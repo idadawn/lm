@@ -1,0 +1,75 @@
+pipeline {
+  agent {
+    node {
+      label 'nodejs'
+    }
+  }
+
+  environment {
+    APP_NAME = 'venus-web'
+    GITLAB_URL = 'http://192.168.0.16:88/YinMai/venus-web.git'
+    REGISTRY = 'harbor.jnpf.team'
+    HARBOR_CREDENTIAL_ID = 'harbor-id'
+    HARBOR_NAMESPACE = 'jnpfsoft'
+    GITLAB_CREDENTIAL_ID = 'gitlab-id'
+    KUBECONFIG_CREDENTIAL_ID = 'kubeconfig-id'
+    SONAR_CREDENTIAL_ID = 'sonar-id'
+    BRANCH_NAME = 'test'
+    REMARKS = 'web前端项目-vue3'
+  }
+
+  stages {
+
+    stage('Checkout SCM') {
+      steps {
+        git(credentialsId: "$GITLAB_CREDENTIAL_ID", url: "$GITLAB_URL", branch: "$BRANCH_NAME", changelog: true, poll: false)
+      }
+    }
+
+    stage('Build & Push') {
+      agent none
+      steps {
+        container('nodejs') {
+          sh 'npm install -g n'
+          sh 'n 16.17.1'
+          sh 'npm install -g pnpm'
+          sh 'pnpm -v'
+          // sh 'pnpm config set registry https://registry.npm.taobao.org'
+          // sh 'pnpm install && pnpm build'
+          sh 'yarn install && yarn build'
+          sh 'docker build -t $REGISTRY/$HARBOR_NAMESPACE/$APP_NAME:SNAPSHOT-$BRANCH_NAME-$BUILD_NUMBER -f Dockerfile .'
+          withCredentials([usernamePassword(credentialsId : "$HARBOR_CREDENTIAL_ID" ,passwordVariable : 'HARBOR_PASSWORD' ,usernameVariable : 'HARBOR_USERNAME' ,)]) {
+            sh 'echo "$HARBOR_PASSWORD" | docker login $REGISTRY -u "$HARBOR_USERNAME" --password-stdin'
+            sh 'docker push $REGISTRY/$HARBOR_NAMESPACE/$APP_NAME:SNAPSHOT-$BRANCH_NAME-$BUILD_NUMBER'
+          }
+        }
+      }
+    }
+
+    stage('Deploy to Staging') {
+      steps {
+        container ('nodejs') {
+          withCredentials([
+            kubeconfigFile(
+              credentialsId: env.KUBECONFIG_CREDENTIAL_ID,
+              variable: 'KUBECONFIG')
+            ]) {
+            sh 'envsubst < deploy/cm.yaml | kubectl apply -f -'  
+            sh 'envsubst < deploy/deployment.yaml | kubectl apply -f -'
+            sh 'envsubst < deploy/service.yaml | kubectl apply -f -'
+            sh 'envsubst < deploy/ingress.yaml | kubectl apply -f -'
+          }
+        }
+      }
+    }
+
+  }
+  post {
+    success {
+      wechatWebhook(url: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=7132aecb-6e66-46d3-a5e4-c133940f9ab6', content: "**DevOps发布提醒**(Auto)\n> 环境：`测试环境`\n> 编号：第`${BUILD_NUMBER}`次构建\n> 项目：`${APP_NAME}`\n> 分支：`${BRANCH_NAME}`\n> 备注：`${REMARKS}`\n> 结果：<font color='info'>发布成功</font>(⊙‿⊙)")
+    }
+    failure {
+      wechatWebhook(url: 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=7132aecb-6e66-46d3-a5e4-c133940f9ab6', content: "**DevOps发布提醒**(Auto)\n> 环境：`测试环境`\n> 编号：第`${BUILD_NUMBER}`次构建\n> 项目：`${APP_NAME}`\n> 分支：`${BRANCH_NAME}`\n> 备注：`${REMARKS}`\n> 结果：<font color='warning'>发布失败</font>(⊙︿⊙)，请登录系统查看详情")
+    }
+  }
+}

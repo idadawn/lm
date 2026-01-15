@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\common\Poxiao.Common.Core\Poxiao.Common.Core.csproj" />
+		<ProjectReference Include="..\..\message\Poxiao.Message.Interfaces\Poxiao.Message.Interfaces.csproj" />
+		<ProjectReference Include="..\..\system\Poxiao.Systems.Interfaces\Poxiao.Systems.Interfaces.csproj" />
+	</ItemGroup>
+
+</Project>

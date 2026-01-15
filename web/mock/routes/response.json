@@ -1,0 +1,13 @@
+[
+  {
+    "url": "/demo",
+    "method": "GET",
+    "response": {
+      "code": "200",
+      "data": {},
+      "message": "demo response"
+    },
+    "status": 200,
+    "delay": 200
+  }
+]

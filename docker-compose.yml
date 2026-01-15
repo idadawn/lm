@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # 1. 向量数据库 (Qdrant) - 存储外观特性定义与指标定义
+  qdrant:
+    image: qdrant/qdrant:v1.12.1
+    container_name: qdrant_db
+    restart: always
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - ./qdrant_storage:/qdrant/storage
+    networks:
+      - detection_net
+
+  # 2. 向量推理引擎 (TEI) - 用于外观特性语义匹配 (SRS 4.1)
+  tei-embedding:
+    image: ghcr.io/huggingface/text-embeddings-inference:1.6
+    container_name: tei_api
+    runtime: nvidia
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      - HF_HUB_OFFLINE=1 # 开启离线模式
+      - HUGGINGFACE_HUB_CACHE=/data
+    volumes:
+      # 挂载之前下载好的 BGE-M3 模型
+      - ./models/bge-m3:/data/model
+    # 强制从本地路径加载模型
+    command: --model-id /data/model --max-client-batch-size 32
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+    networks:
+      - detection_net
+
+  # 3. 大模型推理引擎 (vLLM) - 用于自然语言问数 (SRS 4.5)
+  vllm:
+    image: vllm/vllm-openai:latest
+    container_name: qwen_vllm
+    runtime: nvidia
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - HF_HUB_OFFLINE=1 # 开启离线模式
+    volumes:
+      # 挂载之前下载好的 Qwen2.5-7B 模型
+      - ./models/qwen2.5-7b:/data/qwen2.5-7b
+    # 命令说明：
+    # --model: 指向容器内的模型路径
+    # --gpu-memory-utilization: 建议设为 0.7，留出显存给 TEI 引擎
+    command: >
+      --model /data/qwen2.5-7b --host 0.0.0.0 --port 8000 --trust-remote-code --gpu-memory-utilization 0.7 --max-model-len 4096
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
+    networks:
+      - detection_net
+
+networks:
+  detection_net:
+    driver: bridge

@@ -1,0 +1,127 @@
+using Poxiao.Infrastructure.Filter;
+using Poxiao.Lab.Entity.Dto.IntermediateData;
+using Poxiao.Lab.Entity.Entity;
+
+namespace Poxiao.Lab.Interfaces;
+
+/// <summary>
+/// 中间数据服务接口.
+/// </summary>
+public interface IIntermediateDataService
+{
+    /// <summary>
+    /// 获取中间数据列表.
+    /// </summary>
+    /// <param name="input">查询条件</param>
+    /// <returns>分页数据</returns>
+    Task<dynamic> GetList(IntermediateDataListQuery input);
+
+    /// <summary>
+    /// 获取中间数据详情.
+    /// </summary>
+    /// <param name="id">数据ID</param>
+    /// <returns>详情数据</returns>
+    Task<IntermediateDataInfoOutput> GetInfo(string id);
+
+    /// <summary>
+    /// 从原始数据生成中间数据.
+    /// </summary>
+    /// <param name="input">生成条件</param>
+    /// <returns>生成结果</returns>
+    Task<IntermediateDataGenerateOutput> Generate(IntermediateDataGenerateInput input);
+
+    /// <summary>
+    /// 更新性能数据.
+    /// </summary>
+    /// <param name="input">性能数据</param>
+    /// <returns></returns>
+    Task UpdatePerformance(IntermediateDataPerfUpdateInput input);
+
+    /// <summary>
+    /// 更新外观特性.
+    /// </summary>
+    /// <param name="input">外观特性数据</param>
+    /// <returns></returns>
+    Task UpdateAppearance(IntermediateDataAppearUpdateInput input);
+
+    /// <summary>
+    /// 更新基础信息.
+    /// </summary>
+    /// <param name="input">基础信息</param>
+    /// <returns></returns>
+    Task UpdateBaseInfo(IntermediateDataBaseUpdateInput input);
+
+    /// <summary>
+    /// 删除中间数据.
+    /// </summary>
+    /// <param name="id">数据ID</param>
+    /// <returns></returns>
+    Task Delete(string id);
+
+    /// <summary>
+    /// 批量删除中间数据.
+    /// </summary>
+    /// <param name="ids">数据ID列表</param>
+    /// <returns></returns>
+    Task BatchDelete(List<string> ids);
+
+    /// <summary>
+    /// 获取产品规格列表（用于筛选）.
+    /// </summary>
+    /// <returns>产品规格列表</returns>
+    Task<List<ProductSpecOption>> GetProductSpecOptions();
+
+    /// <summary>
+    /// 解析检测列配置.
+    /// </summary>
+    List<int> ParseDetectionColumns(string detectionColumnsStr);
+
+    /// <summary>
+    /// 从原始数据生成中间数据.
+    /// </summary>
+    IntermediateDataEntity GenerateIntermediateData(
+        RawDataEntity rawData,
+        ProductSpecEntity productSpec,
+        List<int> detectionColumns,
+        int layers,
+        decimal length,
+        decimal density,
+        int? specVersion
+    );
+}
+
+/// <summary>
+/// 产品规格选项.
+/// </summary>
+public class ProductSpecOption
+{
+    /// <summary>
+    /// 规格ID.
+    /// </summary>
+    public string Id { get; set; }
+
+    /// <summary>
+    /// 规格代码.
+    /// </summary>
+    public string Code { get; set; }
+
+    /// <summary>
+    /// 规格名称.
+    /// </summary>
+    public string Name { get; set; }
+
+    /// <summary>
+    /// 检测列.
+    /// </summary>
+    public string DetectionColumns { get; set; }
+
+    /// <summary>
+    /// 长度.
+    /// </summary>
+    public decimal? Length { get; set; }
+
+    /// <summary>
+    /// 层数.
+    /// </summary>
+    public int? Layers { get; set; }
+}

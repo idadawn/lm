@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\Poxiao.Lab.Interfaces\Poxiao.Lab.Interfaces.csproj" />
+    <ProjectReference Include="..\Poxiao.Lab.Entity\Poxiao.Lab.Entity.csproj" />
+    <ProjectReference Include="..\..\common\Poxiao.Common.Core\Poxiao.Common.Core.csproj" />
+    <ProjectReference Include="..\..\ai\Poxiao.AI.Interfaces\Poxiao.AI.Interfaces.csproj" />
+    <ProjectReference Include="..\..\system\Poxiao.Systems.Interfaces\Poxiao.Systems.Interfaces.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SemanticKernel" Version="1.33.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.33.0-alpha" />
+    <PackageReference Include="Microsoft.SemanticKernel.Connectors.OpenAI" Version="1.33.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Core" Version="1.33.0" />
+    <PackageReference Include="Microsoft.SemanticKernel.Abstractions" Version="1.33.0" />
+  </ItemGroup>
+</Project>

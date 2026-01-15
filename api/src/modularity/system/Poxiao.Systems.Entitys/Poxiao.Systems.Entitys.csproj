@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\infrastructure\Poxiao.Extras.CollectiveOAuth\Poxiao.Extras.CollectiveOAuth.csproj" />
+    <ProjectReference Include="..\..\..\infrastructure\Poxiao.Extras.Thirdparty\Poxiao.Extras.Thirdparty.csproj" />
+    <ProjectReference Include="..\..\common\Poxiao.Common\Poxiao.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

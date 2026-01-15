@@ -1,0 +1,32 @@
+﻿// Global using directives
+
+global using AdvancedStringBuilder;
+global using Mapster;
+global using Microsoft.AspNetCore.Mvc;
+global using NCalc;
+global using Newtonsoft.Json;
+global using Poxiao.Infrastructure.Filter;
+global using Poxiao.Infrastructure.Security;
+global using Poxiao.DependencyInjection;
+global using Poxiao.Extras.CollectiveOAuth.Enums;
+global using Poxiao.FriendlyException;
+global using Poxiao.Infrastructure.Const;
+global using Poxiao.Infrastructure.Core.Manager;
+global using Poxiao.Infrastructure.Dtos.DataBase;
+global using Poxiao.Infrastructure.Enums;
+global using Poxiao.Infrastructure.Extension;
+global using Poxiao.Infrastructure.Models;
+global using Poxiao.Kpi.Core;
+global using Poxiao.Kpi.Core.Entitys;
+global using Poxiao.Kpi.Core.Enums;
+global using Poxiao.Message.Entitys.Entity;
+global using Poxiao.RemoteRequest;
+global using Poxiao.Systems.Entitys.Dto.DbLink;
+global using Poxiao.Systems.Entitys.Permission;
+global using Poxiao.Systems.Entitys.System;
+global using Poxiao.Systems.Interfaces.System;
+global using SqlSugar;
+global using System.ComponentModel;
+global using System.ComponentModel.DataAnnotations;
+global using System.Diagnostics;
+global using System.Text;

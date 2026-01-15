@@ -1,0 +1,84 @@
+<template>
+    <div class="JNPF-common-layout">
+      <FlowBox v-if="flowVisible" ref="FlowBox" @close="closeFlow" />
+      <el-dialog title="请选择流程" :close-on-click-modal="false" append-to-body
+                 :visible.sync="flowListVisible" class="JNPF-dialog template-dialog JNPF-dialog_center"
+                 lock-scroll width="400px">
+        <el-scrollbar class="template-list">
+          <div class="template-item" v-for="item in flowList" :key="item.id"
+               @click="selectFlow(item)">{{item.fullName}}
+          </div>
+        </el-scrollbar>
+      </el-dialog>
+    </div>
+</template>
+<script>
+
+    import FlowBox from '@/views/workFlow/components/FlowBox'
+    import {getFormById} from '@/api/workFlow/FormDesign'
+    import { getFlowList } from '@/api/workFlow/FlowEngine'
+    export default {
+        components: {FlowBox},
+        data() {
+            return {
+              formFlowId: "",
+              flowVisible: false,
+              flowListVisible: false,
+              flowList: [],
+              flowItem: {}
+            }
+        },
+        created() {
+          this.init();
+        },
+        methods: {
+            getFormById() {
+                getFormById("${context.formId}").then(res => {
+                    const flowId = res.data&&res.data.id
+                    this.formFlowId = flowId;
+                    this.getFlowList(true)
+                }).catch(() => {
+                  this.$router.push('/404');
+                });
+            },
+            init(flag) {
+              this.getFormById(flag);
+            },
+              // 纯表单带流程生成
+              getFlowList(flag) {
+                getFlowList(this.formFlowId,'1').then(res => {
+                  this.flowList = res.data
+                  if (flag && this.flowItem.id) return this.selectFlow(this.flowItem)
+                  if (!this.flowList.length) return this.$message({ type: 'error', message: '流程不存在' })
+                  if (this.flowList.length === 1) return this.selectFlow(this.flowList[0])
+                  this.flowListVisible = true
+                })
+              },
+              // 纯表单带流程生成
+              selectFlow(item) {
+                this.flowItem = item
+                let data = {
+                  id: '',
+                  enCode: item.fullName,
+                  flowId: item.id,
+                  formType: 1,
+                  opType: '-1',
+                  type: 1,
+                  modelId: this.modelId,
+                  isPreview: this.isPreview,
+                  fromForm: 1,
+                  hideCancelBtn: true
+                }
+                this.flowListVisible = false
+                this.flowVisible = true
+                this.$nextTick(() => {
+                  console.log(data)
+                  this.$refs.FlowBox.init(data)
+                })
+              },
+            closeFlow(isRefresh) {
+                if (isRefresh) this.init(true)
+            },
+        },
+    }
+</script>

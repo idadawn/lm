@@ -1,0 +1,740 @@
+<template>
+  <div class="step2-preview-container">
+    <!-- 步骤说明 -->
+    <a-alert
+      message="第二步：数据解析与预览"
+      description="系统正在解析Excel文件，解析完成后将显示数据预览。请检查数据是否正确。"
+      type="info"
+      show-icon
+      style="margin-bottom: 20px" />
+
+    <!-- 解析状态 -->
+    <div v-if="parsing" class="parsing-status">
+      <a-spin size="large" tip="正在解析数据，请稍候..." />
+    </div>
+
+    <!-- 数据预览 -->
+    <div v-if="previewData && !parsing" class="preview-section">
+      <h3 class="section-title">数据预览</h3>
+      <div class="preview-statistics">
+        <a-row :gutter="16">
+          <a-col :span="8">
+            <Statistic title="总行数" :value="previewData.statistics.totalRows" />
+          </a-col>
+          <a-col :span="8">
+            <Statistic title="有效数据" :value="previewData.statistics.validDataRows"
+                       :value-style="{ color: previewData.statistics.validDataRows > 0 ? '#52c41a' : '#ff4d4f' }" />
+          </a-col>
+          <a-col :span="8">
+            <Statistic title="无效数据" :value="previewData.statistics.invalidDataRows"
+                       :value-style="{ color: '#ff4d4f' }" />
+          </a-col>
+        </a-row>
+        
+        <!-- 无有效数据警告 -->
+        <a-alert
+          v-if="previewData.statistics.validDataRows === 0 && previewData.statistics.totalRows > 0"
+          type="error"
+          show-icon
+          style="margin-top: 16px">
+          <template #message>
+            <span style="font-weight: 600;">没有有效数据可以导入！</span>
+          </template>
+          <template #description>
+            <div>
+              <p style="margin-bottom: 8px;">所有数据因炉号格式不符而被标记为无效。</p>
+              <p style="margin-bottom: 4px;"><strong>炉号格式要求：</strong>[产线数字][班次汉字][8位日期]-[炉号]-[卷号]-[分卷号]</p>
+              <p style="margin-bottom: 0;"><strong>示例：</strong>1甲20251101-1-4-1 或 1甲20251101-1-4-1脆</p>
+            </div>
+          </template>
+        </a-alert>
+      </div>
+
+      <!-- 筛选与统计工具栏 -->
+      <div class="preview-toolbar">
+        <a-radio-group v-model:value="filterType" button-style="solid">
+          <a-radio-button value="all">
+            全部数据 ({{ previewData.statistics.totalRows }})
+          </a-radio-button>
+          <a-radio-button value="valid">
+            有效数据 ({{ previewData.statistics.validDataRows }})
+          </a-radio-button>
+          <a-radio-button value="invalid">
+            无效数据 ({{ previewData.statistics.invalidDataRows }})
+          </a-radio-button>
+        </a-radio-group>
+      </div>
+
+      <!-- 数据表格预览（左右分栏） -->
+      <div class="preview-split-container">
+        <!-- 左侧：原始数据 -->
+        <div class="preview-left-panel">
+          <div class="panel-header">原始数据</div>
+          <a-table
+            ref="leftTableRef"
+            :columns="leftColumns"
+            :data-source="paginatedRows"
+            :pagination="paginationConfig"
+            @change="handleTableChange"
+            size="small"
+            :scroll="{ x: 500 }"
+            class="sync-scroll-table left-table">
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.dataIndex === 'prodDate'">
+                {{ formatDate(record.prodDate) }}
+              </template>
+              <template v-else-if="column.key === 'columnCount'">
+                {{ record.detectionData ? Object.keys(record.detectionData).length : 0 }}
+              </template>
+              <template v-else>
+                {{ record[column.dataIndex] ?? '-' }}
+              </template>
+            </template>
+          </a-table>
+        </div>
+
+        <!-- 右侧：导入数据 -->
+        <div class="preview-right-panel">
+          <div class="panel-header">导入数据</div>
+          <a-table
+            ref="rightTableRef"
+            :columns="rightColumns"
+            :data-source="paginatedRows"
+            :pagination="paginationConfig"
+            @change="handleTableChange"
+            size="small"
+            :scroll="{ x: 'max-content' }"
+            class="sync-scroll-table right-table">
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.dataIndex === 'prodDate'">
+                {{ formatDate(record.prodDate) }}
+              </template>
+              <template v-else-if="column.dataIndex === 'isValidData'">
+                <a-tag :color="record.isValidData ? 'success' : 'error'">
+                  {{ record.isValidData ? '有效' : '无效' }}
+                </a-tag>
+              </template>
+              <template v-else-if="column.key === 'columnCount'">
+                {{ record.detectionData ? Object.keys(record.detectionData).length : 0 }}
+              </template>
+              <template v-else-if="column.dataIndex === 'furnaceNoParsed'">
+                <template v-if="record.furnaceNo && record.featureSuffix">
+                  {{ record.furnaceNo.replace(new RegExp(record.featureSuffix + '$'), '') }}
+                </template>
+                <template v-else-if="record.lineNo !== undefined && record.shift !== undefined && 
+                                     record.furnaceNoParsed !== undefined && record.coilNo !== undefined && 
+                                     record.subcoilNo !== undefined && record.prodDate">
+                  {{ formatFurnaceNo(record) }}
+                </template>
+                <template v-else-if="record.furnaceNo">
+                  {{ record.furnaceNo.replace(/[脆软硬]$/, '') }}
+                </template>
+                <template v-else>
+                  -
+                </template>
+              </template>
+              <template v-else>
+                {{ record[column.dataIndex] ?? '-' }}
+              </template>
+            </template>
+          </a-table>
+        </div>
+      </div>
+      
+      <!-- 如果有数据但分页后为空（理论不应发生），或者空数据提示 -->
+      <div v-if="filteredRows.length === 0" class="preview-empty">
+        暂无符合条件的数据
+      </div>
+    </div>
+
+    <!-- 错误状态 -->
+    <div v-if="parseError" class="error-status">
+      <a-result
+        status="error"
+        title="数据解析失败"
+        :sub-title="parseError">
+        <template #extra>
+          <a-button type="primary" @click="handleRetry">重试</a-button>
+        </template>
+      </a-result>
+    </div>
+  </div>
+</template>
+
+<script lang="ts" setup>
+import { ref, computed, nextTick, onMounted, watch } from 'vue';
+import { message, Statistic } from 'ant-design-vue';
+import { uploadAndParse } from '/@/api/lab/rawData';
+import type {
+  ImportStrategy,
+  DataPreviewResult,
+} from '/@/api/lab/types/rawData';
+
+const props = defineProps({
+  importSessionId: {
+    type: String,
+    required: true,
+  },
+  fileName: {
+    type: String,
+    required: true,
+  },
+  importStrategy: {
+    type: String as () => ImportStrategy,
+    required: true,
+  },
+});
+
+const emit = defineEmits(['next', 'prev', 'cancel']);
+
+// 状态
+const parsing = ref(false);
+const previewData = ref<DataPreviewResult | null>(null);
+const parseError = ref<string>('');
+const showErrorDetails = ref(false);
+
+const leftTableRef = ref();
+const rightTableRef = ref();
+const isScrolling = ref(false);
+
+// 筛选与分页状态
+const filterType = ref<string>('all');
+const currentPage = ref(1);
+const pageSize = ref(20);
+
+// 过滤后的数据
+const filteredRows = computed(() => {
+  if (!previewData.value?.rows) return [];
+  
+  if (filterType.value === 'valid') {
+    return previewData.value.rows.filter(row => row.isValidData);
+  } else if (filterType.value === 'invalid') {
+    return previewData.value.rows.filter(row => !row.isValidData);
+  }
+  return previewData.value.rows;
+});
+
+// 分页配置
+const paginationConfig = computed(() => ({
+  current: currentPage.value,
+  pageSize: pageSize.value,
+  total: filteredRows.value.length,
+  showSizeChanger: true,
+  showQuickJumper: true,
+  showTotal: (total) => `共 ${total} 条`,
+}));
+
+// 分页后的当前页数据
+const paginatedRows = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return filteredRows.value.slice(start, end);
+});
+
+// 处理表格分页变化
+function handleTableChange(pagination) {
+  currentPage.value = pagination.current;
+  pageSize.value = pagination.pageSize;
+  
+  // 重置滚动条位置
+  nextTick(() => {
+    const leftTableBody = leftTableRef.value?.$el?.querySelector('.ant-table-body');
+    const rightTableBody = rightTableRef.value?.$el?.querySelector('.ant-table-body');
+    
+    if (leftTableBody) {
+      leftTableBody.scrollTop = 0;
+    }
+    if (rightTableBody) {
+      rightTableBody.scrollTop = 0;
+    }
+    
+    // 重新初始化滚动同步（因为表格内容可能已更新）
+    initSyncScroll();
+  });
+}
+
+// 格式化日期
+function formatDate(date: string | number | undefined) {
+  if (!date) return '-';
+  try {
+    let d: Date;
+    // 处理时间戳（可能是字符串或数字）
+    if (typeof date === 'number' || (typeof date === 'string' && /^\d+$/.test(date))) {
+      const timestamp = typeof date === 'string' ? parseInt(date, 10) : date;
+      // 判断是秒级还是毫秒级时间戳
+      d = new Date(timestamp > 1000000000000 ? timestamp : timestamp * 1000);
+    } else {
+      d = new Date(date);
+    }
+    
+    if (isNaN(d.getTime())) return String(date);
+    
+    const year = d.getFullYear();
+    const month = d.getMonth() + 1; // getMonth() returns 0-11
+    const day = d.getDate();
+    // 格式: YYYY/M/D matches user request "2025/11/1"
+    return `${year}/${month}/${day}`;
+  } catch {
+    return String(date);
+  }
+}
+
+// 格式化炉号（不带特性描述）
+function formatFurnaceNo(record: any): string {
+  if (!record.prodDate) return '-';
+  const date = formatDate(record.prodDate).replace(/\//g, '');
+  const shiftMap: Record<number, string> = { 1: '甲', 2: '乙', 3: '丙' };
+  const shiftStr = shiftMap[record.shift] || String(record.shift);
+  return `${record.lineNo}${shiftStr}${date}-${record.furnaceNoParsed}-${record.coilNo}-${record.subcoilNo}`;
+}
+
+// 获取产品规格名称 (Removed unused function)
+// 加载产品规格列表 (Removed unused function)
+
+// 左侧列定义（原始数据）
+// 行号、日期、炉号（和Excel一致带特性描述）、宽度、带材重量、数据列数
+const leftColumns = computed(() => [
+  { title: '行号', dataIndex: 'rowIndex', width: 60, fixed: 'left' },
+  { 
+    title: '日期', 
+    dataIndex: 'prodDate', 
+    width: 100,
+    customRender: ({ text }) => formatDate(text)
+  },
+  { title: '炉号', dataIndex: 'furnaceNo', width: 150 },
+  { title: '宽度', dataIndex: 'width', width: 80 },
+  { title: '带材重量', dataIndex: 'coilWeight', width: 100 },
+  { 
+    title: '数据列数', 
+    key: 'columnCount', 
+    width: 100,
+    align: 'center',
+    customRender: ({ record }) => {
+      // 简单计算detectionData的键数量
+      return record.detectionData ? Object.keys(record.detectionData).length : 0;
+    }
+  },
+]);
+
+// 右侧列定义（导入数据）
+// 行号、日期、炉号(不带特性描述)、特性描述、数据列数、炉号解析状态
+const rightColumns = computed(() => {
+  const columns: any[] = [
+    { title: '行号', dataIndex: 'rowIndex', width: 60, fixed: 'left' },
+    { 
+      title: '日期', 
+      dataIndex: 'prodDate', 
+      width: 100,
+      customRender: ({ text }) => formatDate(text)
+    },
+    { 
+      title: '炉号', 
+      dataIndex: 'furnaceNoParsed', 
+      width: 150,
+      customRender: ({ record }) => {
+        // 从原始炉号中移除特性描述，生成不带特性描述的炉号
+        // 格式：[产线数字][班次汉字][8位日期]-[炉号]-[卷号]-[分卷号]
+        if (record.furnaceNo && record.featureSuffix) {
+          // 移除特性描述后缀
+          return record.furnaceNo.replace(new RegExp(record.featureSuffix + '$'), '');
+        }
+        // 如果有解析后的字段，组合生成炉号
+        if (record.lineNo !== undefined && record.shift !== undefined && 
+            record.furnaceNoParsed !== undefined && record.coilNo !== undefined && 
+            record.subcoilNo !== undefined && record.prodDate) {
+          const date = formatDate(record.prodDate).replace(/\//g, '');
+          const shiftMap: Record<number, string> = { 1: '甲', 2: '乙', 3: '丙' };
+          const shiftStr = shiftMap[record.shift] || String(record.shift);
+          return `${record.lineNo}${shiftStr}${date}-${record.furnaceNoParsed}-${record.coilNo}-${record.subcoilNo}`;
+        }
+        // 如果都没有，尝试从原始炉号中移除特性描述
+        if (record.furnaceNo) {
+          // 尝试移除常见的特性描述（脆、软等）
+          return record.furnaceNo.replace(/[脆软硬]$/, '');
+        }
+        return '-';
+      }
+    },
+    { title: '特性描述', dataIndex: 'featureSuffix', width: 100 },
+    { 
+      title: '数据列数', 
+      key: 'columnCount', 
+      width: 100,
+      align: 'center',
+      customRender: ({ record }) => {
+        // 计算detectionData的键数量
+        return record.detectionData ? Object.keys(record.detectionData).length : 0;
+      }
+    },
+    { 
+      title: '炉号解析状态', 
+      dataIndex: 'isValidData', 
+      width: 120, 
+      fixed: 'right',
+      align: 'center'
+    }
+  ];
+
+  return columns;
+});
+
+// 计算是否可以进入下一步（必须有有效数据）
+const canGoNext = computed(() => {
+  if (previewData.value === null || parsing.value) return false;
+  // 必须至少有一条有效数据才能继续
+  return (previewData.value.statistics?.validDataRows || 0) > 0;
+});
+
+// 解析数据
+async function parseData() {
+  if (!props.importSessionId || !props.fileName) {
+    parseError.value = '会话ID或文件名缺失';
+    return;
+  }
+
+  parsing.value = true;
+  parseError.value = '';
+
+  try {
+    // 调用解析接口（文件数据已在第一步保存到后端，通过 sessionId 获取）
+    const result = await uploadAndParse({
+      fileName: props.fileName,
+      importStrategy: props.importStrategy,
+      importSessionId: props.importSessionId,
+    });
+
+    // 保存预览数据
+    previewData.value = result.preview;
+
+    // 为数据添加行号
+    if (previewData.value?.rows) {
+      previewData.value.rows.forEach((row, index) => {
+        row.rowIndex = index + 1;
+      });
+    }
+
+    // 检查解析结果
+    const validCount = previewData.value?.statistics?.validDataRows || 0;
+    const totalCount = previewData.value?.statistics?.totalRows || 0;
+    
+    // 标记为已解析（无论是否有有效数据，只要解析成功就标记）
+    hasParsed.value = true;
+    
+    if (validCount === 0 && totalCount > 0) {
+      message.warning(`数据解析完成，但没有有效数据！共 ${totalCount} 行数据，全部因炉号格式不符而标记为无效。请检查炉号格式是否符合：[产线数字][班次汉字][8位日期]-[炉号]-[卷号]-[分卷号]，例如：1甲20251101-1-4-1`);
+    } else if (validCount > 0) {
+      message.success(`数据解析成功，有效数据 ${validCount} 条`);
+    } else {
+      message.warning('未解析到任何数据，请检查Excel文件');
+    }
+    
+    // 初始化同步滚动（延迟以确保表格已完全渲染）
+    nextTick(() => {
+      setTimeout(() => {
+        initSyncScroll();
+      }, 200);
+    });
+  } catch (error: any) {
+    parseError.value = error.message || '数据解析失败';
+    message.error(parseError.value);
+    previewData.value = null;
+    // 解析失败时不标记为已解析，允许重试
+    hasParsed.value = false;
+  } finally {
+    parsing.value = false;
+  }
+}
+
+// 同步滚动逻辑
+function initSyncScroll() {
+  nextTick(() => {
+    const leftTableBody = leftTableRef.value?.$el?.querySelector('.ant-table-body');
+    const rightTableBody = rightTableRef.value?.$el?.querySelector('.ant-table-body');
+
+    if (!leftTableBody || !rightTableBody) {
+      // 如果表格还没渲染，延迟重试
+      setTimeout(() => initSyncScroll(), 100);
+      return;
+    }
+
+    // 移除之前的监听器（如果存在）
+    if ((leftTableBody as any)._handleLeftScroll) {
+      leftTableBody.removeEventListener('scroll', (leftTableBody as any)._handleLeftScroll);
+    }
+    if ((rightTableBody as any)._handleRightScroll) {
+      rightTableBody.removeEventListener('scroll', (rightTableBody as any)._handleRightScroll);
+    }
+
+    const handleLeftScroll = (e: Event) => {
+      if (isScrolling.value) return;
+      isScrolling.value = true;
+      const scrollTop = (e.target as HTMLElement).scrollTop;
+      rightTableBody.scrollTop = scrollTop;
+      // 使用requestAnimationFrame或setTimeout重置标志位，防止死循环
+      window.requestAnimationFrame(() => {
+        isScrolling.value = false;
+      });
+    };
+
+    const handleRightScroll = (e: Event) => {
+      if (isScrolling.value) return;
+      isScrolling.value = true;
+      const scrollTop = (e.target as HTMLElement).scrollTop;
+      leftTableBody.scrollTop = scrollTop;
+      window.requestAnimationFrame(() => {
+        isScrolling.value = false;
+      });
+    };
+
+    // 保存引用以便清理
+    (leftTableBody as any)._handleLeftScroll = handleLeftScroll;
+    (rightTableBody as any)._handleRightScroll = handleRightScroll;
+
+    leftTableBody.addEventListener('scroll', handleLeftScroll, { passive: true });
+    rightTableBody.addEventListener('scroll', handleRightScroll, { passive: true });
+
+    // 清理函数存储
+    (window as any)._step2ScrollCleanups = () => {
+      if ((leftTableBody as any)._handleLeftScroll) {
+        leftTableBody.removeEventListener('scroll', (leftTableBody as any)._handleLeftScroll);
+        delete (leftTableBody as any)._handleLeftScroll;
+      }
+      if ((rightTableBody as any)._handleRightScroll) {
+        rightTableBody.removeEventListener('scroll', (rightTableBody as any)._handleRightScroll);
+        delete (rightTableBody as any)._handleRightScroll;
+      }
+    };
+  });
+}
+
+// 重试解析
+function handleRetry() {
+  hasParsed.value = false; // 重置解析标记，允许重新解析
+  parseData();
+}
+
+// 下一步
+async function handleNext() {
+  if (!previewData.value) {
+    message.warning('数据尚未解析完成，请稍候');
+    return;
+  }
+
+  // 检查是否有有效数据
+  const validCount = previewData.value.statistics?.validDataRows || 0;
+  if (validCount === 0) {
+    message.error('没有有效数据！请检查Excel文件中的炉号格式是否正确。炉号格式要求：[产线数字][班次汉字][8位日期]-[炉号]-[卷号]-[分卷号]，例如：1甲20251101-1-4-1');
+    return;
+  }
+
+  emit('next');
+}
+
+// 保存并进入下一步（供父组件调用）
+async function saveAndNext() {
+  await handleNext();
+}
+
+// 标记是否已经解析过（避免重复解析）
+const hasParsed = ref(false);
+
+// 组件挂载时自动解析数据（如果有会话ID）
+onMounted(() => {
+  if (props.importSessionId && !hasParsed.value) {
+    parseData();
+  }
+});
+
+// 监听 importSessionId 变化，当从空变为有值时触发解析
+watch(
+  () => props.importSessionId,
+  (newId, oldId) => {
+    // 当 importSessionId 从空变为有值，且还没有解析过时，触发解析
+    if (newId && !oldId && !hasParsed.value) {
+      parseData();
+    }
+  },
+  { immediate: false }
+);
+
+// 暴露给父组件
+defineExpose({
+  canGoNext,
+  saveAndNext,
+});
+</script>
+
+<style lang="less" scoped>
+.step2-preview-container {
+  padding: 0;
+  position: relative;
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #262626;
+  line-height: 1.5;
+}
+
+.parsing-status {
+  padding: 60px 0;
+  text-align: center;
+}
+
+.preview-section {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #f0f0f0;
+}
+
+.preview-statistics {
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border: 1px solid #f0f0f0;
+}
+
+.error-alert {
+  margin-bottom: 16px;
+  margin-top: 16px;
+}
+
+.error-summary {
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.error-item {
+  padding: 4px 0;
+  font-size: 12px;
+  color: #595959;
+  border-bottom: 1px solid #f0f0f0;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.more-errors {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8c8c8c;
+  font-style: italic;
+}
+
+.preview-split-container {
+  display: flex;
+  gap: 16px;
+  min-height: 400px; /* 最小高度，允许根据内容扩展 */
+  margin-bottom: 16px;
+}
+
+.preview-left-panel, 
+.preview-right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 12px 16px;
+  font-weight: 600;
+  background: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.sync-scroll-table {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  
+  :deep(.ant-table) {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  
+  :deep(.ant-table-container) {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  
+  :deep(.ant-table-body) {
+    flex: 1;
+    overflow: auto !important; /* 同时支持横向和纵向滚动 */
+    max-height: 500px; /* 限制表格内容区域的最大高度 */
+  }
+  
+  :deep(.ant-table-thead > tr > th),
+  :deep(.ant-table-tbody > tr > td) {
+    height: 40px; /* 固定行高 */
+    line-height: 24px;
+    padding: 8px 12px !important;
+    white-space: nowrap; /* 防止内容换行导致行高不一致 */
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  :deep(.ant-pagination) {
+    margin-top: 16px;
+    flex-shrink: 0;
+    padding: 0 16px;
+  }
+}
+
+.preview-more {
+  padding: 12px;
+  text-align: center;
+  color: #8c8c8c;
+  font-size: 14px;
+  background: #fafafa;
+  border-top: 1px solid #f0f0f0;
+}
+
+.furnace-no-cell {
+  .parsed-info {
+    margin-top: 4px;
+  }
+}
+
+.preview-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.pagination-info {
+  font-size: 14px;
+  color: #8c8c8c;
+}
+
+.preview-empty {
+  text-align: center;
+  padding: 40px 0;
+  color: #8c8c8c;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+}
+
+.detection-value {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+}
+
+.error-status {
+  padding: 40px 0;
+}
+</style>

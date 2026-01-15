@@ -1,0 +1,65 @@
+#set($moduleName = "${context.genInfo.className}")
+#if($context.isForm)
+    #set($package = "package ${context.package}.${context.isForm}.model.${moduleName};")
+#else
+    #set($package = "package ${context.package}.model.${moduleName};")
+#end
+${package}
+
+import lombok.Data;
+import java.util.List;
+import java.util.Date;
+import java.math.BigDecimal;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.alibaba.fastjson.annotation.JSONField;
+
+/**
+ *
+ * ${context.genInfo.description}
+ * 版本： ${context.genInfo.version}
+ * 版权: ${context.genInfo.copyright}
+ * 作者： ${context.genInfo.createUser}
+ * 日期： ${context.genInfo.createDate}
+ */
+@Data
+public class ${context.className}Model  {
+
+    #foreach($html in ${context.children.childList})
+        #set($fieLdsModel = ${html.fieLdsModel})
+        #set($config = ${fieLdsModel.config})
+        #set($jnpfkey = ${config.jnpfKey})
+        #set($vModel = "${fieLdsModel.vModel}")
+        #set($fieldName=${config.label})
+#if(${jnpfkey}=="date")
+    /** ${fieldName} **/
+    @JsonProperty("${vModel}")
+    private Long  ${vModel};
+#elseif(${jnpfkey}=='numInput' || ${jnpfkey}=='calculate' )
+	/** ${fieldName} **/
+	@JsonProperty("${vModel}")
+    #if(${fieLdsModel.precision})
+    private BigDecimal ${vModel};
+    #else
+    private Integer ${vModel};
+    #end
+
+#elseif(${jnpfkey}=='slider'|| ${jnpfkey}=='rate')
+        /** ${fieldName} **/
+        @JsonProperty("${vModel}")
+        private Integer ${vModel};
+
+#elseif(${jnpfkey}=='relationFormAttr'|| ${jnpfkey}=='popupAttr')
+    #set($vModel ="${fieLdsModel.relationField}_${fieLdsModel.showField}")
+	/** ${fieldName} **/
+	@JsonProperty("${vModel}")
+	private String ${vModel};
+
+#else
+        /** ${fieldName} **/
+        @JsonProperty("${vModel}")
+        private String ${vModel};
+#end
+        #end
+
+
+}

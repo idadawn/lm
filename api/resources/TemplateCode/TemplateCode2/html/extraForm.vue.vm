@@ -1,0 +1,1251 @@
+#macro(GetStartAndEndTime $mastKey,$config,$html,$startTime,$endTime)
+    #set($startRelationField="''")
+    #if($config.startRelationField)
+        #set($startRelationField="${context.formModel}.${config.startRelationField}")
+        #if($config.startChild)
+            #set($startRelationField="scope.row.${config.startRelationField}")
+        #end
+    #end
+    #set($startTimeValue="#if(${config.startTimeValue})'${config.startTimeValue}'#else''#end")
+    #set($startTimeType="#if(${config.startTimeType})${config.startTimeType}#else''#end")
+    #set($startTimeTarget="#if(${config.startTimeTarget})${config.startTimeTarget}#else''#end")
+    #set($endRelationField="''")
+    #if($config.endRelationField)
+        #set($endRelationField="${context.formModel}.${config.endRelationField}")
+        #if($config.endChild)
+            #set($endRelationField="scope.row.${config.endRelationField}")
+        #end
+    #end
+    #set($endTimeValue="#if(${config.endTimeValue})'${config.endTimeValue}'#else''#end")
+    #set($endTimeType="#if(${config.endTimeType})${config.endTimeType}#else''#end")
+    #set($endTimeTarget="#if(${config.endTimeTarget})${config.endTimeTarget}#else''#end")
+
+    #set($startTime="dateTime(${config.startTimeRule},${startTimeType},${startTimeTarget},${startTimeValue},${startRelationField})")
+    #set($endTime="dateTime(${config.endTimeRule},${endTimeType},${endTimeTarget},${endTimeValue},${endRelationField})")
+    #if($mastKey=='time')
+        #set($startTime="time(${config.startTimeRule},${startTimeType},${startTimeTarget},${startTimeValue},'${html.format}',${startRelationField})")
+        #set($endTime="time(${config.endTimeRule},${endTimeType},${endTimeTarget},${endTimeValue},'${html.format}',${endRelationField})")
+    #end
+#end
+#set($pKeyName = "${context.pKeyName}")
+#set($isSelectDialog = false)
+<template>
+<el-dialog :title="!${context.formModel}.${pKeyName} ? '新建' :'编辑'"
+           :close-on-click-modal="false" append-to-body
+           :visible.sync="visible" class="JNPF-dialog JNPF-dialog_center" lock-scroll
+           width="${context.generalWidth}"  destroy-on-close>
+<el-row :gutter="${context.gutter}" class="${context.formStyle}">
+
+<el-form ref="${context.formRef}" :model="${context.formModel}" :rules="${context.formRules}" size="${context.size}" label-width="${context.labelWidth}px" label-position="${context.labelPosition}" #if($context.disabled == true ) :disabled="true"  #end>
+    <template v-if="!loading">
+        #foreach($html in ${context.columnDataListFiled})
+        #set($vModel = "${html.vModel}")
+        #set($config = $html.config)
+        #set($mastKey = "${config.jnpfKey}")
+        #set($show = $config.noShow)
+        #set($pcshow = $config.pc)
+        #set($startTime=${html.startTime})
+        #set($endTime=${html.endTime})
+        #if(${mastKey}=='date'||${mastKey}=='time')
+            #GetStartAndEndTime($mastKey,$config,$html,$startTime,$endTime)
+        #end
+        #if($show == false && $pcshow == true)
+            <el-col :span="${config.span}" #if(${context.columnData.useFormPermission}) #if(${vModel}) v-if="jnpf.hasFormP('${vModel}')"
+            #elseif($mastKey == 'relationFormAttr' || $mastKey == 'popupAttr')
+                    v-if="jnpf.hasFormP('${html.relationField}')"
+            #end
+            #end >
+                <jnpf-form-tip-item #if($config.showLabel && $config.showLabel == true)
+                    #if($config.label) label="${config.label}" #end
+                    #if($config.labelWidth) label-width="${config.labelWidth}px"#end #else label-width="0"#end
+                    #if($vModel) prop="${vModel}" #end  #if($config.label && $config.tipLabel) tip-label="${config.tipLabel}" #end>
+                    #set($mastModel="${context.formModel}.${vModel}")
+                    #if($mastKey =="createUser"||$mastKey =="modifyUser"||$mastKey =="currOrganize"||$mastKey =="currPosition")
+                        #set($mastModel="${context.formModel}.${vModel}_name")
+                    #end
+                    <${config.tag} #if($vModel)  v-model="${mastModel}" @change="changeData('${vModel}',-1)"  #end
+                    #if($mastKey!='JNPFText')
+                        #if($html.placeholder) placeholder="${html.placeholder}" #end
+                    #else
+                        #if($mastKey == 'relationFormAttr' || $mastKey == 'popupAttr')
+                            #if($config.defaultValue) defaultValue="${config.defaultValue}"#end
+                        #else
+                            #if($config.defaultValue) value="${config.defaultValue}"#end
+                        #end
+                    #end
+                    #if($mastKey== 'cascader')
+                        #if($html.showAllLevels)
+                            show-all-levels
+                        #else
+                            :show-all-levels="false"
+                        #end
+                    #end
+                    #if($mastKey =='popupSelect' || $mastKey =='popupTableSelect')
+                        :rowIndex="null" :formData="${context.formModel}"
+                    #end
+                    #if($mastKey== 'uploadFz' || $mastKey== 'uploadImg')
+                        #if(${html.fileSize}) :fileSize="${html.fileSize}" #else :fileSize="null" #end  #end
+                    #if($html.maxlength) :maxlength="${html.maxlength}" #end
+                    #if($html.readonly == true ) readonly #end
+                    #if($html.disabled == true ):disabled="${html.disabled}"#end
+                    #if($html.clearable == true ) clearable #end
+                    #if($html.prefixicon) prefix-icon='${html.prefixicon}' #end
+                    #if($html.suffixicon) suffix-icon='${html.suffixicon}' #end
+                    #if($html.style) :style='${html.style}'#end
+                    #if($html.showWordLimit == true ) ${html.showWordLimit} #end
+                    #if($html.size) size="${html.size}" #end
+                    #if($html.min) :min="${html.min}" #end
+                    #if($html.max) :max="${html.max}" #end
+                    #if($html.type) type="${html.type}" #end
+                    #if($html.autosize) :autosize='${html.autosize}' #end
+                    #if($html.step) :step="${html.step}" #end
+                    #if($html.precision) :precision="${html.precision}" #end
+                    #if($html.stepstrictly==true) stepstrictly #end
+                    #if($html.textStyle) :textStyle='${html.textStyle}' #end
+                    #if($html.lineHeight) :lineHeight="${html.lineHeight}" #end
+                    #if($html.fontSize) :fontSize="${html.fontSize}" #end
+                    #if($html.controlsposition) controls-position='${html.controlsposition}' #end
+                    #if($html.showChinese) :showChinese="${html.showChinese}" #end
+                    #if($html.showPassword) show-password #end
+                    #if($html.filterable==true) filterable #end
+                    #if($html.multiple) :multiple="${html.multiple}" #end
+                    #if($html.separator) separator="${html.separator}" #end
+                    #if($html.isrange==true) is-range #end
+                    #if($html.rangeseparator) range-separator="${html.rangeseparator}" #end
+                    #if($html.startplaceholder) start-placeholder="${html.startplaceholder}" #end
+                    #if($html.endplaceholder) end-placeholder="${html.endplaceholder}" #end
+                    #if($html.format) format="${html.format}" #end
+                    #if($html.colorformat) color-format="${html.colorformat}" #end
+                    #if($html.valueformat) value-format="${html.valueformat}" #end
+                    #if($html.activetext) active-text="${html.activetext}" #end
+                    #if($html.inactivetext) inactive-text="${html.inactivetext}" #end
+                    #if($html.activecolor) active-color="${html.activecolor}" #end
+                    #if($html.inactivecolor) inactive-color="${html.inactivecolor}" #end
+                    #if($html.activevalue) :active-value="${html.activevalue}" #end
+                    #if($html.inactivevalue) :inactive-value="${html.inactivevalue}" #end
+                    #if($html.pickeroptions) :picker-options='${html.pickeroptions}'#end
+                    #if($html.showScore == true ) show-score #end
+                    #if($html.showText == true ) show-text #end
+                    #if($html.allowhalf == true ) allow-half #end
+                    #if($html.showAlpha == true ) show-alpha #end
+                    #if($html.showStops == true ) show-stops #end
+                    #if($html.range == true ) range #end
+                    #if($html.showTip == true ) :showTip="${html.showTip}" #end
+                    #if($html.accept) accept="${html.accept}" #end
+                    #if($html.sizeUnit) sizeUnit="${html.sizeUnit}" #end
+                    #if($html.limit) :limit="${html.limit}" #end
+                    #if($html.pathType) pathType="${html.pathType}" #end
+                    #if($html.isAccount) :isAccount="${html.isAccount}" #end
+                    #if($html.folder) folder="${html.folder}" #end
+                    #if($html.buttonText) buttonText="${html.buttonText}" #end
+                    #if($html.contentposition) content-position="${html.contentposition}" #end
+                    #if($!html.level ) :level=${html.level} #end
+                    #if($html.isAmountChinese) isAmountChinese #end
+                    #if($html.thousands) thousands #end
+                    #if($html.addonAfter) addonAfter="${html.addonAfter}" #end
+                    #if($html.addonBefore) addonBefore="${html.addonBefore}" #end
+                    #if($html.controlsPosition) controlsPosition="${html.controlsPosition}" #end
+                    #if($startTime) :startTime="${startTime}" #end
+                    #if($endTime) :endTime="${endTime}" #end
+                    #if($html.description) description="${html.description}" #end
+                    #if($html.closeText) closeText="${html.closeText}" #end
+                    #if($html.tipText) tipText="${html.tipText}" #end
+                    #if($mastKey == 'relationFormAttr' || $mastKey == 'popupAttr')
+                        #if($html.relationField) relationField="${html.relationField}" #end
+                        #if($html.showField) showField="${html.showField}" #end
+                        #if($config.isStorage) isStorage=$config.isStorage #end
+                    #end
+                    #if($html.selectType) selectType="$html.selectType" #end
+                    #if($html.selectType == 'custom')
+                        #if($html.ableDepIds) :ableDepIds = '$html.ableDepIds' #end
+                        #if($html.ablePosIds) :ablePosIds = '$html.ablePosIds' #end
+                        #if($html.ableUserIds) :ableUserIds = '$html.ableUserIds' #end
+                        #if($html.ableRoleIds) :ableRoleIds = '$html.ableRoleIds' #end
+                        #if($html.ableGroupIds) :ableGroupIds = '$html.ableGroupIds' #end
+                        #if($html.ableIds) :ableIds = '$html.ableIds' #end
+                    #elseif($html.selectType == 'dep' || $html.selectType == 'pos' || $html.selectType == 'role' || $html.selectType == 'group')
+                        #if($html.relationField)
+                            :ableRelationIds=" Array.isArray(dataForm.${html.relationField}) ? dataForm.${html.relationField} : [dataForm.${html.relationField}]"
+                        #end
+                    #end
+                    #if($mastKey == 'relationForm') field="${vModel}" modelId ="${html.modelId}"  :columnOptions="${vModel}columnOptions" relationField="${html.relationField}" popupWidth="${html.popupWidth}" #if($html.hasPage) hasPage :pageSize="$html.pageSize" #end  #end
+                    #if($mastKey == 'popupSelect' ||$mastKey == 'popupTableSelect')
+                        field="${vModel}" interfaceId="${html.interfaceId}" :columnOptions="${vModel}columnOptions" propsValue="${html.propsValue}" relationField="${html.relationField}" popupType="${html.popupType}"
+                        #if(${html.popupTitle}) popupTitle="${html.popupTitle}" #end popupWidth="${html.popupWidth}"
+                        #if($html.hasPage) hasPage :pageSize="$html.pageSize" #end  #end
+                    #if($mastKey=='cascader' || $mastKey=='treeSelect'||$mastKey=='checkbox'||$mastKey=='radio'||$mastKey=='select') :options="${vModel}Options" :props="${vModel}Props"
+                        #if(${html.direction}) direction="${html.direction}" #end #if(${html.optionType}) optionType="${html.optionType}" #end  #end
+                    #if($mastKey == 'autoComplete')
+                      relationField="${html.relationField}"
+                      interfaceId="${html.interfaceId}"
+                      :templateJson="interfaceRes.${vModel}"
+                      :total="${html.total}"
+                      :formData="${context.formModel}"
+                    #end>
+                    #if($mastKey!='checkbox' && $mastKey!='radio' && $mastKey!='select')
+                        #if($html.slot.prepend)
+                            <template slot="prepend">${html.slot.prepend}</template>
+                        #end
+                        #if($html.slot.append)
+                            <template slot="append">${html.slot.append}</template>
+                        #end
+                    #end
+                </${config.tag}>
+                </jnpf-form-tip-item>
+            </el-col>
+            #end
+        #end
+    </template>
+</el-form>
+    <SelectDialog v-if="selectDialogVisible" :config="currTableConf" :formData="dataForm"
+              ref="selectDialog" @select="addForSelect" @close="selectDialogVisible=false"/>
+    </el-row>
+    <span slot="footer" class="dialog-footer">
+        <el-button @click="visible = false">#if(${context.cancelButtonText})${context.cancelButtonText}#else 取 消#end</el-button>
+        <el-button type="primary" @click="dataFormSubmit()" :loading="btnLoading">#if(${context.confirmButtonText})${context.confirmButtonText}#else 确 定#end</el-button>
+    </span>
+    </el-dialog>
+</template>
+<script>
+    import request from '@/utils/request'
+    import { getDataInterfaceRes } from '@/api/systemData/dataInterface'
+    import { getDictionaryDataSelector } from '@/api/systemData/dictionary'
+    import { getDateDay, getLaterData, getBeforeData, getBeforeTime, getLaterTime } from '@/components/Generator/utils/index.js'
+    #if($isSelectDialog == true)
+    import SelectDialog from '@/components/SelectDialog'
+    #end
+
+    export default {
+        components: { #if($isSelectDialog == true) SelectDialog #end},
+        props: [],
+        data() {
+            return {
+                dataFormSubmitType: 0,
+                continueBtnLoading: false,
+                index: 0,
+                prevDis: false,
+                nextDis: false,
+                allList: [],
+                visible: false,
+                loading: false,
+                btnLoading: false,
+                selectDialogVisible: false,
+                currTableConf:{},
+                addTableConf:{
+                #foreach($children in ${context.children})
+                        #set($className = "${children.className.substring(0,1).toLowerCase()}${children.className.substring(1).toLowerCase()}")
+                   #if(${children.addTableConf})
+                        ${className}List :$!{children.addTableConf},
+                   #end
+                #end
+            },
+                tableRows:{
+                    #foreach($child in ${context.children})
+                        #set($className = "")
+                        #foreach($children in ${context.children})
+                            #if(${children.tableModel}==${child.tableModel})
+                                #set($className = "${children.className.substring(0,1).toLowerCase()}${children.className.substring(1).toLowerCase()}")
+                            #end
+                        #end
+                            ${className}List:{
+                        #foreach($childListAll in ${child.childList})
+                            #set($html = $childListAll.fieLdsModel)
+                            #set($model = "${html.vModel}")
+                            #set($config = ${html.config})
+                            #set($jnpfKey = "${config.jnpfKey}")
+                            #if($model)
+                                #if(${jnpfKey}=='cascader'||${jnpfKey}=='checkbox' || ${jnpfKey}=='address')
+                                    ${model} : [],
+                                #elseif(${jnpfKey}=='select' || ${jnpfKey}=='userSelect' || ${jnpfKey}=='depSelect' || ${jnpfKey}=='posSelect' || ${jnpfKey}=='treeSelect')
+                                    #if(${html.multiple}=='true')
+                                        ${model} : [],
+                                    #end
+                                #elseif(${jnpfKey} == 'comSelect')
+                                    ${model} : [],
+                                #elseif(${jnpfKey}=='uploadImg'||${jnpfKey}=='uploadFz' || ${jnpfKey}=='timeRange' || ${jnpfKey}=='dateRange')
+                                    ${model} : [],
+                                #elseif(${jnpfKey}=='switch'||${jnpfKey}=='slider')
+                                    ${model} : [],
+                                #elseif(${jnpfKey}=='numInput'||${jnpfKey}=='calculate')
+                                    ${model} : undefined,
+                                #else
+                                    ${model} : '',
+                                #end
+                            #end
+                        #end
+                            enabledmark:undefined
+                    },
+                    #end
+                },
+            currVmodel:"",
+            ${context.formModel}: {
+                #foreach($fieLdsModel in ${context.fields})
+            #set($html = $fieLdsModel.formColumnModel.fieLdsModel)
+            #set($vModel = "${html.vModel}")
+                #if($vModel !='')
+                    #set($config = $html.config)
+                    #set($mastKey = "${config.jnpfKey}")
+                    #if($mastKey!='JNPFText' && $mastKey!='divider')
+##                    #if($!config.valueType=='String')
+##                        #if(${config.defaultValue})
+##                            $!{vModel} : "$!{config.defaultValue}",
+##                        #else
+##                            $!{vModel} : undefined,
+##                        #end
+##                    #elseif($!config.valueType=='undefined')
+##                        $!{vModel} : undefined,
+##                    #else
+##                        $!{vModel} : $!{config.defaultValue},
+##                    #end
+                            #if($!config.valueType=='String')
+                                $!{vModel} : "$!{config.defaultValue}",
+                            #elseif($!config.valueType=='undefined')
+                                #if(${mastKey}=='numInput'||${mastKey}=='calculate')
+                                    $!{vModel} : undefined,
+                                #else
+                                    $!{vModel} : '',
+                                #end
+                            #else
+                                #if(${mastKey}=='treeSelect' && ${html.multiple}=='false')
+                                    $!{vModel} : '',
+                                #else
+                                    $!{vModel} : $!{config.defaultValue},
+                                #end
+                            #end
+                #end
+                #end
+                #end
+                #foreach($child in ${context.children})
+                    #set($className = "")
+                    #foreach($children in ${context.children})
+                        #if(${children.tableModel}==${child.tableModel})
+                            #set($className = "${children.className.substring(0,1).toLowerCase()}${children.className.substring(1).toLowerCase()}")
+                        #end
+                    #end
+                        ${className}List:[],
+                #end
+                #foreach($clum in ${context.columnChildren})
+                    #set($clumLowName = "${clum.tableName.toLowerCase()}")
+                    ${clumLowName}:
+                    {
+                        #foreach($field in  ${clum.fieLdsModelList})
+                            #set($fieldName = ${field.field})
+                                $fieldName:'',
+                        #end
+                    },
+                #end
+                #foreach($mast in ${context.mastTable})
+                    #set($mastField = $mast.formMastTableModel.mastTable.fieLdsModel)
+                    #set($config =$mastField.config)
+                    #set($mastKey = ${config.jnpfKey})
+                    #if($mastKey!='JNPFText' && $mastKey!='divider')
+                            #if($!config.valueType=='String')
+                                ${mast.formMastTableModel.vModel} : "$!{config.defaultValue}",
+                            #elseif($!config.valueType=='undefined')
+                                #if(${mastKey}=='numInput'||${mastKey}=='calculate')
+                                    ${mast.formMastTableModel.vModel} : undefined,
+                                #else
+                                ${mast.formMastTableModel.vModel} : '',
+                                #end
+                            #else
+                                ${mast.formMastTableModel.vModel} : $!{config.defaultValue},
+                            #end
+                    #end
+                #end
+                #if($context.version)
+                    version: 0,
+                #end
+            },
+            #foreach($fieLdsModel in ${context.form})
+                #set($jnpfKey = "${fieLdsModel.jnpfKey}")
+                #set($formModel = ${fieLdsModel.formModel})
+                #set($outermost = ${formModel.outermost})
+                #set($isEnd = "${fieLdsModel.isEnd}")
+                #if(${isEnd}=='0')
+                    #if($jnpfKey=='collapse')
+                        #if(${outermost}=='0')
+                            ${formModel.model}:${formModel.active},
+                        #end
+                    #end
+                    #if($jnpfKey=='tab')
+                        #if(${outermost}=='0')
+                            ${formModel.model}:'${formModel.active}',
+                        #end
+                    #end
+                #end
+            #end
+            ${context.formRules}:
+            {
+                #foreach($fieLdsModel in ${context.fields})
+                    #set($html = $fieLdsModel.formColumnModel.fieLdsModel)
+                    #set($vModel = "${html.vModel}")
+                    #set($config = $html.config)
+                    #set($mastKey = "${config.jnpfKey}")
+                    #set($listSize=$!{config.regList})
+                    #set($defaultValue=${config.defaultValue})
+                    #set($defaultValueSize=$!{config.defaultValue})
+                    #set($trigger = ${config.trigger})
+                    #if(${trigger.substring(0,1)}!='[')
+                        #set($trigger = "'"+ ${config.trigger}+ "'")
+                    #end
+                    #if($mastKey!='JNPFText' && $mastKey!='divider' && $mastKey!='switch')
+                        #if(!$config.defaultValue && $config.defaultValue==[])
+                            #set($messages='请至少选择一个')
+                        #elseif(${config.defaultValue} && (${defaultValueSize} || $defaultValueSize.size()>0))
+                            #set($messages='请至少选择一个')
+                        #elseif($html.placeholder)
+                            #set($messages=${html.placeholder})
+                        #else
+                            #set($messages='不能为空')
+                        #end
+                        #if($config.required==true|| (${listSize} && $listSize.size()>0))
+                            ${vModel}: [
+                            #if($config.required==true)
+                                {
+                                    required: true,
+                                    message: '$!{messages}',
+                                    trigger: ${trigger}
+                                },
+                            #end
+                            #if($listSize.size()>0)
+                                #foreach($regList in ${config.regList})
+                                    {
+                                        pattern: ${regList.pattern},
+                                        message: '${regList.message}',
+                                        trigger: ${trigger}
+                                    },
+                                #end
+                            #end
+                        ],
+                        #end
+                    #end
+                #end
+
+
+                #foreach($ChildField in ${context.columnChildren})
+                    #foreach($FormMastTableModel in ${ChildField.fieLdsModelList})
+                        #set($html = ${FormMastTableModel.mastTable.fieLdsModel})
+                        #set($vModel = "${html.vModel}")
+                        #set($config = $html.config)
+                        #set($mastKey = "${config.jnpfKey}")
+                        #set($listSize=$!{config.regList})
+                        #set($defaultValue=${config.defaultValue})
+                        #set($defaultValueSize=$!{config.defaultValue})
+                        #set($trigger = ${config.trigger})
+                        #if(${trigger.substring(0,1)}!='[')
+                            #set($trigger = "'"+ ${config.trigger}+ "'")
+                        #end
+                        #if($mastKey!='JNPFText' && $mastKey!='divider' && $mastKey!='switch')
+                            #if(!$config.defaultValue && $config.defaultValue==[])
+                                #set($messages='请至少选择一个')
+                            #elseif(${config.defaultValue} && (${defaultValueSize} || $defaultValueSize.size()>0))
+                                #set($messages='请至少选择一个')
+                            #elseif($html.placeholder)
+                                #set($messages=${html.placeholder})
+                            #else
+                                #set($messages='不能为空')
+                            #end
+                            #if($config.required==true|| (${listSize} && $listSize.size()>0))
+                                ${FormMastTableModel.vModel}: [
+                                #if($config.required==true)
+                                    {
+                                        required: true,
+                                        message: '$!{messages}',
+                                        trigger: ${trigger}
+                                    },
+                                #end
+                                #if($listSize.size()>0)
+                                    #foreach($regList in ${config.regList})
+                                        {
+                                            pattern: ${regList.pattern},
+                                            message: '${regList.message}',
+                                            trigger: ${trigger}
+                                        },
+                                    #end
+                                #end
+                            ],
+                            #end
+                        #end
+                    #end
+                #end
+
+            },
+            #foreach($fieLdsModel in ${context.fields})
+                #set($html = $fieLdsModel.formColumnModel.fieLdsModel)
+                #set($vModel = "${html.vModel}")
+                #set($config = $html.config)
+                #set($jnpfkey = $config.jnpfKey)
+                #if(${config.dataType}=='dictionary'||${config.dataType}=='dynamic')
+                        ${vModel}Options:[],
+                #elseif(${config.dataType} == "static")
+                    #if($html.slot.options)
+                        ${vModel}Options:${html.slot.options},
+                    #elseif($html.options)
+                        ${vModel}Options:${html.options},
+                    #end
+                #end
+                #if($jnpfkey == "relationForm" || $jnpfkey == "popupSelect" || $jnpfkey == "popupTableSelect")
+                    ${vModel}columnOptions:[#foreach($options in ${html.columnOptions}) {"label":"${options.label}","value":"${options.value}"},#end],
+                #end
+                #if($html.props)
+                    #set($propsModel = ${html.props.props})
+                       $!{vModel}Props:{"label":"${propsModel.label}","value":"${propsModel.value}" #if($!{propsModel.multiple}) ,"multiple":$propsModel.multiple #end #if($!{propsModel.children}),"children":"${propsModel.children}" #end},
+                #end
+            #end
+
+            #foreach($child in ${context.children})
+                #set($className = "${child.className.substring(0,1).toLowerCase()}${child.className.substring(1).toLowerCase()}")
+                #foreach($fieLdsModel in ${child.childList})
+                    #set($html = $fieLdsModel.fieLdsModel)
+                    #set($vModel = "${html.vModel}")
+                    #set($config = $html.config)
+                    #set($jnpfkey = $config.jnpfKey)
+                    #if(${config.dataType}=='dictionary'||${config.dataType}=='dynamic')
+                        ${className}${vModel}Options:[],
+                    #elseif(${config.dataType} == "static")
+                        #if($html.slot.options)
+                        ${className}${vModel}Options:${html.slot.options},
+                        #elseif($html.options)
+                        ${className}${vModel}Options:${html.options},
+                        #end
+                    #end
+                    #if($jnpfkey == "relationForm" || $jnpfkey == "popupSelect" || $jnpfkey == "popupTableSelect")
+                        ${className}${vModel}columnOptions:[#foreach($options in ${html.columnOptions}) {"label":"${options.label}","value":"${options.value}"},#end],
+                    #end
+                    #if($html.props)
+                        #set($propsModel = ${html.props.props})
+                                ${className}$!{vModel}Props:{"label":"${propsModel.label}","value":"${propsModel.value}" #if($!{propsModel.multiple}) ,"multiple":$propsModel.multiple #end #if($!{propsModel.children}),"children":"${propsModel.children}" #end},
+                    #end
+                #end
+            #end
+            #foreach($ChildField in ${context.columnChildren})
+                #foreach($FormMastTableModel in ${ChildField.fieLdsModelList})
+                    #set($html = ${FormMastTableModel.mastTable.fieLdsModel})
+                    #set($jnpfKey = ${html.config.jnpfKey})
+                    #set($ChildVmodel =${FormMastTableModel.vModel})
+                    #set($ClDataType = ${html.config.dataType})
+                    #if(${ClDataType}=='dictionary'||${ClDataType}=='dynamic')
+                    ${ChildVmodel}Options:[],
+                    #elseif(${ClDataType} == "static")
+                        #if($html.slot.options)
+                    ${ChildVmodel}Options:${html.slot.options},
+                        #elseif($html.options)
+                    ${ChildVmodel}Options:${html.options},
+                        #end
+                    #end
+                    #if(${jnpfKey} == "relationForm" || ${jnpfKey} == "popupSelect" || $jnpfKey == "popupTableSelect")
+                        ${ChildVmodel}columnOptions:[#foreach($options in ${html.columnOptions}) {"label":"${options.label}","value":"${options.value}"},#end],
+                    #end
+                    #if($html.props)
+                        #set($propsModel = ${html.props.props})
+                             $!{ChildVmodel}Props:{"label":"${propsModel.label}","value":"${propsModel.value}" #if($!{propsModel.multiple}) ,"multiple":$propsModel.multiple #end #if($!{propsModel.children}),"children":"${propsModel.children}" #end},
+                    #end
+                #end
+            #end
+            childIndex:-1,
+                    isEdit:false,
+                    interfaceRes: {
+                #foreach($fieLdsModel in ${context.fields})
+                    #set($html = $fieLdsModel.formColumnModel.fieLdsModel)
+                    #set($vModel = "${html.vModel}")
+                    #set($config = $html.config)
+                    #set($mastKey = "${config.jnpfKey}")
+                    #if(${vModel})
+                        ${vModel}:#if($!{html.templateJson})${html.templateJson} #else [] #end,
+                    #end
+                #end
+                #foreach($MastfieLds in ${context.mastTable})
+                    #set($BeforeVmodel = $MastfieLds.formMastTableModel.vModel)
+                    #set($tableName = $MastfieLds.formMastTableModel.table)
+                    #set($lowTableName = "${tableName.toLowerCase()}")
+                    #set($html = $MastfieLds.formMastTableModel.mastTable.fieLdsModel)
+                    #set($vModel = "${html.vModel}")
+                    #set($config = $html.config)
+                    #if( ${vModel})
+                        ${BeforeVmodel}:#if($!{html.templateJson})${html.templateJson} #else [] #end,
+                    #end
+                #end
+                #foreach($child in ${context.children})
+                    #set($className = "${child.className.substring(0,1).toLowerCase()}${child.className.substring(1).toLowerCase()}")
+                    #foreach($fieLdsModel in ${child.childList})
+                        #set($html = $fieLdsModel.fieLdsModel)
+                        #set($vModel = "${html.vModel}")
+                        #set($config = $html.config)
+                        #if( ${vModel})
+                            ${className}${vModel}:#if($!{config.templateJson})${config.templateJson} #else [] #end,
+                        #end
+                    #end
+                #end
+            },
+        }
+        },
+        computed: {},
+        watch: {},
+        created() {
+            this.dataAll()
+        },
+        mounted() {},
+        methods: {
+            goBack() {
+                this.visible = false
+                this.$emit('refreshDataList', true)
+            },
+            changeData(model, index) {
+                this.isEdit = false
+                this.childIndex = index
+                let modelAll = model.split("-");
+                let faceMode = "";
+                for (let i = 0; i < modelAll.length; i++) {
+                    faceMode += modelAll[i];
+                }
+                for (let key in this.interfaceRes) {
+                    if (key != faceMode) {
+                        let faceReList = this.interfaceRes[key]
+                        for (let i = 0; i < faceReList.length; i++) {
+                            if (faceReList[i].relationField == model) {
+                                let options = 'get' + key + 'Options';
+                                if(this[options]){
+                                    this[options]()
+                                }
+                                this.changeData(key, index)
+                            }
+                        }
+                    }
+                }
+            },
+            changeDataFormData(type, data, model,index,defaultValue) {
+                if(!this.isEdit) {
+                    if (type == 2) {
+                        for (let i = 0; i < this.dataForm[data].length; i++) {
+                            if (index == -1) {
+                                this.dataForm[data][i][model] = defaultValue
+                            } else if (index == i) {
+                                this.dataForm[data][i][model] = defaultValue
+                            }
+                        }
+                    } else {
+                        this.dataForm[data] = defaultValue
+                    }
+                }
+            },
+            dataAll(){
+                #foreach($fieLdsModel in ${context.fields})
+                    #set($html = $fieLdsModel.formColumnModel.fieLdsModel)
+                    #set($vModel = "${html.vModel}")
+                    #set($config = $html.config)
+                    #set($dataType = "${config.dataType}")
+                    #if(${config.dataType}=='dictionary'||${config.dataType}=='dynamic')
+                        this.get${vModel}Options();
+                    #end
+                #end
+                #foreach($child in ${context.children})
+                    #set($className = "${child.className.substring(0,1).toLowerCase()}${child.className.substring(1).toLowerCase()}")
+                    #foreach($fieLdsModel in ${child.childList})
+                        #set($html = $fieLdsModel.fieLdsModel)
+                        #set($vModel = "${html.vModel}")
+                        #set($config = $html.config)
+                        #if(${config.dataType}=='dictionary'||${config.dataType}=='dynamic')
+                            this.get${className}${vModel}Options();
+                        #end
+                    #end
+                #end
+                #foreach($ColumnFieldModel in ${context.mastTable})
+                    #set($html =${ColumnFieldModel.formMastTableModel})
+                    #set($vModel = "${html.vModel}")
+                    #set($config = $html.mastTable.fieLdsModel.config)
+                    #if(${config.dataType}=='dictionary'||${config.dataType}=='dynamic')
+                        this.get${vModel}Options();
+                    #end
+                #end
+            },
+            #foreach($child in ${context.children})
+				#set($className = "")
+				#foreach($children in ${context.children})
+					#if(${children.tableModel}==${child.tableModel})
+						#set($className = "${children.className.substring(0,1).toLowerCase()}${children.className.substring(1).toLowerCase()}")
+					#end
+				#end
+				${className}Exist() {
+				let isOk = true;
+					for(let i=0;i<this.dataForm.${className}List.length;i++){
+						const e = this.dataForm.${className}List[i];
+						#foreach($childListAll in ${child.childList})
+							#set($html = $childListAll.fieLdsModel)
+							#set($model = "${html.vModel}")
+							#set($config = ${html.config})
+							#set($control = "${config.jnpfKey}")
+                            #set($takeEnd = true)
+				                            #set($req = $config.required)
+				                    #if(${model} && ${req}==true)
+				                        #if(${control}=='cascader'||${control}=='checkbox' || ${control}=='address'|| ${control} == 'comSelect' ||
+				                            ${control}=='uploadImg'||${control}=='uploadFz' || ${control}=='timeRange' || ${control}=='dateRange')
+				                        if (!e.${model}.length) {
+                                        #elseif(${control}=='select' || ${control}=='userSelect'|| ${control}=='depSelect' || ${control}=='posSelect' || ${control}=='treeSelect'|| ${control}=='roleSelect'|| ${control}=='groupSelect'|| ${control}=='popupTableSelect')
+				                            #if(${html.multiple}=='true')
+				                            if (!e.${model}.length) {
+				                            #else
+				                            if (!e.${model}) {
+				                            #end
+				                        #elseif(${control}!='switch')
+				                            if (!e.${model}) {
+                                        #else
+                                            #set($takeEnd = false)
+                                        #end
+												this.$message({
+									message: '${config.label}不能为空',
+									type: 'error',
+									duration: 1000
+								});
+								isOk = false
+								break
+                      #if($takeEnd == true)
+                      }
+                      #end
+                            #end
+						#end
+					}
+				return isOk;
+			},
+			#end
+            #foreach($fieLdsModel in ${context.fields})
+                #set($html = $fieLdsModel.formColumnModel.fieLdsModel)
+                #set($vModel = "${html.vModel}")
+                #set($config = $html.config)
+                #set($dataType = "${config.dataType}")
+                #set($jnpfkey="${config.jnpfKey}")
+                #set($defaultValue='""')
+                #if($!config.valueType=='String')
+                    #set($defaultValue="'$!{config.defaultValue}'")
+                #elseif($!config.valueType=='undefined')
+                    #set($defaultValue='""')
+                #else
+                    #set($defaultValue=$!{config.defaultValue})
+                #end
+                #if(${dataType}=='dictionary')
+                    get${vModel}Options() {
+                        getDictionaryDataSelector('${config.dictionaryType}').then(res => {
+                            this.${vModel}Options = res.data.list
+                        })
+                    },
+                #elseif(${dataType}=='dynamic')
+                    get${vModel}Options() {
+                    const index = this.childIndex
+                    let templateJsonList = JSON.parse(JSON.stringify(this.interfaceRes.${vModel}))
+                    for (let i = 0; i < templateJsonList.length; i++) {
+                        let json = templateJsonList[i];
+                        if(json.relationField){
+                            let relationFieldAll = json.relationField.split("-");
+                            let val = json.defaultValue;
+                            if(relationFieldAll.length>1 && index>-1){
+                                val = this.dataForm[relationFieldAll[0]+'List']&&this.dataForm[relationFieldAll[0]+'List'].length?this.dataForm[relationFieldAll[0]+'List'][index][relationFieldAll[1]]:''
+                            }else {
+                                val = this.dataForm[relationFieldAll]
+                            }
+                            json.defaultValue = val
+                        }
+                    }
+                    let template ={
+                        paramList:templateJsonList
+                    }
+                    getDataInterfaceRes('${config.propsUrl}',template).then(res => {
+                        let data = res.data
+                        this.${vModel}Options = data
+                        this.changeDataFormData(1,'${vModel}','${vModel}',index,${defaultValue})
+                    })
+                    },
+                #end
+            #end
+            #foreach($child in ${context.children})
+                #set($showSummary = ${child.showSummary})
+                #set($summaryField =  ${child.summaryField})
+                #set($className = "${child.className.substring(0,1).toLowerCase()}${child.className.substring(1).toLowerCase()}")
+                #if($showSummary)
+                    get${className}Summaries(param) {
+                        const summaryField = ${summaryField};
+                        const { columns, data } = param;
+                        const sums = [];
+                        columns.forEach((column, index) => {
+                            if (index === 0) {
+                                sums[index] = '合计';
+                                return;
+                            }
+                            if (!summaryField.includes(column.property)) {
+                                sums[index] = '';
+                                return;
+                            }
+                            const values = data.map(item => Number(item[column.property]));
+                            if (!values.every(value => isNaN(value))) {
+                                sums[index] = values.reduce((prev, curr) => {
+                                    const value = Number(curr);
+                                    if (!isNaN(value)) {
+                                        return prev + curr;
+                                    } else {
+                                        return prev;
+                                    }
+                                }, 0);
+                            } else {
+                                sums[index] = '';
+                            }
+                        });
+                        return sums;
+                    },
+                #end
+                #foreach($fieLdsModel in ${child.childList})
+                    #set($html = $fieLdsModel.fieLdsModel)
+                    #set($vModel = "${html.vModel}")
+                    #set($config = $html.config)
+                    #set($dataType = "${config.dataType}")
+                    #set($jnpfkey="${config.jnpfKey}")
+                    #set($defaultValue='""')
+                    #if($!config.valueType=='String')
+                        #set($defaultValue="'$!{config.defaultValue}'")
+                    #elseif($!config.valueType=='undefined')
+                        #set($defaultValue='""')
+                    #else
+                        #set($defaultValue=$!{config.defaultValue})
+                    #end
+                    #if(${dataType}=='dictionary')
+                        get${className}${vModel}Options() {
+                            getDictionaryDataSelector('${config.dictionaryType}').then(res => {
+                                this.${className}${vModel}Options = res.data.list
+                            })
+                        },
+                    #elseif(${dataType}=='dynamic')
+                        get${className}${vModel}Options() {
+                            const index = this.childIndex
+                            let templateJsonList = JSON.parse(JSON.stringify(this.interfaceRes.${className}${vModel}))
+                            for (let i = 0; i < templateJsonList.length; i++) {
+                                let json = templateJsonList[i];
+                                if(json.relationField){
+                                    let relationFieldAll = json.relationField.split("-");
+                                    let val = json.defaultValue;
+                                    if(relationFieldAll.length>1 && index>-1){
+                                        val = this.dataForm[relationFieldAll[0]+'List']&&this.dataForm[relationFieldAll[0]+'List'].length?this.dataForm[relationFieldAll[0]+'List'][index][relationFieldAll[1]]:''
+                                    }else {
+                                        val = this.dataForm[relationFieldAll]
+                                    }
+                                    json.defaultValue = val
+                                }
+                            }
+                            let template ={
+                                paramList:templateJsonList
+                            }
+                            getDataInterfaceRes('${config.propsUrl}',template).then(res => {
+                                let data = res.data
+                                this.${className}${vModel}Options = data
+                                if(index==-1) return
+                                this.${context.formModel}.${className}List[index].${html.vModel}Options =data
+                                this.changeDataFormData(2,'${className}List','${vModel}',index,${defaultValue})
+                            })
+                        },
+                    #end
+                #end
+            #end
+            #foreach($ColumnFieldModel in ${context.mastTable})
+                #set($html =${ColumnFieldModel.formMastTableModel})
+                #set($vModel = "${html.vModel}")
+                #set($config = $html.mastTable.fieLdsModel.config)
+                #set($dataType = "${config.dataType}")
+                #set($jnpfkey="${config.jnpfKey}")
+                #set($defaultValue='""')
+                #if($!config.valueType=='String')
+                    #set($defaultValue="'$!{config.defaultValue}'")
+                #elseif($!config.valueType=='undefined')
+                    #set($defaultValue='""')
+                #else
+                    #set($defaultValue=$!{config.defaultValue})
+                #end
+                #if(${dataType}=='dictionary')
+                    get${vModel}Options() {
+                        getDictionaryDataSelector('${config.dictionaryType}').then(res => {
+                            this.${vModel}Options = res.data.list
+                        })
+                    },
+                #elseif(${dataType}=='dynamic')
+                    get${vModel}Options() {
+                        const index = this.childIndex
+                        let templateJsonList = JSON.parse(JSON.stringify(this.interfaceRes.${vModel}))
+                        for (let i = 0; i < templateJsonList.length; i++) {
+                            let json = templateJsonList[i];
+                            if(json.relationField){
+                                let relationFieldAll = json.relationField.split("-");
+                                let val = json.defaultValue;
+                                if(relationFieldAll.length>1 && index>-1){
+                                    val = this.dataForm[relationFieldAll[0]+'List']&&this.dataForm[relationFieldAll[0]+'List'].length?this.dataForm[relationFieldAll[0]+'List'][index][relationFieldAll[1]]:''
+                                }else {
+                                    val = this.dataForm[relationFieldAll]
+                                }
+                                json.defaultValue = val
+                            }
+                        }
+                        let template ={
+                            paramList:templateJsonList
+                        }
+                        getDataInterfaceRes('${config.propsUrl}',template).then(res => {
+                            let data = res.data
+                            this.${vModel}Options = data
+                            this.changeDataFormData(1,'${vModel}','${vModel}',index,${defaultValue})
+                        })
+                    },
+                #end
+            #end
+            #set($ref = "${context.formRef}")
+            #set($l = "'")
+            #set($c = "[")
+            #set($p = "]")
+            #if(${context.popupType}=='fullScreen')
+                goBack() {
+                    this.$emit('refresh')
+                },
+            #end
+            clearData(){
+                #foreach($fieLdsModel in ${context.fields})
+                    #set($html = $fieLdsModel.formColumnModel.fieLdsModel)
+                    #set($vModel = "${html.vModel}")
+                    #if($vModel !='')
+                        #set($config = $html.config)
+                        #set($mastKey = "${config.jnpfKey}")
+                        #if($mastKey!='JNPFText' && $mastKey!='divider')
+                            #if($!config.valueType=='String')
+                               this.${context.formModel}.$!{vModel} = "$!{config.defaultValue}";
+                            #elseif($!config.valueType=='undefined')
+                                #if(${mastKey}=='numInput'||${mastKey}=='calculate')
+                                this.${context.formModel}.$!{vModel} = undefined;
+                                #else
+                               this.${context.formModel}.$!{vModel} = '';
+                                #end
+                            #else
+                                #if(${mastKey}=='treeSelect' && ${html.multiple}=='false')
+                                    this.${context.formModel}.$!{vModel} = '';
+                                #else
+                                     this.${context.formModel}.$!{vModel} = $!{config.defaultValue};
+                                #end
+                            #end
+                        #end
+                    #end
+                #end
+                #foreach($child in ${context.children})
+                    #set($className = "")
+                    #foreach($children in ${context.children})
+                        #if(${children.tableModel}==${child.tableModel})
+                            #set($className = "${children.className.substring(0,1).toLowerCase()}${children.className.substring(1).toLowerCase()}")
+                        #end
+                    #end
+                        this.${context.formModel}.${className}List=[];
+                #end
+                #foreach($clum in ${context.columnChildren})
+                    #set($clumLowName = "${clum.tableName.toLowerCase()}")
+                        #foreach($field in  ${clum.fieLdsModelList})
+                            #set($fieldName = ${field.field})
+                            this.${context.formModel}.${clumLowName}.$fieldName= '';
+                        #end
+                #end
+                #foreach($mast in ${context.mastTable})
+                    #set($mastField = $mast.formMastTableModel.mastTable.fieLdsModel)
+                    #set($config =$mastField.config)
+                    #set($mastKey = ${config.jnpfKey})
+                    #if($mastKey!='JNPFText' && $mastKey!='divider')
+                        #if($!config.valueType=='String')
+                            this.${context.formModel}.${mast.formMastTableModel.vModel} = "$!{config.defaultValue}";
+                        #elseif($!config.valueType=='undefined')
+                            this.${context.formModel}.${mast.formMastTableModel.vModel} = '';
+                        #else
+                            #if(${mastKey}=='numInput'||${mastKey}=='calculate')
+                            this.${context.formModel}.${mast.formMastTableModel.vModel} = undefined;
+                            #elseif(${mastKey}=='treeSelect' && ${mastField.multiple}=='false')
+                                this.${context.formModel}.${mast.formMastTableModel.vModel} = '';
+                            #else
+                            this.${context.formModel}.${mast.formMastTableModel.vModel} = $!{config.defaultValue};
+                            #end
+                        #end
+                    #end
+                #end
+                #if($context.version)
+                    this.dataForm.version= 0;
+                #end
+            },
+            init(data) {
+                this.visible = true;
+                this.$nextTick(() => {
+                    this.$refs${c}${l}${ref}${l}${p}.resetFields();
+                    this.${context.formModel} = data || {}
+                });
+                this.$store.commit('generator/UPDATE_RELATION_DATA', {})
+            },
+            // 表单提交
+            dataFormSubmit(type) {
+                this.dataFormSubmitType = type ? type : 0
+                this.$refs${c}${l}${ref}${l}${p}.validate((valid) => {
+                    if (valid) {
+                            this.request()
+                    }
+                })
+            },
+            #set($mag ='$message')
+            request() {
+                if (this.dataFormSubmitType == 2) {
+                    this.continueBtnLoading = true
+                } else {
+                    this.btnLoading = true
+                }
+                let _data =this.dataList()
+                if (!this.${context.formModel}.${pKeyName}) {
+                    request({
+                        url: '/api/${context.module}/${context.className}',
+                        method: 'post',
+                        data: _data
+                    }).then((res) => {
+                        this.$mag({
+                            message: res.msg,
+                            type: 'success',
+                            duration: 1000,
+                            onClose: () => {
+                                if (this.dataFormSubmitType == 2) {
+                                    this.$nextTick(() => {
+                                        this.$refs['elForm'].resetFields();
+                                    })
+                                    this.continueBtnLoading = false
+                                    return
+                                }
+                                this.visible = false
+                                this.btnLoading = false
+                                this.$emit('refreshDataList', true)
+                            }
+                        })
+                    }).catch(()=>{  this.btnLoading = false  })
+                }else{
+                    request({
+                        url: '/api/${context.module}/${context.className}/'+this.${context.formModel}.${pKeyName},
+                        method: 'PUT',
+                        data: _data
+                    }).then((res) => {
+                        this.$mag({
+                            message: res.msg,
+                            type: 'success',
+                            duration: 1000,
+                            onClose: () => {
+                                if (this.dataFormSubmitType == 2) return this.continueBtnLoading = false
+                                this.visible = false
+                                this.btnLoading = false
+                                this.$emit('refreshDataList', true)
+                            }
+                        })
+                    }).catch(()=>{  this.btnLoading = false  })
+                }
+            },
+            #foreach($child in ${context.children})
+                #set($className = "")
+                #foreach($children in ${context.children})
+                    #if(${children.tableModel}==${child.tableModel})
+                        #set($className = "${children.className.substring(0,1).toLowerCase()}${children.className.substring(1).toLowerCase()}")
+                    #end
+                #end
+            #end
+            openSelectDialog(key) {
+                this.currTableConf=this.addTableConf[key]
+                this.currVmodel=key
+                this.selectDialogVisible = true
+                this.$nextTick(() => {
+                    this.$refs.selectDialog.init()
+                })
+            },
+            addForSelect(data) {
+                for (let i = 0; i < data.length; i++) {
+                    let item={...this.tableRows[this.currVmodel],...data[i]}
+                    this.dataForm[this.currVmodel].push(item)
+                }
+            },
+            dateTime(timeRule, timeType, timeTarget, timeValueData, dataValue) {
+                let timeDataValue = null;
+                let timeValue = Number(timeValueData)
+                if (timeRule) {
+                    if (timeType == 1) {
+                        timeDataValue = timeValue
+                    } else if (timeType == 2) {
+                        timeDataValue = dataValue
+                    } else if (timeType == 3) {
+                        timeDataValue = new Date().getTime()
+                    } else if (timeType == 4) {
+                        let previousDate = '';
+                        if (timeTarget == 1 || timeTarget == 2) {
+                            previousDate = getDateDay(timeTarget, timeType, timeValue)
+                            timeDataValue = new Date(previousDate).getTime()
+                        } else if (timeTarget == 3) {
+                            previousDate = getBeforeData(timeValue)
+                            timeDataValue = new Date(previousDate).getTime()
+                        } else {
+                            timeDataValue = getBeforeTime(timeTarget, timeValue).getTime()
+                        }
+                    } else if (timeType == 5) {
+                        let previousDate = '';
+                        if (timeTarget == 1 || timeTarget == 2) {
+                            previousDate = getDateDay(timeTarget, timeType, timeValue)
+                            timeDataValue = new Date(previousDate).getTime()
+                        } else if (timeTarget == 3) {
+                            previousDate = getLaterData(timeValue)
+                            timeDataValue = new Date(previousDate).getTime()
+                        } else {
+                            timeDataValue = getLaterTime(timeTarget, timeValue).getTime()
+                        }
+                    }
+                }
+                return timeDataValue;
+            },
+            time(timeRule, timeType, timeTarget, timeValue, formatType, dataValue) {
+                let format = formatType == 'HH:mm' ? 'HH:mm:00' : formatType
+                let timeDataValue = null
+                if (timeRule) {
+                    if (timeType == 1) {
+                        timeDataValue = timeValue || '00:00:00'
+                        if (timeDataValue.split(':').length == 3) {
+                            timeDataValue = timeDataValue
+                        } else {
+                            timeDataValue = timeDataValue + ':00'
+                        }
+                    } else if (timeType == 2) {
+                        timeDataValue = dataValue
+                    } else if (timeType == 3) {
+                        timeDataValue = this.jnpf.toDate(new Date(), format)
+                    } else if (timeType == 4) {
+                        let previousDate = '';
+                        previousDate = getBeforeTime(timeTarget, timeValue)
+                        timeDataValue = this.jnpf.toDate(previousDate, format)
+                    } else if (timeType == 5) {
+                        let previousDate = '';
+                        previousDate = getLaterTime(timeTarget, timeValue)
+                        timeDataValue = this.jnpf.toDate(previousDate, format)
+                    }
+                }
+                return timeDataValue;
+            },
+            dataList(){
+                var _data = JSON.parse(JSON.stringify(this.${context.formModel}));
+                #foreach($fieLdsModel in ${context.fields})
+                    #set($html = $fieLdsModel.formColumnModel.fieLdsModel)
+                    #set($vModel = "${html.vModel}")
+                    #set($config = $html.config)
+                    #set($mastKey = "${config.jnpfKey}")
+                    #if($vModel)
+                        #StringifytoString($html,"_data.${vModel}","_data.${vModel}","")
+                    #end
+                #end
+                #foreach($MastfieLds in ${context.mastTable})
+                    #set($BeforeVmodel = $MastfieLds.formMastTableModel.vModel)
+                    #set($tableName = $MastfieLds.formMastTableModel.table)
+                    #set($lowTableName = "${tableName.toLowerCase()}")
+                    #set($html = $MastfieLds.formMastTableModel.mastTable.fieLdsModel)
+                    #set($vModel = "${html.vModel}")
+                    #set($config = $html.config)
+                    #set($mastKey = "${config.jnpfKey}")
+                    #if(${vModel})
+                        #StringifytoString($html,"_data.${lowTableName}.${vModel}","_data.${BeforeVmodel}","true")
+                    #end
+                #end
+                #foreach($child in ${context.children})
+                    #set($className = "")
+                    #foreach($children in ${context.children})
+                        #if(${children.tableModel}==${child.tableModel})
+                            #set($className = "${children.className.substring(0,1).toLowerCase()}${children.className.substring(1).toLowerCase()}")
+                        #end
+                    #end
+                #end
+                return _data;
+            },
+            dataInfo(dataAll){
+                let _dataAll =dataAll
+                #foreach($fieLdsModel in ${context.fields})
+                    #set($html = $fieLdsModel.formColumnModel.fieLdsModel)
+                    #set($vModel = "${html.vModel}")
+                    #set($config = $html.config)
+                    #set($mastKey = "${config.jnpfKey}")
+                    #set($parm1 = "_dataAll.${vModel}")
+                    #set($parm2 = "_dataAll.${vModel}")
+                    #ParsetoArray($html,$parm1,$parm2,"")
+                #end
+                #foreach($MastfieLds in ${context.mastTable})
+                    #set($table =  ${MastfieLds.formMastTableModel.table})
+                    #set($lowTableName = "${table.toLowerCase()}")
+                    #set($BeforeVmodel = $MastfieLds.formMastTableModel.vModel)
+                    #set($html = $MastfieLds.formMastTableModel.mastTable.fieLdsModel)
+                    #set($vModel = "${html.vModel}")
+                    #set($config = $html.config)
+                    #set($mastKey = "${config.jnpfKey}")
+                    #set($parm1 = "_dataAll.${BeforeVmodel}")
+                    #set($parm2 = "_dataAll.${lowTableName}.${vModel}")
+                    #ParsetoArray($html,$parm1,$parm2,"true")
+                #end
+                #foreach($child in ${context.children})
+                    #set($className = "")
+                    #foreach($children in ${context.children})
+                        #if(${children.tableModel}==${child.tableModel})
+                            #set($className = "${children.className.substring(0,1).toLowerCase()}${children.className.substring(1).toLowerCase()}")
+                        #end
+                    #end
+                #end
+                this.${context.formModel} = _dataAll
+                this.isEdit = true
+                this.dataAll()
+                #foreach($child in ${context.children})
+                    #set($className = "")
+                    #foreach($children in ${context.children})
+                        #if(${children.tableModel}==${child.tableModel})
+                            #set($className = "${children.className.substring(0,1).toLowerCase()}${children.className.substring(1).toLowerCase()}")
+                        #end
+                    #end
+                #end
+                this.childIndex=-1
+            },
+        },
+    }
+
+</script>
+#macro(ParsetoArray $html,$parm1,$parm2,$isFailure)
+    #set($config = $html.config)
+    #set($mastKey = "${config.jnpfKey}")
+    #if(${mastKey}=='checkbox' || ${mastKey}=='timeRange' || ${mastKey}=='dateRange' || ${mastKey}=='address' || ${mastKey}=='cascader')
+        $parm1 = ${parm2} ?JSON.parse($parm2):[]
+    #elseif(${mastKey}=="uploadFz" || ${mastKey}=="uploadImg" || ${mastKey}=='comSelect')
+        $parm1 = ${parm2} ?JSON.parse($parm2):[]
+    #elseif(${mastKey}=='select' || ${mastKey}=='userSelect'|| ${mastKey}=='depSelect' || ${mastKey}=='posSelect' || ${mastKey}=='treeSelect'|| ${mastKey}=='roleSelect'|| ${mastKey}=='groupSelect'|| ${mastKey}=='popupTableSelect' || ${mastKey}=='usersSelect')
+##        #if($!{config.defaultValue} == '[]')
+##            $parm1 = ${parm2} ?JSON.parse($parm2):[]
+##        #else
+            #if(${html.multiple}=='true')
+                $parm1 = ${parm2} ?JSON.parse($parm2):[]
+            #else
+                #if($isFailure)
+                    $parm1 = $parm2
+                #end
+            #end
+##        #end
+    #elseif(${mastKey}=="switch" || ${mastKey}=="slider")
+        $parm1 = parseInt($parm2)
+    #elseif($isFailure)
+        $parm1 = $parm2
+    #end
+#end
+#macro(StringifytoString $html,$parm1,$parm2,$isFailure)
+    #set($config = $html.config)
+    #set($mastKey = "${config.jnpfKey}")
+    #if(${mastKey}=='checkbox' || ${mastKey}=='timeRange' || ${mastKey}=='dateRange' || ${mastKey}=='address' || ${mastKey}=='cascader')
+        $parm1 = Array.isArray(${parm2})? JSON.stringify(${parm2}):'[]'
+    #elseif(${mastKey}=="uploadFz" || ${mastKey}=="uploadImg"  || ${mastKey}=='comSelect')
+        $parm1 = Array.isArray(${parm2})? JSON.stringify(${parm2}):'[]'
+    #elseif(${mastKey}=='select' || ${mastKey}=='userSelect'|| ${mastKey}=='depSelect' || ${mastKey}=='posSelect' || ${mastKey}=='treeSelect'|| ${mastKey}=='roleSelect'|| ${mastKey}=='groupSelect'|| ${mastKey}=='popupTableSelect' || ${mastKey}=='usersSelect')
+##        #if($!{config.defaultValue} == '[]')
+##            $parm1 = Array.isArray(${parm2})? JSON.stringify(${parm2}):'[]'
+##        #else
+            #if(${html.multiple}=='true')
+                $parm1 = Array.isArray(${parm2})? JSON.stringify(${parm2}):'[]'
+            #else
+                #if($isFailure)
+                    $parm1 = $parm2
+                #end
+            #end
+##        #end
+    #elseif(${mastKey}=="switch" || ${mastKey}=="slider")
+        $parm1 = parseInt($parm2)
+    #elseif($isFailure)
+        $parm1 = $parm2
+    #end
+#end

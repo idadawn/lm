@@ -1,0 +1,63 @@
+# 项目开发规范
+
+## 实体基类字段映射注意事项
+
+### CLDEntityBase 基类字段大小写规则
+
+**重要：** `CLDEntityBase` 基类中的数据库字段名大小写不一致，继承该基类时需要特别注意：
+
+1. **创建相关字段（全大写，无下划线）：**
+   - `F_CREATORTIME` - 创建时间
+   - `F_CREATORUSERID` - 创建用户ID
+   - `F_ENABLEDMARK` - 启用标识
+
+2. **修改和删除相关字段（F_ 后首字母大写）：**
+   - `F_LastModifyTime` - 修改时间
+   - `F_LastModifyUserId` - 修改用户ID
+   - `F_DeleteMark` - 删除标志
+   - `F_DeleteTime` - 删除时间
+   - `F_DeleteUserId` - 删除用户ID
+
+### 处理方式
+
+当数据库表结构与基类字段名不一致时：
+
+1. **如果表字段名与基类不同**（如 `F_CREATOR_TIME` vs `F_CREATORTIME`）：
+   - 在实体类中重写该属性，使用 `[SugarColumn(ColumnName = "实际字段名")]` 指定正确的字段名
+
+2. **如果表中不存在基类的字段**：
+   - 在实体类中重写该属性，使用 `[SugarColumn(IsIgnore = true)]` 忽略数据库映射
+
+### 示例
+
+```csharp
+// 示例：RawDataImportSessionEntity
+public class RawDataImportSessionEntity : CLDEntityBase
+{
+    // 重写字段映射以匹配表结构（带下划线）
+    [SugarColumn(ColumnName = "F_CREATOR_TIME", IsNullable = true)]
+    public override DateTime? CreatorTime { get; set; }
+    
+    [SugarColumn(ColumnName = "F_CREATOR_USER_ID", IsNullable = true)]
+    public override string CreatorUserId { get; set; }
+    
+    [SugarColumn(ColumnName = "F_LAST_MODIFY_TIME", IsNullable = true)]
+    public override DateTime? LastModifyTime { get; set; }
+    
+    // 忽略表中不存在的字段
+    [SugarColumn(IsIgnore = true)]
+    public override string LastModifyUserId { get; set; }
+    
+    [SugarColumn(IsIgnore = true)]
+    public override int? EnabledMark { get; set; }
+}
+```
+
+### 检查清单
+
+在创建或修改继承 `CLDEntityBase` 的实体类时，请检查：
+
+- [ ] 数据库表字段名是否与基类字段名完全匹配（注意大小写和下划线）
+- [ ] 如果表字段名不同，是否已重写属性并指定正确的 `ColumnName`
+- [ ] 如果表中不存在某些基类字段，是否已使用 `IsIgnore = true` 忽略映射
+- [ ] 所有字段映射是否正确，避免运行时出现 "Unknown column" 错误

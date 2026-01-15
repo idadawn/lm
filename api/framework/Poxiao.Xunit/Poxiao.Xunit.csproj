@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<Description>Poxiao Xunit 单元测试拓展插件。</Description>
+    <Version>1.0.0</Version>
+    <Authors>Poxiao</Authors>
+    <Company />
+    <Product>Poxiao</Product>
+    <Copyright>© 2023-present Poxiao</Copyright>
+    <RepositoryUrl />
+    <RepositoryType />
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="xunit.extensibility.execution" Version="2.9.3" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\Poxiao\Poxiao.csproj" />
+	</ItemGroup>
+
+</Project>

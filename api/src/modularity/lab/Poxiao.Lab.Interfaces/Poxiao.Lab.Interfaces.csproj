@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Poxiao.Lab.Entity\Poxiao.Lab.Entity.csproj" />
+  </ItemGroup>
+</Project>

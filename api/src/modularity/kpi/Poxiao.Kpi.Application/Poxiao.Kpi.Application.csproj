@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MailKit" Version="2.15.0" />
+    <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
+    <PackageReference Include="NCalcSync" Version="3.9.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\common\Poxiao.Common.Core\Poxiao.Common.Core.csproj" />
+    <ProjectReference Include="..\..\system\Poxiao.Systems.Interfaces\Poxiao.Systems.Interfaces.csproj" />
+    <ProjectReference Include="..\Poxiao.Kpi.Core\Poxiao.Kpi.Core.csproj" />
+  </ItemGroup>
+
+</Project>

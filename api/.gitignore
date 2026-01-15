@@ -1,0 +1,15 @@
+.vs
+logs
+obj
+bin
+.DS_Store
+nupkgs
+/docker/volumes/mysql/data/mysql.sock
+/docker/volumes/mysql/data/ca-key.pem
+/docker/volumes/redis/data/dump.rdb
+/src/application/Poxiao.API.Entry/Properties/PublishProfiles/FolderProfile2.pubxml
+/src/application/Poxiao.API.Entry/Properties/PublishProfiles/FolderProfile1.pubxml
+/src/application/Poxiao.API.Entry/Properties/PublishProfiles/FolderProfile.pubxml
+/src/application/Poxiao.API.Entry/Properties/PublishProfiles/FolderProfile.pubxml.user
+/src/application/Poxiao.API.Entry/Properties/PublishProfiles/FolderProfile1.pubxml.user
+/src/application/Poxiao.API.Entry/Properties/PublishProfiles/FolderProfile2.pubxml.user

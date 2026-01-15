@@ -1,0 +1,26 @@
+{
+  "ConnectionStrings": {
+    "ConnectionConfigs": [
+      {
+        "ConfigId": "default",
+        "DBName": "kpi_sys",
+        "DBType": "MySql", //MySql;SqlServer;Oracle;PostgreSQL;Dm;Kdbndp;Sqlite;
+        "Host": "61.174.171.60",
+        "Port": "31557",
+        "UserName": "root",
+        "Password": "Szzz.emergen@2021",
+        "DefaultConnection": "server=61.174.171.60;Port=31557;Database={0};Uid=root;Pwd=Szzz.emergen@2021;AllowLoadLocalInfile=true;"
+      },
+      {
+        "ConfigId": "Poxiao-Job", // 不可修改
+        "DBName": "kpi_sys",
+        "DBType": "MySql", //MySql;SqlServer;Oracle;PostgreSQL;Dm;Kdbndp;Sqlite;
+        "Host": "61.174.171.60",
+        "Port": "31557",
+        "UserName": "root",
+        "Password": "Szzz.emergen@2021",
+        "DefaultConnection": "server=61.174.171.60;Port=31557;Database={0};Uid=root;Pwd=Szzz.emergen@2021;AllowLoadLocalInfile=true;"
+      }
+    ]
+  }
+}

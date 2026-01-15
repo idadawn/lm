@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\common\Poxiao.Common.CodeGen\Poxiao.Common.CodeGen.csproj" />
+		<ProjectReference Include="..\..\common\Poxiao.Common.Core\Poxiao.Common.Core.csproj" />
+		<ProjectReference Include="..\..\common\Poxiao.Common\Poxiao.Infrastructure.csproj" />
+		<ProjectReference Include="..\..\engine\Poxiao.VisualDev.Engine\Poxiao.VisualDev.Engine.csproj" />
+		<ProjectReference Include="..\Poxiao.WorkFlow.Interfaces\Poxiao.WorkFlow.Interfaces.csproj" />
+	</ItemGroup>
+
+</Project>

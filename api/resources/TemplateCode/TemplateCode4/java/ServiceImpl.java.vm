@@ -1,0 +1,176 @@
+package ${package.ServiceImpl};
+
+import ${package.Entity}.*;
+import ${package.Mapper}.${table.mapperName};
+import ${package.Service}.*;
+import ${superServiceImplClassPackage};
+
+
+#if(${DS})
+import com.baomidou.dynamic.datasource.annotation.DS;
+import jnpf.database.util.DataSourceUtil;
+import jnpf.database.model.entity.DbLinkEntity;
+import com.baomidou.dynamic.datasource.toolkit.DynamicDataSourceContextHolder;
+import jnpf.database.plugins.DynamicSourceGeneratorInterface;
+#end
+
+#if(${main})
+#set($packName = "${name.toLowerCase()}")
+import ${modulePackageName}.model.${packName}.*;
+import cn.hutool.core.util.ObjectUtil;
+#end
+#foreach($subfield in ${child})
+    #set($ChildName="${subfield.className.substring(0,1).toUpperCase()}${subfield.className.substring(1)}")
+    #set($childName="${subfield.className.substring(0,1).toLowerCase()}${subfield.className.substring(1)}")
+import ${package.Entity}.${ChildName}Entity;
+#end
+
+import jnpf.util.StringUtil;
+import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+
+
+/**
+ *
+ * ${genInfo.description}
+ * 版本： ${genInfo.version}
+ * 版权： ${genInfo.copyright}
+ * 作者： ${genInfo.createUser}
+ * 日期： ${genInfo.createDate}
+ */
+@Service
+#if(${DS})
+@DS("${DS}")
+#end
+public class ${table.serviceImplName} extends ${superServiceImplClass}<${table.mapperName}, ${table.entityName}> implements ${table.serviceName}#if(${DS}),DynamicSourceGeneratorInterface #end {
+#if(${DS})
+##    @Autowired
+##    private DbLinkService dblinkService;
+#end
+
+#foreach($subfield in ${childTableNameList})
+    #set($ChildName="${subfield.table.substring(0,1).toUpperCase()}${subfield.table.substring(1)}")
+    #set($childName="${subfield.table.substring(0,1).toLowerCase()}${subfield.table.substring(1)}")
+@Autowired
+private ${ChildName}Service ${childName}Service;
+#end
+
+#if(${main})
+    #set($Entity = "${table.entityName}")
+
+    @Override
+    public void create(${Entity} entity){
+        this.save(entity);
+    }
+
+//验证表单唯一字段
+@Override
+public String checkForm(${Name}CrForm form,int i) {
+		int total = 0;
+		String countRecover = "";
+		boolean isUp =StringUtil.isNotEmpty(form.get${peimaryKeyName}()) && !form.get${peimaryKeyName}().equals("0");
+    #foreach($mastField in $mast)
+        #set($Field = $mastField.formColumnModel.fieLdsModel)
+        #set($config = $Field.config)
+        #set($unique = $config.unique)
+        #set($jnpfKey = $config.jnpfKey)
+        #set($vModel = ${Field.vModel})
+        #if($jnpfKey == 'comInput' && $unique ==true)
+            #set($upName = "${vModel.substring(0,1).toUpperCase()}${vModel.substring(1)}")
+                if(ObjectUtil.isNotEmpty(form.get${upName}())){
+                    form.set${upName}(form.get${upName}().trim());
+                    QueryWrapper<${Name}Entity> ${vModel}Wrapper=new QueryWrapper<>();
+                    ${vModel}Wrapper.lambda().eq(${Name}Entity::get${upName},form.get${upName}());
+                #if($logicalDelete)
+                        //假删除标志
+                    ${vModel}Wrapper.lambda().isNull(${Name}Entity::getDeletemark);
+                #end
+                    if (isUp){
+                        ${vModel}Wrapper.lambda().ne(${Name}Entity::get${peimaryKeyName}, form.getId());
+                    }
+                    if((int) this.count(${vModel}Wrapper)>0){
+						total ++;
+						countRecover = "${config.label}";
+                     }
+                }
+            #end
+        #end
+     #foreach($grid in ${child})
+    #set($list = "${grid.className.substring(0,1).toUpperCase()}${grid.className.substring(1).toLowerCase()}")
+    #set($serviceName = "${grid.className.substring(0,1).toLowerCase()}${grid.className.substring(1)}")
+         #set($tableField = "${grid.tableField.substring(0,1).toUpperCase()}${grid.tableField.substring(1)}")
+				 if (form.get${list}List()!=null){
+         #foreach($jnpfkey in ${grid.childList})
+             #if(${jnpfkey.fieLdsModel.vModel} != '')
+                 #set($key = ${jnpfkey.fieLdsModel.config.jnpfKey})
+                 #set($model = "${jnpfkey.fieLdsModel.vModel.substring(0,1).toUpperCase()}${jnpfkey.fieLdsModel.vModel.substring(1)}")
+                 #set($unique = $jnpfkey.fieLdsModel.config.unique)
+                 #if($key =="comInput" && $unique ==true)
+            form.get${list}List().stream().forEach(t->{
+                if(StringUtil.isNotEmpty(t.get${model}())){
+                    t.set${model}(t.get${model}().trim());
+                }
+            });
+			QueryWrapper<${grid.className}Entity> ${grid.className}${model}Wrapper = new QueryWrapper<>();
+            List<String> ${model}List = form.get${list}List().stream().filter(f->StringUtil.isNotEmpty(f.get${model}())).map(f -> f.get${model}()).collect(Collectors.toList());
+            HashSet<String> ${model}Set = new HashSet<>(${model}List);
+            if(${model}Set.size() != ${model}List.size()){
+                 countRecover = "${jnpfkey.fieLdsModel.config.label}";
+             }
+            if(${model}List.size()>0){
+                 for (String ${model} : ${model}List) {
+                     ${grid.className}${model}Wrapper.lambda().eq(${grid.className}Entity::get${model}, ${model});
+                     if(isUp){
+                         ${grid.className}${model}Wrapper.lambda().ne(${grid.className}Entity::get${tableField},form.getId());
+                     }
+                     if((int) ${serviceName}Service.count(${grid.className}${model}Wrapper) > 0){
+                     countRecover = "${jnpfkey.fieLdsModel.config.label}";
+                        total ++;
+                     }
+                 }
+             }
+                 #end
+             #end
+         #end
+         }
+        #end
+#if(${columnChildren.size()}>0)
+    #foreach($cl in  ${columnChildren})
+        #set($oracleName = "${cl.TableName.substring(0,1).toUpperCase()}${cl.TableName.substring(1).toLowerCase()}")
+		if(ObjectUtil.isNotEmpty(form.get${oracleName}())){
+        #foreach($clModel in ${cl.fieLdsModelList})
+            #set($model = "${clModel.field.substring(0,1).toUpperCase()}${clModel.field.substring(1).toLowerCase()}")
+            #set($key =  ${clModel.mastTable.fieLdsModel.config.jnpfKey})
+            #set($unique = $clModel.mastTable.fieLdsModel.config.unique)
+            #if($key =="comInput" && $unique ==true)
+                    if(ObjectUtil.isNotEmpty(form.get${oracleName}().get${model}())){
+                    form.get${oracleName}().set${model}(form.get${oracleName}().get${model}().trim());
+                    QueryWrapper<${oracleName}Entity> ${oracleName}${model}Wrapper=new QueryWrapper<>();
+                ${oracleName}${model}Wrapper.lambda().eq(${oracleName}Entity::get${model},form.get${oracleName}().get${model}());
+                    if (isUp){
+                    ${oracleName}${model}Wrapper.lambda().ne(${oracleName}Entity::get${cl.relationUpField}, form.getId());
+                    }
+                    if((int) ${cl.modelLowName}Service.count(${oracleName}${model}Wrapper)>i){
+						countRecover = "${clModel.mastTable.fieLdsModel.config.label}";
+                    	total ++;
+                    }
+                    }
+             #end
+        #end
+		}
+    #end
+#end
+		return countRecover;
+    }
+#end
+#if(${DS})
+        @Override
+        public DataSourceUtil getDataSource() {
+            return generaterSwapUtil.getDataSource(this.getClass().getAnnotation(DS.class).value());
+		}
+#end
+}

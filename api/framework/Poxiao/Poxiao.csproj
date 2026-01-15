@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>true</IsPackable>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<OpenApiGenerateDocuments>false</OpenApiGenerateDocuments>
+		<Description>Poxiao 帮助类</Description>
+		<Version>1.0.0</Version>
+		<Authors>Poxiao</Authors>
+		<Company />
+		<Product>Poxiao</Product>
+		<Copyright>© 2023-present Poxiao</Copyright>
+		<RepositoryUrl />
+		<RepositoryType />
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Remove="FriendlyException\Assets\error.html" />
+		<None Remove="Schedule\Dashboard\frontend\**\*" />
+		<None Remove="SpecificationDocument\Assets\index-mini-profiler.html" />
+		<None Remove="SpecificationDocument\Assets\index.html" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="FriendlyException\Assets\error.html" />
+		<EmbeddedResource Include="Schedule\Dashboard\frontend\**\*" />
+		<EmbeddedResource Include="SpecificationDocument\Assets\index-mini-profiler.html" />
+		<EmbeddedResource Include="SpecificationDocument\Assets\index.html" />
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+		<PackageReference Include="CSRedisCore" Version="3.8.807" />
+		<PackageReference Include="MiniProfiler.AspNetCore.Mvc" Version="4.5.4" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Poxiao.Extras.DependencyModel.CodeAnalysis\Poxiao.Extras.DependencyModel.CodeAnalysis.csproj" />
+	</ItemGroup>
+
+</Project>

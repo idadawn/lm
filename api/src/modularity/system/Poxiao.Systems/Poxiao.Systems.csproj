@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\infrastructure\Poxiao.Extras.CollectiveOAuth\Poxiao.Extras.CollectiveOAuth.csproj" />
+		<ProjectReference Include="..\..\engine\Poxiao.VisualDev.Engine\Poxiao.VisualDev.Engine.csproj" />
+		<ProjectReference Include="..\..\message\Poxiao.Message.Interfaces\Poxiao.Message.Interfaces.csproj" />
+		<ProjectReference Include="..\..\taskschedule\Poxiao.TaskScheduler.Interfaces\Poxiao.TaskScheduler.Interfaces.csproj" />
+		<ProjectReference Include="..\..\workflow\Poxiao.WorkFlow.Interfaces\Poxiao.WorkFlow.Interfaces.csproj" />
+		<ProjectReference Include="..\Poxiao.Systems.Interfaces\Poxiao.Systems.Interfaces.csproj" />
+	</ItemGroup>
+
+</Project>

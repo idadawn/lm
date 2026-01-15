@@ -1,0 +1,49 @@
+{
+  "ConnectionStrings": {
+    "ConnectionConfigs": [
+      {
+        "ConfigId": "default",
+        "DBName": "kpi_sys",
+        "DBType": "MySql", //MySql;SqlServer;Oracle;PostgreSQL;Dm;Kdbndp;Sqlite;
+        "Host": "61.174.171.60",
+        "Port": "33061",
+        "UserName": "root",
+        "Password": "Deep@2021",
+        //SqlServer
+        //"DefaultConnection": "Data Source=192.168.0.214;Initial Catalog={0};User ID=sa;Password=kMaeMP8Yck6b6wA;MultipleActiveResultSets=true"
+        //Kdbndp
+        //"DefaultConnection": "Server=192.168.0.103;Port=54321;UID=YANYU;PWD=123456;database=YANSOURCE"
+        //Dm
+        //"DefaultConnection": "Server=192.168.0.50; User Id=PoxiaoTEST; PWD=I97eH!bRfy55qGzF;DATABASE=PoxiaoTEST"
+        //Oracle
+        //"DefaultConnection": "Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=192.168.0.19)(PORT=1521))(CONNECT_DATA=(SERVER = DEDICATED)(SERVICE_NAME=PoxiaoCLOUD)));User Id=PoxiaoCLOUD;Password=PoxiaoCLOUD"
+        //PostgreSQL
+        //"DefaultConnection": "PORT=5432;DATABASE=java_boot_dev_postgresql;HOST=192.168.0.103;PASSWORD=123456;USER ID=postgres"
+        //MySql
+        "DefaultConnection": "server=61.174.171.60;Database={0};Port=33061;Uid=root;Pwd=Deep@2021;AllowLoadLocalInfile=true"
+      },
+      {
+        "ConfigId": "Poxiao-Job", // 不可修改
+        "DBName": "kpi_sys",
+        "DBType": "MySql", //MySql;SqlServer;Oracle;PostgreSQL;Dm;Kdbndp;Sqlite;
+        "Host": "61.174.171.60",
+        "Port": "33061",
+        "UserName": "root",
+        "Password": "Deep@2021",
+        //SqlServer
+        //"DefaultConnection": "Data Source=192.168.0.214;Initial Catalog={0};User ID=sa;Password=kMaeMP8Yck6b6wA;MultipleActiveResultSets=true"
+        //Kdbndp
+        //"DefaultConnection": "Server=192.168.0.103;Port=54321;UID=YANYU;PWD=123456;database=YANSOURCE"
+        //Dm
+        //"DefaultConnection": "Server=192.168.0.50; User Id=PoxiaoTEST; PWD=I97eH!bRfy55qGzF;DATABASE=PoxiaoTEST"
+        //Oracle
+        //"DefaultConnection": "Data Source=(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=192.168.0.19)(PORT=1521))(CONNECT_DATA=(SERVER = DEDICATED)(SERVICE_NAME=PoxiaoCLOUD)));User Id=PoxiaoCLOUD;Password=PoxiaoCLOUD"
+        //PostgreSQL
+        //"DefaultConnection": "PORT=5432;DATABASE=java_boot_dev_postgresql;HOST=192.168.0.103;PASSWORD=123456;USER ID=postgres"
+        //MySql
+        //"DefaultConnection": "server=192.168.0.10;Database=netcore_test;Uid=netcore_test;Pwd=jhpGB3A88CF57fBC;AllowLoadLocalInfile=true"
+        "DefaultConnection": "server=61.174.171.60;Database={0};Port=33061;Uid=root;Pwd=Deep@2021;AllowLoadLocalInfile=true"
+      }
+    ]
+  } 
+}

@@ -1,0 +1,106 @@
+#set($moduleName = "${context.genInfo.className.toLowerCase()}")
+#if($context.isForm)
+    #set($package = "package ${context.package}.${context.isForm}.model.${moduleName};")
+#else
+    #set($package = "package ${context.package}.model.${moduleName};")
+#end
+${package}
+
+import lombok.Data;
+import java.util.List;
+import java.util.Date;
+import java.math.BigDecimal;
+import jnpf.annotation.JnpfField;
+import cn.afterturn.easypoi.excel.annotation.Excel;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.alibaba.fastjson.annotation.JSONField;
+
+/**
+ *
+ * ${context.genInfo.description}
+ * 版本： ${context.genInfo.version}
+ * 版权: ${context.genInfo.copyright}
+ * 作者： ${context.genInfo.createUser}
+ * 日期： ${context.genInfo.createDate}
+ */
+@Data
+public class ${context.className}Model  {
+
+    #foreach($html in ${context.children.childList})
+        #set($fieLdsModel = ${html.fieLdsModel})
+        #set($config = ${fieLdsModel.config})
+        #set($jnpfkey = ${config.jnpfKey})
+        #set($vModel = "${fieLdsModel.vModel}")
+        #set($fieldName=${config.label})
+        /** ${fieldName} **/
+		@JnpfField(#if(${fieldName}) label = "${fieldName}", #end
+        #if(${jnpfkey}) jnpfKey = "${jnpfkey}", #end
+        #if($fieLdsModel.multiple) multiple = ${fieLdsModel.multiple},#end
+        #if($fieLdsModel.showLevel) showLevel = "${fieLdsModel.showLevel}",#end
+        #if($config.rule) rule="${config.rule}", #end
+        #if(${jnpfkey} == "switch")
+            #if($fieLdsModel.activeTxt) activeTxt="${fieLdsModel.activeTxt}", #end
+            #if($fieLdsModel.inactiveTxt) inactiveTxt="${fieLdsModel.inactiveTxt}", #end
+        #end
+        #if($fieLdsModel.min) min=${fieLdsModel.min}, #end
+        #if($fieLdsModel.max) max=${fieLdsModel.max}, #end
+        #if($fieLdsModel.unique) unique = ${fieLdsModel.unique},#end
+        #if($config.regList) regex = ${config.reg},#end
+        #if($config.relationTable) relationTable = "${config.relationTable}",#end
+        #if($config.tableName) tableName = "${config.tableName}",#end
+        #if($fieLdsModel.format) format = "${fieLdsModel.format}",#end
+        #if($fieLdsModel.startTime) startTime = "${fieLdsModel.startTime}",#end
+        #if($fieLdsModel.endTime) endTime = "${fieLdsModel.endTime}",#end
+        #if($config.dataType) dataType = "${config.dataType}",#end
+        #if($config.propsUrl) propsUrl = "${config.propsUrl}",#end
+        #if($config.dictionaryType) dictionaryType = "${config.dictionaryType}",#end
+        #if($fieLdsModel.props.props.label) dataLabel = "${fieLdsModel.props.props.label}",#end
+        #if($fieLdsModel.props.props.value) dataValue = "${fieLdsModel.props.props.value}",#end
+        #if($config.options) #if(${config.dataType}=="static") options = ${config.options},
+        #end #end
+            #if($fieLdsModel.ableDepIds) ableDepIds = ${fieLdsModel.ableDepIds},#end
+            #if($fieLdsModel.ablePosIds) ablePosIds = ${fieLdsModel.ablePosIds},#end
+            #if($fieLdsModel.ableUserIds) ableUserIds = ${fieLdsModel.ableUserIds},#end
+            #if($fieLdsModel.ableRoleIds) ableRoleIds = ${fieLdsModel.ableRoleIds},#end
+            #if($fieLdsModel.ableGroupIds) ableGroupIds = ${fieLdsModel.ableGroupIds},#end
+            #if($fieLdsModel.ableIds) ableIds = ${fieLdsModel.ableIds},#end
+        vModel = "#if(${vModel})${vModel}#end")
+        #if($fieLdsModel.needImport)
+        @Excel(name = "${fieldName}",orderNum = "1",isImportField = "true")
+        #end
+#if(${jnpfkey}=="date")
+    @JsonProperty("${vModel}")
+    private String ${vModel};
+#elseif(${jnpfkey}=='numInput' || ${jnpfkey}=='calculate')
+	@JsonProperty("${vModel}")
+    #if(${fieLdsModel.precision})
+    private BigDecimal ${vModel};
+    private String ${vModel}_name;
+    #else
+    private Integer ${vModel};
+    private String ${vModel}_name;
+    #end
+
+#elseif(${jnpfkey}=='slider'|| ${jnpfkey}=='rate')
+	@JsonProperty("${vModel}")
+	private Integer ${vModel};
+
+#elseif(${jnpfkey}=='relationFormAttr'|| ${jnpfkey}=='popupAttr')
+    #if(${config.isStorage}==1)
+        #set($vModel ="${fieLdsModel.relationField}_${fieLdsModel.showField}")
+    #end
+	@JsonProperty("${vModel}")
+	private String ${vModel};
+#elseif(${jnpfkey}=='relationForm')
+	@JsonProperty("${vModel}")
+	private String ${vModel};
+
+	@JsonProperty("${vModel}_id")
+	private String ${vModel}_id;
+#else
+    @JsonProperty("${vModel}")
+    private String ${vModel};
+#end
+    #end
+
+}

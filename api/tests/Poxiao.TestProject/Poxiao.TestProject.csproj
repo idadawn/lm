@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<NoWarn>1701;1702;1591</NoWarn>
+		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\framework\Poxiao.Extras.Authentication.JwtBearer\Poxiao.Extras.Authentication.JwtBearer.csproj" />
+		<ProjectReference Include="..\..\framework\Poxiao.Extras.DatabaseAccessor.Dapper\Poxiao.Extras.DatabaseAccessor.Dapper.csproj" />
+		<ProjectReference Include="..\..\framework\Poxiao.Extras.DatabaseAccessor.SqlSugar\Poxiao.Extras.DatabaseAccessor.SqlSugar.csproj" />
+		<ProjectReference Include="..\..\framework\Poxiao.Extras.ObjectMapper.Mapster\Poxiao.Extras.ObjectMapper.Mapster.csproj" />
+		<ProjectReference Include="..\..\framework\Poxiao\Poxiao.csproj" />
+	</ItemGroup>
+
+</Project>

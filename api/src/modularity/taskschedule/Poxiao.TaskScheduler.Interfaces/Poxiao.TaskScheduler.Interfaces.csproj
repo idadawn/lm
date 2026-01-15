@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<ItemGroup>
+		<ProjectReference Include="..\Poxiao.TaskScheduler.Entitys\Poxiao.TaskScheduler.Entitys.csproj" />
+	</ItemGroup>
+
+</Project>

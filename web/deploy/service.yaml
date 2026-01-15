@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: venus-web-external
+  namespace: jnpf-staging
+  labels:
+    app: venus-web
+  annotations:
+    kubesphere.io/description: vue3测试环境外部访问
+    kubesphere.io/serviceType: statelessservice
+spec:
+  ports:
+    - name: http-80
+      port: 80
+      protocol: TCP
+      targetPort: 80
+  selector:
+    app: venus-web
+  sessionAffinity: None
+  type: ClusterIP

@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>true</IsPackable>
+		<Description>Poxiao Jwt 授权验证拓展插件。</Description>
+		<Version>1.0.0</Version>
+		<Authors>Poxiao</Authors>
+		<Company />
+		<Product>Poxiao</Product>
+		<Copyright>© 2023-present Poxiao</Copyright>
+		<RepositoryUrl />
+		<RepositoryType />
+	</PropertyGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.1" />
+	</ItemGroup>
+</Project>

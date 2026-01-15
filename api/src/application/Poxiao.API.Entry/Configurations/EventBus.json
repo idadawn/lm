@@ -1,0 +1,8 @@
+{
+  "EventBus": {
+    "EventBusType": "Memory", //Memory,RabbitMQ
+    "HostName": "60.60.60.181:31694",
+    "UserName": "admin",
+    "Password": "LeOYRBBeCat8fK/9huTt"
+  }
+}

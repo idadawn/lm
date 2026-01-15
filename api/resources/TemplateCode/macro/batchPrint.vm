@@ -1,0 +1,64 @@
+
+#*
+这是一个批量打印的方法宏,包含打印相关方法
+*#
+#macro(handlePrint $batchPrint)
+  #if ($batchPrint == true)
+  printBrowseHandle(id) {
+    this.printDialogVisible = false;
+    this.handleBatchPrint(id);
+  },
+  printDialog() {
+    if (!this.multipleSelection.length) {
+      this.$message({
+        type: "warning",
+        message: "请选择一条数据",
+        duration: 1500
+      });
+      return;
+    }
+    this.printDialogVisible = true;
+    this.$nextTick(() => {
+      if (this.printId.length == 1) {
+        this.printBrowseHandle(this.printId[0].id);
+        return;
+      }
+      #set($ref='this.'+'$'+'refs')
+      ${ref}.printDialog.init(this.printId.split(","));
+    });
+  },
+  handleBatchPrint(id) {
+    if (!id) {
+      this.$message({
+        type: "warning",
+        message: "请配置打印模板",
+        duration: 1500
+      });
+      return;
+    }
+    this.printIdNow = id;
+    this.printBrowseVisible = true;
+  },
+  #end
+#end
+#*
+打印属性相关
+*#
+#macro(handlePrintData $batchPrint $printId)
+  printId: '$!{printId}',
+  printIdNow: '$!{printId}',
+  #if ($batchPrint == true)
+    printDialogVisible: false,
+    printBrowseVisible: false,
+  #end
+#end
+#*
+导入组件相关
+*#
+#macro(handlePrintCom $batchPrint)
+
+  #if( ${batchPrint}==true)
+      <print-browse :visible.sync="printBrowseVisible" :id="printIdNow" :batchIds="multipleSelection.join()"/>
+      <PrintDialog v-if="printDialogVisible" ref="printDialog" @change="printBrowseHandle"/>
+  #end
+#end

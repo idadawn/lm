@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: venus-web-ingress
+  namespace: jnpf-staging
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    kubesphere.io/description: venus-web前端访问
+spec:
+  rules:
+    - host: vue3.devops.jnpf.team
+      http:
+        paths:
+          - path: /
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: venus-web-external
+                port:
+                  number: 80

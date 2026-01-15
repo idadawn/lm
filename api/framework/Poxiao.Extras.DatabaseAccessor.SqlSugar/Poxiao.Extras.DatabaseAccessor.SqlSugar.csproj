@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IsPackable>true</IsPackable>
+		<Description>Poxiao 数据库访问器 SqlSugar 插件。</Description>
+		<Version>1.0.0</Version>
+		<Authors>Poxiao</Authors>
+		<Company />
+		<Product>Poxiao</Product>
+		<Copyright>© 2023-present Poxiao</Copyright>
+		<RepositoryUrl />
+		<RepositoryType />
+	</PropertyGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+		<PackageReference Include="SqlSugarCore" Version="5.1.4.211" />
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Poxiao\Poxiao.csproj" />
+	</ItemGroup>
+
+</Project>

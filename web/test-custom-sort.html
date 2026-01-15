@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Custom Sort Button Test</title>
+    <script>
+        // Test if click event is working
+        function testClick() {
+            console.log('Button clicked!');
+            alert('Button clicked!');
+        }
+
+        // Check for JavaScript errors
+        window.addEventListener('error', function(e) {
+            console.error('JavaScript Error:', e.message);
+            console.error('File:', e.filename);
+            console.error('Line:', e.lineno);
+        });
+    </script>
+</head>
+<body>
+    <h1>Custom Sort Button Test</h1>
+    <button onclick="testClick()">Test Click</button>
+
+    <h2>Possible Issues:</h2>
+    <ol>
+        <li>JavaScript errors on page load</li>
+        <li>CSS z-index issues</li>
+        <li>Event handler not properly attached</li>
+        <li>Modal component not properly imported</li>
+        <li>Vue reactivity issues</li>
+    </ol>
+</body>
+</html>

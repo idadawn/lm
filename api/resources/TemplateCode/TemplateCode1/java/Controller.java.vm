@@ -1,0 +1,292 @@
+package ${package.Controller};
+
+import jnpf.util.ServiceAllUtil;
+import jnpf.base.entity.DictionaryDataEntity;
+import jnpf.permission.entity.OrganizeEntity;
+import jnpf.permission.entity.PositionEntity;
+import jnpf.permission.entity.UserEntity;
+import jnpf.engine.entity.FlowTaskEntity;
+import org.springframework.web.bind.annotation.RestController;
+#if(${superControllerClassPackage})
+import ${superControllerClassPackage};
+#end
+#set($modelClassName ="${genInfo.className.substring(0,1).toLowerCase()}${genInfo.className.substring(1)}")
+#set($modelPath = ${modulePackageName}+".model."+${modelPathName})
+import ${modelPath}.${genInfo.className}Form;
+import ${modelPath}.${genInfo.className}InfoVO;
+import ${package.Entity}.${table.entityName};
+import ${package.Service}.${table.serviceName};
+#foreach($grid in ${child})
+import ${package.Entity}.${grid.className}Entity;
+import ${modelPath}.${grid.className}Model;
+#end
+#foreach($grid in ${tableNameAll})
+import ${package.Entity}.${grid.className}Entity;
+import ${modelPath}.${grid.className}Model;
+#end
+import jnpf.util.DateUtil;
+import jnpf.util.JsonUtil;
+import jnpf.util.StringUtil;
+import jnpf.util.UserProvider;
+import jnpf.base.vo.PaginationVO;
+import jnpf.base.UserInfo;
+import jnpf.base.vo.ListVO;
+import jnpf.util.*;
+import jnpf.exception.WorkFlowException;
+import jnpf.base.ActionResult;
+import jnpf.exception.DataException;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.*;
+import java.util.LinkedList;
+import java.util.stream.Collectors;
+import javax.validation.Valid;
+
+#macro(code7Data $type $form $model $formModel)
+    #set($jnpfkey = ${formModel})
+    #set($key = ${jnpfkey.config.jnpfKey})
+    #set($rule = ${jnpfkey.config.rule})
+    #set($showLevel = "${jnpfkey.showLevel}")
+    #if(${key}=='createUser')
+        #if(${type} =='update')
+        ${form}.set${model}(null);
+        #else
+        ${form}.set${model}(userInfo.getUserId());
+        #end
+    #elseif(${key}=='createTime')
+        #if(${type} =='update')
+        ${form}.set${model}(null);
+        #else
+        ${form}.set${model}(DateUtil.getNow());
+        #end
+    #elseif(${key}=='modifyTime')
+        #if(${type} =='update')
+        ${form}.set${model}(DateUtil.getNow());
+        #else
+        ${form}.set${model}(null);
+        #end
+    #elseif(${key}=='modifyUser')
+        #if(${type} =='update')
+        ${form}.set${model}(userInfo.getUserId());
+        #end
+    #elseif(${key}=='currDept' || ${key}=='currOrganize')
+        #if(${type} =='update')
+            ${form}.set${model}(null);
+        #else
+            ${form}.set${model}(userInfo.getDepartmentId());
+        #end
+    #elseif(${key}=='currPosition')
+        ${form}.set${model}(userInfo.getPositionIds().length>0 ? userInfo.getPositionIds()[0] : "");
+    #elseif(${key}=='billRule')
+        ${form}.set${model}(StringUtil.isEmpty(${form}.get${model}())?serviceUtil.getBillNumber("${rule}"):${form}.get${model}());
+    #end
+#end
+
+#macro(code7List $show $form $model $list $formModel)
+    #set($jnpfkey = ${formModel})
+    #set($config = $jnpfkey.config)
+    #set($props = $jnpfkey.props)
+    #set($key = ${config.jnpfKey})
+    #set($dataType = ${config.dataType})
+    #set($interfaceId = "${jnpfkey.interfaceId}")
+    #set($propsValue = "${jnpfkey.propsValue}")
+    #set($relationField = "${jnpfkey.relationField}")
+    #set($modelId = "${jnpfkey.modelId}")
+    #set($multiple="${jnpfkey.multiple}")
+    #set($showLevel = "${jnpfkey.showLevel}")
+    #if(${key}=='createUser')
+        UserEntity ${list}${model}createUser = serviceUtil.getUserInfo(${form}.get${model}());
+        ${form}.set${model}(${list}${model}createUser!=null ? ${list}${model}createUser.getRealName() : ${form}.get${model}());
+    #elseif(${key}=='currDept' || ${key}=='currOrganize')
+        OrganizeEntity ${list}${model}currOrganize = serviceUtil.getOrganizeInfo(${form}.get${model}());
+        if(${list}${model}currOrganize!=null){
+        #if($showLevel=='all')
+        List<OrganizeEntity> ${list}${model}organizeName = serviceUtil.getOrganizeName(Arrays.asList(${list}${model}currOrganize.getOrganizeIdTree().split(",")));
+        ${form}.set${model}(String.join("/",${list}${model}organizeName.stream().map(t->t.getFullName()).collect(Collectors.toList())));
+        #else
+        ${form}.set${model}(${list}${model}currOrganize!=null ? ${list}${model}currOrganize.getFullName() : ${form}.get${model}());
+        #end
+        }
+    #elseif(${key}=='currPosition')
+        PositionEntity ${list}${model}currPosition = serviceUtil.getPositionInfo(${form}.get${model}());
+        ${form}.set${model}(${list}${model}currPosition!=null ? ${list}${model}currPosition.getFullName() : ${form}.get${model}());
+    #elseif(${key}=='modifyUser')
+        UserEntity ${list}${model}modifyUser = StringUtil.isNotEmpty(${form}.get${model}())? serviceUtil.getUserInfo(${form}.get${model}()):null;
+        ${form}.set${model}(${list}${model}modifyUser!=null ? ${list}${model}modifyUser.getRealName() : ${form}.get${model}());
+	#end
+	#if($show==true)
+    #end
+#end
+
+/**
+ *
+ * ${genInfo.description}
+ * 版本： ${genInfo.version}
+ * 版权： ${genInfo.copyright}
+ * 作者： ${genInfo.createUser}
+ * 日期： ${genInfo.createDate}
+ */
+@RestController
+@RequestMapping("/api/workflow/${module}/${genInfo.className}")
+public class ${table.controllerName} {
+
+    #set($peimaryKeyName="${pKeyName.substring(0,1).toUpperCase()}${pKeyName.substring(1)}")
+    #set($serviceName = "${table.serviceName.substring(0,1).toLowerCase()}${table.serviceName.substring(1)}")
+    #set($formName = "${modelName.substring(0,1).toLowerCase()}${modelName.substring(1)}")
+    @Autowired
+    private ${table.serviceName} ${serviceName};
+    @Autowired
+    private UserProvider userProvider;
+    @Autowired
+    private ServiceAllUtil serviceUtil;
+    private boolean primaryKeyPolicy = ${primaryKeyPolicy};
+    @GetMapping("/{id}")
+    public ActionResult info(@PathVariable("id") String id,String flowtaskid) {
+        ${table.entityName} entity = ${table.serviceName.substring(0,1).toLowerCase()}${table.serviceName.substring(1)}.getInfo(id);
+        #foreach($jnpfkey in ${system})
+            #set($vModel = "${jnpfkey.vModel}")
+            #if($vModel)
+			#set($model = "${vModel.substring(0,1).toUpperCase()}${vModel.substring(1)}")
+            #set($form="entity")
+            #set($formModel = $jnpfkey)
+                #code7List(false,$form,$model,'',$formModel)
+            #end
+        #end
+        id = StringUtil.isNotEmpty(flowtaskid)?flowtaskid:id;
+        ${genInfo.className}InfoVO vo = JsonUtil.getJsonToBean(entity, ${genInfo.className}InfoVO.class);
+        if(vo!=null) {
+        vo.set${peimaryKeyName}(id);
+        #foreach($grid in ${child})
+        List<${grid.className}Entity> ${grid.className}List = ${table.serviceName.substring(0,1).toLowerCase()}${table.serviceName.substring(1)}.Get${grid.className}List(id);
+            #set($list = "${grid.className.substring(0,1).toUpperCase()}${grid.className.substring(1).toLowerCase()}")
+        vo.set${list}List(JsonUtil.getJsonToList(${grid.className}List,${grid.className}Model.class ));
+        #end
+        #foreach($grid in ${tableNameAll})
+        ${grid.className}Entity ${grid.className} = ${table.serviceName.substring(0,1).toLowerCase()}${table.serviceName.substring(1)}.get${grid.className}(id);
+        if(${grid.className}!=null){
+            #set($list = "${grid.className.substring(0,1).toUpperCase()}${grid.className.substring(1).toLowerCase()}")
+		vo.set${list}(JsonUtil.getJsonToBean(${grid.className},${grid.className}Model.class ));
+            #foreach($childList in $grid.childList)
+                #set($formMastTableModel = $childList.formMastTableModel)
+                #set($filed = $formMastTableModel.field)
+                #set($jnpfkey = $formMastTableModel.mastTable.fieLdsModel)
+                #set($formModel = $jnpfkey)
+                #set($model = "${filed.substring(0,1).toUpperCase()}${filed.substring(1)}")
+                #set($form="vo.get"+"${list}"+"()")
+                #code7List(false,$form,$model,$list,$formModel)
+            #end
+        }
+        #end
+        }
+        return ActionResult.success(vo);
+    }
+
+    @PostMapping("/{id}")
+    public ActionResult create(@RequestBody @Valid Map<String,Object> data,@PathVariable("id") String id) throws DataException,WorkFlowException {
+        Map<String,Object> dataAll = JsonUtil.entityToMap(${table.serviceName.substring(0,1).toLowerCase()}${table.serviceName.substring(1)}.uniqueAll(data,0));
+        dataAll.put("flowtaskid",id);
+        ${modelName}Form ${formName}Form = JsonUtil.getJsonToBean(dataAll,${modelName}Form.class);
+        UserInfo userInfo = userProvider.get();
+        #foreach($jnpfkey in ${system})
+            #set($vModel = "${jnpfkey.vModel}")
+            #if($vModel)
+            #set($model = "${vModel.substring(0,1).toUpperCase()}${vModel.substring(1)}")
+            #set($form="${formName}"+"Form")
+            #set($formModel=${jnpfkey})
+                #code7Data('create',$form,$model,$formModel)
+            #end
+        #end
+        ${table.entityName} entity = JsonUtil.getJsonToBean(${formName}Form, ${modelName}Entity.class);
+        #foreach($grid in ${child})
+            #set($list = "${grid.className.substring(0,1).toUpperCase()}${grid.className.substring(1).toLowerCase()}")
+        List<${grid.className}Entity> ${grid.className}List = JsonUtil.getJsonToList(${formName}Form.get${list}List(),${grid.className}Entity.class);
+        for(${grid.className}Entity entitys : ${grid.className}List){
+            #foreach($jnpfkey in ${grid.childList})
+                #set($fieLdsModel = ${jnpfkey.fieLdsModel})
+                #set($childModels = ${fieLdsModel.vModel})
+                #if($childModels)
+                #set($model = "${childModels.substring(0,1).toUpperCase()}${childModels.substring(1)}")
+                #set($formModel=${fieLdsModel})
+                #set($form="entitys")
+                    #code7Data('create',$form,$model,$formModel)
+                #end
+            #end
+        }
+        #end
+        #foreach($grid in ${tableNameAll})
+            #set($list = "${grid.className.substring(0,1).toUpperCase()}${grid.className.substring(1).toLowerCase()}")
+            #foreach($childList in $grid.childList)
+                #set($formMastTableModel = $childList.formMastTableModel)
+                #set($form="${formName}"+"Form.get"+"${list}"+"()")
+                #set($formModel=${formMastTableModel.mastTable.fieLdsModel})
+                #set($fieldAll = $formMastTableModel.field)
+                #set($model = "${fieldAll.substring(0,1).toUpperCase()}${fieldAll.substring(1)}")
+                #code7Data('create',$form,$model,$formModel)
+            #end
+        ${grid.className}Entity ${grid.className} = JsonUtil.getJsonToBean(${formName}Form.get${list}(),${grid.className}Entity.class);
+        #end
+        String flowId = ${formName}Form.getFlowId();
+        String status = ${formName}Form.getStatus();
+        Map<String, List<String>> candidateList = ${formName}Form.getCandidateList();
+        ${table.serviceName.substring(0,1).toLowerCase()}${table.serviceName.substring(1)}.create(entity#foreach($grid in ${child}),${grid.className}List#end#foreach($grid in ${tableNameAll}), ${grid.className}#end,status,flowId,candidateList,dataAll);
+        return ActionResult.success("0".equals(${formName}Form.getStatus())?"提交成功":"保存成功");
+    }
+
+    @PutMapping("/{id}")
+    public ActionResult update(@PathVariable("id") String id,@RequestBody @Valid Map<String,Object> data) throws DataException,WorkFlowException{
+        String taskId = id;
+        Map<String,Object> dataAll = JsonUtil.entityToMap(${table.serviceName.substring(0,1).toLowerCase()}${table.serviceName.substring(1)}.uniqueAll(data,1));
+        dataAll.put("flowtaskid",id);
+        ${modelName}Form ${formName}Form = JsonUtil.getJsonToBean(dataAll,${modelName}Form.class);
+        ${table.entityName} info = ${table.serviceName.substring(0,1).toLowerCase()}${table.serviceName.substring(1)}.getInfo(taskId);
+        if(info!=null){
+        UserInfo userInfo = userProvider.get();
+        #foreach($jnpfkey in ${system})
+            #set($vModel = "${jnpfkey.vModel}")
+            #if($vModel)
+            #set($model = "${vModel.substring(0,1).toUpperCase()}${vModel.substring(1)}")
+            #set($form="${formName}"+"Form")
+            #set($formModel=${jnpfkey})
+                #code7Data('update',$form,$model,$formModel)
+            #end
+        #end
+		${table.entityName} entity = JsonUtil.getJsonToBean(${formName}Form, ${modelName}Entity.class);
+            #foreach($grid in ${child})
+                #set($list = "${grid.className.substring(0,1).toUpperCase()}${grid.className.substring(1).toLowerCase()}")
+        List<${grid.className}Entity> ${grid.className}List = JsonUtil.getJsonToList(${formName}Form.get${list}List(),${grid.className}Entity.class);
+        for(${grid.className}Entity entitys : ${grid.className}List){
+            #foreach($jnpfkey in ${grid.childList})
+                #set($fieLdsModel = ${jnpfkey.fieLdsModel})
+                #set($childModels = ${fieLdsModel.vModel})
+                #if($childModels)
+                #set($model = "${childModels.substring(0,1).toUpperCase()}${childModels.substring(1)}")
+                #set($formModel=${fieLdsModel})
+                #set($form="entitys")
+                    #code7Data('update',$form,$model,$formModel)
+                #end
+            #end
+        }
+            #end
+            #foreach($grid in ${tableNameAll})
+                #set($list = "${grid.className.substring(0,1).toUpperCase()}${grid.className.substring(1).toLowerCase()}")
+                #foreach($childList in $grid.childList)
+                    #set($formMastTableModel = $childList.formMastTableModel)
+                    #set($form="${formName}"+"Form.get"+"${list}"+"()")
+                    #set($formModel=${formMastTableModel.mastTable.fieLdsModel})
+                    #set($fieldAll = $formMastTableModel.field)
+                    #set($model = "${fieldAll.substring(0,1).toUpperCase()}${fieldAll.substring(1)}")
+                    #code7Data('update',$form,$model,$formModel)
+                #end
+        ${grid.className}Entity ${grid.className} = JsonUtil.getJsonToBean(${formName}Form.get${list}(),${grid.className}Entity.class);
+            #end
+		String flowId = ${formName}Form.getFlowId();
+		String status = ${formName}Form.getStatus();
+        Map<String, List<String>> candidateList = ${formName}Form.getCandidateList();
+		${table.serviceName.substring(0,1).toLowerCase()}${table.serviceName.substring(1)}.update(info.get${peimaryKeyName}(),entity#foreach($grid in ${child}),${grid.className}List#end#foreach($grid in ${tableNameAll}), ${grid.className}#end,status,flowId,candidateList,dataAll);
+		return ActionResult.success("0".equals(${formName}Form.getStatus())?"提交成功":"保存成功");
+        }
+        return ActionResult.fail("更新失败，数据不存在");
+    }
+
+}

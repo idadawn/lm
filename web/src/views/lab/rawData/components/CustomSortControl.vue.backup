@@ -1,0 +1,266 @@
+<template>
+  <div class="custom-sort-control">
+    <a-button @click="openEditor">
+      <SortAscendingOutlined />
+      自定义排序
+    </a-button>
+
+    <div v-if="sortRules.length > 0" class="sort-rules-display">
+      <span class="rules-label">当前排序：</span>
+      <span class="rules-content">
+        <template v-for="(rule, index) in displayRules" :key="index">
+          <span v-if="index > 0" class="separator">→</span>
+          <a-tooltip :title="getRuleTooltip(rule)">
+            <span class="rule-item">
+              {{ rule.label }}
+              <span class="order-icon">{{ rule.order === 'asc' ? '↑' : '↓' }}</span>
+            </span>
+          </a-tooltip>
+        </template>
+      </span>
+      <a-button
+        type="link"
+        size="small"
+        @click="clearSort"
+        class="clear-btn"
+      >
+        清除
+      </a-button>
+    </div>
+    <div v-else class="sort-rules-placeholder">
+      默认排序：检测日期→炉号→卷号→分卷号→产线
+    </div>
+
+    <CustomSortEditor
+      v-model:visible="editorVisible"
+      v-model:sortRules="sortRules"
+      @change="handleSortChange"
+    />
+  </div>
+</template>
+
+<script lang="ts" setup>
+import { ref, computed, watch } from 'vue';
+import { SortAscendingOutlined } from '@ant-design/icons-vue';
+import CustomSortEditor from './CustomSortEditor.vue';
+
+interface SortRule {
+  field: string;
+  order: 'asc' | 'desc';
+}
+
+interface FieldMap {
+  value: string;
+  label: string;
+}
+
+interface Props {
+  modelValue?: SortRule[];
+}
+
+interface Emits {
+  (e: 'update:modelValue', value: SortRule[]): void;
+  (e: 'change', value: SortRule[]): void;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  modelValue: () => [],
+});
+
+const emit = defineEmits<Emits>();
+
+// 字段映射
+const fieldMap: FieldMap[] = [
+  { value: 'prodDate', label: '检测日期' },
+  { value: 'furnaceNoParsed', label: '炉号' },
+  { value: 'coilNo', label: '卷号' },
+  { value: 'subcoilNo', label: '分卷号' },
+  { value: 'lineNo', label: '产线' },
+  { value: 'productSpecName', label: '产品规格' },
+  { value: 'creatorTime', label: '录入日期' },
+];
+
+// 排序规则
+const sortRules = ref<SortRule[]>(props.modelValue || []);
+
+// 编辑器可见性
+const editorVisible = ref(false);
+
+// 显示的排序规则
+const displayRules = computed(() => {
+  return sortRules.value.map(rule => {
+    const field = fieldMap.find(f => f.value === rule.field);
+    return {
+      ...rule,
+      label: field?.label || rule.field,
+    };
+  });
+});
+
+// 打开编辑器
+function openEditor() {
+  editorVisible.value = true;
+}
+
+// 清除排序
+function clearSort() {
+  sortRules.value = [];
+  emit('update:modelValue', []);
+  emit('change', []);
+}
+
+// 处理排序变化
+function handleSortChange(newRules: SortRule[]) {
+  sortRules.value = newRules;
+  emit('update:modelValue', newRules);
+  emit('change', newRules);
+}
+
+// 获取规则提示
+function getRuleTooltip(rule: SortRule & { label: string }) {
+  return `${rule.label} - ${rule.order === 'asc' ? '正序' : '倒序'}`;
+}
+
+// 监听外部值变化
+watch(
+  () => props.modelValue,
+  (newValue) => {
+    sortRules.value = newValue || [];
+  },
+  { deep: true }
+);
+</script>
+
+<style lang="less" scoped>
+.custom-sort-control {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0;
+
+  * {
+    box-sizing: border-box;
+  }
+
+  .sort-rules-display {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background-color: #f5f5f5;
+    border-radius: 6px;
+    font-size: 14px;
+
+    .rules-label {
+      color: #666;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .rules-content {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px;
+
+      .rule-item {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 6px;
+        background-color: #e6f7ff;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+
+        &:hover {
+          background-color: #bae7ff;
+        }
+
+        .order-icon {
+          margin-left: 4px;
+          font-size: 12px;
+          color: #1890ff;
+        }
+      }
+
+      .separator {
+        color: #999;
+      }
+    }
+
+    .clear-btn {
+      flex-shrink: 0;
+      margin-left: 8px;
+      color: #999;
+
+      &:hover {
+        color: #ff4d4f;
+      }
+    }
+  }
+
+  .sort-rules-placeholder {
+    color: #999;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .custom-sort-control {
+    flex-direction: column;
+    align-items: stretch;
+
+    .sort-rules-display {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+  }
+}
+</style>
+
+<style lang="less">
+// 修复tooltip
+.ant-tooltip {
+  max-width: 200px;
+  z-index: 1070;
+
+  .ant-tooltip-inner {
+    word-wrap: break-word;
+  }
+}
+</style>
+<style lang="less">
+// 全局修复
+* {
+  box-sizing: border-box;
+}
+</style>
+<style lang="less">
+// 修复清除按钮内边距
+.sort-rules-display {
+  .clear-btn {
+    padding: 0 4px;
+    height: auto;
+    line-height: 1;
+  }
+}
+</style>
+<style lang="less">
+// 修复按钮高度
+.custom-sort-control {
+  .ant-btn {
+    height: 32px;
+    padding: 4px 12px;
+
+    &:not(.ant-btn-link) {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+  }
+}
+</style>

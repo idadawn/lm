@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<AllowUnsafeBlocks>False</AllowUnsafeBlocks>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <Compile Remove="Contracts\OContracts\EntityBase.cs" />
+	  <Compile Remove="Contracts\OContracts\ICreatorTime.cs" />
+	  <Compile Remove="Contracts\OContracts\IDeleteTime.cs" />
+	  <Compile Remove="Contracts\OContracts\IEntity.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Aspose.Cells" Version="23.5.0" />
+		<PackageReference Include="Aspose.Words" Version="23.5.0" />
+		<PackageReference Include="FreeSpire.Office" Version="4.3.1" />
+		<PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
+		<PackageReference Include="System.Management" Version="8.0.0" />
+		<PackageReference Include="NPOI" Version="2.5.5" />
+		<PackageReference Include="UAParser" Version="3.1.47" />
+		<PackageReference Include="Yitter.IdGenerator" Version="1.0.14" />
+		<PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="2.88.0" />
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <ProjectReference Include="..\..\..\..\framework\Poxiao.Extras.Authentication.JwtBearer\Poxiao.Extras.Authentication.JwtBearer.csproj" />
+	  <ProjectReference Include="..\..\..\..\framework\Poxiao.Extras.DatabaseAccessor.SqlSugar\Poxiao.Extras.DatabaseAccessor.SqlSugar.csproj" />
+	  <ProjectReference Include="..\..\..\..\framework\Poxiao.Extras.ObjectMapper.Mapster\Poxiao.Extras.ObjectMapper.Mapster.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Update="Roslynator.Analyzers" Version="4.1.0">
+	    <PrivateAssets>all</PrivateAssets>
+	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	  </PackageReference>
+	  <PackageReference Update="StyleCop.Analyzers" Version="1.1.118">
+	    <PrivateAssets>all</PrivateAssets>
+	    <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+	  </PackageReference>
+	</ItemGroup>
+
+</Project>

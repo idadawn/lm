@@ -1,0 +1,105 @@
+#set($modelPath = "model."+${context.modelPathName})
+#set($mastTableName = $context.mastTableName)
+package ${context.package}.${modelPath};
+
+import lombok.Data;
+import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.ArrayList;
+import java.math.BigDecimal;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.alibaba.fastjson.annotation.JSONField;
+#foreach($html in ${context.children})
+    #set($jnpfkey = "${context.config.jnpfKey}")
+import ${context.package}.${modelPath}.${html.className}Model;
+#end
+#foreach($masetkey in $mastTableName.entrySet())
+    #set($table = $masetkey.value)
+    #set($childModel = "import ${context.package}.${modelPath}.${table}Model;")
+${childModel}
+#end
+
+/**
+ *
+ * ${context.genInfo.description}
+ * 版本: ${context.genInfo.version}
+ * 版权: ${context.genInfo.copyright}
+ * 作者： ${context.genInfo.createUser}
+ * 日期： ${context.genInfo.createDate}
+ */
+@Data
+public class ${context.className}Form  {
+
+    #foreach($fieLdsModel in ${context.fields})
+        #set($html = $fieLdsModel.formColumnModel.fieLdsModel)
+        #set($vModel = "${html.vModel}")
+        #set($config = $html.config)
+        #set($jnpfkey = "${config.jnpfKey}")
+        #set($fieldName=${config.label})
+        #if(${vModel})
+            #if(${jnpfkey}=='slider')
+    /** ${fieldName} **/
+    @JsonProperty("${vModel}")
+    private Integer ${vModel};
+
+            #elseif(${jnpfkey}=='date')
+    /** ${fieldName} **/
+    @JsonProperty("${vModel}")
+    private Long  ${vModel};
+
+            #else
+    /** ${fieldName} **/
+    @JsonProperty("${vModel}")
+    private String ${vModel};
+
+            #end
+        #end
+    #end
+    #foreach($masetkey in $mastTableName.entrySet())
+        #set($table = $masetkey.value)
+        #set($tableModel = "${table.toLowerCase()}")
+    /** 表单子表 **/
+    @JsonProperty("${tableModel}")
+    private ${table}Model ${tableModel} = new ${table}Model();
+
+    #end
+    #foreach($html in ${context.children})
+        #set($className = "${html.className.toLowerCase()}")
+    /** 子表数据 **/
+    @JsonProperty("${className}List")
+    private List<${html.className}Model> ${className}List  = new ArrayList<>();
+
+    #end
+
+    /** 加签审批人 **/
+    @JsonProperty("freeapproveruserid")
+    private String freeapproveruserid;
+
+    /** 候选人 **/
+    @JsonProperty("candidateList")
+    private Map<String, List<String>> candidateList;
+
+    /** 状态 **/
+    @JsonProperty("status")
+    private String status;
+
+    /** 引擎id **/
+    @JsonProperty("flowId")
+    private String flowId;
+
+    /** 任务主键 **/
+    @JsonProperty("flowtaskid")
+    private String flowtaskid;
+
+    /** 版本 **/
+    @JsonProperty("version")
+    private Integer version;
+
+    /** 抄送人 **/
+    @JsonProperty("copyIds")
+    private String copyIds;
+
+
+}

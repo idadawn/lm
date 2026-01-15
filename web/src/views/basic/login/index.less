@@ -1,0 +1,254 @@
+@prefix-cls: ~'@{namespace}-login-container';
+@countdown-prefix-cls: ~'@{namespace}-countdown-input';
+@dark-bg: #293146;
+
+html[data-theme='dark'] {
+  .@{prefix-cls} {
+    background-color: @dark-bg;
+    .login-right-panel {
+        background-color: @dark-bg;
+    }
+    
+    // Dark mode form inputs
+    .ant-input,
+    .ant-input-affix-wrapper,
+    .ant-input-password {
+      background-color: #232a3b;
+    }
+
+    .ant-btn:not(.ant-btn-link):not(.ant-btn-primary) {
+      border: 1px solid #4a5569;
+    }
+
+    &-form {
+      background: transparent !important;
+    }
+    
+    input.fix-auto-fill,
+    .fix-auto-fill input {
+      -webkit-box-shadow: 0 0 0 1000px #232a3b inset !important;
+    }
+    input:-webkit-autofill {
+      -webkit-box-shadow: 0 0 0 1000px #232a3b inset !important;
+      -webkit-text-fill-color: #c9d1d9 !important;
+    }
+    .ant-input-affix-wrapper > input.ant-input:focus {
+        box-shadow: 0 0 0 1000px #232a3b inset !important;
+        -webkit-text-fill-color: #c9d1d9 !important;
+        caret-color: #c9d1d9;
+        border-color: unset !important;
+    }
+    
+     input:-internal-autofill-previewed,
+    input:-internal-autofill-selected {
+      -webkit-text-fill-color: #232a3b;
+      transition: background-color 5000s ease-out 0.2s;
+    }
+  }
+}
+
+.@{prefix-cls} {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: row; // Split screen layout
+  
+  // Left Panel - Image and Text
+  .login-left-panel {
+      width: 60%;
+      height: 100%;
+      background-image: url(/resource/img/login-split-bg.png);
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: cover;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      
+      .login-text-container {
+          padding-left: 10%;
+          color: #fff;
+          
+          .text-title {
+              font-size: 40px;
+              font-weight: bold;
+              margin-bottom: 20px;
+              letter-spacing: 2px;
+          }
+          
+          .text-subtitle {
+              font-size: 24px;
+              margin-bottom: 10px;
+              opacity: 0.9;
+          }
+           
+          .text-english {
+              font-size: 16px;
+              opacity: 0.8;
+              font-style: italic;
+          }
+      }
+      
+      // Blue overlay if needed, though image likely has it. 
+      // Assuming image is pre-styled as per user request.
+  }
+
+  // Right Panel - Form
+  .login-right-panel {
+      width: 40%;
+      height: 100%;
+      background: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      
+      .copyright {
+        color: #8c8c8c;
+        font-size: 12px;
+        position: absolute;
+        bottom: 30px;
+        text-align: center;
+        width: 100%;
+      }
+  }
+
+  // Common Form Styles
+  .ant-input-affix-wrapper > input.ant-input:focus {
+    box-shadow: 0 0 0 1000px #fff inset !important;
+  }
+
+  .@{prefix-cls}-form {
+    width: 400px; 
+    // Removed specific padding that centered it before, now handled by flexbox
+    
+    .ant-image,
+    .login-logo {
+      width: 100%;
+      height: 36px;
+      margin: 0 auto 20px;
+    }
+  }
+
+  // Original Login Content styles used by LoginForm components
+    .login-cap {
+      font-size: 24px;
+      line-height: 33px;
+      margin-bottom: 5px;
+      font-weight: bold;
+      color: #333;
+    }
+    
+    .login-sub-title {
+      margin-bottom: 40px;
+      line-height: 17px;
+      color: #8c8c8c;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .sso-login-btn {
+      width: 100%;
+      font-size: 16px;
+      margin-top: 100px;
+    }
+
+    // Social icons
+     .socials-box {
+        margin-top: 20px;
+        width: 100%;
+      }
+
+  .socials-list {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    .socials-item {
+      width: 32px;
+      height: 32px;
+      line-height: 32px;
+      text-align: center;
+      cursor: pointer;
+      border-radius: 50%;
+      margin: 0 12px;
+      i {
+        font-size: 22px;
+        color: #b9b9b9;
+      }
+      &:hover {
+        background-color: @primary-color;
+        i {
+          color: #fff;
+        }
+      }
+    }
+  }
+  
+  .sms-input .ant-input {
+      min-width: 0 !important;
+  }
+  
+  .sms-right {
+    width: 120px;
+    height: 40px;
+    cursor: pointer;
+    .codeImg {
+      width: 100%;
+      height: 40px;
+    }
+  }
+}
+
+// Modal styles
+.login-code-popover {
+  .ant-popover-inner-content {
+    padding: 12px;
+  }
+  .code-content {
+    padding: 0;
+    .qrcode {
+      display: block;
+      width: 122px;
+      height: 122px;
+    }
+    .code-tip {
+      text-align: center;
+      font-size: 14px;
+      font-weight: 400;
+      line-height: 25px;
+      color: @text-color-label;
+    }
+  }
+}
+.jnpf-login-code-modal {
+  .ant-modal-header {
+    border-bottom: none !important;
+    height: 10px !important;
+  }
+  .wechat-code-container {
+    text-align: center;
+    padding-bottom: 30px;
+    .cap {
+      line-height: 38px;
+      font-size: 26px;
+      color: #000721;
+    }
+    .wechat-code-img {
+      display: inline-block;
+      width: 182px;
+      height: 182px;
+      margin: 40px 0 44px;
+    }
+    .tip {
+      line-height: 30px;
+      font-size: 16px;
+      color: #666;
+      margin-bottom: 6px;
+      font-weight: 400;
+    }
+  }
+}

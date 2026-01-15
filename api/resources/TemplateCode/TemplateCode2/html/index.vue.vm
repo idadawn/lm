@@ -1,0 +1,1661 @@
+#parse("macro/batchPrint.vm")
+
+<template>
+    #set($sign='$')
+    #set($doc='.')
+    #set($needDynamic=["treeSelect","cascader"])
+    #set($needToJsonStatic = ["cascader","checkbox"])
+    #set($needToJsonMultiple = ["select","treeSelect"])
+
+    <div class="JNPF-common-layout">
+        #if(${context.columnData.type}==2)
+                <div class="JNPF-common-layout-left">
+                    #if(${context.columnData.treeTitle})
+                        <div class="JNPF-common-title">
+                            <h2>${context.columnData.treeTitle}</h2>
+                            #if(${context.columnData.treeSynType} == 0)
+                                <el-dropdown>
+                                    <el-link icon="icon-ym icon-ym-mpMenu" :underline="false" />
+                                    <el-dropdown-menu slot="dropdown">
+                                        <el-dropdown-item @click.native="toggleTreeExpand(true)">展开全部</el-dropdown-item>
+                                        <el-dropdown-item @click.native="toggleTreeExpand(false)">折叠全部</el-dropdown-item>
+                                    </el-dropdown-menu>
+                                </el-dropdown>
+                            #end
+                        </div>
+                    #end
+                    #if(${context.columnData.hasTreeQuery} == true &&  ${context.columnData.treeSynType} == 0)
+                        <div class="JNPF-common-tree-search-box">
+                            <el-input placeholder="输入关键字" v-model="keyword" suffix-icon="el-icon-search" clearable />
+                        </div>
+                    #end
+
+                   <el-tree :data="treeData"
+                            class="JNPF-common-el-tree" highlight-current
+                            ref="treeBox" :expand-on-click-node="false" @node-click="handleNodeClick"
+                            node-key="${context.columnData.treePropsValue}"
+                            :props="treeProps"
+                       #if(${context.columnData.treeSynType} == 0 || ${context.columnData.treeDataSource} != 'api')
+                            :default-expand-all="expandsTree"
+                            :filter-node-method="filterNode"
+                            :lazy="false"
+                       #else
+                            :default-expand-all="false"
+                            :lazy="true"
+                            :load="loadNode"
+                       #end
+                            v-if="refreshTree">
+        <span class="custom-tree-node" slot-scope="{ node, data }">
+          <i :class="data.icon"></i>
+          <span class="text">{{node.label}}</span>
+        </span>
+                    </el-tree>
+                </div>
+            #end
+
+        <div class="JNPF-common-layout-center">
+            #set($searchSize=$!{context.searchList})
+            #if($searchSize.size()>0)
+            <el-row class="JNPF-common-search-box" :gutter="16">
+                <el-form @submit.native.prevent>
+                    #foreach($se in ${context.searchList})
+                        #set($serchFiled=${se.vModel})
+                        #if(${foreach.index}<3 && $searchSize.size()>0)
+                        <el-col :span="6">
+                                <el-form-item label="$se.config.label">
+                                    #set($jk=${se.config.jnpfKey})
+                                    #set($name="${se.props.props.label}")
+                                    #set($id="${se.props.props.value}")
+                                    #if($jk=='checkbox'||$jk=='select'||$jk=='radio')
+                                        #set($placeholder = '请选择')
+                                        #if($!{se.placeholder})
+                                            #set($placeholder = ${se.placeholder})
+                                        #end
+                                        <el-select v-model="query.${serchFiled}" placeholder="${placeholder}" #if(${se.searchMultiple} =='true') multiple #end
+                                                   clearable>
+                                            <el-option v-for="(item, index) in ${serchFiled}Options" :key="index"
+                                                       :label="item.${name}" :value="item.${id}"
+                                                       :disabled="item.disabled"></el-option>
+                                        </el-select>
+                                    #elseif($jk=='date')
+                                        #set($datetypeStr= "datetimerange")
+                                        #if($se.type=="year")
+                                            #set($datetypeStr= "monthrange")
+                                        #else
+                                            #set($datetypeStr= "$!{se.type}range")
+                                        #end
+                                        <el-date-picker v-model="query.${serchFiled}" type="$datetypeStr"
+                                                        value-format="$!{se.valueformat}" format="$!{se.format}" start-placeholder="开始日期"
+                                                        end-placeholder="结束日期" >
+                                        </el-date-picker>
+                                    #elseif($jk=='time')
+                                        <el-time-picker v-model="query.${serchFiled}" start-placeholder="开始时间" end-placeholder="结束时间"
+                                                        clearable value-format="$!{se.valueformat}" format="$!{se.format}" is-range
+                                        />
+                                    #elseif($jk=='numInput'||$jk=='calculate')
+                                        <num-range v-model="query.${serchFiled}"></num-range>
+                                    #elseif($jk=='createUser'||$jk=='modifyUser')
+                                        <userSelect v-model="query.${serchFiled}" placeholder="请选择" />
+                                    #elseif($jk=='currDept')
+                                        <depSelect v-model="query.${serchFiled}" placeholder="请选择"  :lastLevel="false"/>
+                                    #elseif($jk=='currOrganize')
+                                        <comSelect v-model="query.${serchFiled}" placeholder="请选择"  :lastLevel="false" #if(${se.searchMultiple} =='true') multiple #end/>
+                                    #elseif($jk=='currPosition')
+                                        <posSelect v-model="query.${serchFiled}" placeholder="请选择" #if(${se.searchMultiple} =='true') multiple #end/>
+                                    #elseif($jk=='comInput' || $jk=='textarea' || $jk=='JNPFText' || $jk=='billRule')
+                                        <el-input v-model="query.${serchFiled}" placeholder="请输入" clearable>  </el-input>
+                                    #elseif($jk=='createTime'||$jk=='modifyTime')
+                                        <el-date-picker v-model="query.${serchFiled}" value-format="timestamp" format="yyyy-MM-dd"
+                                                        start-placeholder="开始日期" end-placeholder="结束日期"  type="daterange" />
+                                    #elseif($jk=='treeSelect'||$jk=='cascader')
+                                        <${se.config.tag}  v-model="query.${serchFiled}" placeholder="$!{se.placeholder}" :options ="${serchFiled}Options" :props="${serchFiled}Props"
+                                        clearable/>
+                                     #elseif($jk=='address')
+                                        <JNPF-Address  v-model="query.${serchFiled}" placeholder="$!{se.placeholder}" :level="$!{se.level}"
+                                        clearable/>
+                                    #else
+                                        <${se.config.tag}
+                                        #if($se.selectType) selectType="$se.selectType" #end
+                                        #if($se.selectType == 'custom')
+                                            #if($se.ableDepIds) :ableDepIds = '$se.ableDepIds' #end
+                                            #if($se.ablePosIds) :ablePosIds = '$se.ablePosIds' #end
+                                            #if($se.ableUserIds) :ableUserIds = '$se.ableUserIds' #end
+                                            #if($se.ableRoleIds) :ableRoleIds = '$se.ableRoleIds' #end
+                                            #if($se.ableGroupIds) :ableGroupIds = '$se.ableGroupIds' #end
+                                            #if($se.ableIds) :ableIds = '$se.ableIds' #end
+                                        #end
+                                        v-model="query.${serchFiled}" placeholder="$!{se.placeholder}
+                                        " clearable #if(${se.searchMultiple} =='true') multiple #end />
+                                    #end
+                                </el-form-item>
+                            </el-col>
+                        #end
+                    #end
+                    #if($searchSize.size()>3)
+                        <template v-if="showAll">
+                            #foreach($se in ${context.searchList})
+                                #set($serchFiled=${se.vModel})
+                                #if(${foreach.index}>=3)
+                                    <el-col :span="6">
+                                        <el-form-item label="$se.config.label">
+                                            #set($jk=${se.config.jnpfKey})
+                                            #set($name="${se.props.props.label}")
+                                            #set($id="${se.props.props.value}")
+                                            #if($jk=='checkbox'||$jk=='select'||$jk=='radio')
+                                                #set($placeholder = '请选择')
+                                                #if($!{se.placeholder})
+                                                    #set($placeholder = ${se.placeholder})
+                                                #end
+                                                <el-select v-model="query.${serchFiled}" placeholder="${placeholder}"
+                                                           clearable #if(${se.searchMultiple} =='true') multiple #end>
+                                                    <el-option v-for="(item, index) in ${serchFiled}Options" :key="index"
+                                                               :label="item.${name}" :value="item.${id}"
+                                                               :disabled="item.disabled"></el-option>
+                                                </el-select>
+                                            #elseif($jk=='date')
+                                                #set($datetypeStr= "datetimerange")
+                                                #if($se.type=="year")
+                                                    #set($datetypeStr= "monthrange")
+                                                #else
+                                                    #set($datetypeStr= "$!{se.type}range")
+                                                #end
+                                                <el-date-picker v-model="query.${serchFiled}" type="$datetypeStr"
+                                                                value-format="$!{se.valueformat}" format="$!{se.format}" start-placeholder="开始日期"
+                                                                end-placeholder="结束日期" >
+                                                </el-date-picker>
+                                            #elseif($jk=='time')
+                                                <el-time-picker v-model="query.${serchFiled}" start-placeholder="开始时间" end-placeholder="结束时间"
+                                                                clearable value-format="$!{se.valueformat}" format="$!{se.format}" is-range
+                                                />
+                                            #elseif($jk=='numInput'||$jk=='calculate')
+                                                <num-range v-model="query.${serchFiled}"></num-range>
+                                            #elseif($jk=='createUser'||$jk=='modifyUser')
+                                                <userSelect v-model="query.${serchFiled}" placeholder="请选择" />
+                                            #elseif($jk=='currDept')
+                                                <depSelect v-model="query.${serchFiled}" placeholder="请选择"  :lastLevel="false"/>
+                                            #elseif($jk=='currOrganize')
+                                                <comSelect v-model="query.${serchFiled}" placeholder="请选择"  :lastLevel="false" #if(${se.searchMultiple} =='true') multiple #end/>
+                                            #elseif($jk=='currPosition')
+                                                <posSelect v-model="query.${serchFiled}" placeholder="请选择" #if(${se.searchMultiple} =='true') multiple #end/>
+                                            #elseif($jk=='comInput' || $jk=='textarea' || $jk=='JNPFText' || $jk=='billRule')
+                                                <el-input v-model="query.${serchFiled}" placeholder="请输入" clearable>  </el-input>
+                                            #elseif($jk=='createTime'||$jk=='modifyTime')
+                                                <el-date-picker v-model="query.${serchFiled}" value-format="timestamp" format="yyyy-MM-dd"
+                                                                start-placeholder="开始日期" end-placeholder="结束日期"  type="daterange" />
+                                            #elseif($jk=='treeSelect'||$jk=='cascader')
+                                                <${se.config.tag}  v-model="query.${serchFiled}" placeholder="$!{se.placeholder}" :options ="${serchFiled}Options" :props="${serchFiled}Props"
+                                                clearable/>
+                                            #elseif($jk=='address')
+                                                <JNPF-Address  v-model="query.${serchFiled}" placeholder="$!{se.placeholder}" :level="$!{se.level}"
+                                                               clearable/>
+                                            #else
+                                                <${se.config.tag}
+                                                #if($se.selectType) selectType="$se.selectType" #end
+                                                #if($se.selectType == 'custom')
+                                                    #if($se.ableDepIds) :ableDepIds = '$se.ableDepIds' #end
+                                                    #if($se.ablePosIds) :ablePosIds = '$se.ablePosIds' #end
+                                                    #if($se.ableUserIds) :ableUserIds = '$se.ableUserIds' #end
+                                                    #if($se.ableRoleIds) :ableRoleIds = '$se.ableRoleIds' #end
+                                                    #if($se.ableGroupIds) :ableGroupIds = '$se.ableGroupIds' #end
+                                                    #if($se.ableIds) :ableIds = '$se.ableIds' #end
+                                                #end
+                                                v-model="query.${serchFiled}" placeholder="$!{se.placeholder}"  clearable
+                                                #if(${se.searchMultiple} =='true') multiple #end
+                                                #if($jk == 'autoComplete')
+                                                    relationField="${se.relationField}"
+                                                    interfaceId="${se.interfaceId}"
+                                                    :templateJson="interfaceRes.${serchFiled}"
+                                                    :total="${se.total}"
+                                                    :formData="query.${serchFiled}"
+                                                #end/>
+                                            #end
+                                        </el-form-item>
+                                    </el-col>
+                                #end
+                            #end
+                        </template>
+                    #end
+                    <el-col :span="6">
+                        <el-form-item>
+                            <el-button type="primary" icon="el-icon-search" @click="search()">查询</el-button>
+                            <el-button icon="el-icon-refresh-right" @click="reset()">重置</el-button>
+                            #if($searchSize.size()>3)
+                                <el-button type="text" icon="el-icon-arrow-down" @click="showAll=true" v-if="!showAll">
+                                    展开
+                                </el-button>
+                                <el-button type="text" icon="el-icon-arrow-up" @click="showAll=false" v-else>
+                                    收起
+                                </el-button>
+                            #end
+                        </el-form-item>
+                    </el-col>
+                </el-form>
+            </el-row>
+            #end
+            <div class="JNPF-common-layout-main JNPF-flex-main">
+                <div class="JNPF-common-head">
+                    <div>
+                        #set($btsSize=$!{context.columnData.btnsList})
+                        #if($btsSize.size()>0)
+                            #foreach($bts in ${context.columnData.btnsList})
+                                #if(${bts.value}=='add')
+                                    <el-button type="primary" icon="${bts.icon}" #if(${context.columnData.useBtnPermission}) v-has="'btn_${bts.value}'" #end @click="addOrUpdateHandle()">${bts.label}
+                                    </el-button>
+                                #elseif(${bts.value}=='print')
+                                    <el-button type="text" icon="${bts.icon}" @click="print()" #if(${context.columnData.useBtnPermission}) v-has="'btn_${bts.value}'" #end>${bts.label}
+                                    </el-button>
+                                #elseif(${bts.value}=='upload')
+                                    <el-button type="text" icon="${bts.icon}" @click="handelUpload()" #if(${context.columnData.useBtnPermission}) v-has="'btn_${bts.value}'" #end>${bts.label}
+                                    </el-button>
+                                #elseif(${bts.value}=='download')
+                                    <el-button type="text" icon="${bts.icon}" @click="exportData()" #if(${context.columnData.useBtnPermission}) v-has="'btn_${bts.value}'" #end>${bts.label}
+                                    </el-button>
+                                #elseif(${bts.value}=='batchRemove')
+                                    <el-button type="text" icon="${bts.icon}" @click="handleBatchRemoveDel()" #if(${context.columnData.useBtnPermission}) v-has="'btn_${bts.value}'" #end>${bts.label}
+                                    </el-button>
+                                #elseif(${bts.value}=='batchPrint')
+                                  <el-button type="text" icon="${bts.icon}" @click="printDialog()" #if(${context.columnData.useBtnPermission}) v-has="'btn_${bts.value}'" #end>${bts.label}
+                                  </el-button>
+                                #end
+                            #end
+                        #end
+                    </div>
+                    <div class="JNPF-common-head-right">
+                      #if($context.superQuery)
+                        <el-tooltip content="高级查询" placement="top" v-if="true">
+                            <el-link icon="icon-ym icon-ym-filter JNPF-common-head-icon" :underline="false"
+                                     @click="openSuperQuery()" />
+                        </el-tooltip>
+                          #if($context.treeTable==true && $context.treeLazyType==true)
+                              //树形同步加载内容
+                            <el-tooltip effect="dark" content="展开" placement="top">
+                              <el-link v-show="!expandsTree" type="text"
+                                       icon="icon-ym icon-ym-btn-expand JNPF-common-head-icon" :underline="false"
+                                       @click="toggleExpandList()" />
+                            </el-tooltip>
+                            <el-tooltip effect="dark" content="折叠" placement="top">
+                              <el-link v-show="expandsTree" type="text"
+                                       icon="icon-ym icon-ym-btn-collapse JNPF-common-head-icon" :underline="false"
+                                       @click="toggleExpandList()" />
+                            </el-tooltip>
+                          #end
+                        <el-tooltip effect="dark" :content="$t('common.refresh')" placement="top">
+                            <el-link icon="icon-ym icon-ym-Refresh JNPF-common-head-icon" :underline="false"
+                                     @click="initData()" />
+                        </el-tooltip>
+                       #else
+                       <el-tooltip effect="dark" content="刷新" placement="top">
+                           <el-link icon="icon-ym icon-ym-Refresh JNPF-common-head-icon" :underline="false"
+                                    @click="reset()"/>
+                       </el-tooltip>
+                      #end
+                    </div>
+                </div>
+                #set($batchRemove=false)
+                #set($batchPrint=false)
+                #foreach($bts in ${context.columnData.btnsList})
+                    #if(${bts.value}=='batchRemove')
+                        #set($batchRemove=true)
+                    #end
+                    #if(${bts.value}=='batchPrint')
+                        #set($batchPrint=true)
+                    #end
+                    #end
+                <JNPF-table v-loading="listLoading" :data="list" @sort-change='sortChange'  #if(${batchRemove}==true || ${batchPrint}==true) has-c @selection-change="handleSelectionChange"#end
+                    #if($context.childTableStyle == 1) :span-method="arraySpanMethod" #end #if($context.hasFixed == true) :hasNO='false' #end
+                    #if(${context.groupTable} == true) row-key="${context.pKeyName}" :tree-props="{children: 'children', hasChildren: ''}"  default-expand-all  #end
+
+                    #if(${context.treeTable} == true && ${context.treeLazyType} == true) row-key="${context.pKeyName}" :tree-props="{children: 'children', hasChildren: ''}"
+                            :default-expand-all ="expandsTable"  v-if="refreshTable"
+                    #end
+
+                    #if(${context.treeTable} == true && ${context.treeLazyType} == false) row-key="${context.pKeyName}" :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
+                      v-if="refreshTable" :lazy="true" :load="treeLoad" :default-expand-all="false"
+                    #end
+                    #if(${context.configurationTotal} == true) show-summary :summary-method="getTableSummaries" #end>
+                    #set($columnListSize=$!{context.columnDataListFiled})
+                    #set($suffixName = "_name")
+                    #set($groupField = ${context.groupField})
+                    #if($context.childTableStyle == 1 || ${context.groupTable} || ${context.treeTable})
+                        #if($context.hasFixed == true)
+                            <el-table-column type="index" width="50" label="序号" align="center" fixed="left" /> #end
+                        #if($columnListSize.size()>0)
+                            #foreach($columnField in ${context.columnDataListFiled})
+                                #set($columnFieldProp=${columnField.prop})
+                                #if(${columnField.newProp})
+                                    #set($colTableName = ${columnField.columnTableName})
+                                    #set($columnFieldProp = "${columnField.newProp}")
+                                #end
+                                #set($func ="dynamicText")
+                                #if(${columnField.jnpfKey} == 'treeSelect' || ${columnField.jnpfKey} == 'cascader')
+                                    #set($func ="dynamicTreeText")
+                                #end
+                                #if($columnField.columnChildListModel)
+                                    #set($comList = $columnField.columnChildListModel)
+                                    <el-table-column prop="${comList.tableField}"  label="${comList.label}" align="center"  #if(${columnField.width})width="${columnField.width}"#end >
+                                        <el-table-column prop="${comList.tableField}-child-first" width="1px"
+                                                         label-class-name="table-child-first" #if(${context.groupTable} == true) class-name="child-table-box"#end>
+                                            <template slot-scope="scope" v-if="!scope.row.top">
+                                                <div class="child-table-column">
+                                                    <template v-if="!scope.row.${comList.tableField}Expand">
+                                                        <tr v-for="(item, index) in scope.row.${comList.tableField}.slice(0, 3)"
+                                                            class="child-table__row" :key="index">
+                                                            <td class="td-child-first">
+                                                                <div class="cell"></div>
+                                                            </td>
+                                                            #foreach($field in $comList.fields)
+                                                                #set($func ="dynamicText")
+                                                                #if(${field.jnpfKey} == 'treeSelect' || ${field.jnpfKey} == 'cascader')
+                                                                    #set($func ="dynamicTreeText")
+                                                                #end
+                                                                #if(${field.width})
+                                                                <td :style="{width:`${${field.width}-1}px`}" #if(${context.columnData.useColumnPermission}) v-if="jnpf.hasP('${comList.tableField}-${field.prop}')" #end>
+                                                                #else
+                                                                <td class="td-flex-1" #if(${context.columnData.useColumnPermission}) v-if="jnpf.hasP('${comList.tableField}-${field.prop}')" #end>
+                                                                #end
+                                                                <div class="cell">
+                                                                    #set($fncVmodel = "${comList.tableField}_${field.prop}")
+                                                                    #if(${field.jnpfKey} == 'relationForm')
+                                                                        <a @click="toDetail(item.${field.prop}_id,'${field.modelId}')" style="color:#1890ff">
+                                                                          {{item.${field.prop}}}</a>
+                                                                    #elseif(${field.jnpfKey} =='numInput' || ${field.jnpfKey} =='calculate')
+                                                                        <JnpfNumber v-model="item.${field.prop}$suffixName" :thousands="${field.thousands}"/>
+                                                                    #else
+                                                                            {{ item.${field.prop} #if($field.config.dataType =='static') | ${func}($!{fncVmodel}Options) #end }}
+                                                                    #end
+                                                                </div>
+                                                            </td>
+                                                            #end
+                                                        </tr>
+                                                    </template>
+                                                    <template v-if="scope.row.${comList.tableField}Expand">
+                                                        <tr v-for="(item, index) in scope.row.${comList.tableField}" class="child-table__row" :key="index">
+                                                            <td class="td-child-first">
+                                                                <div class="cell"></div>
+                                                            </td>
+                                                            #foreach($field in $comList.fields)
+                                                                #set($func ="dynamicText")
+                                                                #if(${field.jnpfKey} == 'treeSelect' || ${field.jnpfKey} == 'cascader')
+                                                                    #set($func ="dynamicTreeText")
+                                                                #end
+                                                                #if(${field.width})
+                                                                <td :style="{width:`${${field.width}-1}px`}" #if(${context.columnData.useColumnPermission}) v-if="jnpf.hasP('${comList.tableField}-${field.prop}')" #end>
+                                                                #else
+                                                                <td class="td-flex-1" #if(${context.columnData.useColumnPermission}) v-if="jnpf.hasP('${comList.tableField}-${field.prop}')" #end>
+                                                                #end
+                                                                <div class="cell">
+                                                                    #set($fncVmodel = "${comList.tableField}_${field.prop}")
+                                                                    #if(${field.jnpfKey} == 'relationForm')
+                                                                        <a  @click="toDetail(item.${field.prop}_id,'${field.modelId}')"  style="color:#1890ff">
+                                                                          {{item.${field.prop}}}</a>
+                                                                    #elseif(${field.jnpfKey} =='numInput' || ${field.jnpfKey} =='calculate')
+                                                                        <JnpfNumber v-model="item.${field.prop}$suffixName" :thousands="${field.thousands}"/>
+                                                                    #else
+                                                                        {{ item.${field.prop} #if($field.config.dataType =='static') | ${func}($!{fncVmodel}Options) #end }}
+                                                                    #end
+                                                                </div>
+                                                            </td>
+                                                            #end
+                                                        </tr>
+                                                    </template>
+                                                    <div class="expand-more-btn" v-if="scope.row.${comList.tableField}.length > 3">
+                                                        <el-button v-if="scope.row.${comList.tableField}Expand" type="text"
+                                                                   @click="scope.row.${comList.tableField}Expand=!scope.row.${comList.tableField}Expand">隐藏部分</el-button>
+                                                        <el-button v-if="!scope.row.${comList.tableField}Expand" type="text"
+                                                                   @click="scope.row.${comList.tableField}Expand=!scope.row.${comList.tableField}Expand">加载更多</el-button>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </el-table-column>
+                                        #foreach($field in $comList.fields)
+                                            <el-table-column prop="${comList.tableField}-${field.prop}" label="${field.label}" #if(${columnField.width})width="${columnField.width}" #else width="100"  #end  #if(${context.columnData.useColumnPermission}) v-if="jnpf.hasP('${comList.tableField}-${field.prop}')" #end/>
+                                        #end
+                                    </el-table-column>
+                                #end
+                                    #if($columnField.first ==true)
+                                        <el-table-column prop="${columnFieldProp}${suffixName}" label="${columnField.label}"  align="${columnField.align}"
+                                            #if($context.childTableStyle == 1)  #if(${columnField.fixed} != 'none') fixed="${columnField.fixed}" #end #end
+                                                         #if(${columnField.width})width="${columnField.width}"#end
+                                            #if(${context.columnData.useColumnPermission}) v-if="jnpf.hasP('${columnFieldProp}')" #end>
+                                            <template slot-scope="scope">
+                                                <span v-if="scope.row.top">{{scope.row.${groupField}${suffixName}}}</span>
+                                                <span v-else>
+                                                    #if(${columnField.jnpfKey} =='numInput' || ${columnField.jnpfKey} =='calculate')
+                                                    <JnpfNumber v-model="scope.row.${columnFieldProp}${suffixName}" :thousands="${columnField.thousands}"/>
+                                                    #else
+                                                        {{scope.row.${columnFieldProp}${suffixName}}}
+                                                    #end
+                                                </span>
+                                            </template>
+                                        </el-table-column>
+                                    #else
+                                        #if(${columnField.config.dataType}=='static')
+                                            <el-table-column label="${columnField.label}" #if(${columnField.width})width="${columnField.width}"#end prop="${columnFieldProp}" algin="${columnField.align}"
+                                                #if(${columnField.sortable}) sortable="custom" #end
+                                                #if($context.childTableStyle == 1)  #if(${columnField.fixed} != 'none') fixed="${columnField.fixed}" #end #end
+                                                #if(${context.columnData.useColumnPermission}) v-if="jnpf.hasP('${columnField.prop}')" #end>
+                                                <template slot-scope="scope">
+                                                    {{ scope.row.$!{columnField.vModel} | ${func}($!{columnField.vModel}Options) }}
+                                                </template>
+                                            </el-table-column>
+                                        #else
+                                            #if(${columnField.label})
+                                                #if($groupField !=${columnFieldProp})
+                                                    <el-table-column
+                                                    #if(${columnField.jnpfKey} =='relationFormAttr' || ${columnField.jnpfKey} == 'popupAttr')
+                                                            prop="${columnFieldProp}"
+                                                    #else
+                                                            prop="${columnFieldProp}${suffixName}"
+                                                    #end label="${columnField.label}" #if(${columnField.width})width="${columnField.width}"#end align="${columnField.align}"
+                                                        #if(${columnField.sortable}) sortable="custom" #end
+                                                        #if($context.childTableStyle == 1)  #if(${columnField.fixed} != 'none') fixed="${columnField.fixed}" #end #end
+                                                        #if(${context.columnData.useColumnPermission}) v-if="jnpf.hasP('${columnField.prop}')" #end>
+                                                    #if(${columnField.jnpfKey} =='relationForm')
+                                                        <template slot-scope="scope">
+                                                            <a  style="color:#1890ff"
+                                                        #if(${columnField.newProp})
+                                                                     v-if = "scope.row.${columnField.columnTableName}"
+                                                         #end
+                                                                     @click="toDetail(scope.row.${columnFieldProp},'${columnField.modelId}')">
+                                                                {{scope.row.${columnFieldProp}${suffixName}}}</a>
+                                                        </template>
+                                                    #end
+                                                        #if(${columnField.jnpfKey} =='numInput' || ${columnField.jnpfKey} =='calculate')
+                                                            <template slot-scope="scope"  #if(${columnField.columnTableName}) v-if="scope.row.${columnField.columnTableName}"
+                                                                #else v-if="scope.row.${columnFieldProp}${suffixName}" #end>
+                                                                <JnpfNumber v-model="scope.row.${columnFieldProp}${suffixName}" :thousands="${columnField.thousands}"/>
+                                                            </template>
+                                                        #end
+                                                    </el-table-column>
+                                                #end
+                                            #end
+                                        #end
+                                    #end
+                            #end
+                        #end
+                    #else
+                        #set($cldColModelList = ${context.cldColModelList})
+                        #if($cldColModelList.size()>0)
+                            <el-table-column type="expand" width="40">
+                                <template slot-scope="props">
+                                    <el-tabs v-model="props.row.activeName">
+                                        #foreach($child in $cldColModelList)
+                                            #set($columnChildListModel = $child.columnChildListModel)
+
+                                            <el-tab-pane label="${columnChildListModel.label}">
+                                                <el-table :data="props.row.${columnChildListModel.tableField}" stripe size='mini'>
+                                                    #foreach($field in $columnChildListModel.fields)
+                                                        #set($func ="dynamicText")
+                                                        #if($needDynamic.contains(${field.jnpfKey}))
+                                                            #set($func ="dynamicTreeText")
+                                                        #end
+                                                      #if(${field.jnpfKey} == 'relationForm')
+                                                        <el-table-column prop="${field.prop}" label="${field.label}" #if(${field.width}) width="${field.width}" #end >
+                                                          <template slot-scope="scope">
+                                                            <a  @click="toDetail(scope.row.${field.prop}_id,'${field.modelId}')"  style="color:#1890ff">
+                                                              {{scope.row.${field.prop}}}</a>
+                                                          </template>
+                                                        </el-table-column>
+                                                      #elseif(${field.config.dataType}=='static')
+                                                          #set($func ="dynamicText")
+                                                          #if(${field.jnpfKey} == 'treeSelect' || ${field.jnpfKey} == 'cascader')
+                                                              #set($func ="dynamicTreeText")
+                                                          #end
+                                                        <el-table-column prop="${field.prop}" label="${field.label}" #if(${field.width}) width="${field.width}" #end >
+                                                          <template slot-scope="scope">
+                                                            {{ scope.row.${field.prop} | ${func}($!{field.vModel.replaceFirst("-","_")}Options) }}
+                                                          </template>
+                                                        </el-table-column>
+                                                      #elseif(${field.config.dataType}=='static')
+                                                          <el-table-column prop="${field.prop}" label="${field.label}" #if(${field.width}) width="${field.width}" #end >
+                                                              <template slot-scope="scope">
+                                                                  {{ scope.row.${field.prop} | ${func}(${field.config.parentVModel}_${field.prop}Options) }}
+                                                              </template>
+                                                          </el-table-column>
+                                                      #else
+                                                        <el-table-column prop="${field.prop}" label="${field.label}" #if(${field.width}) width="${field.width}" #end />
+                                                      #end
+                                                    #end
+                                                </el-table>
+                                            </el-tab-pane>
+                                        #end
+                                    </el-tabs>
+                                </template>
+                            </el-table-column>
+                        #end
+                        #set($notChildColList = ${context.notChildColList})
+                        #foreach($columnFieldc in $notChildColList)
+                            #set($columnFieldcProp=${columnFieldc.prop})
+                            #if(${columnFieldc.newProp})
+                                #set($columnFieldcProp = "${columnFieldc.newProp}")
+                            #end
+                            #set($func ="dynamicText")
+                            #if(${columnFieldc.jnpfKey} == 'treeSelect' || ${columnFieldc.jnpfKey} == 'cascader')
+                                #set($func ="dynamicTreeText")
+                            #end
+                            #if(${columnFieldc.dataType}=='static')
+                                <el-table-column label="${columnFieldc.label}" #if(${columnFieldc.width})width="${columnFieldc.width}"#end prop="${columnFieldcProp}" algin="${columnFieldc.align}"
+                                    #if(${columnFieldc.sortable}) sortable="custom" #end
+                                    #if($context.childTableStyle == 1)  #if(${columnFieldc.fixed} != 'none') fixed="${columnFieldc.fixed}" #end #end
+                                    #if(${context.columnData.useColumnPermission}) v-if="jnpf.hasP('${columnFieldc.prop}')" #end>
+                                    <template slot-scope="scope">
+                                        {{ scope.row.$!{columnFieldc.vModel}  | ${func}($!{columnFieldc.vModel}Options) }}
+                                    </template>
+                                </el-table-column>
+                            #else
+                                #if(${columnFieldc.label})
+                                    #if($groupField !=${columnFieldcProp})
+                                        <el-table-column
+                                        #if(${columnFieldc.jnpfKey} =='relationFormAttr' || ${columnFieldc.jnpfKey} == 'popupAttr')
+                                                prop="${columnFieldcProp}"
+                                        #else
+                                                prop="${columnFieldcProp}${suffixName}"
+                                        #end label="${columnFieldc.label}" #if(${columnFieldc.width})width="${columnFieldc.width}"#end align="${columnFieldc.align}"
+                                            #if(${columnFieldc.sortable}) sortable="custom" #end
+                                            #if($context.childTableStyle == 1)  #if(${columnFieldc.fixed} != 'none') fixed="${columnFieldc.fixed}" #end #end
+                                            #if(${context.columnData.useColumnPermission}) v-if="jnpf.hasP('${columnFieldc.prop}')" #end>
+                                            #if($columnFieldc.first == true)
+                                                <template slot-scope="scope">
+                                                    <span v-if="scope.row.top">{{scope.row.${groupField}${suffixName}}}</span>
+                                                    <span v-else>
+                                                        #if(${columnField.jnpfKey} =='numInput' || ${columnField.jnpfKey} =='calculate')
+                                                        <JnpfNumber v-model="scope.row.${columnFieldProp}${suffixName}" :thousands="${columnField.thousands}"/>
+                                                        #else
+                                                            {{scope.row.${columnFieldProp}${suffixName}}}
+                                                        #end
+                                                    </span>
+                                                </template>
+                                            #else
+                                                #if(${columnFieldc.jnpfKey} =='relationForm')
+                                                    <template slot-scope="scope">
+                                                        <a  style="color:#1890ff"
+                                                    #if(${columnFieldc.newProp})
+                                                        v-if = "scope.row.${columnFieldc.columnTableName}"
+                                                    #end
+                                                        @click="toDetail(scope.row.${columnFieldcProp},'${columnFieldc.modelId}')">
+                                                      {{scope.row.${columnFieldcProp}${suffixName}}}</a>
+                                                  </template>
+                                                #end
+                                                #if(${columnField.jnpfKey} =='numInput' || ${columnField.jnpfKey} =='calculate')
+                                                    <template slot-scope="scope">
+                                                        <JnpfNumber v-model="scope.row.${columnFieldProp}${suffixName}" :thousands="${columnField.thousands}"/>
+                                                    </template>
+                                                #end
+                                            #end
+                                        </el-table-column>
+                                    #end
+                                #end
+                            #end
+                        #end
+                    #end
+                    #set($columnBtnsSize=$!{context.columnData.columnBtnsList})
+                    #if($columnBtnsSize.size()>0)
+                        <el-table-column label="操作"
+                                         #if($context.childTableStyle != 2 ||${context.groupTable} == true||${context.lineEdit} == true||${context.treeTable} == true) fixed="right" #end
+                                         #if($columnBtnsSize.size()==3)width="150" #elseif($columnBtnsSize.size()==2)
+                                         width="100" #else width="50" #end>
+                            <template slot-scope="scope"  #if(${context.groupTable} == true) v-if="!scope.row.top" #end>
+                                #foreach($columnBtns in ${context.columnData.columnBtnsList})
+                                    #if(${columnBtns.value}=='edit')
+                                        <el-button type="text"
+                                                   @click="addOrUpdateHandle(scope.row.${context.pKeyName})" #if(${context.columnData.useBtnPermission}) v-has="'btn_${columnBtns.value}'" #end>${columnBtns.label}
+                                        </el-button>
+                                    #elseif(${columnBtns.value}=='remove')
+                                        <el-button type="text" class="JNPF-table-delBtn" #if(${context.columnData.useBtnPermission}) v-has="'btn_${columnBtns.value}'" #end @click="handleDel(scope.row.${context.pKeyName})">${columnBtns.label}
+                                        </el-button>
+                                    #elseif(${columnBtns.value}=='detail')
+                                        <el-button type="text"  #if(${context.columnData.useBtnPermission}) v-has="'btn_${columnBtns.value}'" #end
+                                                   @click="goDetail(scope.row.${context.pKeyName})">${columnBtns.label}
+                                        </el-button>
+                                    #end
+                                #end
+                            </template>
+                        </el-table-column>
+                    #end
+                </JNPF-table>
+                #if(${context.columnData.hasPage}==true)
+                    #if(${context.groupTable} != true)
+                        <pagination :total="total" :page.sync="listQuery.currentPage" :limit.sync="listQuery.pageSize" @pagination="initData"/>
+                    #end #end
+            </div>
+        </div>
+        <JNPF-Form v-if="formVisible" ref="JNPFForm" @refresh="refresh"/>
+        <ExportBox v-if="exportBoxVisible" ref="ExportBox" @download="download"/>
+
+        #handlePrintCom(${batchPrint})
+
+        <ImportBox v-if="uploadBoxVisible" ref="UploadBox" @refresh="initData" />
+        <Detail v-if="detailVisible" ref="Detail" @refresh="detailVisible=false"/>
+        <ToFormDetail v-if="toFormDetailVisible" ref="toFormDetail" @close="toFormDetailVisible = false" />
+#if($context.superQuery)
+        <SuperQuery v-if="superQueryVisible" ref="SuperQuery" :columnOptions="superQueryJson"
+                @superQuery="superQuery" />
+#end
+    </div>
+</template>
+
+<script>
+#if( ${batchPrint}==true)
+import PrintDialog from "@/components/PrintDialog";
+import PrintBrowse from "@/components/PrintBrowse/batch";
+#end
+
+import request from '@/utils/request'
+import {mapGetters} from "vuex";
+import {getDictionaryDataSelector} from '@/api/systemData/dictionary'
+import JNPFForm from './form'
+import ExportBox from './ExportBox'
+import ToFormDetail from '@/views/basic/dynamicModel/list/detail'
+import {getDataInterfaceRes} from '@/api/systemData/dataInterface'
+import Detail from './Detail'
+import { getConfigData } from '@/api/onlineDev/visualDev'
+import { getDefaultCurrentValueUserIdAsync } from '@/api/permission/user'
+import { getDefaultCurrentValueDepartmentIdAsync } from '@/api/permission/organize'
+##列表子表开启
+import columnList from './columnList'
+import { thousandsFormat } from "@/components/Generator/utils/index"
+#if($context.superQuery)
+import SuperQuery from '@/components/SuperQuery'
+import superQueryJson from './superQueryJson'
+#end
+
+    export default {
+        components: {JNPFForm,#if( ${batchPrint}==true)PrintBrowse,PrintDialog,#end ExportBox,Detail,ToFormDetail #if($context.superQuery), SuperQuery#end},
+        data() {
+            return {
+            #handlePrintData(${batchPrint}, $!{context.printId})
+
+                keyword:'',
+                expandsTree: true,
+                refreshTree: true,
+                toFormDetailVisible:false,
+	    ## 列表子表开启
+                expandObj:{},
+                 columnOptions: [],
+                 #foreach($comList in $childModels)
+                         ${comList.tableField}Expand: {},
+                 #end
+                 mergeList: [],
+                exportList:[],
+#if(${context.groupTable} == true)
+        columnList:[],
+    #else
+        columnList,
+    #end
+                #if(${context.treeTable} == true)
+                  expandsTable: true,
+                  refreshTable: true,
+                  expandsTree: true,
+                #end
+
+                #if($searchSize.size()>3)
+                    showAll: false,
+                #end
+            #if($context.superQuery)
+                superQueryVisible: false,
+                superQueryJson,
+            #end
+                uploadBoxVisible: false,
+                detailVisible: false,
+                query: {
+                    #if($searchSize.size()>0)
+                        #foreach($keyword in ${context.searchList})
+                            #set($serchFiled=${keyword.vModel})
+                            #set($maohao=':')
+                                ${serchFiled}${maohao}undefined,
+                        #end
+                    #end
+                },
+                treeProps: {
+                    children: '${context.columnData.treePropsChildren}',
+                    label: '${context.columnData.treePropsLabel}',
+                    value: '${context.columnData.treePropsValue}',
+                    isLeaf: 'isLeaf'
+                },
+                list: [],
+                listLoading: true,
+                #if(${batchRemove}==true || ${batchPrint}==true) multipleSelection: [],#end
+                #if(${context.columnData.hasPage}==true)
+                    total: 0,
+                #end
+                listQuery: {
+                    superQueryJson: '',
+                    #if(${context.columnData.hasPage}==true)
+                        currentPage: 1,
+                        pageSize: ${context.columnData.pageSize},
+                    #end
+                    sort: "${context.columnData.sort}",
+                    sidx: "${context.columnData.defaultSidx}",
+                },
+                formVisible: false,
+                exportBoxVisible: false,
+                ## 列表子表关闭
+                ##  columnList: [
+                ##  #foreach($columnField in ${context.columnDataListFiled})
+                ##      #set($columnFieldProp=${columnField.prop})
+                ##      #if(${columnField.newProp})
+                ##          #set($columnFieldProp = ${columnField.newProp})
+                ##      #end
+                ##      {prop: '${columnFieldProp}', label: '${columnField.label}'},
+                ##      #end
+                ##  ],
+                ##
+                #if(${context.columnData.type}==2)
+                    treeData: [],
+                    treeActiveId: '',
+                #end
+                #foreach($fieLdsModel in ${context.fields})
+                    #set($html = $fieLdsModel.formColumnModel.fieLdsModel)
+                    #set($vModel = "${html.vModel}")
+                    #set($config = $html.config)
+                    #set($jnpfKey = ${config.jnpfKey})
+                    #if(${config.dataType}=='dictionary'||${config.dataType}=='dynamic')
+                            ${vModel}Options:[],
+                    #elseif(${config.dataType} == "static")
+                        #if($html.slot.options)
+                                ${vModel}Options:${html.slot.options},
+                        #elseif($html.options)
+                                ${vModel}Options:${html.options},
+                        #end
+                    #end
+                    #if($html.config.props)
+                            $!{vModel}Props:{"label":"${html.config.props.label}","value":"${html.config.props.value}"},
+                    #elseif($html.props.propsModel)
+                        #set($propsModel =${html.props.propsModel})
+                        #set($multiple = ${propsModel.multiple})
+                            $!{vModel}Props:{"label":"${propsModel.label}","value":"${propsModel.value}" #if($!{multiple}) ,"multiple":$multiple #end #if($!{propsModel.children}),"children":"${propsModel.children}" #end},
+                    #end
+                #end
+                #foreach($ChildField in ${context.columnChildren})
+                    #foreach($FormMastTableModel in ${ChildField.fieLdsModelList})
+                        #set($html = ${FormMastTableModel.mastTable.fieLdsModel})
+                        #set($ChildVmodel =${FormMastTableModel.vModel})
+                        #set($ClDataType = ${html.config.dataType})
+                        #set($jnpfKey = ${html.config.jnpfKey})
+                        #if(${ClDataType}=='dictionary'||${ClDataType}=='dynamic')
+                                ${ChildVmodel}Options:[],
+                        #elseif(${ClDataType} == "static")
+                            #if($html.slot.options)
+                                    ${ChildVmodel}Options:${html.slot.options},
+                            #elseif($html.options)
+                                    ${ChildVmodel}Options:${html.options},
+                            #end
+                        #end
+                        #if($html.config.props)
+                                $!{ChildVmodel}Props:{"label":"${html.config.props.label}","value":"${html.config.props.value}"},
+                        #elseif($html.props.propsModel)
+                            #set($propsModel =${html.props.propsModel})
+                            #set($multiple = ${propsModel.multiple})
+                                $!{ChildVmodel}Props:{"label":"${propsModel.label}","value":"${propsModel.value}" #if($!{multiple}) ,"multiple":$multiple #end #if($!{propsModel.children}),"children":"${propsModel.children}" #end},
+                        #elseif($html.props.props)
+                            #set($propsModel = ${html.props.props})
+                            #set($multiple = ${propsModel.multiple})
+                                $!{ChildVmodel}Props:{"label":"${propsModel.label}","value":"${propsModel.value}" #if($!{multiple}) ,"multiple":$multiple #end #if($!{propsModel.children}),"children":"${propsModel.children}" #end},
+                        #end
+                    #end
+                #end
+                #foreach($child in ${context.children})
+                    #set($className = "${child.tableModel}")
+                    #foreach($fieLdsModel in ${child.childList})
+                        #set($html = $fieLdsModel.fieLdsModel)
+                        #set($vModel = "${html.vModel}")
+                        #set($config = $html.config)
+                        #set($jnpfkey = $config.jnpfKey)
+                        #if(${config.dataType}=='dictionary'||${config.dataType}=='dynamic')
+                                ${className}_${vModel}Options:[],
+                        #elseif(${config.dataType} == "static")
+                            #if($html.slot.options)
+                                    ${className}_${vModel}Options:${html.slot.options},
+                            #elseif($html.options)
+                                    ${className}_${vModel}Options:${html.options},
+                            #end
+                        #end
+                        #if($jnpfkey == "relationForm" || $jnpfkey == "popupSelect" || $jnpfkey == "popupTableSelect")
+                                ${className}_${vModel}columnOptions:[#foreach($options in ${html.columnOptions}) {"label":"${options.label}","value":"${options.value}"},#end],
+                        #end
+                        #if($html.props)
+                            #set($propsModel = ${html.props.props})
+                                ${className}_$!{vModel}Props:{"label":"${propsModel.label}","value":"${propsModel.value}" #if($!{propsModel.multiple}) ,"multiple":$propsModel.multiple #end #if($!{propsModel.children}),"children":"${propsModel.children}" #end},
+                        #end
+                    #end
+                #end
+                interfaceRes: {
+                    #foreach($fieLdsModel in ${context.fields})
+                        #set($html = $fieLdsModel.formColumnModel.fieLdsModel)
+                        #set($vModel = "${html.vModel}")
+                        #set($config = $html.config)
+                        #set($mastKey = "${config.jnpfKey}")
+                        #if(${vModel} && $!{html.interfaceId})
+                            ${vModel}:#if($!{html.templateJson})${html.templateJson} #else [] #end,
+                        #end
+                    #end
+                    #foreach($MastfieLds in ${context.mastTable})
+                        #set($BeforeVmodel = $MastfieLds.formMastTableModel.vModel)
+                        #set($tableName = $MastfieLds.formMastTableModel.table)
+                        #set($lowTableName = "${tableName.toLowerCase()}")
+                        #set($html = $MastfieLds.formMastTableModel.mastTable.fieLdsModel)
+                        #set($vModel = "${html.vModel}")
+                        #set($config = $html.config)
+                        #if( ${vModel} && $!{html.interfaceId})
+                            ${BeforeVmodel}:#if($!{html.templateJson})${html.templateJson} #else [] #end,
+                        #end
+                    #end
+                    #foreach($child in ${context.children})
+                        #set($className = "${child.className.substring(0,1).toLowerCase()}${child.className.substring(1).toLowerCase()}")
+                        #foreach($fieLdsModel in ${child.childList})
+                            #set($html = $fieLdsModel.fieLdsModel)
+                            #set($vModel = "${html.vModel}")
+                            #set($config = $html.config)
+                            #if( ${vModel} && $!{html.interfaceId})
+                                ${config.parentVModel}_${vModel}:#if($!{config.templateJson})${config.templateJson} #else [] #end,
+                            #end
+                        #end
+                    #end
+                },
+            }
+        },
+    #if(${context.columnData.hasTreeQuery} == true)
+        watch: {
+            #if(${context.columnData.treeSynType} == 0 || ${context.columnData.treeDataSource} != 'api')
+                keyword(val) {
+                    this.$refs.treeBox.filter(val)
+                }
+            #end
+        },
+    #end
+        computed: {
+            ...mapGetters(['userInfo']),
+            menuId() {
+                return this.$route.meta.modelId || ''
+            }
+        },
+        created() {
+            ## 列表子表开启
+            #if(${context.groupTable} == true)
+                this.columnList = columnList.filter(o=>o.__vModel__!=='${context.groupField}')
+            #end
+              this.getColumnList(),
+            #if(${context.columnData.type}==2)
+                this.getTreeView();
+            #else
+                this.initSearchDataAndListData()
+            #end
+            #foreach($key in ${context.searchList})
+                #if(${key.config.dataType}=='dictionary'||${key.config.dataType}=='dynamic')
+                    this.get$!{key.vModel}Options();
+                #end
+            #end
+        },
+        methods: {
+            #handlePrint(${batchPrint})
+
+            toDetail(defaultValue, modelId) {
+                if (!defaultValue) return
+                getConfigData(modelId).then(res => {
+                    if (!res.data || !res.data.formData) return
+                    let formData = JSON.parse(res.data.formData)
+                    formData.popupType = 'general'
+                    this.toFormDetailVisible = true
+                    this.$nextTick(() => {
+                        this.$refs.toFormDetail.init(formData, modelId, defaultValue)
+                    })
+                })
+            },
+            toggleTreeExpand(expands) {
+                this.keyword=''
+                this.refreshTree = false
+                this.expandsTree = expands
+                this.$nextTick(() => {
+                    this.refreshTree = true
+                    this.$nextTick(() => {
+                        this.$refs.treeBox.setCurrentKey(null)
+                    })
+                })
+            },
+            filterNode(value, data) {
+                if (!value) return true;
+                return data[this.treeProps.label].indexOf(value) !== -1;
+            },
+            loadNode(node, resolve) {
+                const nodeData = node.data
+                const config ={
+                    treeInterfaceId:"${context.columnData.treeInterfaceId}",
+                    treeTemplateJson:${context.columnData.treeTemplateJson}
+                }
+                if (config.treeInterfaceId) {
+                    //这里是为了拿到参数中关联的字段的值，后端自行拿
+                    if (config.treeTemplateJson && config.treeTemplateJson.length) {
+                        for (let i = 0; i < config.treeTemplateJson.length; i++) {
+                            const element = config.treeTemplateJson[i];
+                            element.defaultValue = nodeData[element.relationField] || ''
+                        }
+                    }
+                    //参数
+                    let query = {
+                        paramList: config.treeTemplateJson || [],
+                    }
+                    //接口
+                    getDataInterfaceRes(config.treeInterfaceId, query).then(res => {
+                        let data = res.data
+                        if (Array.isArray(data)) {
+                            resolve(data);
+                        } else {
+                            resolve([]);
+                        }
+                    })
+                }
+            },
+            #if(${context.configurationTotal} == true)
+            getTableSummaries(param) {
+                const { columns, data } = param;
+                const sums = [];
+                columns.forEach((column, index) => {
+                    if (index === 0) {
+                        sums[index] = '合计';
+                        return;
+                    } else if (${context.fieldsTotal}.includes(column.property)) {
+                        const values = data.map(item => {
+                            if (column.property.includes('.')) {
+                                const [attr1, attr2] = column.property.split('.')
+                                return Number(item[attr1][attr2])
+                            }
+                            return Number(item[column.property])
+                        });
+                        if (!values.every(value => isNaN(value))) {
+                            sums[index] = values.reduce((prev, curr) => {
+                                const value = Number(curr);
+                                if (!isNaN(value)) {
+                                    return prev + curr;
+                                } else {
+                                    return prev;
+                                }
+                            }, 0).toFixed(2);
+                            if(${context.thousandsField}.includes(column.property)){
+                                sums[index] = thousandsFormat(sums[index]);
+                            }
+                        } else {
+                            sums[index] = '';
+                        }
+                    }
+                })
+                return sums;
+            },
+        #end
+            ## 列表子表开启
+             getColumnList() {
+     #if(${context.columnData.useColumnPermission})
+         // 开启权限
+         let columnPermissionList = []
+         const permissionList = this.$store.getters.permissionList
+                 const modelId = this.$route.meta.modelId
+             const list = permissionList.filter(o => o.modelId === modelId)
+         const columnList = list[0] && list[0].column ? list[0].column : []
+         for (let i = 0; i < this.columnList.length; i++) {
+             inner: for (let j = 0; j < columnList.length; j++) {
+                 if (this.columnList[i].prop === columnList[j].enCode) {
+                     columnPermissionList.push(this.columnList[i])
+                     break inner
+                 }
+             }
+         }
+         this.columnOptions = this.transformColumnList(columnPermissionList)
+     #else
+         // 没有开启权限
+         this.columnOptions = this.transformColumnList(this.columnList)
+     #end
+             },
+             transformColumnList(columnList) {
+                 let list = []
+                 for (let i = 0; i < columnList.length; i++) {
+                     const e = columnList[i];
+                     if (!e.prop.includes('-')) {
+                         list.push(e)
+                     } else {
+                         let prop = e.prop.split('-')[0]
+                         let label = e.label.split('-')[0]
+                         let vModel = e.prop.split('-')[1]
+                         let newItem = {
+                             align: "center",
+                             jnpfKey: "table",
+                             prop,
+                             label,
+                             children: []
+                         }
+                         e.vModel = vModel
+                         if (!this.expandObj.hasOwnProperty(`${prop}Expand`)) this.$set(this.expandObj, `${prop}Expand`, false)
+                         if (!list.some(o => o.prop === prop)) list.push(newItem)
+                         for (let i = 0; i < list.length; i++) {
+                             if (list[i].prop === prop) {
+                                 list[i].children.push(e)
+                                 break
+                             }
+                         }
+                     }
+                 }
+                 this.getMergeList(list)
+                 this.getExportList(list)
+                 return list
+             },
+             arraySpanMethod({ column }) {
+                 for (let i = 0; i < this.mergeList.length; i++) {
+                     if (column.property == this.mergeList[i].prop) {
+                         return [this.mergeList[i].rowspan, this.mergeList[i].colspan]
+                     }
+                 }
+             },
+             getMergeList(list) {
+                 let newList = JSON.parse(JSON.stringify(list))
+                 newList.forEach(item => {
+                     if (item.children && item.children.length) {
+                         let child = {
+                             prop: item.prop + '-child-first'
+                         }
+                         item.children.unshift(child)
+                     }
+                 })
+                 newList.forEach(item => {
+                     if (item.children && item.children.length ) {
+                         item.children.forEach((child, index) => {
+                             if (index == 0) {
+                                 this.mergeList.push({
+                                     prop: child.prop,
+                                     rowspan: 1,
+                                     colspan: item.children.length
+                                 })
+                             } else {
+                                 this.mergeList.push({
+                                     prop: child.prop,
+                                     rowspan: 0,
+                                     colspan: 0
+                                 })
+                             }
+                         })
+                     } else {
+                         this.mergeList.push({
+                             prop: item.prop,
+                             rowspan: 1,
+                             colspan: 1
+                         })
+                     }
+                 })
+             },
+            getExportList(list) {
+                let exportList = []
+                for (let i = 0; i < list.length; i++) {
+                    if (list[i].jnpfKey === 'table') {
+                        for (let j = 0; j < list[i].children.length; j++) {
+                            exportList.push(list[i].children[j])
+                        }
+                    } else {
+                        exportList.push(list[i])
+                    }
+                }
+                this.exportList = exportList
+            },
+            #foreach($key in ${context.searchList})
+                #if(${key.config.dataType}=='dictionary')
+                    get$!{key.vModel}Options() {
+                        getDictionaryDataSelector('${key.config.dictionaryType}').then(res => {
+                            this.$!{key.vModel}Options = res.data.list
+                        })
+                    },
+                #elseif(${key.config.dataType}=='dynamic')
+                    get$!{key.vModel}Options() {
+                        getDataInterfaceRes('${key.config.propsUrl}').then(res => {
+                            let data = res.data
+                            this.${key.vModel}Options = data
+                        })
+                    },
+                #end
+            #end
+            goDetail(id){
+                this.detailVisible = true
+                this.$nextTick(() => {
+                    this.$refs.Detail.init(id)
+                })
+            },
+            sortChange({column, prop, order}) {
+                this.listQuery.sort = order == 'ascending' ? 'asc' : 'desc'
+                this.listQuery.sidx = !order ? '' : prop
+                this.initData()
+            },
+            #set($datasourse = ${context.columnData.treeDataSource})
+            #if(${context.columnData.type}==2)
+                getTreeView() {
+                    #if(${datasourse} =='dictionary')
+                        getDictionaryDataSelector('${context.columnData.treeDictionary}').then(res => {
+                            this.treeData = res.data.list
+                            this.initSearchDataAndListData()
+                        })
+                    #elseif(${datasourse} == 'api')
+                        getDataInterfaceRes('${context.columnData.treePropsUrl}').then(res => {
+                            let data = res.data
+                            this.treeData = data
+                            this.initSearchDataAndListData()
+                        })
+                    #elseif(${datasourse}=='organize')
+                        this.${sign}store.dispatch('generator/getDepTree').then(res => {
+                            this.treeData = res
+                            this.initSearchDataAndListData()
+                        })
+                    #elseif(${datasourse} == 'department')
+                        this.${sign}store.dispatch('generator/getDepTree').then(res => {
+                            this.treeData = res
+                            this.initSearchDataAndListData()
+                        })
+                    #end
+                },
+                getNodePath(node) {
+                    let fullPath = []
+                    const loop = (node) => {
+                        if (node.level) fullPath.unshift(node.data)
+                        if (node.parent) loop(node.parent)
+                    }
+                    loop(node)
+                    return fullPath
+                },
+                handleNodeClick(data,node) {
+                    this.treeActiveId = data.${context.columnData.treePropsValue}
+                    for(let
+                    key in this.query
+                )
+                    {
+                        this.query[key] = undefined
+                    }
+                    #if(${datasourse}=='organize')
+                        const nodePath = this.getNodePath(node)
+                        const currValue = nodePath.map(o => o.${context.columnData.treePropsValue})
+                        this.query.${context.treeRelationField} = currValue
+                     #else
+                         this.query.${context.treeRelationField} = data.${context.columnData.treePropsValue}
+                    #end
+                    this.listQuery = {
+                        #if(${context.columnData.hasPage}==true)
+                            currentPage: 1,
+                            pageSize: ${context.columnData.pageSize},
+                        #end
+                        sort: "${context.columnData.sort}",
+                        sidx: "${context.columnData.defaultSidx}",
+                    }
+                    this.initData()
+                },
+            #end
+            async initSearchDataAndListData() {
+                await this.initSearchData()
+                this.initData()
+            },
+            //初始化查询的默认数据
+            async initSearchData() {
+            #set($searchDataHavaDateFeild=0)
+        #foreach($searchItem in ${context.searchList})
+            #set($serchFiled=${searchItem.vModel})
+            #set($jk=${searchItem.config.jnpfKey})
+            #set($defaultCurrent=${searchItem.config.defaultCurrent})
+            #set($multiple=${searchItem.searchMultiple})
+            #set($selectType=${searchItem.selectType})
+            #if($jk=='date' && $defaultCurrent == true)
+##                #if($searchDataHavaDateFeild==0)
+##                let startDateTime = new Date()
+##                startDateTime.setHours(0,0,0,0)
+##                let endDateTime = new Date()
+##                endDateTime.setHours(23,59,59,999)
+##                #set($searchDataHavaDateFeild=1)
+##                #end
+##                this.query.${serchFiled} = [startDateTime.getTime(), endDateTime.getTime()]
+            #elseif($jk=='depSelect' && $defaultCurrent == true)
+                if(this.userInfo.departmentId != null && this.userInfo.departmentId != '') {
+                #if($selectType=='all')
+            #if($multiple == true)
+                    this.query.${serchFiled} = [this.userInfo.departmentId]
+            #else
+                    this.query.${serchFiled} = this.userInfo.departmentId
+            #end
+                #else
+                    let ableDepIds = ${searchItem.ableDepIds}
+                    if(ableDepIds instanceof Array && ableDepIds.length > 0 && ableDepIds.includes(this.userInfo.departmentId)) {
+                        #if($multiple == true)
+                        this.query.${serchFiled} = [this.userInfo.departmentId]
+                            #else
+                        this.query.${serchFiled} = this.userInfo.departmentId
+                        #end
+                    } else if(ableDepIds instanceof Array && ableDepIds.length > 0) {
+                        let res = await getDefaultCurrentValueDepartmentIdAsync({departIds:ableDepIds})
+                        if (res.data.departmentId != null && res.data.departmentId != '') {
+                            #if($multiple == true)
+                            this.query.${serchFiled} = [this.userInfo.departmentId]
+                            #else
+                            this.query.${serchFiled} = this.userInfo.departmentId
+                            #end
+                        }
+                    } else {}
+                #end
+                }
+            #elseif($jk=='comSelect' && $defaultCurrent == true)
+                if(this.userInfo.organizeIdList instanceof Array && this.userInfo.organizeIdList.length > 0) {
+                    #if($multiple == true)
+                    this.query.${serchFiled} = [this.userInfo.organizeIdList]
+                    #else
+                    this.query.${serchFiled} = this.userInfo.organizeIdList
+                    #end
+                }
+            #elseif($jk=='userSelect' && $defaultCurrent == true && ($selectType=='all' || $selectType == 'custom'))
+                #if($selectType=='all')
+                #if($multiple == true)
+                this.query.${serchFiled} = [this.userInfo.userId]
+                #else
+                this.query.${serchFiled} = this.userInfo.userId
+                #end
+                #elseif($selectType=='custom')
+                if(this.userInfo.userId != null && this.userInfo.userId != '') {
+                    let ableUserIds = ${searchItem.ableUserIds}
+                    let ableDepIds = ${searchItem.ableDepIds}
+                    let ableGroupIds = ${searchItem.ableGroupIds}
+                    let ableRoleIds = ${searchItem.ableRoleIds}
+                    let ablePosIds = ${searchItem.ablePosIds}
+                    if (ableUserIds instanceof Array && ableUserIds.length > 0 && ableUserIds.includes(this.userInfo.userId)) {
+                      #if($multiple == true)
+                        this.query.${serchFiled} = [this.userInfo.userId]
+                      #else
+                        this.query.${serchFiled} = this.userInfo.userId
+                      #end
+                    } else if((ableUserIds instanceof Array && ableUserIds.length > 0)
+                        || (ableDepIds instanceof Array && ableDepIds.length > 0)
+                        || (ableGroupIds instanceof Array && ableGroupIds.length > 0)
+                        || (ableRoleIds instanceof Array && ableRoleIds.length > 0)
+                        || (ablePosIds instanceof Array && ablePosIds.length > 0)) {
+                        let res = await getDefaultCurrentValueUserIdAsync({
+                            departIds:ableDepIds,
+                            groupIds:ableGroupIds,
+                            roleIds:ableRoleIds,
+                            userIds:ableUserIds,
+                            positionIds:ablePosIds
+                        })
+                        if (res.data.userId != null && res.data.userId != '') {
+                          #if($multiple == true)
+                            this.query.${serchFiled} = [this.userInfo.userId]
+                          #else
+                            this.query.${serchFiled} = this.userInfo.userId
+                          #end
+                        }
+                    } else {}
+                }
+                #end
+            #end
+        #end
+            },
+            initData() {
+                this.listLoading = true;
+                let _query = {
+                    ...this.listQuery,
+                    ...this.query,
+#if(${context.groupTable} == true)
+            dataType: 0,
+    #else
+             keyword: this.keyword,
+             dataType: ${context.dataType},
+    #end
+                menuId:this.menuId,
+                moduleId:'${context.moduleId}'
+                };
+                request({
+                    url: `/api/${context.module}/${context.className}/getList`,
+                    method: 'post',
+                    data: _query
+                }).then(res => {
+                    var _list =[];
+                    #set($listName = ".list.")
+                    #set($listNa = ".list")
+                    for(let i=0;i<res.data${listName}length;i++){
+                        let _data = res.data${listNa}[i];
+                        #if(${context.groupTable} == true)
+                            for(let k =0;k<_data.children.length;k++){
+                                let children= _data.children[k];
+                                ##子表默认分组展示
+                                #foreach($childMod in ${context.childModels})
+                                    children.${childMod.tableField}Expand = false
+                                #end
+                                ##主副静态数据转换
+                                #foreach($column in ${context.columnList})
+                                    #set($prop = "${column.prop}")
+                                    #set($label = "${column.label}")
+                                    #foreach($fieLdsModel in ${context.fields})
+                                        #set($html = $fieLdsModel.formColumnModel.fieLdsModel)
+                                        #set($vModel = "${html.vModel}")
+                                        #set($param= "${vModel}")
+                                        #ConvertData($prop,$html,$vModel,$param,"children",'')
+                                    #end
+                                    #foreach($fieLdsModel in ${context.mastTable})
+                                        #set($html = $fieLdsModel.formMastTableModel.mastTable.fieLdsModel)
+                                        #set($formMastTableModel =  $fieLdsModel.formMastTableModel)
+                                        #set($table = "${formMastTableModel.table}")
+                                        #set($field = ${formMastTableModel.field})
+                                        #set($vModel = "${formMastTableModel.vModel}")
+                                        #set($param= "${table}.${field}")
+                                        #ConvertData($prop,$html,$vModel,$param,"children",$table)
+                                    #end
+                                #end
+                                ##子表数据转换
+                                #foreach($childMod in ${context.childModels})
+                                    for(let z =0;z<children.${childMod.tableField}.length;z++){
+                                        let ${childMod.tableField} = children.${childMod.tableField}[z];
+                                        #foreach($cf in $childMod.fields)
+                                            #if($cf.jnpfKey == "date")
+                                                ${childMod.tableField}.${cf.prop} = this.jnpf.toDate(Number(${childMod.tableField}.${cf.prop}), '${cf.format}')
+                                            #end
+                                            #if($needToJsonStatic.contains(${cf.jnpfKey}) && ${cf.config.dataType}=='static')
+                                                    ${childMod.tableField}.${cf.prop} = ${childMod.tableField}.${cf.prop}?JSON.parse(${childMod.tableField}.${cf.prop}):''
+                                            #end
+                                            #if($needToJsonMultiple.contains(${cf.jnpfKey}) && ${cf.multiple} == 'true' && $cf.config.dataType=='static')
+                                                    ${childMod.tableField}.${cf.prop} = ${childMod.tableField}.${cf.prop}?JSON.parse(${childMod.tableField}.${cf.prop}):''
+                                            #end
+                                        #end
+                                    }
+                                #end
+                            }
+                         #else
+                             ##主副数据转换
+                             #foreach($column in ${context.columnList})
+                                 #set($prop = "${column.prop}")
+                                 #set($label = "${column.label}")
+                                 #foreach($fieLdsModel in ${context.fields})
+                                     #set($html = $fieLdsModel.formColumnModel.fieLdsModel)
+                                     #set($vModel = "${html.vModel}")
+                                     #set($param= "${vModel}")
+                                     #ConvertData($prop,$html,$vModel,$param,"_data",'')
+                                 #end
+                                 #foreach($fieLdsModel in ${context.mastTable})
+                                     #set($html = $fieLdsModel.formMastTableModel.mastTable.fieLdsModel)
+                                     #set($formMastTableModel =  $fieLdsModel.formMastTableModel)
+                                     #set($table = "${formMastTableModel.table}")
+                                     #set($field = ${formMastTableModel.field})
+                                     #set($vModel = "${formMastTableModel.vModel}")
+                                     #set($param= "${table}.${field}")
+                                     #ConvertData($prop,$html,$vModel,$param,"_data",$table)
+                                 #end
+                             #end
+                             ##子表数据转换
+                             #foreach($childMod in ${context.childModels})
+                                 for(let z =0;z<_data.${childMod.tableField}.length;z++){
+                                     let ${childMod.tableField} = _data.${childMod.tableField}[z];
+                                     #foreach($cf in $childMod.fields)
+                                         #if($cf.jnpfKey == "date")
+                                             ${childMod.tableField}.${cf.prop} = this.jnpf.toDate(Number(${childMod.tableField}.${cf.prop}), '${cf.format}')
+                                         #end
+                                         #if($needToJsonStatic.contains(${cf.jnpfKey}) && ${cf.config.dataType}=='static')
+                                             ${childMod.tableField}.${cf.prop} = ${childMod.tableField}.${cf.prop}?JSON.parse(${childMod.tableField}.${cf.prop}):''
+                                         #end
+                                         #if($needToJsonMultiple.contains(${cf.jnpfKey}) && ${cf.multiple} == 'true' && $cf.config.dataType=='static')
+                                             ${childMod.tableField}.${cf.prop} = ${childMod.tableField}.${cf.prop}?JSON.parse(${childMod.tableField}.${cf.prop}):''
+                                         #end
+                                     #end
+                                 }
+                             #end
+                        #end
+                        _list.push(_data)
+                    }
+                    ##  this.list = _list
+                #if(${context.groupTable} == true)
+                    this.list = _list.map(o => ({ top: true, ...o }))
+                   #else
+                   this.list = _list.map(o => ({
+                       ...o,
+                       ...this.expandObj,
+                       #if(${context.treeTable} == true && ${context.treeLazyType} == false)
+                         hasChildren: true,
+                       #end
+                   }))
+                   #end
+                #if(${context.groupTable} != true)
+                    #if(${context.columnData.hasPage}==true)
+                        this.total = res.data.pagination.total
+                    #end
+                 #end
+                    this.listLoading = false
+                })
+            },
+            #set($d='${id}')
+            handleDel(id) {
+                this.$confirm('此操作将永久删除该数据, 是否继续?', '提示', {
+                    type: 'warning'
+                }).then(() => {
+                    request({
+                        url: `/api/${context.module}/${context.className}/${d}`,
+                        method: 'DELETE'
+                    }).then(res => {
+                        this.$message({
+                            type: 'success',
+                            message: res.msg,
+                            onClose: () => {
+                                this.initData()
+                            }
+                        });
+                    })
+                }).catch(() => {
+                });
+            },
+            handelUpload(){
+                this.uploadBoxVisible = true
+                    #set($refstring = '$refs')
+                this.$nextTick(() => {
+                    this.${refstring}.UploadBox.init("","${context.module}/${context.className}")
+                })
+            },
+
+            #if(${batchRemove}==true || ${batchPrint}==true)
+                handleSelectionChange(val) {
+                    const res = val.map(item => item.${context.pKeyName})
+                    this.multipleSelection = res
+                },
+                handleBatchRemoveDel() {
+                    if (!this.multipleSelection.length) {
+                        this.$message({
+                            type: 'error',
+                            message: '请选择一条数据',
+                            duration: 1500,
+                        })
+                        return
+                    }
+                    const ids = this.multipleSelection.join()
+                    #set($ids='${ids}')
+                    this.$confirm('您确定要删除这些数据吗, 是否继续？', '提示', {
+                        type: 'warning'
+                    }).then(() => {
+                        request({
+                            url: `/api/${context.module}/${context.className}/batchRemove`,
+                            data: ids,
+                            method: 'DELETE'
+                        }).then(res => {
+                            this.$message({
+                                type: 'success',
+                                message: res.msg,
+                                onClose: () => {
+                                    this.initData()
+                                }
+                            });
+                        })
+                    }).catch(() => {
+                    })
+                },
+            #end
+            #if($context.superQuery)
+                openSuperQuery() {
+                    this.superQueryVisible = true
+                    this.$nextTick(() => {
+                        this.$refs.SuperQuery.init()
+                    })
+                },
+                superQuery(queryJson) {
+                    this.listQuery.superQueryJson = queryJson
+                    this.listQuery.currentPage = 1
+                    this.initData()
+                },
+            #end
+            addOrUpdateHandle(id, isDetail) {
+                this.formVisible = true
+                this.$nextTick(() => {
+                    this.${sign}refs.JNPFForm.init(id, isDetail,this.list)
+                })
+            },
+            exportData() {
+                this.exportBoxVisible = true
+                this.$nextTick(() => {
+                    this.$refs${doc}ExportBox.init(this.exportList)
+                })
+            },
+            download(data) {
+                let query = {...data, ...this.listQuery, ...this.query,menuId:this.menuId}
+                request({
+                    url: `/api/${context.module}/${context.className}/Actions/Export`,
+                    method: 'post',
+                    data: query
+                }).then(res => {
+                    if (!res.data.url) return
+                    this.jnpf.downloadFile(res.data.url)
+                    this.$refs.ExportBox.visible = false
+                    this.exportBoxVisible = false
+                })
+            },
+            search() {
+            #if(${context.columnData.hasPage}==true)
+                this.listQuery.currentPage=1
+                this.listQuery.pageSize=${context.columnData.pageSize}
+           #end
+                this.listQuery.sort="${context.columnData.sort}"
+                this.listQuery.sidx="${context.columnData.defaultSidx}"
+                this.initData()
+            },
+            refresh(isrRefresh) {
+                this.formVisible = false
+                if (isrRefresh) this.reset()
+            },
+            reset() {
+                for (let key in this.query) {
+                    this.query[key] = undefined
+                }
+                this.search()
+            },
+#if($context.treeTable==true && $context.treeLazyType==false)
+    //异步树形调用方法
+treeLoad(tree, treeNode, resolve) {
+    let _query = {
+    dataType: ${context.dataType},
+    menuId:this.menuId,
+    treeParentValue:tree?tree.${context.subField}:"",
+  };
+  request({
+    url: `/api/${context.module}/${context.className}/getList`,
+    method: 'post',
+    data: _query
+  }).then(res => {
+    var _list =[];
+      #set($listName = ".list.")
+      #set($listNa = ".list")
+      #if(${context.groupTable} == true)
+          #set($listName = ".")
+          #set($listNa = "")
+      #end
+    for(let i=0;i<res.data${listName}length;i++){
+        let _data = res.data${listNa}[i];
+        ##主副数据转换
+        #foreach($column in ${context.columnList})
+        #set($prop = "${column.prop}")
+        #set($label = "${column.label}")
+        #foreach($fieLdsModel in ${context.fields})
+            #set($html = $fieLdsModel.formColumnModel.fieLdsModel)
+            #set($vModel = "${html.vModel}")
+            #set($param= "${vModel}")
+            #ConvertData($prop,$html,$vModel,$param,"_data",'')
+        #end
+        #foreach($fieLdsModel in ${context.mastTable})
+            #set($html = $fieLdsModel.formMastTableModel.mastTable.fieLdsModel)
+            #set($formMastTableModel =  $fieLdsModel.formMastTableModel)
+            #set($table = "${formMastTableModel.table}")
+            #set($field = ${formMastTableModel.field})
+            #set($vModel = "${formMastTableModel.vModel}")
+            #set($param= "${table}.${field}")
+            #ConvertData($prop,$html,$vModel,$param,"_data",$table)
+        #end
+        #end
+        ##子表数据转换
+        #foreach($childMod in ${context.childModels})
+        for(let z =0;z<_data.${childMod.tableField}.length;z++){
+            let ${childMod.tableField} = _data.${childMod.tableField}[z];
+            #foreach($cf in $childMod.fields)
+                #if($cf.jnpfKey == "date")
+                        ${childMod.tableField}.${cf.prop} = this.jnpf.toDate(Number(${childMod.tableField}.${cf.prop}), '${cf.format}')
+                #end
+                #if($needToJsonStatic.contains(${cf.jnpfKey}) && ${cf.config.dataType}=='static')
+                        ${childMod.tableField}.${cf.prop} = ${childMod.tableField}.${cf.prop}?JSON.parse(${childMod.tableField}.${cf.prop}):''
+                #end
+                #if($needToJsonMultiple.contains(${cf.jnpfKey}) && ${cf.multiple} == 'true' && $cf.config.dataType=='static')
+                        ${childMod.tableField}.${cf.prop} = ${childMod.tableField}.${cf.prop}?JSON.parse(${childMod.tableField}.${cf.prop}):''
+                #end
+            #end
+        }
+        #end
+      _list.push(_data)
+    }
+    this._list = _list.map(o => ({
+      ...o,
+      ...this.expandObj,
+      hasChildren: true
+    }))
+    if (Array.isArray(_list)) {
+      resolve(_list);
+    } else {
+      resolve([]);
+    }
+  })
+},
+#end
+
+        #if(${context.treeTable}==true  && ${context.treeLazyType} == true)
+            // 展开折叠方法
+          toggleExpandList() {
+            this.refreshTable = false;
+            this.expandsTree = !this.expandsTree;
+            this.expandsTable = !this.expandsTable;
+            this.$nextTick(() => {
+              this.refreshTable = true;
+            });
+          },
+        #end
+        }
+    }
+</script>
+
+#macro(ConvertData $prop,$html,$vModel,$param,$dataName,$table)
+    #set($multiple = ${html.multiple})
+    #set($config = $html.config)
+    #set($mastKey = "${config.jnpfKey}")
+    #set($dataType = "$config.dataType")
+    #if($prop == $vModel)
+        #if(${mastKey} == "date")
+            #if($table)
+            if($dataName.${table}){
+                $dataName.${param} = this.jnpf.toDate(Number($dataName.${param}), '${html.format}')
+            }
+            #else
+            $dataName.${param} = this.jnpf.toDate(Number($dataName.${param}), '${html.format}')
+            #end
+        #end
+        #if($needToJsonStatic.contains(${mastKey}) && $dataType=='static')
+            #if($table)
+            if($dataName.${table}){
+                $dataName.${param} = $dataName.${param}?JSON.parse($dataName.${param}):''
+            }
+            #else
+            $dataName.${param} = $dataName.${param}?JSON.parse($dataName.${param}):''
+            #end
+        #end
+        #if($needToJsonMultiple.contains(${mastKey}) && ${multiple} == 'true' && $dataType=='static')
+            #if($table)
+            if($dataName.${table}){
+                $dataName.${param} = $dataName.${param}?JSON.parse($dataName.${param}):''
+            }
+            #else
+            $dataName.${param} = $dataName.${param}?JSON.parse($dataName.${param}):''
+            #end
+        #end
+    #end
+#end

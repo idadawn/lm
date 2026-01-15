@@ -1,0 +1,53 @@
+//{
+//  "ConnectionStrings": {
+//    "ConnectionConfigs": [
+//      {
+//        "ConfigId": "default",
+//        "DBName": "lumei",
+//        "DBType": "MySql", //MySql;SqlServer;Oracle;PostgreSQL;Dm;Kdbndp;Sqlite;
+//        "Host": "127.0.0.1",
+//        "Port": "33060",
+//        "UserName": "root",
+//        "Password": "Deep@2021",
+//        "DefaultConnection": "server=127.0.0.1;Port=33060;Database={0};Uid=root;Pwd=Deep@2021;AllowLoadLocalInfile=true"
+//      },
+//      {
+//        "ConfigId": "Poxiao-Job", // 不可修改
+//        "DBName": "lumei",
+//        "DBType": "MySql", //MySql;SqlServer;Oracle;PostgreSQL;Dm;Kdbndp;Sqlite;
+//        "Host": "127.0.0.1",
+//        "Port": "33060",
+//        "UserName": "root",
+//        "Password": "Deep@2021",
+//        "DefaultConnection": "server=127.0.0.1;Port=33060;Database={0};Uid=root;Pwd=Deep@2021;AllowLoadLocalInfile=true"
+//      }
+//    ]
+//  }
+//}
+
+{
+  "ConnectionStrings": {
+    "ConnectionConfigs": [
+      {
+        "ConfigId": "default",
+        "DBName": "lumei",
+        "DBType": "MySql", //MySql;SqlServer;Oracle;PostgreSQL;Dm;Kdbndp;Sqlite;
+        "Host": "127.0.0.1",
+        "Port": "33060",
+        "UserName": "root",
+        "Password": "Deep@2021",
+        "DefaultConnection": "server=127.0.0.1;Port=33060;Database={0};Uid=root;Pwd=Deep@2021;AllowLoadLocalInfile=true"
+      },
+      {
+        "ConfigId": "Poxiao-Job", // 不可修改
+        "DBName": "lumei",
+        "DBType": "MySql", //MySql;SqlServer;Oracle;PostgreSQL;Dm;Kdbndp;Sqlite;
+        "Host": "127.0.0.1",
+        "Port": "33060",
+        "UserName": "root",
+        "Password": "Deep@2021",
+        "DefaultConnection": "server=127.0.0.1;Port=33060;Database={0};Uid=root;Pwd=Deep@2021;AllowLoadLocalInfile=true"
+      }
+    ]
+  }
+}

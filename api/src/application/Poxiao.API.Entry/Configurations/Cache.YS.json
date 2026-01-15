@@ -1,0 +1,9 @@
+{
+  "Cache": {
+    "CacheType": "RedisCache", // MemoryCache
+    "ip": "redis-master.kpi-prod-middleware.svc.cluster.local",
+    "port": 6379,
+    "password": "DkA/YPD8PcK+cC",
+    "RedisConnectionString": "{0}:{1},password={2}, poolsize=500,ssl=false,defaultDatabase=4"
+  }
+}

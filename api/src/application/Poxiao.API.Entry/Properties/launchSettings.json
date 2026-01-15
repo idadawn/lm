@@ -1,0 +1,46 @@
+{
+  "profiles": {
+    "YS": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "YS"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://*:9530"
+    },
+    "YY": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "YY"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://*:10089"
+    },
+    "dev": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "dev"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://*:10089"
+    },
+    "wdev": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "YY"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://*:9002"
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "publishAllPorts": true
+    }
+  }
+}

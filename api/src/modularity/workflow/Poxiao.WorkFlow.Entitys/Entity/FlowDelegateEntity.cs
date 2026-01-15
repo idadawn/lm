@@ -1,0 +1,83 @@
+using Poxiao.Infrastructure.Contracts;
+using SqlSugar;
+
+namespace Poxiao.WorkFlow.Entitys.Entity;
+
+/// <summary>
+/// 流程委托.
+/// </summary>
+[SugarTable("FLOW_DELEGATE")]
+public class FlowDelegateEntity : CLDEntityBase
+{
+    /// <summary>
+    /// 被委托人id.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_TOUSERID")]
+    public string? ToUserId { get; set; }
+
+    /// <summary>
+    /// 被委托人名称.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_TOUSERNAME")]
+    public string? ToUserName { get; set; }
+
+    /// <summary>
+    /// 委托流程id.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_FLOWID")]
+    public string? FlowId { get; set; }
+
+    /// <summary>
+    /// 委托流程名称.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_FLOWNAME")]
+    public string? FlowName { get; set; }
+
+    /// <summary>
+    /// 流程分类.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_FLOWCATEGORY")]
+    public string? FlowCategory { get; set; }
+
+    /// <summary>
+    /// 开始时间.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_STARTTIME")]
+    public DateTime? StartTime { get; set; }
+
+    /// <summary>
+    /// 结束时间.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_ENDTIME")]
+    public DateTime? EndTime { get; set; }
+
+    /// <summary>
+    /// 描述.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_DESCRIPTION")]
+    public string? Description { get; set; }
+
+    /// <summary>
+    /// 排序码.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_SORTCODE")]
+    public long? SortCode { get; set; }
+
+    /// <summary>
+    /// 委托类型(0:发起,1:审批).
+    /// </summary>
+    [SugarColumn(ColumnName = "F_TYPE")]
+    public string? Type { get; set; }
+
+    /// <summary>
+    /// 委托人id.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_USERID")]
+    public string? UserId { get; set; }
+
+    /// <summary>
+    /// 委托人名称.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_USERNAME")]
+    public string? UserName { get; set; }
+}

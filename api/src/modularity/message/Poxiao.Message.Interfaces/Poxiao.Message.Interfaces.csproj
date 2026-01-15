@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<ItemGroup>
+		<ProjectReference Include="..\Poxiao.Message.Entitys\Poxiao.Message.Entitys.csproj" />
+	</ItemGroup>
+
+</Project>

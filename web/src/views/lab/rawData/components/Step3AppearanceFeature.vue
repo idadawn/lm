@@ -1,0 +1,727 @@
+<template>
+  <div class="step3-container">
+    <!-- 步骤说明 -->
+    <a-alert
+      message="第四步：匹配外观特性"
+      description="系统已根据炉号中的特性汉字自动匹配外观特性（支持1:n关系）。请检查并修正匹配结果。"
+      type="info"
+      show-icon
+      style="margin-bottom: 20px" />
+
+    <!-- 统计信息 -->
+    <div class="statistics-section">
+      <a-row :gutter="16">
+        <a-col :span="5">
+          <a-statistic title="总数据行数" :value="totalRows" />
+        </a-col>
+        <a-col :span="5">
+          <a-statistic title="需要匹配" :value="needMatchCount" :value-style="{ color: '#1890ff' }" />
+        </a-col>
+        <a-col :span="5">
+          <a-statistic title="已匹配" :value="matchedCount" :value-style="{ color: '#52c41a' }" />
+        </a-col>
+        <a-col :span="5">
+          <a-statistic title="未匹配" :value="unmatchedCount" :value-style="{ color: '#ff4d4f' }" />
+        </a-col>
+        <a-col :span="4">
+          <a-statistic title="匹配率" :value="matchRate" suffix="%" />
+        </a-col>
+      </a-row>
+    </div>
+
+    <!-- 筛选和操作 -->
+    <div class="filter-section">
+      <a-space>
+        <a-button @click="handleRefresh" :loading="loading">
+          <ReloadOutlined /> 刷新匹配结果
+        </a-button>
+        <a-button @click="handleBatchMatch" :disabled="!hasUnmatchedData">
+          <ThunderboltOutlined /> 批量匹配
+        </a-button>
+        <a-select
+          v-model:value="filterStatus"
+          style="width: 140px"
+          placeholder="筛选状态"
+          allow-clear
+          @change="handleFilterChange">
+          <a-select-option value="">全部</a-select-option>
+          <a-select-option value="matched">已匹配</a-select-option>
+          <a-select-option value="unmatched">未匹配</a-select-option>
+          <a-select-option value="no_feature">无需匹配</a-select-option>
+        </a-select>
+        <a-input-search
+          v-model:value="searchText"
+          placeholder="搜索炉号或特性汉字"
+          style="width: 250px"
+          @search="handleSearch"
+          allow-clear />
+      </a-space>
+    </div>
+
+    <!-- 数据表格 -->
+    <div class="table-section">
+      <a-table
+        :columns="columns"
+        :data-source="displayData"
+        :pagination="paginationConfig"
+        :row-selection="rowSelection"
+        :loading="loading"
+        row-key="id"
+        size="middle"
+        :scroll="{ x: 1200 }">
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.dataIndex === 'furnaceNo'">
+            <div class="furnace-no-cell">
+              <div>{{ record.furnaceNo }}</div>
+              <div v-if="record.featureSuffix" class="feature-tag">
+                <a-tag size="small" color="orange">{{ record.featureSuffix }}</a-tag>
+              </div>
+            </div>
+          </template>
+
+          <template v-else-if="column.dataIndex === 'matchedFeatures'">
+            <div class="matched-features-cell">
+              <div v-if="record.appearanceFeatureIds?.length" class="feature-list">
+                <a-space wrap size="small">
+                  <a-tag
+                    v-for="featureId in record.appearanceFeatureIds.slice(0, 3)"
+                    :key="featureId"
+                    color="blue">
+                    {{ getFeatureName(featureId) }}
+                  </a-tag>
+                  <a-tag v-if="record.appearanceFeatureIds.length > 3"
+                    color="default">
+                    +{{ record.appearanceFeatureIds.length - 3 }}
+                  </a-tag>
+                </a-space>
+              </div>
+              <div v-else-if="record.featureSuffix" class="unmatched-features">
+                <a-tag color="error">未匹配</a-tag>
+              </div>
+              <div v-else class="no-feature">
+                <a-tag color="default">无需匹配</a-tag>
+              </div>
+            </div>
+          </template>
+
+          <template v-else-if="column.dataIndex === 'matchConfidence'">
+            <div class="confidence-cell">
+              <a-progress
+                v-if="record.matchConfidence"
+                :percent="Math.round(record.matchConfidence * 100)"
+                :stroke-color="getConfidenceColor(record.matchConfidence)"
+                size="small"
+                :show-info="false" />
+              <span v-if="record.matchConfidence" class="confidence-text">
+                {{ Math.round(record.matchConfidence * 100) }}%
+              </span>
+              <span v-else>-</span>
+            </div>
+          </template>
+
+          <template v-else-if="column.dataIndex === 'actions'">
+            <a-space v-if="record.featureSuffix">
+              <a-button
+                type="primary"
+                size="small"
+                @click.stop="handleEditFeatures(record)">
+                <EditOutlined /> 编辑
+              </a-button>
+              <a-button
+                v-if="record.appearanceFeatureIds?.length"
+                type="link"
+                danger
+                size="small"
+                @click.stop="handleClearFeatures(record)">
+                <ClearOutlined /> 清除
+              </a-button>
+            </a-space>
+            <span v-else class="no-action">-</span>
+          </template>
+        </template>
+      </a-table>
+    </div>
+
+    <!-- 特性选择弹窗 -->
+    <a-modal
+      v-model:open="featureModalVisible"
+      title="选择外观特性"
+      :width="900"
+      :mask-closable="false"
+      @ok="handleFeatureModalOk"
+      @cancel="handleFeatureModalCancel">
+      <div class="feature-selection-content">
+        <!-- 当前特性汉字 -->
+        <div class="current-feature" v-if="currentRecord?.featureSuffix">
+          <a-alert
+            :message="`原始特性汉字：${currentRecord.featureSuffix}`"
+            type="info"
+            show-icon
+            style="margin-bottom: 16px" />
+        </div>
+
+        <!-- 特性分类展示 -->
+        <div class="feature-categories">
+          <a-collapse v-model:activeKey="activeCategories" accordion>
+            <a-collapse-panel
+              v-for="category in featureCategories"
+              :key="category.id"
+              :header="category.name">
+              <div class="category-features">
+                <a-row :gutter="[16, 16]">
+                  <a-col
+                    v-for="feature in getFeaturesByCategory(category.id)"
+                    :key="feature.id"
+                    :span="8">
+                    <div
+                      class="feature-item"
+                      :class="{ selected: isFeatureSelected(feature) }"
+                      @click="toggleFeature(feature)">
+                      <div class="feature-header">
+                        <div class="feature-name">{{ feature.name }}</div>
+                        <div class="feature-level" v-if="feature.severityLevelName">
+                          <a-tag size="small">{{ feature.severityLevelName }}</a-tag>
+                        </div>
+                      </div>
+                      <div class="feature-desc" v-if="feature.description">
+                        {{ feature.description }}
+                      </div>
+                      <div class="feature-confidence" v-if="feature.confidence">
+                        置信度：{{ Math.round(feature.confidence * 100) }}%
+                      </div>
+                    </div>
+                  </a-col>
+                </a-row>
+              </div>
+            </a-collapse-panel>
+          </a-collapse>
+        </div>
+
+        <!-- 已选特性预览 -->
+        <div class="selected-features" v-if="selectedFeatures.length > 0">
+          <h4>已选择的特性（{{ selectedFeatures.length }}）：</h4>
+          <a-space wrap>
+            <a-tag
+              v-for="feature in selectedFeatures"
+              :key="feature.id"
+              closable
+              @close="removeFeature(feature)">
+              {{ feature.name }}
+              <span v-if="feature.severityLevelName">（{{ feature.severityLevelName }}）</span>
+            </a-tag>
+          </a-space>
+        </div>
+      </div>
+    </a-modal>
+
+    <!-- 加载状态 -->
+    <div v-if="loading" class="loading-overlay">
+      <a-spin tip="正在加载数据..." />
+    </div>
+  </div>
+</template>
+
+<script lang="ts" setup>
+import { ref, computed, reactive, onMounted, watch } from 'vue';
+import { message } from 'ant-design-vue';
+import {
+  ReloadOutlined,
+  ThunderboltOutlined,
+  EditOutlined,
+  ClearOutlined
+} from '@ant-design/icons-vue';
+import { getAppearanceFeatureMatches, updateAppearanceFeatureMatches } from '/@/api/lab/rawData';
+import { getAppearanceFeatureList, getAppearanceFeatureCategoryList } from '/@/api/lab/appearanceFeature';
+import type {
+  RawDataRow,
+  AppearanceFeature,
+  AppearanceFeatureCategory,
+  Step3AppearanceFeatureInput
+} from '/@/api/lab/types/rawData';
+
+const props = defineProps({
+  importSessionId: {
+    type: String,
+    required: true,
+  },
+});
+
+const emit = defineEmits(['prev', 'next', 'cancel']);
+
+// 状态
+const loading = ref(false);
+const data = ref<RawDataRow[]>([]);
+const allFeatures = ref<AppearanceFeature[]>([]);
+const featureCategories = ref<AppearanceFeatureCategory[]>([]);
+const filterStatus = ref('');
+const searchText = ref('');
+const hasLoaded = ref(false); // 标记是否已经加载过数据（避免重复加载）
+const selectedRowKeys = ref<string[]>([]);
+
+// 弹窗状态
+const featureModalVisible = ref(false);
+const currentRecord = ref<RawDataRow | null>(null);
+const selectedFeatures = ref<AppearanceFeature[]>([]);
+const activeCategories = ref<string[]>([]);
+
+// 分页配置
+const paginationConfig = reactive({
+  current: 1,
+  pageSize: 20,
+  total: 0,
+  showSizeChanger: true,
+  showQuickJumper: true,
+  showTotal: (total: number) => `共 ${total} 条`,
+});
+
+// 计算属性
+const totalRows = computed(() => Array.isArray(data.value) ? data.value.length : 0);
+// 需要匹配的行数（只有有特性汉字的才需要匹配）
+const needMatchCount = computed(() => Array.isArray(data.value) ? data.value.filter(row => row.featureSuffix).length : 0);
+// 已匹配：有特性汉字且已匹配外观特性
+const matchedCount = computed(() => Array.isArray(data.value) ? data.value.filter(row => row.featureSuffix && (row.appearanceFeatureIds?.length || 0) > 0).length : 0);
+// 未匹配：有特性汉字但未匹配外观特性
+const unmatchedCount = computed(() => Array.isArray(data.value) ? data.value.filter(row => row.featureSuffix && (row.appearanceFeatureIds?.length || 0) === 0).length : 0);
+// 匹配率基于需要匹配的行数
+const matchRate = computed(() => needMatchCount.value > 0 ? Math.round((matchedCount.value / needMatchCount.value) * 100) : 100);
+const hasUnmatchedData = computed(() => unmatchedCount.value > 0);
+
+const displayData = computed(() => {
+  // 确保 data.value 是数组
+  if (!Array.isArray(data.value)) {
+    paginationConfig.total = 0;
+    return [];
+  }
+  
+  let filtered = data.value;
+
+  // 状态筛选
+  if (filterStatus.value === 'matched') {
+    // 已匹配：有特性汉字且已匹配外观特性
+    filtered = filtered.filter(row => row.featureSuffix && (row.appearanceFeatureIds?.length || 0) > 0);
+  } else if (filterStatus.value === 'unmatched') {
+    // 未匹配：有特性汉字但未匹配外观特性
+    filtered = filtered.filter(row => row.featureSuffix && (row.appearanceFeatureIds?.length || 0) === 0);
+  } else if (filterStatus.value === 'no_feature') {
+    // 无需匹配：没有特性汉字
+    filtered = filtered.filter(row => !row.featureSuffix);
+  }
+
+  // 搜索筛选
+  if (searchText.value) {
+    const search = searchText.value.toLowerCase();
+    filtered = filtered.filter(row =>
+      row.furnaceNo?.toLowerCase().includes(search) ||
+      (row.featureSuffix && row.featureSuffix.toLowerCase().includes(search))
+    );
+  }
+
+  // 分页
+  paginationConfig.total = filtered.length;
+  const start = (paginationConfig.current - 1) * paginationConfig.pageSize;
+  const end = start + paginationConfig.pageSize;
+  return filtered.slice(start, end);
+});
+
+// 表格列配置
+const columns = [
+  {
+    title: '行号',
+    dataIndex: 'rowIndex',
+    width: 80,
+    fixed: 'left',
+  },
+  {
+    title: '生产日期',
+    dataIndex: 'prodDate',
+    width: 120,
+  },
+  {
+    title: '炉号',
+    dataIndex: 'furnaceNo',
+    width: 180,
+  },
+  {
+    title: '特性汉字',
+    dataIndex: 'featureSuffix',
+    width: 120,
+  },
+  {
+    title: '匹配特性',
+    dataIndex: 'matchedFeatures',
+    width: 300,
+  },
+  {
+    title: '匹配置信度',
+    dataIndex: 'matchConfidence',
+    width: 120,
+    align: 'center',
+  },
+  {
+    title: '操作',
+    dataIndex: 'actions',
+    width: 150,
+    fixed: 'right',
+  },
+];
+
+// 表格行选择配置
+const rowSelection = computed(() => ({
+  selectedRowKeys: selectedRowKeys.value,
+  onChange: (keys: string[]) => {
+    selectedRowKeys.value = keys;
+  },
+}));
+
+// 方法
+async function loadData() {
+  loading.value = true;
+  try {
+    const response = await getAppearanceFeatureMatches(props.importSessionId);
+    
+    // 处理不同的响应格式
+    let rawData: any[] = [];
+    if (Array.isArray(response)) {
+      rawData = response;
+    } else if (response?.data && Array.isArray(response.data)) {
+      rawData = response.data;
+    } else if (response?.list && Array.isArray(response.list)) {
+      rawData = response.list;
+    } else if (response?.items && Array.isArray(response.items)) {
+      rawData = response.items;
+    }
+    
+    data.value = rawData;
+
+    // 添加行号
+    data.value.forEach((row, index) => {
+      row.rowIndex = index + 1;
+    });
+
+    // 设置选中行
+    selectedRowKeys.value = data.value
+      .filter(row => !row.appearanceFeatureIds?.length)
+      .map(row => row.id!);
+    
+    // 标记为已加载
+    hasLoaded.value = true;
+  } catch (error) {
+    console.error('加载特性匹配数据失败:', error);
+    message.error('加载数据失败');
+    data.value = []; // 确保 data 始终是数组
+    // 加载失败时不标记为已加载，允许重试
+    hasLoaded.value = false;
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function loadFeatures() {
+  try {
+    const [featuresResponse, categoriesResponse] = await Promise.all([
+      getAppearanceFeatureList({ keyword: '' }),
+      getAppearanceFeatureCategoryList({ keyword: '' })
+    ]);
+
+    allFeatures.value = featuresResponse.list || [];
+    featureCategories.value = categoriesResponse.list || [];
+  } catch (error) {
+    message.error('加载特性数据失败');
+  }
+}
+
+function getFeatureName(featureId: string): string {
+  const feature = allFeatures.value.find(f => f.id === featureId);
+  return feature ? feature.name : featureId;
+}
+
+function getFeaturesByCategory(categoryId: string): AppearanceFeature[] {
+  return allFeatures.value.filter(f => f.categoryId === categoryId);
+}
+
+function isFeatureSelected(feature: AppearanceFeature): boolean {
+  return selectedFeatures.value.some(f => f.id === feature.id);
+}
+
+function toggleFeature(feature: AppearanceFeature) {
+  const index = selectedFeatures.value.findIndex(f => f.id === feature.id);
+  if (index > -1) {
+    selectedFeatures.value.splice(index, 1);
+  } else {
+    selectedFeatures.value.push(feature);
+  }
+}
+
+function removeFeature(feature: AppearanceFeature) {
+  const index = selectedFeatures.value.findIndex(f => f.id === feature.id);
+  if (index > -1) {
+    selectedFeatures.value.splice(index, 1);
+  }
+}
+
+function getConfidenceColor(confidence: number): string {
+  if (confidence >= 0.9) return '#52c41a';
+  if (confidence >= 0.7) return '#faad14';
+  return '#ff4d4f';
+}
+
+function handleRefresh() {
+  hasLoaded.value = false; // 重置加载标记，允许重新加载
+  loadData();
+}
+
+function handleBatchMatch() {
+  if (selectedRowKeys.value.length === 0) {
+    message.warning('请先选择要批量匹配的数据');
+    return;
+  }
+  message.info('批量匹配功能开发中...');
+}
+
+function handleFilterChange() {
+  paginationConfig.current = 1;
+}
+
+function handleSearch() {
+  paginationConfig.current = 1;
+}
+
+async function handleEditFeatures(record: RawDataRow) {
+  console.log('handleEditFeatures called', record);
+  if (!record) {
+    console.error('record is null or undefined');
+    return;
+  }
+  
+  // 确保特性数据已加载
+  if (allFeatures.value.length === 0 || featureCategories.value.length === 0) {
+    await loadFeatures();
+  }
+  
+  currentRecord.value = record;
+  selectedFeatures.value = [];
+
+  // 加载当前记录已匹配的特性
+  if (record.appearanceFeatureIds?.length) {
+    record.appearanceFeatureIds.forEach(id => {
+      const feature = allFeatures.value.find(f => f.id === id);
+      if (feature) {
+        selectedFeatures.value.push(feature);
+      }
+    });
+  }
+
+  featureModalVisible.value = true;
+  // 默认展开第一个分类
+  if (featureCategories.value.length > 0) {
+    activeCategories.value = [featureCategories.value[0].id];
+  }
+}
+
+function handleClearFeatures(record: RawDataRow) {
+  record.appearanceFeatureIds = [];
+  // record.matchConfidence = undefined;
+}
+
+async function handleFeatureModalOk() {
+  if (!currentRecord.value) return;
+
+  // 更新特性ID列表
+  currentRecord.value.appearanceFeatureIds = selectedFeatures.value.map(f => f.id);
+  currentRecord.value.matchConfidence = selectedFeatures.value.length > 0 ? 1.0 : undefined;
+
+  featureModalVisible.value = false;
+}
+
+function handleFeatureModalCancel() {
+  featureModalVisible.value = false;
+  currentRecord.value = null;
+  selectedFeatures.value = [];
+}
+
+// 暴露给父组件的方法
+const canGoNext = computed(() => true); // 始终可以点击下一步，由 saveAndNext 处理确认逻辑
+
+async function saveAndNext() {
+  if (unmatchedCount.value > 0) {
+    const confirmed = await new Promise<boolean>((resolve) => {
+      const userConfirmed = confirm(`还有 ${unmatchedCount.value} 行数据未匹配特性，确定要继续吗？`);
+      resolve(userConfirmed);
+    });
+
+    if (!confirmed) {
+      return;
+    }
+  }
+
+  try {
+    // 保存当前匹配结果
+    const updateData: Step3AppearanceFeatureInput = {
+      importSessionId: props.importSessionId,
+      matches: data.value.map(row => ({
+        rowId: row.id!,
+        appearanceFeatureIds: row.appearanceFeatureIds || [],
+      })),
+    };
+
+    await updateAppearanceFeatureMatches(props.importSessionId, updateData);
+    emit('next');
+  } catch (error) {
+    message.error('保存失败，请重试');
+  }
+}
+
+// 生命周期
+onMounted(() => {
+  // 如果有 importSessionId 且还没有加载过，则加载数据
+  if (props.importSessionId && !hasLoaded.value) {
+    loadData();
+  }
+  loadFeatures(); // 特性列表可以提前加载
+});
+
+// 监听 importSessionId 变化，当从空变为有值时自动加载数据
+watch(
+  () => props.importSessionId,
+  (newId, oldId) => {
+    // 当 importSessionId 从空变为有值，且还没有加载过时，触发加载
+    if (newId && !oldId && !hasLoaded.value) {
+      loadData();
+    }
+  },
+  { immediate: false }
+);
+
+// 暴露给父组件
+defineExpose({
+  canGoNext,
+  saveAndNext,
+});
+</script>
+
+<style lang="less" scoped>
+.step3-container {
+  padding: 0;
+}
+
+.statistics-section {
+  padding: 20px;
+  background: #fafafa;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.filter-section {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.table-section {
+  .furnace-no-cell {
+    .feature-tag {
+      margin-top: 4px;
+    }
+  }
+
+  .matched-features-cell {
+    .feature-list {
+      .ant-tag {
+        margin-bottom: 4px;
+      }
+    }
+  }
+
+  .confidence-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .confidence-text {
+      font-size: 12px;
+      color: #666;
+    }
+  }
+
+  // 确保操作按钮可以正常点击
+  :deep(.ant-table-cell-fix-right) {
+    .ant-space {
+      pointer-events: auto;
+      
+      .ant-btn {
+        pointer-events: auto;
+        cursor: pointer;
+        position: relative;
+        z-index: 1;
+      }
+    }
+  }
+}
+
+.feature-selection-content {
+  .current-feature {
+    margin-bottom: 16px;
+  }
+
+  .feature-categories {
+    margin-bottom: 16px;
+
+    .category-features {
+      padding: 16px 0;
+    }
+
+    .feature-item {
+      padding: 12px;
+      border: 1px solid #d9d9d9;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.3s;
+      height: 100%;
+
+      &:hover {
+        border-color: #1890ff;
+        background-color: #f0f9ff;
+      }
+
+      &.selected {
+        border-color: #1890ff;
+        background-color: #e6f7ff;
+      }
+
+      .feature-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+
+        .feature-name {
+          font-weight: 500;
+        }
+      }
+
+      .feature-desc {
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 4px;
+      }
+
+      .feature-confidence {
+        font-size: 12px;
+        color: #999;
+      }
+    }
+  }
+
+  .selected-features {
+    padding: 16px;
+    background: #fafafa;
+    border-radius: 6px;
+
+    h4 {
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+  }
+}
+</style>

@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\engine\Poxiao.VisualDev.Engine\Poxiao.VisualDev.Engine.csproj" />
+		<ProjectReference Include="..\..\visualdev\Poxiao.VisualDev.Interfaces\Poxiao.VisualDev.Interfaces.csproj" />
+	</ItemGroup>
+
+</Project>

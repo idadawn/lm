@@ -57,29 +57,90 @@ function renderContent({ content }: Pick<ModalOptionsEx, 'content'>) {
 /**
  * @description: Create confirmation box
  */
-function createConfirm(options: ModalOptionsEx): ConfirmOptions {
+type ConfirmInstance = {
+  destroy: () => void;
+  update: (config: ModalFuncProps) => void;
+};
+
+/**
+ * 强制清理所有确认弹窗的 DOM 元素
+ * 解决 Ant Design Vue Modal.confirm 在某些情况下不能正确关闭的问题
+ */
+function forceCleanupConfirmModals() {
+  setTimeout(() => {
+    // 清理确认弹窗
+    const confirmModals = document.querySelectorAll('.ant-modal-confirm');
+    confirmModals.forEach((modal) => {
+      const wrap = modal.closest('.ant-modal-wrap');
+      if (wrap && wrap.parentNode) {
+        wrap.parentNode.removeChild(wrap);
+      }
+    });
+
+    // 清理遮罩层
+    const masks = document.querySelectorAll('.ant-modal-mask');
+    masks.forEach((mask) => {
+      if (mask.parentNode) {
+        mask.parentNode.removeChild(mask);
+      }
+    });
+
+    // 恢复 body 样式
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+    document.body.classList.remove('ant-scrolling-effect');
+  }, 100);
+}
+
+function createConfirm(options: ModalOptionsEx): ConfirmInstance {
   const iconType = options.iconType || 'warning';
   Reflect.deleteProperty(options, 'iconType');
 
-  let confirmInstance: any = null;
+  // 取出用户回调，避免后续被覆盖/重复调用
+  const { onOk: userOnOk, onCancel: userOnCancel, ...rest } = options as ModalFuncProps;
+
+  let instance: ConfirmInstance | null = null;
+  let isDestroyed = false;
+
+  // 安全销毁函数，确保只执行一次
+  const safeDestroy = () => {
+    if (isDestroyed) return;
+    isDestroyed = true;
+
+    try {
+      instance?.destroy();
+    } catch (e) {
+      console.warn('Modal destroy failed:', e);
+    }
+
+    // 强制清理 DOM，确保弹窗关闭
+    forceCleanupConfirmModals();
+  };
 
   const opt: ModalFuncProps = {
     centered: true,
     icon: getIcon(iconType),
-    ...options,
+    ...rest,
     content: renderContent(options),
-    onOk: async () => {
-      const { onOk } = options;
-      if (onOk) {
-        await onOk();
+    // 关键：取消必须主动销毁，否则会残留遮罩/弹窗
+    onCancel: async () => {
+      try {
+        await (userOnCancel as any)?.();
+      } finally {
+        safeDestroy();
       }
-      setTimeout(() => {
-        confirmInstance?.destroy();
-      }, 100);
+    },
+    // 确认：成功后再关闭；若用户 onOk 抛错/拒绝，则不关闭，方便展示错误并重试
+    onOk: async () => {
+      if (userOnOk) {
+        await (userOnOk as any)();
+      }
+      safeDestroy();
     },
   };
-  confirmInstance = Modal.confirm(opt) as unknown as ConfirmOptions;
-  return confirmInstance;
+
+  instance = Modal.confirm(opt) as unknown as ConfirmInstance;
+  return instance;
 }
 
 const getBaseOptions = () => {

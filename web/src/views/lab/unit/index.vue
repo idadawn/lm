@@ -37,13 +37,12 @@
             <a-button type="primary" @click="handleCreateCategory">创建第一个单位维度</a-button>
           </div>
           <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div
-              v-for="item in categoryList"
-              :key="item.id"
+            <div v-for="item in categoryList" :key="item.id"
               class="bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:border-green-400 hover:shadow-md transition-all relative group">
               <div class="flex items-start justify-between mb-3">
                 <div class="flex items-center gap-3 flex-1">
-                  <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center text-xl font-bold text-green-700 border border-green-200 shadow-sm">
+                  <div
+                    class="w-12 h-12 rounded-lg bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center text-xl font-bold text-green-700 border border-green-200 shadow-sm">
                     {{ item.name.charAt(0) }}
                   </div>
                   <div class="flex-1">
@@ -54,9 +53,9 @@
                     <p v-if="item.description" class="text-sm text-gray-600 mt-2">{{ item.description }}</p>
                   </div>
                 </div>
-                <div class="hidden group-hover:flex gap-1 flex-col">
-                  <a-button type="link" size="small" @click="handleEditCategory(item)">编辑</a-button>
-                  <a-button type="link" size="small" danger @click="handleDeleteCategory(item)">删除</a-button>
+                <div class="hidden group-hover:flex gap-1 flex-col" @mousedown.stop @click.stop>
+                  <a-button type="link" size="small" @click.stop="handleEditCategory(item)">编辑</a-button>
+                  <a-button type="link" size="small" danger @click.stop="handleDeleteCategory(item)">删除</a-button>
                 </div>
               </div>
             </div>
@@ -66,11 +65,7 @@
         <!-- 单位定义标签页 -->
         <a-tab-pane key="unit" tab="单位定义">
           <div class="mb-4">
-            <a-select
-              v-model:value="selectedCategoryId"
-              placeholder="筛选维度"
-              allowClear
-              style="width: 200px"
+            <a-select v-model:value="selectedCategoryId" placeholder="筛选维度" allowClear style="width: 200px"
               @change="loadUnitList">
               <a-select-option v-for="cat in categoryList" :key="cat.id" :value="cat.id">
                 {{ cat.name }}
@@ -87,22 +82,18 @@
             <a-button type="primary" @click="handleCreateUnit">创建第一个单位</a-button>
           </div>
           <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div
-              v-for="item in unitList"
-              :key="item.id"
-              :class="[
-                'bg-white rounded-lg p-4 shadow-sm border hover:shadow-md transition-all relative group',
-                item.isBase ? 'border-blue-300 border-2' : 'border-gray-200'
-              ]">
+            <div v-for="item in unitList" :key="item.id" :class="[
+              'bg-white rounded-lg p-4 shadow-sm border hover:shadow-md transition-all relative group',
+              item.isBase ? 'border-blue-300 border-2' : 'border-gray-200'
+            ]">
               <div class="flex items-start justify-between mb-3">
                 <div class="flex items-center gap-3 flex-1">
-                  <div
-                    :class="[
-                      'w-12 h-12 rounded-lg flex items-center justify-center text-xl font-bold border shadow-sm',
-                      item.isBase
-                        ? 'bg-blue-50 text-blue-600 border-blue-200'
-                        : 'bg-gray-50 text-gray-600 border-gray-200'
-                    ]">
+                  <div :class="[
+                    'w-12 h-12 rounded-lg flex items-center justify-center text-xl font-bold border shadow-sm',
+                    item.isBase
+                      ? 'bg-blue-50 text-blue-600 border-blue-200'
+                      : 'bg-gray-50 text-gray-600 border-gray-200'
+                  ]">
                     {{ item.symbol }}
                   </div>
                   <div class="flex-1">
@@ -118,9 +109,10 @@
                     </div>
                   </div>
                 </div>
-                <div class="hidden group-hover:flex gap-1 flex-col">
-                  <a-button type="link" size="small" @click="handleEditUnit(item)">编辑</a-button>
-                  <a-button type="link" size="small" danger @click="handleDeleteUnit(item)" :disabled="item.isBase">
+                <div class="hidden group-hover:flex gap-1 flex-col" @mousedown.stop @click.stop>
+                  <a-button type="link" size="small" @click.stop="handleEditUnit(item)">编辑</a-button>
+                  <a-button type="link" size="small" danger @click.stop="handleDeleteUnit(item)"
+                    :disabled="item.isBase === 1 || item.isBase === true">
                     删除
                   </a-button>
                 </div>
@@ -137,29 +129,11 @@
     <!-- 单位定义Modal -->
     <UnitDefinitionModal @register="registerUnitModal" @success="handleUnitSuccess" />
 
-    <!-- 删除确认Modal -->
-    <a-modal
-      v-model:open="deleteModalVisible"
-      :title="deleteType === 'category' ? '删除单位维度' : '删除单位定义'"
-      ok-text="确认删除"
-      ok-type="danger"
-      @ok="handleDeleteOk"
-      :confirmLoading="deleteLoading">
-      <div class="p-4">
-        <div class="flex items-center gap-3 mb-4 text-red-500">
-          <InfoCircleFilled class="text-2xl" />
-          <span class="font-bold">确认删除</span>
-        </div>
-        <p>确定要删除此{{ deleteType === 'category' ? '单位维度' : '单位定义' }}吗？</p>
-        <p class="text-gray-500 mt-2 text-sm">此操作不可恢复。</p>
-      </div>
-    </a-modal>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue';
-import { InfoCircleFilled } from '@ant-design/icons-vue';
 import { useModal } from '/@/components/Modal';
 import { useMessage } from '/@/hooks/web/useMessage';
 import UnitCategoryModal from './components/UnitCategoryModal.vue';
@@ -173,16 +147,12 @@ import {
 
 const [registerCategoryModal, { openModal: openCategoryModal }] = useModal();
 const [registerUnitModal, { openModal: openUnitModal }] = useModal();
-const { createMessage } = useMessage();
+const { createMessage, createConfirm, createWarningModal } = useMessage();
 
 const activeTab = ref('category');
 const categoryList = ref<any[]>([]);
 const unitList = ref<any[]>([]);
 const selectedCategoryId = ref<string | undefined>(undefined);
-const deleteModalVisible = ref(false);
-const deleteLoading = ref(false);
-const deleteType = ref<'category' | 'unit'>('category');
-const currentDeleteRecord = ref<any>(null);
 
 const loadCategoryList = async () => {
   try {
@@ -214,50 +184,118 @@ const handleEditCategory = (record: any) => {
   openCategoryModal(true, { isUpdate: true, record });
 };
 
-const handleDeleteCategory = (record: any) => {
-  currentDeleteRecord.value = record;
-  deleteType.value = 'category';
-  deleteModalVisible.value = true;
+
+const handleDeleteCategory = async (record: any) => {
+  console.log('[删除] 点击删除单位维度按钮', { record });
+  if (!record || !record.id) {
+    createMessage.error('删除失败：记录ID不存在');
+    console.error('[删除] 记录或ID为空', { record });
+    return;
+  }
+
+  const recordName = record?.name || record?.code || '该单位维度';
+
+  // 先检查该维度下是否有单位
+  try {
+    console.log('[删除] 开始检查维度下的单位', record.id);
+    const unitsInCategory = await getUnitDefinitionList(record.id);
+    console.log('[删除] 维度下的单位列表', unitsInCategory);
+    if (unitsInCategory && unitsInCategory.length > 0) {
+      console.log('[删除] 发现单位，显示警告', unitsInCategory.length);
+      createWarningModal({
+        title: '无法删除',
+        content: `单位维度"${recordName}"下存在 ${unitsInCategory.length} 个单位定义，请先删除或转移这些单位后再尝试删除维度。`,
+        okText: '我知道了',
+      });
+      return;
+    }
+  } catch (error) {
+    console.error('[删除] 检查维度下单位失败:', error);
+    createMessage.error('检查维度下单位失败，无法执行删除操作');
+    return;
+  }
+
+  console.log('[删除] 显示确认对话框');
+  // 使用 createConfirm，确保弹窗能正确关闭
+  createConfirm({
+    iconType: 'warning',
+    title: '确认删除',
+    content: `确定要删除单位维度"${recordName}"吗？此操作不可恢复。`,
+    okText: '确认删除',
+    cancelText: '取消',
+    onOk: async () => {
+      console.log('[删除] 用户点击确认');
+      try {
+        await deleteUnitCategory(record.id);
+        createMessage.success('删除成功');
+        await loadCategoryList();
+        console.log('[删除] 删除成功，关闭对话框');
+      } catch (error: any) {
+        console.error('[删除] 删除失败:', error);
+        const errorMsg = error?.response?.data?.msg || error?.message || '删除失败，请稍后重试';
+        createMessage.error(errorMsg);
+        throw error; // 重新抛出错误，阻止 Modal 自动关闭
+      }
+    },
+    onCancel: () => {
+      console.log('[删除] 用户点击取消');
+    },
+  });
 };
 
-const handleCreateUnit = () => {
+const handleCreateUnit = async () => {
+  // 确保单位维度列表已加载
+  if (categoryList.value.length === 0) {
+    await loadCategoryList();
+  }
   openUnitModal(true, { isUpdate: false, categoryList: categoryList.value });
 };
 
-const handleEditUnit = (record: any) => {
+const handleEditUnit = async (record: any) => {
+  // 确保单位维度列表已加载
+  if (categoryList.value.length === 0) {
+    await loadCategoryList();
+  }
   openUnitModal(true, { isUpdate: true, record, categoryList: categoryList.value });
 };
 
 const handleDeleteUnit = (record: any) => {
-  currentDeleteRecord.value = record;
-  deleteType.value = 'unit';
-  deleteModalVisible.value = true;
+  console.log('[删除] 点击删除单位定义按钮', { record });
+  if (!record || !record.id) {
+    createMessage.error('删除失败：记录ID不存在');
+    console.error('[删除] 记录或ID为空', { record });
+    return;
+  }
+
+  if (record.isBase === 1 || record.isBase === true) {
+    createMessage.warning('基准单位不能删除');
+    return;
+  }
+
+  const recordName = record?.name || record?.symbol || '该单位定义';
+  
+  // 使用 createConfirm，确保弹窗能正确关闭
+  createConfirm({
+    iconType: 'warning',
+    title: '确认删除',
+    content: `确定要删除单位定义"${recordName}"吗？此操作不可恢复。`,
+    okText: '确认删除',
+    cancelText: '取消',
+    onOk: async () => {
+      try {
+        await deleteUnitDefinition(record.id);
+        createMessage.success('删除成功');
+        await loadUnitList();
+      } catch (error: any) {
+        console.error('删除失败:', error);
+        const errorMsg = error?.response?.data?.msg || error?.message || '删除失败，请稍后重试';
+        createMessage.error(errorMsg);
+        throw error; // 重新抛出错误，阻止 Modal 自动关闭
+      }
+    },
+  });
 };
 
-const handleDeleteOk = async () => {
-  if (!currentDeleteRecord.value) return;
-  try {
-    deleteLoading.value = true;
-    if (deleteType.value === 'category') {
-      await deleteUnitCategory(currentDeleteRecord.value.id);
-    } else {
-      await deleteUnitDefinition(currentDeleteRecord.value.id);
-    }
-    createMessage.success('删除成功');
-    deleteModalVisible.value = false;
-    if (deleteType.value === 'category') {
-      await loadCategoryList();
-    } else {
-      await loadUnitList();
-    }
-  } catch (error: any) {
-    console.error('删除失败:', error);
-    const errorMsg = error?.response?.data?.msg || error?.message || '删除失败，请稍后重试';
-    createMessage.error(errorMsg);
-  } finally {
-    deleteLoading.value = false;
-  }
-};
 
 const handleCategorySuccess = () => {
   loadCategoryList();

@@ -50,20 +50,20 @@
 <script lang="ts" setup>
   import { usePopup } from '/@/components/Popup';
   import { useModal } from '/@/components/Modal';
+  import { useMessage } from '/@/hooks/web/useMessage';
   import Form from './Form.vue';
   import DepForm from './DepForm.vue';
   import { getDashTreeList, deleteDash } from '/@/api/chart';
   import { reactive } from 'vue';
   import { PlayCircleOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons-vue';
   import { postMetrictagList } from '/@/api/labelManagement';
-  import { Modal } from 'ant-design-vue';
-  import { ExclamationCircleOutlined } from '@ant-design/icons-vue';
-  import { createVNode, onMounted, ref } from 'vue';
+  import { onMounted, ref } from 'vue';
 
   defineOptions({ name: 'permission-organize' });
 
   const [registerForm, { openPopup: openFormPopup }] = usePopup();
   const [registerDepForm, { openModal: openDepFormModal }] = useModal();
+  const { createMessage, createConfirm } = useMessage();
 
   const state: any = reactive({
     items: [],
@@ -100,18 +100,21 @@
   // 删除仪表盘
   const delDash = item => {
     // 二次确认是否需要删除
-    Modal.confirm({
+    createConfirm({
+      iconType: 'warning',
       title: '确定要删除此数据吗？',
-      icon: createVNode(ExclamationCircleOutlined),
-      onOk() {
-        return new Promise(async resolve => {
+      content: '删除后无法恢复，请谨慎操作。',
+      onOk: async () => {
+        try {
           await deleteDash(item.id);
+          createMessage.success('删除成功');
           onSearch();
-          resolve(true);
-        }).catch(() => console.log('Oops errors!'));
+        } catch (error: any) {
+          const errorMsg = error?.response?.data?.msg || error?.message || '删除失败，请稍后重试';
+          createMessage.error(errorMsg);
+          throw error; // 重新抛出错误，阻止 Modal 自动关闭
+        }
       },
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
-      onCancel() {},
     });
   };
 

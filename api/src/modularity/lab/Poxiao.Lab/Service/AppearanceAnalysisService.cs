@@ -42,7 +42,11 @@ public class AppearanceAnalysisService : IAppearanceAnalysisService, ITransient
             // 从数据库动态获取所有特性
             var allFeatures = await _featureRepository
                 .AsQueryable()
-                .Where(f => f.DeleteMark == null && !string.IsNullOrEmpty(f.Name) && !string.IsNullOrEmpty(f.CategoryId))
+                .Where(f =>
+                    f.DeleteMark == null
+                    && !string.IsNullOrEmpty(f.Name)
+                    && !string.IsNullOrEmpty(f.CategoryId)
+                )
                 .ToListAsync();
 
             // 获取所有大类，建立ID到名称的映射
@@ -57,33 +61,34 @@ public class AppearanceAnalysisService : IAppearanceAnalysisService, ITransient
             var featuresByCategory = allFeatures
                 .Where(f => categoryIdToName.ContainsKey(f.CategoryId))
                 .GroupBy(f => categoryIdToName[f.CategoryId])
-                .ToDictionary(
-                    g => g.Key,
-                    g => g.Select(f => f.Name).Distinct().ToList()
-                );
+                .ToDictionary(g => g.Key, g => g.Select(f => f.Name).Distinct().ToList());
 
             // 确保所有大类都包含在字典中，即使没有特征定义也显示（空列表）
-            var categoryFeatures = categoryIdToName.Values
-                .ToDictionary(
-                    categoryName => categoryName,
-                    categoryName => featuresByCategory.ContainsKey(categoryName)
+            var categoryFeatures = categoryIdToName.Values.ToDictionary(
+                categoryName => categoryName,
+                categoryName =>
+                    featuresByCategory.ContainsKey(categoryName)
                         ? featuresByCategory[categoryName]
                         : new List<string>()
-                );
+            );
 
             // 从数据库动态获取启用的外观特性等级
-            var featureLevels = await _featureLevelRepository
+            var featureLevelEntities = await _featureLevelRepository
                 .AsQueryable()
                 .Where(s => s.Enabled == true && s.DeleteMark == null)
                 .OrderBy(s => s.SortCode)
-                .Select(s => s.Name)
                 .ToListAsync();
+
+            var featureLevels = featureLevelEntities.Select(s => s.Name).ToList();
+            var defaultLevel =
+                featureLevelEntities.FirstOrDefault(s => s.IsDefault)?.Name ?? "默认";
 
             // 调用AI模块的分析服务
             var aiResult = await _aiAnalysisService.AnalyzeAsync(
                 featureSuffix,
                 categoryFeatures,
-                featureLevels
+                featureLevels,
+                defaultLevel
             );
 
             if (!aiResult.Success || aiResult.Features == null || !aiResult.Features.Any())
@@ -93,12 +98,14 @@ public class AppearanceAnalysisService : IAppearanceAnalysisService, ITransient
             }
 
             // 转换为业务层的DTO格式
-            var features = aiResult.Features.Select(f => new Poxiao.Lab.Entity.Dto.AppearanceFeature.AIFeatureItem
-            {
-                Name = f.Name,
-                Level = f.Level,
-                Category = f.Category
-            }).ToList();
+            var features = aiResult
+                .Features.Select(f => new Poxiao.Lab.Entity.Dto.AppearanceFeature.AIFeatureItem
+                {
+                    Name = f.Name,
+                    Level = f.Level,
+                    Category = f.Category,
+                })
+                .ToList();
 
             // 返回兼容格式
             return new FeatureClassification
@@ -106,7 +113,7 @@ public class AppearanceAnalysisService : IAppearanceAnalysisService, ITransient
                 Features = features,
                 MainCategory = features[0].Category,
                 SubCategory = features[0].Name,
-                Severity = features[0].Level
+                Severity = features[0].Level,
             };
         }
         catch (Exception ex)

@@ -44,7 +44,8 @@ public class AppearanceFeatureAnalysisService : IAppearanceFeatureAnalysisServic
     public async Task<AppearanceFeatureAnalysisResult> AnalyzeAsync(
         string featureSuffix,
         Dictionary<string, List<string>> categoryFeatures,
-        List<string> severityLevels
+        List<string> severityLevels,
+        string defaultSeverityLevel = null
     )
     {
         if (string.IsNullOrEmpty(featureSuffix))
@@ -58,11 +59,22 @@ public class AppearanceFeatureAnalysisService : IAppearanceFeatureAnalysisServic
 
         try
         {
+            // Set default if not provided
+            if (string.IsNullOrEmpty(defaultSeverityLevel))
+            {
+                defaultSeverityLevel = "默认";
+            }
+
             // 从配置文件读取提示词模板
             var promptTemplate = GetPromptTemplate();
 
             // 替换动态占位符
-            var systemPrompt = BuildSystemPrompt(promptTemplate, categoryFeatures, severityLevels);
+            var systemPrompt = BuildSystemPrompt(
+                promptTemplate,
+                categoryFeatures,
+                severityLevels,
+                defaultSeverityLevel
+            );
 
             var messages = new List<ChatMessage>
             {
@@ -122,11 +134,12 @@ public class AppearanceFeatureAnalysisService : IAppearanceFeatureAnalysisServic
             {
                 var endpoint = _configuration.GetSection("AI:Chat")["Endpoint"];
                 var modelId = _configuration.GetSection("AI:Chat")["ModelId"] ?? "/data/qwen2.5-7b";
-                errorMessage = $"AI 服务端点未找到 (404)。请检查：\n" +
-                              $"1. vLLM 服务是否正在运行\n" +
-                              $"2. 端点配置是否正确: {endpoint}\n" +
-                              $"3. 模型 ID 是否存在: {modelId}\n" +
-                              $"4. 完整的请求 URL 应该是: {endpoint}/chat/completions";
+                errorMessage =
+                    $"AI 服务端点未找到 (404)。请检查：\n"
+                    + $"1. vLLM 服务是否正在运行\n"
+                    + $"2. 端点配置是否正确: {endpoint}\n"
+                    + $"3. 模型 ID 是否存在: {modelId}\n"
+                    + $"4. 完整的请求 URL 应该是: {endpoint}/chat/completions";
             }
             else if (ex.Status == 401)
             {
@@ -139,7 +152,7 @@ public class AppearanceFeatureAnalysisService : IAppearanceFeatureAnalysisServic
 
             Console.WriteLine($"Error calling AI service: {errorMessage}");
             Console.WriteLine($"Exception details: {ex}");
-            
+
             return new AppearanceFeatureAnalysisResult
             {
                 Success = false,
@@ -187,7 +200,7 @@ public class AppearanceFeatureAnalysisService : IAppearanceFeatureAnalysisServic
 {{SEVERITY_LEVELS}}
 
 # Constraints
-1. 如果没有提到等级，默认为""默认""
+1. 如果没有提到等级，默认为""{{DEFAULT_LEVEL}}""
 2. 如果是多个特性（如""脆有划痕""），请返回列表
 3. 必须返回 JSON 格式，不要有任何额外文字
 4. name 字段只包含核心特性名称（如""脆""、""划痕""），不包含等级词
@@ -196,12 +209,12 @@ public class AppearanceFeatureAnalysisService : IAppearanceFeatureAnalysisServic
 
 # Output Format
 如果是单个特性：
-[{""name"": ""脆"", ""level"": ""默认"", ""category"": ""韧性""}]
+[{""name"": ""脆"", ""level"": ""{{DEFAULT_LEVEL}}"", ""category"": ""韧性""}]
 
 如果是多个特性：
 [
-  {""name"": ""脆"", ""level"": ""默认"", ""category"": ""韧性""},
-  {""name"": ""划痕"", ""level"": ""默认"", ""category"": ""划痕""}
+  {""name"": ""脆"", ""level"": ""{{DEFAULT_LEVEL}}"", ""category"": ""韧性""},
+  {""name"": ""划痕"", ""level"": ""{{DEFAULT_LEVEL}}"", ""category"": ""划痕""}
 ]
 
 # Examples
@@ -213,12 +226,12 @@ public class AppearanceFeatureAnalysisService : IAppearanceFeatureAnalysisServic
 
 输入: ""脆有划痕""
 输出: [
-  {""name"": ""脆"", ""level"": ""默认"", ""category"": ""韧性""},
-  {""name"": ""划痕"", ""level"": ""默认"", ""category"": ""划痕""}
+  {""name"": ""脆"", ""level"": ""{{DEFAULT_LEVEL}}"", ""category"": ""韧性""},
+  {""name"": ""划痕"", ""level"": ""{{DEFAULT_LEVEL}}"", ""category"": ""划痕""}
 ]
 
 输入: ""看起来容易折断""
-输出: [{""name"": ""脆"", ""level"": ""默认"", ""category"": ""韧性""}]";
+输出: [{""name"": ""脆"", ""level"": ""{{DEFAULT_LEVEL}}"", ""category"": ""韧性""}]";
     }
 
     /// <summary>
@@ -227,7 +240,8 @@ public class AppearanceFeatureAnalysisService : IAppearanceFeatureAnalysisServic
     private string BuildSystemPrompt(
         string template,
         Dictionary<string, List<string>> categoryFeatures,
-        List<string> severityLevels
+        List<string> severityLevels,
+        string defaultSeverityLevel
     )
     {
         // 按照"大类: 特性名称1、特性名称2..."的格式组织
@@ -236,11 +250,8 @@ public class AppearanceFeatureAnalysisService : IAppearanceFeatureAnalysisServic
         {
             foreach (var kvp in categoryFeatures.OrderBy(x => x.Key))
             {
-                if (kvp.Value != null && kvp.Value.Any())
-                {
-                    var featuresText = string.Join("、", kvp.Value);
-                    categoryFeaturesText.Add($"{kvp.Key}: {featuresText}");
-                }
+                var featuresText = string.Join("、", kvp.Value);
+                categoryFeaturesText.Add($"{kvp.Key}: {featuresText}");
             }
         }
 
@@ -253,8 +264,70 @@ public class AppearanceFeatureAnalysisService : IAppearanceFeatureAnalysisServic
                 ? string.Join("、", severityLevels)
                 : "默认、轻微、微、中等、严重、超级";
 
-        return template
-            .Replace("{{CATEGORY_FEATURES}}", categoryFeaturesFormatted)
-            .Replace("{{SEVERITY_LEVELS}}", severityLevelsText);
+        // Use Regex for case-insensitive replacement to be robust
+        var result = template;
+
+        // 1. Replace Category Features
+        var categoryPlaceholder = "{{CATEGORY_FEATURES}}";
+        if (
+            System.Text.RegularExpressions.Regex.IsMatch(
+                result,
+                categoryPlaceholder,
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase
+            )
+        )
+        {
+            result = System.Text.RegularExpressions.Regex.Replace(
+                result,
+                categoryPlaceholder,
+                categoryFeaturesFormatted,
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase
+            );
+        }
+
+        // 2. Replace Severity Levels
+        var severityPlaceholder = "{{SEVERITY_LEVELS}}";
+        if (
+            System.Text.RegularExpressions.Regex.IsMatch(
+                result,
+                severityPlaceholder,
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase
+            )
+        )
+        {
+            result = System.Text.RegularExpressions.Regex.Replace(
+                result,
+                severityPlaceholder,
+                severityLevelsText,
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase
+            );
+        }
+
+        // 3. Replace Default Level
+        // Replace {{DEFAULT_LEVEL}} if exists
+        var defaultLevelPlaceholder = "{{DEFAULT_LEVEL}}";
+        if (
+            System.Text.RegularExpressions.Regex.IsMatch(
+                result,
+                defaultLevelPlaceholder,
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase
+            )
+        )
+        {
+            result = System.Text.RegularExpressions.Regex.Replace(
+                result,
+                defaultLevelPlaceholder,
+                defaultSeverityLevel,
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase
+            );
+        }
+
+        // Also replace hardcoded "默认" in specific instruction if placeholder not found or just to be safe for legacy templates
+        // Pattern: 默认为""默认"" or 默认为“默认”
+        result = result.Replace("默认为\"\"默认\"\"", $"默认为\"\"{defaultSeverityLevel}\"\"");
+        result = result.Replace("默认为“默认”", $"默认为“{defaultSeverityLevel}”");
+        result = result.Replace("\"level\": \"默认\"", $"\"level\": \"{defaultSeverityLevel}\""); // Examples replacement
+
+        return result;
     }
 }

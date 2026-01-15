@@ -107,7 +107,7 @@
                   </div>
                   <div class="hidden group-hover:flex gap-2">
                     <a-button type="link" size="small" @click="handleEdit(item)">编辑</a-button>
-                    <a-button type="link" size="small" danger @click="handleDelete(item)">删除</a-button>
+                    <a-button type="link" size="small" danger @click.stop="handleDelete(item)">删除</a-button>
                   </div>
                 </div>
               </div>
@@ -120,18 +120,7 @@
     <!-- Modal -->
     <SeverityLevelModal @register="registerModal" @success="handleSuccess" />
 
-    <!-- Delete Confirm Modal -->
-    <a-modal v-model:open="deleteModalVisible" title="删除确认" ok-text="确认删除" ok-type="danger" @ok="handleDeleteOk"
-      :confirmLoading="deleteLoading">
-      <div class="p-4">
-        <div class="flex items-center gap-3 mb-4 text-red-500">
-          <InfoCircleFilled class="text-2xl" />
-          <span class="font-bold">确认删除</span>
-        </div>
-        <p>确定要删除此特性等级吗？</p>
-        <p class="text-gray-500 mt-2 text-sm">此操作不可恢复。</p>
-      </div>
-    </a-modal>
+
   </div>
 </template>
 
@@ -149,7 +138,7 @@
 
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue';
-import { InfoCircleFilled } from '@ant-design/icons-vue';
+
 import { useModal } from '/@/components/Modal';
 import { useMessage } from '/@/hooks/web/useMessage';
 import draggable from 'vuedraggable';
@@ -157,11 +146,9 @@ import SeverityLevelModal from './components/SeverityLevelModal.vue';
 import { getSeverityLevelList, delSeverityLevel, updateSeverityLevel, SeverityLevelInfo } from '/@/api/lab/severityLevel';
 
 const [registerModal, { openModal }] = useModal();
-const { createMessage } = useMessage();
+const { createMessage, createConfirm } = useMessage();
 const list = ref<SeverityLevelInfo[]>([]);
-const deleteModalVisible = ref(false);
-const deleteLoading = ref(false);
-const currentDeleteRecord = ref<SeverityLevelInfo | null>(null);
+
 
 const loadData = async () => {
   try {
@@ -198,25 +185,25 @@ const handleEdit = (record: SeverityLevelInfo) => {
 };
 
 const handleDelete = (record: SeverityLevelInfo) => {
-  currentDeleteRecord.value = record;
-  deleteModalVisible.value = true;
-};
-
-const handleDeleteOk = async () => {
-  if (!currentDeleteRecord.value) return;
-  try {
-    deleteLoading.value = true;
-    await delSeverityLevel(currentDeleteRecord.value.id);
-    createMessage.success('删除成功');
-    deleteModalVisible.value = false;
-    loadData();
-  } catch (error: any) {
-    console.error('删除失败:', error);
-    const errorMsg = error?.response?.data?.msg || error?.message || '删除失败，请稍后重试';
-    createMessage.error(errorMsg);
-  } finally {
-    deleteLoading.value = false;
-  }
+  createConfirm({
+    iconType: 'warning',
+    title: '删除确认',
+    content: '确定要删除此特性等级吗？此操作不可恢复。',
+    okText: '确认删除',
+    okType: 'danger',
+    onOk: async () => {
+      try {
+        await delSeverityLevel(record.id);
+        createMessage.success('删除成功');
+        loadData();
+      } catch (error: any) {
+        console.error('删除失败:', error);
+        const errorMsg = error?.response?.data?.msg || error?.message || '删除失败，请稍后重试';
+        createMessage.error(errorMsg);
+        return Promise.reject(error);
+      }
+    }
+  });
 };
 
 const handleSuccess = () => {

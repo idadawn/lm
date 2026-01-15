@@ -692,19 +692,9 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
             FeatureClassification aiClassification;
             if (query.StartsWith("TEST_MOCK_AI:"))
             {
-                // 测试模式：直接返回模拟的AI结果
-                aiClassification = new FeatureClassification
-                {
-                    Features = new List<AIFeatureItem>
-                    {
-                        new AIFeatureItem
-                        {
-                            Name = "测试划痕",
-                            Category = "测试大类",
-                            Level = "测试",
-                        },
-                    },
-                };
+                aiClassification = await _analysisService.DefineAppearanceFeatureAsync(
+                    query.Replace("TEST_MOCK_AI:", "")
+                );
             }
             else
             {

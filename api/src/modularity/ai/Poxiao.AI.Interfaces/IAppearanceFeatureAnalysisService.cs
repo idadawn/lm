@@ -18,7 +18,8 @@ public interface IAppearanceFeatureAnalysisService
     Task<AppearanceFeatureAnalysisResult> AnalyzeAsync(
         string featureSuffix,
         Dictionary<string, List<string>> categoryFeatures,
-        List<string> severityLevels
+        List<string> severityLevels,
+        string defaultSeverityLevel = null
     );
 }
 

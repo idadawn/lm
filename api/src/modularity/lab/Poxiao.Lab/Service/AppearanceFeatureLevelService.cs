@@ -17,13 +17,21 @@ namespace Poxiao.Lab.Service;
 /// </summary>
 [ApiDescriptionSettings(Tag = "Lab", Name = "appearance-feature-levels", Order = 102)]
 [Route("api/lab/appearance-feature-levels")]
-public class AppearanceFeatureLevelService : IAppearanceFeatureLevelService, IDynamicApiController, ITransient
+public class AppearanceFeatureLevelService
+    : IAppearanceFeatureLevelService,
+        IDynamicApiController,
+        ITransient
 {
     private readonly ISqlSugarRepository<AppearanceFeatureLevelEntity> _repository;
+    private readonly ISqlSugarRepository<AppearanceFeatureEntity> _featureRepository;
 
-    public AppearanceFeatureLevelService(ISqlSugarRepository<AppearanceFeatureLevelEntity> repository)
+    public AppearanceFeatureLevelService(
+        ISqlSugarRepository<AppearanceFeatureLevelEntity> repository,
+        ISqlSugarRepository<AppearanceFeatureEntity> featureRepository
+    )
     {
         _repository = repository;
+        _featureRepository = featureRepository;
     }
 
     /// <inheritdoc />
@@ -38,13 +46,16 @@ public class AppearanceFeatureLevelService : IAppearanceFeatureLevelService, IDy
                 !string.IsNullOrEmpty(input.Keyword),
                 t =>
                     t.Name.Contains(input.Keyword)
-                    || (!string.IsNullOrEmpty(t.Description) && t.Description.Contains(input.Keyword))
+                    || (
+                        !string.IsNullOrEmpty(t.Description)
+                        && t.Description.Contains(input.Keyword)
+                    )
             )
             .WhereIF(input.Enabled.HasValue, t => t.Enabled == input.Enabled.Value)
             .Where(t => t.DeleteMark == null)
             .OrderBy(t => t.SortCode)
             .ToListAsync();
-        
+
         // 如果SortCode相同，按Name排序（在内存中排序）
         data = data.OrderBy(x => x.SortCode ?? 0).ThenBy(x => x.Name).ToList();
 
@@ -88,18 +99,18 @@ public class AppearanceFeatureLevelService : IAppearanceFeatureLevelService, IDy
         // 显式设置 IsDefault 和 Enabled 字段，确保布尔值正确设置
         entity.IsDefault = input.IsDefault;
         entity.Enabled = input.Enabled;
-        
+
         // 先调用 Creator() 设置创建信息
         entity.Creator();
         entity.LastModifyUserId = entity.CreatorUserId;
         entity.LastModifyTime = entity.CreatorTime;
-        
+
         // 如果设置为默认，需要将其他所有项设为非默认（批量更新）
         if (entity.IsDefault)
         {
             var currentUserId = entity.CreatorUserId;
             var currentTime = DateTime.Now;
-            
+
             await _repository
                 .AsSugarClient()
                 .Updateable<AppearanceFeatureLevelEntity>()
@@ -107,15 +118,13 @@ public class AppearanceFeatureLevelService : IAppearanceFeatureLevelService, IDy
                 {
                     IsDefault = false,
                     LastModifyTime = currentTime,
-                    LastModifyUserId = currentUserId
+                    LastModifyUserId = currentUserId,
                 })
                 .Where(t => t.IsDefault == true && t.DeleteMark == null)
                 .ExecuteCommandAsync();
         }
 
-        var isOk = await _repository
-            .AsInsertable(entity)
-            .ExecuteCommandAsync();
+        var isOk = await _repository.AsInsertable(entity).ExecuteCommandAsync();
         if (isOk < 1)
             throw Oops.Oh(ErrorCode.COM1000);
     }
@@ -144,7 +153,9 @@ public class AppearanceFeatureLevelService : IAppearanceFeatureLevelService, IDy
         }
 
         // 先获取原有实体，保留 CreatorUserId 等字段
-        var existingEntity = await _repository.GetFirstAsync(t => t.Id == id && t.DeleteMark == null);
+        var existingEntity = await _repository.GetFirstAsync(t =>
+            t.Id == id && t.DeleteMark == null
+        );
         if (existingEntity == null)
             throw Oops.Oh(ErrorCode.COM1005);
 
@@ -153,17 +164,17 @@ public class AppearanceFeatureLevelService : IAppearanceFeatureLevelService, IDy
         // 显式设置 IsDefault 字段，确保布尔值正确更新
         entity.IsDefault = input.IsDefault;
         entity.Enabled = input.Enabled;
-        
+
         // 先调用 LastModify() 设置修改信息
         entity.LastModify();
-        
+
         // 如果设置为默认，需要将其他所有项设为非默认（排除当前项，批量更新）
         // 这样可以确保数据一致性，即使当前项已经是默认，也能处理数据不一致的情况
         if (input.IsDefault)
         {
             var currentUserId = entity.LastModifyUserId;
             var currentTime = entity.LastModifyTime ?? DateTime.Now;
-            
+
             await _repository
                 .AsSugarClient()
                 .Updateable<AppearanceFeatureLevelEntity>()
@@ -171,12 +182,12 @@ public class AppearanceFeatureLevelService : IAppearanceFeatureLevelService, IDy
                 {
                     IsDefault = false,
                     LastModifyTime = currentTime,
-                    LastModifyUserId = currentUserId
+                    LastModifyUserId = currentUserId,
                 })
                 .Where(t => t.IsDefault == true && t.Id != currentId && t.DeleteMark == null)
                 .ExecuteCommandAsync();
         }
-        
+
         // 只更新指定字段，避免更新 CreatorUserId 等不应该更新的字段
         var isOk = await _repository
             .AsUpdateable(entity)
@@ -203,6 +214,17 @@ public class AppearanceFeatureLevelService : IAppearanceFeatureLevelService, IDy
         if (entity == null)
             throw Oops.Oh(ErrorCode.COM1005);
 
+        // 检查是否被使用
+        var isUsed = await _featureRepository
+            .AsQueryable()
+            .Where(t => t.SeverityLevelId == id && t.DeleteMark == null)
+            .AnyAsync();
+
+        if (isUsed)
+        {
+            throw Oops.Bah("该等级已被使用，请先解除引用");
+        }
+
         entity.Delete();
         var isOk = await _repository
             .AsUpdateable(entity)
@@ -226,7 +248,7 @@ public class AppearanceFeatureLevelService : IAppearanceFeatureLevelService, IDy
             .Where(t => t.Enabled == true && t.DeleteMark == null)
             .OrderBy(t => t.SortCode)
             .ToListAsync();
-        
+
         // 如果SortCode相同，按Name排序（在内存中排序）
         data = data.OrderBy(x => x.SortCode ?? 0).ThenBy(x => x.Name).ToList();
 

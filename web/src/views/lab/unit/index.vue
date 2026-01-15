@@ -147,7 +147,7 @@ import {
 
 const [registerCategoryModal, { openModal: openCategoryModal }] = useModal();
 const [registerUnitModal, { openModal: openUnitModal }] = useModal();
-const { createMessage, createConfirm, createWarningModal } = useMessage();
+const { createMessage, createConfirm } = useMessage();
 
 const activeTab = ref('category');
 const categoryList = ref<any[]>([]);
@@ -186,37 +186,13 @@ const handleEditCategory = (record: any) => {
 
 
 const handleDeleteCategory = async (record: any) => {
-  console.log('[删除] 点击删除单位维度按钮', { record });
   if (!record || !record.id) {
     createMessage.error('删除失败：记录ID不存在');
-    console.error('[删除] 记录或ID为空', { record });
     return;
   }
 
   const recordName = record?.name || record?.code || '该单位维度';
 
-  // 先检查该维度下是否有单位
-  try {
-    console.log('[删除] 开始检查维度下的单位', record.id);
-    const unitsInCategory = await getUnitDefinitionList(record.id);
-    console.log('[删除] 维度下的单位列表', unitsInCategory);
-    if (unitsInCategory && unitsInCategory.length > 0) {
-      console.log('[删除] 发现单位，显示警告', unitsInCategory.length);
-      createWarningModal({
-        title: '无法删除',
-        content: `单位维度"${recordName}"下存在 ${unitsInCategory.length} 个单位定义，请先删除或转移这些单位后再尝试删除维度。`,
-        okText: '我知道了',
-      });
-      return;
-    }
-  } catch (error) {
-    console.error('[删除] 检查维度下单位失败:', error);
-    createMessage.error('检查维度下单位失败，无法执行删除操作');
-    return;
-  }
-
-  console.log('[删除] 显示确认对话框');
-  // 使用 createConfirm，确保弹窗能正确关闭
   createConfirm({
     iconType: 'warning',
     title: '确认删除',
@@ -224,21 +200,15 @@ const handleDeleteCategory = async (record: any) => {
     okText: '确认删除',
     cancelText: '取消',
     onOk: async () => {
-      console.log('[删除] 用户点击确认');
       try {
         await deleteUnitCategory(record.id);
         createMessage.success('删除成功');
         await loadCategoryList();
-        console.log('[删除] 删除成功，关闭对话框');
       } catch (error: any) {
-        console.error('[删除] 删除失败:', error);
         const errorMsg = error?.response?.data?.msg || error?.message || '删除失败，请稍后重试';
         createMessage.error(errorMsg);
         throw error; // 重新抛出错误，阻止 Modal 自动关闭
       }
-    },
-    onCancel: () => {
-      console.log('[删除] 用户点击取消');
     },
   });
 };

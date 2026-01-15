@@ -357,10 +357,45 @@ public class AppearanceFeatureRuleMatcher : ITransient
 
         // ========== 优先级3: 匹配关键词 ==========
         // 对应策略第一阶段第2步：关键字（F_KEYWORDS）包含匹配
-        foreach (var feature in features)
+        // ========== 优先级3: 匹配关键词 ==========
+        // 对应策略第一阶段第2步：关键字（F_KEYWORDS）包含匹配
+
+        // 找出所有匹配关键词的特性
+        var keywordMatches = features
+            .Select(f => new { Feature = f, Keywords = GetKeywords(f) })
+            .Where(x => x.Keywords.Any(k => k.Equals(coreName, StringComparison.OrdinalIgnoreCase)))
+            .Select(x => x.Feature)
+            .ToList();
+
+        if (keywordMatches.Any())
         {
-            var keywords = GetKeywords(feature);
-            if (keywords.Any(k => k.Equals(coreName, StringComparison.OrdinalIgnoreCase)))
+            // 排序策略：
+            // 1. 优先匹配大类名称包含核心词的特性（解决 "亮线" 匹配到 "划痕" 而不是 "亮线类"下的特性 的问题）
+            // 2. 其次按置信度/顺序（这里保持原有顺序）
+            var sortedMatches = keywordMatches
+                .OrderByDescending(f =>
+                {
+                    if (
+                        categoryIdToName != null
+                        && !string.IsNullOrEmpty(f.CategoryId)
+                        && categoryIdToName.ContainsKey(f.CategoryId)
+                    )
+                    {
+                        var catName = categoryIdToName[f.CategoryId];
+                        // 如果大类名称包含核心词（如 "亮线类" 包含 "亮线"），给予高优先级
+                        if (
+                            !string.IsNullOrEmpty(catName)
+                            && catName.Contains(coreName, StringComparison.OrdinalIgnoreCase)
+                        )
+                        {
+                            return 1;
+                        }
+                    }
+                    return 0;
+                })
+                .ToList();
+
+            foreach (var feature in sortedMatches)
             {
                 // 如果有程度词，尝试匹配对应等级
                 if (!string.IsNullOrEmpty(degreeWord) && severityLevelIdToName != null)

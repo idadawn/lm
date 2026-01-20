@@ -48,14 +48,6 @@
                 :icon="h(EditOutlined)">
                 编辑
               </a-button>
-              <a-button
-                type="link"
-                danger
-                size="small"
-                @click="removeAttribute(index)"
-                :icon="h(DeleteOutlined)">
-                删除
-              </a-button>
             </a-space>
           </template>
         </template>
@@ -68,18 +60,6 @@
       description="暂无扩展属性"
       :image="false"
       style="margin: 20px 0" />
-
-    <!-- 操作按钮 -->
-    <div class="action-buttons">
-      <a-space>
-        <a-button type="dashed" @click="showAddModal = true" :icon="h(PlusOutlined)">
-          添加扩展属性
-        </a-button>
-        <a-button v-if="localAttributes.length > 0" @click="clearAllAttributes">
-          清空所有
-        </a-button>
-      </a-space>
-    </div>
 
     <!-- 添加/编辑属性对话框 -->
     <a-modal
@@ -230,6 +210,11 @@ const props = defineProps({
         precision: 1
       }
     ]
+  },
+  // 是否显示“添加扩展属性”和“清空所有”按钮
+  showAddAndClear: {
+    type: Boolean,
+    default: true
   }
 });
 

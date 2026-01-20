@@ -2,7 +2,7 @@ using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Contracts;
 using SqlSugar;
 
-namespace Poxiao.Lab.Entity.Entity;
+namespace Poxiao.Lab.Entity;
 
 /// <summary>
 /// 产品规格.
@@ -33,7 +33,7 @@ public class ProductSpecEntity : CLDEntityBase
     /// 对应原始数据有效列（如 13,15,18,22）.
     /// </summary>
     [SugarColumn(ColumnName = "F_DETECTION_COLUMNS", IsNullable = true)]
-    public string DetectionColumns { get; set; }
+    public int DetectionColumns { get; set; }
 
     /// <summary>
     /// 描述.

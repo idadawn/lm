@@ -1,5 +1,5 @@
 using Poxiao.DatabaseAccessor;
-using Poxiao.Lab.Entity.Entity;
+using Poxiao.Lab.Entity;
 using SqlSugar;
 
 namespace Poxiao.API.Entry.Extensions;

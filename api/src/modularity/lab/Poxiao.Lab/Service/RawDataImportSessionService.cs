@@ -10,9 +10,9 @@ using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Core.Manager.Files;
 using Poxiao.Infrastructure.Security;
+using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.AppearanceFeature;
 using Poxiao.Lab.Entity.Dto.RawData;
-using Poxiao.Lab.Entity.Entity;
 using Poxiao.Lab.Entity.Models;
 using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
@@ -269,11 +269,13 @@ public class RawDataImportSessionService
                 item.Status = e.ImportStatus == 0 ? "success" : "failed";
                 item.ErrorMessage = e.ImportError;
                 // 构建标准炉号（用于重复检查）
-                if (item.IsValidData == 1 &&
-                    item.LineNo.HasValue &&
-                    !string.IsNullOrWhiteSpace(item.Shift) &&
-                    item.ProdDate.HasValue &&
-                    item.FurnaceBatchNo.HasValue)
+                if (
+                    item.IsValidData == 1
+                    && item.LineNo.HasValue
+                    && !string.IsNullOrWhiteSpace(item.Shift)
+                    && item.ProdDate.HasValue
+                    && item.FurnaceBatchNo.HasValue
+                )
                 {
                     item.StandardFurnaceNo = GetFurnaceNo(item);
                 }
@@ -317,7 +319,9 @@ public class RawDataImportSessionService
             .ToList();
 
         // 记录日志以便调试
-        Console.WriteLine($"[GetProductSpecMatches] 总数据: {entities.Count}, 有效数据: {validEntities.Count}");
+        Console.WriteLine(
+            $"[GetProductSpecMatches] 总数据: {entities.Count}, 有效数据: {validEntities.Count}"
+        );
 
         return validEntities
             .Select(t => new RawDataProductSpecMatchOutput
@@ -333,7 +337,7 @@ public class RawDataImportSessionService
                 ProductSpecId = t.ProductSpecId,
                 ProductSpecName = t.ProductSpecName,
                 ProductSpecCode = t.ProductSpecCode,
-                MatchStatus = t.ProductSpecId == null ? "unmatched" : "matched"
+                MatchStatus = t.ProductSpecId == null ? "unmatched" : "matched",
             })
             .ToList();
     }
@@ -419,7 +423,7 @@ public class RawDataImportSessionService
             // 获取产品规格详情
             string specCode = null;
             string specName = null;
-            string columns = null;
+            int? columns = null;
 
             if (!string.IsNullOrEmpty(item.ProductSpecId))
             {
@@ -482,15 +486,17 @@ public class RawDataImportSessionService
                 var oldIsValidData = entity.IsValidData;
                 // 更新 IsValidData 字段
                 entity.IsValidData = item.IsValidData ? 1 : 0;
-                
+
                 // 如果值发生了变化，标记需要保存
                 if (oldIsValidData != entity.IsValidData)
                 {
                     needSave = true;
                     updatedCount++;
-                    Console.WriteLine($"[UpdateDuplicateSelections] 更新数据ID: {item.RawDataId}, IsValidData: {oldIsValidData} -> {entity.IsValidData}");
+                    Console.WriteLine(
+                        $"[UpdateDuplicateSelections] 更新数据ID: {item.RawDataId}, IsValidData: {oldIsValidData} -> {entity.IsValidData}"
+                    );
                 }
-                
+
                 // 如果被标记为无效，更新错误信息
                 if (entity.IsValidData == 0)
                 {
@@ -508,11 +514,13 @@ public class RawDataImportSessionService
                 else if (entity.IsValidData == 1)
                 {
                     // 如果被标记为有效，移除"重复数据，已选择保留其他数据"的错误信息
-                    if (!string.IsNullOrWhiteSpace(entity.ImportError) && 
-                        entity.ImportError.Contains("重复数据，已选择保留其他数据"))
+                    if (
+                        !string.IsNullOrWhiteSpace(entity.ImportError)
+                        && entity.ImportError.Contains("重复数据，已选择保留其他数据")
+                    )
                     {
-                        entity.ImportError = entity.ImportError
-                            .Replace("重复数据，已选择保留其他数据；", "")
+                        entity.ImportError = entity
+                            .ImportError.Replace("重复数据，已选择保留其他数据；", "")
                             .Replace("重复数据，已选择保留其他数据", "")
                             .Trim();
                         if (string.IsNullOrWhiteSpace(entity.ImportError))
@@ -525,7 +533,9 @@ public class RawDataImportSessionService
             }
             else
             {
-                Console.WriteLine($"[UpdateDuplicateSelections] 警告：找不到数据ID: {item.RawDataId}");
+                Console.WriteLine(
+                    $"[UpdateDuplicateSelections] 警告：找不到数据ID: {item.RawDataId}"
+                );
             }
         }
 
@@ -533,7 +543,7 @@ public class RawDataImportSessionService
         if (needSave)
         {
             await SaveParsedDataToFile(sessionId, entities);
-            
+
             // 更新会话的有效数据行数
             var session = await _sessionRepository.GetFirstAsync(t => t.Id == sessionId);
             if (session != null)
@@ -541,9 +551,11 @@ public class RawDataImportSessionService
                 var validCount = entities.Count(x => x.IsValidData == 1);
                 session.ValidDataRows = validCount;
                 await _sessionRepository.UpdateAsync(session);
-                
+
                 // 记录日志以便调试
-                Console.WriteLine($"[UpdateDuplicateSelections] 更新了 {input.Items.Count} 条数据，有效数据行数: {validCount}/{entities.Count}");
+                Console.WriteLine(
+                    $"[UpdateDuplicateSelections] 更新了 {input.Items.Count} 条数据，有效数据行数: {validCount}/{entities.Count}"
+                );
             }
         }
         else
@@ -803,10 +815,12 @@ public class RawDataImportSessionService
 
         // 1.0 处理重复的炉号（保留第一条，移除其他）
         var validDataToCheck = validData
-            .Where(t => t.LineNo.HasValue && 
-                       !string.IsNullOrWhiteSpace(t.Shift) && 
-                       t.ProdDate.HasValue && 
-                       t.FurnaceBatchNo.HasValue)
+            .Where(t =>
+                t.LineNo.HasValue
+                && !string.IsNullOrWhiteSpace(t.Shift)
+                && t.ProdDate.HasValue
+                && t.FurnaceBatchNo.HasValue
+            )
             .ToList();
 
         if (validDataToCheck.Count > 0)
@@ -829,10 +843,12 @@ public class RawDataImportSessionService
             validData = validData
                 .Where(t =>
                 {
-                    if (!t.LineNo.HasValue || 
-                        string.IsNullOrWhiteSpace(t.Shift) || 
-                        !t.ProdDate.HasValue || 
-                        !t.FurnaceBatchNo.HasValue)
+                    if (
+                        !t.LineNo.HasValue
+                        || string.IsNullOrWhiteSpace(t.Shift)
+                        || !t.ProdDate.HasValue
+                        || !t.FurnaceBatchNo.HasValue
+                    )
                     {
                         return true; // 不符合规则的数据保留（会被后续逻辑处理）
                     }
@@ -844,10 +860,12 @@ public class RawDataImportSessionService
 
         // 1.1 检查数据库中已存在的炉号，忽略这些数据
         validDataToCheck = validData
-            .Where(t => t.LineNo.HasValue && 
-                       !string.IsNullOrWhiteSpace(t.Shift) && 
-                       t.ProdDate.HasValue && 
-                       t.FurnaceBatchNo.HasValue)
+            .Where(t =>
+                t.LineNo.HasValue
+                && !string.IsNullOrWhiteSpace(t.Shift)
+                && t.ProdDate.HasValue
+                && t.FurnaceBatchNo.HasValue
+            )
             .ToList();
 
         if (validDataToCheck.Count > 0)
@@ -862,17 +880,19 @@ public class RawDataImportSessionService
             // 查询数据库中已存在的标准炉号
             var dbEntities = await _rawDataRepository
                 .AsQueryable()
-                .Where(e => e.IsValidData == 1 && 
-                           e.LineNo.HasValue && 
-                           !string.IsNullOrWhiteSpace(e.Shift) && 
-                           e.ProdDate.HasValue && 
-                           e.FurnaceBatchNo.HasValue)
+                .Where(e =>
+                    e.IsValidData == 1
+                    && e.LineNo.HasValue
+                    && !string.IsNullOrWhiteSpace(e.Shift)
+                    && e.ProdDate.HasValue
+                    && e.FurnaceBatchNo.HasValue
+                )
                 .Select(e => new
                 {
                     e.LineNo,
                     e.Shift,
                     e.ProdDate,
-                    e.FurnaceBatchNo
+                    e.FurnaceBatchNo,
                 })
                 .ToListAsync();
 
@@ -885,10 +905,13 @@ public class RawDataImportSessionService
                     entity.ProdDate,
                     entity.FurnaceBatchNo.Value.ToString(),
                     "1", // 卷号默认为1
-                    "1"  // 分卷号默认为1
+                    "1" // 分卷号默认为1
                 );
                 var standardFurnaceNo = furnaceNoObj?.GetFurnaceNo();
-                if (!string.IsNullOrEmpty(standardFurnaceNo) && standardFurnaceNos.Contains(standardFurnaceNo))
+                if (
+                    !string.IsNullOrEmpty(standardFurnaceNo)
+                    && standardFurnaceNos.Contains(standardFurnaceNo)
+                )
                 {
                     existingFurnaceNos.Add(standardFurnaceNo);
                 }
@@ -898,15 +921,18 @@ public class RawDataImportSessionService
             validData = validData
                 .Where(t =>
                 {
-                    if (!t.LineNo.HasValue || 
-                        string.IsNullOrWhiteSpace(t.Shift) || 
-                        !t.ProdDate.HasValue || 
-                        !t.FurnaceBatchNo.HasValue)
+                    if (
+                        !t.LineNo.HasValue
+                        || string.IsNullOrWhiteSpace(t.Shift)
+                        || !t.ProdDate.HasValue
+                        || !t.FurnaceBatchNo.HasValue
+                    )
                     {
                         return true; // 不符合规则的数据保留（会被后续逻辑处理）
                     }
                     var standardFurnaceNo = GetFurnaceNo(t);
-                    return string.IsNullOrEmpty(standardFurnaceNo) || !existingFurnaceNos.Contains(standardFurnaceNo);
+                    return string.IsNullOrEmpty(standardFurnaceNo)
+                        || !existingFurnaceNos.Contains(standardFurnaceNo);
                 })
                 .ToList();
         }
@@ -1003,7 +1029,7 @@ public class RawDataImportSessionService
 
             foreach (var raw in group)
             {
-                var intermediate = _intermediateDataService.GenerateIntermediateData(
+                var intermediate = await _intermediateDataService.GenerateIntermediateDataAsync(
                     raw,
                     spec,
                     detectionColumns,
@@ -1149,11 +1175,13 @@ public class RawDataImportSessionService
     /// </summary>
     private string GetFurnaceNo(RawDataEntity entity)
     {
-        if (entity == null ||
-            !entity.LineNo.HasValue ||
-            string.IsNullOrWhiteSpace(entity.Shift) ||
-            !entity.ProdDate.HasValue ||
-            !entity.FurnaceBatchNo.HasValue)
+        if (
+            entity == null
+            || !entity.LineNo.HasValue
+            || string.IsNullOrWhiteSpace(entity.Shift)
+            || !entity.ProdDate.HasValue
+            || !entity.FurnaceBatchNo.HasValue
+        )
         {
             return null;
         }
@@ -1176,11 +1204,13 @@ public class RawDataImportSessionService
     /// </summary>
     private string GetFurnaceNo(RawDataPreviewItem item)
     {
-        if (item == null ||
-            !item.LineNo.HasValue ||
-            string.IsNullOrWhiteSpace(item.Shift) ||
-            !item.ProdDate.HasValue ||
-            !item.FurnaceBatchNo.HasValue)
+        if (
+            item == null
+            || !item.LineNo.HasValue
+            || string.IsNullOrWhiteSpace(item.Shift)
+            || !item.ProdDate.HasValue
+            || !item.FurnaceBatchNo.HasValue
+        )
         {
             return null;
         }
@@ -1200,15 +1230,17 @@ public class RawDataImportSessionService
     private List<RawDataEntity> ParseExcel(byte[] fileBytes, string fileName, int skipRows)
     {
         var entities = new List<RawDataEntity>();
-        
+
         // 先获取所有列名，用于通过索引访问列（AA列=索引26，AB列=索引27）
         string breakCountColumnName = null;
         string singleCoilWeightColumnName = null;
-        
+
         using (var streamForColumns = new MemoryStream(fileBytes))
         {
-            var columns = MiniExcelLibs.MiniExcel.GetColumns(streamForColumns, useHeaderRow: true).ToList();
-            
+            var columns = MiniExcelLibs
+                .MiniExcel.GetColumns(streamForColumns, useHeaderRow: true)
+                .ToList();
+
             // AA列是第27列（索引26），AB列是第28列（索引27）
             if (columns.Count > 26)
             {
@@ -1219,7 +1251,7 @@ public class RawDataImportSessionService
                 singleCoilWeightColumnName = columns[27]; // AB列
             }
         }
-        
+
         // 使用新的流读取数据行
         using var stream = new MemoryStream(fileBytes);
         // Use HeaderRow = true to get key-value pairs
@@ -1235,7 +1267,7 @@ public class RawDataImportSessionService
             entity.FurnaceNo = GetValue<string>(row, "炉号");
             entity.Width = GetValue<decimal?>(row, "宽度");
             entity.CoilWeight = GetValue<decimal?>(row, "带材重量");
-            
+
             // 读取断头数：先尝试通过表头名称读取，如果失败则通过列索引读取
             if (!entity.BreakCount.HasValue)
             {
@@ -1253,17 +1285,27 @@ public class RawDataImportSessionService
                     }
                 }
             }
-            
+
             // 如果通过表头名称读取失败，尝试通过列索引读取（AA列=索引26）
-            if (!entity.BreakCount.HasValue && !string.IsNullOrEmpty(breakCountColumnName) && row.ContainsKey(breakCountColumnName))
+            if (
+                !entity.BreakCount.HasValue
+                && !string.IsNullOrEmpty(breakCountColumnName)
+                && row.ContainsKey(breakCountColumnName)
+            )
             {
                 entity.BreakCount = GetValue<int?>(row, breakCountColumnName);
             }
-            
+
             // 读取单卷重量：先尝试通过表头名称读取，如果失败则通过列索引读取
             if (!entity.SingleCoilWeight.HasValue)
             {
-                var singleCoilWeightHeaders = new[] { "单卷重量", "单卷重", "SingleCoilWeight", "AB" };
+                var singleCoilWeightHeaders = new[]
+                {
+                    "单卷重量",
+                    "单卷重",
+                    "SingleCoilWeight",
+                    "AB",
+                };
                 foreach (var header in singleCoilWeightHeaders)
                 {
                     if (row.ContainsKey(header))
@@ -1277,9 +1319,13 @@ public class RawDataImportSessionService
                     }
                 }
             }
-            
+
             // 如果通过表头名称读取失败，尝试通过列索引读取（AB列=索引27）
-            if (!entity.SingleCoilWeight.HasValue && !string.IsNullOrEmpty(singleCoilWeightColumnName) && row.ContainsKey(singleCoilWeightColumnName))
+            if (
+                !entity.SingleCoilWeight.HasValue
+                && !string.IsNullOrEmpty(singleCoilWeightColumnName)
+                && row.ContainsKey(singleCoilWeightColumnName)
+            )
             {
                 entity.SingleCoilWeight = GetValue<decimal?>(row, singleCoilWeightColumnName);
             }
@@ -1488,11 +1534,13 @@ public class RawDataImportSessionService
         {
             var item = items[i];
             // 只检查解析成功的有效数据（符合规则的数据）
-            if (item.IsValidData == 1 &&
-                item.LineNo.HasValue &&
-                !string.IsNullOrWhiteSpace(item.Shift) &&
-                item.ProdDate.HasValue &&
-                item.FurnaceBatchNo.HasValue)
+            if (
+                item.IsValidData == 1
+                && item.LineNo.HasValue
+                && !string.IsNullOrWhiteSpace(item.Shift)
+                && item.ProdDate.HasValue
+                && item.FurnaceBatchNo.HasValue
+            )
             {
                 var standardFurnaceNo = GetFurnaceNo(item);
                 if (!string.IsNullOrEmpty(standardFurnaceNo))
@@ -1512,8 +1560,12 @@ public class RawDataImportSessionService
             if (kvp.Value.Count > 1)
             {
                 // 有重复的炉号，标记为重复状态
-                var duplicateRowNumbers = string.Join("、", kvp.Value.Select(idx => $"第{items[idx].SortCode}行"));
-                var warningMessage = $"炉号重复：标准炉号 {kvp.Key} 在以下行出现重复：{duplicateRowNumbers}，请选择保留哪条数据";
+                var duplicateRowNumbers = string.Join(
+                    "、",
+                    kvp.Value.Select(idx => $"第{items[idx].SortCode}行")
+                );
+                var warningMessage =
+                    $"炉号重复：标准炉号 {kvp.Key} 在以下行出现重复：{duplicateRowNumbers}，请选择保留哪条数据";
 
                 foreach (var rowIndex in kvp.Value)
                 {
@@ -1547,11 +1599,13 @@ public class RawDataImportSessionService
     {
         // 只检查符合规则的有效数据
         var validItems = items
-            .Where(item => item.IsValidData == 1 &&
-                          item.LineNo.HasValue &&
-                          !string.IsNullOrWhiteSpace(item.Shift) &&
-                          item.ProdDate.HasValue &&
-                          item.FurnaceBatchNo.HasValue)
+            .Where(item =>
+                item.IsValidData == 1
+                && item.LineNo.HasValue
+                && !string.IsNullOrWhiteSpace(item.Shift)
+                && item.ProdDate.HasValue
+                && item.FurnaceBatchNo.HasValue
+            )
             .ToList();
 
         if (validItems.Count == 0)
@@ -1579,17 +1633,19 @@ public class RawDataImportSessionService
         // 查询数据库中所有有效数据，构建标准炉号并检查
         var dbEntities = await _rawDataRepository
             .AsQueryable()
-            .Where(e => e.IsValidData == 1 &&
-                       e.LineNo.HasValue &&
-                       !string.IsNullOrWhiteSpace(e.Shift) &&
-                       e.ProdDate.HasValue &&
-                       e.FurnaceBatchNo.HasValue)
+            .Where(e =>
+                e.IsValidData == 1
+                && e.LineNo.HasValue
+                && !string.IsNullOrWhiteSpace(e.Shift)
+                && e.ProdDate.HasValue
+                && e.FurnaceBatchNo.HasValue
+            )
             .Select(e => new
             {
                 e.LineNo,
                 e.Shift,
                 e.ProdDate,
-                e.FurnaceBatchNo
+                e.FurnaceBatchNo,
             })
             .ToListAsync();
 
@@ -1601,11 +1657,14 @@ public class RawDataImportSessionService
                 entity.ProdDate,
                 entity.FurnaceBatchNo.Value.ToString(),
                 "1", // 卷号默认为1
-                "1"  // 分卷号默认为1
+                "1" // 分卷号默认为1
             );
 
             var standardFurnaceNo = furnaceNoObj?.GetFurnaceNo();
-            if (!string.IsNullOrEmpty(standardFurnaceNo) && standardFurnaceNos.Contains(standardFurnaceNo))
+            if (
+                !string.IsNullOrEmpty(standardFurnaceNo)
+                && standardFurnaceNos.Contains(standardFurnaceNo)
+            )
             {
                 existingFurnaceNos.Add(standardFurnaceNo);
             }
@@ -1615,7 +1674,10 @@ public class RawDataImportSessionService
         foreach (var item in validItems)
         {
             var standardFurnaceNo = GetFurnaceNo(item);
-            if (!string.IsNullOrEmpty(standardFurnaceNo) && existingFurnaceNos.Contains(standardFurnaceNo))
+            if (
+                !string.IsNullOrEmpty(standardFurnaceNo)
+                && existingFurnaceNos.Contains(standardFurnaceNo)
+            )
             {
                 item.ExistsInDatabase = true;
                 // 如果状态还是success或duplicate，改为exists_in_db
@@ -1624,7 +1686,8 @@ public class RawDataImportSessionService
                     item.Status = "exists_in_db";
                 }
                 // 追加提示信息
-                var infoMessage = $"炉号 {standardFurnaceNo} 在数据库中已存在，将被忽略，不会保存到数据库";
+                var infoMessage =
+                    $"炉号 {standardFurnaceNo} 在数据库中已存在，将被忽略，不会保存到数据库";
                 if (string.IsNullOrWhiteSpace(item.ErrorMessage))
                 {
                     item.ErrorMessage = infoMessage;
@@ -1680,7 +1743,8 @@ public class RawDataImportSessionService
             // Excel TotalRows is 1-based data count. Skip TotalRows - 1 to get the last data row.
             // If TotalRows=1, Skip(0).
             int skipCount = lastLog.TotalRows - 1;
-            if (skipCount < 0) skipCount = 0;
+            if (skipCount < 0)
+                skipCount = 0;
 
             var row = rows.Skip(skipCount).FirstOrDefault();
             if (row == null)
@@ -1701,15 +1765,15 @@ public class RawDataImportSessionService
             // 如果炉号解析失败，使用检测日期（DetectionDate，从Excel"日期"列读取）作为后备
             if (!string.IsNullOrWhiteSpace(entity.FurnaceNo))
             {
-                 var furnaceNoObj = FurnaceNo.Parse(entity.FurnaceNo);
-                 if (furnaceNoObj.IsValid && furnaceNoObj.ProdDate.HasValue)
-                 {
-                     entity.ProdDate = furnaceNoObj.ProdDate;
-                 }
-                 else if (entity.DetectionDate.HasValue)
-                 {
-                     entity.ProdDate = entity.DetectionDate;
-                 }
+                var furnaceNoObj = FurnaceNo.Parse(entity.FurnaceNo);
+                if (furnaceNoObj.IsValid && furnaceNoObj.ProdDate.HasValue)
+                {
+                    entity.ProdDate = furnaceNoObj.ProdDate;
+                }
+                else if (entity.DetectionDate.HasValue)
+                {
+                    entity.ProdDate = entity.DetectionDate;
+                }
             }
             else if (entity.DetectionDate.HasValue)
             {
@@ -1752,12 +1816,28 @@ public class RawDataImportSessionService
         var detectionData = new Dictionary<int, decimal?>();
         var detectionProps = new[]
         {
-            entity.Detection1, entity.Detection2, entity.Detection3, entity.Detection4,
-            entity.Detection5, entity.Detection6, entity.Detection7, entity.Detection8,
-            entity.Detection9, entity.Detection10, entity.Detection11, entity.Detection12,
-            entity.Detection13, entity.Detection14, entity.Detection15, entity.Detection16,
-            entity.Detection17, entity.Detection18, entity.Detection19, entity.Detection20,
-            entity.Detection21, entity.Detection22
+            entity.Detection1,
+            entity.Detection2,
+            entity.Detection3,
+            entity.Detection4,
+            entity.Detection5,
+            entity.Detection6,
+            entity.Detection7,
+            entity.Detection8,
+            entity.Detection9,
+            entity.Detection10,
+            entity.Detection11,
+            entity.Detection12,
+            entity.Detection13,
+            entity.Detection14,
+            entity.Detection15,
+            entity.Detection16,
+            entity.Detection17,
+            entity.Detection18,
+            entity.Detection19,
+            entity.Detection20,
+            entity.Detection21,
+            entity.Detection22,
         };
 
         for (int i = 0; i < detectionProps.Length; i++)
@@ -1797,16 +1877,13 @@ public class RawDataImportSessionService
         // 4. 遍历规格进行匹配
         foreach (var spec in productSpecs)
         {
-            if (string.IsNullOrWhiteSpace(spec.DetectionColumns))
+            // DetectionColumns 已经从可空类型调整为非空 int，
+            // 约定：小于等于 0 表示“未配置检测列”
+            if (spec.DetectionColumns <= 0)
                 continue;
 
-            // 解析规格配置的检测列（如 "13" 或 "13,15,18,22"）
-            var specColumns = spec
-                .DetectionColumns.Split(new[] { ',', '，' }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(s => int.TryParse(s.Trim(), out var i) ? i : 0)
-                .Where(i => i > 0)
-                .OrderBy(i => i) // 按升序排序，优先匹配较小的检测列
-                .ToList();
+            // 解析规格配置的检测列（现在是 int 类型，直接转换为列表）
+            var specColumns = new List<int> { spec.DetectionColumns };
 
             if (specColumns.Count == 0)
                 continue;
@@ -2049,7 +2126,7 @@ public class RawDataImportSessionService
 
             foreach (var raw in group)
             {
-                var intermediate = _intermediateDataService.GenerateIntermediateData(
+                var intermediate = await _intermediateDataService.GenerateIntermediateDataAsync(
                     raw,
                     spec,
                     detectionColumns,

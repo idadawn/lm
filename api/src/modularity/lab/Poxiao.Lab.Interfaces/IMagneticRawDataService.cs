@@ -1,5 +1,4 @@
 using Poxiao.Lab.Entity.Dto.MagneticData;
-using Poxiao.Lab.Entity.Entity;
 
 namespace Poxiao.Lab.Interfaces;
 

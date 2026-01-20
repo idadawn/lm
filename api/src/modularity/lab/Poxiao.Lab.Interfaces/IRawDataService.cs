@@ -1,6 +1,5 @@
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Lab.Entity.Dto.RawData;
-using Poxiao.Lab.Entity.Entity;
 
 namespace Poxiao.Lab.Interfaces;
 

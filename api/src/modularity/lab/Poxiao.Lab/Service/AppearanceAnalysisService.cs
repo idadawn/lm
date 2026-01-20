@@ -1,7 +1,7 @@
 using Poxiao.AI.Interfaces;
 using Poxiao.DependencyInjection;
+using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.AppearanceFeature;
-using Poxiao.Lab.Entity.Entity;
 using Poxiao.Lab.Interfaces;
 using SqlSugar;
 

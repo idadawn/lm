@@ -1,0 +1,211 @@
+-- ============================================
+-- 中间数据表（LAB_INTERMEDIATE_DATA）- 完整创建脚本
+-- 数据库类型：MySQL
+-- 创建日期：2025-01-XX
+-- 说明：创建中间数据表，用于存储从原始数据转换后的中间计算结果
+-- 注意：本脚本字段名与 IntermediateDataEntity 实体类映射一致
+-- ============================================
+
+-- 如果表已存在，先删除（仅用于开发环境，生产环境请谨慎使用）
+DROP TABLE IF EXISTS `LAB_INTERMEDIATE_DATA`;
+
+CREATE TABLE `LAB_INTERMEDIATE_DATA` (
+    -- ============================================
+    -- 来自 OEntityBase 的字段
+    -- 注意：使用基类默认字段名 F_Id（I 是小写），不需要在实体类中重写
+    -- ============================================
+    `F_Id` VARCHAR(50) NOT NULL COMMENT '主键ID',
+    `F_TenantId` VARCHAR(50) DEFAULT NULL COMMENT '租户ID',
+    
+    -- ============================================
+    -- 来自 CLDEntityBase 的字段
+    -- ============================================
+    `F_CREATORTIME` DATETIME DEFAULT NULL COMMENT '创建时间',
+    `F_CREATORUSERID` VARCHAR(50) DEFAULT NULL COMMENT '创建用户ID',
+    `F_ENABLEDMARK` INT DEFAULT 1 COMMENT '启用标识（1-启用，0-禁用）',
+    `F_LastModifyTime` DATETIME DEFAULT NULL COMMENT '修改时间',
+    `F_LastModifyUserId` VARCHAR(50) DEFAULT NULL COMMENT '修改用户ID',
+    `F_DeleteMark` INT DEFAULT 0 COMMENT '删除标志（0-未删除，1-已删除）',
+    `F_DeleteTime` DATETIME DEFAULT NULL COMMENT '删除时间',
+    `F_DeleteUserId` VARCHAR(50) DEFAULT NULL COMMENT '删除用户ID',
+    
+    -- ============================================
+    -- 业务字段
+    -- ============================================
+    
+    -- 关联字段
+    `F_RAW_DATA_ID` VARCHAR(50) DEFAULT NULL COMMENT '原始数据ID',
+    `F_DETECTION_DATE` VARCHAR(10) DEFAULT NULL COMMENT '检测日期',
+    `F_PROD_DATE` DATETIME DEFAULT NULL COMMENT '生产日期',
+    
+    -- 基础信息（从炉号解析）
+    `F_FURNACE_NO` VARCHAR(100) DEFAULT NULL COMMENT '原始炉号',
+    `F_LINE_NO` INT DEFAULT NULL COMMENT '产线（从炉号解析）',
+    `F_SHIFT` VARCHAR(10) DEFAULT NULL COMMENT '班次（从炉号解析，存储原始汉字：甲、乙、丙）',
+    `F_SHIFT_NUMERIC` INT DEFAULT NULL COMMENT '班次数字（用于排序：甲=1, 乙=2, 丙=3）',
+    `F_FURNACE_BATCH_NO` INT DEFAULT NULL COMMENT '炉次号（从炉号解析）',
+    `F_COIL_NO` DECIMAL(18, 2) DEFAULT NULL COMMENT '卷号（从炉号解析，支持小数）',
+    `F_SUBCOIL_NO` DECIMAL(18, 2) DEFAULT NULL COMMENT '分卷号（从炉号解析，支持小数）',
+    `F_SPRAY_NO` VARCHAR(50) DEFAULT NULL COMMENT '喷次（8位日期-炉号）',
+    `F_LABELING` VARCHAR(50) DEFAULT NULL COMMENT '贴标',
+    `F_FURNACE_NO_FORMATTED` VARCHAR(200) DEFAULT NULL COMMENT '炉号（格式：[产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号]）',
+    
+    -- 性能数据（可编辑）
+    `F_PERF_SS_POWER` DECIMAL(18, 4) DEFAULT NULL COMMENT '1.35T 50Hz Ss激磁功率 (VA/kg)',
+    `F_PERF_PS_LOSS` DECIMAL(18, 4) DEFAULT NULL COMMENT '1.35T 50Hz Ps铁损 (W/kg)',
+    `F_PERF_HC` DECIMAL(18, 4) DEFAULT NULL COMMENT '1.35T 50Hz Hc (A/m)',
+    `F_AFTER_SS_POWER` DECIMAL(18, 4) DEFAULT NULL COMMENT '刻痕后性能 Ss激磁功率 (VA/kg)',
+    `F_AFTER_PS_LOSS` DECIMAL(18, 4) DEFAULT NULL COMMENT '刻痕后性能 Ps铁损 (W/kg)',
+    `F_AFTER_HC` DECIMAL(18, 4) DEFAULT NULL COMMENT '刻痕后性能 Hc (A/m)',
+    `F_PERF_EDITOR_ID` VARCHAR(50) DEFAULT NULL COMMENT '性能数据编辑人ID',
+    `F_PERF_EDITOR_NAME` VARCHAR(50) DEFAULT NULL COMMENT '性能数据编辑人姓名',
+    `F_PERF_EDIT_TIME` DATETIME DEFAULT NULL COMMENT '性能数据编辑时间',
+    `F_PERF_EDITOR` VARCHAR(50) DEFAULT NULL COMMENT '性能录入员，自动获取当前用户',
+    
+    -- 计算字段
+    `F_ONE_METER_WT` DECIMAL(18, 2) DEFAULT NULL COMMENT '一米带材重量(g)：F_FOUR_METER_WT / STD_LENGTH',
+    `F_WIDTH` DECIMAL(18, 2) DEFAULT NULL COMMENT '带宽',
+    
+    -- 带厚分布（1-22）
+    `F_THICK_1` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚1 (μm)，前端动态计算列：F_LAM_DIST_i / LAYERS',
+    `F_THICK_2` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚2',
+    `F_THICK_3` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚3',
+    `F_THICK_4` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚4',
+    `F_THICK_5` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚5',
+    `F_THICK_6` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚6',
+    `F_THICK_7` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚7',
+    `F_THICK_8` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚8',
+    `F_THICK_9` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚9',
+    `F_THICK_10` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚10',
+    `F_THICK_11` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚11',
+    `F_THICK_12` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚12',
+    `F_THICK_13` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚13',
+    `F_THICK_14` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚14',
+    `F_THICK_15` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚15',
+    `F_THICK_16` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚16',
+    `F_THICK_17` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚17',
+    `F_THICK_18` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚18',
+    `F_THICK_19` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚19',
+    `F_THICK_20` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚20',
+    `F_THICK_21` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚21',
+    `F_THICK_22` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚22',
+    `F_THICK_ABNORMAL` VARCHAR(200) DEFAULT NULL COMMENT '带厚异常标记（JSON格式，标记哪些带厚需要红色标注）',
+    
+    -- 带厚统计
+    `F_THICK_RANGE` VARCHAR(50) DEFAULT NULL COMMENT '带厚范围（最小值～最大值）',
+    `F_THICK_MIN` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚最小值',
+    `F_THICK_MAX` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚最大值',
+    `F_THICK_DIFF` DECIMAL(18, 1) DEFAULT NULL COMMENT '带厚极差：最大值-最小值，一位小数',
+    
+    -- 产品规格相关（导入时从产品规格写入）
+    `F_PRODUCT_LENGTH` DECIMAL(18, 2) DEFAULT NULL COMMENT '产品长度（来自产品规格）',
+    `F_PRODUCT_LAYERS` INT DEFAULT NULL COMMENT '产品层数（来自产品规格）',
+    `F_PRODUCT_DENSITY` DECIMAL(18, 3) DEFAULT NULL COMMENT '产品密度（来自产品规格）',
+    
+    -- 物理性能计算
+    `F_DENSITY` DECIMAL(18, 2) DEFAULT NULL COMMENT '密度 (g/cm³)：(F_ONE_M_WT * 1000) / (F_WIDTH * F_AVG_THICK)',
+    `F_LAM_FACTOR` DECIMAL(18, 2) DEFAULT NULL COMMENT '叠片系数 (%)：F_FOUR_M_WT / (F_WIDTH * 400 * F_AVG_THICK * THEO_DENSITY * 10^-7)',
+    `F_AVG_THICKNESS` DECIMAL(18, 2) DEFAULT NULL COMMENT '平均厚度 (μm)：AVG(F_LAM_DIST_1..22) / LAYERS',
+    
+    -- 外观特性（可编辑）
+    `F_FEATURE_SUFFIX` VARCHAR(50) DEFAULT NULL COMMENT '特性描述（从炉号解析）',
+    `F_APPEARANCE_FEATURE_IDS` JSON DEFAULT NULL COMMENT '匹配后的特性ID列表（JSON格式，数组：["feature-id-1", "feature-id-2", ...]）',
+    `F_BREAK_COUNT` INT DEFAULT NULL COMMENT '断头数(个)',
+    `F_SINGLE_COIL_WEIGHT` DECIMAL(18, 2) DEFAULT NULL COMMENT '单卷重量(kg)',
+    `F_MID_SI_LEFT` VARCHAR(50) DEFAULT NULL COMMENT '中Si (左)，中Si含量左侧检测值',
+    `F_MID_SI_RIGHT` VARCHAR(50) DEFAULT NULL COMMENT '中Si (右)，中Si含量右侧检测值',
+    `F_MID_B_LEFT` VARCHAR(50) DEFAULT NULL COMMENT '中B (左)，中B含量左侧检测值',
+    `F_MID_B_RIGHT` VARCHAR(50) DEFAULT NULL COMMENT '中B (右)，中B含量右侧检测值',
+    `F_L_PATTERN_W` DECIMAL(18, 2) DEFAULT NULL COMMENT '左花纹纹宽，实测宽度',
+    `F_L_PATTERN_S` DECIMAL(18, 2) DEFAULT NULL COMMENT '左花纹纹间距，实测间距',
+    `F_M_PATTERN_W` DECIMAL(18, 2) DEFAULT NULL COMMENT '中花纹纹宽，实测宽度',
+    `F_M_PATTERN_S` DECIMAL(18, 2) DEFAULT NULL COMMENT '中花纹纹间距，实测间距',
+    `F_R_PATTERN_W` DECIMAL(18, 2) DEFAULT NULL COMMENT '右花纹纹宽，实测宽度',
+    `F_R_PATTERN_S` DECIMAL(18, 2) DEFAULT NULL COMMENT '右花纹纹间距，实测间距',
+    `F_APPEAR_EDITOR_ID` VARCHAR(50) DEFAULT NULL COMMENT '外观检验员编辑人ID',
+    `F_APPEAR_EDITOR_NAME` VARCHAR(50) DEFAULT NULL COMMENT '外观检验员编辑人姓名',
+    `F_APPEAR_EDIT_TIME` DATETIME DEFAULT NULL COMMENT '外观检验员编辑时间',
+    
+    -- 判定结果
+    `F_MAGNETIC_RES` VARCHAR(50) DEFAULT NULL COMMENT '磁性能判定，根据 Ps 铁损值逻辑判断',
+    `F_THICK_RES` VARCHAR(50) DEFAULT NULL COMMENT '厚度判定，平均厚度达标判定',
+    `F_LAM_FACTOR_RES` VARCHAR(50) DEFAULT NULL COMMENT '叠片系数判定，叠片系数达标判定',
+    
+    -- 其他字段
+    `F_COIL_WEIGHT` DECIMAL(18, 2) DEFAULT NULL COMMENT '四米带材重量',
+    
+    -- 叠片系数厚度分布（原始检测列，1-22）
+    `F_DETECTION_1` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列1',
+    `F_DETECTION_2` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列2',
+    `F_DETECTION_3` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列3',
+    `F_DETECTION_4` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列4',
+    `F_DETECTION_5` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列5',
+    `F_DETECTION_6` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列6',
+    `F_DETECTION_7` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列7',
+    `F_DETECTION_8` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列8',
+    `F_DETECTION_9` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列9',
+    `F_DETECTION_10` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列10',
+    `F_DETECTION_11` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列11',
+    `F_DETECTION_12` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列12',
+    `F_DETECTION_13` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列13',
+    `F_DETECTION_14` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列14',
+    `F_DETECTION_15` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列15',
+    `F_DETECTION_16` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列16',
+    `F_DETECTION_17` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列17',
+    `F_DETECTION_18` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列18',
+    `F_DETECTION_19` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列19',
+    `F_DETECTION_20` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列20',
+    `F_DETECTION_21` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列21',
+    `F_DETECTION_22` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列22',
+    
+    -- 厚度相关计算
+    `F_MAX_THICKNESS_RAW` DECIMAL(18, 2) DEFAULT NULL COMMENT '最大厚度（检测列最大值）',
+    `F_MAX_AVG_THICKNESS` DECIMAL(18, 2) DEFAULT NULL COMMENT '最大平均厚度（最大值/层数）',
+    `F_STRIP_TYPE` DECIMAL(18, 2) DEFAULT NULL COMMENT '带型，依据中段与两侧均值差计算',
+    
+    -- 其他业务字段
+    `F_FIRST_INSPECTION` VARCHAR(50) DEFAULT NULL COMMENT '一次交检',
+    `F_REQUIRES_MANUAL_CONFIRM` TINYINT(1) DEFAULT NULL COMMENT '是否需要人工确认（特性匹配置信度 < 90% 时需要人工确认）',
+    `F_PRODUCT_SPEC_ID` VARCHAR(50) DEFAULT NULL COMMENT '产品规格ID',
+    `F_PRODUCT_SPEC_CODE` VARCHAR(50) DEFAULT NULL COMMENT '产品规格代码',
+    `F_PRODUCT_SPEC_NAME` VARCHAR(100) DEFAULT NULL COMMENT '产品规格名称',
+    `F_PRODUCT_SPEC_VERSION` VARCHAR(50) DEFAULT NULL COMMENT '产品规格版本',
+    `F_DETECTION_COLUMNS` VARCHAR(100) DEFAULT NULL COMMENT '检测列（从产品规格中获取）',
+    `F_MATCH_CONFIDENCE` DOUBLE DEFAULT NULL COMMENT '特性匹配置信度（0-1）',
+    
+    -- ============================================
+    -- 主键和索引
+    -- ============================================
+    PRIMARY KEY (`F_Id`),
+    
+    -- 普通索引
+    KEY `IDX_RAW_DATA_ID` (`F_RAW_DATA_ID`),
+    KEY `IDX_DETECTION_DATE` (`F_DETECTION_DATE`),
+    KEY `IDX_FURNACE_NO` (`F_FURNACE_NO`),
+    KEY `IDX_LINE_NO` (`F_LINE_NO`),
+    KEY `IDX_SHIFT` (`F_SHIFT`),
+    KEY `IDX_PRODUCT_SPEC_ID` (`F_PRODUCT_SPEC_ID`),
+    KEY `IDX_TENANT_ID` (`F_TenantId`),
+    KEY `IDX_DELETE_MARK` (`F_DeleteMark`),
+    KEY `IDX_ENABLED_MARK` (`F_ENABLEDMARK`),
+    KEY `IDX_DETECTION_DATE_TENANT` (`F_DETECTION_DATE`, `F_TenantId`, `F_DeleteMark`),
+    KEY `IDX_FURNACE_NO_TENANT` (`F_FURNACE_NO`, `F_TenantId`, `F_DeleteMark`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='中间数据表';
+
+-- ============================================
+-- 验证表结构
+-- ============================================
+-- 执行以下查询可以验证表结构是否正确创建：
+-- SELECT
+--     COLUMN_NAME AS '字段名',
+--     DATA_TYPE AS '数据类型',
+--     CHARACTER_MAXIMUM_LENGTH AS '长度',
+--     NUMERIC_PRECISION AS '精度',
+--     NUMERIC_SCALE AS '小数位数',
+--     IS_NULLABLE AS '可空',
+--     COLUMN_DEFAULT AS '默认值',
+--     COLUMN_COMMENT AS '注释'
+-- FROM information_schema.COLUMNS
+-- WHERE TABLE_SCHEMA = DATABASE()
+--     AND TABLE_NAME = 'LAB_INTERMEDIATE_DATA'
+-- ORDER BY ORDINAL_POSITION;

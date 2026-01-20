@@ -1,4 +1,4 @@
-using Poxiao.Lab.Entity.Entity;
+using Poxiao.Lab.Entity;
 
 namespace Poxiao.Lab.Interfaces;
 

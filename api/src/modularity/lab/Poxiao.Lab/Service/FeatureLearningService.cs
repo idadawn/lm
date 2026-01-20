@@ -3,8 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
+using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.AppearanceFeature;
-using Poxiao.Lab.Entity.Entity;
 using SqlSugar;
 
 namespace Poxiao.Lab.Service;

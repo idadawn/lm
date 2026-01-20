@@ -1,5 +1,5 @@
+using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.RawData;
-using Poxiao.Lab.Entity.Entity;
 
 namespace Poxiao.Lab.Interfaces;
 

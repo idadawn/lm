@@ -1,5 +1,3 @@
-using Poxiao.Lab.Entity.Entity;
-
 namespace Poxiao.Lab.Entity.Dto.RawData;
 
 /// <summary>
@@ -55,7 +53,7 @@ public class RawDataProductSpecMatchOutput
     public decimal? CoilWeight { get; set; }
     public int? BreakCount { get; set; } // 断头数
     public decimal? SingleCoilWeight { get; set; } // 单卷重量
-    public string DetectionColumns { get; set; } // 数据的有效检测列
+    public int? DetectionColumns { get; set; } // 数据的有效检测列
     public string ProductSpecId { get; set; }
     public string ProductSpecName { get; set; }
     public string ProductSpecCode { get; set; }

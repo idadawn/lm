@@ -12,8 +12,8 @@ using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Filter;
+using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.RawData;
-using Poxiao.Lab.Entity.Entity;
 using Poxiao.Lab.Entity.Models;
 using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
@@ -282,12 +282,28 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
                             // 获取有效检测列信息用于错误提示（从detection1-detection22字段读取）
                             var detectionProps = new[]
                             {
-                                item.Detection1, item.Detection2, item.Detection3, item.Detection4,
-                                item.Detection5, item.Detection6, item.Detection7, item.Detection8,
-                                item.Detection9, item.Detection10, item.Detection11, item.Detection12,
-                                item.Detection13, item.Detection14, item.Detection15, item.Detection16,
-                                item.Detection17, item.Detection18, item.Detection19, item.Detection20,
-                                item.Detection21, item.Detection22
+                                item.Detection1,
+                                item.Detection2,
+                                item.Detection3,
+                                item.Detection4,
+                                item.Detection5,
+                                item.Detection6,
+                                item.Detection7,
+                                item.Detection8,
+                                item.Detection9,
+                                item.Detection10,
+                                item.Detection11,
+                                item.Detection12,
+                                item.Detection13,
+                                item.Detection14,
+                                item.Detection15,
+                                item.Detection16,
+                                item.Detection17,
+                                item.Detection18,
+                                item.Detection19,
+                                item.Detection20,
+                                item.Detection21,
+                                item.Detection22,
                             };
 
                             var validColumns = new List<int>();
@@ -303,7 +319,7 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
                             {
                                 int maxIndex = validColumns.Max();
                                 int minIndex = validColumns.Min();
-                                
+
                                 // 计算连续列数
                                 int continuousCount = 0;
                                 for (int i = 1; i <= maxIndex; i++)
@@ -587,12 +603,28 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
                             // 获取有效检测列信息用于错误提示（从detection1-detection22字段读取）
                             var detectionProps = new[]
                             {
-                                entity.Detection1, entity.Detection2, entity.Detection3, entity.Detection4,
-                                entity.Detection5, entity.Detection6, entity.Detection7, entity.Detection8,
-                                entity.Detection9, entity.Detection10, entity.Detection11, entity.Detection12,
-                                entity.Detection13, entity.Detection14, entity.Detection15, entity.Detection16,
-                                entity.Detection17, entity.Detection18, entity.Detection19, entity.Detection20,
-                                entity.Detection21, entity.Detection22
+                                entity.Detection1,
+                                entity.Detection2,
+                                entity.Detection3,
+                                entity.Detection4,
+                                entity.Detection5,
+                                entity.Detection6,
+                                entity.Detection7,
+                                entity.Detection8,
+                                entity.Detection9,
+                                entity.Detection10,
+                                entity.Detection11,
+                                entity.Detection12,
+                                entity.Detection13,
+                                entity.Detection14,
+                                entity.Detection15,
+                                entity.Detection16,
+                                entity.Detection17,
+                                entity.Detection18,
+                                entity.Detection19,
+                                entity.Detection20,
+                                entity.Detection21,
+                                entity.Detection22,
                             };
 
                             var validColumns = new List<int>();
@@ -608,7 +640,7 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
                             {
                                 int maxIndex = validColumns.Max();
                                 int minIndex = validColumns.Min();
-                                
+
                                 // 计算连续列数
                                 int continuousCount = 0;
                                 for (int i = 1; i <= maxIndex; i++)
@@ -687,7 +719,13 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
             }
 
             // 检查炉号重复（格式：[产线数字][班次汉字][8位日期]-[炉次号]）
-            CheckDuplicateFurnaceNoForImport(successEntities, errorDetails, headerIndexes, sheet, entityRowMap);
+            CheckDuplicateFurnaceNoForImport(
+                successEntities,
+                errorDetails,
+                headerIndexes,
+                sheet,
+                entityRowMap
+            );
 
             // 批量插入成功的数据
             if (successEntities.Count > 0)
@@ -883,11 +921,18 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
                 else
                 {
                     // 如果解析失败，尝试从已有字段构建
-                    if (item.ProdDate.HasValue && item.LineNo.HasValue && !string.IsNullOrEmpty(item.Shift) 
-                        && item.FurnaceBatchNo.HasValue && item.CoilNo.HasValue && item.SubcoilNo.HasValue)
+                    if (
+                        item.ProdDate.HasValue
+                        && item.LineNo.HasValue
+                        && !string.IsNullOrEmpty(item.Shift)
+                        && item.FurnaceBatchNo.HasValue
+                        && item.CoilNo.HasValue
+                        && item.SubcoilNo.HasValue
+                    )
                     {
                         var dateStr = item.ProdDate.Value.ToString("yyyyMMdd");
-                        item.FurnaceNoFormatted = $"{item.LineNo}{item.Shift}{dateStr}-{item.FurnaceBatchNo}-{item.CoilNo}-{item.SubcoilNo}";
+                        item.FurnaceNoFormatted =
+                            $"{item.LineNo}{item.Shift}{dateStr}-{item.FurnaceBatchNo}-{item.CoilNo}-{item.SubcoilNo}";
                     }
                     else
                     {
@@ -1121,11 +1166,13 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
         {
             var item = items[i];
             // 只检查解析成功的有效数据（符合规则的数据）
-            if (item.IsValidData == 1 && 
-                item.LineNo.HasValue && 
-                !string.IsNullOrWhiteSpace(item.Shift) && 
-                item.ProdDate.HasValue && 
-                item.FurnaceBatchNo.HasValue)
+            if (
+                item.IsValidData == 1
+                && item.LineNo.HasValue
+                && !string.IsNullOrWhiteSpace(item.Shift)
+                && item.ProdDate.HasValue
+                && item.FurnaceBatchNo.HasValue
+            )
             {
                 // 构建标准炉号：[产线数字][班次汉字][8位日期]-[炉次号]
                 var dateStr = item.ProdDate.Value.ToString("yyyyMMdd");
@@ -1146,8 +1193,12 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
             if (kvp.Value.Count > 1)
             {
                 // 有重复的炉号，标记为重复状态
-                var duplicateRowNumbers = string.Join("、", kvp.Value.Select(idx => $"第{items[idx].SortCode}行"));
-                var warningMessage = $"炉号重复：标准炉号 {kvp.Key} 在以下行出现重复：{duplicateRowNumbers}，请选择保留哪条数据";
+                var duplicateRowNumbers = string.Join(
+                    "、",
+                    kvp.Value.Select(idx => $"第{items[idx].SortCode}行")
+                );
+                var warningMessage =
+                    $"炉号重复：标准炉号 {kvp.Key} 在以下行出现重复：{duplicateRowNumbers}，请选择保留哪条数据";
 
                 foreach (var rowIndex in kvp.Value)
                 {
@@ -1181,12 +1232,14 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
     {
         // 只检查符合规则的有效数据
         var validItems = items
-            .Where(item => item.IsValidData == 1 && 
-                          item.LineNo.HasValue && 
-                          !string.IsNullOrWhiteSpace(item.Shift) && 
-                          item.ProdDate.HasValue && 
-                          item.FurnaceBatchNo.HasValue &&
-                          !string.IsNullOrWhiteSpace(item.StandardFurnaceNo))
+            .Where(item =>
+                item.IsValidData == 1
+                && item.LineNo.HasValue
+                && !string.IsNullOrWhiteSpace(item.Shift)
+                && item.ProdDate.HasValue
+                && item.FurnaceBatchNo.HasValue
+                && !string.IsNullOrWhiteSpace(item.StandardFurnaceNo)
+            )
             .ToList();
 
         if (validItems.Count == 0)
@@ -1201,28 +1254,31 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
         // 查询数据库中已存在的标准炉号
         // 标准炉号格式：[产线数字][班次汉字][8位日期]-[炉次号]
         var existingFurnaceNos = new HashSet<string>();
-        
+
         // 查询数据库中所有有效数据，构建标准炉号并检查
         var dbEntities = await _repository
             .AsQueryable()
-            .Where(e => e.IsValidData == 1 && 
-                       e.LineNo.HasValue && 
-                       !string.IsNullOrWhiteSpace(e.Shift) && 
-                       e.ProdDate.HasValue && 
-                       e.FurnaceBatchNo.HasValue)
+            .Where(e =>
+                e.IsValidData == 1
+                && e.LineNo.HasValue
+                && !string.IsNullOrWhiteSpace(e.Shift)
+                && e.ProdDate.HasValue
+                && e.FurnaceBatchNo.HasValue
+            )
             .Select(e => new
             {
                 e.LineNo,
                 e.Shift,
                 e.ProdDate,
-                e.FurnaceBatchNo
+                e.FurnaceBatchNo,
             })
             .ToListAsync();
 
         foreach (var entity in dbEntities)
         {
             var dateStr = entity.ProdDate.Value.ToString("yyyyMMdd");
-            var standardFurnaceNo = $"{entity.LineNo}{entity.Shift}{dateStr}-{entity.FurnaceBatchNo}";
+            var standardFurnaceNo =
+                $"{entity.LineNo}{entity.Shift}{dateStr}-{entity.FurnaceBatchNo}";
             if (standardFurnaceNos.Contains(standardFurnaceNo))
             {
                 existingFurnaceNos.Add(standardFurnaceNo);
@@ -1241,7 +1297,8 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
                     item.Status = "exists_in_db";
                 }
                 // 追加提示信息
-                var infoMessage = $"炉号 {item.StandardFurnaceNo} 在数据库中已存在，将被忽略，不会保存到数据库";
+                var infoMessage =
+                    $"炉号 {item.StandardFurnaceNo} 在数据库中已存在，将被忽略，不会保存到数据库";
                 if (string.IsNullOrWhiteSpace(item.ErrorMessage))
                 {
                     item.ErrorMessage = infoMessage;
@@ -1263,7 +1320,8 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
         List<RawDataImportErrorDetail> errorEntities,
         Dictionary<string, int> headerIndexes,
         ISheet sheet,
-        Dictionary<RawDataEntity, int> entityRowMap)
+        Dictionary<RawDataEntity, int> entityRowMap
+    )
     {
         // 构建标准炉号字典：标准炉号 -> 实体列表（包含行号信息）
         var furnaceNoDict = new Dictionary<string, List<(RawDataEntity Entity, int RowIndex)>>();
@@ -1271,15 +1329,18 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
         foreach (var entity in successEntities)
         {
             // 只检查解析成功的有效数据
-            if (entity.IsValidData == 1 && 
-                entity.LineNo.HasValue && 
-                !string.IsNullOrWhiteSpace(entity.Shift) && 
-                entity.ProdDate.HasValue && 
-                entity.FurnaceBatchNo.HasValue)
+            if (
+                entity.IsValidData == 1
+                && entity.LineNo.HasValue
+                && !string.IsNullOrWhiteSpace(entity.Shift)
+                && entity.ProdDate.HasValue
+                && entity.FurnaceBatchNo.HasValue
+            )
             {
                 // 构建标准炉号：[产线数字][班次汉字][8位日期]-[炉次号]
                 var dateStr = entity.ProdDate.Value.ToString("yyyyMMdd");
-                var standardFurnaceNo = $"{entity.LineNo}{entity.Shift}{dateStr}-{entity.FurnaceBatchNo}";
+                var standardFurnaceNo =
+                    $"{entity.LineNo}{entity.Shift}{dateStr}-{entity.FurnaceBatchNo}";
 
                 if (!furnaceNoDict.ContainsKey(standardFurnaceNo))
                 {
@@ -1299,8 +1360,12 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
             {
                 // 有重复的炉号，为所有重复的实体设置错误信息
                 var duplicateItems = kvp.Value;
-                var rowNumbers = string.Join("、", duplicateItems.Select(item => $"第{item.RowIndex + 1}行")); // +1是因为Excel行号从1开始
-                var errorMessage = $"炉号重复：标准炉号 {kvp.Key} 在以下行出现重复：{rowNumbers}，请修改后重新导入";
+                var rowNumbers = string.Join(
+                    "、",
+                    duplicateItems.Select(item => $"第{item.RowIndex + 1}行")
+                ); // +1是因为Excel行号从1开始
+                var errorMessage =
+                    $"炉号重复：标准炉号 {kvp.Key} 在以下行出现重复：{rowNumbers}，请修改后重新导入";
 
                 foreach (var (entity, rowIndex) in duplicateItems)
                 {
@@ -1321,16 +1386,24 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
 
                     // 添加到错误详情列表
                     var row = sheet?.GetRow(rowIndex);
-                    errorEntities.Add(new RawDataImportErrorDetail
-                    {
-                        RowIndex = rowIndex + 1, // Excel行号从1开始
-                        ErrorMessage = entity.ImportError,
-                        RawData = row != null ? GetRowData(row, headerIndexes) : new Dictionary<string, object>
+                    errorEntities.Add(
+                        new RawDataImportErrorDetail
                         {
-                            { "FurnaceNo", entity.FurnaceNo ?? "" },
-                            { "ProdDate", entity.ProdDate?.ToString("yyyy-MM-dd") ?? "" }
+                            RowIndex = rowIndex + 1, // Excel行号从1开始
+                            ErrorMessage = entity.ImportError,
+                            RawData =
+                                row != null
+                                    ? GetRowData(row, headerIndexes)
+                                    : new Dictionary<string, object>
+                                    {
+                                        { "FurnaceNo", entity.FurnaceNo ?? "" },
+                                        {
+                                            "ProdDate",
+                                            entity.ProdDate?.ToString("yyyy-MM-dd") ?? ""
+                                        },
+                                    },
                         }
-                    });
+                    );
                 }
             }
         }
@@ -1528,12 +1601,28 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
         var detectionData = new Dictionary<int, decimal?>();
         var detectionProps = new[]
         {
-            entity.Detection1, entity.Detection2, entity.Detection3, entity.Detection4,
-            entity.Detection5, entity.Detection6, entity.Detection7, entity.Detection8,
-            entity.Detection9, entity.Detection10, entity.Detection11, entity.Detection12,
-            entity.Detection13, entity.Detection14, entity.Detection15, entity.Detection16,
-            entity.Detection17, entity.Detection18, entity.Detection19, entity.Detection20,
-            entity.Detection21, entity.Detection22
+            entity.Detection1,
+            entity.Detection2,
+            entity.Detection3,
+            entity.Detection4,
+            entity.Detection5,
+            entity.Detection6,
+            entity.Detection7,
+            entity.Detection8,
+            entity.Detection9,
+            entity.Detection10,
+            entity.Detection11,
+            entity.Detection12,
+            entity.Detection13,
+            entity.Detection14,
+            entity.Detection15,
+            entity.Detection16,
+            entity.Detection17,
+            entity.Detection18,
+            entity.Detection19,
+            entity.Detection20,
+            entity.Detection21,
+            entity.Detection22,
         };
 
         for (int i = 0; i < detectionProps.Length; i++)
@@ -1573,16 +1662,13 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
         // 3. 遍历规格进行匹配
         foreach (var spec in productSpecs)
         {
-            if (string.IsNullOrWhiteSpace(spec.DetectionColumns))
+            // DetectionColumns 已经从可空类型调整为非空 int，
+            // 约定：小于等于 0 表示“未配置检测列”
+            if (spec.DetectionColumns <= 0)
                 continue;
 
-            // 解析规格配置的检测列（如 "13" 或 "13,15,18,22"）
-            var specColumns = spec
-                .DetectionColumns.Split(new[] { ',', '，' }, StringSplitOptions.RemoveEmptyEntries)
-                .Select(s => int.TryParse(s.Trim(), out var i) ? i : 0)
-                .Where(i => i > 0)
-                .OrderBy(i => i) // 按升序排序，优先匹配较小的检测列
-                .ToList();
+            // 解析规格配置的检测列（现在是 int 类型，直接转换为列表）
+            var specColumns = new List<int> { spec.DetectionColumns };
 
             if (specColumns.Count == 0)
                 continue;

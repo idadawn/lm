@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Poxiao.Infrastructure.Security;
-using Poxiao.Lab.Entity.Entity;
 
 namespace Poxiao.Lab.Entity.Extensions;
 
@@ -13,7 +12,7 @@ public static class ProductSpecExtensions
 {
     // 注意：以下方法已废弃，扩展属性现在存储在 LAB_PRODUCT_SPEC_ATTRIBUTE 表中
     // 保留这些方法仅用于向后兼容，但不会实际使用 PropertyJson 字段
-    
+
     /// <summary>
     /// 获取产品规格的扩展属性（已废弃，请使用属性表）
     /// </summary>

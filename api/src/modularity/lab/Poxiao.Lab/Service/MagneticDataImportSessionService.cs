@@ -9,8 +9,8 @@ using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Core.Manager.Files;
+using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.MagneticData;
-using Poxiao.Lab.Entity.Entity;
 using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
 using Poxiao.Systems.Interfaces.Common;
@@ -346,9 +346,8 @@ public class MagneticDataImportSessionService
 
                 if (parseResult.FurnaceBatchNo.HasValue)
                 {
-                    // 中间数据表的FurnaceNoParsed是VARCHAR，需要转换为字符串比较
-                    var furnaceBatchNoStr = parseResult.FurnaceBatchNo.Value.ToString();
-                    query = query.Where(t => t.FurnaceNoParsed == furnaceBatchNoStr);
+                    // 中间数据表的FurnaceBatchNo是INT，直接比较
+                    query = query.Where(t => t.FurnaceBatchNo == parseResult.FurnaceBatchNo.Value);
                 }
 
                 var intermediateData = await query.FirstAsync();

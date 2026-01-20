@@ -1,5 +1,4 @@
 using Poxiao.Lab.Entity.Dto.ProductSpec;
-using Poxiao.Lab.Entity.Entity;
 
 namespace Poxiao.Lab.Interfaces;
 

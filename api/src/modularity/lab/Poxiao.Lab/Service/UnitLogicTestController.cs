@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Poxiao.DynamicApiController;
+using Poxiao.Lab.Entity;
 
 namespace Poxiao.Lab.Service
 {
@@ -71,12 +72,12 @@ namespace Poxiao.Lab.Service
         public object TestMatchRule(string input)
         {
             var matcher = new AppearanceFeatureRuleMatcher();
-            var features = new List<Entity.Entity.AppearanceFeatureEntity>();
+            var features = new List<AppearanceFeatureEntity>();
 
             // Mock Data
             // 1. Feature: Scratch (Name="划痕", Keywords include "亮线")
             features.Add(
-                new Entity.Entity.AppearanceFeatureEntity
+                new AppearanceFeatureEntity
                 {
                     Id = "1",
                     Name = "划痕",
@@ -88,7 +89,7 @@ namespace Poxiao.Lab.Service
 
             // 2. Feature: BrightLine (Name="亮线")
             features.Add(
-                new Entity.Entity.AppearanceFeatureEntity
+                new AppearanceFeatureEntity
                 {
                     Id = "2",
                     Name = "亮线",

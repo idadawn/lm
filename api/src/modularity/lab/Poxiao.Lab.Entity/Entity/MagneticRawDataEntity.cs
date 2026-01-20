@@ -4,7 +4,7 @@ using Poxiao.Infrastructure.Contracts;
 using Poxiao.Lab.Entity.Attributes;
 using SqlSugar;
 
-namespace Poxiao.Lab.Entity.Entity;
+namespace Poxiao.Lab.Entity;
 
 /// <summary>
 /// 磁性原始数据实体.

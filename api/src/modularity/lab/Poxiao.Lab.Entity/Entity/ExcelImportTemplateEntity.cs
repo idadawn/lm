@@ -2,7 +2,7 @@ using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Contracts;
 using SqlSugar;
 
-namespace Poxiao.Lab.Entity.Entity;
+namespace Poxiao.Lab.Entity;
 
 /// <summary>
 /// Excel导入模板表.

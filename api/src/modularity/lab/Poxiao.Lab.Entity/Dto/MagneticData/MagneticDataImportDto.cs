@@ -1,5 +1,3 @@
-using Poxiao.Lab.Entity.Entity;
-
 namespace Poxiao.Lab.Entity.Dto.MagneticData;
 
 /// <summary>

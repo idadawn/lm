@@ -1,6 +1,6 @@
 using Poxiao.DependencyInjection;
+using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.AppearanceFeature;
-using Poxiao.Lab.Entity.Entity;
 
 namespace Poxiao.Lab.Service;
 

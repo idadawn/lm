@@ -22,6 +22,7 @@
           </div>
           <ExtendedAttributesForm
             v-model="extendedAttributes"
+            :showAddAndClear="!!id"
             @change="handleExtendedAttributesChange" />
         </TabPane>
         <TabPane key="2" tab="版本管理" v-if="id">

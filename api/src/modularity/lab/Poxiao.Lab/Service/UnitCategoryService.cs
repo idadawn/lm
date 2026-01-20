@@ -3,11 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
+using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.Unit;
-using Poxiao.Lab.Entity.Entity;
 using Poxiao.Lab.Interfaces;
 using SqlSugar;
-
 namespace Poxiao.Lab.Service;
 
 /// <summary>

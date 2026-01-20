@@ -338,5 +338,28 @@ export const COMMON_ROUTE: AppRouteRecordRaw = {
         affix: false,
       },
     },
+    {
+      path: '/lab/metric/form/:id?',
+      component: () => import('/@/views/lab/metric/Form.vue'),
+      name: 'MetricForm',
+      meta: {
+        title: '指标表单',
+        defaultTitle: '指标表单',
+        icon: 'icon-ym icon-ym-webDesign',
+        affix: false,
+        hideMenu: true,
+      },
+    },
+    {
+      path: '/lab/metric',
+      component: () => import('/@/views/lab/metric/index.vue'),
+      name: 'MetricList',
+      meta: {
+        title: '指标定义',
+        defaultTitle: '指标定义',
+        icon: 'icon-ym icon-ym-webDesign',
+        affix: false,
+      },
+    },
   ],
 };

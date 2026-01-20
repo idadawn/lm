@@ -21,9 +21,6 @@
         <a-button type="primary" :icon="h(PlusOutlined)" @click="addOrUpdateHandle()" class="bg-blue-600 border-blue-600 hover:bg-blue-500">
           {{ t('common.addText') }}
         </a-button>
-        <a-button type="default" :icon="h(SettingOutlined)" @click="addPublicAttributeHandle()">
-          新增公共属性
-        </a-button>
       </div>
     </div>
 
@@ -142,9 +139,7 @@
           @showSizeChange="handlePageSizeChange" />
       </div>
     </div>
-    
     <Form @register="registerFormModal" @reload="reload" />
-    <PublicAttributeList @register="registerPublicAttributeListModal" @reload="reload" />
   </div>
 </template>
 <script lang="ts" setup>
@@ -154,17 +149,15 @@
   import { useMessage } from '/@/hooks/web/useMessage';
   import { useI18n } from '/@/hooks/web/useI18n';
   import { useModal } from '/@/components/Modal';
-  import { PlusOutlined, SettingOutlined } from '@ant-design/icons-vue';
+  import { PlusOutlined } from '@ant-design/icons-vue';
   import draggable from 'vuedraggable';
   import Form from './Form.vue';
-  import PublicAttributeList from './PublicAttributeList.vue';
 
   defineOptions({ name: 'ProductSpec' });
 
   const { createMessage, createConfirm } = useMessage();
   const { t } = useI18n();
   const [registerFormModal, { openModal: openFormModal }] = useModal();
-  const [registerPublicAttributeListModal, { openModal: openPublicAttributeListModal }] = useModal();
 
   // 组件挂载状态
   const isMounted = ref(true);
@@ -351,11 +344,6 @@
   // 编辑/新增
   function addOrUpdateHandle(id = '') {
     openFormModal(true, { id });
-  }
-
-  // 打开公共属性列表
-  function addPublicAttributeHandle() {
-    openPublicAttributeListModal(true, {});
   }
 
   // 删除按钮点击处理（中间函数，用于调试和验证）

@@ -1,6 +1,6 @@
 using Poxiao.Infrastructure.Filter;
+using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.IntermediateData;
-using Poxiao.Lab.Entity.Entity;
 
 namespace Poxiao.Lab.Interfaces;
 
@@ -72,14 +72,14 @@ public interface IIntermediateDataService
     Task<List<ProductSpecOption>> GetProductSpecOptions();
 
     /// <summary>
-    /// 解析检测列配置.
+    /// 解析检测列配置 (生成 1 到 N 的列表).
     /// </summary>
-    List<int> ParseDetectionColumns(string detectionColumnsStr);
+    List<int> ParseDetectionColumns(int? detectionColumnsCount);
 
     /// <summary>
     /// 从原始数据生成中间数据.
     /// </summary>
-    IntermediateDataEntity GenerateIntermediateData(
+    Task<IntermediateDataEntity> GenerateIntermediateDataAsync(
         RawDataEntity rawData,
         ProductSpecEntity productSpec,
         List<int> detectionColumns,
@@ -113,7 +113,7 @@ public class ProductSpecOption
     /// <summary>
     /// 检测列.
     /// </summary>
-    public string DetectionColumns { get; set; }
+    public int DetectionColumns { get; set; }
 
     /// <summary>
     /// 长度.

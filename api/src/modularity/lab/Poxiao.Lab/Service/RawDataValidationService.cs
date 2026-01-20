@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 using Poxiao.DependencyInjection;
-using Poxiao.Lab.Entity.Entity;
+using Poxiao.Lab.Entity;
 using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
 

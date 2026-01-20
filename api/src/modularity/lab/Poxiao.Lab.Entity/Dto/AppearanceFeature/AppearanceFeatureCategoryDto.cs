@@ -2,7 +2,6 @@ using System.Text.Json.Serialization;
 using Poxiao.Infrastructure.Contracts;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Security;
-using Poxiao.Lab.Entity.Entity;
 
 namespace Poxiao.Lab.Entity.Dto.AppearanceFeature;
 

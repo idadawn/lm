@@ -5,7 +5,7 @@ using SqlSugar;
 using SugarColumn = SqlSugar.SugarColumn;
 using SugarTable = SqlSugar.SugarTable;
 
-namespace Poxiao.Lab.Entity.Entity;
+namespace Poxiao.Lab.Entity;
 
 /// <summary>
 /// 原始数据导入日志实体

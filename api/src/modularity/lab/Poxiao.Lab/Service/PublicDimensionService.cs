@@ -4,7 +4,7 @@ using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Enums;
-using Poxiao.Lab.Entity.Entity;
+using Poxiao.Lab.Entity;
 using Poxiao.Lab.Interfaces;
 using SqlSugar;
 

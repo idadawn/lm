@@ -5,8 +5,8 @@ using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Security;
+using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.AppearanceFeature;
-using Poxiao.Lab.Entity.Entity;
 using Poxiao.Lab.Interfaces;
 using SqlSugar;
 

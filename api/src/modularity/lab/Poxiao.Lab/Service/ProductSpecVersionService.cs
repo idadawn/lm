@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Poxiao.DatabaseAccessor;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
-using Poxiao.Lab.Entity.Entity;
+using Poxiao.Lab.Entity;
 using SqlSugar;
 
 namespace Poxiao.Lab.Service;

@@ -5,7 +5,7 @@ using Poxiao.Infrastructure.Contracts;
 using Poxiao.Lab.Entity.Attributes;
 using SqlSugar;
 
-namespace Poxiao.Lab.Entity.Entity;
+namespace Poxiao.Lab.Entity;
 
 /// <summary>
 /// 原始数据.
@@ -137,10 +137,10 @@ public class RawDataEntity : CLDEntityBase
     public string ProductSpecVersion { get; set; }
 
     /// <summary>
-    /// 检测列（从产品规格中获取）.
+    /// 检测列（从产品规格中获取 - 数量）.
     /// </summary>
-    [SugarColumn(ColumnName = "F_DETECTION_COLUMNS", Length = 100, IsNullable = true)]
-    public string DetectionColumns { get; set; }
+    [SugarColumn(ColumnName = "F_DETECTION_COLUMNS", IsNullable = true)]
+    public int? DetectionColumns { get; set; }
 
     /// <summary>
     /// 检测数据列1-22（固定22列）.

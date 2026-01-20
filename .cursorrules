@@ -4,9 +4,25 @@
 
 **在创建或修改数据库字段、生成数据库脚本时，必须先查看本规范文件！**
 
-确保数据库脚本中的字段命名与 `CLDEntityBase` 基类字段规范一致，避免字段映射错误。
+确保数据库脚本中的字段命名与基类字段规范一致，避免字段映射错误。
 
-## 实体基类字段映射注意事项
+## 实体基类字段映射规范
+
+### 基类继承关系
+
+```
+CLDEntityBase : OEntityBase<string>, IOCreatorTime, IODeleteTime
+```
+
+### OEntityBase<TKey> 基类字段（CLDEntityBase 的父类）
+
+**重要：** `OEntityBase` 中的字段名大小写规则：
+
+1. **主键字段：**
+   - `F_Id` - 主键ID（注意：是 `F_Id`，不是 `F_ID`，I 是小写）
+
+2. **租户字段：**
+   - `F_TenantId` - 租户ID（注意：是 `F_TenantId`，T 和 I 都是大写，但 Id 中的 I 是大写）
 
 ### CLDEntityBase 基类字段大小写规则
 
@@ -24,20 +40,68 @@
    - `F_DeleteTime` - 删除时间
    - `F_DeleteUserId` - 删除用户ID
 
+### 完整字段列表（CLDEntityBase 包含所有字段）
+
+继承 `CLDEntityBase` 的实体类会自动包含以下所有字段：
+
+**来自 OEntityBase：**
+- `F_Id` - 主键ID（VARCHAR(50)，NOT NULL，主键）
+- `F_TenantId` - 租户ID（VARCHAR(50)，NULL）
+
+**来自 CLDEntityBase：**
+- `F_CREATORTIME` - 创建时间（DATETIME，NULL）
+- `F_CREATORUSERID` - 创建用户ID（VARCHAR(50)，NULL）
+- `F_ENABLEDMARK` - 启用标识（INT，NULL，默认值建议为 1）
+- `F_LastModifyTime` - 修改时间（DATETIME，NULL）
+- `F_LastModifyUserId` - 修改用户ID（VARCHAR(50)，NULL）
+- `F_DeleteMark` - 删除标志（INT，NULL，默认值建议为 0）
+- `F_DeleteTime` - 删除时间（DATETIME，NULL）
+- `F_DeleteUserId` - 删除用户ID（VARCHAR(50)，NULL）
+
 ### 处理方式
+
+**重要原则：基类中存在的字段尽可能不要重写，优先使用基类的默认映射。**
 
 当数据库表结构与基类字段名不一致时：
 
-1. **如果表字段名与基类不同**（如 `F_CREATOR_TIME` vs `F_CREATORTIME`）：
-   - 在实体类中重写该属性，使用 `[SugarColumn(ColumnName = "实际字段名")]` 指定正确的字段名
+1. **优先使用基类标准字段名**（推荐）：
+   - 在创建新表时，数据库脚本应使用基类标准字段名（如 `F_Id`、`F_TenantId`、`F_CREATORTIME` 等）
+   - 实体类不需要重写这些属性，直接使用基类的默认映射
+   - 这样可以保持代码简洁，避免不必要的重写
 
-2. **如果表中不存在基类的字段**：
+2. **如果表字段名与基类不同**（如历史遗留表使用 `F_CREATOR_TIME` vs `F_CREATORTIME`）：
+   - 在实体类中重写该属性，使用 `[SugarColumn(ColumnName = "实际字段名")]` 指定正确的字段名
+   - 在脚本注释中说明字段命名不一致的原因
+
+3. **如果表中不存在基类的字段**：
    - 在实体类中重写该属性，使用 `[SugarColumn(IsIgnore = true)]` 忽略数据库映射
 
 ### 示例
 
+#### 示例1：标准用法（字段名与基类完全一致，推荐）
+
 ```csharp
-// 示例：RawDataImportSessionEntity
+// 标准用法：数据库表字段名与基类完全一致，不需要重写基类属性
+public class IntermediateDataFormulaEntity : CLDEntityBase
+{
+    // 不需要重写 Id、TenantId 等基类属性，使用基类默认映射
+    // 基类会自动映射：Id -> F_Id, TenantId -> F_TenantId
+    
+    // 只定义业务字段
+    [SugarColumn(ColumnName = "F_TABLE_NAME", Length = 50, IsNullable = false)]
+    public string TableName { get; set; } = "INTERMEDIATE_DATA";
+    
+    [SugarColumn(ColumnName = "F_COLUMN_NAME", Length = 100, IsNullable = false)]
+    public string ColumnName { get; set; }
+    
+    // ... 其他业务字段
+}
+```
+
+#### 示例2：字段名不一致（历史遗留表）
+
+```csharp
+// 示例：RawDataImportSessionEntity（表字段名与基类不同）
 public class RawDataImportSessionEntity : CLDEntityBase
 {
     // 重写字段映射以匹配表结构（带下划线）
@@ -59,33 +123,104 @@ public class RawDataImportSessionEntity : CLDEntityBase
 }
 ```
 
+#### 示例3：标准 CREATE TABLE 脚本
+
+```sql
+CREATE TABLE IF NOT EXISTS `lab_metric_definition` (
+    -- 来自 OEntityBase 的字段
+    `F_Id` VARCHAR(50) NOT NULL COMMENT '主键ID',
+    `F_TenantId` VARCHAR(50) DEFAULT NULL COMMENT '租户ID',
+    
+    -- 来自 CLDEntityBase 的字段
+    `F_CREATORTIME` DATETIME DEFAULT NULL COMMENT '创建时间',
+    `F_CREATORUSERID` VARCHAR(50) DEFAULT NULL COMMENT '创建用户ID',
+    `F_ENABLEDMARK` INT DEFAULT 1 COMMENT '启用标识（1-启用，0-禁用）',
+    `F_LastModifyTime` DATETIME DEFAULT NULL COMMENT '修改时间',
+    `F_LastModifyUserId` VARCHAR(50) DEFAULT NULL COMMENT '修改用户ID',
+    `F_DeleteMark` INT DEFAULT 0 COMMENT '删除标志（0-未删除，1-已删除）',
+    `F_DeleteTime` DATETIME DEFAULT NULL COMMENT '删除时间',
+    `F_DeleteUserId` VARCHAR(50) DEFAULT NULL COMMENT '删除用户ID',
+    
+    -- 业务字段
+    `name` VARCHAR(100) NOT NULL COMMENT '指标名称',
+    -- ... 其他业务字段
+    
+    PRIMARY KEY (`F_Id`),
+    KEY `IDX_TENANT_ID` (`F_TenantId`),
+    KEY `IDX_DELETE_MARK` (`F_DeleteMark`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
 ### 数据库脚本生成规范
 
 **在生成数据库脚本（CREATE TABLE、ALTER TABLE 等）时，必须遵循以下规范：**
 
 1. **优先使用基类标准字段名**（推荐）：
-   - 创建相关字段：`F_CREATORTIME`、`F_CREATORUSERID`、`F_ENABLEDMARK`（全大写，无下划线）
-   - 修改和删除相关字段：`F_LastModifyTime`、`F_LastModifyUserId`、`F_DeleteMark`、`F_DeleteTime`、`F_DeleteUserId`（F_ 后首字母大写）
+   - **主键和租户字段（来自 OEntityBase）：**
+     - `F_Id` - 主键ID（VARCHAR(50) NOT NULL，主键）
+     - `F_TenantId` - 租户ID（VARCHAR(50) NULL）
+   
+   - **创建相关字段（全大写，无下划线）：**
+     - `F_CREATORTIME` - 创建时间（DATETIME NULL）
+     - `F_CREATORUSERID` - 创建用户ID（VARCHAR(50) NULL）
+     - `F_ENABLEDMARK` - 启用标识（INT NULL，默认值 1）
+   
+   - **修改和删除相关字段（F_ 后首字母大写）：**
+     - `F_LastModifyTime` - 修改时间（DATETIME NULL）
+     - `F_LastModifyUserId` - 修改用户ID（VARCHAR(50) NULL）
+     - `F_DeleteMark` - 删除标志（INT NULL，默认值 0）
+     - `F_DeleteTime` - 删除时间（DATETIME NULL）
+     - `F_DeleteUserId` - 删除用户ID（VARCHAR(50) NULL）
 
 2. **如果必须使用不同的字段名**（如历史遗留表）：
    - 必须在实体类中重写属性并指定正确的 `ColumnName`
    - 在脚本注释中说明字段命名不一致的原因
+   - **特别注意：** 如果数据库表使用 `F_ID`（全大写）而不是 `F_Id`，需要在实体类中重写 `Id` 属性
 
-3. **字段可空性**：
-   - `F_CREATORTIME`、`F_CREATORUSERID` 建议设置为 `NULL`（允许系统初始化时为空）
-   - `F_ENABLEDMARK` 建议设置默认值为 `1`
-   - `F_DeleteMark` 建议设置默认值为 `0`
+3. **字段可空性和默认值**：
+   - `F_Id` - NOT NULL，主键
+   - `F_TenantId` - NULL（允许为空）
+   - `F_CREATORTIME`、`F_CREATORUSERID` - NULL（允许系统初始化时为空）
+   - `F_ENABLEDMARK` - NULL，建议默认值为 `1`
+   - `F_LastModifyTime`、`F_LastModifyUserId` - NULL（允许为空）
+   - `F_DeleteMark` - NULL，建议默认值为 `0`
+   - `F_DeleteTime`、`F_DeleteUserId` - NULL（允许为空）
 
 ### 检查清单
 
 在创建或修改继承 `CLDEntityBase` 的实体类时，请检查：
 
+**实体类检查：**
+- [ ] **优先检查：是否不必要地重写了基类属性？** 如果数据库表使用基类标准字段名（如 `F_Id`），则不需要重写 `Id` 属性
 - [ ] 数据库表字段名是否与基类字段名完全匹配（注意大小写和下划线）
-- [ ] 如果表字段名不同，是否已重写属性并指定正确的 `ColumnName`
+- [ ] 如果表字段名与基类不同（如历史遗留表），是否已重写属性并指定正确的 `ColumnName`
 - [ ] 如果表中不存在某些基类字段，是否已使用 `IsIgnore = true` 忽略映射
 - [ ] 所有字段映射是否正确，避免运行时出现 "Unknown column" 错误
 
-**在生成数据库脚本前，请再次确认：**
+**数据库脚本检查：**
 - [ ] 已查看本规范文件中的字段命名规范
-- [ ] 数据库脚本中的字段名与基类规范一致（或已在实体类中正确映射）
+- [ ] **优先使用基类标准字段名**：主键字段使用 `F_Id`（注意 I 是小写），不要使用 `F_ID`
+- [ ] 租户字段使用 `F_TenantId`（注意大小写）
+- [ ] 创建相关字段使用全大写无下划线：`F_CREATORTIME`、`F_CREATORUSERID`、`F_ENABLEDMARK`
+- [ ] 修改和删除相关字段使用 F_ 后首字母大写：`F_LastModifyTime`、`F_LastModifyUserId`、`F_DeleteMark`、`F_DeleteTime`、`F_DeleteUserId`
 - [ ] 字段的可空性和默认值设置合理
+- [ ] 主键字段设置为 NOT NULL 并定义为主键
+- [ ] `F_ENABLEDMARK` 默认值设置为 `1`
+- [ ] `F_DeleteMark` 默认值设置为 `0`
+
+### 常见问题
+
+**Q: 为什么会出现 "Unknown column 'F_Id' in 'field list' 错误？**
+A: 可能的原因：
+1. 数据库表使用 `F_ID`（全大写）而不是 `F_Id`，需要在实体类中重写 `Id` 属性
+2. 表中缺少 `F_Id` 或 `F_ID` 字段，需要执行数据库迁移脚本添加字段
+
+**Q: 如何判断应该使用 `F_Id` 还是 `F_ID`？**
+A: **优先使用 `F_Id`（I 是小写）**，这是基类的标准字段名。只有在创建新表时，应使用 `F_Id`，这样实体类就不需要重写 `Id` 属性。只有在处理历史遗留表（已使用 `F_ID`）时，才需要在实体类中重写 `Id` 属性。
+
+**Q: 为什么基类中存在的字段尽可能不要重写？**
+A: 
+1. **保持代码简洁**：避免不必要的重写代码
+2. **减少维护成本**：基类字段的映射逻辑统一管理
+3. **降低出错风险**：减少因重写导致的字段映射错误
+4. **遵循最佳实践**：只有在必要时（字段名不一致或字段不存在）才重写

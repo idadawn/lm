@@ -1,5 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
+    <Compile Remove="Service\Metric\**" />
+    <EmbeddedResource Remove="Service\Metric\**" />
+    <None Remove="Service\Metric\**" />
+  </ItemGroup>
+  <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="..\Poxiao.Lab.Interfaces\Poxiao.Lab.Interfaces.csproj" />
     <ProjectReference Include="..\Poxiao.Lab.Entity\Poxiao.Lab.Entity.csproj" />

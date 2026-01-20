@@ -1,6 +1,5 @@
 using Poxiao.Infrastructure.Contracts;
 using Poxiao.Infrastructure.Filter;
-using Poxiao.Lab.Entity.Entity;
 
 namespace Poxiao.Lab.Entity.Dto.IntermediateData;
 

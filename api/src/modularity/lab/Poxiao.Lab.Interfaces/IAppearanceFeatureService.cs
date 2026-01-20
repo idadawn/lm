@@ -1,5 +1,4 @@
 using Poxiao.Lab.Entity.Dto.AppearanceFeature;
-using Poxiao.Lab.Entity.Entity;
 
 namespace Poxiao.Lab.Interfaces;
 

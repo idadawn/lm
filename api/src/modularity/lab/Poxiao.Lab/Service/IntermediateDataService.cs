@@ -7,9 +7,9 @@ using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Filter;
+using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.IntermediateData;
 using Poxiao.Lab.Entity.Dto.RawData;
-using Poxiao.Lab.Entity.Entity;
 using Poxiao.Lab.Entity.Extensions;
 using Poxiao.Lab.Entity.Models;
 using Poxiao.Lab.Helpers;
@@ -64,71 +64,6 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         {
             query = query.Where(t => t.ProductSpecId == input.ProductSpecId);
         }
-
-        // 关键词搜索
-        if (!string.IsNullOrWhiteSpace(input.Keyword))
-        {
-            query = query.Where(t =>
-                (t.FurnaceNo != null && t.FurnaceNo.Contains(input.Keyword))
-                || (t.LineNo.HasValue && t.LineNo.Value.ToString().Contains(input.Keyword))
-                || (t.ShiftNo != null && t.ShiftNo.Contains(input.Keyword))
-                || (t.SprayNo != null && t.SprayNo.Contains(input.Keyword))
-                || (t.BatchNo != null && t.BatchNo.Contains(input.Keyword))
-            );
-        }
-
-        // 日期月份筛选
-        if (!string.IsNullOrWhiteSpace(input.DateMonth))
-        {
-            query = query.Where(t => t.DateMonth == input.DateMonth);
-        }
-
-        // 日期范围筛选
-        if (input.StartDate.HasValue)
-        {
-            query = query.Where(t => t.ProdDate >= input.StartDate.Value);
-        }
-        if (input.EndDate.HasValue)
-        {
-            var endDate = input.EndDate.Value.AddDays(1);
-            query = query.Where(t => t.ProdDate < endDate);
-        }
-
-        // 产线筛选
-        if (!string.IsNullOrWhiteSpace(input.LineNo))
-        {
-            if (int.TryParse(input.LineNo, out var lineNoValue))
-            {
-                query = query.Where(t => t.LineNo == lineNoValue);
-            }
-        }
-
-        // 排序
-        if (!string.IsNullOrWhiteSpace(input.SortRules))
-        {
-            try
-            {
-                var sortRules = JsonConvert.DeserializeObject<List<SortRule>>(input.SortRules);
-                if (sortRules != null && sortRules.Count > 0)
-                {
-                    foreach (var rule in sortRules)
-                    {
-                        var isAsc = rule.Order?.ToLower() == "asc";
-                        query = query.OrderByIF(true, $"{rule.Field} {(isAsc ? "asc" : "desc")}");
-                    }
-                }
-            }
-            catch
-            {
-                // 排序解析失败，使用默认排序
-                query = query.OrderBy(t => t.ProdDate).OrderBy(t => t.FurnaceNoParsed); // 中间数据表保持原字段名
-            }
-        }
-        else
-        {
-            query = query.OrderBy(t => t.ProdDate).OrderBy(t => t.FurnaceNoParsed);
-        }
-
         // 分页查询
         var result = await query.ToPagedListAsync(input.CurrentPage, input.PageSize);
 
@@ -317,7 +252,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
                 }
 
                 // 生成中间数据
-                var intermediateData = GenerateIntermediateData(
+                var intermediateData = await GenerateIntermediateDataAsync(
                     rawData,
                     productSpec,
                     detectionColumns,
@@ -370,7 +305,6 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         entity.PerfAfterSsPower = input.PerfAfterSsPower;
         entity.PerfAfterPsLoss = input.PerfAfterPsLoss;
         entity.PerfAfterHc = input.PerfAfterHc;
-        entity.PerfJudgeName = input.PerfJudgeName;
         entity.PerfEditorId = _userManager.UserId;
         entity.PerfEditorName = _userManager.RealName;
         entity.PerfEditTime = DateTime.Now;
@@ -393,17 +327,6 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         {
             throw Oops.Oh("数据不存在");
         }
-
-        entity.Toughness = input.Toughness;
-        entity.FishScale = input.FishScale;
-        entity.MidSi = input.MidSi;
-        entity.MidB = input.MidB;
-        entity.LeftPattern = input.LeftPattern;
-        entity.MidPattern = input.MidPattern;
-        entity.RightPattern = input.RightPattern;
-        entity.BreakCount = input.BreakCount;
-        entity.CoilWeightKg = input.CoilWeightKg;
-        entity.AppearJudgeName = input.AppearJudgeName;
         entity.AppearEditorId = _userManager.UserId;
         entity.AppearEditorName = _userManager.RealName;
         entity.AppearEditTime = DateTime.Now;
@@ -427,11 +350,9 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             throw Oops.Oh("数据不存在");
         }
 
-        entity.DateMonth = input.DateMonth;
         entity.MagneticResult = input.MagneticResult;
         entity.ThicknessResult = input.ThicknessResult;
         entity.LaminationResult = input.LaminationResult;
-        entity.Remark = input.Remark;
         entity.LastModifyUserId = _userManager.UserId;
         entity.LastModifyTime = DateTime.Now;
 
@@ -525,27 +446,23 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     #region 私有方法
 
     /// <summary>
-    /// 解析检测列配置.
+    /// 解析检测列配置 (生成 1 到 N 的列表).
     /// </summary>
-    public List<int> ParseDetectionColumns(string detectionColumnsStr)
+    public List<int> ParseDetectionColumns(int? detectionColumnsCount)
     {
-        if (string.IsNullOrWhiteSpace(detectionColumnsStr))
+        if (!detectionColumnsCount.HasValue || detectionColumnsCount.Value <= 0)
         {
             return new List<int>();
         }
 
-        return detectionColumnsStr
-            .Split(',')
-            .Select(s => int.TryParse(s.Trim(), out var n) ? n : 0)
-            .Where(n => n > 0)
-            .OrderBy(n => n)
-            .ToList();
+        // 生成从 1 到 N 的整数列表
+        return Enumerable.Range(1, detectionColumnsCount.Value).ToList();
     }
 
     /// <summary>
     /// 从原始数据生成中间数据.
     /// </summary>
-    public IntermediateDataEntity GenerateIntermediateData(
+    public async Task<IntermediateDataEntity> GenerateIntermediateDataAsync(
         RawDataEntity rawData,
         ProductSpecEntity productSpec,
         List<int> detectionColumns,
@@ -560,15 +477,9 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             Id = Guid.NewGuid().ToString(),
             RawDataId = rawData.Id,
             ProdDate = rawData.ProdDate,
-            DateMonth = rawData.ProdDate?.ToString("yyyy-MM") ?? "",
-            // 去掉特性汉字后的炉号
-            FurnaceNo = FurnaceNoHelper.RemoveFeatureSuffix(
-                rawData.FurnaceNo,
-                rawData.FeatureSuffix
-            ),
+            FurnaceNo = rawData.FurnaceNo,
             LineNo = rawData.LineNo,
             Shift = rawData.Shift,
-            FurnaceNoParsed = rawData.FurnaceBatchNo?.ToString(),
             CoilNo = rawData.CoilNo,
             SubcoilNo = rawData.SubcoilNo,
             ProductSpecId = productSpec.Id,
@@ -576,6 +487,10 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             ProductSpecVersion = specVersion?.ToString(),
             DetectionColumns = productSpec.DetectionColumns,
             CreatorTime = DateTime.Now,
+            // 产品规格参数直接写入中间数据表，参与后续计算
+            ProductLength = length,
+            ProductLayers = layers,
+            ProductDensity = density,
         };
 
         // 使用FurnaceNo类生成各种编号
@@ -591,21 +506,18 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
 
         if (furnaceNoObj.IsValid)
         {
-            // 班次：产线-班次-日期-炉号（保持原有格式）
-            entity.ShiftNo = $"{rawData.LineNo}-{rawData.Shift}-{rawData.ProdDate?.ToString("yyyyMMdd")}-{rawData.FurnaceBatchNo}";
-
             // 喷次：8位日期-炉号
             entity.SprayNo = furnaceNoObj.GetSprayNo();
 
             // 批次：产线数字+班次汉字+8位日期-炉号
-            entity.BatchNo = furnaceNoObj.GetBatchNo();
+            entity.ShiftNo = furnaceNoObj.GetBatchNo();
         }
         else
         {
             // 如果解析失败，使用简单格式
-            entity.ShiftNo = $"{rawData.LineNo}-{rawData.Shift}-{rawData.ProdDate?.ToString("yyyyMMdd")}-{rawData.FurnaceBatchNo}";
             entity.SprayNo = $"{rawData.ProdDate?.ToString("yyyyMMdd")}-{rawData.FurnaceBatchNo}";
-            entity.BatchNo = $"{rawData.LineNo}{rawData.Shift}{rawData.ProdDate?.ToString("yyyyMMdd")}-{rawData.FurnaceBatchNo}";
+            entity.ShiftNo =
+                $"{rawData.LineNo}{rawData.Shift}{rawData.ProdDate?.ToString("yyyyMMdd")}-{rawData.FurnaceBatchNo}";
         }
 
         // 四米带材重量（原始数据带材重量）
@@ -776,13 +688,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         if (rawData.CoilNo.HasValue)
         {
             var coilNoValue = rawData.CoilNo.Value;
-            // 假设一个炉号有多个卷，根据卷号判断分段
-            // 这里简化处理，实际逻辑可能需要根据业务调整
-            entity.SegmentType = coilNoValue <= 1 ? "前端" : (coilNoValue >= 3 ? "后端" : "中端");
         }
-
-        // 外观特性（从炉号解析的特性描述，原始特性汉字）
-        entity.AppearanceFeature = rawData.FeatureSuffix;
 
         // 特性ID列表（从原始数据复制，如果原始数据有匹配结果）
         if (!string.IsNullOrWhiteSpace(rawData.AppearanceFeatureIds))
@@ -800,7 +706,106 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             entity.RequiresManualConfirm = false;
         }
 
+        // 计算指标（在基础数据生成完成后）
+        await CalculateIndicatorsAsync(entity, productSpec.Id);
+
         return entity;
+    }
+
+    /// <summary>
+    /// 计算所有启用的指标（使用新的 Metric 系统）
+    /// </summary>
+    private async Task CalculateIndicatorsAsync(
+        IntermediateDataEntity entity,
+        string productSpecId
+    ) { }
+
+    /// <summary>
+    /// 从中间数据实体提取上下文数据（用于指标计算）
+    /// </summary>
+    private Dictionary<string, object> ExtractContextDataFromEntity(IntermediateDataEntity entity)
+    {
+        var contextData = new Dictionary<string, object>();
+
+        // 添加数值字段（使用实际存在的属性）
+        AddValueIfNotNull(contextData, "Width", entity.Width);
+        AddValueIfNotNull(contextData, "AvgThickness", entity.AvgThickness);
+        AddValueIfNotNull(contextData, "FourMeterWeight", entity.FourMeterWeight);
+        AddValueIfNotNull(contextData, "OneMeterWeight", entity.OneMeterWeight);
+
+        // 产品规格相关参数（导入时写入）
+        AddValueIfNotNull(contextData, "ProductLength", entity.ProductLength);
+        AddValueIfNotNull(contextData, "ProductLayers", entity.ProductLayers);
+        AddValueIfNotNull(contextData, "ProductDensity", entity.ProductDensity);
+
+        // 为通用公式提供常用简写变量
+        AddValueIfNotNull(contextData, "Length", entity.ProductLength);
+        AddValueIfNotNull(contextData, "Layers", entity.ProductLayers);
+        AddValueIfNotNull(contextData, "Density", entity.Density ?? entity.ProductDensity);
+        AddValueIfNotNull(contextData, "LaminationFactor", entity.LaminationFactor);
+        AddValueIfNotNull(contextData, "StripType", entity.StripType);
+
+        // 添加其他可能需要的字段
+        if (entity.CoilNo.HasValue)
+        {
+            contextData["CoilNo"] = entity.CoilNo.Value;
+        }
+
+        if (entity.LineNo.HasValue)
+        {
+            contextData["LineNo"] = entity.LineNo.Value;
+        }
+
+        return contextData;
+    }
+
+    /// <summary>
+    /// 如果值不为null，添加到字典
+    /// </summary>
+    private void AddValueIfNotNull(Dictionary<string, object> dict, string key, object value)
+    {
+        if (value != null)
+        {
+            dict[key] = value;
+        }
+    }
+
+    /// <summary>
+    /// 设置指标值到中间数据实体（使用反射）.
+    /// </summary>
+    private void SetIndicatorValue(
+        IntermediateDataEntity entity,
+        string indicatorCode,
+        object value
+    )
+    {
+        // 尝试直接设置属性（属性名与指标编码相同）
+        var property = typeof(IntermediateDataEntity).GetProperty(indicatorCode);
+        if (property != null && property.CanWrite)
+        {
+            // 转换类型
+            if (value != null)
+            {
+                var targetType = property.PropertyType;
+                if (
+                    targetType.IsGenericType
+                    && targetType.GetGenericTypeDefinition() == typeof(Nullable<>)
+                )
+                {
+                    targetType = Nullable.GetUnderlyingType(targetType);
+                }
+
+                if (targetType != null)
+                {
+                    var convertedValue = Convert.ChangeType(value, targetType);
+                    property.SetValue(entity, convertedValue);
+                    return;
+                }
+            }
+        }
+
+        // 如果直接属性不存在，可以考虑使用扩展字段（JSON）存储
+        // 这里暂时只支持直接属性映射
     }
 
     /// <summary>
@@ -811,12 +816,28 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         var values = new List<decimal?>();
         var detectionProps = new[]
         {
-            rawData.Detection1, rawData.Detection2, rawData.Detection3, rawData.Detection4,
-            rawData.Detection5, rawData.Detection6, rawData.Detection7, rawData.Detection8,
-            rawData.Detection9, rawData.Detection10, rawData.Detection11, rawData.Detection12,
-            rawData.Detection13, rawData.Detection14, rawData.Detection15, rawData.Detection16,
-            rawData.Detection17, rawData.Detection18, rawData.Detection19, rawData.Detection20,
-            rawData.Detection21, rawData.Detection22
+            rawData.Detection1,
+            rawData.Detection2,
+            rawData.Detection3,
+            rawData.Detection4,
+            rawData.Detection5,
+            rawData.Detection6,
+            rawData.Detection7,
+            rawData.Detection8,
+            rawData.Detection9,
+            rawData.Detection10,
+            rawData.Detection11,
+            rawData.Detection12,
+            rawData.Detection13,
+            rawData.Detection14,
+            rawData.Detection15,
+            rawData.Detection16,
+            rawData.Detection17,
+            rawData.Detection18,
+            rawData.Detection19,
+            rawData.Detection20,
+            rawData.Detection21,
+            rawData.Detection22,
         };
 
         foreach (var col in detectionColumns)

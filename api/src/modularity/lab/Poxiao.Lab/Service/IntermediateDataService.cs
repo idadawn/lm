@@ -9,12 +9,15 @@ using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.IntermediateData;
+using Poxiao.Lab.Entity.Dto.IntermediateDataFormula;
 using Poxiao.Lab.Entity.Dto.RawData;
+using Poxiao.Lab.Entity.Enums;
 using Poxiao.Lab.Entity.Extensions;
 using Poxiao.Lab.Entity.Models;
 using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
 using Poxiao.Systems.Entitys.Permission;
+using Poxiao.TaskQueue;
 using SqlSugar;
 
 namespace Poxiao.Lab.Service;
@@ -33,6 +36,8 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     private readonly ISqlSugarRepository<UserEntity> _userRepository;
     private readonly IUserManager _userManager;
     private readonly ProductSpecVersionService _versionService;
+    private readonly IIntermediateDataFormulaService _formulaService;
+    private readonly IFormulaParser _formulaParser;
 
     public IntermediateDataService(
         ISqlSugarRepository<IntermediateDataEntity> repository,
@@ -41,7 +46,9 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         ISqlSugarRepository<ProductSpecEntity> productSpecRepository,
         ISqlSugarRepository<UserEntity> userRepository,
         IUserManager userManager,
-        ProductSpecVersionService versionService
+        ProductSpecVersionService versionService,
+        IIntermediateDataFormulaService formulaService,
+        IFormulaParser formulaParser
     )
     {
         _repository = repository;
@@ -51,6 +58,8 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         _userRepository = userRepository;
         _userManager = userManager;
         _versionService = versionService;
+        _formulaService = formulaService;
+        _formulaParser = formulaParser;
     }
 
     /// <inheritdoc />
@@ -64,12 +73,89 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         {
             query = query.Where(t => t.ProductSpecId == input.ProductSpecId);
         }
-        // 分页查询
-        var result = await query.ToPagedListAsync(input.CurrentPage, input.PageSize);
+
+        // 按关键词筛选（炉号、产线等）
+        if (!string.IsNullOrEmpty(input.Keyword))
+        {
+            query = query.Where(t =>
+                (t.FurnaceNoFormatted != null && t.FurnaceNoFormatted.Contains(input.Keyword)) ||
+                (t.LineNo.HasValue && t.LineNo.Value.ToString().Contains(input.Keyword))
+            );
+        }
+
+        // 按生产日期范围筛选
+        if (input.StartDate.HasValue)
+        {
+            query = query.Where(t => t.ProdDate >= input.StartDate.Value);
+        }
+        if (input.EndDate.HasValue)
+        {
+            var endDate = input.EndDate.Value.AddDays(1);
+            query = query.Where(t => t.ProdDate < endDate);
+        }
+
+        // 按检测日期范围筛选
+        if (input.DetectionStartDate.HasValue)
+        {
+            query = query.Where(t => t.DetectionDate >= input.DetectionStartDate.Value);
+        }
+        if (input.DetectionEndDate.HasValue)
+        {
+            var detectionEndDate = input.DetectionEndDate.Value.AddDays(1);
+            query = query.Where(t => t.DetectionDate < detectionEndDate);
+        }
+
+
+        // 按产线筛选
+        if (!string.IsNullOrEmpty(input.LineNo))
+        {
+            if (int.TryParse(input.LineNo, out var lineNoValue))
+            {
+                query = query.Where(t => t.LineNo == lineNoValue);
+            }
+            else
+            {
+                // 如果无法解析为整数，则返回空结果
+                query = query.Where(t => false);
+            }
+        }
+
+        // 先查询所有符合条件的数据（不排序，不分页）
+        var allData = await query.ToListAsync();
+
+        // 处理排序规则
+        if (!string.IsNullOrEmpty(input.SortRules))
+        {
+            try
+            {
+                var sortRules = System.Text.Json.JsonSerializer.Deserialize<List<SortRule>>(input.SortRules);
+                if (sortRules != null && sortRules.Count > 0)
+                {
+                    allData = ApplySortRules(allData, sortRules);
+                }
+            }
+            catch
+            {
+                // 如果排序规则解析失败，使用默认排序
+                allData = ApplyDefaultSort(allData);
+            }
+        }
+        else
+        {
+            // 没有排序规则，使用默认排序
+            allData = ApplyDefaultSort(allData);
+        }
+
+        // 手动分页
+        var total = allData.Count;
+        var pageSize = input.PageSize > 0 ? input.PageSize : 10;
+        var currentPage = input.CurrentPage > 0 ? input.CurrentPage : 1;
+        var skip = (currentPage - 1) * pageSize;
+        var pagedData = allData.Skip(skip).Take(pageSize).ToList();
 
         // 获取创建者姓名
-        var userIds = result
-            .list.Select(t => t.CreatorUserId)
+        var userIds = pagedData
+            .Select(t => t.CreatorUserId)
             .Where(id => !string.IsNullOrEmpty(id))
             .Distinct()
             .ToList();
@@ -81,13 +167,12 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         var userDict = users.ToDictionary(u => u.Id, u => u.RealName);
 
         // 转换输出
-        var outputList = result
-            .list.Select(item =>
+        var outputList = pagedData.Select(item =>
             {
                 var output = item.Adapt<IntermediateDataListOutput>();
                 output.CreatorUserName = userDict.GetValueOrDefault(item.CreatorUserId ?? "", "");
-                output.ProdDateStr = item.ProdDate?.ToString("yyyy/M/d") ?? "";
-
+                output.ProdDateStr = item.ProdDate?.ToString("yyyy/MM/ddm") ?? "";
+                output.DetectionDateStr = item.DetectionDate?.ToString("yyyy/MM/dd") ?? "";
                 // 构建带厚分布列表
                 output.ThicknessDistList = BuildThicknessDistList(item);
 
@@ -98,7 +183,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             })
             .ToList();
 
-        return new { list = outputList, pagination = result.pagination };
+        return new { list = outputList, pagination = new { total = total, pageSize = pageSize, current = currentPage } };
     }
 
     /// <inheritdoc />
@@ -240,6 +325,10 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
                 ? den
                 : 7.25m;
 
+        // 生成批次ID，用于关联本次生成的所有中间数据
+        var batchId = Guid.NewGuid().ToString();
+        var generatedIds = new List<string>();
+
         foreach (var rawData in rawDataList)
         {
             try
@@ -251,7 +340,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
                     continue;
                 }
 
-                // 生成中间数据
+                // 生成中间数据（传入批次ID）
                 var intermediateData = await GenerateIntermediateDataAsync(
                     rawData,
                     productSpec,
@@ -259,7 +348,8 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
                     layers,
                     length,
                     density,
-                    usedVersion
+                    usedVersion,
+                    batchId
                 );
                 intermediateData.CreatorUserId = currentUserId;
 
@@ -273,6 +363,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
                 }
 
                 await _repository.InsertAsync(intermediateData);
+                generatedIds.Add(intermediateData.Id);
                 output.SuccessCount++;
             }
             catch (Exception ex)
@@ -280,6 +371,24 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
                 output.FailedCount++;
                 output.Errors.Add($"炉号 {rawData.FurnaceNo} 生成失败: {ex.Message}");
             }
+        }
+
+        // 批量保存完成后，异步触发公式计算任务
+        if (generatedIds.Count > 0)
+        {
+            output.BatchId = batchId;
+            // 使用后台任务队列异步执行公式计算
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await BatchCalculateFormulasByBatchIdInternalAsync(batchId);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"后台公式计算任务失败: {ex.Message}");
+                }
+            });
         }
 
         return output;
@@ -462,6 +571,14 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     /// <summary>
     /// 从原始数据生成中间数据.
     /// </summary>
+    /// <param name="rawData">原始数据</param>
+    /// <param name="productSpec">产品规格</param>
+    /// <param name="detectionColumns">检测列</param>
+    /// <param name="layers">层数</param>
+    /// <param name="length">长度</param>
+    /// <param name="density">密度</param>
+    /// <param name="specVersion">规格版本</param>
+    /// <param name="batchId">批次ID，用于后续异步公式计算</param>
     public async Task<IntermediateDataEntity> GenerateIntermediateDataAsync(
         RawDataEntity rawData,
         ProductSpecEntity productSpec,
@@ -469,28 +586,49 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         int layers,
         decimal length,
         decimal density,
-        int? specVersion
+        int? specVersion,
+        string batchId = null
     )
     {
         var entity = new IntermediateDataEntity
         {
             Id = Guid.NewGuid().ToString(),
             RawDataId = rawData.Id,
+            // 日期相关
+            DetectionDate = rawData.DetectionDate,
             ProdDate = rawData.ProdDate,
+            // 炉号相关
             FurnaceNo = rawData.FurnaceNo,
+            FurnaceNoFormatted = rawData.FurnaceNoFormatted,
+            // 基础信息
             LineNo = rawData.LineNo,
             Shift = rawData.Shift,
+            ShiftNumeric = rawData.ShiftNumeric,
+            FurnaceBatchNo = rawData.FurnaceBatchNo,
             CoilNo = rawData.CoilNo,
             SubcoilNo = rawData.SubcoilNo,
+            FeatureSuffix = rawData.FeatureSuffix,
+            // 产品规格信息
             ProductSpecId = productSpec.Id,
+            ProductSpecCode = productSpec.Code,
             ProductSpecName = productSpec.Name,
             ProductSpecVersion = specVersion?.ToString(),
             DetectionColumns = productSpec.DetectionColumns,
-            CreatorTime = DateTime.Now,
+            // 外观特性相关
+            AppearanceFeatureIds = rawData.AppearanceFeatureIds,
+            MatchConfidence = rawData.MatchConfidence,
+            // 外观数据
+            BreakCount = rawData.BreakCount,
+            SingleCoilWeight = rawData.SingleCoilWeight,
             // 产品规格参数直接写入中间数据表，参与后续计算
             ProductLength = length,
             ProductLayers = layers,
             ProductDensity = density,
+            // 公式计算相关字段初始化
+            BatchId = batchId,
+            CalcStatus = IntermediateDataCalcStatus.PENDING,
+            CalcStatusTime = DateTime.Now,
+            CreatorTime = DateTime.Now,
         };
 
         // 使用FurnaceNo类生成各种编号
@@ -508,20 +646,18 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         {
             // 喷次：8位日期-炉号
             entity.SprayNo = furnaceNoObj.GetSprayNo();
-
-            // 批次：产线数字+班次汉字+8位日期-炉号
             entity.ShiftNo = furnaceNoObj.GetBatchNo();
         }
         else
         {
             // 如果解析失败，使用简单格式
             entity.SprayNo = $"{rawData.ProdDate?.ToString("yyyyMMdd")}-{rawData.FurnaceBatchNo}";
-            entity.ShiftNo =
-                $"{rawData.LineNo}{rawData.Shift}{rawData.ProdDate?.ToString("yyyyMMdd")}-{rawData.FurnaceBatchNo}";
+            entity.ShiftNo = $"{rawData.LineNo}{rawData.Shift}{rawData.ProdDate?.ToString("yyyyMMdd")}-{rawData.FurnaceBatchNo}";
+
         }
 
         // 四米带材重量（原始数据带材重量）
-        entity.FourMeterWeight = rawData.CoilWeight;
+        entity.CoilWeight = rawData.CoilWeight;
 
         // 一米带材重量 = 四米带材重量 / 长度
         if (rawData.CoilWeight.HasValue && length > 0)
@@ -530,7 +666,31 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         }
 
         // 带宽
-        entity.StripWidth = rawData.Width.HasValue ? Math.Round(rawData.Width.Value, 2) : null;
+        entity.Width = rawData.Width.HasValue ? Math.Round(rawData.Width.Value, 2) : null;
+
+        // 赋值所有检测列数据（Detection1-22）
+        entity.Detection1 = rawData.Detection1;
+        entity.Detection2 = rawData.Detection2;
+        entity.Detection3 = rawData.Detection3;
+        entity.Detection4 = rawData.Detection4;
+        entity.Detection5 = rawData.Detection5;
+        entity.Detection6 = rawData.Detection6;
+        entity.Detection7 = rawData.Detection7;
+        entity.Detection8 = rawData.Detection8;
+        entity.Detection9 = rawData.Detection9;
+        entity.Detection10 = rawData.Detection10;
+        entity.Detection11 = rawData.Detection11;
+        entity.Detection12 = rawData.Detection12;
+        entity.Detection13 = rawData.Detection13;
+        entity.Detection14 = rawData.Detection14;
+        entity.Detection15 = rawData.Detection15;
+        entity.Detection16 = rawData.Detection16;
+        entity.Detection17 = rawData.Detection17;
+        entity.Detection18 = rawData.Detection18;
+        entity.Detection19 = rawData.Detection19;
+        entity.Detection20 = rawData.Detection20;
+        entity.Detection21 = rawData.Detection21;
+        entity.Detection22 = rawData.Detection22;
 
         // 获取检测列数据并计算带厚
         var detectionValues = GetDetectionValues(rawData, detectionColumns);
@@ -620,12 +780,12 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         // 密度计算: 一米带材重量(g) / (带宽(mm) * (平均厚度/10))
         if (
             entity.OneMeterWeight.HasValue
-            && entity.StripWidth.HasValue
+            && entity.Width.HasValue
             && entity.AvgThickness.HasValue
             && entity.AvgThickness.Value > 0
         )
         {
-            var divisor = entity.StripWidth.Value * (entity.AvgThickness.Value / 10m);
+            var divisor = entity.Width.Value * (entity.AvgThickness.Value / 10m);
             if (divisor > 0)
             {
                 entity.Density = Math.Round(entity.OneMeterWeight.Value / divisor, 2);
@@ -635,22 +795,22 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         // 叠片系数计算: 四米带材重量(g) / (带宽(mm) * 400 * 平均厚度 * 7.25 * 0.0000001)
         // 注：400对应产品规格长度(4m = 400cm)
         if (
-            entity.FourMeterWeight.HasValue
-            && entity.StripWidth.HasValue
+            entity.CoilWeight.HasValue
+            && entity.Width.HasValue
             && entity.AvgThickness.HasValue
             && entity.AvgThickness.Value > 0
         )
         {
             var lengthCm = length * 100; // 转换为厘米
             var divisor =
-                entity.StripWidth.Value
+                entity.Width.Value
                 * lengthCm
                 * entity.AvgThickness.Value
                 * density
                 * 0.0000001m;
             if (divisor > 0)
             {
-                entity.LaminationFactor = Math.Round(entity.FourMeterWeight.Value / divisor, 2);
+                entity.LaminationFactor = Math.Round(entity.CoilWeight.Value / divisor, 2);
             }
         }
 
@@ -709,6 +869,9 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         // 计算指标（在基础数据生成完成后）
         await CalculateIndicatorsAsync(entity, productSpec.Id);
 
+        // 注意：公式计算已改为异步后台任务，不在生成时计算
+        // 数据先保存到中间表，然后通过 BatchCalculateFormulasAsync 批量计算
+
         return entity;
     }
 
@@ -718,42 +881,540 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     private async Task CalculateIndicatorsAsync(
         IntermediateDataEntity entity,
         string productSpecId
-    ) { }
+    )
+    { }
 
     /// <summary>
-    /// 从中间数据实体提取上下文数据（用于指标计算）
+    /// 批量计算公式（用于后台任务）.
+    /// 对指定的中间数据ID列表进行公式计算，支持错误记录和用户提示.
+    /// </summary>
+    /// <param name="intermediateDataIds">中间数据ID列表</param>
+    /// <returns>计算结果统计</returns>
+    [HttpPost("batch-calculate-formulas")]
+    public async Task<FormulaCalculationResult> BatchCalculateFormulasAsync(
+        [FromBody] List<string> intermediateDataIds
+    )
+    {
+        return await BatchCalculateFormulasInternalAsync(intermediateDataIds);
+    }
+
+    /// <summary>
+    /// 根据批次ID批量计算公式.
+    /// </summary>
+    /// <param name="batchId">批次ID</param>
+    /// <returns>计算结果统计</returns>
+    [HttpPost("batch-calculate-by-batch-id/{batchId}")]
+    public async Task<FormulaCalculationResult> BatchCalculateFormulasByBatchIdAsync(string batchId)
+    {
+        return await BatchCalculateFormulasByBatchIdInternalAsync(batchId);
+    }
+
+    /// <summary>
+    /// 获取批次计算状态.
+    /// </summary>
+    /// <param name="batchId">批次ID</param>
+    /// <returns>批次计算状态统计</returns>
+    [HttpGet("batch-status/{batchId}")]
+    public async Task<BatchCalculationStatus> GetBatchCalculationStatusAsync(string batchId)
+    {
+        var entities = await _repository
+            .AsQueryable()
+            .Where(t => t.BatchId == batchId && t.DeleteMark == null)
+            .Select(t => new { t.CalcStatus, t.CalcErrorMessage })
+            .ToListAsync();
+
+        return new BatchCalculationStatus
+        {
+            BatchId = batchId,
+            TotalCount = entities.Count,
+            PendingCount = entities.Count(e => e.CalcStatus == IntermediateDataCalcStatus.PENDING),
+            ProcessingCount = entities.Count(e =>
+                e.CalcStatus == IntermediateDataCalcStatus.PROCESSING
+            ),
+            SuccessCount = entities.Count(e => e.CalcStatus == IntermediateDataCalcStatus.SUCCESS),
+            FailedCount = entities.Count(e => e.CalcStatus == IntermediateDataCalcStatus.FAILED),
+        };
+    }
+
+    /// <summary>
+    /// 根据批次ID批量计算公式（内部方法，用于后台任务）.
+    /// </summary>
+    /// <param name="batchId">批次ID</param>
+    /// <returns>计算结果统计</returns>
+    internal async Task<FormulaCalculationResult> BatchCalculateFormulasByBatchIdInternalAsync(
+        string batchId
+    )
+    {
+        // 根据批次ID查询待计算的中间数据
+        var intermediateDataIds = await _repository
+            .AsQueryable()
+            .Where(t => t.BatchId == batchId && t.DeleteMark == null)
+            .Select(t => t.Id)
+            .ToListAsync();
+
+        return await BatchCalculateFormulasInternalAsync(intermediateDataIds);
+    }
+
+    /// <summary>
+    /// 批量计算公式内部实现（可被后台任务调用）.
+    /// </summary>
+    internal async Task<FormulaCalculationResult> BatchCalculateFormulasInternalAsync(
+        List<string> intermediateDataIds
+    )
+    {
+        var result = new FormulaCalculationResult
+        {
+            TotalCount = intermediateDataIds?.Count ?? 0,
+            SuccessCount = 0,
+            FailedCount = 0,
+            Errors = new List<FormulaCalculationError>(),
+        };
+
+        if (intermediateDataIds == null || intermediateDataIds.Count == 0)
+        {
+            return result;
+        }
+
+        try
+        {
+            // 1. 从公式维护中获取所有启用的计算公式（类型为CALC），只查询一次
+            var allFormulas = await _formulaService.GetListAsync();
+            var calcFormulas = allFormulas
+                .Where(f =>
+                    f.FormulaType == "CALC"
+                    && f.IsEnabled
+                    && !string.IsNullOrWhiteSpace(f.Formula)
+                    && f.TableName == "INTERMEDIATE_DATA"
+                )
+                .OrderBy(f => f.SortOrder) // 按排序序号排序
+                .ThenBy(f => f.CreatorTime) // 如果排序序号相同，按创建时间排序
+                .ToList();
+
+            if (calcFormulas.Count == 0)
+            {
+                result.Message = "没有启用的计算公式";
+                return result;
+            }
+
+            // 2. 批量查询中间数据
+            var entities = await _repository
+                .AsQueryable()
+                .Where(t => intermediateDataIds.Contains(t.Id) && t.DeleteMark == null)
+                .ToListAsync();
+
+            if (entities.Count == 0)
+            {
+                result.Message = "未找到需要计算的中间数据";
+                return result;
+            }
+
+            // 3. 逐条计算（可以后续优化为并行计算）
+            foreach (var entity in entities)
+            {
+                try
+                {
+                    // 更新状态为计算中
+                    entity.CalcStatus = IntermediateDataCalcStatus.PROCESSING;
+                    entity.CalcStatusTime = DateTime.Now;
+                    entity.CalcErrorMessage = null; // 清空之前的错误信息
+                    await _repository
+                        .AsUpdateable(entity)
+                        .UpdateColumns(t => new {
+                            t.CalcStatus,
+                            t.CalcStatusTime,
+                            t.CalcErrorMessage,
+                        })
+                        .ExecuteCommandAsync();
+
+                    // 执行公式计算
+                    await CalculateFormulasForEntityAsync(entity, calcFormulas);
+
+                    // 更新状态为成功
+                    entity.CalcStatus = IntermediateDataCalcStatus.SUCCESS;
+                    entity.CalcStatusTime = DateTime.Now;
+                    entity.CalcErrorMessage = null;
+                    await _repository
+                        .AsUpdateable(entity)
+                        .UpdateColumns(t => new {
+                            t.CalcStatus,
+                            t.CalcStatusTime,
+                            t.CalcErrorMessage,
+                        })
+                        .ExecuteCommandAsync();
+
+                    result.SuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    result.FailedCount++;
+                    var errorMessage =
+                        ex.Message.Length > 500 ? ex.Message.Substring(0, 500) : ex.Message;
+
+                    // 更新状态为失败，并记录错误摘要
+                    entity.CalcStatus = IntermediateDataCalcStatus.FAILED;
+                    entity.CalcStatusTime = DateTime.Now;
+                    entity.CalcErrorMessage = errorMessage;
+                    await _repository
+                        .AsUpdateable(entity)
+                        .UpdateColumns(t => new {
+                            t.CalcStatus,
+                            t.CalcStatusTime,
+                            t.CalcErrorMessage,
+                        })
+                        .ExecuteCommandAsync();
+
+                    result.Errors.Add(
+                        new FormulaCalculationError
+                        {
+                            IntermediateDataId = entity.Id,
+                            FurnaceNo = entity.FurnaceNo,
+                            ErrorMessage = ex.Message,
+                            ErrorDetail = ex.ToString(),
+                        }
+                    );
+                }
+            }
+
+            result.Message =
+                $"计算完成：成功 {result.SuccessCount} 条，失败 {result.FailedCount} 条";
+        }
+        catch (Exception ex)
+        {
+            result.Message = $"批量计算过程发生异常: {ex.Message}";
+            result.Errors.Add(
+                new FormulaCalculationError
+                {
+                    ErrorMessage = ex.Message,
+                    ErrorDetail = ex.ToString(),
+                }
+            );
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// 对单个中间数据实体进行公式计算.
+    /// </summary>
+    private async Task CalculateFormulasForEntityAsync(
+        IntermediateDataEntity entity,
+        List<IntermediateDataFormulaDto> calcFormulas
+    )
+    {
+        try
+        {
+            if (calcFormulas == null || calcFormulas.Count == 0)
+            {
+                return; // 没有计算公式，直接返回
+            }
+
+            // 1. 提取中间数据实体的上下文数据（用于公式计算）
+            var contextData = ExtractContextDataFromEntity(entity);
+
+            // 3. 按顺序计算每个公式
+            foreach (var formulaDto in calcFormulas)
+            {
+                try
+                {
+                    // 计算公式值
+                    decimal? calculatedValue = null;
+                    try
+                    {
+                        calculatedValue = _formulaParser.Calculate(formulaDto.Formula, contextData);
+                    }
+                    catch (Exception calcEx)
+                    {
+                        // 计算失败，如果公式有默认值，使用默认值
+                        if (!string.IsNullOrWhiteSpace(formulaDto.DefaultValue))
+                        {
+                            if (decimal.TryParse(formulaDto.DefaultValue, out var defaultVal))
+                            {
+                                calculatedValue = defaultVal;
+                            }
+                        }
+                        // 如果没有默认值，抛出异常以便记录错误
+                        if (!calculatedValue.HasValue)
+                        {
+                            throw new Exception(
+                                $"公式计算失败 - 列名: {formulaDto.ColumnName}, 公式: {formulaDto.Formula}, 错误: {calcEx.Message}"
+                            );
+                        }
+                    }
+
+                    // 如果计算值为null，使用默认值（注意：公式维护中定义的默认值）
+                    if (
+                        !calculatedValue.HasValue
+                        && !string.IsNullOrWhiteSpace(formulaDto.DefaultValue)
+                    )
+                    {
+                        if (decimal.TryParse(formulaDto.DefaultValue, out var defaultVal))
+                        {
+                            calculatedValue = defaultVal;
+                        }
+                    }
+
+                    // 应用精度（公式维护中定义的精度）
+                    if (calculatedValue.HasValue && formulaDto.Precision.HasValue)
+                    {
+                        calculatedValue = Math.Round(
+                            calculatedValue.Value,
+                            formulaDto.Precision.Value
+                        );
+                    }
+
+                    // 4. 将计算结果设置到中间数据实体的对应属性
+                    SetFormulaValueToEntity(entity, formulaDto.ColumnName, calculatedValue);
+
+                    // 5. 更新上下文数据，以便后续公式可以使用已计算的值
+                    if (calculatedValue.HasValue)
+                    {
+                        contextData[formulaDto.ColumnName] = calculatedValue.Value;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // 公式计算失败，使用默认值（如果公式维护中定义了默认值）
+                    if (!string.IsNullOrWhiteSpace(formulaDto.DefaultValue))
+                    {
+                        if (decimal.TryParse(formulaDto.DefaultValue, out var defaultVal))
+                        {
+                            // 应用精度
+                            if (formulaDto.Precision.HasValue)
+                            {
+                                defaultVal = Math.Round(defaultVal, formulaDto.Precision.Value);
+                            }
+                            SetFormulaValueToEntity(entity, formulaDto.ColumnName, defaultVal);
+                            contextData[formulaDto.ColumnName] = defaultVal;
+                        }
+                    }
+                    else
+                    {
+                        // 没有默认值，抛出异常以便上层记录错误
+                        throw new Exception(
+                            $"公式计算失败 - 列名: {formulaDto.ColumnName}, 公式: {formulaDto.Formula}, 错误: {ex.Message}"
+                        );
+                    }
+                }
+            }
+
+            // 7. 保存更新后的实体到数据库
+            entity.LastModifyTime = DateTime.Now;
+            await _repository.UpdateAsync(entity);
+
+            // TODO: 判定公式（JUDGE类型）的计算逻辑，待前端代码完成后实现
+            // 判定公式通常用于判断数据是否符合某些条件，返回布尔值或文本结果
+        }
+        catch (Exception ex)
+        {
+            // 重新抛出异常，以便上层记录错误
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// 将公式计算结果设置到中间数据实体的对应属性.
+    /// </summary>
+    private void SetFormulaValueToEntity(
+        IntermediateDataEntity entity,
+        string columnName,
+        decimal? value
+    )
+    {
+        if (string.IsNullOrWhiteSpace(columnName))
+            return;
+
+        // 使用反射设置属性值
+        var property = typeof(IntermediateDataEntity).GetProperty(columnName);
+        if (property != null && property.CanWrite)
+        {
+            try
+            {
+                // 处理可空类型
+                var targetType = property.PropertyType;
+                if (
+                    targetType.IsGenericType
+                    && targetType.GetGenericTypeDefinition() == typeof(Nullable<>)
+                )
+                {
+                    var underlyingType = Nullable.GetUnderlyingType(targetType);
+                    if (underlyingType != null && underlyingType == typeof(decimal))
+                    {
+                        property.SetValue(entity, value);
+                        return;
+                    }
+                }
+                else if (targetType == typeof(decimal))
+                {
+                    property.SetValue(entity, value ?? 0m);
+                    return;
+                }
+                else if (targetType == typeof(decimal?))
+                {
+                    property.SetValue(entity, value);
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(
+                    $"设置属性值失败 - 属性名: {columnName}, 值: {value}, 错误: {ex.Message}"
+                );
+            }
+        }
+        else
+        {
+            Console.WriteLine(
+                $"未找到可写属性 - 属性名: {columnName}，可能需要在 IntermediateDataEntity 中添加该属性"
+            );
+        }
+    }
+
+    /// <summary>
+    /// 从中间数据实体提取上下文数据（用于公式计算）
     /// </summary>
     private Dictionary<string, object> ExtractContextDataFromEntity(IntermediateDataEntity entity)
     {
         var contextData = new Dictionary<string, object>();
 
-        // 添加数值字段（使用实际存在的属性）
-        AddValueIfNotNull(contextData, "Width", entity.Width);
-        AddValueIfNotNull(contextData, "AvgThickness", entity.AvgThickness);
-        AddValueIfNotNull(contextData, "FourMeterWeight", entity.FourMeterWeight);
-        AddValueIfNotNull(contextData, "OneMeterWeight", entity.OneMeterWeight);
+        // 使用反射自动提取所有数值类型的属性
+        var entityType = typeof(IntermediateDataEntity);
+        var properties = entityType.GetProperties(
+            System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance
+        );
 
-        // 产品规格相关参数（导入时写入）
-        AddValueIfNotNull(contextData, "ProductLength", entity.ProductLength);
-        AddValueIfNotNull(contextData, "ProductLayers", entity.ProductLayers);
-        AddValueIfNotNull(contextData, "ProductDensity", entity.ProductDensity);
-
-        // 为通用公式提供常用简写变量
-        AddValueIfNotNull(contextData, "Length", entity.ProductLength);
-        AddValueIfNotNull(contextData, "Layers", entity.ProductLayers);
-        AddValueIfNotNull(contextData, "Density", entity.Density ?? entity.ProductDensity);
-        AddValueIfNotNull(contextData, "LaminationFactor", entity.LaminationFactor);
-        AddValueIfNotNull(contextData, "StripType", entity.StripType);
-
-        // 添加其他可能需要的字段
-        if (entity.CoilNo.HasValue)
+        foreach (var prop in properties)
         {
-            contextData["CoilNo"] = entity.CoilNo.Value;
+            // 跳过非数值类型和特殊属性
+            if (
+                prop.Name == "Id"
+                || prop.Name == "RawDataId"
+                || prop.Name == "CreatorUserId"
+                || prop.Name == "CreatorTime"
+                || prop.Name == "LastModifyUserId"
+                || prop.Name == "LastModifyTime"
+                || prop.Name == "DeleteMark"
+                || prop.Name == "DeleteUserId"
+                || prop.Name == "DeleteTime"
+                || prop.Name == "TenantId"
+                || prop.Name == "AppearanceFeatureIdsList" // 辅助属性
+            )
+            {
+                continue;
+            }
+
+            var propType = prop.PropertyType;
+            var underlyingType = Nullable.GetUnderlyingType(propType) ?? propType;
+
+            // 只提取数值类型（decimal, int, double, float, long等）
+            if (
+                underlyingType == typeof(decimal)
+                || underlyingType == typeof(int)
+                || underlyingType == typeof(long)
+                || underlyingType == typeof(double)
+                || underlyingType == typeof(float)
+                || underlyingType == typeof(short)
+                || underlyingType == typeof(byte)
+            )
+            {
+                var value = prop.GetValue(entity);
+                if (value != null)
+                {
+                    // 转换为decimal以便公式计算
+                    try
+                    {
+                        var decimalValue = Convert.ToDecimal(value);
+                        contextData[prop.Name] = decimalValue;
+                    }
+                    catch
+                    {
+                        // 转换失败，跳过
+                    }
+                }
+            }
         }
 
-        if (entity.LineNo.HasValue)
+        // 添加常用简写变量（兼容性）
+        if (!contextData.ContainsKey("Length") && contextData.ContainsKey("ProductLength"))
         {
-            contextData["LineNo"] = entity.LineNo.Value;
+            contextData["Length"] = contextData["ProductLength"];
+        }
+        if (!contextData.ContainsKey("Layers") && contextData.ContainsKey("ProductLayers"))
+        {
+            contextData["Layers"] = contextData["ProductLayers"];
+        }
+        if (!contextData.ContainsKey("Density"))
+        {
+            if (contextData.ContainsKey("Density"))
+            {
+                contextData["Density"] = contextData["Density"];
+            }
+            else if (contextData.ContainsKey("ProductDensity"))
+            {
+                contextData["Density"] = contextData["ProductDensity"];
+            }
+        }
+
+        // 添加检测列数据（Detection1-Detection22）
+        for (int i = 1; i <= 22; i++)
+        {
+            var propName = $"Detection{i}";
+            var prop = entityType.GetProperty(propName);
+            if (prop != null)
+            {
+                var value = prop.GetValue(entity);
+                if (value != null)
+                {
+                    try
+                    {
+                        contextData[propName] = Convert.ToDecimal(value);
+                    }
+                    catch { }
+                }
+            }
+        }
+
+        // 添加带厚分布数据（Thickness1-Thickness22）
+        for (int i = 1; i <= 22; i++)
+        {
+            var propName = $"Thickness{i}";
+            var prop = entityType.GetProperty(propName);
+            if (prop != null)
+            {
+                var value = prop.GetValue(entity);
+                if (value != null)
+                {
+                    try
+                    {
+                        contextData[propName] = Convert.ToDecimal(value);
+                    }
+                    catch { }
+                }
+            }
+        }
+
+        // 添加叠片系数分布数据（LaminationDist1-LaminationDist22）
+        for (int i = 1; i <= 22; i++)
+        {
+            var propName = $"LaminationDist{i}";
+            var prop = entityType.GetProperty(propName);
+            if (prop != null)
+            {
+                var value = prop.GetValue(entity);
+                if (value != null)
+                {
+                    try
+                    {
+                        contextData[propName] = Convert.ToDecimal(value);
+                    }
+                    catch { }
+                }
+            }
+        }
+
+        // 添加检测列数量（用于TO运算符）
+        if (entity.DetectionColumns.HasValue && entity.DetectionColumns.Value > 0)
+        {
+            contextData["DetectionColumns"] = entity.DetectionColumns.Value;
         }
 
         return contextData;
@@ -949,6 +1610,177 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
 
         return list;
     }
+
+    #region 排序相关方法
+
+    /// <summary>
+    /// 应用排序规则.
+    /// </summary>
+    private List<IntermediateDataEntity> ApplySortRules(List<IntermediateDataEntity> data, List<SortRule> sortRules)
+    {
+        if (sortRules == null || sortRules.Count == 0)
+            return ApplyDefaultSort(data);
+
+        IOrderedEnumerable<IntermediateDataEntity> orderedData = null;
+
+        for (int i = 0; i < sortRules.Count; i++)
+        {
+            var rule = sortRules[i];
+
+            // 跳过字段为空的规则
+            if (string.IsNullOrEmpty(rule.Field))
+                continue;
+
+            var isDesc = rule.Order?.ToLower() == "desc";
+
+            if (i == 0)
+            {
+                // 第一个排序字段
+                orderedData = ApplySingleFieldSort(data, rule.Field, isDesc);
+            }
+            else
+            {
+                // 后续的ThenBy
+                if (orderedData != null)
+                {
+                    orderedData = ApplyThenBy(orderedData, rule.Field, isDesc);
+                }
+            }
+        }
+
+        return orderedData?.ToList() ?? data;
+    }
+
+    /// <summary>
+    /// 应用单字段排序（首次排序）.
+    /// </summary>
+    private IOrderedEnumerable<IntermediateDataEntity> ApplySingleFieldSort(
+        IEnumerable<IntermediateDataEntity> data,
+        string field,
+        bool isDesc
+    )
+    {
+        if (string.IsNullOrEmpty(field))
+        {
+            // 如果字段为空，按ID排序
+            return data.OrderBy(t => t.Id);
+        }
+
+        switch (field.ToLower())
+        {
+            case "proddate":
+                return isDesc
+                    ? data.OrderByDescending(t => t.ProdDate ?? DateTime.MinValue)
+                    : data.OrderBy(t => t.ProdDate ?? DateTime.MinValue);
+
+            case "furnacebatchno":
+                return isDesc
+                    ? data.OrderByDescending(t => t.FurnaceBatchNo ?? int.MaxValue)
+                    : data.OrderBy(t => t.FurnaceBatchNo ?? int.MaxValue);
+
+            case "coilno":
+                return isDesc
+                    ? data.OrderByDescending(t => t.CoilNo ?? decimal.MaxValue)
+                    : data.OrderBy(t => t.CoilNo ?? decimal.MaxValue);
+
+            case "subcoilno":
+                return isDesc
+                    ? data.OrderByDescending(t => t.SubcoilNo ?? decimal.MaxValue)
+                    : data.OrderBy(t => t.SubcoilNo ?? decimal.MaxValue);
+
+            case "lineno":
+                return isDesc
+                    ? data.OrderByDescending(t => t.LineNo ?? int.MaxValue)
+                    : data.OrderBy(t => t.LineNo ?? int.MaxValue);
+
+            case "productspecname":
+                return isDesc
+                    ? data.OrderByDescending(t => t.ProductSpecName ?? string.Empty)
+                    : data.OrderBy(t => t.ProductSpecName ?? string.Empty);
+
+            case "creatortime":
+                return isDesc
+                    ? data.OrderByDescending(t => t.CreatorTime ?? DateTime.MinValue)
+                    : data.OrderBy(t => t.CreatorTime ?? DateTime.MinValue);
+
+            default:
+                // 不支持的字段，按ID排序
+                return data.OrderBy(t => t.Id);
+        }
+    }
+
+    /// <summary>
+    /// 应用ThenBy排序.
+    /// </summary>
+    private IOrderedEnumerable<IntermediateDataEntity> ApplyThenBy(
+        IOrderedEnumerable<IntermediateDataEntity> orderedData,
+        string field,
+        bool isDesc
+    )
+    {
+        if (string.IsNullOrEmpty(field))
+        {
+            // 如果字段为空，保持原顺序
+            return orderedData;
+        }
+
+        switch (field.ToLower())
+        {
+            case "proddate":
+                return isDesc
+                    ? orderedData.ThenByDescending(t => t.ProdDate ?? DateTime.MinValue)
+                    : orderedData.ThenBy(t => t.ProdDate ?? DateTime.MinValue);
+
+            case "furnacebatchno":
+                return isDesc
+                    ? orderedData.ThenByDescending(t => t.FurnaceBatchNo ?? int.MaxValue)
+                    : orderedData.ThenBy(t => t.FurnaceBatchNo ?? int.MaxValue);
+
+            case "coilno":
+                return isDesc
+                    ? orderedData.ThenByDescending(t => t.CoilNo ?? decimal.MaxValue)
+                    : orderedData.ThenBy(t => t.CoilNo ?? decimal.MaxValue);
+
+            case "subcoilno":
+                return isDesc
+                    ? orderedData.ThenByDescending(t => t.SubcoilNo ?? decimal.MaxValue)
+                    : orderedData.ThenBy(t => t.SubcoilNo ?? decimal.MaxValue);
+
+            case "lineno":
+                return isDesc
+                    ? orderedData.ThenByDescending(t => t.LineNo ?? int.MaxValue)
+                    : orderedData.ThenBy(t => t.LineNo ?? int.MaxValue);
+
+            case "productspecname":
+                return isDesc
+                    ? orderedData.ThenByDescending(t => t.ProductSpecName ?? string.Empty)
+                    : orderedData.ThenBy(t => t.ProductSpecName ?? string.Empty);
+
+            case "creatortime":
+                return isDesc
+                    ? orderedData.ThenByDescending(t => t.CreatorTime ?? DateTime.MinValue)
+                    : orderedData.ThenBy(t => t.CreatorTime ?? DateTime.MinValue);
+
+            default:
+                // 不支持的字段，保持原顺序
+                return orderedData;
+        }
+    }
+
+    /// <summary>
+    /// 应用默认排序.
+    /// </summary>
+    private List<IntermediateDataEntity> ApplyDefaultSort(List<IntermediateDataEntity> data)
+    {
+        return data.OrderBy(t => t.ProdDate ?? DateTime.MinValue)
+            .ThenBy(t => t.FurnaceBatchNo ?? int.MaxValue)
+            .ThenBy(t => t.CoilNo ?? decimal.MaxValue)
+            .ThenBy(t => t.SubcoilNo ?? decimal.MaxValue)
+            .ThenBy(t => t.LineNo ?? int.MaxValue)
+            .ToList();
+    }
+
+    #endregion
 
     #endregion
 }

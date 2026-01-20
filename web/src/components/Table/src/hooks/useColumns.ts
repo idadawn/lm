@@ -140,6 +140,13 @@ export function useColumns(propsRef: ComputedRef<BasicTableProps>, getPagination
         column.customTitle = column.title;
         Reflect.deleteProperty(column, 'title');
       }
+      
+      // 移除 slots 属性以避免 ant-design-vue 的警告
+      // 现在使用 v-slot:headerCell 和 v-slot:bodyCell 代替
+      if (slots) {
+        Reflect.deleteProperty(column, 'slots');
+      }
+      
       const isDefaultAction = [INDEX_COLUMN_FLAG, ACTION_COLUMN_FLAG].includes(flag!);
       if (!customRender && format && !edit && !isDefaultAction) {
         column.customRender = ({ text, record, index }) => {
@@ -163,7 +170,16 @@ export function useColumns(propsRef: ComputedRef<BasicTableProps>, getPagination
           column.children = column.children.map(mapFn);
         }
 
-        return mapFn(column);
+        const mappedColumn = mapFn(column);
+        // 确保子列也移除了 slots 属性
+        if (mappedColumn.children?.length) {
+          mappedColumn.children.forEach(child => {
+            if (child.slots) {
+              Reflect.deleteProperty(child, 'slots');
+            }
+          });
+        }
+        return mappedColumn;
       });
   });
 

@@ -49,6 +49,7 @@ CREATE TABLE `LAB_INTERMEDIATE_DATA` (
     `F_SPRAY_NO` VARCHAR(50) DEFAULT NULL COMMENT '喷次（8位日期-炉号）',
     `F_LABELING` VARCHAR(50) DEFAULT NULL COMMENT '贴标',
     `F_FURNACE_NO_FORMATTED` VARCHAR(200) DEFAULT NULL COMMENT '炉号（格式：[产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号]）',
+    `F_SHIFT_NO` VARCHAR(20) DEFAULT NULL COMMENT '班次',
     
     -- 性能数据（可编辑）
     `F_PERF_SS_POWER` DECIMAL(18, 4) DEFAULT NULL COMMENT '1.35T 50Hz Ss激磁功率 (VA/kg)',
@@ -64,7 +65,8 @@ CREATE TABLE `LAB_INTERMEDIATE_DATA` (
     
     -- 计算字段
     `F_ONE_METER_WT` DECIMAL(18, 2) DEFAULT NULL COMMENT '一米带材重量(g)：F_FOUR_METER_WT / STD_LENGTH',
-    `F_WIDTH` DECIMAL(18, 2) DEFAULT NULL COMMENT '带宽',
+    `F_STRIP_WIDTH` DECIMAL(18, 2) DEFAULT NULL COMMENT '带宽',
+    `F_WIDTH` DECIMAL(18, 2) DEFAULT NULL COMMENT '宽度',
     
     -- 带厚分布（1-22）
     `F_THICK_1` DECIMAL(18, 2) DEFAULT NULL COMMENT '带厚1 (μm)，前端动态计算列：F_LAM_DIST_i / LAYERS',
@@ -174,6 +176,14 @@ CREATE TABLE `LAB_INTERMEDIATE_DATA` (
     `F_MATCH_CONFIDENCE` DOUBLE DEFAULT NULL COMMENT '特性匹配置信度（0-1）',
     
     -- ============================================
+    -- 公式计算相关字段
+    -- ============================================
+    `F_BATCH_ID` VARCHAR(50) DEFAULT NULL COMMENT '批次ID（关联导入会话或导入日志）',
+    `F_CALC_STATUS` VARCHAR(20) DEFAULT 'PENDING' COMMENT '公式计算状态：PENDING-待计算，PROCESSING-计算中，SUCCESS-计算成功，FAILED-计算失败',
+    `F_CALC_STATUS_TIME` DATETIME DEFAULT NULL COMMENT '计算状态更新时间',
+    `F_CALC_ERROR_MESSAGE` VARCHAR(500) DEFAULT NULL COMMENT '计算错误摘要（简要错误信息，用于前端展示）',
+    
+    -- ============================================
     -- 主键和索引
     -- ============================================
     PRIMARY KEY (`F_Id`),
@@ -189,7 +199,10 @@ CREATE TABLE `LAB_INTERMEDIATE_DATA` (
     KEY `IDX_DELETE_MARK` (`F_DeleteMark`),
     KEY `IDX_ENABLED_MARK` (`F_ENABLEDMARK`),
     KEY `IDX_DETECTION_DATE_TENANT` (`F_DETECTION_DATE`, `F_TenantId`, `F_DeleteMark`),
-    KEY `IDX_FURNACE_NO_TENANT` (`F_FURNACE_NO`, `F_TenantId`, `F_DeleteMark`)
+    KEY `IDX_FURNACE_NO_TENANT` (`F_FURNACE_NO`, `F_TenantId`, `F_DeleteMark`),
+    KEY `IDX_BATCH_ID` (`F_BATCH_ID`),
+    KEY `IDX_CALC_STATUS` (`F_CALC_STATUS`),
+    KEY `IDX_BATCH_ID_CALC_STATUS` (`F_BATCH_ID`, `F_CALC_STATUS`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='中间数据表';
 
 -- ============================================

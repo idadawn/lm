@@ -1,5 +1,6 @@
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Contracts;
+using Poxiao.Lab.Entity.Enums;
 using SqlSugar;
 
 namespace Poxiao.Lab.Entity;
@@ -50,7 +51,7 @@ public class IntermediateDataFormulaEntity : CLDEntityBase
         DefaultValue = "CALC",
         IsNullable = true
     )]
-    public string FormulaType { get; set; } = "CALC";
+    public IntermediateDataFormulaType FormulaType { get; set; } = IntermediateDataFormulaType.CALC;
 
     /// <summary>
     /// 单位ID（关联单位定义表）.

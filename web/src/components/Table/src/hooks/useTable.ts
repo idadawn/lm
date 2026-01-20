@@ -54,116 +54,180 @@ export function useTable(tableProps?: Props): [
     );
   }
 
-  function getTableInstance(): TableActionType {
+  function getTableInstance(): TableActionType | null {
     const table = unref(tableRef);
-    if (!table) {
-      error('The table instance has not been obtained yet, please make sure the table is presented when performing the table operation!');
-    }
-    return table as TableActionType;
+    return table as TableActionType | null;
   }
 
   const methods: TableActionType & {
     getForm: () => FormActionType;
   } = {
     reload: async (opt?: FetchParams) => {
-      return await getTableInstance().reload(opt);
+      const table = getTableInstance();
+      if (!table) {
+        console.warn('The table instance has not been obtained yet, please make sure the table is presented when performing the table operation!');
+        return;
+      }
+      return await table.reload(opt);
     },
     setProps: (props: Partial<BasicTableProps>) => {
-      getTableInstance().setProps(props);
+      const table = getTableInstance();
+      if (!table) return;
+      table.setProps(props);
     },
     redoHeight: () => {
-      getTableInstance().redoHeight();
+      const table = getTableInstance();
+      if (!table) return;
+      table.redoHeight();
     },
     setSelectedRows: (rows: Recordable[]) => {
-      return toRaw(getTableInstance().setSelectedRows(rows));
+      const table = getTableInstance();
+      if (!table) return;
+      return toRaw(table.setSelectedRows(rows));
     },
     setLoading: (loading: boolean) => {
-      getTableInstance().setLoading(loading);
+      const table = getTableInstance();
+      if (!table) return;
+      table.setLoading(loading);
     },
     getDataSource: () => {
-      return getTableInstance().getDataSource();
+      const table = getTableInstance();
+      if (!table) return [];
+      return table.getDataSource();
     },
     getRawDataSource: () => {
-      return getTableInstance().getRawDataSource();
+      const table = getTableInstance();
+      if (!table) return [];
+      return table.getRawDataSource();
     },
     getFetchParams: () => {
-      return getTableInstance().getFetchParams();
+      const table = getTableInstance();
+      if (!table) return {};
+      return table.getFetchParams();
     },
     getColumns: ({ ignoreIndex = false }: { ignoreIndex?: boolean } = {}) => {
-      const columns = getTableInstance().getColumns({ ignoreIndex }) || [];
+      const table = getTableInstance();
+      if (!table) return [];
+      const columns = table.getColumns({ ignoreIndex }) || [];
       return toRaw(columns);
     },
     setColumns: (columns: BasicColumn[]) => {
-      getTableInstance().setColumns(columns);
+      const table = getTableInstance();
+      if (!table) return;
+      table.setColumns(columns);
     },
     setTableData: (values: any[]) => {
-      return getTableInstance().setTableData(values);
+      const table = getTableInstance();
+      if (!table) return;
+      return table.setTableData(values);
     },
     setPagination: (info: Partial<PaginationProps>) => {
-      return getTableInstance().setPagination(info);
+      const table = getTableInstance();
+      if (!table) return;
+      return table.setPagination(info);
     },
     deleteSelectRowByKey: (key: string) => {
-      getTableInstance().deleteSelectRowByKey(key);
+      const table = getTableInstance();
+      if (!table) return;
+      table.deleteSelectRowByKey(key);
     },
     getSelectRowKeys: () => {
-      return toRaw(getTableInstance().getSelectRowKeys());
+      const table = getTableInstance();
+      if (!table) return [];
+      return toRaw(table.getSelectRowKeys());
     },
     getSelectRows: () => {
-      return toRaw(getTableInstance().getSelectRows());
+      const table = getTableInstance();
+      if (!table) return [];
+      return toRaw(table.getSelectRows());
     },
     clearSelectedRowKeys: () => {
-      getTableInstance().clearSelectedRowKeys();
+      const table = getTableInstance();
+      if (!table) return;
+      table.clearSelectedRowKeys();
     },
     setSelectedRowKeys: (keys: string[] | number[]) => {
-      getTableInstance().setSelectedRowKeys(keys);
+      const table = getTableInstance();
+      if (!table) return;
+      table.setSelectedRowKeys(keys);
     },
     getPaginationRef: () => {
-      return getTableInstance().getPaginationRef();
+      const table = getTableInstance();
+      if (!table) return undefined;
+      return table.getPaginationRef();
     },
     getSize: () => {
-      return toRaw(getTableInstance().getSize());
+      const table = getTableInstance();
+      if (!table) return undefined;
+      return toRaw(table.getSize());
     },
     updateTableData: (index: number, key: string, value: any) => {
-      return getTableInstance().updateTableData(index, key, value);
+      const table = getTableInstance();
+      if (!table) return;
+      return table.updateTableData(index, key, value);
     },
     deleteTableDataRecord: (rowKey: string | number | string[] | number[]) => {
-      return getTableInstance().deleteTableDataRecord(rowKey);
+      const table = getTableInstance();
+      if (!table) return;
+      return table.deleteTableDataRecord(rowKey);
     },
     insertTableDataRecord: (record: Recordable | Recordable[], index?: number) => {
-      return getTableInstance().insertTableDataRecord(record, index);
+      const table = getTableInstance();
+      if (!table) return;
+      return table.insertTableDataRecord(record, index);
     },
     updateTableDataRecord: (rowKey: string | number, record: Recordable) => {
-      return getTableInstance().updateTableDataRecord(rowKey, record);
+      const table = getTableInstance();
+      if (!table) return;
+      return table.updateTableDataRecord(rowKey, record);
     },
     findTableDataRecord: (rowKey: string | number) => {
-      return getTableInstance().findTableDataRecord(rowKey);
+      const table = getTableInstance();
+      if (!table) return undefined;
+      return table.findTableDataRecord(rowKey);
     },
     getRowSelection: () => {
-      return toRaw(getTableInstance().getRowSelection());
+      const table = getTableInstance();
+      if (!table) return undefined;
+      return toRaw(table.getRowSelection());
     },
     getCacheColumns: () => {
-      return toRaw(getTableInstance().getCacheColumns());
+      const table = getTableInstance();
+      if (!table) return [];
+      return toRaw(table.getCacheColumns());
     },
     getForm: () => {
       return unref(formRef) as unknown as FormActionType;
     },
     setShowPagination: async (show: boolean) => {
-      getTableInstance().setShowPagination(show);
+      const table = getTableInstance();
+      if (!table) return;
+      table.setShowPagination(show);
     },
     getShowPagination: () => {
-      return toRaw(getTableInstance().getShowPagination());
+      const table = getTableInstance();
+      if (!table) return false;
+      return toRaw(table.getShowPagination());
     },
     expandAll: () => {
-      getTableInstance().expandAll();
+      const table = getTableInstance();
+      if (!table) return;
+      table.expandAll();
     },
     expandRows: (keys: string[]) => {
-      getTableInstance().expandRows(keys);
+      const table = getTableInstance();
+      if (!table) return;
+      table.expandRows(keys);
     },
     collapseAll: () => {
-      getTableInstance().collapseAll();
+      const table = getTableInstance();
+      if (!table) return;
+      table.collapseAll();
     },
     scrollTo: (pos: string) => {
-      getTableInstance().scrollTo(pos);
+      const table = getTableInstance();
+      if (!table) return;
+      table.scrollTo(pos);
     },
   };
 

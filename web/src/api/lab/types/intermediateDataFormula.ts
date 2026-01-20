@@ -12,6 +12,7 @@ export interface IntermediateDataFormula {
     id: string;
     tableName: string;
     columnName: string;
+    displayName?: string;
     formulaName: string;
     formula: string;
     formulaType?: string;

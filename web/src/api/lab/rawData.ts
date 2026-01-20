@@ -71,7 +71,6 @@ export async function updateImportSession(id: string, data: any): Promise<Import
 
     // 注意：这里假设后端有/metadata接口，如果没有需要创建
     // 临时解决方案：直接返回当前会话，不更新元数据
-    console.warn('Metadata update not implemented, skipping metadata update');
   }
 
   // 如果有步骤信息，更新步骤
@@ -220,19 +219,14 @@ export async function uploadAndParse(data: Step1UploadAndParseInput): Promise<St
 
 // 更新重复数据的选择结果（将未选择的数据标记为无效）
 export function updateDuplicateSelections(importSessionId: string, data: { rawDataId: string; isValidData: boolean }[]): Promise<void> {
-  console.log('[API] updateDuplicateSelections 被调用', { importSessionId, dataCount: data.length, data });
   const url = Api.ImportSessionPrefix + '/' + importSessionId + '/duplicate-selections';
-  console.log('[API] 请求URL:', url);
-  console.log('[API] 请求数据:', { items: data });
   
   return defHttp.put({ 
     url: url, 
     data: { items: data } 
   }).then((response) => {
-    console.log('[API] updateDuplicateSelections 成功:', response);
     return response;
   }).catch((error) => {
-    console.error('[API] updateDuplicateSelections 失败:', error);
     throw error;
   });
 }

@@ -9,6 +9,7 @@ using Poxiao.Infrastructure.Enums;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Attributes;
 using Poxiao.Lab.Entity.Dto.IntermediateDataFormula;
+using Poxiao.Lab.Entity.Enums;
 using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
 using SqlSugar;
@@ -52,6 +53,42 @@ public class IntermediateDataFormulaService
         _formulaParser = formulaParser;
     }
 
+    /// <summary>
+    /// 将实体转换为 DTO，处理枚举到字符串的转换.
+    /// </summary>
+    private IntermediateDataFormulaDto ToDto(IntermediateDataFormulaEntity entity)
+    {
+        var dto = entity.Adapt<IntermediateDataFormulaDto>();
+        dto.FormulaType = entity.FormulaType.ToString();
+        
+        // 根据 columnName 查找对应的 displayName
+        dto.DisplayName = GetColumnDisplayName(entity.ColumnName);
+        
+        return dto;
+    }
+
+    /// <summary>
+    /// 根据列名获取显示名称.
+    /// </summary>
+    private string GetColumnDisplayName(string columnName)
+    {
+        if (string.IsNullOrEmpty(columnName))
+            return null;
+
+        var entityType = typeof(IntermediateDataEntity);
+        var prop = entityType.GetProperty(columnName, BindingFlags.Public | BindingFlags.Instance);
+        if (prop == null)
+            return null;
+
+        var columnAttr = prop.GetCustomAttribute<IntermediateDataColumnAttribute>();
+        if (columnAttr != null && !string.IsNullOrEmpty(columnAttr.DisplayName))
+        {
+            return columnAttr.DisplayName;
+        }
+
+        return GetDisplayName(prop);
+    }
+
     /// <inheritdoc />
     [HttpGet("")]
     public async Task<List<IntermediateDataFormulaDto>> GetListAsync()
@@ -63,7 +100,7 @@ public class IntermediateDataFormulaService
             .OrderBy(t => t.CreatorTime)
             .ToListAsync();
 
-        return list.Adapt<List<IntermediateDataFormulaDto>>();
+        return list.Select(ToDto).ToList();
     }
 
     /// <inheritdoc />
@@ -74,7 +111,7 @@ public class IntermediateDataFormulaService
         if (entity == null)
             throw Oops.Oh(ErrorCode.COM1005);
 
-        return entity.Adapt<IntermediateDataFormulaDto>();
+        return ToDto(entity);
     }
 
     /// <inheritdoc />
@@ -115,6 +152,23 @@ public class IntermediateDataFormulaService
         }
 
         var entity = dto.Adapt<IntermediateDataFormulaEntity>();
+        // 处理 FormulaType 字符串到枚举的转换
+        if (!string.IsNullOrEmpty(dto.FormulaType))
+        {
+            if (Enum.TryParse<IntermediateDataFormulaType>(dto.FormulaType, out var formulaType))
+            {
+                entity.FormulaType = formulaType;
+            }
+            else
+            {
+                entity.FormulaType = IntermediateDataFormulaType.CALC; // 默认值
+            }
+        }
+        else
+        {
+            entity.FormulaType = IntermediateDataFormulaType.CALC; // 默认值
+        }
+        
         entity.Creator();
         entity.LastModifyUserId = entity.CreatorUserId;
         entity.LastModifyTime = entity.CreatorTime;
@@ -123,7 +177,7 @@ public class IntermediateDataFormulaService
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1000);
 
-        return entity.Adapt<IntermediateDataFormulaDto>();
+        return ToDto(entity);
     }
 
     /// <inheritdoc />
@@ -182,7 +236,14 @@ public class IntermediateDataFormulaService
         entity.FormulaName = dto.FormulaName ?? entity.ColumnName;
         entity.Formula = dto.Formula ?? entity.Formula;
         entity.FormulaLanguage = dto.FormulaLanguage ?? entity.FormulaLanguage;
-        entity.FormulaType = dto.FormulaType ?? entity.FormulaType;
+        // 将字符串转换为枚举
+        if (!string.IsNullOrEmpty(dto.FormulaType))
+        {
+            if (Enum.TryParse<IntermediateDataFormulaType>(dto.FormulaType, out var formulaType))
+            {
+                entity.FormulaType = formulaType;
+            }
+        }
         entity.UnitId = dto.UnitId;
         entity.UnitName = dto.UnitName;
         entity.Precision = dto.Precision;
@@ -197,7 +258,7 @@ public class IntermediateDataFormulaService
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1001);
 
-        return entity.Adapt<IntermediateDataFormulaDto>();
+        return ToDto(entity);
     }
 
     /// <inheritdoc />
@@ -218,7 +279,7 @@ public class IntermediateDataFormulaService
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1001);
 
-        return entity.Adapt<IntermediateDataFormulaDto>();
+        return ToDto(entity);
     }
 
     /// <inheritdoc />
@@ -260,7 +321,7 @@ public class IntermediateDataFormulaService
                 FormulaName = col.DisplayName ?? col.ColumnName,
                 Formula = "",
                 FormulaLanguage = "EXCEL", // 默认EXCEL
-                FormulaType = col.IsCalculable ? "CALC" : "JUDGE",
+                FormulaType = col.IsCalculable ? IntermediateDataFormulaType.CALC : IntermediateDataFormulaType.JUDGE,
                 UnitName = null, // 单位ID暂为空，后续编辑
                 Precision = col.DecimalDigits,
                 IsEnabled = true,

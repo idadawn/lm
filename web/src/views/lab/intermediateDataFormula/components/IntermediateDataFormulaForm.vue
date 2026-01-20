@@ -5,7 +5,8 @@
     :title="getTitle"
     @ok="handleSubmit"
     @cancel="handleCancel"
-    :width="900">
+    :width="1000"
+    :bodyStyle="{ height: 'calc(100vh - 200px)', padding: '16px' }">
     <BasicForm @register="registerForm"></BasicForm>
   </BasicModal>
 </template>
@@ -16,8 +17,9 @@ import { BasicModal, useModalInner } from '/@/components/Modal';
 import { BasicForm, useForm } from '/@/components/Form';
 import { useMessage } from '/@/hooks/web/useMessage';
 import type { IntermediateDataFormula } from '/@/api/lab/types/intermediateDataFormula';
-import { getIntermediateDataFormulaList, validateFormula, updateIntermediateDataFormula } from '/@/api/lab/intermediateDataFormula';
+import { getIntermediateDataFormulaList, validateFormula, updateIntermediateDataFormula, getAvailableColumns } from '/@/api/lab/intermediateDataFormula';
 import { getUnitById } from '/@/utils/lab/unit';
+import UnitSelect from '/@/components/Lab/UnitSelect.vue';
 import JudgmentRuleEditor from './JudgmentRuleEditor.vue';
 
 const emit = defineEmits(['register', 'reload']);
@@ -33,11 +35,12 @@ onMounted(() => {
 
 async function refreshAvailableFields() {
    try {
-     const result = await getIntermediateDataFormulaList();
+     // 使用 getAvailableColumns 获取所有列，包括 showInFormulaMaintenance: false 的列
+     const result = await getAvailableColumns(true);
      if (result && Array.isArray(result)) {
         availableFields.value = result.map(item => ({
              id: item.columnName, 
-             name: item.formulaName || item.columnName,
+             name: item.displayName || item.columnName,
              code: item.columnName
         }));
      }
@@ -59,6 +62,7 @@ const [registerForm, { setFieldsValue, resetFields, validate, getFieldsValue }] 
         ],
       },
       defaultValue: 'INTERMEDIATE_DATA',
+      ifShow: () => formMode.value === 'Attributes',
     },
     {
       field: 'columnName',
@@ -67,6 +71,7 @@ const [registerForm, { setFieldsValue, resetFields, validate, getFieldsValue }] 
       componentProps: {
         disabled: true,
       },
+      ifShow: () => formMode.value === 'Attributes',
     },
     {
       field: 'formulaName',
@@ -75,6 +80,7 @@ const [registerForm, { setFieldsValue, resetFields, validate, getFieldsValue }] 
       componentProps: {
         disabled: true,
       },
+      ifShow: () => formMode.value === 'Attributes',
     },
     // --- 属性 / 公式 通用字段 ---
     {
@@ -99,6 +105,7 @@ const [registerForm, { setFieldsValue, resetFields, validate, getFieldsValue }] 
       },
       defaultValue: 'CALC',
       rules: [{ required: true, trigger: 'change', message: '必填' }],
+      ifShow: () => formMode.value === 'Attributes',
     },
     // --- 属性模式字段 ---
     {
@@ -183,39 +190,44 @@ const [registerForm, { setFieldsValue, resetFields, validate, getFieldsValue }] 
     // --- 公式模式字段 ---
     {
       field: 'formula',
-      label: '公式',
+      label: '',
       component: 'Input',
       ifShow: () => formMode.value === 'Formula',
+      colProps: { span: 24 },
+      labelWidth: 0,
+      labelCol: { span: 0 },
+      wrapperCol: { span: 24 },
       render: ({ model, field }) => {
-        const formulaType = model['formulaType'] || 'CALC';
+        const formulaType = model['formulaType'] || originalRecord.value?.formulaType || 'CALC';
         if (formulaType === 'JUDGE') {
-          return h(JudgmentRuleEditor, {
-            value: model[field],
-            defaultValue: model['defaultValue'],
-            fields: availableFields.value,
-            'onUpdate:value': (val: string) => {
-                model[field] = val;
-                setFieldsValue({ formula: val });
-            },
-            'onUpdate:defaultValue': (val: string) => {
-                model['defaultValue'] = val;
-                setFieldsValue({ defaultValue: val });
-            },
-          });
+          return h('div', { 
+            style: { 
+              width: '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box'
+            } 
+          }, [
+            h(JudgmentRuleEditor, {
+              value: model[field],
+              defaultValue: model['defaultValue'],
+              fields: availableFields.value,
+              'onUpdate:value': (val: string) => {
+                  model[field] = val;
+                  setFieldsValue({ formula: val });
+              },
+              'onUpdate:defaultValue': (val: string) => {
+                  model['defaultValue'] = val;
+                  setFieldsValue({ defaultValue: val });
+              },
+            })
+          ]);
         }
-        // Fallback to normal input for CALC
-        // Note: BasicForm render override completely replaces component.
-        // We need to render default Input if not JUDGE. Not easy with `render`.
-        // Better strategy: Use `slot`. But BasicForm slot usage is specific.
-        // Simple way: If not JUDGE, render VNode for Input.TextArea or similar.
-        // Or since we only care about JUDGE here? No, we need to support CALC too.
-        // Actually, this render function is only called if ifShow is true.
-        // Let's implement dynamic component rendering.
+        
          return h('div', [
              h('textarea', {
                  value: model[field],
                  class: 'ant-input',
-                 rows: 4,
+                 rows: 8,
                  placeholder: '请输入公式表达式',
                  onInput: (e: any) => {
                      model[field] = e.target.value;
@@ -224,33 +236,36 @@ const [registerForm, { setFieldsValue, resetFields, validate, getFieldsValue }] 
              })
          ]);
       },
-      // When using render, componentProps are ignored.
-      // We must implement validation logic manually or rely on `rules`.
       rules: [
-        { required: true, trigger: 'blur', message: '必填' },
         {
           validator: async (_rule, value) => {
-            if (!value) return;
-            const formulaType = getFieldsValue().formulaType;
-             if (formulaType === 'JUDGE') {
-                  // Validate JSON
-                  try {
-                      const rules = JSON.parse(value);
-                      if (!Array.isArray(rules) || rules.length === 0) {
-                           // Allow empty rules? Maybe not.
-                           // return Promise.reject('请至少添加一条判定规则');
-                      }
-                  } catch {
-                      return Promise.reject('判定规则格式错误');
-                  }
-                  return Promise.resolve();
-             }
+            const formulaType = getFieldsValue().formulaType || originalRecord.value?.formulaType;
+            
+            // 对于判定公式，如果没有值也不报错（允许为空）
+            if (!value) {
+              if (formulaType === 'JUDGE') {
+                return Promise.resolve();
+              }
+              return Promise.reject('必填');
+            }
+            
+            if (formulaType === 'JUDGE') {
+              try {
+                const rules = JSON.parse(value);
+                if (!Array.isArray(rules)) {
+                  return Promise.reject('判定规则格式错误');
+                }
+              } catch {
+                return Promise.reject('判定规则格式错误');
+              }
+              return Promise.resolve();
+            }
 
             try {
               const result = await validateFormula({
                 formula: value,
                 formulaLanguage: getFieldsValue().formulaLanguage || 'EXCEL',
-                columnName: getFieldsValue().columnName,
+                columnName: getFieldsValue().columnName || originalRecord.value?.columnName,
               });
               if (!result.isValid) {
                 return Promise.reject(result.errorMessage || '公式验证失败');
@@ -326,7 +341,15 @@ const [registerModal, { setModalProps, closeModal }] = useModalInner(async (data
 
 const { createMessage } = useMessage();
 
-const getTitle = computed(() => formMode.value === 'Attributes' ? '编辑属性' : '编辑公式');
+const getTitle = computed(() => {
+  if (formMode.value === 'Attributes') {
+    return '编辑属性';
+  } else {
+    // 公式模式下，显示列名或公式名称
+    const columnName = originalRecord.value?.formulaName || originalRecord.value?.columnName || '';
+    return columnName ? `编辑公式 - ${columnName}` : '编辑公式';
+  }
+});
 
 const handleSubmit = async () => {
   try {
@@ -352,3 +375,51 @@ const handleCancel = () => {
   closeModal();
 };
 </script>
+
+<style scoped lang="less">
+:deep(.ant-form-item) {
+  .ant-col.ant-form-item-control {
+    &.ant-col-18 {
+      max-width: 100%;
+    }
+  }
+}
+
+:deep(.ant-form-item-control-input-content) {
+  width: 100%;
+  
+  > div {
+    width: 100%;
+  }
+}
+
+// 隐藏模态框的滚动条但保持滚动功能
+:deep(.crollbar) {
+  .crollbar__bar {
+    display: none !important;
+  }
+  
+  .crollbar__wrap {
+    scrollbar-width: none; // Firefox
+    -ms-overflow-style: none; // IE and Edge
+    overflow: hidden !important; // 完全禁用滚动
+    
+    &::-webkit-scrollbar {
+      display: none; // Chrome, Safari, Opera
+    }
+  }
+  
+  .crollbar__view {
+    overflow: visible !important;
+  }
+}
+
+// 确保模态框 body 不滚动
+:deep(.ant-modal-body) {
+  overflow: hidden !important;
+  
+  .crollbar {
+    overflow: hidden !important;
+  }
+}
+</style>

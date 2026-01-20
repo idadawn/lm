@@ -1,148 +1,128 @@
 <template>
-  <div class="flex flex-col gap-6 p-2 max-w-4xl mx-auto h-full overflow-y-auto pb-20">
+  <div class="judgment-editor">
     <!-- Intro -->
-    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-2 flex gap-3">
-      <div class="bg-blue-100 p-2 rounded-full h-fit text-blue-600">
+    <div class="intro-banner">
+      <div class="icon-wrapper">
         <Icon icon="ant-design:branches-outlined" :size="20" />
       </div>
-      <div>
-        <h3 class="font-bold text-blue-900">判定逻辑配置</h3>
-        <p class="text-sm text-blue-700 mt-1">
-          系统将按照<span class="font-bold">从上到下</span>
+      <div class="content">
+        <h3>判定逻辑配置</h3>
+        <p>
+          系统将按照<span class="bold">从上到下</span>
           的顺序执行规则。一旦满足某条规则的条件，即返回对应的结果，并停止后续判断。
         </p>
       </div>
     </div>
 
-    <!-- Rule List -->
-    <div v-for="(rule, ruleIdx) in rules" :key="rule.id" class="relative pl-8">
-      <!-- Visual Flow Line -->
-      <div class="absolute left-3 top-0 bottom-0 w-0.5 bg-slate-200"></div>
-      <div
-        class="absolute left-0 top-6 w-6 h-6 bg-slate-100 border-2 border-slate-300 text-slate-500 rounded-full flex items-center justify-center text-xs font-bold z-10">
-        {{ ruleIdx + 1 }}
-      </div>
+    <!-- Scrollable Content Area -->
+    <div class="scrollable-content">
+      <!-- Rule List -->
+      <div v-for="(rule, ruleIdx) in rules" :key="rule.id" class="rule-container">
+        <!-- Visual Flow Line -->
+        <div class="flow-line"></div>
+        <div class="rule-number">{{ ruleIdx + 1 }}</div>
 
-      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <!-- Rule Header / Result -->
-        <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <span class="text-sm font-medium text-slate-500">如果满足以下条件，则返回:</span>
-            <div class="flex items-center gap-2">
-              <Icon icon="ant-design:arrow-right-outlined" :size="16" class="text-slate-400" />
-              <input v-model="rule.resultValue"
-                class="w-40 font-bold text-blue-700 border-b border-blue-300 bg-transparent focus:outline-none focus:border-blue-600 px-1"
-                placeholder="例如: A" @change="emitChange" />
+        <div class="rule-card">
+          <!-- Rule Header / Result -->
+          <div class="rule-header">
+            <div class="left">
+              <span class="label">如果满足以下条件，则返回:</span>
+              <div class="result-input-wrapper">
+                <Icon icon="ant-design:arrow-right-outlined" :size="16" class="arrow-icon" />
+                <input v-model="rule.resultValue" placeholder="例如: A" @change="emitChange" />
+              </div>
             </div>
+            <button @click="removeRule(ruleIdx)" class="delete-btn">删除规则</button>
           </div>
-          <button @click="removeRule(ruleIdx)" class="text-xs text-red-500 hover:text-red-700 hover:underline">
-            删除规则
-          </button>
-        </div>
 
-        <!-- Conditions Area -->
-        <div class="p-4 bg-slate-50/50">
-          <div class="bg-white border border-slate-200 rounded-lg p-3">
-            <!-- Global Logic Toggle (Currently only support Root Group Logic) -->
-            <div class="flex items-center gap-2 mb-3">
-              <span class="text-xs font-bold text-slate-500 uppercase">当</span>
-              <div class="inline-flex bg-slate-100 p-0.5 rounded-md border border-slate-200">
-                <button @click="updateGroupLogic(ruleIdx, 'AND')"
-                  :class="['px-3 py-0.5 text-xs rounded font-medium transition-all', rule.rootGroup.logic === 'AND' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-700']">
-                  满足所有 (AND)
-                </button>
-                <button @click="updateGroupLogic(ruleIdx, 'OR')"
-                  :class="['px-3 py-0.5 text-xs rounded font-medium transition-all', rule.rootGroup.logic === 'OR' ? 'bg-white shadow-sm text-orange-600' : 'text-slate-500 hover:text-slate-700']">
-                  满足任一 (OR)
-                </button>
-              </div>
-              <span class="text-xs font-bold text-slate-500 uppercase">条件时:</span>
-            </div>
-
-            <!-- Conditions List -->
-            <div class="space-y-2 relative">
-              <div v-if="rule.rootGroup.conditions.length > 0"
-                :class="['absolute top-2 bottom-2 left-[-10px] w-1.5 rounded-l', rule.rootGroup.logic === 'AND' ? 'bg-blue-200' : 'bg-orange-200']">
+          <!-- Conditions Area -->
+          <div class="conditions-area">
+            <div class="conditions-wrapper">
+              <!-- Logic Toggle -->
+              <div class="logic-toggle">
+                <span class="logic-label">当</span>
+                <div class="toggle-group">
+                  <button @click="updateGroupLogic(ruleIdx, 'AND')"
+                    :class="{ 'active-and': rule.rootGroup.logic === 'AND' }">
+                    满足所有 (AND)
+                  </button>
+                  <button @click="updateGroupLogic(ruleIdx, 'OR')"
+                    :class="{ 'active-or': rule.rootGroup.logic === 'OR' }">
+                    满足任一 (OR)
+                  </button>
+                </div>
+                <span class="logic-label">条件时:</span>
               </div>
 
-              <div v-for="(condition, cIdx) in rule.rootGroup.conditions" :key="condition.id"
-                class="flex items-center gap-2 mb-2 bg-white p-2 rounded border border-slate-200 shadow-sm hover:border-blue-300 transition-colors">
-                <!-- Field Select -->
-                <div class="w-1/3 min-w-[120px]">
-                  <Select v-model:value="condition.fieldId" size="small" class="w-full !text-xs" :options="props.fields"
-                    :field-names="{ label: 'name', value: 'id' }" @change="emitChange" />
+              <!-- Conditions List -->
+              <div class="conditions-list">
+                <div v-if="rule.rootGroup.conditions.length > 0"
+                  :class="['logic-indicator', rule.rootGroup.logic === 'AND' ? 'and' : 'or']">
                 </div>
 
-                <!-- Operator Select -->
-                <div class="w-[100px] shrink-0">
-                  <Select v-model:value="condition.operator" size="small" class="w-full !text-xs"
-                    :options="RULE_OPERATORS" @change="emitChange" />
+                <div v-for="(condition, cIdx) in rule.rootGroup.conditions" :key="condition.id" class="condition-row">
+                  <!-- Field Select -->
+                  <div class="field-select">
+                    <Select v-model:value="condition.fieldId" size="small" class="w-full" :options="props.fields"
+                      :field-names="{ label: 'name', value: 'id' }" @change="emitChange" />
+                  </div>
+
+                  <!-- Operator Select -->
+                  <div class="operator-select">
+                    <Select v-model:value="condition.operator" size="small" class="w-full" :options="RULE_OPERATORS"
+                      @change="emitChange" />
+                  </div>
+
+                  <!-- Value Input -->
+                  <div class="value-input">
+                    <Input v-if="!['IS_NULL', 'NOT_NULL'].includes(condition.operator)" v-model:value="condition.value"
+                      size="small" placeholder="比较值" @change="emitChange" />
+                    <span v-else class="no-value">无需输入值</span>
+                  </div>
+
+                  <button @click="removeCondition(ruleIdx, cIdx)" class="delete-condition-btn">
+                    <Icon icon="ant-design:delete-outlined" :size="14" />
+                  </button>
                 </div>
 
-                <!-- Value Input -->
-                <div class="flex-1">
-                  <Input v-if="!['IS_NULL', 'NOT_NULL'].includes(condition.operator)" v-model:value="condition.value"
-                    size="small" placeholder="比较值" @change="emitChange" />
-                  <span v-else
-                    class="text-xs text-slate-400 italic bg-slate-50 px-2 py-1 rounded block text-center border">
-                    无需输入值
-                  </span>
+                <div v-if="rule.rootGroup.conditions.length === 0" class="empty-state">
+                  暂无条件，请添加
                 </div>
-
-                <button @click="removeCondition(ruleIdx, cIdx)"
-                  class="p-1.5 text-red-500 hover:bg-red-50 rounded transition-colors">
-                  <Icon icon="ant-design:delete-outlined" :size="14" />
-                </button>
               </div>
 
-              <div v-if="rule.rootGroup.conditions.length === 0"
-                class="text-center py-4 text-slate-400 text-sm border border-dashed rounded bg-slate-50">
-                暂无条件，请添加
-              </div>
-            </div>
-
-            <div class="mt-3">
-              <button @click="addCondition(ruleIdx)"
-                class="w-full py-1 text-xs border border-dashed border-slate-300 text-slate-500 rounded hover:bg-slate-50 hover:border-blue-300 hover:text-blue-500 flex items-center justify-center gap-1 transition-colors">
+              <button @click="addCondition(ruleIdx)" class="add-condition-btn">
                 <Icon icon="ant-design:plus-outlined" :size="12" /> 添加条件
               </button>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Add Rule Button -->
-    <div class="pl-8 relative">
-      <div class="absolute left-3 top-0 bottom-0 w-0.5 bg-slate-200"></div>
-      <button @click="addRule"
-        class="w-full h-12 border-2 border-dashed border-slate-300 text-slate-500 rounded-lg hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-all flex items-center justify-center font-medium">
-        <Icon icon="ant-design:plus-outlined" :size="16" class="mr-2" /> 添加优先级规则
-      </button>
-    </div>
-
-    <!-- Default Fallback -->
-    <div class="pl-8 relative mt-4">
-      <div class="absolute left-3 top-0 h-8 w-0.5 bg-slate-200"></div>
-      <div
-        class="absolute left-0 top-2 w-6 h-6 bg-slate-800 text-white rounded-full flex items-center justify-center text-xs font-bold z-10">
-        终
+      <!-- Add Rule Button -->
+      <div class="add-rule-container">
+        <div class="flow-line"></div>
+        <button @click="addRule" class="add-rule-btn">
+          <Icon icon="ant-design:plus-outlined" :size="16" style="margin-right: 8px" /> 添加优先级规则
+        </button>
       </div>
+    </div>
 
-      <div class="bg-slate-800 text-white rounded-xl shadow-lg p-5 flex items-center justify-between">
-        <div>
-          <h4 class="font-bold flex items-center gap-2">
-            <Icon icon="ant-design:check-circle-outlined" :size="20" class="text-green-400" />
+    <!-- Default Fallback - Fixed at Bottom -->
+    <div class="default-container">
+      <div class="flow-line-short"></div>
+      <div class="end-marker">终</div>
+
+      <div class="default-card">
+        <div class="left">
+          <h4>
+            <Icon icon="ant-design:check-circle-outlined" :size="20" class="check-icon" />
             默认结果 (Else)
           </h4>
-          <p class="text-slate-300 text-xs mt-1">
-            如果以上所有规则都不满足，则返回此值。
-          </p>
+          <p>如果以上所有规则都不满足，则返回此值。</p>
         </div>
-        <div class="flex items-center gap-3">
-          <span class="text-sm font-medium text-slate-300">返回:</span>
-          <input :value="defaultValueLocal" @input="updateDefaultValue"
-            class="w-32 bg-slate-700 border border-slate-600 text-white font-bold px-2 py-1 rounded focus:outline-none focus:border-slate-500" />
+        <div class="right">
+          <span class="label">返回:</span>
+          <input :value="defaultValueLocal" @input="updateDefaultValue" />
         </div>
       </div>
     </div>
@@ -262,6 +242,493 @@ function removeCondition(ruleIndex: number, conditionIndex: number) {
 }
 </script>
 
-<style scoped>
-/* Tailwind-like utilities if unocss/windicss is configured, else inline styles mostly used above */
+<style scoped lang="less">
+.judgment-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 8px;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
+  position: relative;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+// Intro Banner
+.intro-banner {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 8px;
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+
+  .icon-wrapper {
+    background: #dbeafe;
+    padding: 8px;
+    border-radius: 50%;
+    height: fit-content;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .content {
+    h3 {
+      font-weight: 700;
+      color: #1e3a8a;
+      margin: 0;
+      font-size: 15px;
+    }
+    p {
+      font-size: 13px;
+      color: #1d4ed8;
+      margin-top: 4px;
+      margin-bottom: 0;
+
+      .bold {
+        font-weight: 700;
+      }
+    }
+  }
+}
+
+// Scrollable Content
+.scrollable-content {
+  flex: 1;
+  padding-bottom: 24px;
+  min-height: 0;
+  width: 100%;
+}
+
+// Rule Container
+.rule-container {
+  position: relative;
+  padding-left: 32px;
+}
+
+.flow-line {
+  position: absolute;
+  left: 12px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #e2e8f0;
+}
+
+.rule-number {
+  position: absolute;
+  left: 0;
+  top: 24px;
+  width: 24px;
+  height: 24px;
+  background: #f1f5f9;
+  border: 2px solid #cbd5e1;
+  color: #64748b;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  z-index: 10;
+}
+
+.rule-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+// Rule Header
+.rule-header {
+  background: #f8fafc;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  .left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #64748b;
+    }
+
+    .result-input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .arrow-icon {
+        color: #94a3b8;
+      }
+
+      input {
+        width: 160px;
+        font-weight: 700;
+        color: #1d4ed8;
+        border: none;
+        border-bottom: 1px solid #93c5fd;
+        background: transparent;
+        padding: 2px 4px;
+        outline: none;
+        font-size: 14px;
+
+        &:focus {
+          border-bottom-color: #2563eb;
+        }
+
+        &::placeholder {
+          color: #94a3b8;
+          font-weight: normal;
+        }
+      }
+    }
+  }
+
+  .delete-btn {
+    font-size: 12px;
+    color: #ef4444;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+
+    &:hover {
+      text-decoration: underline;
+      color: #dc2626;
+    }
+  }
+}
+
+// Conditions Area
+.conditions-area {
+  padding: 16px;
+  background: rgba(248, 250, 252, 0.5);
+
+  .conditions-wrapper {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+  }
+}
+
+// Logic Toggle
+.logic-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+
+  .logic-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  .toggle-group {
+    display: inline-flex;
+    background: #f1f5f9;
+    padding: 2px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+
+    button {
+      padding: 2px 12px;
+      font-size: 12px;
+      border-radius: 4px;
+      font-weight: 500;
+      transition: all 0.2s;
+      border: none;
+      background: transparent;
+      color: #64748b;
+      cursor: pointer;
+
+      &:hover {
+        color: #334155;
+      }
+
+      &.active-and {
+        background: white;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        color: #2563eb;
+      }
+
+      &.active-or {
+        background: white;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        color: #ea580c;
+      }
+    }
+  }
+}
+
+// Conditions List
+.conditions-list {
+  position: relative;
+
+  .logic-indicator {
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    left: -10px;
+    width: 6px;
+    border-radius: 3px 0 0 3px;
+
+    &.and {
+      background: #bfdbfe;
+    }
+
+    &.or {
+      background: #fed7aa;
+    }
+  }
+}
+
+// Condition Row
+.condition-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  background: white;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: border-color 0.2s;
+
+  &:hover {
+    border-color: #93c5fd;
+  }
+
+  .field-select {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .operator-select {
+    width: 110px;
+    flex-shrink: 0;
+  }
+
+  .value-input {
+    flex: 1;
+  }
+
+  .no-value {
+    font-size: 12px;
+    color: #94a3b8;
+    font-style: italic;
+    background: #f8fafc;
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    flex: 1;
+  }
+
+  .delete-condition-btn {
+    padding: 6px;
+    color: #ef4444;
+    background: none;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      background: #fef2f2;
+    }
+  }
+}
+
+// Empty State
+.empty-state {
+  text-align: center;
+  padding: 16px;
+  color: #94a3b8;
+  font-size: 13px;
+  border: 1px dashed #e2e8f0;
+  border-radius: 6px;
+  background: #f8fafc;
+}
+
+// Add Condition Button
+.add-condition-btn {
+  width: 100%;
+  padding: 6px;
+  margin-top: 12px;
+  font-size: 12px;
+  border: 1px dashed #cbd5e1;
+  color: #64748b;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #f8fafc;
+    border-color: #93c5fd;
+    color: #2563eb;
+  }
+}
+
+// Add Rule Button Container
+.add-rule-container {
+  padding-left: 32px;
+  position: relative;
+
+  .flow-line {
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e2e8f0;
+  }
+
+  .add-rule-btn {
+    width: 100%;
+    height: 48px;
+    border: 2px dashed #cbd5e1;
+    color: #64748b;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    transition: all 0.2s;
+
+    &:hover {
+      border-color: #60a5fa;
+      color: #2563eb;
+      background: #eff6ff;
+    }
+  }
+}
+
+// Default Fallback
+.default-container {
+  padding-left: 32px;
+  position: sticky;
+  bottom: 0;
+  flex-shrink: 0;
+  background: white;
+  z-index: 10;
+  margin-top: auto;
+
+  .flow-line-short {
+    position: absolute;
+    left: 12px;
+    top: 0;
+    height: 32px;
+    width: 2px;
+    background: #e2e8f0;
+  }
+
+  .end-marker {
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 24px;
+    height: 24px;
+    background: #1e293b;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    z-index: 10;
+  }
+
+  .default-card {
+    background: #1e293b;
+    color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .left {
+      h4 {
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        font-size: 15px;
+
+        .check-icon {
+          color: #4ade80;
+        }
+      }
+
+      p {
+        color: #94a3b8;
+        font-size: 12px;
+        margin-top: 4px;
+        margin-bottom: 0;
+      }
+    }
+
+    .right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      .label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #94a3b8;
+      }
+
+      input {
+        width: 128px;
+        background: #334155;
+        border: 1px solid #475569;
+        color: white;
+        font-weight: 700;
+        padding: 4px 8px;
+        border-radius: 4px;
+        outline: none;
+
+        &:focus {
+          border-color: #64748b;
+        }
+      }
+    }
+  }
+}
 </style>
+

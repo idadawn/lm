@@ -33,7 +33,10 @@
           :scroll="{ x: 1300 }"
         >
           <template #bodyCell="{ column, record }">
-            <template v-if="column.key === 'formulaType'">
+            <template v-if="column.key === 'displayName'">
+              {{ record.displayName || record.formulaName || record.columnName }}
+            </template>
+            <template v-else-if="column.key === 'formulaType'">
                <a-tag :color="record.formulaType === 'CALC' ? 'blue' : 'orange'">
                 {{ record.formulaType === 'CALC' ? '计算' : '判定' }}
               </a-tag>
@@ -115,8 +118,7 @@ const columns = [
   },
   {
     title: '列名',
-    dataIndex: 'columnName',
-    key: 'columnName',
+    key: 'displayName',
     width: 150,
   },
   {
@@ -188,7 +190,11 @@ const handleEdit = (record: IntermediateDataFormula, mode: 'Attributes' | 'Formu
 };
 
 const handleOpenFormulaBuilder = (record: IntermediateDataFormula) => {
-  openFormulaBuilderModal(true, { record });
+  if (record.formulaType === 'JUDGE') {
+    openFormModal(true, { isUpdate: true, record, mode: 'Formula' });
+  } else {
+    openFormulaBuilderModal(true, { record });
+  }
 };
 
 const handleSaveFormula = async (data: { id: string; formula: string }) => {

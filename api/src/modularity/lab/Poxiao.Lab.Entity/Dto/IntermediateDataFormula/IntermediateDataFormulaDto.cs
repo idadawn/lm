@@ -26,6 +26,12 @@ public class IntermediateDataFormulaDto
     public string ColumnName { get; set; }
 
     /// <summary>
+    /// 列显示名称（中文名称）.
+    /// </summary>
+    [JsonPropertyName("displayName")]
+    public string DisplayName { get; set; }
+
+    /// <summary>
     /// 公式名称.
     /// </summary>
     [JsonPropertyName("formulaName")]

@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using MiniExcelLibs;
 using Newtonsoft.Json;
 using Poxiao.DependencyInjection;
@@ -17,6 +18,7 @@ using Poxiao.Lab.Entity.Models;
 using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
 using Poxiao.Systems.Interfaces.Common;
+using Poxiao.TaskQueue;
 using SqlSugar;
 
 namespace Poxiao.Lab.Service;
@@ -957,18 +959,7 @@ public class RawDataImportSessionService
             }
         }
 
-        // 2. 将所有数据写入原始数据表（包括有效和无效数据）
-        if (allData.Count > 0)
-        {
-            // 分批插入防止SQL太长
-            var batches = allData.Chunk(1000);
-            foreach (var batch in batches)
-            {
-                await _rawDataRepository.AsInsertable(batch.ToList()).ExecuteCommandAsync();
-            }
-        }
-
-        // 2. 生成中间数据
+        // 2. 生成中间数据（在事务之前准备好所有数据）
         var specs = await _productSpecRepository.GetListAsync();
         var intermediateEntities = new List<IntermediateDataEntity>();
 
@@ -1043,13 +1034,85 @@ public class RawDataImportSessionService
             }
         }
 
+        // 3. 使用事务确保原始数据和中间数据的导入操作原子性（同时成功或同时失败）
+        var db = _sessionRepository.AsSugarClient();
+        try
+        {
+            await db.Ado.BeginTranAsync();
+
+            // 3.1 将所有数据写入原始数据表（包括有效和无效数据）
+            if (allData.Count > 0)
+            {
+                // 分批插入防止SQL太长
+                var batches = allData.Chunk(1000);
+                foreach (var batch in batches)
+                {
+                    await _rawDataRepository.AsInsertable(batch.ToList()).ExecuteCommandAsync();
+                }
+            }
+
+            // 3.2 将中间数据写入中间数据表
+            if (intermediateEntities.Count > 0)
+            {
+                await db.Insertable(intermediateEntities).ExecuteCommandAsync();
+            }
+
+            await db.Ado.CommitTranAsync();
+        }
+        catch (Exception ex)
+        {
+            await db.Ado.RollbackTranAsync();
+            session.Status = "failed";
+            await _sessionRepository.UpdateAsync(session);
+            throw Oops.Oh($"导入失败，数据已回滚: {ex.Message}");
+        }
+
         if (intermediateEntities.Count > 0)
         {
-            // Use context from _sessionRepository to insert intermediate data if repository not injected
-            await _sessionRepository
-                .AsSugarClient()
-                .Insertable(intermediateEntities)
-                .ExecuteCommandAsync();
+            // 异步触发公式计算任务（根据批次ID后台执行，不阻塞导入流程）
+            TaskQueued.Enqueue(
+                (serviceProvider) =>
+                {
+                    try
+                    {
+                        var intermediateDataService =
+                            serviceProvider.GetRequiredService<IntermediateDataService>();
+                        // 使用 Task.Run 异步执行，避免阻塞任务队列
+                        Task.Run(async () =>
+                        {
+                            try
+                            {
+                                // 根据批次ID批量计算公式
+                                var result =
+                                    await intermediateDataService.BatchCalculateFormulasByBatchIdInternalAsync(
+                                        sessionId
+                                    );
+                                // 可以在这里记录计算结果或发送通知
+                                Console.WriteLine(
+                                    $"批次 {sessionId} 公式计算完成 - 成功: {result?.SuccessCount}, 失败: {result?.FailedCount}"
+                                );
+                                if (result?.FailedCount > 0)
+                                {
+                                    Console.WriteLine(
+                                        $"批次 {sessionId} 公式计算失败详情: {string.Join("; ", result.Errors.Select(e => $"{e.FurnaceNo}: {e.ErrorMessage}"))}"
+                                    );
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine(
+                                    $"批次 {sessionId} 后台公式计算任务执行失败: {ex.Message}"
+                                );
+                            }
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"创建批次 {sessionId} 公式计算任务失败: {ex.Message}");
+                    }
+                },
+                delay: 1000 // 延迟1秒执行，确保数据已完全保存
+            );
         }
 
         // 3. Mark Session Complete

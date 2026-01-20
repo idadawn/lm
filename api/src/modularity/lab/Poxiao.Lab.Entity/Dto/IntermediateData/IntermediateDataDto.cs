@@ -24,14 +24,24 @@ public class IntermediateDataListQuery : PageInputBase
     public string DateMonth { get; set; }
 
     /// <summary>
-    /// 开始日期.
+    /// 开始日期（生产日期）.
     /// </summary>
     public DateTime? StartDate { get; set; }
 
     /// <summary>
-    /// 结束日期.
+    /// 结束日期（生产日期）.
     /// </summary>
     public DateTime? EndDate { get; set; }
+
+    /// <summary>
+    /// 检测开始日期.
+    /// </summary>
+    public DateTime? DetectionStartDate { get; set; }
+
+    /// <summary>
+    /// 检测结束日期.
+    /// </summary>
+    public DateTime? DetectionEndDate { get; set; }
 
     /// <summary>
     /// 产线.
@@ -55,9 +65,14 @@ public class IntermediateDataListOutput : IntermediateDataEntity
     public string CreatorUserName { get; set; }
 
     /// <summary>
-    /// 检测日期字符串格式（用于前端展示）.
+    /// 生产日期字符串格式（用于前端展示）.
     /// </summary>
     public string ProdDateStr { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 检测日期字符串格式（用于前端展示）.
+    /// </summary>
+    public string DetectionDateStr { get; set; } = string.Empty;
 
     /// <summary>
     /// 带厚分布列表（用于子表展示）.
@@ -164,6 +179,11 @@ public class IntermediateDataGenerateInput
 /// </summary>
 public class IntermediateDataGenerateOutput
 {
+    /// <summary>
+    /// 批次ID（用于跟踪异步公式计算任务）.
+    /// </summary>
+    public string BatchId { get; set; }
+
     /// <summary>
     /// 成功数量.
     /// </summary>
@@ -326,4 +346,51 @@ public class IntermediateDataBaseUpdateInput
     /// 备注.
     /// </summary>
     public string Remark { get; set; }
+}
+
+/// <summary>
+/// 批次计算状态.
+/// </summary>
+public class BatchCalculationStatus
+{
+    /// <summary>
+    /// 批次ID.
+    /// </summary>
+    public string BatchId { get; set; }
+
+    /// <summary>
+    /// 总数量.
+    /// </summary>
+    public int TotalCount { get; set; }
+
+    /// <summary>
+    /// 待计算数量.
+    /// </summary>
+    public int PendingCount { get; set; }
+
+    /// <summary>
+    /// 计算中数量.
+    /// </summary>
+    public int ProcessingCount { get; set; }
+
+    /// <summary>
+    /// 成功数量.
+    /// </summary>
+    public int SuccessCount { get; set; }
+
+    /// <summary>
+    /// 失败数量.
+    /// </summary>
+    public int FailedCount { get; set; }
+
+    /// <summary>
+    /// 是否全部完成.
+    /// </summary>
+    public bool IsCompleted => PendingCount == 0 && ProcessingCount == 0;
+
+    /// <summary>
+    /// 完成进度百分比.
+    /// </summary>
+    public double ProgressPercent =>
+        TotalCount == 0 ? 100 : (double)(SuccessCount + FailedCount) / TotalCount * 100;
 }

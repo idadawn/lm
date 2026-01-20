@@ -2,6 +2,7 @@ using Newtonsoft.Json;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Contracts;
 using Poxiao.Lab.Entity.Attributes;
+using Poxiao.Lab.Entity.Enums;
 using SqlSugar;
 
 namespace Poxiao.Lab.Entity;
@@ -23,7 +24,7 @@ public class IntermediateDataEntity : CLDEntityBase
     /// 检测日期.
     /// </summary>
     [SugarColumn(ColumnName = "F_DETECTION_DATE", Length = 10)]
-    public string DetectionDate { get; set; }
+    public DateTime? DetectionDate { get; set; }
 
     /// <summary>
     /// 生产日期.
@@ -180,16 +181,9 @@ public class IntermediateDataEntity : CLDEntityBase
     public decimal? OneMeterWeight { get; set; }
 
     /// <summary>
-    /// 带宽.
-    /// </summary>
-    [IntermediateDataColumn("带宽", sort: 9, dataType: "decimal", showInFormulaMaintenance: false, description: "带宽")]
-    [SugarColumn(ColumnName = "F_STRIP_WIDTH", DecimalDigits = 2, IsNullable = true)]
-    public decimal? StripWidth { get; set; }
-
-    /// <summary>
     /// 宽度.
     /// </summary>
-    [ExcelImportColumn("宽度", Sort = 3)]
+    [IntermediateDataColumn("带宽", sort: 40, dataType: "decimal", showInFormulaMaintenance: false, description: "带宽")]
     [SugarColumn(ColumnName = "F_WIDTH", IsNullable = true)]
     public decimal? Width { get; set; }
 
@@ -560,9 +554,9 @@ public class IntermediateDataEntity : CLDEntityBase
     /// <summary>
     /// 四米带材重量.
     /// </summary>
-    [IntermediateDataColumn("四米带材重量", sort: 41, dataType: "decimal", showInFormulaMaintenance: false, description: "四米带材重量")]
-    [SugarColumn(ColumnName = "F_FOUR_METER_WT", DecimalDigits = 1, IsNullable = true)]
-    public decimal? FourMeterWeight { get; set; }
+    [IntermediateDataColumn("四米带材重量", sort: 40, dataType: "decimal", showInFormulaMaintenance: false, description: "四米带材重量")]
+    [SugarColumn(ColumnName = "F_COIL_WEIGHT", IsNullable = true)]
+    public decimal? CoilWeight { get; set; }
 
     #region 叠片系数厚度分布（原始检测列）
 
@@ -722,13 +716,46 @@ public class IntermediateDataEntity : CLDEntityBase
     /// </summary>
     [IntermediateDataColumn("检测列", sort: 41, dataType: "int", showInFormulaMaintenance: false, description: "检测列")]
     [SugarColumn(ColumnName = "F_DETECTION_COLUMNS", IsNullable = true)]
-    public int DetectionColumns { get; set; }
+    public int? DetectionColumns { get; set; }
 
     /// <summary>
     /// 特性匹配置信度（0-1）.
     /// </summary>
     [SugarColumn(ColumnName = "F_MATCH_CONFIDENCE", IsNullable = true)]
     public double? MatchConfidence { get; set; }
+
+    #region 公式计算相关字段
+
+    /// <summary>
+    /// 批次ID（关联导入会话或导入日志）.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_BATCH_ID", Length = 50, IsNullable = true)]
+    public string BatchId { get; set; }
+
+    /// <summary>
+    /// 公式计算状态：PENDING-待计算，PROCESSING-计算中，SUCCESS-计算成功，FAILED-计算失败.
+    /// </summary>
+    [SugarColumn(
+        ColumnName = "F_CALC_STATUS",
+        Length = 20,
+        DefaultValue = "PENDING",
+        IsNullable = true
+    )]
+    public IntermediateDataCalcStatus CalcStatus { get; set; } = IntermediateDataCalcStatus.PENDING;
+
+    /// <summary>
+    /// 计算状态更新时间.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_CALC_STATUS_TIME", IsNullable = true)]
+    public DateTime? CalcStatusTime { get; set; }
+
+    /// <summary>
+    /// 计算错误摘要（简要错误信息，用于前端展示）.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_CALC_ERROR_MESSAGE", Length = 500, IsNullable = true)]
+    public string CalcErrorMessage { get; set; }
+
+    #endregion
 
     #region 辅助属性（不存储到数据库）
 

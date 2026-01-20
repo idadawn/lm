@@ -79,6 +79,14 @@ public interface IIntermediateDataService
     /// <summary>
     /// 从原始数据生成中间数据.
     /// </summary>
+    /// <param name="rawData">原始数据</param>
+    /// <param name="productSpec">产品规格</param>
+    /// <param name="detectionColumns">检测列</param>
+    /// <param name="layers">层数</param>
+    /// <param name="length">长度</param>
+    /// <param name="density">密度</param>
+    /// <param name="specVersion">规格版本</param>
+    /// <param name="batchId">批次ID，用于后续异步公式计算</param>
     Task<IntermediateDataEntity> GenerateIntermediateDataAsync(
         RawDataEntity rawData,
         ProductSpecEntity productSpec,
@@ -86,7 +94,8 @@ public interface IIntermediateDataService
         int layers,
         decimal length,
         decimal density,
-        int? specVersion
+        int? specVersion,
+        string batchId = null
     );
 }
 

@@ -1,0 +1,61 @@
+-- 修复 lab_raw_data_import_session 表结构
+-- 1. 添加缺失的 F_PARSED_DATA_FILE 字段
+-- 2. 修复其他可能缺失的字段
+-- 3. 调整字段长度
+
+-- 方法1：使用 ALTER TABLE 语句直接修改（推荐）
+ALTER TABLE `lab_raw_data_import_session`
+-- 添加 F_PARSED_DATA_FILE 字段
+ADD COLUMN IF NOT EXISTS `F_PARSED_DATA_FILE` VARCHAR(500) DEFAULT NULL COMMENT '解析后的数据JSON文件路径（临时存储，完成导入后才写入数据库）',
+-- 添加其他可能缺失的字段
+ADD COLUMN IF NOT EXISTS `F_DeleteMark` INT(11) DEFAULT '0' COMMENT '删除标志',
+ADD COLUMN IF NOT EXISTS `F_DeleteTime` DATETIME DEFAULT NULL COMMENT '删除时间',
+ADD COLUMN IF NOT EXISTS `F_DeleteUserId` VARCHAR(50) DEFAULT NULL COMMENT '删除用户',
+ADD COLUMN IF NOT EXISTS `F_LastModifyUserId` VARCHAR(50) DEFAULT NULL COMMENT '修改用户',
+ADD COLUMN IF NOT EXISTS `F_TenantId` VARCHAR(50) DEFAULT NULL COMMENT '租户ID',
+ADD COLUMN IF NOT EXISTS `F_ENABLEDMARK` INT(11) DEFAULT '1' COMMENT '启用标识',
+-- 修改 F_SOURCE_FILE_ID 字段长度
+MODIFY COLUMN `F_SOURCE_FILE_ID` VARCHAR(500) DEFAULT NULL COMMENT 'Excel源文件ID';
+
+-- 验证修改结果
+SELECT
+    COLUMN_NAME,
+    DATA_TYPE,
+    CHARACTER_MAXIMUM_LENGTH,
+    IS_NULLABLE,
+    COLUMN_DEFAULT,
+    COLUMN_COMMENT
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = DATABASE()
+    AND TABLE_NAME = 'lab_raw_data_import_session'
+ORDER BY ORDINAL_POSITION;
+
+-- 方法2：完整的 CREATE TABLE 语句（如果需要重建表）
+/*
+DROP TABLE IF EXISTS `lab_raw_data_import_session`;
+
+CREATE TABLE `lab_raw_data_import_session` (
+    `F_ID` VARCHAR(50) NOT NULL COMMENT '主键ID',
+    `F_TENANTID` VARCHAR(50) DEFAULT NULL COMMENT '租户ID',
+    `F_FILE_NAME` VARCHAR(200) NOT NULL COMMENT '文件名',
+    `F_SOURCE_FILE_ID` VARCHAR(500) DEFAULT NULL COMMENT 'Excel源文件ID',
+    `F_PARSED_DATA_FILE` VARCHAR(500) DEFAULT NULL COMMENT '解析后的数据JSON文件路径（临时存储，完成导入后才写入数据库）',
+    `F_IMPORT_STRATEGY` VARCHAR(20) DEFAULT 'incremental' COMMENT '导入策略：已废弃，固定为incremental以保持向后兼容性',
+    `F_CURRENT_STEP` INT DEFAULT 0 COMMENT '当前步骤（0-第一步，1-第二步，2-第三步，3-第四步）',
+    `F_TOTAL_ROWS` INT DEFAULT 0 COMMENT '总行数',
+    `F_VALID_DATA_ROWS` INT DEFAULT 0 COMMENT '有效数据行数',
+    `F_STATUS` VARCHAR(20) DEFAULT 'pending' COMMENT '状态：pending/in_progress/completed/failed/cancelled',
+    `F_CREATOR_USER_ID` VARCHAR(50) DEFAULT NULL COMMENT '创建人ID',
+    `F_CREATOR_TIME` DATETIME DEFAULT NULL COMMENT '创建时间',
+    `F_LAST_MODIFY_TIME` DATETIME DEFAULT NULL COMMENT '最后修改时间',
+    `F_LAST_MODIFY_USER_ID` VARCHAR(50) DEFAULT NULL COMMENT '修改用户ID',
+    `F_ENABLEDMARK` INT DEFAULT 1 COMMENT '启用标识（1-启用，0-禁用）',
+    `F_DeleteMark` INT DEFAULT 0 COMMENT '删除标志（0-未删除，1-已删除）',
+    `F_DeleteTime` DATETIME DEFAULT NULL COMMENT '删除时间',
+    `F_DeleteUserId` VARCHAR(50) DEFAULT NULL COMMENT '删除用户ID',
+    PRIMARY KEY (`F_ID`),
+    KEY `idx_status` (`F_STATUS`),
+    KEY `idx_creator` (`F_CREATOR_USER_ID`),
+    KEY `idx_tenant_id` (`F_TENANTID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='原始数据导入会话表';
+*/

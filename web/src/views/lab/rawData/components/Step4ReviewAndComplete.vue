@@ -265,37 +265,51 @@ function handleRetry() {
 const hasValidSessionId = computed(() => props.importSessionId && props.importSessionId.trim() !== '');
 
 // 监听 importSessionId 变化，当有有效ID时加载核对数据
+// 监听 importSessionId 变化
 watch(
   () => props.importSessionId,
   (newId, oldId) => {
-    const hasValidId = newId && newId.trim() !== '';
-    // 当 importSessionId 从空变为有值，且还没有加载过时，触发加载
-    if (hasValidId && !oldId && !hasLoadedReview.value) {
-      loadReviewData();
-    } else if (!hasValidId) {
-      // 如果 importSessionId 变为空，重置状态
-      loading.value = false;
-      loadingReview.value = false;
-      importError.value = '';
-      importSuccess.value = false;
-      hasLoadedReview.value = false;
-      reviewData.value = {};
+    // 这里的逻辑只负责重置状态，不再自动加载数据
+    // 数据加载由父组件在切换到此步骤时调用 triggerLoad 触发
+    if (newId !== oldId) {
+      if (!newId) {
+        // 如果 importSessionId 变为空，重置所有状态
+        loading.value = false;
+        loadingReview.value = false;
+        importError.value = '';
+        importSuccess.value = false;
+        hasLoadedReview.value = false;
+        reviewData.value = {};
+      } else {
+        // 如果变为新的ID，仅重置加载标记和数据
+        hasLoadedReview.value = false;
+        reviewData.value = {};
+        importError.value = '';
+        importSuccess.value = false;
+      }
     }
   },
-  { immediate: false }
+  { immediate: true }
 );
 
-// 组件挂载时，如果有 importSessionId 且还没有加载过，则加载数据
+// 组件挂载时不自动加载数据，等待父组件调用 triggerLoad
 onMounted(() => {
-  if (props.importSessionId && !hasLoadedReview.value) {
+  // 移除自动加载逻辑
+});
+
+// 添加一个方法来手动触发加载（供父组件调用）
+function triggerLoad() {
+  if (props.importSessionId && props.importSessionId.trim() !== '' && !hasLoadedReview.value) {
+    hasLoadedReview.value = false;
     loadReviewData();
   }
-});
+}
 
 // 暴露给父组件
 defineExpose({
   canGoNext,
   saveAndNext,
+  triggerLoad, // 暴露触发加载的方法
 });
 </script>
 

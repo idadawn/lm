@@ -1,5 +1,11 @@
 # 项目开发规范
 
+## ⚠️ 重要提醒
+
+**在创建或修改数据库字段、生成数据库脚本时，必须先查看本规范文件！**
+
+确保数据库脚本中的字段命名与 `CLDEntityBase` 基类字段规范一致，避免字段映射错误。
+
 ## 实体基类字段映射注意事项
 
 ### CLDEntityBase 基类字段大小写规则
@@ -53,6 +59,23 @@ public class RawDataImportSessionEntity : CLDEntityBase
 }
 ```
 
+### 数据库脚本生成规范
+
+**在生成数据库脚本（CREATE TABLE、ALTER TABLE 等）时，必须遵循以下规范：**
+
+1. **优先使用基类标准字段名**（推荐）：
+   - 创建相关字段：`F_CREATORTIME`、`F_CREATORUSERID`、`F_ENABLEDMARK`（全大写，无下划线）
+   - 修改和删除相关字段：`F_LastModifyTime`、`F_LastModifyUserId`、`F_DeleteMark`、`F_DeleteTime`、`F_DeleteUserId`（F_ 后首字母大写）
+
+2. **如果必须使用不同的字段名**（如历史遗留表）：
+   - 必须在实体类中重写属性并指定正确的 `ColumnName`
+   - 在脚本注释中说明字段命名不一致的原因
+
+3. **字段可空性**：
+   - `F_CREATORTIME`、`F_CREATORUSERID` 建议设置为 `NULL`（允许系统初始化时为空）
+   - `F_ENABLEDMARK` 建议设置默认值为 `1`
+   - `F_DeleteMark` 建议设置默认值为 `0`
+
 ### 检查清单
 
 在创建或修改继承 `CLDEntityBase` 的实体类时，请检查：
@@ -61,3 +84,8 @@ public class RawDataImportSessionEntity : CLDEntityBase
 - [ ] 如果表字段名不同，是否已重写属性并指定正确的 `ColumnName`
 - [ ] 如果表中不存在某些基类字段，是否已使用 `IsIgnore = true` 忽略映射
 - [ ] 所有字段映射是否正确，避免运行时出现 "Unknown column" 错误
+
+**在生成数据库脚本前，请再次确认：**
+- [ ] 已查看本规范文件中的字段命名规范
+- [ ] 数据库脚本中的字段名与基类规范一致（或已在实体类中正确映射）
+- [ ] 字段的可空性和默认值设置合理

@@ -103,7 +103,8 @@ public class RawDataListQuery : PageInputBase
     public string LineNo { get; set; }
 
     /// <summary>
-    /// 排序规则（JSON格式，如：[{"field":"ProdDate","order":"asc"},{"field":"FurnaceNoParsed","order":"asc"}]）.
+    /// 排序规则（JSON格式，如：[{"field":"ProdDate","order":"asc"},{"field":"FurnaceBatchNo","order":"asc"}]）.
+    /// 注意：ProdDate是生产日期（从原始炉号解析），不是检测日期（DetectionDate）.
     /// </summary>
     public string SortRules { get; set; }
 
@@ -150,9 +151,22 @@ public class RawDataListOutput : RawDataEntity
     public string CreatorUserName { get; set; }
 
     /// <summary>
-    /// 检测日期字符串格式（用于前端展示，格式：2025/11/1）
+    /// 生产日期字符串格式（用于前端展示，格式：2025/11/1）
+    /// 生产日期（ProdDate）从原始炉号（FurnaceNo）中解析，格式：yyyyMMdd
     /// </summary>
     public string ProdDateStr { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 检测日期字符串格式（用于前端展示，格式：2025/11/1）
+    /// 检测日期（DetectionDate）从Excel的"日期"列直接读取
+    /// </summary>
+    public string DetectionDateStr { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 炉号（格式：[产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号]）
+    /// 从原始炉号解析后重新构建，不包含特性描述
+    /// </summary>
+    public string FurnaceNoFormatted { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -192,7 +206,7 @@ public class RawDataPreviewOutput
 public class RawDataPreviewItem : RawDataEntity
 {
     /// <summary>
-    /// 状态 (success/failed).
+    /// 状态 (success/failed/duplicate/exists_in_db).
     /// </summary>
     public string Status { get; set; }
 
@@ -200,6 +214,21 @@ public class RawDataPreviewItem : RawDataEntity
     /// 错误信息.
     /// </summary>
     public string ErrorMessage { get; set; }
+
+    /// <summary>
+    /// 是否在本次Excel中重复（用于前端显示，让用户选择保留哪条）.
+    /// </summary>
+    public bool IsDuplicateInFile { get; set; }
+
+    /// <summary>
+    /// 是否在数据库中已存在（用于前端显示，标记为将被忽略）.
+    /// </summary>
+    public bool ExistsInDatabase { get; set; }
+
+    /// <summary>
+    /// 标准炉号（用于重复检查）.
+    /// </summary>
+    public string StandardFurnaceNo { get; set; }
 }
 
 /// <summary>

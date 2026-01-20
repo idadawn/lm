@@ -15,17 +15,6 @@
         show-icon
         style="margin-bottom: 20px" />
 
-      <!-- 导入策略选择 -->
-      <div class="import-strategy" style="margin-bottom: 20px">
-        <a-radio-group v-model:value="importStrategy" :disabled="uploading">
-          <a-radio value="incremental">增量导入</a-radio>
-          <a-radio value="full">全量导入</a-radio>
-        </a-radio-group>
-        <div class="strategy-description">
-          <span v-if="importStrategy === 'incremental'">自动跳过已导入的行（基于文件名和行数）</span>
-          <span v-else-if="importStrategy === 'full'">导入所有数据，不跳过任何行</span>
-        </div>
-      </div>
 
       <a-upload
         v-model:file-list="fileList"
@@ -33,65 +22,76 @@
         accept=".xlsx,.xls"
         :max-count="1"
         @remove="handleRemove">
-        <template #uploadButton>
-          <a-button type="primary" :loading="uploading">
-            <template #icon><UploadOutlined /></template>
-            选择文件
-          </a-button>
-        </template>
+        <a-button type="primary" :loading="uploading">
+          <template #icon><UploadOutlined /></template>
+          选择文件
+        </a-button>
       </a-upload>
 
-      <!-- 数据预览 -->
-      <div v-if="previewData" class="data-preview" style="margin-top: 20px">
-        <a-divider>数据预览</a-divider>
-        <div class="preview-info">
-          <a-row :gutter="16">
-            <a-col :span="8">
-              <a-statistic title="总行数" :value="previewData.statistics.totalRows" />
-            </a-col>
-            <a-col :span="8">
-              <a-statistic title="有效数据" :value="previewData.statistics.validDataRows" :value-style="{ color: '#3f8600' }" />
-            </a-col>
-            <a-col :span="8">
-              <a-statistic title="无效数据" :value="previewData.statistics.invalidDataRows" :value-style="{ color: '#cf1322' }" />
-            </a-col>
-          </a-row>
-        </div>
+      <!-- 文件选择状态提示 -->
+      <div v-if="fileList.length > 0" style="margin-top: 8px; color: #52c41a; font-size: 14px;">
+        ✓ 已选择文件：{{ fileList[0].name }} ({{ formatFileSize(fileList[0].size) }})
+      </div>
+      <div v-else style="margin-top: 8px; color: #999; font-size: 14px;">
+        请选择Excel文件（支持 .xlsx, .xls 格式，最大10MB）
+      </div>
 
-        <!-- 错误提示 -->
-        <div v-if="previewData.errors?.length > 0" style="margin-top: 16px">
-          <a-alert
-            message="数据校验提示"
-            :description="`发现 ${previewData.errors.length} 行数据存在问题，导入后可在错误报告中查看详情`"
-            type="warning"
-            show-icon />
+      <!-- 导入选项 -->
+      <div v-if="fileList.length > 0" class="import-options" style="margin-top: 16px">
+        <a-checkbox v-model:checked="skipExistingFurnaceNo">
+          跳过已存在的炉号数据
+        </a-checkbox>
+        <div class="option-description" style="font-size: 12px; color: #666; margin-top: 4px">
+          勾选后，如果炉号已存在，系统会自动跳过该行数据，不会重复导入
         </div>
       </div>
+
 
       <!-- 导入结果 -->
       <div v-if="importResult" class="import-result" style="margin-top: 20px">
         <a-divider>导入结果</a-divider>
         <a-row :gutter="16">
-          <a-col :span="8">
-            <a-statistic title="成功数量" :value="importResult.successCount" :value-style="{ color: '#3f8600' }" />
+          <a-col :span="6">
+            <a-statistic title="成功数量" :value="importResult.successRows" :value-style="{ color: '#3f8600' }" />
           </a-col>
-          <a-col :span="8">
-            <a-statistic title="失败数量" :value="importResult.failCount" :value-style="{ color: '#cf1322' }" />
+          <a-col :span="6">
+            <a-statistic title="失败数量" :value="importResult.failRows" :value-style="{ color: '#cf1322' }" />
           </a-col>
-          <a-col :span="8">
-            <a-statistic title="有效数据" :value="importResult.validDataCount || 0" :value-style="{ color: '#1890ff' }" />
+          <a-col :span="6">
+            <a-statistic title="跳过数量" :value="importResult.skippedRows" :value-style="{ color: '#faad14' }" />
+          </a-col>
+          <a-col :span="6">
+            <a-statistic title="总行数" :value="importResult.totalRows" :value-style="{ color: '#1890ff' }" />
           </a-col>
         </a-row>
 
-        <div v-if="importResult.failCount > 0" style="margin-top: 20px">
-          <a-alert message="部分数据导入失败，请下载错误报告查看详情" type="warning" show-icon style="margin-bottom: 10px" />
-          <a-button type="primary" @click="handleDownloadErrorReport" :loading="downloading">
-            <template #icon><DownloadOutlined /></template>
-            下载错误报告
-          </a-button>
+        <!-- 显示重复炉号信息 -->
+        <div v-if="importResult.duplicateFurnaceNos && importResult.duplicateFurnaceNos.length > 0" style="margin-top: 20px">
+          <a-alert
+            message="重复炉号提示"
+            :description="`发现 ${importResult.duplicateFurnaceNos.length} 个重复炉号，已根据设置处理`"
+            type="warning"
+            show-icon
+            style="margin-bottom: 10px" />
+          <div style="font-size: 12px; color: #666; margin-top: 8px">
+            重复炉号：{{ importResult.duplicateFurnaceNos.slice(0, 5).join('、') }}{{ importResult.duplicateFurnaceNos.length > 5 ? '...' : '' }}
+          </div>
         </div>
 
-        <div v-if="importResult.successCount > 0 && importResult.failCount === 0" style="margin-top: 20px">
+        <!-- 显示错误信息 -->
+        <div v-if="importResult.errors && importResult.errors.length > 0" style="margin-top: 20px">
+          <a-alert message="导入过程中出现错误" type="error" show-icon style="margin-bottom: 10px" />
+          <div style="max-height: 200px; overflow-y: auto; font-size: 12px; color: #666; padding: 8px; background: #fff2f0; border-radius: 4px;">
+            <div v-for="(error, index) in importResult.errors.slice(0, 10)" :key="index" style="margin-bottom: 4px;">
+              {{ error }}
+            </div>
+            <div v-if="importResult.errors.length > 10" style="color: #999; font-style: italic;">
+              还有 {{ importResult.errors.length - 10 }} 条错误信息未显示...
+            </div>
+          </div>
+        </div>
+
+        <div v-if="importResult.successRows > 0 && importResult.failRows === 0" style="margin-top: 20px">
           <a-result status="success" title="导入成功" sub-title="所有数据已成功导入" />
         </div>
       </div>
@@ -109,11 +109,9 @@
   import { BasicModal, useModalInner } from '/@/components/Modal';
   import { useMessage } from '/@/hooks/web/useMessage';
   import { useI18n } from '/@/hooks/web/useI18n';
-  import { importRawData, previewRawData } from '/@/api/lab/rawData';
-  import { UploadOutlined, DownloadOutlined } from '@ant-design/icons-vue';
+  import { simpleImportRawData } from '/@/api/lab/rawData';
+  import { UploadOutlined } from '@ant-design/icons-vue';
   import type { UploadFile } from 'ant-design-vue';
-  import { downloadByData } from '/@/utils/file/download';
-  import type { ImportStrategy, DataPreviewResult } from '/@/api/lab/types/rawData';
 
   const emit = defineEmits(['register', 'reload']);
   const [registerModal, { closeModal }] = useModalInner(init);
@@ -122,18 +120,14 @@
 
   const fileList = ref<UploadFile[]>([]);
   const uploading = ref(false);
-  const downloading = ref(false);
   const importResult = ref<any>(null);
-  const importStrategy = ref<ImportStrategy>('incremental');
-  const previewData = ref<DataPreviewResult | null>(null);
+  const skipExistingFurnaceNo = ref(true); // 默认跳过已存在的炉号
 
   function init() {
     fileList.value = [];
     uploading.value = false;
-    downloading.value = false;
     importResult.value = null;
-    importStrategy.value = 'incremental';
-    previewData.value = null;
+    skipExistingFurnaceNo.value = true;
   }
 
   function beforeUpload(file: File) {
@@ -150,13 +144,13 @@
       createMessage.error('文件大小不能超过10MB！');
       return false;
     }
-    return false; // 阻止自动上传
+    // 返回 false 会阻止自动上传，但文件会显示在 fileList 中
+    return false;
   }
 
   function handleRemove() {
     fileList.value = [];
     importResult.value = null;
-    previewData.value = null;
   }
 
   async function handleImport() {
@@ -165,7 +159,8 @@
       return;
     }
 
-    const file = fileList.value[0].originFileObj || fileList.value[0];
+    const fileItem = fileList.value[0];
+    const file = fileItem.originFileObj as File || (fileItem as any);
     if (!file) {
       createMessage.warning('文件不存在');
       return;
@@ -177,29 +172,22 @@
       const base64 = await fileToBase64(file);
       const fileName = file.name;
 
-      // 首先预览数据
-      try {
-        const previewResult = await previewRawData({
-          fileData: base64,
-          fileName: fileName,
-          importStrategy: importStrategy.value,
-        });
-        previewData.value = previewResult;
-      } catch (previewError) {
-        console.warn('预览失败，继续导入:', previewError);
-      }
-
-      // 调用导入接口
-      const result = await importRawData({
+      // 调用简化导入接口（直接上传、解析、保存）
+      const result = await simpleImportRawData({
         fileData: base64,
         fileName: fileName,
-        importStrategy: importStrategy.value,
+        skipExistingFurnaceNo: skipExistingFurnaceNo.value,
       });
 
-      importResult.value = result.data;
-      createMessage.success(`导入完成：成功 ${result.data.successCount} 条，失败 ${result.data.failCount} 条`);
+      importResult.value = result;
+      createMessage.success(`导入完成：成功 ${result.successRows} 条，失败 ${result.failRows} 条，跳过 ${result.skippedRows} 条`);
 
-      if (result.data.successCount > 0) {
+      // 显示重复炉号提示
+      if (result.duplicateFurnaceNos && result.duplicateFurnaceNos.length > 0) {
+        createMessage.warning(`发现 ${result.duplicateFurnaceNos.length} 个重复炉号，已根据设置处理`);
+      }
+
+      if (result.successRows > 0) {
         emit('reload');
       }
     } catch (error: any) {
@@ -223,68 +211,43 @@
     });
   }
 
-  function handleDownloadErrorReport() {
-    if (!importResult.value?.errorReport) {
-      createMessage.warning('错误报告不存在');
-      return;
-    }
-
-    downloading.value = true;
-    try {
-      // 将Base64转换为Blob
-      const byteCharacters = atob(importResult.value.errorReport);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], {
-        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      });
-
-      // 下载文件
-      downloadByData(blob, importResult.value.errorReportFileName || '错误报告.xlsx');
-    } catch (error: any) {
-      createMessage.error('下载失败：' + error.message);
-    } finally {
-      downloading.value = false;
-    }
-  }
 
   function handleClose() {
     closeModal();
-    if (importResult.value?.successCount > 0) {
+    if (importResult.value?.successRows > 0) {
       emit('reload');
     }
+  }
+
+  // 格式化文件大小
+  function formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   }
 </script>
 <style scoped>
   .import-content {
     padding: 10px 0;
+    max-height: 70vh; /* 防止内容过多超出屏幕高度 */
+    overflow-y: auto; /* 添加垂直滚动 */
   }
   .import-result {
     padding: 10px;
     background: #f5f5f5;
     border-radius: 4px;
   }
-  .import-strategy {
+  .import-options {
     padding: 12px;
     background: #fafafa;
     border-radius: 4px;
     border: 1px solid #e8e8e8;
   }
-  .strategy-description {
+  .option-description {
     margin-top: 8px;
     font-size: 12px;
     color: #666;
-  }
-  .data-preview {
-    padding: 16px;
-    background: #fafafa;
-    border-radius: 4px;
-    border: 1px solid #e8e8e8;
-  }
-  .preview-info {
-    margin-bottom: 16px;
   }
 </style>

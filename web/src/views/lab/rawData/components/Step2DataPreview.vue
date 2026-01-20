@@ -48,6 +48,22 @@
             </div>
           </template>
         </a-alert>
+        
+        <!-- 数据库中已存在炉号提示 -->
+        <a-alert
+          v-if="hasExistingFurnaceNos"
+          type="info"
+          show-icon
+          style="margin-top: 16px">
+          <template #message>
+            <span style="font-weight: 600;">检测到数据库中已存在的炉号</span>
+          </template>
+          <template #description>
+            <div>
+              <p style="margin-bottom: 0;">部分炉号在数据库中已存在，这些数据将被忽略，不会保存到数据库中。</p>
+            </div>
+          </template>
+        </a-alert>
       </div>
 
       <!-- 筛选与统计工具栏 -->
@@ -61,6 +77,9 @@
           </a-radio-button>
           <a-radio-button value="invalid">
             无效数据 ({{ previewData.statistics.invalidDataRows }})
+          </a-radio-button>
+          <a-radio-button v-if="hasDuplicateFurnaceNos" value="duplicate">
+            重复数据 ({{ duplicateCount }})
           </a-radio-button>
         </a-radio-group>
       </div>
@@ -77,14 +96,22 @@
             :pagination="paginationConfig"
             @change="handleTableChange"
             size="small"
-            :scroll="{ x: 500 }"
+            :scroll="{ x: 'max-content' }"
             class="sync-scroll-table left-table">
             <template #bodyCell="{ column, record }">
               <template v-if="column.dataIndex === 'prodDate'">
                 {{ formatDate(record.prodDate) }}
               </template>
               <template v-else-if="column.key === 'columnCount'">
-                {{ record.detectionData ? Object.keys(record.detectionData).length : 0 }}
+                {{ (() => {
+                  let count = 0;
+                  for (let i = 1; i <= 22; i++) {
+                    if (record[`detection${i}`] !== null && record[`detection${i}`] !== undefined) {
+                      count++;
+                    }
+                  }
+                  return count;
+                })() }}
               </template>
               <template v-else>
                 {{ record[column.dataIndex] ?? '-' }}
@@ -110,12 +137,33 @@
                 {{ formatDate(record.prodDate) }}
               </template>
               <template v-else-if="column.dataIndex === 'isValidData'">
-                <a-tag :color="record.isValidData ? 'success' : 'error'">
-                  {{ record.isValidData ? '有效' : '无效' }}
-                </a-tag>
+                <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                  <a-tag :color="getStatusColor(record)" style="margin: 0;">
+                    {{ getStatusText(record) }}
+                  </a-tag>
+                  <template v-if="record.isDuplicateInFile">
+                    <a-checkbox 
+                      v-model:checked="record.selectedForImport"
+                      @change="handleDuplicateSelection(record)"
+                      style="font-size: 12px; margin: 0;">
+                      保留此条
+                    </a-checkbox>
+                  </template>
+                  <template v-else-if="record.existsInDatabase">
+                    <a-tag color="orange" style="font-size: 12px; margin: 0;">数据库中已存在，将被忽略</a-tag>
+                  </template>
+                </div>
               </template>
               <template v-else-if="column.key === 'columnCount'">
-                {{ record.detectionData ? Object.keys(record.detectionData).length : 0 }}
+                {{ (() => {
+                  let count = 0;
+                  for (let i = 1; i <= 22; i++) {
+                    if (record[`detection${i}`] !== null && record[`detection${i}`] !== undefined) {
+                      count++;
+                    }
+                  }
+                  return count;
+                })() }}
               </template>
               <template v-else-if="column.dataIndex === 'furnaceNoParsed'">
                 <template v-if="record.furnaceNo && record.featureSuffix">
@@ -164,7 +212,7 @@
 <script lang="ts" setup>
 import { ref, computed, nextTick, onMounted, watch } from 'vue';
 import { message, Statistic } from 'ant-design-vue';
-import { uploadAndParse } from '/@/api/lab/rawData';
+import { uploadAndParse, updateDuplicateSelections } from '/@/api/lab/rawData';
 import type {
   ImportStrategy,
   DataPreviewResult,
@@ -202,6 +250,17 @@ const filterType = ref<string>('all');
 const currentPage = ref(1);
 const pageSize = ref(20);
 
+// 监听筛选类型变化，重置分页
+watch(filterType, () => {
+  currentPage.value = 1;
+});
+
+// 计算重复数据数量
+const duplicateCount = computed(() => {
+  if (!previewData.value?.rows) return 0;
+  return previewData.value.rows.filter((row: any) => row.isDuplicateInFile).length;
+});
+
 // 过滤后的数据
 const filteredRows = computed(() => {
   if (!previewData.value?.rows) return [];
@@ -210,6 +269,8 @@ const filteredRows = computed(() => {
     return previewData.value.rows.filter(row => row.isValidData);
   } else if (filterType.value === 'invalid') {
     return previewData.value.rows.filter(row => !row.isValidData);
+  } else if (filterType.value === 'duplicate') {
+    return previewData.value.rows.filter((row: any) => row.isDuplicateInFile);
   }
   return previewData.value.rows;
 });
@@ -288,33 +349,152 @@ function formatFurnaceNo(record: any): string {
   return `${record.lineNo}${shiftStr}${date}-${record.furnaceNoParsed}-${record.coilNo}-${record.subcoilNo}`;
 }
 
+// 获取状态颜色
+function getStatusColor(record: any): string {
+  if (record.existsInDatabase) {
+    return 'orange';
+  }
+  if (record.isDuplicateInFile) {
+    return 'warning';
+  }
+  if (record.status === 'failed' || !record.isValidData) {
+    return 'error';
+  }
+  return 'success';
+}
+
+// 获取状态文本
+function getStatusText(record: any): string {
+  if (record.existsInDatabase) {
+    return '数据库中已存在';
+  }
+  if (record.isDuplicateInFile) {
+    return '重复（需选择）';
+  }
+  if (record.status === 'failed' || !record.isValidData) {
+    return '无效';
+  }
+  return '有效';
+}
+
+// 处理重复炉号选择
+function handleDuplicateSelection(record: any) {
+  console.log('handleDuplicateSelection: 被调用', record);
+  if (!previewData.value?.rows) {
+    console.warn('handleDuplicateSelection: previewData.value?.rows 为空');
+    return;
+  }
+  
+  // 找到所有相同标准炉号的数据
+  const sameFurnaceNoRows = previewData.value.rows.filter(
+    (r: any) => r.standardFurnaceNo === record.standardFurnaceNo && r.isDuplicateInFile
+  );
+  
+  // 如果当前行被选中，取消其他行的选中状态，并将其他行标记为无效
+  if (record.selectedForImport) {
+    sameFurnaceNoRows.forEach((r: any) => {
+      if (r.id !== record.id) {
+        r.selectedForImport = false;
+        // 将未选择的数据标记为无效，不再参与后续工作
+        r.isValidData = false;
+        r.status = 'failed';
+        if (!r.errorMessage) {
+          r.errorMessage = '重复数据，已选择保留其他数据';
+        } else if (!r.errorMessage.includes('重复数据，已选择保留其他数据')) {
+          r.errorMessage = `重复数据，已选择保留其他数据；${r.errorMessage}`;
+        }
+      } else {
+        // 确保被选中的行是有效的
+        r.isValidData = true;
+        if (r.status === 'failed') {
+          r.status = 'duplicate'; // 保持重复标记，但状态改为duplicate
+        }
+      }
+    });
+    
+    // 更新统计信息
+    updateStatistics();
+  } else {
+    // 如果取消选择，需要检查是否还有其他行被选中
+    const hasOtherSelected = sameFurnaceNoRows.some((r: any) => r.id !== record.id && r.selectedForImport === true);
+    if (!hasOtherSelected) {
+      // 如果没有其他行被选中，恢复所有行的有效状态（但保持重复标记）
+      sameFurnaceNoRows.forEach((r: any) => {
+        if (r.id !== record.id) {
+          // 恢复为有效，但保持重复标记
+          r.isValidData = true;
+          r.status = 'duplicate';
+          // 移除"重复数据，已选择保留其他数据"的错误信息
+          if (r.errorMessage && r.errorMessage.includes('重复数据，已选择保留其他数据')) {
+            r.errorMessage = r.errorMessage.replace(/重复数据，已选择保留其他数据[；;]?/g, '').trim();
+            if (!r.errorMessage) {
+              r.errorMessage = undefined;
+            }
+          }
+        }
+      });
+      // 恢复当前行为有效（如果之前是有效的）
+      if (record.isValidData === false && record.status === 'failed') {
+        record.isValidData = true;
+        record.status = 'duplicate';
+      }
+      updateStatistics();
+    }
+  }
+}
+
+// 更新统计信息
+function updateStatistics() {
+  if (!previewData.value?.rows) return;
+  
+  const totalRows = previewData.value.rows.length;
+  const validDataRows = previewData.value.rows.filter((r: any) => r.isValidData === true || r.isValidData === 1).length;
+  const invalidDataRows = totalRows - validDataRows;
+  
+  if (previewData.value.statistics) {
+    previewData.value.statistics.totalRows = totalRows;
+    previewData.value.statistics.validDataRows = validDataRows;
+    previewData.value.statistics.invalidDataRows = invalidDataRows;
+    previewData.value.statistics.successRows = validDataRows;
+    previewData.value.statistics.failRows = invalidDataRows;
+  }
+}
+
 // 获取产品规格名称 (Removed unused function)
 // 加载产品规格列表 (Removed unused function)
 
 // 左侧列定义（原始数据）
-// 行号、日期、炉号（和Excel一致带特性描述）、宽度、带材重量、数据列数
-const leftColumns = computed(() => [
-  { title: '行号', dataIndex: 'rowIndex', width: 60, fixed: 'left' },
-  { 
-    title: '日期', 
-    dataIndex: 'prodDate', 
-    width: 100,
-    customRender: ({ text }) => formatDate(text)
-  },
-  { title: '炉号', dataIndex: 'furnaceNo', width: 150 },
-  { title: '宽度', dataIndex: 'width', width: 80 },
-  { title: '带材重量', dataIndex: 'coilWeight', width: 100 },
-  { 
-    title: '数据列数', 
-    key: 'columnCount', 
-    width: 100,
-    align: 'center',
-    customRender: ({ record }) => {
-      // 简单计算detectionData的键数量
-      return record.detectionData ? Object.keys(record.detectionData).length : 0;
-    }
-  },
-]);
+// 行号、日期、炉号（和Excel一致带特性描述）、宽度、带材重量、检测列1-22
+const leftColumns = computed(() => {
+  const columns: any[] = [
+    { title: '行号', dataIndex: 'rowIndex', width: 60, fixed: 'left' },
+    { 
+      title: '日期', 
+      dataIndex: 'prodDate', 
+      width: 100,
+      customRender: ({ text }) => formatDate(text)
+    },
+    { title: '炉号', dataIndex: 'furnaceNo', width: 150 },
+    { title: '宽度', dataIndex: 'width', width: 80 },
+    { title: '带材重量', dataIndex: 'coilWeight', width: 100 },
+  ];
+  
+  // 添加检测列1-22
+  for (let i = 1; i <= 22; i++) {
+    columns.push({
+      title: `检测${i}`,
+      dataIndex: `detection${i}`,
+      width: 80,
+      align: 'right',
+      customRender: ({ text, record }) => {
+        const value = record[`detection${i}`];
+        return value !== null && value !== undefined ? value : '-';
+      }
+    });
+  }
+  
+  return columns;
+});
 
 // 右侧列定义（导入数据）
 // 行号、日期、炉号(不带特性描述)、特性描述、数据列数、炉号解析状态
@@ -362,14 +542,21 @@ const rightColumns = computed(() => {
       width: 100,
       align: 'center',
       customRender: ({ record }) => {
-        // 计算detectionData的键数量
-        return record.detectionData ? Object.keys(record.detectionData).length : 0;
+        // 计算detection1-detection22字段中有值的列数
+        let count = 0;
+        for (let i = 1; i <= 22; i++) {
+          const key = `detection${i}`;
+          if (record[key] !== null && record[key] !== undefined) {
+            count++;
+          }
+        }
+        return count;
       }
     },
     { 
       title: '炉号解析状态', 
       dataIndex: 'isValidData', 
-      width: 120, 
+      width: 180, 
       fixed: 'right',
       align: 'center'
     }
@@ -378,11 +565,47 @@ const rightColumns = computed(() => {
   return columns;
 });
 
-// 计算是否可以进入下一步（必须有有效数据）
+// 计算是否有重复的炉号（已移除提示，但保留计算属性以防其他地方使用）
+const hasDuplicateFurnaceNos = computed(() => {
+  if (!previewData.value?.rows) return false;
+  return previewData.value.rows.some((row: any) => row.isDuplicateInFile);
+});
+
+// 计算是否有数据库中已存在的炉号
+const hasExistingFurnaceNos = computed(() => {
+  if (!previewData.value?.rows) return false;
+  return previewData.value.rows.some((row: any) => row.existsInDatabase);
+});
+
+// 计算是否可以进入下一步（必须有有效数据，且重复的炉号都已选择）
 const canGoNext = computed(() => {
   if (previewData.value === null || parsing.value) return false;
   // 必须至少有一条有效数据才能继续
-  return (previewData.value.statistics?.validDataRows || 0) > 0;
+  const validCount = previewData.value.statistics?.validDataRows || 0;
+  if (validCount === 0) return false;
+  
+  // 检查重复的炉号是否都已选择
+  if (previewData.value.rows) {
+    const duplicateGroups = new Map<string, any[]>();
+    previewData.value.rows.forEach((row: any) => {
+      if (row.isDuplicateInFile && row.standardFurnaceNo) {
+        if (!duplicateGroups.has(row.standardFurnaceNo)) {
+          duplicateGroups.set(row.standardFurnaceNo, []);
+        }
+        duplicateGroups.get(row.standardFurnaceNo)!.push(row);
+      }
+    });
+    
+    // 检查每个重复组是否至少有一条被选中
+    for (const [_, rows] of duplicateGroups) {
+      const hasSelected = rows.some((row: any) => row.selectedForImport === true);
+      if (!hasSelected) {
+        return false; // 有重复组没有选择，不能继续
+      }
+    }
+  }
+  
+  return true;
 });
 
 // 解析数据
@@ -406,10 +629,24 @@ async function parseData() {
     // 保存预览数据
     previewData.value = result.preview;
 
-    // 为数据添加行号
+    // 为数据添加行号，并初始化重复炉号选择状态
     if (previewData.value?.rows) {
       previewData.value.rows.forEach((row, index) => {
         row.rowIndex = index + 1;
+        // 对于重复的炉号，默认选中第一条（按行号排序）
+        if (row.isDuplicateInFile && row.selectedForImport === undefined) {
+          // 找到所有相同标准炉号的数据
+          const sameFurnaceNoRows = previewData.value.rows.filter(
+            (r: any) => r.standardFurnaceNo === row.standardFurnaceNo && r.isDuplicateInFile
+          );
+          // 按行号排序，第一条默认选中
+          sameFurnaceNoRows.sort((a: any, b: any) => (a.rowIndex || 0) - (b.rowIndex || 0));
+          if (sameFurnaceNoRows[0]?.id === row.id) {
+            row.selectedForImport = true;
+          } else {
+            row.selectedForImport = false;
+          }
+        }
       });
     }
 
@@ -515,7 +752,9 @@ function handleRetry() {
 
 // 下一步
 async function handleNext() {
+  console.log('handleNext: 被调用');
   if (!previewData.value) {
+    console.warn('handleNext: previewData.value 为空');
     message.warning('数据尚未解析完成，请稍候');
     return;
   }
@@ -527,7 +766,125 @@ async function handleNext() {
     return;
   }
 
+  // 检查重复的炉号是否都已选择，并保存选择结果
+  if (previewData.value.rows) {
+    const duplicateGroups = new Map<string, any[]>();
+    previewData.value.rows.forEach((row: any) => {
+      if (row.isDuplicateInFile && row.standardFurnaceNo) {
+        if (!duplicateGroups.has(row.standardFurnaceNo)) {
+          duplicateGroups.set(row.standardFurnaceNo, []);
+        }
+        duplicateGroups.get(row.standardFurnaceNo)!.push(row);
+      }
+    });
+    
+    // 如果有重复数据，检查每个重复组是否至少有一条被选中
+    if (duplicateGroups.size > 0) {
+      for (const [furnaceNo, rows] of duplicateGroups) {
+        const hasSelected = rows.some((row: any) => row.selectedForImport === true);
+        if (!hasSelected) {
+          message.warning(`炉号 ${furnaceNo} 存在重复，请选择保留哪条数据`);
+          return;
+        }
+      }
+      
+      // 保存重复数据的选择结果到后端
+      console.log('开始保存重复数据选择结果...');
+      try {
+        await saveDuplicateSelections();
+        console.log('重复数据选择结果保存完成');
+        // 保存成功后，等待一小段时间确保后端数据已更新
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (error: any) {
+        console.error('保存重复数据选择结果失败:', error);
+        message.error('保存重复数据选择结果失败，请重试');
+        return;
+      }
+    } else {
+      console.log('没有重复数据，跳过保存');
+    }
+  }
+
   emit('next');
+}
+
+// 保存重复数据的选择结果到后端
+async function saveDuplicateSelections() {
+  if (!previewData.value?.rows || !props.importSessionId) {
+    console.warn('saveDuplicateSelections: 缺少必要的数据或会话ID');
+    return;
+  }
+  
+  console.log('saveDuplicateSelections: 开始处理，总数据行数:', previewData.value.rows.length);
+  
+  // 找出所有需要更新的重复数据
+  const updates: { rawDataId: string; isValidData: boolean }[] = [];
+  const duplicateGroups = new Map<string, any[]>();
+  
+  // 按标准炉号分组
+  previewData.value.rows.forEach((row: any) => {
+    if (row.isDuplicateInFile && row.standardFurnaceNo) {
+      if (!duplicateGroups.has(row.standardFurnaceNo)) {
+        duplicateGroups.set(row.standardFurnaceNo, []);
+      }
+      duplicateGroups.get(row.standardFurnaceNo)!.push(row);
+    }
+  });
+  
+  console.log(`saveDuplicateSelections: 找到 ${duplicateGroups.size} 个重复炉号组`);
+  
+  if (duplicateGroups.size === 0) {
+    console.log('saveDuplicateSelections: 没有重复数据，无需保存');
+    return;
+  }
+  
+  // 对于每个重复组，更新所有数据的状态
+  for (const [furnaceNo, rows] of duplicateGroups) {
+    console.log(`处理重复炉号组: ${furnaceNo}, 共 ${rows.length} 条数据`);
+    
+    // 检查是否有被选中的数据
+    const selectedRows = rows.filter((r: any) => r.selectedForImport === true);
+    console.log(`  - 被选中的数据: ${selectedRows.length} 条`);
+    
+    rows.forEach((row: any) => {
+      // 根据 selectedForImport 确定是否有效
+      // 如果 selectedForImport 为 true，则有效；否则无效
+      const isValid = row.selectedForImport === true;
+      
+      // 同时检查 isValidData 字段，确保一致性
+      const currentIsValid = row.isValidData === true || row.isValidData === 1;
+      
+      if (isValid !== currentIsValid) {
+        console.warn(`  - 数据ID: ${row.id}, selectedForImport 和 isValidData 不一致! selectedForImport: ${row.selectedForImport}, isValidData: ${row.isValidData}`);
+        // 使用 selectedForImport 的值，因为它更准确
+        row.isValidData = isValid;
+      }
+      
+      console.log(`  - 数据ID: ${row.id}, selectedForImport: ${row.selectedForImport}, isValidData: ${row.isValidData}, 保存为: ${isValid}`);
+      updates.push({
+        rawDataId: row.id,
+        isValidData: isValid
+      });
+    });
+  }
+  
+  if (updates.length === 0) {
+    console.log('saveDuplicateSelections: 没有需要更新的重复数据');
+    return;
+  }
+  
+  console.log(`saveDuplicateSelections: 准备保存 ${updates.length} 条重复数据的更新:`, updates);
+  console.log(`saveDuplicateSelections: 调用API，会话ID: ${props.importSessionId}`);
+  
+  try {
+    // 调用API保存更新
+    await updateDuplicateSelections(props.importSessionId, updates);
+    console.log('saveDuplicateSelections: 重复数据选择结果已保存到后端成功:', updates.length, '条数据');
+  } catch (error: any) {
+    console.error('saveDuplicateSelections: 保存重复数据选择结果失败:', error);
+    // 抛出错误，阻止进入下一步，确保数据一致性
+    throw error;
+  }
 }
 
 // 保存并进入下一步（供父组件调用）
@@ -684,6 +1041,16 @@ defineExpose({
     white-space: nowrap; /* 防止内容换行导致行高不一致 */
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+  
+  // 确保右侧表格的状态列内容在一行显示
+  :deep(.ant-table-cell-fix-right) {
+    .ant-tag,
+    .ant-checkbox-wrapper {
+      white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+    }
   }
   
   :deep(.ant-pagination) {

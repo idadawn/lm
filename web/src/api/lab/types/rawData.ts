@@ -5,6 +5,7 @@ export interface ImportSession {
   id: string;
   fileName: string;
   sourceFileId?: string;
+  /** @deprecated 导入策略功能已移除，此字段仅用于向后兼容 */
   importStrategy: 'incremental' | 'full' | 'overwrite' | 'deduplicate';
   currentStep: number; // 0-3
   totalRows: number;
@@ -15,18 +16,23 @@ export interface ImportSession {
   creatorUserId?: string;
 }
 
-// 导入策略
+// 导入策略（已废弃，固定为'incremental'以保持向后兼容性）
 export type ImportStrategy = 'incremental' | 'full' | 'overwrite' | 'deduplicate';
 
 // 原始数据行（支持动态检测列）
 export interface RawDataRow {
   id?: string;
   prodDate: string;
+  prodDateStr?: string; // 生产日期字符串格式
+  detectionDate?: string;
+  detectionDateStr?: string; // 检测日期字符串格式
   furnaceNo: string;
   lineNo?: string;
   shift?: string;
   width?: number;
   coilWeight?: number;
+  breakCount?: number; // 断头数
+  singleCoilWeight?: number; // 单卷重量
   detectionData?: Record<string, number | null>; // JSON格式：{"1": 1.23, "2": 2.45, ...}
   detectionColumns?: string; // 检测列范围，如 "13"
   productSpecId?: string;
@@ -49,6 +55,13 @@ export interface RawDataRow {
   productSpecMatchStatus?: 'matched' | 'unmatched' | 'partial';
   appearanceFeatureMatchStatus?: 'matched' | 'unmatched' | 'partial';
   matchConfidence?: number; // 匹配置信度
+  // 炉号重复相关字段
+  status?: string; // 状态：success/failed/duplicate/exists_in_db
+  errorMessage?: string; // 错误信息
+  isDuplicateInFile?: boolean; // 是否在本次Excel中重复
+  existsInDatabase?: boolean; // 是否在数据库中已存在
+  standardFurnaceNo?: string; // 标准炉号（用于重复检查）
+  selectedForImport?: boolean; // 用户选择是否导入（用于重复炉号选择）
 }
 
 // 炉号解析结果
@@ -129,7 +142,6 @@ export interface ValidationError {
 export interface Step1UploadAndParseInput {
   fileData?: string;  // Base64字符串（可选，文件已在创建会话时保存到后端）
   fileName: string;
-  importStrategy: ImportStrategy;
   importSessionId: string;  // 必填，使用已存在的会话
 }
 
@@ -173,6 +185,7 @@ export interface ImportLog {
   id: string;
   fileName: string;
   sourceFileId?: string;
+  /** @deprecated 导入策略功能已移除，此字段仅用于向后兼容 */
   importStrategy: ImportStrategy;
   totalRows: number;
   successRows: number;
@@ -191,4 +204,21 @@ export interface ErrorReport {
   fileName: string;
   errors: ValidationError[];
   errorCount: number;
+}
+
+// 简化导入输入
+export interface SimpleImportInput {
+  fileName: string;
+  fileData: string;
+  skipExistingFurnaceNo?: boolean;
+}
+
+// 简化导入输出
+export interface SimpleImportOutput {
+  totalRows: number;
+  successRows: number;
+  failRows: number;
+  skippedRows: number;
+  errors: string[];
+  duplicateFurnaceNos: string[];
 }

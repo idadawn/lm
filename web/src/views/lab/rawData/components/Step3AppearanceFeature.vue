@@ -68,8 +68,20 @@
         :loading="loading"
         row-key="id"
         size="middle"
-        :scroll="{ x: 1200 }">
+        :scroll="{ x: 1200 }"
+        @change="handleTableChange">
         <template #bodyCell="{ column, record }">
+          <template v-if="column.dataIndex === 'rowIndex'">
+            <div class="row-index-cell">
+              <span>{{ record.rowIndex }}</span>
+              <!-- 置信度 < 90% 时在行号旁显示警告图标 -->
+              <ExclamationCircleOutlined
+                v-if="record.matchConfidence && record.matchConfidence < 0.9"
+                class="warning-icon"
+                style="color: #faad14; margin-left: 4px; font-size: 14px" />
+            </div>
+          </template>
+
           <template v-if="column.dataIndex === 'furnaceNo'">
             <div class="furnace-no-cell">
               <div>{{ record.furnaceNo }}</div>
@@ -116,6 +128,14 @@
                 {{ Math.round(record.matchConfidence * 100) }}%
               </span>
               <span v-else>-</span>
+              <!-- 置信度 < 90% 时显示警告标识 -->
+              <a-tag
+                v-if="record.matchConfidence && record.matchConfidence < 0.9"
+                color="warning"
+                size="small"
+                style="margin-left: 8px">
+                <ExclamationCircleOutlined /> 需人工确认
+              </a-tag>
             </div>
           </template>
 
@@ -228,7 +248,8 @@ import {
   ReloadOutlined,
   ThunderboltOutlined,
   EditOutlined,
-  ClearOutlined
+  ClearOutlined,
+  ExclamationCircleOutlined
 } from '@ant-design/icons-vue';
 import { getAppearanceFeatureMatches, updateAppearanceFeatureMatches } from '/@/api/lab/rawData';
 import { getAppearanceFeatureList, getAppearanceFeatureCategoryList } from '/@/api/lab/appearanceFeature';
@@ -330,11 +351,6 @@ const columns = [
     dataIndex: 'rowIndex',
     width: 80,
     fixed: 'left',
-  },
-  {
-    title: '生产日期',
-    dataIndex: 'prodDate',
-    width: 120,
   },
   {
     title: '炉号',
@@ -486,6 +502,12 @@ function handleSearch() {
   paginationConfig.current = 1;
 }
 
+// 处理表格分页变化
+function handleTableChange(pagination: any) {
+  paginationConfig.current = pagination.current;
+  paginationConfig.pageSize = pagination.pageSize;
+}
+
 async function handleEditFeatures(record: RawDataRow) {
   console.log('handleEditFeatures called', record);
   if (!record) {
@@ -592,10 +614,20 @@ watch(
   { immediate: false }
 );
 
+// 添加一个方法来手动触发加载（供父组件调用）
+function triggerLoad() {
+  if (props.importSessionId && props.importSessionId.trim() !== '') {
+    // 重置加载标记，允许重新加载（即使之前已加载过）
+    hasLoaded.value = false;
+    loadData();
+  }
+}
+
 // 暴露给父组件
 defineExpose({
   canGoNext,
   saveAndNext,
+  triggerLoad, // 暴露触发加载的方法
 });
 </script>
 
@@ -641,6 +673,27 @@ defineExpose({
     .confidence-text {
       font-size: 12px;
       color: #666;
+    }
+  }
+
+  .row-index-cell {
+    display: flex;
+    align-items: center;
+
+    .warning-icon {
+      color: #faad14;
+      margin-left: 4px;
+      font-size: 14px;
+      animation: pulse 2s infinite;
+    }
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
     }
   }
 

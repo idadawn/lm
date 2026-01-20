@@ -67,7 +67,7 @@
   // 对话框状态
   const visible = ref(false);
   const confirmLoading = ref(false);
-  const selectedFeature = ref<AppearanceFeatureInfo | null>(null);
+  const selectedFeatures = ref<AppearanceFeatureInfo[]>([]);
 
   // 左侧树相关
   const leftTreeRef = ref<Nullable<TreeActionType>>(null);
@@ -97,13 +97,9 @@
     isCanResizeParent: true,
     resizeHeightOffset: -74,
     rowSelection: {
-      type: 'radio',
+      type: 'checkbox',
       onChange: (selectedRowKeys: string[], selectedRows: AppearanceFeatureInfo[]) => {
-        if (selectedRows.length > 0) {
-          selectedFeature.value = selectedRows[0];
-        } else {
-          selectedFeature.value = null;
-        }
+        selectedFeatures.value = selectedRows;
       },
     },
     formConfig: {
@@ -237,15 +233,25 @@
 
   // 处理表格行点击
   function handleRowClick(record: AppearanceFeatureInfo) {
-    selectedFeature.value = record;
-    setSelectedRowKeys([record.id]);
+    const currentSelected = selectedFeatures.value || [];
+    const index = currentSelected.findIndex(item => item.id === record.id);
+    
+    let newSelected: AppearanceFeatureInfo[] = [];
+    if (index === -1) {
+      newSelected = [...currentSelected, record];
+    } else {
+      newSelected = currentSelected.filter(item => item.id !== record.id);
+    }
+    
+    selectedFeatures.value = newSelected;
+    setSelectedRowKeys(newSelected.map(item => item.id));
   }
 
   // 打开对话框
   function open() {
     console.log('[FeatureSelectDialog] open 方法被调用');
     visible.value = true;
-    selectedFeature.value = null;
+    selectedFeatures.value = [];
     console.log('[FeatureSelectDialog] visible 设置为:', visible.value);
     // 参考 productModal.vue，在对话框打开后初始化数据
     initData();
@@ -258,12 +264,12 @@
 
   // 确认选择
   function handleConfirm() {
-    if (!selectedFeature.value) {
-      createMessage.warning('请选择一个特性');
+    if (selectedFeatures.value.length === 0) {
+      createMessage.warning('请选择至少一个特性');
       return;
     }
 
-    emit('confirm', selectedFeature.value);
+    emit('confirm', selectedFeatures.value);
     close();
   }
 

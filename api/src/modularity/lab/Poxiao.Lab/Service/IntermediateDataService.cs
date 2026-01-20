@@ -11,6 +11,7 @@ using Poxiao.Lab.Entity.Dto.IntermediateData;
 using Poxiao.Lab.Entity.Dto.RawData;
 using Poxiao.Lab.Entity.Entity;
 using Poxiao.Lab.Entity.Extensions;
+using Poxiao.Lab.Entity.Models;
 using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
 using Poxiao.Systems.Entitys.Permission;
@@ -68,9 +69,11 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         if (!string.IsNullOrWhiteSpace(input.Keyword))
         {
             query = query.Where(t =>
-                t.FurnaceNo.Contains(input.Keyword)
-                || t.LineNo.Contains(input.Keyword)
-                || t.SprayNo.Contains(input.Keyword)
+                (t.FurnaceNo != null && t.FurnaceNo.Contains(input.Keyword))
+                || (t.LineNo.HasValue && t.LineNo.Value.ToString().Contains(input.Keyword))
+                || (t.ShiftNo != null && t.ShiftNo.Contains(input.Keyword))
+                || (t.SprayNo != null && t.SprayNo.Contains(input.Keyword))
+                || (t.BatchNo != null && t.BatchNo.Contains(input.Keyword))
             );
         }
 
@@ -94,7 +97,10 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         // 产线筛选
         if (!string.IsNullOrWhiteSpace(input.LineNo))
         {
-            query = query.Where(t => t.LineNo == input.LineNo);
+            if (int.TryParse(input.LineNo, out var lineNoValue))
+            {
+                query = query.Where(t => t.LineNo == lineNoValue);
+            }
         }
 
         // 排序
@@ -115,7 +121,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             catch
             {
                 // 排序解析失败，使用默认排序
-                query = query.OrderBy(t => t.ProdDate).OrderBy(t => t.FurnaceNoParsed);
+                query = query.OrderBy(t => t.ProdDate).OrderBy(t => t.FurnaceNoParsed); // 中间数据表保持原字段名
             }
         }
         else
@@ -521,9 +527,6 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     /// <summary>
     /// 解析检测列配置.
     /// </summary>
-    /// <summary>
-    /// 解析检测列配置.
-    /// </summary>
     public List<int> ParseDetectionColumns(string detectionColumnsStr)
     {
         if (string.IsNullOrWhiteSpace(detectionColumnsStr))
@@ -563,21 +566,47 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
                 rawData.FurnaceNo,
                 rawData.FeatureSuffix
             ),
-            LineNo = rawData.LineNo?.ToString(),
-            Shift = rawData.Shift?.ToString(),
-            FurnaceNoParsed = rawData.FurnaceNoParsed?.ToString(),
-            CoilNo = rawData.CoilNo?.ToString(),
-            SubcoilNo = rawData.SubcoilNo?.ToString(),
+            LineNo = rawData.LineNo,
+            Shift = rawData.Shift,
+            FurnaceNoParsed = rawData.FurnaceBatchNo?.ToString(),
+            CoilNo = rawData.CoilNo,
+            SubcoilNo = rawData.SubcoilNo,
             ProductSpecId = productSpec.Id,
             ProductSpecName = productSpec.Name,
-            ProductSpecVersion = specVersion,
+            ProductSpecVersion = specVersion?.ToString(),
             DetectionColumns = productSpec.DetectionColumns,
             CreatorTime = DateTime.Now,
         };
 
-        // 计算喷次
-        entity.SprayNo =
-            $"{rawData.LineNo}-{rawData.Shift}-{rawData.ProdDate?.ToString("yyyyMMdd")}-{rawData.FurnaceNoParsed}";
+        // 使用FurnaceNo类生成各种编号
+        var furnaceNoObj = FurnaceNo.Build(
+            rawData.LineNo?.ToString() ?? "1",
+            rawData.Shift?.ToString() ?? "甲",
+            rawData.ProdDate,
+            rawData.FurnaceBatchNo?.ToString() ?? "1",
+            rawData.CoilNo?.ToString() ?? "1",
+            rawData.SubcoilNo?.ToString() ?? "1",
+            rawData.FeatureSuffix
+        );
+
+        if (furnaceNoObj.IsValid)
+        {
+            // 班次：产线-班次-日期-炉号（保持原有格式）
+            entity.ShiftNo = $"{rawData.LineNo}-{rawData.Shift}-{rawData.ProdDate?.ToString("yyyyMMdd")}-{rawData.FurnaceBatchNo}";
+
+            // 喷次：8位日期-炉号
+            entity.SprayNo = furnaceNoObj.GetSprayNo();
+
+            // 批次：产线数字+班次汉字+8位日期-炉号
+            entity.BatchNo = furnaceNoObj.GetBatchNo();
+        }
+        else
+        {
+            // 如果解析失败，使用简单格式
+            entity.ShiftNo = $"{rawData.LineNo}-{rawData.Shift}-{rawData.ProdDate?.ToString("yyyyMMdd")}-{rawData.FurnaceBatchNo}";
+            entity.SprayNo = $"{rawData.ProdDate?.ToString("yyyyMMdd")}-{rawData.FurnaceBatchNo}";
+            entity.BatchNo = $"{rawData.LineNo}{rawData.Shift}{rawData.ProdDate?.ToString("yyyyMMdd")}-{rawData.FurnaceBatchNo}";
+        }
 
         // 四米带材重量（原始数据带材重量）
         entity.FourMeterWeight = rawData.CoilWeight;
@@ -746,10 +775,10 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         // 分段类型：根据卷号判断前端/中端/后端
         if (rawData.CoilNo.HasValue)
         {
-            var coilNoInt = rawData.CoilNo.Value;
+            var coilNoValue = rawData.CoilNo.Value;
             // 假设一个炉号有多个卷，根据卷号判断分段
             // 这里简化处理，实际逻辑可能需要根据业务调整
-            entity.SegmentType = coilNoInt <= 1 ? "前端" : (coilNoInt >= 3 ? "后端" : "中端");
+            entity.SegmentType = coilNoValue <= 1 ? "前端" : (coilNoValue >= 3 ? "后端" : "中端");
         }
 
         // 外观特性（从炉号解析的特性描述，原始特性汉字）
@@ -761,26 +790,40 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             entity.AppearanceFeatureIds = rawData.AppearanceFeatureIds;
         }
 
+        // 设置是否需要人工确认：如果特性匹配置信度 < 90%，则需要人工确认
+        if (rawData.MatchConfidence.HasValue && rawData.MatchConfidence.Value < 0.9)
+        {
+            entity.RequiresManualConfirm = true;
+        }
+        else
+        {
+            entity.RequiresManualConfirm = false;
+        }
+
         return entity;
     }
 
     /// <summary>
-    /// 获取原始数据中指定检测列的值（优先使用JSON字段）.
+    /// 获取原始数据中指定检测列的值（从detection1-detection22字段读取）.
     /// </summary>
     private List<decimal?> GetDetectionValues(RawDataEntity rawData, List<int> detectionColumns)
     {
         var values = new List<decimal?>();
-
-        // 优先从JSON字段读取
-        var detectionData = string.IsNullOrWhiteSpace(rawData.DetectionData)
-            ? new Dictionary<int, decimal?>()
-            : DetectionDataConverter.FromJson(rawData.DetectionData);
+        var detectionProps = new[]
+        {
+            rawData.Detection1, rawData.Detection2, rawData.Detection3, rawData.Detection4,
+            rawData.Detection5, rawData.Detection6, rawData.Detection7, rawData.Detection8,
+            rawData.Detection9, rawData.Detection10, rawData.Detection11, rawData.Detection12,
+            rawData.Detection13, rawData.Detection14, rawData.Detection15, rawData.Detection16,
+            rawData.Detection17, rawData.Detection18, rawData.Detection19, rawData.Detection20,
+            rawData.Detection21, rawData.Detection22
+        };
 
         foreach (var col in detectionColumns)
         {
-            if (detectionData.ContainsKey(col) && detectionData[col].HasValue)
+            if (col >= 1 && col <= 22)
             {
-                values.Add(detectionData[col].Value);
+                values.Add(detectionProps[col - 1]);
             }
             else
             {
@@ -838,7 +881,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             catch { }
         }
 
-        for (int i = 1; i <= 10; i++)
+        for (int i = 1; i <= 22; i++)
         {
             var propName = $"Thickness{i}";
             var prop = typeof(IntermediateDataEntity).GetProperty(propName);
@@ -869,7 +912,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     {
         var list = new List<LaminationDistItem>();
 
-        for (int i = 1; i <= 10; i++)
+        for (int i = 1; i <= 22; i++)
         {
             var propName = $"LaminationDist{i}";
             var prop = typeof(IntermediateDataEntity).GetProperty(propName);

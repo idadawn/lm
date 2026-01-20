@@ -24,7 +24,8 @@ public class ExcelTemplateConfig
     /// 字段映射配置.
     /// </summary>
     [JsonPropertyName("fieldMappings")]
-    public List<TemplateColumnMapping> FieldMappings { get; set; } = new List<TemplateColumnMapping>();
+    public List<TemplateColumnMapping> FieldMappings { get; set; } =
+        new List<TemplateColumnMapping>();
 
     /// <summary>
     /// 检测列配置.
@@ -37,6 +38,12 @@ public class ExcelTemplateConfig
     /// </summary>
     [JsonPropertyName("validation")]
     public TemplateValidationConfig Validation { get; set; } = new TemplateValidationConfig();
+
+    /// <summary>
+    /// Excel表头信息（保存完整的Excel列信息，用于编辑时恢复下拉选项）.
+    /// </summary>
+    [JsonPropertyName("excelHeaders")]
+    public List<ExcelHeaderInfo> ExcelHeaders { get; set; } = new List<ExcelHeaderInfo>();
 }
 
 /// <summary>
@@ -51,10 +58,22 @@ public class TemplateColumnMapping
     public string Field { get; set; }
 
     /// <summary>
+    /// 字段显示名（中文）.
+    /// </summary>
+    [JsonPropertyName("label")]
+    public string Label { get; set; }
+
+    /// <summary>
     /// Excel列名（支持多个备选名称）.
     /// </summary>
     [JsonPropertyName("excelColumnNames")]
     public List<string> ExcelColumnNames { get; set; } = new List<string>();
+
+    /// <summary>
+    /// Excel列索引（A, B, C...）.
+    /// </summary>
+    [JsonPropertyName("excelColumnIndex")]
+    public string ExcelColumnIndex { get; set; }
 
     /// <summary>
     /// 是否必填.
@@ -73,6 +92,12 @@ public class TemplateColumnMapping
     /// </summary>
     [JsonPropertyName("defaultValue")]
     public string DefaultValue { get; set; }
+
+    /// <summary>
+    /// 单位ID.
+    /// </summary>
+    [JsonPropertyName("unitId")]
+    public string UnitId { get; set; }
 }
 
 /// <summary>
@@ -84,14 +109,8 @@ public class DetectionColumnConfig
     /// 检测列表头模式（{col}会被替换为列号）.
     /// </summary>
     [JsonPropertyName("patterns")]
-    public List<string> Patterns { get; set; } = new List<string>
-    {
-        "{col}",
-        "检测{col}",
-        "列{col}",
-        "第{col}列",
-        "检测列{col}"
-    };
+    public List<string> Patterns { get; set; } =
+        new List<string> { "{col}", "检测{col}", "列{col}", "第{col}列", "检测列{col}" };
 
     /// <summary>
     /// 最小列号.
@@ -121,35 +140,54 @@ public class TemplateValidationConfig
     /// 字段级别验证规则.
     /// </summary>
     [JsonPropertyName("fieldRules")]
-    public Dictionary<string, FieldValidationRule> FieldRules { get; set; } = new Dictionary<string, FieldValidationRule>();
+    public Dictionary<string, FieldValidationRule> FieldRules { get; set; } =
+        new Dictionary<string, FieldValidationRule>();
 }
 
 /// <summary>
-    /// 字段验证规则.
+/// 字段验证规则.
+/// </summary>
+public class FieldValidationRule
+{
+    /// <summary>
+    /// 正则表达式模式.
     /// </summary>
-    public class FieldValidationRule
-    {
-        /// <summary>
-        /// 正则表达式模式.
-        /// </summary>
-        [JsonPropertyName("pattern")]
-        public string Pattern { get; set; }
+    [JsonPropertyName("pattern")]
+    public string Pattern { get; set; }
 
-        /// <summary>
-        /// 错误提示信息.
-        /// </summary>
-        [JsonPropertyName("errorMessage")]
-        public string ErrorMessage { get; set; }
+    /// <summary>
+    /// 错误提示信息.
+    /// </summary>
+    [JsonPropertyName("errorMessage")]
+    public string ErrorMessage { get; set; }
 
-        /// <summary>
-        /// 最小值（数值类型）.
-        /// </summary>
-        [JsonPropertyName("min")]
-        public decimal? Min { get; set; }
+    /// <summary>
+    /// 最小值（数值类型）.
+    /// </summary>
+    [JsonPropertyName("min")]
+    public decimal? Min { get; set; }
 
-        /// <summary>
-        /// 最大值（数值类型）.
-        /// </summary>
-        [JsonPropertyName("max")]
-        public decimal? Max { get; set; }
-    }
+    /// <summary>
+    /// 最大值（数值类型）.
+    /// </summary>
+    [JsonPropertyName("max")]
+    public decimal? Max { get; set; }
+}
+
+/// <summary>
+/// Excel表头信息.
+/// </summary>
+public class ExcelHeaderInfo
+{
+    /// <summary>
+    /// Excel列索引（A, B, C...）.
+    /// </summary>
+    [JsonPropertyName("index")]
+    public string Index { get; set; }
+
+    /// <summary>
+    /// Excel列名.
+    /// </summary>
+    [JsonPropertyName("name")]
+    public string Name { get; set; }
+}

@@ -261,7 +261,7 @@
       { title: '原始炉号', dataIndex: 'furnaceNo', key: 'furnaceNo', width: 150 },
       { title: '产线', dataIndex: 'lineNo', key: 'lineNo', width: 80 },
       { title: '班次', dataIndex: 'shift', key: 'shift', width: 80 },
-      { title: '炉号', dataIndex: 'furnaceNoParsed', key: 'furnaceNoParsed', width: 100 },
+      { title: '炉次号', dataIndex: 'furnaceBatchNo', key: 'furnaceBatchNo', width: 100 },
       { title: '卷号', dataIndex: 'coilNo', key: 'coilNo', width: 80 },
       { title: '分卷', dataIndex: 'subcoilNo', key: 'subcoilNo', width: 80 },
       { title: '带宽', dataIndex: 'width', key: 'width', width: 100 },

@@ -14,6 +14,7 @@ using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Lab.Entity.Dto.RawData;
 using Poxiao.Lab.Entity.Entity;
+using Poxiao.Lab.Entity.Models;
 using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
 using Poxiao.Systems.Entitys.Permission;
@@ -142,22 +143,23 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
 
                 // 2. 解析数据
                 var item = new RawDataPreviewItem();
+                // 设置行号（Excel行号，从1开始，rowIndex是Excel行索引，所以行号是rowIndex+1）
+                item.SortCode = rowIndex + 1;
                 var errors = new List<string>();
 
                 try
                 {
                     // 读取基础字段
-                    item.ProdDate = GetCellValue<DateTime?>(row, headerIndexes, "日期");
+                    item.DetectionDate = GetCellValue<DateTime?>(row, headerIndexes, "日期");
                     item.FurnaceNo = GetCellValue<string>(row, headerIndexes, "炉号");
                     item.Width = GetCellValue<decimal?>(row, headerIndexes, "宽度");
                     item.CoilWeight = GetCellValue<decimal?>(row, headerIndexes, "带材重量");
+                    // 读取AA列（索引26）和AB列（索引27）
+                    item.BreakCount = GetCellValueByIndex<int?>(row, 26);
+                    item.SingleCoilWeight = GetCellValueByIndex<decimal?>(row, 27);
 
-                    // 动态读取所有检测数据列（支持扩展，不限制为22列）
-                    // 使用JSON字段存储，支持任意数量的检测列
-                    var detectionData = new Dictionary<int, decimal?>();
-
-                    // 从Excel中读取检测数据列（尝试读取到100列，实际可能更少）
-                    for (int colIndex = 1; colIndex <= 100; colIndex++)
+                    // 检测数据列1-22（固定22列）
+                    for (int colIndex = 1; colIndex <= 22; colIndex++)
                     {
                         decimal? detectionValue = null;
 
@@ -178,59 +180,18 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
                                 detectionValue = GetCellValue<decimal?>(row, headerIndexes, header);
                                 if (detectionValue.HasValue)
                                 {
-                                    detectionData[colIndex] = detectionValue.Value;
+                                    // 使用反射设置对应的Detection属性
+                                    var propName = $"Detection{colIndex}";
+                                    var prop = typeof(RawDataPreviewItem).GetProperty(propName);
+                                    prop?.SetValue(item, detectionValue.Value);
                                     break;
                                 }
                             }
                         }
-
-                        // 如果连续多列都没有值，停止读取（假设检测列是连续的）
-                        if (!detectionValue.HasValue && detectionData.Count > 0)
-                        {
-                            // 如果已经有数据，但当前列没有值，可能是到了末尾
-                            // 继续检查下一列，如果下一列也没有值，则停止
-                            bool nextColumnHasValue = false;
-                            foreach (
-                                var nextHeader in new[]
-                                {
-                                    (colIndex + 1).ToString(),
-                                    $"检测{colIndex + 1}",
-                                    $"列{colIndex + 1}",
-                                    $"第{colIndex + 1}列",
-                                    $"检测列{colIndex + 1}",
-                                }
-                            )
-                            {
-                                if (headerIndexes.ContainsKey(nextHeader))
-                                {
-                                    var nextValue = GetCellValue<decimal?>(
-                                        row,
-                                        headerIndexes,
-                                        nextHeader
-                                    );
-                                    if (nextValue.HasValue)
-                                    {
-                                        nextColumnHasValue = true;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if (!nextColumnHasValue)
-                            {
-                                break; // 连续两列都没有值，停止读取
-                            }
-                        }
-                    }
-
-                    // 将检测数据保存到JSON字段
-                    if (detectionData.Count > 0)
-                    {
-                        item.DetectionData = DetectionDataConverter.ToJson(detectionData);
                     }
 
                     // 校验必填字段
-                    if (item.ProdDate == null)
+                    if (item.DetectionDate == null)
                         errors.Add("日期不能为空");
                     if (string.IsNullOrWhiteSpace(item.FurnaceNo))
                         errors.Add("炉号不能为空");
@@ -252,14 +213,27 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
                             item.LineNo = parseResult.LineNoNumeric;
                             item.Shift = parseResult.Shift;
                             item.ShiftNumeric = parseResult.ShiftNumeric;
-                            item.FurnaceNoParsed = parseResult.FurnaceNoNumeric;
+                            item.FurnaceBatchNo = parseResult.FurnaceNoNumeric;
                             item.CoilNo = parseResult.CoilNoNumeric;
                             item.SubcoilNo = parseResult.SubcoilNoNumeric;
                             item.FeatureSuffix = parseResult.FeatureSuffix;
 
-                            if (parseResult.ProdDate.HasValue && item.ProdDate == null)
+                            // 生产日期（ProdDate）：优先使用从原始炉号（FurnaceNo）中解析出的日期
+                            // 如果炉号解析失败，使用检测日期（DetectionDate，从Excel"日期"列读取）作为后备
+                            if (parseResult.ProdDate.HasValue)
                             {
                                 item.ProdDate = parseResult.ProdDate;
+                            }
+                            else if (item.DetectionDate.HasValue)
+                            {
+                                item.ProdDate = item.DetectionDate;
+                            }
+
+                            // 计算格式化炉号（格式：[产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号]）
+                            var furnaceNoObj = FurnaceNo.Parse(item.FurnaceNo);
+                            if (furnaceNoObj.IsValid)
+                            {
+                                item.FurnaceNoFormatted = furnaceNoObj.GetFurnaceNo();
                             }
 
                             // 判断是否为有效数据（符合炉号解析规则）
@@ -305,24 +279,44 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
                         }
                         else
                         {
-                            // 获取有效检测列信息用于错误提示（使用JSON字段）
-                            var detectionValues = DetectionDataConverter.FromJson(
-                                item.DetectionData
-                            );
-                            var validColumns = detectionValues
-                                .Where(kvp => kvp.Value.HasValue)
-                                .Select(kvp => kvp.Key)
-                                .OrderBy(k => k)
-                                .ToList();
+                            // 获取有效检测列信息用于错误提示（从detection1-detection22字段读取）
+                            var detectionProps = new[]
+                            {
+                                item.Detection1, item.Detection2, item.Detection3, item.Detection4,
+                                item.Detection5, item.Detection6, item.Detection7, item.Detection8,
+                                item.Detection9, item.Detection10, item.Detection11, item.Detection12,
+                                item.Detection13, item.Detection14, item.Detection15, item.Detection16,
+                                item.Detection17, item.Detection18, item.Detection19, item.Detection20,
+                                item.Detection21, item.Detection22
+                            };
+
+                            var validColumns = new List<int>();
+                            for (int i = 0; i < detectionProps.Length; i++)
+                            {
+                                if (detectionProps[i].HasValue)
+                                {
+                                    validColumns.Add(i + 1);
+                                }
+                            }
 
                             if (validColumns.Count > 0)
                             {
                                 int maxIndex = validColumns.Max();
                                 int minIndex = validColumns.Min();
-                                int continuousCount =
-                                    DetectionDataConverter.GetContinuousColumnCount(
-                                        item.DetectionData
-                                    );
+                                
+                                // 计算连续列数
+                                int continuousCount = 0;
+                                for (int i = 1; i <= maxIndex; i++)
+                                {
+                                    if (validColumns.Contains(i))
+                                    {
+                                        continuousCount = i;
+                                    }
+                                    else
+                                    {
+                                        break;
+                                    }
+                                }
 
                                 // 检查是否有缺失的列（不连续）
                                 bool isContinuous = continuousCount == maxIndex && minIndex == 1;
@@ -365,6 +359,13 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
 
                 result.ParsedData.Add(item);
             }
+
+            // 检查炉号重复（格式：[产线数字][班次汉字][8位日期]-[炉次号]）
+            // 只检查符合规则的有效数据
+            CheckDuplicateFurnaceNo(result.ParsedData);
+
+            // 检查数据库中已存在的炉号
+            await CheckExistingFurnaceNoInDatabase(result.ParsedData);
         }
         catch (Exception ex)
         {
@@ -441,6 +442,9 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
             // 开始行 = 表头(1) + 跳过行数
             int startRowIndex = 1 + skipRows;
 
+            // 用于记录实体和行号的映射关系（用于重复检查）
+            var entityRowMap = new Dictionary<RawDataEntity, int>();
+
             // 处理数据行
             for (int rowIndex = startRowIndex; rowIndex <= sheet.LastRowNum; rowIndex++)
             {
@@ -449,21 +453,24 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
                     continue;
 
                 var entity = new RawDataEntity();
+                // 设置行号（Excel行号，从1开始，rowIndex是Excel行索引，所以行号是rowIndex+1）
+                entity.SortCode = rowIndex + 1;
                 var errors = new List<string>();
 
                 try
                 {
                     // 读取基础字段
-                    entity.ProdDate = GetCellValue<DateTime?>(row, headerIndexes, "日期");
+                    entity.DetectionDate = GetCellValue<DateTime?>(row, headerIndexes, "日期");
                     entity.FurnaceNo = GetCellValue<string>(row, headerIndexes, "炉号");
                     entity.Width = GetCellValue<decimal?>(row, headerIndexes, "宽度");
                     entity.CoilWeight = GetCellValue<decimal?>(row, headerIndexes, "带材重量");
+                    // 读取AA列（索引26）和AB列（索引27）
+                    entity.BreakCount = GetCellValueByIndex<int?>(row, 26);
+                    entity.SingleCoilWeight = GetCellValueByIndex<decimal?>(row, 27);
 
                     // 动态读取所有检测数据列（使用JSON字段存储，支持任意数量的检测列）
-                    var detectionData = new Dictionary<int, decimal?>();
-
-                    // 从Excel中读取检测数据列（尝试读取到100列，实际可能更少）
-                    for (int colIndex = 1; colIndex <= 100; colIndex++)
+                    // 检测数据列1-22（固定22列）
+                    for (int colIndex = 1; colIndex <= 22; colIndex++)
                     {
                         decimal? detectionValue = null;
 
@@ -484,59 +491,18 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
                                 detectionValue = GetCellValue<decimal?>(row, headerIndexes, header);
                                 if (detectionValue.HasValue)
                                 {
-                                    detectionData[colIndex] = detectionValue.Value;
+                                    // 使用反射设置对应的Detection属性
+                                    var propName = $"Detection{colIndex}";
+                                    var prop = typeof(RawDataEntity).GetProperty(propName);
+                                    prop?.SetValue(entity, detectionValue.Value);
                                     break;
                                 }
                             }
                         }
-
-                        // 如果连续多列都没有值，停止读取（假设检测列是连续的）
-                        if (!detectionValue.HasValue && detectionData.Count > 0)
-                        {
-                            // 如果已经有数据，但当前列没有值，可能是到了末尾
-                            // 继续检查下一列，如果下一列也没有值，则停止
-                            bool nextColumnHasValue = false;
-                            foreach (
-                                var nextHeader in new[]
-                                {
-                                    (colIndex + 1).ToString(),
-                                    $"检测{colIndex + 1}",
-                                    $"列{colIndex + 1}",
-                                    $"第{colIndex + 1}列",
-                                    $"检测列{colIndex + 1}",
-                                }
-                            )
-                            {
-                                if (headerIndexes.ContainsKey(nextHeader))
-                                {
-                                    var nextValue = GetCellValue<decimal?>(
-                                        row,
-                                        headerIndexes,
-                                        nextHeader
-                                    );
-                                    if (nextValue.HasValue)
-                                    {
-                                        nextColumnHasValue = true;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if (!nextColumnHasValue)
-                            {
-                                break; // 连续两列都没有值，停止读取
-                            }
-                        }
-                    }
-
-                    // 将检测数据保存到JSON字段
-                    if (detectionData.Count > 0)
-                    {
-                        entity.DetectionData = DetectionDataConverter.ToJson(detectionData);
                     }
 
                     // 校验必填字段
-                    if (entity.ProdDate == null)
+                    if (entity.DetectionDate == null)
                         errors.Add("日期不能为空");
                     if (string.IsNullOrWhiteSpace(entity.FurnaceNo))
                         errors.Add("炉号不能为空");
@@ -559,15 +525,27 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
                             entity.LineNo = parseResult.LineNoNumeric;
                             entity.Shift = parseResult.Shift;
                             entity.ShiftNumeric = parseResult.ShiftNumeric;
-                            entity.FurnaceNoParsed = parseResult.FurnaceNoNumeric;
+                            entity.FurnaceBatchNo = parseResult.FurnaceNoNumeric;
                             entity.CoilNo = parseResult.CoilNoNumeric;
                             entity.SubcoilNo = parseResult.SubcoilNoNumeric;
                             entity.FeatureSuffix = parseResult.FeatureSuffix;
 
-                            // 如果解析出的日期与输入的日期不一致，使用解析出的日期
-                            if (parseResult.ProdDate.HasValue && entity.ProdDate == null)
+                            // 生产日期（ProdDate）：优先使用从原始炉号（FurnaceNo）中解析出的日期
+                            // 如果炉号解析失败，使用检测日期（DetectionDate，从Excel"日期"列读取）作为后备
+                            if (parseResult.ProdDate.HasValue)
                             {
                                 entity.ProdDate = parseResult.ProdDate;
+                            }
+                            else if (entity.DetectionDate.HasValue)
+                            {
+                                entity.ProdDate = entity.DetectionDate;
+                            }
+
+                            // 计算格式化炉号（格式：[产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号]）
+                            var furnaceNoObj = FurnaceNo.Parse(entity.FurnaceNo);
+                            if (furnaceNoObj.IsValid)
+                            {
+                                entity.FurnaceNoFormatted = furnaceNoObj.GetFurnaceNo();
                             }
 
                             // 判断是否为有效数据（符合炉号解析规则）
@@ -606,24 +584,44 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
                         }
                         else
                         {
-                            // 获取有效检测列信息用于错误提示（使用JSON字段）
-                            var detectionValues = DetectionDataConverter.FromJson(
-                                entity.DetectionData
-                            );
-                            var validColumns = detectionValues
-                                .Where(kvp => kvp.Value.HasValue)
-                                .Select(kvp => kvp.Key)
-                                .OrderBy(k => k)
-                                .ToList();
+                            // 获取有效检测列信息用于错误提示（从detection1-detection22字段读取）
+                            var detectionProps = new[]
+                            {
+                                entity.Detection1, entity.Detection2, entity.Detection3, entity.Detection4,
+                                entity.Detection5, entity.Detection6, entity.Detection7, entity.Detection8,
+                                entity.Detection9, entity.Detection10, entity.Detection11, entity.Detection12,
+                                entity.Detection13, entity.Detection14, entity.Detection15, entity.Detection16,
+                                entity.Detection17, entity.Detection18, entity.Detection19, entity.Detection20,
+                                entity.Detection21, entity.Detection22
+                            };
+
+                            var validColumns = new List<int>();
+                            for (int i = 0; i < detectionProps.Length; i++)
+                            {
+                                if (detectionProps[i].HasValue)
+                                {
+                                    validColumns.Add(i + 1);
+                                }
+                            }
 
                             if (validColumns.Count > 0)
                             {
                                 int maxIndex = validColumns.Max();
                                 int minIndex = validColumns.Min();
-                                int continuousCount =
-                                    DetectionDataConverter.GetContinuousColumnCount(
-                                        entity.DetectionData
-                                    );
+                                
+                                // 计算连续列数
+                                int continuousCount = 0;
+                                for (int i = 1; i <= maxIndex; i++)
+                                {
+                                    if (validColumns.Contains(i))
+                                    {
+                                        continuousCount = i;
+                                    }
+                                    else
+                                    {
+                                        break;
+                                    }
+                                }
 
                                 // 检查是否有缺失的列（不连续）
                                 bool isContinuous = continuousCount == maxIndex && minIndex == 1;
@@ -669,6 +667,8 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
                         entity.LastModifyUserId = entity.CreatorUserId;
                         entity.LastModifyTime = entity.CreatorTime;
                         successEntities.Add(entity);
+                        // 记录实体和行号的映射关系
+                        entityRowMap[entity] = rowIndex;
                     }
                 }
                 catch (Exception ex)
@@ -686,25 +686,14 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
                 }
             }
 
+            // 检查炉号重复（格式：[产线数字][班次汉字][8位日期]-[炉次号]）
+            CheckDuplicateFurnaceNoForImport(successEntities, errorDetails, headerIndexes, sheet, entityRowMap);
+
             // 批量插入成功的数据
             if (successEntities.Count > 0)
             {
-                // 按排序规则排序
-                successEntities = successEntities
-                    .OrderBy(e => e.ProdDate)
-                    .ThenBy(e => e.FurnaceNoParsed ?? int.MaxValue)
-                    .ThenBy(e => e.CoilNo ?? int.MaxValue)
-                    .ThenBy(e => e.SubcoilNo ?? int.MaxValue)
-                    .ThenBy(e => e.LineNo ?? int.MaxValue)
-                    .ThenBy(e => e.ShiftNumeric ?? int.MaxValue)
-                    .ToList();
-
-                // 设置排序码
-                for (int i = 0; i < successEntities.Count; i++)
-                {
-                    successEntities[i].SortCode = i + 1;
-                }
-
+                // 注意：SortCode已经在读取Excel时设置为Excel行号，不需要重新设置
+                // 如果需要按业务规则排序，可以在这里排序，但SortCode保持为Excel行号
                 await _repository.AsInsertable(successEntities).ExecuteCommandAsync();
             }
 
@@ -824,20 +813,45 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
                     {
                         Id = r.Id,
                         ProdDate = r.ProdDate,
+                        DetectionDate = r.DetectionDate,
                         FurnaceNo = r.FurnaceNo,
                         LineNo = r.LineNo,
                         Shift = r.Shift,
-                        FurnaceNoParsed = r.FurnaceNoParsed,
+                        FurnaceBatchNo = r.FurnaceBatchNo,
                         CoilNo = r.CoilNo,
                         SubcoilNo = r.SubcoilNo,
                         FeatureSuffix = r.FeatureSuffix,
                         Width = r.Width,
                         CoilWeight = r.CoilWeight,
+                        BreakCount = r.BreakCount,
+                        SingleCoilWeight = r.SingleCoilWeight,
                         ProductSpecId = r.ProductSpecId,
                         ProductSpecCode = r.ProductSpecCode,
                         ProductSpecName = r.ProductSpecName,
                         DetectionColumns = r.DetectionColumns,
-                        DetectionData = r.DetectionData,
+                        // 检测列1-22
+                        Detection1 = r.Detection1,
+                        Detection2 = r.Detection2,
+                        Detection3 = r.Detection3,
+                        Detection4 = r.Detection4,
+                        Detection5 = r.Detection5,
+                        Detection6 = r.Detection6,
+                        Detection7 = r.Detection7,
+                        Detection8 = r.Detection8,
+                        Detection9 = r.Detection9,
+                        Detection10 = r.Detection10,
+                        Detection11 = r.Detection11,
+                        Detection12 = r.Detection12,
+                        Detection13 = r.Detection13,
+                        Detection14 = r.Detection14,
+                        Detection15 = r.Detection15,
+                        Detection16 = r.Detection16,
+                        Detection17 = r.Detection17,
+                        Detection18 = r.Detection18,
+                        Detection19 = r.Detection19,
+                        Detection20 = r.Detection20,
+                        Detection21 = r.Detection21,
+                        Detection22 = r.Detection22,
                         IsValidData = r.IsValidData,
                         ImportError = r.ImportError,
                         ImportStatus = r.ImportStatus,
@@ -848,9 +862,45 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
                         ProdDateStr = r.ProdDate.HasValue
                             ? r.ProdDate.Value.ToString("yyyy/MM/dd")
                             : string.Empty,
+                        DetectionDateStr = r.DetectionDate.HasValue
+                            ? r.DetectionDate.Value.ToString("yyyy/MM/dd")
+                            : string.Empty,
                     }
             )
             .ToListAsync();
+
+        // 计算炉号字段（格式：[产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号]）
+        foreach (var item in data)
+        {
+            try
+            {
+                // 使用FurnaceNo.GetFurnaceNo()方法生成格式化的炉号
+                var furnaceNoObj = FurnaceNo.Parse(item.FurnaceNo);
+                if (furnaceNoObj.IsValid)
+                {
+                    item.FurnaceNoFormatted = furnaceNoObj.GetFurnaceNo();
+                }
+                else
+                {
+                    // 如果解析失败，尝试从已有字段构建
+                    if (item.ProdDate.HasValue && item.LineNo.HasValue && !string.IsNullOrEmpty(item.Shift) 
+                        && item.FurnaceBatchNo.HasValue && item.CoilNo.HasValue && item.SubcoilNo.HasValue)
+                    {
+                        var dateStr = item.ProdDate.Value.ToString("yyyyMMdd");
+                        item.FurnaceNoFormatted = $"{item.LineNo}{item.Shift}{dateStr}-{item.FurnaceBatchNo}-{item.CoilNo}-{item.SubcoilNo}";
+                    }
+                    else
+                    {
+                        item.FurnaceNoFormatted = item.FurnaceNo ?? string.Empty;
+                    }
+                }
+            }
+            catch
+            {
+                // 如果计算失败，使用原始炉号
+                item.FurnaceNoFormatted = item.FurnaceNo ?? string.Empty;
+            }
+        }
 
         // 自定义排序
         if (!string.IsNullOrEmpty(input.SortRules))
@@ -988,6 +1038,307 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
         catch
         {
             return default(T);
+        }
+    }
+
+    /// <summary>
+    /// 按列索引获取单元格值.
+    /// </summary>
+    private T GetCellValueByIndex<T>(IRow row, int columnIndex)
+    {
+        if (row == null || columnIndex < 0)
+            return default(T);
+
+        var cell = row.GetCell(columnIndex);
+        if (cell == null)
+            return default(T);
+
+        try
+        {
+            if (typeof(T) == typeof(int?) || typeof(T) == typeof(int))
+            {
+                if (cell.CellType == CellType.Numeric)
+                {
+                    return (T)(object)(int)cell.NumericCellValue;
+                }
+                if (int.TryParse(cell.ToString(), out var intVal))
+                {
+                    return (T)(object)intVal;
+                }
+                return default(T);
+            }
+
+            if (typeof(T) == typeof(decimal?) || typeof(T) == typeof(decimal))
+            {
+                if (cell.CellType == CellType.Numeric)
+                {
+                    return (T)(object)(decimal)cell.NumericCellValue;
+                }
+                if (decimal.TryParse(cell.ToString(), out var dec))
+                {
+                    return (T)(object)dec;
+                }
+                return default(T);
+            }
+
+            if (typeof(T) == typeof(DateTime?) || typeof(T) == typeof(DateTime))
+            {
+                if (cell.CellType == CellType.Numeric && DateUtil.IsCellDateFormatted(cell))
+                {
+                    return (T)(object)cell.DateCellValue;
+                }
+                if (DateTime.TryParse(cell.ToString(), out var date))
+                {
+                    return (T)(object)date;
+                }
+                return default(T);
+            }
+
+            if (typeof(T) == typeof(string))
+            {
+                return (T)(object)(cell.ToString()?.Trim() ?? string.Empty);
+            }
+
+            return (T)Convert.ChangeType(cell.ToString(), typeof(T));
+        }
+        catch
+        {
+            return default(T);
+        }
+    }
+
+    /// <summary>
+    /// 检查炉号重复（用于预览）.
+    /// 炉号格式：[产线数字][班次汉字][8位日期]-[炉次号]
+    /// 只检查符合规则的有效数据，标记为重复但不直接设为失败，让用户选择保留哪条
+    /// </summary>
+    private void CheckDuplicateFurnaceNo(List<RawDataPreviewItem> items)
+    {
+        // 构建标准炉号字典：标准炉号 -> 行号列表
+        var furnaceNoDict = new Dictionary<string, List<int>>();
+
+        for (int i = 0; i < items.Count; i++)
+        {
+            var item = items[i];
+            // 只检查解析成功的有效数据（符合规则的数据）
+            if (item.IsValidData == 1 && 
+                item.LineNo.HasValue && 
+                !string.IsNullOrWhiteSpace(item.Shift) && 
+                item.ProdDate.HasValue && 
+                item.FurnaceBatchNo.HasValue)
+            {
+                // 构建标准炉号：[产线数字][班次汉字][8位日期]-[炉次号]
+                var dateStr = item.ProdDate.Value.ToString("yyyyMMdd");
+                var standardFurnaceNo = $"{item.LineNo}{item.Shift}{dateStr}-{item.FurnaceBatchNo}";
+                item.StandardFurnaceNo = standardFurnaceNo;
+
+                if (!furnaceNoDict.ContainsKey(standardFurnaceNo))
+                {
+                    furnaceNoDict[standardFurnaceNo] = new List<int>();
+                }
+                furnaceNoDict[standardFurnaceNo].Add(i);
+            }
+        }
+
+        // 检查重复并标记（不直接设为失败，让用户选择保留哪条）
+        foreach (var kvp in furnaceNoDict)
+        {
+            if (kvp.Value.Count > 1)
+            {
+                // 有重复的炉号，标记为重复状态
+                var duplicateRowNumbers = string.Join("、", kvp.Value.Select(idx => $"第{items[idx].SortCode}行"));
+                var warningMessage = $"炉号重复：标准炉号 {kvp.Key} 在以下行出现重复：{duplicateRowNumbers}，请选择保留哪条数据";
+
+                foreach (var rowIndex in kvp.Value)
+                {
+                    var item = items[rowIndex];
+                    // 标记为重复，但不直接设为失败
+                    item.IsDuplicateInFile = true;
+                    // 如果状态还是success，改为duplicate
+                    if (item.Status == "success")
+                    {
+                        item.Status = "duplicate";
+                    }
+                    // 追加警告信息
+                    if (string.IsNullOrWhiteSpace(item.ErrorMessage))
+                    {
+                        item.ErrorMessage = warningMessage;
+                    }
+                    else
+                    {
+                        item.ErrorMessage = $"{item.ErrorMessage}; {warningMessage}";
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 检查数据库中已存在的炉号（用于预览）.
+    /// 如果本次Excel导入的炉号在数据库中已经存在，标记为将被忽略
+    /// </summary>
+    private async Task CheckExistingFurnaceNoInDatabase(List<RawDataPreviewItem> items)
+    {
+        // 只检查符合规则的有效数据
+        var validItems = items
+            .Where(item => item.IsValidData == 1 && 
+                          item.LineNo.HasValue && 
+                          !string.IsNullOrWhiteSpace(item.Shift) && 
+                          item.ProdDate.HasValue && 
+                          item.FurnaceBatchNo.HasValue &&
+                          !string.IsNullOrWhiteSpace(item.StandardFurnaceNo))
+            .ToList();
+
+        if (validItems.Count == 0)
+            return;
+
+        // 构建标准炉号列表
+        var standardFurnaceNos = validItems
+            .Select(item => item.StandardFurnaceNo)
+            .Distinct()
+            .ToList();
+
+        // 查询数据库中已存在的标准炉号
+        // 标准炉号格式：[产线数字][班次汉字][8位日期]-[炉次号]
+        var existingFurnaceNos = new HashSet<string>();
+        
+        // 查询数据库中所有有效数据，构建标准炉号并检查
+        var dbEntities = await _repository
+            .AsQueryable()
+            .Where(e => e.IsValidData == 1 && 
+                       e.LineNo.HasValue && 
+                       !string.IsNullOrWhiteSpace(e.Shift) && 
+                       e.ProdDate.HasValue && 
+                       e.FurnaceBatchNo.HasValue)
+            .Select(e => new
+            {
+                e.LineNo,
+                e.Shift,
+                e.ProdDate,
+                e.FurnaceBatchNo
+            })
+            .ToListAsync();
+
+        foreach (var entity in dbEntities)
+        {
+            var dateStr = entity.ProdDate.Value.ToString("yyyyMMdd");
+            var standardFurnaceNo = $"{entity.LineNo}{entity.Shift}{dateStr}-{entity.FurnaceBatchNo}";
+            if (standardFurnaceNos.Contains(standardFurnaceNo))
+            {
+                existingFurnaceNos.Add(standardFurnaceNo);
+            }
+        }
+
+        // 标记数据库中已存在的炉号
+        foreach (var item in validItems)
+        {
+            if (existingFurnaceNos.Contains(item.StandardFurnaceNo))
+            {
+                item.ExistsInDatabase = true;
+                // 如果状态还是success或duplicate，改为exists_in_db
+                if (item.Status == "success" || item.Status == "duplicate")
+                {
+                    item.Status = "exists_in_db";
+                }
+                // 追加提示信息
+                var infoMessage = $"炉号 {item.StandardFurnaceNo} 在数据库中已存在，将被忽略，不会保存到数据库";
+                if (string.IsNullOrWhiteSpace(item.ErrorMessage))
+                {
+                    item.ErrorMessage = infoMessage;
+                }
+                else
+                {
+                    item.ErrorMessage = $"{item.ErrorMessage}; {infoMessage}";
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 检查炉号重复（用于导入）.
+    /// 炉号格式：[产线数字][班次汉字][8位日期]-[炉次号]
+    /// </summary>
+    private void CheckDuplicateFurnaceNoForImport(
+        List<RawDataEntity> successEntities,
+        List<RawDataImportErrorDetail> errorEntities,
+        Dictionary<string, int> headerIndexes,
+        ISheet sheet,
+        Dictionary<RawDataEntity, int> entityRowMap)
+    {
+        // 构建标准炉号字典：标准炉号 -> 实体列表（包含行号信息）
+        var furnaceNoDict = new Dictionary<string, List<(RawDataEntity Entity, int RowIndex)>>();
+
+        foreach (var entity in successEntities)
+        {
+            // 只检查解析成功的有效数据
+            if (entity.IsValidData == 1 && 
+                entity.LineNo.HasValue && 
+                !string.IsNullOrWhiteSpace(entity.Shift) && 
+                entity.ProdDate.HasValue && 
+                entity.FurnaceBatchNo.HasValue)
+            {
+                // 构建标准炉号：[产线数字][班次汉字][8位日期]-[炉次号]
+                var dateStr = entity.ProdDate.Value.ToString("yyyyMMdd");
+                var standardFurnaceNo = $"{entity.LineNo}{entity.Shift}{dateStr}-{entity.FurnaceBatchNo}";
+
+                if (!furnaceNoDict.ContainsKey(standardFurnaceNo))
+                {
+                    furnaceNoDict[standardFurnaceNo] = new List<(RawDataEntity, int)>();
+                }
+                // 从映射中获取行号
+                var rowIndex = entityRowMap.ContainsKey(entity) ? entityRowMap[entity] : 0;
+                furnaceNoDict[standardFurnaceNo].Add((entity, rowIndex));
+            }
+        }
+
+        // 检查重复并设置错误信息
+        var entitiesToRemove = new List<RawDataEntity>();
+        foreach (var kvp in furnaceNoDict)
+        {
+            if (kvp.Value.Count > 1)
+            {
+                // 有重复的炉号，为所有重复的实体设置错误信息
+                var duplicateItems = kvp.Value;
+                var rowNumbers = string.Join("、", duplicateItems.Select(item => $"第{item.RowIndex + 1}行")); // +1是因为Excel行号从1开始
+                var errorMessage = $"炉号重复：标准炉号 {kvp.Key} 在以下行出现重复：{rowNumbers}，请修改后重新导入";
+
+                foreach (var (entity, rowIndex) in duplicateItems)
+                {
+                    entity.ImportStatus = 1;
+                    entity.IsValidData = 0;
+                    // 如果已有错误信息，追加；否则设置新错误信息
+                    if (string.IsNullOrWhiteSpace(entity.ImportError))
+                    {
+                        entity.ImportError = errorMessage;
+                    }
+                    else
+                    {
+                        entity.ImportError = $"{entity.ImportError}; {errorMessage}";
+                    }
+
+                    // 标记为需要移除
+                    entitiesToRemove.Add(entity);
+
+                    // 添加到错误详情列表
+                    var row = sheet?.GetRow(rowIndex);
+                    errorEntities.Add(new RawDataImportErrorDetail
+                    {
+                        RowIndex = rowIndex + 1, // Excel行号从1开始
+                        ErrorMessage = entity.ImportError,
+                        RawData = row != null ? GetRowData(row, headerIndexes) : new Dictionary<string, object>
+                        {
+                            { "FurnaceNo", entity.FurnaceNo ?? "" },
+                            { "ProdDate", entity.ProdDate?.ToString("yyyy-MM-dd") ?? "" }
+                        }
+                    });
+                }
+            }
+        }
+
+        // 从成功列表移除重复的实体
+        foreach (var entity in entitiesToRemove)
+        {
+            successEntities.Remove(entity);
         }
     }
 
@@ -1173,10 +1524,25 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
         List<ProductSpecEntity> productSpecs
     )
     {
-        // 1. 从JSON字段获取检测数据
-        var detectionData = string.IsNullOrWhiteSpace(entity.DetectionData)
-            ? new Dictionary<int, decimal?>()
-            : DetectionDataConverter.FromJson(entity.DetectionData);
+        // 1. 从detection1-detection22字段获取检测数据
+        var detectionData = new Dictionary<int, decimal?>();
+        var detectionProps = new[]
+        {
+            entity.Detection1, entity.Detection2, entity.Detection3, entity.Detection4,
+            entity.Detection5, entity.Detection6, entity.Detection7, entity.Detection8,
+            entity.Detection9, entity.Detection10, entity.Detection11, entity.Detection12,
+            entity.Detection13, entity.Detection14, entity.Detection15, entity.Detection16,
+            entity.Detection17, entity.Detection18, entity.Detection19, entity.Detection20,
+            entity.Detection21, entity.Detection22
+        };
+
+        for (int i = 0; i < detectionProps.Length; i++)
+        {
+            if (detectionProps[i].HasValue)
+            {
+                detectionData[i + 1] = detectionProps[i].Value;
+            }
+        }
 
         // 2. 获取当前行数据中所有有效（非空）的列索引集合
         var validColumns = detectionData
@@ -1190,8 +1556,19 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
         }
 
         // 3. 获取连续的有效检测列数量（从1开始连续到最后一个有效列）
-        int continuousCount = DetectionDataConverter.GetContinuousColumnCount(entity.DetectionData);
         int maxValidIndex = validColumns.Max();
+        int continuousCount = 0;
+        for (int i = 1; i <= maxValidIndex; i++)
+        {
+            if (validColumns.Contains(i))
+            {
+                continuousCount = i;
+            }
+            else
+            {
+                break;
+            }
+        }
 
         // 3. 遍历规格进行匹配
         foreach (var spec in productSpecs)
@@ -1351,19 +1728,20 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
 
             case "furnaceno":
             case "furnacenoparsed":
+            case "furnacebatchno":
                 return isDesc
-                    ? data.OrderByDescending(t => t.FurnaceNoParsed ?? int.MaxValue)
-                    : data.OrderBy(t => t.FurnaceNoParsed ?? int.MaxValue);
+                    ? data.OrderByDescending(t => t.FurnaceBatchNo ?? int.MaxValue)
+                    : data.OrderBy(t => t.FurnaceBatchNo ?? int.MaxValue);
 
             case "coilno":
                 return isDesc
-                    ? data.OrderByDescending(t => t.CoilNo ?? int.MaxValue)
-                    : data.OrderBy(t => t.CoilNo ?? int.MaxValue);
+                    ? data.OrderByDescending(t => t.CoilNo ?? decimal.MaxValue)
+                    : data.OrderBy(t => t.CoilNo ?? decimal.MaxValue);
 
             case "subcoilno":
                 return isDesc
-                    ? data.OrderByDescending(t => t.SubcoilNo ?? int.MaxValue)
-                    : data.OrderBy(t => t.SubcoilNo ?? int.MaxValue);
+                    ? data.OrderByDescending(t => t.SubcoilNo ?? decimal.MaxValue)
+                    : data.OrderBy(t => t.SubcoilNo ?? decimal.MaxValue);
 
             case "lineno":
                 return isDesc
@@ -1409,19 +1787,20 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
 
             case "furnaceno":
             case "furnacenoparsed":
+            case "furnacebatchno":
                 return isDesc
-                    ? orderedData.ThenByDescending(t => t.FurnaceNoParsed ?? int.MaxValue)
-                    : orderedData.ThenBy(t => t.FurnaceNoParsed ?? int.MaxValue);
+                    ? orderedData.ThenByDescending(t => t.FurnaceBatchNo ?? int.MaxValue)
+                    : orderedData.ThenBy(t => t.FurnaceBatchNo ?? int.MaxValue);
 
             case "coilno":
                 return isDesc
-                    ? orderedData.ThenByDescending(t => t.CoilNo ?? int.MaxValue)
-                    : orderedData.ThenBy(t => t.CoilNo ?? int.MaxValue);
+                    ? orderedData.ThenByDescending(t => t.CoilNo ?? decimal.MaxValue)
+                    : orderedData.ThenBy(t => t.CoilNo ?? decimal.MaxValue);
 
             case "subcoilno":
                 return isDesc
-                    ? orderedData.ThenByDescending(t => t.SubcoilNo ?? int.MaxValue)
-                    : orderedData.ThenBy(t => t.SubcoilNo ?? int.MaxValue);
+                    ? orderedData.ThenByDescending(t => t.SubcoilNo ?? decimal.MaxValue)
+                    : orderedData.ThenBy(t => t.SubcoilNo ?? decimal.MaxValue);
 
             case "lineno":
                 return isDesc
@@ -1455,9 +1834,9 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
     private List<RawDataListOutput> ApplyDefaultSort(List<RawDataListOutput> data)
     {
         return data.OrderBy(t => t.ProdDate ?? DateTime.MinValue)
-            .ThenBy(t => t.FurnaceNoParsed ?? int.MaxValue)
-            .ThenBy(t => t.CoilNo ?? int.MaxValue)
-            .ThenBy(t => t.SubcoilNo ?? int.MaxValue)
+            .ThenBy(t => t.FurnaceBatchNo ?? int.MaxValue)
+            .ThenBy(t => t.CoilNo ?? decimal.MaxValue)
+            .ThenBy(t => t.SubcoilNo ?? decimal.MaxValue)
             .ThenBy(t => t.LineNo ?? int.MaxValue)
             .ThenBy(t => t.ShiftNumeric ?? int.MaxValue)
             .ToList();

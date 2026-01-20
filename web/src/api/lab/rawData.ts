@@ -123,9 +123,19 @@ export async function uploadAndParse(data: Step1UploadAndParseInput): Promise<St
     const convertedPreview: DataPreviewResult = {
       headers: headerOrder,
       rows: parsedData.map((item: any) => {
-        // 处理detectionData，可能是JSON字符串或对象
+        // 处理检测数据：优先使用detection1-detection22字段，如果没有则从detectionData JSON解析（向后兼容）
         let detectionDataObj = {};
-        if (item.detectionData) {
+        // 检查是否有detection1字段（新格式）
+        if (item.detection1 !== undefined) {
+          // 从detection1-detection22字段构建detectionData对象
+          for (let i = 1; i <= 22; i++) {
+            const key = `detection${i}`;
+            if (item[key] !== null && item[key] !== undefined) {
+              detectionDataObj[i] = item[key];
+            }
+          }
+        } else if (item.detectionData) {
+          // 旧格式：从JSON解析（向后兼容）
           if (typeof item.detectionData === 'string') {
             try {
               detectionDataObj = JSON.parse(item.detectionData);
@@ -146,6 +156,17 @@ export async function uploadAndParse(data: Step1UploadAndParseInput): Promise<St
           width: item.width || item.Width,
           coilWeight: item.coilWeight || item.CoilWeight,
           detectionData: detectionDataObj,
+          // 同时保留detection1-detection22字段（如果存在）
+          ...(item.detection1 !== undefined ? {
+            detection1: item.detection1, detection2: item.detection2, detection3: item.detection3,
+            detection4: item.detection4, detection5: item.detection5, detection6: item.detection6,
+            detection7: item.detection7, detection8: item.detection8, detection9: item.detection9,
+            detection10: item.detection10, detection11: item.detection11, detection12: item.detection12,
+            detection13: item.detection13, detection14: item.detection14, detection15: item.detection15,
+            detection16: item.detection16, detection17: item.detection17, detection18: item.detection18,
+            detection19: item.detection19, detection20: item.detection20, detection21: item.detection21,
+            detection22: item.detection22
+          } : {}),
           isValidData: (item.isValidData === 1 || item.IsValidData === 1),
           furnaceNoParsed: item.furnaceNoParsed || item.FurnaceNoParsed || item.furnaceNoParsed,
           coilNo: item.coilNo || item.CoilNo,
@@ -154,6 +175,13 @@ export async function uploadAndParse(data: Step1UploadAndParseInput): Promise<St
           productSpecId: item.productSpecId || item.ProductSpecId,
           productSpecName: item.productSpecName || item.ProductSpecName,
           rowIndex: 0, // 将在组件中设置
+          // 炉号重复相关字段
+          status: item.status || item.Status || (item.isValidData ? 'success' : 'failed'),
+          errorMessage: item.errorMessage || item.ErrorMessage,
+          isDuplicateInFile: item.isDuplicateInFile || item.IsDuplicateInFile || false,
+          existsInDatabase: item.existsInDatabase || item.ExistsInDatabase || false,
+          standardFurnaceNo: item.standardFurnaceNo || item.StandardFurnaceNo,
+          selectedForImport: item.selectedForImport || item.SelectedForImport,
         };
       }),
       statistics: {
@@ -186,6 +214,27 @@ export async function uploadAndParse(data: Step1UploadAndParseInput): Promise<St
 
   // 如果没有预览数据，返回原始响应
   return response;
+}
+
+// ========== 第二步：数据预览与重复数据处理 ==========
+
+// 更新重复数据的选择结果（将未选择的数据标记为无效）
+export function updateDuplicateSelections(importSessionId: string, data: { rawDataId: string; isValidData: boolean }[]): Promise<void> {
+  console.log('[API] updateDuplicateSelections 被调用', { importSessionId, dataCount: data.length, data });
+  const url = Api.ImportSessionPrefix + '/' + importSessionId + '/duplicate-selections';
+  console.log('[API] 请求URL:', url);
+  console.log('[API] 请求数据:', { items: data });
+  
+  return defHttp.put({ 
+    url: url, 
+    data: { items: data } 
+  }).then((response) => {
+    console.log('[API] updateDuplicateSelections 成功:', response);
+    return response;
+  }).catch((error) => {
+    console.error('[API] updateDuplicateSelections 失败:', error);
+    throw error;
+  });
 }
 
 // ========== 第二步：产品规格识别 ==========
@@ -264,6 +313,11 @@ export function completeImport(importSessionId: string): Promise<void> {
 // 导入Excel（旧版接口，保持兼容）
 export function importRawData(data) {
   return defHttp.post({ url: Api.Prefix + '/import', data });
+}
+
+// 简化导入Excel（直接上传、解析、保存，支持炉号去重）
+export function simpleImportRawData(data: SimpleImportInput) {
+  return defHttp.post<SimpleImportOutput>({ url: Api.ImportSessionPrefix + '/simple-import', data });
 }
 
 // 获取列表

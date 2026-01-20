@@ -48,3 +48,22 @@ export function setTemplateAsDefault(id: string) {
 export function validateTemplateConfig(configJson: string) {
     return defHttp.post({ url: Api.Prefix + '/validate-config', data: { configJson } });
 }
+
+// 解析Excel表头
+export function parseExcelHeaders(data: any) {
+    return defHttp.post({ url: Api.Prefix + '/parse-headers', data });
+}
+
+// 获取系统默认字段
+export function getSystemFields(templateCode: string) {
+    return defHttp.get({ url: Api.Prefix + '/system-fields', params: { templateCode } });
+}
+
+// 验证Excel文件与模板配置
+export function validateExcelAgainstTemplate(data: {
+    templateCode: string;
+    fileName: string;
+    fileData: string;
+}) {
+    return defHttp.post({ url: Api.Prefix + '/validate-excel', data });
+}

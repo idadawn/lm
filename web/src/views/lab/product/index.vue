@@ -148,7 +148,7 @@
   </div>
 </template>
 <script lang="ts" setup>
-  import { ref, reactive, h, onMounted } from 'vue';
+  import { ref, reactive, h, onMounted, onUnmounted, nextTick } from 'vue';
   import { getProductSpecList, delProductSpec, updateProductSpec, getProductSpecVersionList } from '/@/api/lab/product';
   import { BasicForm, useForm } from '/@/components/Form';
   import { useMessage } from '/@/hooks/web/useMessage';
@@ -165,6 +165,9 @@
   const { t } = useI18n();
   const [registerFormModal, { openModal: openFormModal }] = useModal();
   const [registerPublicAttributeListModal, { openModal: openPublicAttributeListModal }] = useModal();
+
+  // 组件挂载状态
+  const isMounted = ref(true);
 
   // 数据列表
   const dataList = ref<any[]>([]);
@@ -246,6 +249,7 @@
 
   // 更新分页数据（前端分页）
   function updatePagedData() {
+    if (!isMounted.value) return;
     const start = (pagination.current - 1) * pagination.pageSize;
     const end = start + pagination.pageSize;
     dataList.value = allDataList.value.slice(start, end);
@@ -289,6 +293,9 @@
   async function loadVersionInfoForList(productSpecs: any[]) {
     // 只获取当前版本的版本信息
     const promises = productSpecs.map(async (spec) => {
+      // 如果组件已卸载，停止执行
+      if (!isMounted.value) return;
+      
       // 如果缓存中有且数据中也有，直接使用缓存
       if (versionInfoCache.value.has(spec.id) && spec._currentVersion) {
         return;
@@ -296,6 +303,10 @@
       
       try {
         const response = await getProductSpecVersionList(spec.id);
+        
+        // 再次检查组件是否仍然挂载
+        if (!isMounted.value) return;
+        
         // 确保返回的是数组格式（可能被包装在 data 字段中）
         const versions = Array.isArray(response) ? response : (response?.data || []);
         
@@ -321,9 +332,14 @@
           };
         }
         
-        // 更新当前分页显示的数据
-        updatePagedData();
+        // 使用 nextTick 确保 DOM 更新在正确的时机进行
+        await nextTick();
+        if (isMounted.value) {
+          updatePagedData();
+        }
       } catch (error) {
+        // 如果组件已卸载，不处理错误
+        if (!isMounted.value) return;
         console.error(`获取产品规格 ${spec.id} 的版本信息失败`, error);
       }
     });
@@ -448,7 +464,13 @@
 
   // 初始化
   onMounted(() => {
+    isMounted.value = true;
     loadData();
+  });
+
+  // 组件卸载时清理
+  onUnmounted(() => {
+    isMounted.value = false;
   });
 </script>
 

@@ -127,8 +127,13 @@
   }
 
   // 特性选择确认回调
-  async function handleFeatureSelectConfirm(feature: AppearanceFeatureInfo) {
-    if (!currentRecord.value) return;
+  async function handleFeatureSelectConfirm(features: AppearanceFeatureInfo[]) {
+    if (!currentRecord.value || features.length === 0) return;
+    
+    const feature = features[0];
+    if (features.length > 1) {
+       createMessage.warning('当前仅支持关联单个特性，将自动使用第一个选中的特性。');
+    }
 
     try {
       await updateCorrection(currentRecord.value.id, { featureId: feature.id });

@@ -30,9 +30,10 @@ public class RawDataImportSessionEntity : CLDEntityBase
     public string ParsedDataFile { get; set; }
 
     /// <summary>
-    /// 导入策略：incremental/full/overwrite/deduplicate.
+    /// 导入策略：已废弃，固定为"incremental"以保持向后兼容性.
     /// </summary>
     [SugarColumn(ColumnName = "F_IMPORT_STRATEGY", Length = 20, IsNullable = true)]
+    [Obsolete("导入策略功能已移除，此字段仅用于向后兼容")]
     public string ImportStrategy { get; set; } = "incremental";
 
     /// <summary>
@@ -84,4 +85,14 @@ public class RawDataImportSessionEntity : CLDEntityBase
         IsNullable = true
     )]
     public override DateTime? LastModifyTime { get; set; }
+
+    /// <summary>
+    /// 重写修改用户字段映射，使用 F_LAST_MODIFY_USER_ID（带下划线）.
+    /// </summary>
+    [SugarColumn(
+        ColumnName = "F_LAST_MODIFY_USER_ID",
+        ColumnDescription = "修改用户",
+        IsNullable = true
+    )]
+    public override string LastModifyUserId { get; set; }
 }

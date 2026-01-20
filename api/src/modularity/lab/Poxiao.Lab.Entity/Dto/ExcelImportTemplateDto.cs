@@ -1,3 +1,5 @@
+using Poxiao.Lab.Entity.Config;
+
 namespace Poxiao.Lab.Entity.Dto;
 
 /// <summary>
@@ -16,7 +18,7 @@ public class ExcelImportTemplateDto
     public string TemplateName { get; set; }
 
     /// <summary>
-    /// 模板编码（唯一）.
+    /// 模板编码.
     /// </summary>
     public string TemplateCode { get; set; }
 
@@ -26,39 +28,9 @@ public class ExcelImportTemplateDto
     public string Description { get; set; }
 
     /// <summary>
-    /// 模板类型：system系统模板/user个人模板.
-    /// </summary>
-    public string TemplateType { get; set; }
-
-    /// <summary>
     /// 所有者用户ID（个人模板时有效）.
     /// </summary>
     public string OwnerUserId { get; set; }
-
-    /// <summary>
-    /// 关联的产品规格ID.
-    /// </summary>
-    public string ProductSpecId { get; set; }
-
-    /// <summary>
-    /// 产品规格名称（展示用）.
-    /// </summary>
-    public string ProductSpecName { get; set; }
-
-    /// <summary>
-    /// 版本号.
-    /// </summary>
-    public int Version { get; set; }
-
-    /// <summary>
-    /// 是否默认模板（0=否，1=是）.
-    /// </summary>
-    public int IsDefault { get; set; }
-
-    /// <summary>
-    /// 排序码.
-    /// </summary>
-    public long? SortCode { get; set; }
 
     /// <summary>
     /// 创建时间.
@@ -66,7 +38,75 @@ public class ExcelImportTemplateDto
     public DateTime? CreatorTime { get; set; }
 
     /// <summary>
+    /// 单位ID.
+    /// </summary>
+    public string UnitId { get; set; }
+
+    /// <summary>
     /// 最后修改时间.
     /// </summary>
     public DateTime? LastModifyTime { get; set; }
+}
+
+/// <summary>
+/// Excel表头解析输入参数.
+/// </summary>
+public class ExcelParseHeadersInput
+{
+    /// <summary>
+    /// 文件名.
+    /// </summary>
+    public string FileName { get; set; }
+
+    /// <summary>
+    /// 文件数据(Base64).
+    /// </summary>
+    public string FileData { get; set; }
+}
+
+/// <summary>
+/// Excel模板验证输入参数.
+/// </summary>
+public class ExcelTemplateValidationInput
+{
+    /// <summary>
+    /// 模板编码.
+    /// </summary>
+    public string TemplateCode { get; set; }
+
+    /// <summary>
+    /// 文件名.
+    /// </summary>
+    public string FileName { get; set; }
+
+    /// <summary>
+    /// 文件数据(Base64).
+    /// </summary>
+    public string FileData { get; set; }
+}
+
+/// <summary>
+/// Excel模板验证结果.
+/// </summary>
+public class ExcelTemplateValidationResult
+{
+    /// <summary>
+    /// 验证是否通过.
+    /// </summary>
+    public bool IsValid { get; set; }
+
+    /// <summary>
+    /// 验证错误信息列表.
+    /// </summary>
+    public List<string> Errors { get; set; } = new List<string>();
+
+    /// <summary>
+    /// Excel表头信息.
+    /// </summary>
+    public List<ExcelHeaderDto> ExcelHeaders { get; set; } = new List<ExcelHeaderDto>();
+
+    /// <summary>
+    /// 模板配置信息.
+    /// </summary>
+    public ExcelTemplateConfig TemplateConfig { get; set; }
 }

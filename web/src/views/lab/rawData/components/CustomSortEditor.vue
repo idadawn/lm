@@ -162,8 +162,8 @@ const confirmLoading = ref(false);
 
 // 可用字段
 const availableFields = [
-  { value: 'prodDate', label: '检测日期' },
-  { value: 'furnaceNoParsed', label: '炉号' },
+  { value: 'prodDate', label: '生产日期' },
+  { value: 'furnaceBatchNo', label: '炉次号' },
   { value: 'coilNo', label: '卷号' },
   { value: 'subcoilNo', label: '分卷号' },
   { value: 'lineNo', label: '产线' },

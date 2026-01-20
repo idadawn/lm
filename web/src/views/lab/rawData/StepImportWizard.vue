@@ -37,7 +37,7 @@
           ref="step1Ref"
           :import-session-id="importSessionId"
           @next="handleStep1Next"
-          @cancel="handleCancel"
+          @file-cleared="handleFileCleared"
         />
       </div>
 
@@ -91,10 +91,11 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, computed, reactive, toRefs, watch } from 'vue';
+  import { ref, computed, reactive, toRefs, watch, nextTick } from 'vue';
   import { BasicPopup, usePopupInner } from '/@/components/Popup';
   import { useMessage } from '/@/hooks/web/useMessage';
   import { useI18n } from '/@/hooks/web/useI18n';
+  import { useTabs } from '/@/hooks/web/useTabs';
 
   // 导入步骤组件
   import Step1UploadAndParse from './components/Step1UploadAndParse.vue';
@@ -118,6 +119,7 @@
   const emit = defineEmits(['register', 'reload']);
   const [registerPopup, { closePopup, changeOkLoading }] = usePopupInner(init);
   const { createMessage } = useMessage();
+  const { refreshPage } = useTabs();
 
   // 状态管理
   const state = reactive<State>({
@@ -170,16 +172,34 @@
   // 步骤2完成（数据解析与预览）
   async function handleStep2PreviewNext() {
     state.activeStep = 2;
+    // 切换到第3步（产品规格识别）时，触发数据加载
+    nextTick(() => {
+      const step2Component = step2Ref.value as any;
+      if (step2Component && typeof step2Component.triggerLoad === 'function') {
+        console.log('StepImportWizard: 调用 step2Ref.triggerLoad');
+        step2Component.triggerLoad();
+      } else {
+        console.warn('StepImportWizard: step2Ref.triggerLoad 不存在');
+      }
+    });
   }
 
   // 步骤3完成（产品规格识别）
   async function handleStep2Next() {
     state.activeStep = 3;
+    // 切换到第4步（特性匹配）时，触发数据加载
+    nextTick(() => {
+      step3Ref.value?.triggerLoad?.();
+    });
   }
 
   // 步骤4完成（特性匹配）
   async function handleStep3Next() {
     state.activeStep = 4;
+    // 切换到第4步时，触发数据加载
+    nextTick(() => {
+      step4Ref.value?.triggerLoad?.();
+    });
   }
 
   // 下一步
@@ -249,20 +269,40 @@
     }
   }
 
+  // 处理文件清空事件（从第一步组件触发）
+  function handleFileCleared() {
+    // 当文件被清空时，跳转到第一步并重置状态
+    state.activeStep = 0;
+    state.importSessionId = '';
+    state.fileName = '';
+  }
+
   // 取消
   async function handleCancel() {
     try {
-      if (importSessionId.value) {
+      // 先清空第一步的文件（会同时删除Session）
+      if (step1Ref.value) {
+        await step1Ref.value?.clearFile?.();
+      } else if (importSessionId.value) {
+        // 如果第一步组件不存在，直接删除Session
         await deleteImportSession(importSessionId.value);
       }
       // 重置状态
       init();
       closePopup();
+      // 刷新当前页签
+      await refreshPage();
     } catch (error) {
       console.error('取消导入失败:', error);
       // 重置状态
       init();
       closePopup();
+      // 即使出错也尝试刷新页签
+      try {
+        await refreshPage();
+      } catch (refreshError) {
+        console.error('刷新页签失败:', refreshError);
+      }
     }
   }
 </script>
@@ -282,130 +322,141 @@
 
   .steps-wrapper {
     width: 100%;
+    min-width: 1000px; // 增加最小宽度，确保有足够空间显示所有步骤和箭头
     display: flex;
     align-items: center;
-    padding-left: 10px;
+    padding: 0 16px;
     box-sizing: border-box;
     overflow-x: auto; // 如果内容超出，允许横向滚动
     overflow-y: hidden;
   }
 
   .steps {
-    width: auto; // 根据内容自适应宽度
-    min-width: 0;
-    flex-shrink: 0; // 不允许收缩
-    
+    width: 100%; // 占满可用空间
+    min-width: 1000px; // 与 wrapper 保持一致的最小宽度
+    flex-shrink: 0; // 不允许收缩，确保有足够空间
+
     :deep(.ant-steps) {
-      width: auto; // 根据内容自适应
+      width: 100%; // 占满容器宽度
+      min-width: 1000px; // 确保步骤组件有足够宽度
     }
-    
-    :deep(.ant-steps-item) {
-      flex: 0 0 auto; // 根据内容自适应，不拉伸不收缩
-      width: auto; // 根据内容宽度
-      min-width: 0;
-      padding: 0 4px; // 左右内边距
-      
-      .ant-steps-item-container {
-        width: auto; // 根据内容自适应
-        display: flex;
-        flex-direction: row; // 水平排列：数字在左，文字在右
-        align-items: center; // 垂直居中对齐
-        justify-content: flex-start;
-        gap: 6px; // 数字和文字之间的间距
-      }
-      
-      .ant-steps-item-content {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        width: auto;
-      }
-      
-      .ant-steps-item-title {
-        font-size: 12px;
-        line-height: 1.4;
-        white-space: nowrap; // 不换行，单行显示
-        overflow: visible; // 允许文字完整显示
-        width: auto; // 根据文字长度自适应
-        display: inline-block;
-        box-sizing: border-box;
-        text-align: left; // 左对齐
-        margin: 0; // 移除上边距
-      }
-    }
-    
+
     // 导航模式下，根据文字长度调整宽度
     :deep(.ant-steps-navigation) {
       display: flex;
-      width: auto; // 根据内容自适应
+      width: 100%;
       align-items: center;
       flex-wrap: nowrap; // 不换行
-      
+
       .ant-steps-item {
-        flex: 0 0 auto; // 根据内容自适应，不拉伸不收缩
-        width: auto; // 根据内容宽度
+        flex: 0 0 auto !important; // 强制根据内容自适应，不拉伸不收缩
+        width: auto !important; // 强制宽度自适应
         min-width: fit-content; // 最小宽度适应内容
+        max-width: none; // 不限制最大宽度
+        padding: 0 28px 0 12px; // 增加左右边距，给箭头留出足够空间；左边距较小
+        position: relative; // 确保 tail 定位正确
         
         .ant-steps-item-container {
-          width: auto; // 根据内容自适应
+          width: auto !important; // 容器宽度自适应内容
+          min-width: fit-content; // 最小宽度适应内容
           display: flex;
           flex-direction: row; // 水平排列：数字在左，文字在右
           align-items: center; // 垂直居中对齐
           justify-content: flex-start;
           padding: 4px 0;
-          gap: 6px; // 数字和文字之间的间距
+          gap: 8px; // 增加数字和文字之间的间距
         }
         
         .ant-steps-item-content {
-          width: auto;
+          width: auto !important; // 内容宽度自适应
+          min-width: fit-content; // 最小宽度适应内容
+          max-width: none; // 不限制最大宽度
           display: flex;
           flex-direction: row;
           align-items: center;
+          flex: 0 0 auto; // 不拉伸，根据内容自适应
         }
         
         .ant-steps-item-title {
-          width: auto; // 根据文字长度自适应
+          width: auto !important; // 标题宽度自适应
+          min-width: fit-content; // 最小宽度适应内容
+          max-width: none; // 不限制最大宽度
           text-align: left; // 左对齐
           padding: 0;
           white-space: nowrap; // 不换行
           overflow: visible; // 允许文字完整显示
           margin: 0;
+          font-size: 12px; // 减小字体大小，确保长文本能完整显示
+          line-height: 1.4;
         }
+      }
+      
+      // 确保箭头（连接线）有足够空间显示，不被覆盖
+      .ant-steps-item-tail {
+        display: block !important; // 确保显示连接线
+        position: absolute;
+        top: 50%;
+        left: calc(100% - 28px); // 从右边距开始，确保不被覆盖（与padding-right: 28px对应）
+        width: 24px; // 增加箭头宽度，确保箭头完全可见
+        height: 1px;
+        margin-top: -0.5px;
+        padding: 0;
+        background-color: #d9d9d9;
+        z-index: 1; // 确保在最上层
+        
+        &::after {
+          content: '';
+          position: absolute;
+          right: 0;
+          top: 50%;
+          width: 0;
+          height: 0;
+          border-top: 4px solid transparent;
+          border-bottom: 4px solid transparent;
+          border-left: 6px solid #d9d9d9;
+          transform: translateY(-50%);
+        }
+      }
+      
+      // 最后一个步骤不需要箭头
+      .ant-steps-item:last-child .ant-steps-item-tail {
+        display: none !important;
+      }
+      
+      // 确保图标（数字）和标题水平对齐，数字在左，文字在右
+      .ant-steps-item-icon {
+        margin: 0;
+        margin-right: 0;
+        flex-shrink: 0; // 图标不收缩
+        order: 1; // 确保图标在文字前面（左侧）
+      }
+      
+      .ant-steps-item-content {
+        order: 2; // 确保内容在图标后面（右侧）
+        flex-shrink: 0; // 内容不收缩
       }
     }
     
     // 小尺寸下的优化
     :deep(.ant-steps-small) {
       .ant-steps-item {
-        padding: 0 4px;
-        
+        padding: 0 20px 0 8px; // 小尺寸下增加左右边距，确保文字和箭头有足够空间
+
         .ant-steps-item-container {
-          gap: 4px; // 小尺寸下减少间距
+          gap: 6px; // 小尺寸下减少间距
         }
-        
+
         .ant-steps-item-title {
           font-size: 11px;
-          line-height: 1.4;
+          line-height: 1.3;
           white-space: nowrap; // 不换行
         }
+
+        .ant-steps-item-tail {
+          left: calc(100% - 20px); // 小尺寸下调整箭头位置（与padding-right: 20px对应）
+          width: 20px; // 小尺寸下保持足够箭头宽度
+        }
       }
-    }
-    
-    // 确保连接线不超出容器
-    :deep(.ant-steps-item-tail) {
-      display: none; // 导航模式下通常不需要连接线
-    }
-    
-    // 确保图标（数字）和标题水平对齐，数字在左，文字在右
-    :deep(.ant-steps-item-icon) {
-      margin: 0; // 移除所有边距
-      flex-shrink: 0; // 图标不收缩
-      order: 1; // 确保图标在文字前面（左侧）
-    }
-    
-    :deep(.ant-steps-item-content) {
-      order: 2; // 确保内容在图标后面（右侧）
-      flex-shrink: 0; // 内容不收缩
     }
   }
 

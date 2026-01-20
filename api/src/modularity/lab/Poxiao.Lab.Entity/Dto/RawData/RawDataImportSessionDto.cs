@@ -8,6 +8,11 @@ namespace Poxiao.Lab.Entity.Dto.RawData;
 public class RawDataImportSessionInput
 {
     public string FileName { get; set; }
+
+    /// <summary>
+    /// 导入策略：已废弃，固定为"incremental"以保持向后兼容性
+    /// </summary>
+    [Obsolete("导入策略功能已移除，此属性仅用于向后兼容")]
     public string ImportStrategy { get; set; } = "incremental";
 
     /// <summary>
@@ -48,11 +53,14 @@ public class RawDataProductSpecMatchOutput
     public DateTime? ProdDate { get; set; }
     public decimal? Width { get; set; }
     public decimal? CoilWeight { get; set; }
+    public int? BreakCount { get; set; } // 断头数
+    public decimal? SingleCoilWeight { get; set; } // 单卷重量
     public string DetectionColumns { get; set; } // 数据的有效检测列
     public string ProductSpecId { get; set; }
     public string ProductSpecName { get; set; }
     public string ProductSpecCode { get; set; }
     public string MatchStatus { get; set; } // matched, unmatched, manual
+    public Dictionary<int, decimal?> DetectionValues { get; set; } // 检测数据值
 }
 
 /// <summary>
@@ -103,6 +111,21 @@ public class RawDataUpdateFeatureItem
 {
     public string RawDataId { get; set; }
     public List<string> AppearanceFeatureIds { get; set; }
+}
+
+/// <summary>
+/// 更新重复数据选择输入
+/// </summary>
+public class RawDataUpdateDuplicateSelectionsInput
+{
+    public string SessionId { get; set; }
+    public List<RawDataUpdateDuplicateSelectionItem> Items { get; set; }
+}
+
+public class RawDataUpdateDuplicateSelectionItem
+{
+    public string RawDataId { get; set; }
+    public bool IsValidData { get; set; }
 }
 
 /// <summary>

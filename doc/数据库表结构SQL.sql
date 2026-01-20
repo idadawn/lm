@@ -24,15 +24,18 @@ CREATE TABLE `LAB_RAW_DATA` (
     
     -- 业务字段
     `F_PROD_DATE` DATETIME DEFAULT NULL COMMENT '生产日期',
+    `F_DETECTION_DATE` DATETIME DEFAULT NULL COMMENT '检测日期（从Excel读取）',
     `F_FURNACE_NO` VARCHAR(100) DEFAULT NULL COMMENT '原始炉号（包含特性汉字）',
     `F_LINE_NO` VARCHAR(10) DEFAULT NULL COMMENT '产线（从炉号解析）',
     `F_SHIFT` VARCHAR(10) DEFAULT NULL COMMENT '班次（从炉号解析）',
-    `F_FURNACE_NO_PARSED` VARCHAR(50) DEFAULT NULL COMMENT '炉号（从炉号解析）',
-    `F_COIL_NO` VARCHAR(50) DEFAULT NULL COMMENT '卷号（从炉号解析）',
-    `F_SUBCOIL_NO` VARCHAR(50) DEFAULT NULL COMMENT '分卷号（从炉号解析）',
+    `F_FURNACE_BATCH_NO` INT DEFAULT NULL COMMENT '炉次号（从炉号解析）',
+    `F_COIL_NO` DECIMAL(18, 2) DEFAULT NULL COMMENT '卷号（从炉号解析，支持小数）',
+    `F_SUBCOIL_NO` DECIMAL(18, 2) DEFAULT NULL COMMENT '分卷号（从炉号解析，支持小数）',
     `F_FEATURE_SUFFIX` VARCHAR(50) DEFAULT NULL COMMENT '特性描述（从炉号解析，原始特性汉字）',
     `F_WIDTH` DECIMAL(18, 2) DEFAULT NULL COMMENT '宽度',
     `F_COIL_WEIGHT` DECIMAL(18, 2) DEFAULT NULL COMMENT '带材重量',
+    `F_BREAK_COUNT` INT DEFAULT NULL COMMENT '断头数(个)（AA列）',
+    `F_SINGLE_COIL_WEIGHT` DECIMAL(18, 2) DEFAULT NULL COMMENT '单卷重量(kg)（AB列）',
     
     -- 产品规格字段（用于后续计算）
     `F_PRODUCT_SPEC_ID` VARCHAR(50) DEFAULT NULL COMMENT '产品规格ID',
@@ -40,7 +43,7 @@ CREATE TABLE `LAB_RAW_DATA` (
     `F_PRODUCT_SPEC_NAME` VARCHAR(100) DEFAULT NULL COMMENT '产品规格名称',
     `F_DETECTION_COLUMNS` VARCHAR(100) DEFAULT NULL COMMENT '检测列（从产品规格中获取）',
     
-    -- 检测数据列（保留原有字段，但建议使用JSON字段）
+    -- 检测数据列（固定22列）
     `F_DETECTION_1` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列1',
     `F_DETECTION_2` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列2',
     `F_DETECTION_3` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列3',
@@ -65,7 +68,6 @@ CREATE TABLE `LAB_RAW_DATA` (
     `F_DETECTION_22` DECIMAL(18, 2) DEFAULT NULL COMMENT '检测数据列22',
     
     -- 新增字段（优化方案）
-    `F_DETECTION_DATA` JSON DEFAULT NULL COMMENT '检测数据列（JSON格式，存储动态检测数据，格式：{"1": 值1, "2": 值2, ...}）',
     `F_IS_VALID_DATA` INT DEFAULT 0 COMMENT '有效数据标识（0-非有效数据，1-有效数据，符合炉号解析规则）',
     `F_SOURCE_FILE_ID` VARCHAR(50) DEFAULT NULL COMMENT 'Excel源文件ID（关联文件服务）',
     `F_IMPORT_SESSION_ID` VARCHAR(50) DEFAULT NULL COMMENT '导入会话ID（关联导入会话）',
@@ -235,8 +237,9 @@ CREATE TABLE `lab_raw_data_import_session` (
     `F_ID` VARCHAR(50) NOT NULL COMMENT '主键ID',
     `F_TENANTID` VARCHAR(50) DEFAULT NULL COMMENT '租户ID',
     `F_FILE_NAME` VARCHAR(200) NOT NULL COMMENT '文件名',
-    `F_SOURCE_FILE_ID` VARCHAR(50) DEFAULT NULL COMMENT 'Excel源文件ID',
-    `F_IMPORT_STRATEGY` VARCHAR(20) DEFAULT 'incremental' COMMENT '导入策略：incremental/full/overwrite/deduplicate',
+    `F_SOURCE_FILE_ID` VARCHAR(500) DEFAULT NULL COMMENT 'Excel源文件ID',
+    `F_PARSED_DATA_FILE` VARCHAR(500) DEFAULT NULL COMMENT '解析后的数据JSON文件路径（临时存储，完成导入后才写入数据库）',
+    `F_IMPORT_STRATEGY` VARCHAR(20) DEFAULT 'incremental' COMMENT '导入策略：已废弃，固定为incremental以保持向后兼容性',
     `F_CURRENT_STEP` INT DEFAULT 0 COMMENT '当前步骤（0-第一步，1-第二步，2-第三步，3-第四步）',
     `F_TOTAL_ROWS` INT DEFAULT 0 COMMENT '总行数',
     `F_VALID_DATA_ROWS` INT DEFAULT 0 COMMENT '有效数据行数',
@@ -244,6 +247,11 @@ CREATE TABLE `lab_raw_data_import_session` (
     `F_CREATOR_USER_ID` VARCHAR(50) DEFAULT NULL COMMENT '创建人ID',
     `F_CREATOR_TIME` DATETIME DEFAULT NULL COMMENT '创建时间',
     `F_LAST_MODIFY_TIME` DATETIME DEFAULT NULL COMMENT '最后修改时间',
+    `F_LAST_MODIFY_USER_ID` VARCHAR(50) DEFAULT NULL COMMENT '修改用户ID',
+    `F_ENABLEDMARK` INT DEFAULT 1 COMMENT '启用标识（1-启用，0-禁用）',
+    `F_DeleteMark` INT DEFAULT 0 COMMENT '删除标志（0-未删除，1-已删除）',
+    `F_DeleteTime` DATETIME DEFAULT NULL COMMENT '删除时间',
+    `F_DeleteUserId` VARCHAR(50) DEFAULT NULL COMMENT '删除用户ID',
     PRIMARY KEY (`F_ID`),
     KEY `idx_status` (`F_STATUS`),
     KEY `idx_creator` (`F_CREATOR_USER_ID`),
@@ -279,17 +287,12 @@ CREATE TABLE `lab_raw_data_import_session` (
 -- ============================================
 -- JSON字段格式说明：
 -- 
--- 1. F_DETECTION_DATA（原始数据表）：
---    格式：{"1": 123.45, "2": 234.56, "3": 345.67, ...}
---    说明：键为检测列序号（字符串），值为检测数据（数字）
---    示例：{"1": 123.45, "2": 234.56, "3": 345.67, "4": 456.78}
---
--- 2. F_APPEARANCE_FEATURE_IDS（原始数据表和中间数据表）：
+-- 1. F_APPEARANCE_FEATURE_IDS（原始数据表和中间数据表）：
 --    格式：["feature-id-1", "feature-id-2", "feature-id-3"]
 --    说明：特性ID数组，一个特性汉字可以匹配多个特性（1:n关系）
 --    示例：["appearance-feature-001", "appearance-feature-002"]
 --
--- 3. F_THICKNESS_ABNORMAL（中间数据表）：
+-- 2. F_THICKNESS_ABNORMAL（中间数据表）：
 --    格式：["1", "3", "5"]
 --    说明：需要红色标注的带厚序号数组
 --    示例：["1", "3", "5"]
@@ -301,7 +304,7 @@ CREATE TABLE `lab_raw_data_import_session` (
 -- 2. 所有表都包含软删除字段（F_DeleteMark），支持软删除
 -- 3. JSON字段使用MySQL 5.7+的JSON类型，支持JSON查询和索引
 -- 4. 产品规格ID和特性ID字段已包含，可用于后续计算和关联查询
--- 5. 原始数据表保留Detection1-22字段，但建议使用F_DETECTION_DATA JSON字段
+-- 5. 原始数据表使用Detection1-22字段存储检测数据（固定22列）
 -- 6. 中间数据表的F_FURNACE_NO字段存储的是去掉特性汉字后的炉号
 -- 7. 中间数据表的F_APPEARANCE_FEATURE字段存储的是原始特性汉字
 -- 8. 中间数据表的F_APPEARANCE_FEATURE_IDS字段存储的是匹配后的特性ID列表（JSON格式）

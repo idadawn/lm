@@ -9,28 +9,6 @@
         show-icon
         style="margin-bottom: 24px" />
 
-      <!-- 导入策略选择 -->
-      <div class="strategy-section">
-        <h3 class="section-title">选择导入策略</h3>
-        <a-radio-group v-model:value="importStrategy" class="strategy-group">
-          <a-radio value="incremental" class="strategy-item">
-            <template #default>
-              <div class="strategy-content">
-                <div class="strategy-header"><FileAddOutlined /> 增量导入（推荐）</div>
-                <div class="strategy-desc">自动跳过已导入的行，适合日常数据更新</div>
-              </div>
-            </template>
-          </a-radio>
-          <a-radio value="full" class="strategy-item">
-            <template #default>
-              <div class="strategy-content">
-                <div class="strategy-header"><FileTextOutlined /> 全量导入</div>
-                <div class="strategy-desc">导入所有数据，不跳过任何行</div>
-              </div>
-            </template>
-          </a-radio>
-        </a-radio-group>
-      </div>
 
       <!-- 文件上传 -->
       <div class="file-upload-section">
@@ -65,6 +43,27 @@
         <a-button v-if="fileList.length" type="link" danger @click="clearFile">
           <DeleteOutlined /> 清除文件
         </a-button>
+
+        <!-- 模板验证错误信息 -->
+        <div v-if="validationErrors.length > 0" class="validation-errors">
+          <a-alert
+            type="error"
+            show-icon
+            :message="`发现 ${validationErrors.length} 个问题，请检查后重新上传`"
+            style="margin-bottom: 12px">
+            <template #description>
+              <div class="error-list">
+                <div
+                  v-for="(error, index) in validationErrors"
+                  :key="index"
+                  class="error-item">
+                  <ExclamationCircleOutlined style="color: #ff4d4f; margin-right: 8px" />
+                  <span>{{ error }}</span>
+                </div>
+              </div>
+            </template>
+          </a-alert>
+        </div>
       </div>
 
     </div>
@@ -73,34 +72,49 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import {
-  FileAddOutlined,
-  FileTextOutlined,
   DeleteOutlined,
   InboxOutlined,
-  FileExcelOutlined
+  FileExcelOutlined,
+  ExclamationCircleOutlined
 } from '@ant-design/icons-vue';
-import { createImportSession } from '/@/api/lab/rawData';
-import type {
-  ImportStrategy
-} from '/@/api/lab/types/rawData';
+import { createImportSession, deleteImportSession } from '/@/api/lab/rawData';
+import { getSystemFields, parseExcelHeaders, getDefaultTemplate, validateExcelAgainstTemplate } from '/@/api/lab/excelTemplate';
+import type { ExcelTemplateConfig } from '/@/api/lab/types/excelTemplate';
 
-const emit = defineEmits(['next', 'cancel']);
+// Props
+const props = defineProps<{
+  importSessionId?: string;
+}>();
+
+const emit = defineEmits(['next', 'fileCleared']);
 
 // 状态
 const fileList = ref<any[]>([]);
 const uploading = ref(false);
 const isDragOver = ref(false);
-const importStrategy = ref<ImportStrategy>('incremental');
-const sessionId = ref<string>('');
+const sessionId = ref<string>(props.importSessionId || '');
 const fileBase64 = ref<string>('');
 const fileName = ref<string>('');
+const validationErrors = ref<string[]>([]);
+const validating = ref(false);
+
+// 监听 prop 变化，同步到内部状态
+watch(
+  () => props.importSessionId,
+  (newId) => {
+    if (newId) {
+      sessionId.value = newId;
+    }
+  },
+  { immediate: true }
+);
 
 // 计算是否可以进入下一步
 const canGoNext = computed(() => {
-  return fileList.value.length > 0 && !!sessionId.value;
+  return fileList.value.length > 0 && !!sessionId.value && validationErrors.value.length === 0;
 });
 
 // 方法
@@ -163,6 +177,7 @@ async function handleFile(file: File) {
   }];
 
   uploading.value = true;
+  validationErrors.value = [];
 
   try {
     // 转换为Base64
@@ -170,32 +185,92 @@ async function handleFile(file: File) {
     fileBase64.value = base64;
     fileName.value = file.name;
 
-    // 创建导入会话（上传文件并保存到后端）
-    const result = await createImportSession({
-      fileName: file.name,
-      importStrategy: importStrategy.value,
-      fileData: base64,  // 将文件数据一起发送到后端保存
-    });
+    // 验证Excel文件与模板
+    await validateExcelTemplate(base64);
 
-    // 保存 sessionId（后端直接返回字符串 sessionId）
-    if (!result || (typeof result !== 'string' && !result)) {
-      throw new Error('创建导入会话失败：未返回有效的会话ID');
+    // 如果有验证错误，不创建导入会话
+    if (validationErrors.value.length > 0) {
+      message.warning('文件上传完成，但发现模板验证问题，请查看下方错误提示');
+      return;
     }
-    sessionId.value = result;
-    
+
+    // 如果已有 sessionId（从 prop 传入），直接使用；否则创建新的会话
     if (!sessionId.value) {
-      throw new Error('创建导入会话失败：会话ID为空');
+      // 创建导入会话（上传文件并保存到后端）
+      const result = await createImportSession({
+        fileName: file.name,
+        fileData: base64,  // 将文件数据一起发送到后端保存
+      });
+
+      // 保存 sessionId（后端直接返回字符串 sessionId）
+      if (!result || (typeof result !== 'string' && !result)) {
+        throw new Error('创建导入会话失败：未返回有效的会话ID');
+      }
+      sessionId.value = result;
+
+      if (!sessionId.value) {
+        throw new Error('创建导入会话失败：会话ID为空');
+      }
+    } else {
+      // 如果已有 sessionId，更新会话的文件信息（如果需要）
+      // 注意：这里假设文件已经在创建会话时保存，所以不需要再次上传
+      // 如果需要更新文件，可以在这里调用更新接口
     }
 
     message.success('文件上传成功，下一步将进行数据解析');
   } catch (error: any) {
     message.error(error.message || '文件上传失败');
     fileList.value = [];
-    sessionId.value = '';
+    // 只有在创建新会话失败时才清空 sessionId
+    // 如果是从 prop 传入的，不清空
+    if (!props.importSessionId) {
+      sessionId.value = '';
+    }
     fileBase64.value = '';
     fileName.value = '';
+    validationErrors.value = [];
   } finally {
     uploading.value = false;
+  }
+}
+
+// 验证Excel文件与模板
+async function validateExcelTemplate(fileBase64: string) {
+  validating.value = true;
+  validationErrors.value = [];
+
+  try {
+    // 调用后端验证接口
+    const validationRes: any = await validateExcelAgainstTemplate({
+      templateCode: 'RawDataImport', // 使用枚举值
+      fileName: fileName.value || 'uploaded_file.xlsx',
+      fileData: fileBase64
+    });
+
+    // 处理后端返回的数据格式
+    const validationResult = validationRes?.data || validationRes;
+
+    if (!validationResult) {
+      validationErrors.value.push('模板验证失败：未返回验证结果');
+      return;
+    }
+
+    // 设置验证错误信息
+    if (validationResult.errors && Array.isArray(validationResult.errors)) {
+      validationErrors.value = validationResult.errors;
+    } else {
+      validationErrors.value = [];
+    }
+
+    // 如果验证失败，显示错误信息
+    if (!validationResult.isValid && validationErrors.value.length === 0) {
+      validationErrors.value.push('Excel文件与模板配置不匹配，请检查文件格式');
+    }
+  } catch (error: any) {
+    console.error('模板验证失败:', error);
+    validationErrors.value.push(`模板验证失败：${error.message || '未知错误'}`);
+  } finally {
+    validating.value = false;
   }
 }
 
@@ -205,11 +280,28 @@ function handleFileChange(info: any) {
   }
 }
 
-function clearFile() {
-  fileList.value = [];
-  sessionId.value = '';
-  fileBase64.value = '';
-  fileName.value = '';
+async function clearFile() {
+  try {
+    // 如果已经有sessionId，删除后端的session
+    if (sessionId.value) {
+      await deleteImportSession(sessionId.value);
+    }
+    // 如果是从 prop 传入的 sessionId，也尝试删除
+    if (props.importSessionId && props.importSessionId !== sessionId.value) {
+      await deleteImportSession(props.importSessionId);
+    }
+  } catch (error) {
+    console.error('删除导入会话失败:', error);
+    // 即使删除失败，也继续清理前端状态
+  } finally {
+    fileList.value = [];
+    sessionId.value = '';
+    fileBase64.value = '';
+    fileName.value = '';
+    validationErrors.value = [];
+    // 通知父组件文件已清空，需要跳转到第一步
+    emit('fileCleared');
+  }
 }
 
 function formatFileSize(bytes: number): string {
@@ -239,16 +331,30 @@ async function handleNext() {
     return;
   }
 
-  if (!sessionId.value) {
+  // 检查是否有验证错误
+  if (validationErrors.value.length > 0) {
+    message.error('请先解决模板验证问题，再进入下一步');
+    return;
+  }
+
+  // 检查 sessionId：优先使用 prop，其次使用内部状态
+  const currentSessionId = props.importSessionId || sessionId.value;
+
+  if (!currentSessionId || currentSessionId.trim() === '') {
     message.error('导入会话ID缺失，请重新上传文件');
     return;
   }
 
+  // 如果内部 sessionId 为空但 prop 有值，同步到内部状态
+  if (!sessionId.value && props.importSessionId) {
+    sessionId.value = props.importSessionId;
+  }
+
   // 传递 sessionId 和文件信息到下一步（文件数据已保存在后端，不再传递 fileData）
   emit('next', {
-    sessionId: sessionId.value,
+    sessionId: currentSessionId,
     fileName: fileName.value,
-    importStrategy: importStrategy.value,
+    importStrategy: 'incremental', // 固定为 incremental（已废弃，但需要传递以保持兼容）
   });
 }
 
@@ -257,14 +363,11 @@ async function saveAndNext() {
   await handleNext();
 }
 
-function handleCancel() {
-  emit('cancel');
-}
-
 // 暴露给父组件
 defineExpose({
   canGoNext,
   saveAndNext,
+  clearFile, // 暴露清空文件的方法
 });
 </script>
 
@@ -441,6 +544,35 @@ defineExpose({
 
   &:last-child {
     border-bottom: none;
+  }
+}
+
+.validation-errors {
+  margin-top: 16px;
+}
+
+.error-list {
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.error-list .error-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 8px 0;
+  font-size: 13px;
+  color: #ff4d4f;
+  line-height: 1.6;
+  border-bottom: 1px solid #ffeaea;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  .anticon {
+    margin-top: 2px;
+    flex-shrink: 0;
   }
 }
 

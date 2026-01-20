@@ -65,7 +65,30 @@
         label: '检测列',
         component: 'Input',
         componentProps: { placeholder: '如 13,15,18,22' },
-        rules: [{ required: true, trigger: 'blur', message: '必填' }],
+        rules: [
+          { required: true, trigger: 'blur', message: '必填' },
+          {
+            validator: (rule, value) => {
+              if (!value) {
+                return Promise.resolve();
+              }
+              // 解析逗号分隔的数字
+              const columns = value.split(',').map(col => col.trim()).filter(col => col);
+              // 检查每个数字是否在1-22之间
+              for (const col of columns) {
+                const num = parseInt(col, 10);
+                if (isNaN(num)) {
+                  return Promise.reject('检测列必须为数字');
+                }
+                if (num < 1 || num > 22) {
+                  return Promise.reject('检测列必须在1-22之间，不能超过22');
+                }
+              }
+              return Promise.resolve();
+            },
+            trigger: 'blur',
+          },
+        ],
       },
       {
         field: 'createNewVersion',

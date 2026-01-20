@@ -1,3 +1,6 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Poxiao.Lab.Interfaces;
 using Xunit;
 using Xunit.Abstractions;
@@ -12,7 +15,10 @@ public class UnitConversionServiceTests
     private readonly ITestOutputHelper _output;
     private readonly IUnitConversionService _unitConversionService;
 
-    public UnitConversionServiceTests(ITestOutputHelper output, IUnitConversionService unitConversionService)
+    public UnitConversionServiceTests(
+        ITestOutputHelper output,
+        IUnitConversionService unitConversionService
+    )
     {
         _output = output;
         _unitConversionService = unitConversionService;
@@ -28,14 +34,14 @@ public class UnitConversionServiceTests
         // 基准单位是米 (m)
         // 毫米到基准单位：1mm = 0.001m，所以 ScaleToBase = 0.001
         // 微米到基准单位：1μm = 0.000001m，所以 ScaleToBase = 0.000001
-        
+
         // 换算过程：
         // 1. 15mm 转换为基准单位（米）：15 * 0.001 = 0.015m
         // 2. 0.015m 转换为微米：0.015 / 0.000001 = 15000μm
 
         decimal sourceValue = 15m;
         string fromUnitId = "UNIT_MM"; // 毫米
-        string toUnitId = "UNIT_UM";   // 微米
+        string toUnitId = "UNIT_UM"; // 微米
 
         var result = await _unitConversionService.ConvertAsync(sourceValue, fromUnitId, toUnitId);
 
@@ -53,7 +59,7 @@ public class UnitConversionServiceTests
     {
         decimal sourceValue = 15m;
         string fromUnitId = "UNIT_MM"; // 长度单位
-        string toUnitId = "UNIT_KG";   // 质量单位
+        string toUnitId = "UNIT_KG"; // 质量单位
 
         // 应该抛出异常，因为不能跨维度换算
         await Assert.ThrowsAsync<Exception>(async () =>
@@ -66,15 +72,22 @@ public class UnitConversionServiceTests
     /// 测试其他长度单位换算.
     /// </summary>
     [Theory]
-    [InlineData(1, "UNIT_M", "UNIT_MM", 1000)]      // 1m = 1000mm
-    [InlineData(1, "UNIT_CM", "UNIT_MM", 10)]       // 1cm = 10mm
-    [InlineData(1000, "UNIT_MM", "UNIT_M", 1)]      // 1000mm = 1m
-    [InlineData(1, "UNIT_KM", "UNIT_M", 1000)]      // 1km = 1000m
-    public async Task Test_Length_Conversions(decimal value, string fromUnitId, string toUnitId, decimal expected)
+    [InlineData(1, "UNIT_M", "UNIT_MM", 1000)] // 1m = 1000mm
+    [InlineData(1, "UNIT_CM", "UNIT_MM", 10)] // 1cm = 10mm
+    [InlineData(1000, "UNIT_MM", "UNIT_M", 1)] // 1000mm = 1m
+    [InlineData(1, "UNIT_KM", "UNIT_M", 1000)] // 1km = 1000m
+    public async Task Test_Length_Conversions(
+        decimal value,
+        string fromUnitId,
+        string toUnitId,
+        decimal expected
+    )
     {
         var result = await _unitConversionService.ConvertAsync(value, fromUnitId, toUnitId);
-        
-        _output.WriteLine($"转换结果：{value} {fromUnitId} = {result} {toUnitId}，期望值：{expected}");
+
+        _output.WriteLine(
+            $"转换结果：{value} {fromUnitId} = {result} {toUnitId}，期望值：{expected}"
+        );
 
         Assert.Equal(expected, result, 10); // 允许10位小数精度误差
     }

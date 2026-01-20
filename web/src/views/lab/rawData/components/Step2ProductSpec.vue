@@ -26,6 +26,16 @@
       </a-row>
     </div>
 
+    <!-- 数据正在处理中提示 -->
+    <div v-if="isProcessing && data.length === 0" class="processing-alert" style="margin-bottom: 20px">
+      <a-alert
+        message="数据正在处理中"
+        description="系统正在解析和处理上传的数据，请稍候...（自动重试中）"
+        type="info"
+        show-icon
+      />
+    </div>
+
     <!-- 筛选和操作 -->
     <div class="filter-section">
       <a-space>
@@ -99,30 +109,12 @@
             </div>
           </template>
 
-          <template v-else-if="column.dataIndex === 'actions'">
-            <a-space>
-              <a-button
-                v-if="!record.productSpecId"
-                type="primary"
-                size="small"
-                @click="handleSelectSpec(record)">
-                <EditOutlined /> 选择规格
-              </a-button>
-              <a-button
-                v-else
-                type="link"
-                size="small"
-                @click="handleSelectSpec(record)">
-                <EditOutlined /> 修改
-              </a-button>
-              <a-button
-                type="link"
-                danger
-                size="small"
-                @click="handleClearSpec(record)">
-                <ClearOutlined /> 清除
-              </a-button>
-            </a-space>
+          <template v-else-if="column.dataIndex === 'breakCount'">
+            <span>{{ record.breakCount ?? '-' }}</span>
+          </template>
+
+          <template v-else-if="column.dataIndex === 'singleCoilWeight'">
+            <span>{{ record.singleCoilWeight ?? '-' }}</span>
           </template>
         </template>
       </a-table>
@@ -225,9 +217,7 @@ import { ref, computed, reactive, onMounted, nextTick, watch } from 'vue';
 import { message } from 'ant-design-vue';
 import {
   ReloadOutlined,
-  ThunderboltOutlined,
-  EditOutlined,
-  ClearOutlined
+  ThunderboltOutlined
 } from '@ant-design/icons-vue';
 import { getProductSpecMatches, updateProductSpecMatches } from '/@/api/lab/rawData';
 import { getProductSpecList } from '/@/api/lab/productSpec';
@@ -253,6 +243,12 @@ const specList = ref<ProductSpec[]>([]);
 const filterStatus = ref('');
 const searchText = ref('');
 const selectedRowKeys = ref<string[]>([]);
+
+// 重试机制
+const retryCount = ref(0);
+const maxRetries = 5; // 最大重试次数
+const retryDelay = 2000; // 重试延迟（毫秒）
+const isProcessing = ref(false); // 数据是否正在处理中
 
 // 弹窗状态
 const specModalVisible = ref(false);
@@ -357,6 +353,18 @@ const columns = [
     align: 'center',
   },
   {
+    title: '断头数',
+    dataIndex: 'breakCount',
+    width: 100,
+    align: 'center',
+  },
+  {
+    title: '单卷重量',
+    dataIndex: 'singleCoilWeight',
+    width: 120,
+    align: 'center',
+  },
+  {
     title: '检测列数',
     dataIndex: 'detectionColumns',
     width: 100,
@@ -366,12 +374,6 @@ const columns = [
     title: '产品规格',
     dataIndex: 'productSpec',
     width: 200,
-  },
-  {
-    title: '操作',
-    dataIndex: 'actions',
-    width: 150,
-    fixed: 'right',
   },
 ];
 
@@ -428,10 +430,23 @@ const specRowSelection = computed(() => ({
 }));
 
 // 方法
-async function loadData() {
+async function loadData(isRetry = false) {
+  console.log('Step2ProductSpec: loadData 被调用', { isRetry, importSessionId: props.importSessionId });
+  
+  // 如果是重试，更新重试计数
+  if (isRetry) {
+    retryCount.value++;
+  } else {
+    // 新加载时重置计数
+    retryCount.value = 0;
+    isProcessing.value = true;
+  }
+
   loading.value = true;
   try {
+    console.log('Step2ProductSpec: 调用 getProductSpecMatches API');
     const response = await getProductSpecMatches(props.importSessionId);
+    console.log('Step2ProductSpec: getProductSpecMatches 返回:', response);
 
     // 确保返回的是数组
     let result = response;
@@ -445,6 +460,26 @@ async function loadData() {
       result = [];
     }
 
+    // 检查是否为空数组（可能表示数据还在处理中）
+    if (result.length === 0 && retryCount.value < maxRetries) {
+      // 数据可能还在处理中，延迟重试
+      console.log(`数据可能还在处理中，第${retryCount.value + 1}次重试，${retryDelay}ms后重试...`);
+
+      // 显示处理中的提示
+      isProcessing.value = true;
+
+      // 延迟重试
+      setTimeout(() => {
+        loadData(true);
+      }, retryDelay);
+
+      // 不清空现有数据，保持loading状态
+      return;
+    }
+
+    // 如果达到最大重试次数或已有数据，更新UI
+    isProcessing.value = false;
+
     // 转换数据格式：后端返回的是 RawDataProductSpecMatchOutput，需要转换为 RawDataRow
     data.value = result.map((item: any) => ({
       id: item.rawDataId || item.id || item.RawDataId,
@@ -452,6 +487,8 @@ async function loadData() {
       prodDate: item.prodDate || item.ProdDate,
       width: item.width || item.Width,
       coilWeight: item.coilWeight || item.CoilWeight,
+      breakCount: item.breakCount || item.BreakCount,
+      singleCoilWeight: item.singleCoilWeight || item.SingleCoilWeight,
       detectionColumns: item.detectionColumns || item.DetectionColumns,
       productSpecId: item.productSpecId || item.ProductSpecId,
       productSpecName: item.productSpecName || item.ProductSpecName,
@@ -470,17 +507,41 @@ async function loadData() {
       .filter(row => !row.productSpecId)
       .map(row => row.id!)
       .filter(id => id); // 过滤掉 undefined/null
-    
+
     // 标记为已加载
     hasLoaded.value = true;
   } catch (error) {
     console.error('加载数据失败:', error);
+
+    // 检查是否是解析文件不存在的错误（可能数据还在处理中）
+    const errorMsg = error?.message || '';
+    if (errorMsg.includes('解析数据文件不存在') && retryCount.value < maxRetries) {
+      // 数据可能还在处理中，延迟重试
+      console.log(`数据可能还在处理中（服务端错误），第${retryCount.value + 1}次重试，${retryDelay}ms后重试...`);
+
+      // 显示处理中的提示
+      isProcessing.value = true;
+
+      // 延迟重试
+      setTimeout(() => {
+        loadData(true);
+      }, retryDelay);
+
+      // 不清空现有数据，保持loading状态
+      return;
+    }
+
+    // 其他错误或达到最大重试次数
     message.error('加载数据失败');
     data.value = []; // 确保失败时也是空数组
     // 加载失败时不标记为已加载，允许重试
     hasLoaded.value = false;
+    isProcessing.value = false;
   } finally {
-    loading.value = false;
+    // 只在不是重试或重试完成时才停止loading
+    if (!isRetry || retryCount.value >= maxRetries || data.value.length > 0) {
+      loading.value = false;
+    }
   }
 }
 
@@ -512,6 +573,8 @@ async function loadProductSpecs() {
 
 function handleRefresh() {
   hasLoaded.value = false; // 重置加载标记，允许重新加载
+  retryCount.value = 0; // 重置重试计数器
+  isProcessing.value = false; // 重置处理状态
   loadData();
 }
 
@@ -745,10 +808,24 @@ watch(
   { immediate: false }
 );
 
+// 添加一个方法来手动触发加载（供父组件调用）
+function triggerLoad() {
+  console.log('Step2ProductSpec: triggerLoad 被调用');
+  if (props.importSessionId && props.importSessionId.trim() !== '') {
+    hasLoaded.value = false; // 重置加载标记，允许重新加载
+    retryCount.value = 0; // 重置重试计数器
+    isProcessing.value = false; // 重置处理状态
+    loadData();
+  } else {
+    console.warn('Step2ProductSpec: triggerLoad 被调用，但 importSessionId 为空');
+  }
+}
+
 // 暴露给父组件
 defineExpose({
   canGoNext,
   saveAndNext,
+  triggerLoad, // 暴露触发加载的方法
 });
 </script>
 

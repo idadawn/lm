@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Poxiao.Lab.Entity.Models;
 
 namespace Poxiao.Lab.Helpers;
 
@@ -38,7 +39,7 @@ public static class FurnaceNoHelper
         public DateTime? ProdDate { get; set; }
 
         /// <summary>
-        /// 炉号（解析后的炉号数字部分）.
+        /// 炉次号（解析后的炉次号数字部分）.
         /// </summary>
         public string FurnaceNo { get; set; }
 
@@ -73,20 +74,21 @@ public static class FurnaceNoHelper
         public int? FurnaceNoNumeric { get; set; }
 
         /// <summary>
-        /// 卷号数字（用于排序）.
+        /// 卷号数字（用于排序，支持小数）.
         /// </summary>
-        public int? CoilNoNumeric { get; set; }
+        public decimal? CoilNoNumeric { get; set; }
 
         /// <summary>
-        /// 分卷号数字（用于排序）.
+        /// 分卷号数字（用于排序，支持小数）.
         /// </summary>
-        public int? SubcoilNoNumeric { get; set; }
+        public decimal? SubcoilNoNumeric { get; set; }
     }
 
     /// <summary>
     /// 解析炉号.
-    /// 格式：[产线数字][班次汉字][8位日期]-[炉号]-[卷号]-[分卷号][可选特性汉字]
+    /// 格式：[产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号][可选特性汉字]
     /// 示例：1甲20251101-1-4-1脆
+    /// 注意：炉号格式为 [产线数字][班次汉字][8位日期]-[炉次号]
     /// </summary>
     /// <param name="furnaceNo">原始炉号</param>
     /// <returns>解析结果</returns>
@@ -100,73 +102,29 @@ public static class FurnaceNoHelper
             return result;
         }
 
-        // 正则表达式：匹配 [产线数字][班次汉字][8位日期]-[炉号]-[卷号]-[分卷号][可选特性汉字]
-        // 例如：1甲20251101-1-4-1脆
-        var pattern = @"^(\d+)([^\d]+)(\d{8})-(\d+)-(\d+)-(\d+)(.*)$";
-        var match = Regex.Match(furnaceNo, pattern);
+        // 使用新的FurnaceNo类进行解析
+        var furnaceNoObj = FurnaceNo.Parse(furnaceNo);
 
-        if (!match.Success)
+        if (!furnaceNoObj.IsValid)
         {
-            result.ErrorMessage = "炉号格式不符合规则";
+            result.ErrorMessage = furnaceNoObj.ErrorMessage;
             return result;
         }
 
-        try
-        {
-            result.LineNo = match.Groups[1].Value; // 产线
-            result.Shift = match.Groups[2].Value; // 班次
-            var dateStr = match.Groups[3].Value; // 日期字符串
-            result.FurnaceNo = match.Groups[4].Value; // 炉号
-            result.CoilNo = match.Groups[5].Value; // 卷号
-            result.SubcoilNo = match.Groups[6].Value; // 分卷号
-            result.FeatureSuffix = match.Groups[7].Value?.Trim(); // 特性描述（可选）
-
-            // 解析日期
-            if (DateTime.TryParseExact(
-                dateStr,
-                "yyyyMMdd",
-                null,
-                System.Globalization.DateTimeStyles.None,
-                out var date))
-            {
-                result.ProdDate = date;
-            }
-            else
-            {
-                result.ErrorMessage = "日期格式错误";
-                return result;
-            }
-
-            // 解析数字字段（用于排序）
-            if (int.TryParse(result.LineNo, out var lineNoNum))
-            {
-                result.LineNoNumeric = lineNoNum;
-            }
-
-            // 班次转换为数字：甲=1, 乙=2, 丙=3
-            result.ShiftNumeric = ConvertShiftToNumeric(result.Shift);
-
-            if (int.TryParse(result.FurnaceNo, out var furnaceNoNum))
-            {
-                result.FurnaceNoNumeric = furnaceNoNum;
-            }
-
-            if (int.TryParse(result.CoilNo, out var coilNoNum))
-            {
-                result.CoilNoNumeric = coilNoNum;
-            }
-
-            if (int.TryParse(result.SubcoilNo, out var subcoilNoNum))
-            {
-                result.SubcoilNoNumeric = subcoilNoNum;
-            }
-
-            result.Success = true;
-        }
-        catch (Exception ex)
-        {
-            result.ErrorMessage = $"解析失败：{ex.Message}";
-        }
+        // 填充结果
+        result.Success = true;
+        result.LineNo = furnaceNoObj.LineNo;
+        result.Shift = furnaceNoObj.Shift;
+        result.ProdDate = furnaceNoObj.ProdDate;
+        result.FurnaceNo = furnaceNoObj.FurnaceBatchNo; // 注意：这里存储的是炉次号
+        result.CoilNo = furnaceNoObj.CoilNo;
+        result.SubcoilNo = furnaceNoObj.SubcoilNo;
+        result.FeatureSuffix = furnaceNoObj.FeatureSuffix;
+        result.LineNoNumeric = furnaceNoObj.LineNoNumeric;
+        result.ShiftNumeric = furnaceNoObj.ShiftNumeric;
+        result.FurnaceNoNumeric = furnaceNoObj.FurnaceBatchNoNumeric;
+        result.CoilNoNumeric = furnaceNoObj.CoilNoNumeric;
+        result.SubcoilNoNumeric = furnaceNoObj.SubcoilNoNumeric;
 
         return result;
     }
@@ -184,7 +142,7 @@ public static class FurnaceNoHelper
 
         // 移除所有空白字符后判断
         var shiftTrimmed = shift.Trim();
-        
+
         if (shiftTrimmed.Contains("甲"))
             return 1;
         if (shiftTrimmed.Contains("乙"))
@@ -250,35 +208,28 @@ public static class FurnaceNoHelper
     }
 
     /// <summary>
-    /// 构建标准炉号（去掉特性汉字后的标准格式）.
-    /// 格式：[产线数字][班次汉字][8位日期]-[炉号]-[卷号]-[分卷号]
+    /// 构建炉号（去掉特性汉字后的标准格式）.
+    /// 格式：[产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号]
+    /// 注意：用于重复检查的炉号格式为 [产线数字][班次汉字][8位日期]-[炉次号]
     /// </summary>
     /// <param name="lineNo">产线</param>
     /// <param name="shift">班次</param>
     /// <param name="prodDate">生产日期</param>
-    /// <param name="furnaceNo">炉号</param>
+    /// <param name="furnaceNo">炉次号</param>
     /// <param name="coilNo">卷号</param>
     /// <param name="subcoilNo">分卷号</param>
-    /// <returns>标准炉号</returns>
-    public static string BuildStandardFurnaceNo(
+    /// <returns>炉号</returns>
+    public static string? BuildFurnaceNo(
         string lineNo,
         string shift,
         DateTime? prodDate,
         string furnaceNo,
         string coilNo,
-        string subcoilNo)
+        string subcoilNo
+    )
     {
-        if (string.IsNullOrWhiteSpace(lineNo) ||
-            string.IsNullOrWhiteSpace(shift) ||
-            !prodDate.HasValue ||
-            string.IsNullOrWhiteSpace(furnaceNo) ||
-            string.IsNullOrWhiteSpace(coilNo) ||
-            string.IsNullOrWhiteSpace(subcoilNo))
-        {
-            return null;
-        }
-
-        var dateStr = prodDate.Value.ToString("yyyyMMdd");
-        return $"{lineNo}{shift}{dateStr}-{furnaceNo}-{coilNo}-{subcoilNo}";
+        // 使用新的FurnaceNo类构建
+        var furnaceNoObj = FurnaceNo.Build(lineNo, shift, prodDate, furnaceNo, coilNo, subcoilNo);
+        return furnaceNoObj?.GetFurnaceNo();
     }
 }

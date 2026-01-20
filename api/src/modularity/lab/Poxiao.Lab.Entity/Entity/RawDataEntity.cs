@@ -1,6 +1,8 @@
+using System.ComponentModel;
 using Newtonsoft.Json;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Contracts;
+using Poxiao.Lab.Entity.Attributes;
 using SqlSugar;
 
 namespace Poxiao.Lab.Entity.Entity;
@@ -13,16 +15,32 @@ namespace Poxiao.Lab.Entity.Entity;
 public class RawDataEntity : CLDEntityBase
 {
     /// <summary>
-    /// 生产日期.
+    /// 生产日期（从原始炉号FurnaceNo中解析，格式：yyyyMMdd，如20251101）.
+    /// 如果炉号解析失败，则使用检测日期DetectionDate作为后备.
     /// </summary>
     [SugarColumn(ColumnName = "F_PROD_DATE")]
     public DateTime? ProdDate { get; set; }
 
     /// <summary>
+    /// 检测日期（从Excel的"日期"列直接读取）.
+    /// </summary>
+    [ExcelImportColumn("检测日期", Sort = 1)]
+    [SugarColumn(ColumnName = "F_DETECTION_DATE")]
+    public DateTime? DetectionDate { get; set; }
+
+    /// <summary>
     /// 原始炉号.
     /// </summary>
+    [ExcelImportColumn("炉号", Sort = 2)]
     [SugarColumn(ColumnName = "F_FURNACE_NO", Length = 100)]
     public string FurnaceNo { get; set; }
+
+    /// <summary>
+    /// 炉号（格式：[产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号]）.
+    /// 从原始炉号解析后重新构建，不包含特性描述.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_FURNACE_NO_FORMATTED", Length = 200, IsNullable = true)]
+    public string FurnaceNoFormatted { get; set; }
 
     /// <summary>
     /// 产线（从炉号解析）.
@@ -43,22 +61,22 @@ public class RawDataEntity : CLDEntityBase
     public int? ShiftNumeric { get; set; }
 
     /// <summary>
-    /// 炉号（从炉号解析）.
+    /// 炉次号（从炉号解析）.
     /// </summary>
-    [SugarColumn(ColumnName = "F_FURNACE_NO_PARSED", IsNullable = true)]
-    public int? FurnaceNoParsed { get; set; }
+    [SugarColumn(ColumnName = "F_FURNACE_BATCH_NO", IsNullable = true)]
+    public int? FurnaceBatchNo { get; set; }
 
     /// <summary>
-    /// 卷号（从炉号解析）.
+    /// 卷号（从炉号解析，支持小数）.
     /// </summary>
     [SugarColumn(ColumnName = "F_COIL_NO", IsNullable = true)]
-    public int? CoilNo { get; set; }
+    public decimal? CoilNo { get; set; }
 
     /// <summary>
-    /// 分卷号（从炉号解析）.
+    /// 分卷号（从炉号解析，支持小数）.
     /// </summary>
     [SugarColumn(ColumnName = "F_SUBCOIL_NO", IsNullable = true)]
-    public int? SubcoilNo { get; set; }
+    public decimal? SubcoilNo { get; set; }
 
     /// <summary>
     /// 特性描述（从炉号解析）.
@@ -69,14 +87,30 @@ public class RawDataEntity : CLDEntityBase
     /// <summary>
     /// 宽度.
     /// </summary>
+    [ExcelImportColumn("宽度", Sort = 3)]
     [SugarColumn(ColumnName = "F_WIDTH", IsNullable = true)]
     public decimal? Width { get; set; }
 
     /// <summary>
     /// 带材重量.
     /// </summary>
+    [ExcelImportColumn("带材重量", Sort = 4)]
     [SugarColumn(ColumnName = "F_COIL_WEIGHT", IsNullable = true)]
     public decimal? CoilWeight { get; set; }
+
+    /// <summary>
+    /// 断头数(个).
+    /// </summary>
+    [ExcelImportColumn("断头数", Sort = 5)]
+    [SugarColumn(ColumnName = "F_BREAK_COUNT", IsNullable = true)]
+    public int? BreakCount { get; set; }
+
+    /// <summary>
+    /// 单卷重量(kg).
+    /// </summary>
+    [ExcelImportColumn("单卷重量", Sort = 6)]
+    [SugarColumn(ColumnName = "F_SINGLE_COIL_WEIGHT", IsNullable = true)]
+    public decimal? SingleCoilWeight { get; set; }
 
     /// <summary>
     /// 产品规格ID.
@@ -109,10 +143,95 @@ public class RawDataEntity : CLDEntityBase
     public string DetectionColumns { get; set; }
 
     /// <summary>
-    /// 检测数据列（JSON格式，存储动态检测数据，格式：{"1": 值1, "2": 值2, ...}）.
+    /// 检测数据列1-22（固定22列）.
     /// </summary>
-    [SugarColumn(ColumnName = "F_DETECTION_DATA", ColumnDataType = "json", IsNullable = true)]
-    public string DetectionData { get; set; }
+    [ExcelImportColumn("检测1", Sort = 7)]
+    [SugarColumn(ColumnName = "F_DETECTION_1", IsNullable = true)]
+    public decimal? Detection1 { get; set; }
+
+    [ExcelImportColumn("检测2", Sort = 8)]
+    [SugarColumn(ColumnName = "F_DETECTION_2", IsNullable = true)]
+    public decimal? Detection2 { get; set; }
+
+    [ExcelImportColumn("检测3", Sort = 9)]
+    [SugarColumn(ColumnName = "F_DETECTION_3", IsNullable = true)]
+    public decimal? Detection3 { get; set; }
+
+    [ExcelImportColumn("检测4", Sort = 10)]
+    [SugarColumn(ColumnName = "F_DETECTION_4", IsNullable = true)]
+    public decimal? Detection4 { get; set; }
+
+    [ExcelImportColumn("检测5", Sort = 11)]
+    [SugarColumn(ColumnName = "F_DETECTION_5", IsNullable = true)]
+    public decimal? Detection5 { get; set; }
+
+    [ExcelImportColumn("检测6", Sort = 12)]
+    [SugarColumn(ColumnName = "F_DETECTION_6", IsNullable = true)]
+    public decimal? Detection6 { get; set; }
+
+    [ExcelImportColumn("检测7", Sort = 13)]
+    [SugarColumn(ColumnName = "F_DETECTION_7", IsNullable = true)]
+    public decimal? Detection7 { get; set; }
+
+    [ExcelImportColumn("检测8", Sort = 14)]
+    [SugarColumn(ColumnName = "F_DETECTION_8", IsNullable = true)]
+    public decimal? Detection8 { get; set; }
+
+    [ExcelImportColumn("检测9", Sort = 15)]
+    [SugarColumn(ColumnName = "F_DETECTION_9", IsNullable = true)]
+    public decimal? Detection9 { get; set; }
+
+    [ExcelImportColumn("检测10", Sort = 16)]
+    [SugarColumn(ColumnName = "F_DETECTION_10", IsNullable = true)]
+    public decimal? Detection10 { get; set; }
+
+    [ExcelImportColumn("检测11", Sort = 17)]
+    [SugarColumn(ColumnName = "F_DETECTION_11", IsNullable = true)]
+    public decimal? Detection11 { get; set; }
+
+    [ExcelImportColumn("检测12", Sort = 18)]
+    [SugarColumn(ColumnName = "F_DETECTION_12", IsNullable = true)]
+    public decimal? Detection12 { get; set; }
+
+    [ExcelImportColumn("检测13", Sort = 19)]
+    [SugarColumn(ColumnName = "F_DETECTION_13", IsNullable = true)]
+    public decimal? Detection13 { get; set; }
+
+    [ExcelImportColumn("检测14", Sort = 20)]
+    [SugarColumn(ColumnName = "F_DETECTION_14", IsNullable = true)]
+    public decimal? Detection14 { get; set; }
+
+    [ExcelImportColumn("检测15", Sort = 21)]
+    [SugarColumn(ColumnName = "F_DETECTION_15", IsNullable = true)]
+    public decimal? Detection15 { get; set; }
+
+    [ExcelImportColumn("检测16", Sort = 22)]
+    [SugarColumn(ColumnName = "F_DETECTION_16", IsNullable = true)]
+    public decimal? Detection16 { get; set; }
+
+    [ExcelImportColumn("检测17", Sort = 23)]
+    [SugarColumn(ColumnName = "F_DETECTION_17", IsNullable = true)]
+    public decimal? Detection17 { get; set; }
+
+    [ExcelImportColumn("检测18", Sort = 24)]
+    [SugarColumn(ColumnName = "F_DETECTION_18", IsNullable = true)]
+    public decimal? Detection18 { get; set; }
+
+    [ExcelImportColumn("检测19", Sort = 25)]
+    [SugarColumn(ColumnName = "F_DETECTION_19", IsNullable = true)]
+    public decimal? Detection19 { get; set; }
+
+    [ExcelImportColumn("检测20", Sort = 26)]
+    [SugarColumn(ColumnName = "F_DETECTION_20", IsNullable = true)]
+    public decimal? Detection20 { get; set; }
+
+    [ExcelImportColumn("检测21", Sort = 27)]
+    [SugarColumn(ColumnName = "F_DETECTION_21", IsNullable = true)]
+    public decimal? Detection21 { get; set; }
+
+    [ExcelImportColumn("检测22", Sort = 28)]
+    [SugarColumn(ColumnName = "F_DETECTION_22", IsNullable = true)]
+    public decimal? Detection22 { get; set; }
 
     /// <summary>
     /// 有效数据标识（0-非有效数据，1-有效数据，符合炉号解析规则）.
@@ -167,35 +286,6 @@ public class RawDataEntity : CLDEntityBase
     public long? SortCode { get; set; }
 
     #region 辅助属性（不存储到数据库）
-
-    /// <summary>
-    /// 检测数据值字典（辅助属性，从JSON字段解析）.
-    /// </summary>
-    [SugarColumn(IsIgnore = true)]
-    public Dictionary<int, decimal?> DetectionValues
-    {
-        get
-        {
-            if (string.IsNullOrWhiteSpace(DetectionData))
-                return new Dictionary<int, decimal?>();
-
-            try
-            {
-                return JsonConvert.DeserializeObject<Dictionary<int, decimal?>>(DetectionData)
-                    ?? new Dictionary<int, decimal?>();
-            }
-            catch
-            {
-                return new Dictionary<int, decimal?>();
-            }
-        }
-        set
-        {
-            DetectionData =
-                value == null || value.Count == 0 ? null : JsonConvert.SerializeObject(value);
-        }
-    }
-
     /// <summary>
     /// 特性ID列表（辅助属性，从JSON字段解析）.
     /// </summary>

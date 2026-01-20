@@ -45,6 +45,9 @@
                 <template v-else-if="column.dataIndex === 'creatorTime'">
                   {{ record[column.dataIndex] ? formatToDateTime(record[column.dataIndex]) : '-' }}
                 </template>
+                <template v-else-if="column.key?.startsWith('detection')">
+                  {{ record[column.key] ?? '-' }}
+                </template>
               </template>
             </BasicTable>
           </a-tab-pane>
@@ -56,8 +59,8 @@
               <div class="import-method-selector" style="margin-bottom: 16px">
                 <a-row :gutter="16">
                   <a-col :span="24">
-                    <a-card 
-                      :hoverable="true" 
+                    <a-card
+                      :hoverable="true"
                       class="import-method-card"
                       @click="handleStepImport">
                       <template #title>
@@ -161,57 +164,55 @@
   // 排序配置（支持多字段排序）
   const sortRules = ref([
     { field: 'prodDate', order: 'asc' as 'asc' | 'desc' },
-    { field: 'furnaceNoParsed', order: 'asc' as 'asc' | 'desc' },
+    { field: 'furnaceBatchNo', order: 'asc' as 'asc' | 'desc' },
     { field: 'coilNo', order: 'asc' as 'asc' | 'desc' },
     { field: 'subcoilNo', order: 'asc' as 'asc' | 'desc' },
     { field: 'lineNo', order: 'asc' as 'asc' | 'desc' }
   ]);
 
-  // 从检测列字符串中解析出所有检测列号（如 "13,15,18,22" -> [13, 15, 18, 22]）
-  function parseDetectionColumns(detectionColumnsStr: string): number[] {
-    if (!detectionColumnsStr) return [];
-    return detectionColumnsStr
-      .split(',')
-      .map(s => parseInt(s.trim()))
-      .filter(n => !isNaN(n) && n > 0)
-      .sort((a, b) => a - b);
-  }
+  // 检测数据基础列配置（按指定顺序：检测日期、生产日期、炉号、产品规格、特性描述、宽度、带材重量）
+  const baseColumnsBeforeDetection: BasicColumn[] = [
+    { title: '检测日期', dataIndex: 'detectionDateStr', width: 120, fixed: 'left' },
+    { title: '生产日期', dataIndex: 'prodDateStr', width: 120, fixed: 'left' },
+    { title: '炉号', dataIndex: 'furnaceNo', width: 200, fixed: 'left' },
+    { title: '产品规格', dataIndex: 'productSpecName', key: 'productSpecName', width: 150, fixed: 'left' },
+    { title: '特性描述', dataIndex: 'featureSuffix', width: 120, fixed: 'left' },
+    { title: '宽度', dataIndex: 'width', width: 100, align: 'right', fixed: 'left' },
+    { title: '带材重量', dataIndex: 'coilWeight', width: 120, align: 'right', fixed: 'left' },
+  ];
 
-  // 基础列配置
-  const baseColumns: BasicColumn[] = [
-    { title: '检测日期', dataIndex: 'prodDateStr', width: 120, fixed: 'left' },
-    { title: '原始炉号', dataIndex: 'furnaceNo', width: 150, fixed: 'left' },
-    { title: '产线', dataIndex: 'lineNo', width: 80, align: 'center' },
-    { title: '班次', dataIndex: 'shift', width: 80, align: 'center' },
-    { title: '炉号', dataIndex: 'furnaceNoParsed', width: 100, align: 'center' },
-    { title: '卷号', dataIndex: 'coilNo', width: 80, align: 'center' },
-    { title: '分卷', dataIndex: 'subcoilNo', width: 80, align: 'center' },
-    { title: '宽度', dataIndex: 'width', width: 100, align: 'right' },
-    { title: '带材重量', dataIndex: 'coilWeight', width: 120, align: 'right' },
-    { title: '产品规格', dataIndex: 'productSpecName', key: 'productSpecName', width: 150 },
-    { title: '检测列', dataIndex: 'detectionColumns', key: 'detectionColumns', width: 120 },
-    { title: '特性描述', dataIndex: 'featureSuffix', width: 120 },
+  // 检测数据列（固定显示1-22列）
+  const detectionColumns: BasicColumn[] = Array.from({ length: 22 }, (_, i) => ({
+    title: `检测${i + 1}`,
+    dataIndex: `detection${i + 1}`,
+    key: `detection${i + 1}`,
+    width: 100,
+    align: 'right' as const,
+  }));
+
+  // 检测数据基础列配置（检测列之后的列）
+  const baseColumnsAfterDetection: BasicColumn[] = [
+    { title: '断头数(个)', dataIndex: 'breakCount', width: 100, align: 'right' },
+    { title: '单卷重量(kg)', dataIndex: 'singleCoilWeight', width: 120, align: 'right' },
+    // 隐藏的列
+    { title: '产线', dataIndex: 'lineNo', width: 80, align: 'center', defaultHidden: true },
+    { title: '班次', dataIndex: 'shift', width: 80, align: 'center', defaultHidden: true },
+    { title: '卷号', dataIndex: 'coilNo', width: 80, align: 'center', defaultHidden: true },
+    { title: '分卷', dataIndex: 'subcoilNo', width: 80, align: 'center', defaultHidden: true },
     { title: '录入人', dataIndex: 'creatorUserName', key: 'creatorUserName', width: 120 },
     { title: '录入日期', dataIndex: 'creatorTime', key: 'creatorTime', width: 160 },
   ];
 
-  // 动态检测列（根据数据中的检测列配置生成）
-  const detectionColumnSet = ref<Set<number>>(new Set());
-  const detectionColumns = computed(() => {
-    return Array.from(detectionColumnSet.value)
-      .sort((a, b) => a - b)
-      .map(num => ({
-        title: `检测${num}`,
-        dataIndex: `detection${num}`,
-        key: `detection${num}`,
-        width: 100,
-        align: 'right' as const,
-      }));
-  });
+  // 完整的检测数据列配置
+  const baseColumns: BasicColumn[] = [
+    ...baseColumnsBeforeDetection,
+    ...detectionColumns,
+    ...baseColumnsAfterDetection,
+  ];
 
   const [registerTable, { reload, setColumns, getForm }] = useTable({
     api: getRawDataList,
-    columns: baseColumns, // 初始只使用基础列
+    columns: baseColumns, // 初始列配置：已包含检测列1-22
     useSearchForm: true,
     immediate: false, // 先不立即加载，等设置默认值后再加载
     formConfig: {
@@ -264,29 +265,16 @@
       return params;
     },
     afterFetch: data => {
-      // 数据加载后，分析所有数据中的检测列，动态生成检测列
-      // 优先从实际数据中提取有值的检测列，如果没有则从detectionColumns配置中提取
-      const columnSet = new Set<number>();
+      // 确保sortCode字段存在（后端返回的是SortCode，前端使用sortCode）
       data.forEach((record: any) => {
-        // 首先检查实际数据中有值的检测列（Detection1-Detection22）
-        for (let i = 1; i <= 22; i++) {
-          const key = `detection${i}`;
-          if (record[key] != null && record[key] !== '') {
-            columnSet.add(i);
-          }
-        }
-        // 如果从配置中解析出的列不在实际数据中，也添加（用于显示空列）
-        if (record.detectionColumns) {
-          const cols = parseDetectionColumns(record.detectionColumns);
-          cols.forEach(col => columnSet.add(col));
+        if (record.SortCode !== undefined && record.sortCode === undefined) {
+          record.sortCode = record.SortCode;
         }
       });
-      // 更新检测列集合
-      detectionColumnSet.value = columnSet;
-      // 更新表格列配置（使用setTimeout确保computed已更新）
+
+      // 更新表格列配置（固定显示检测列1-22）
       setTimeout(() => {
-        const allColumns = [...baseColumns, ...detectionColumns.value];
-        setColumns(allColumns);
+        setColumns(baseColumns);
       }, 0);
       return data;
     },
@@ -314,22 +302,41 @@
   }
 
   // ========== 原始数据表格（按Excel顺序，显示所有数据） ==========
-  // 原始数据列配置
-  const rawDataColumns: BasicColumn[] = [
+  // 原始数据基础列配置
+  const rawDataBaseColumns: BasicColumn[] = [
     { title: '行号', dataIndex: 'sortCode', width: 80, fixed: 'left' },
-    { title: '检测日期', dataIndex: 'prodDateStr', width: 120 },
-    { title: '原始炉号', dataIndex: 'furnaceNo', width: 200 },
-    { title: '产线', dataIndex: 'lineNo', width: 80, align: 'center' },
-    { title: '班次', dataIndex: 'shift', width: 80, align: 'center' },
-    { title: '炉号', dataIndex: 'furnaceNoParsed', width: 80, align: 'center' },
-    { title: '卷号', dataIndex: 'coilNo', width: 80, align: 'center' },
-    { title: '分卷', dataIndex: 'subcoilNo', width: 80, align: 'center' },
-    { title: '宽度', dataIndex: 'width', width: 100, align: 'right' },
-    { title: '带材重量', dataIndex: 'coilWeight', width: 120, align: 'right' },
+    { title: '生产日期', dataIndex: 'prodDateStr', width: 120, defaultHidden: true },
+    { title: '检测日期', dataIndex: 'detectionDateStr', width: 120, fixed: 'left' },
+    { title: '原始炉号', dataIndex: 'furnaceNo', width: 200, fixed: 'left' },
+    { title: '炉号', dataIndex: 'furnaceNoFormatted', width: 200, fixed: 'left' },
+    { title: '产线', dataIndex: 'lineNo', width: 80, align: 'center', defaultHidden: true },
+    { title: '班次', dataIndex: 'shift', width: 80, align: 'center', defaultHidden: true },
+    { title: '卷号', dataIndex: 'coilNo', width: 80, align: 'center', defaultHidden: true },
+    { title: '分卷', dataIndex: 'subcoilNo', width: 80, align: 'center', defaultHidden: true },
+    { title: '宽度', dataIndex: 'width', width: 100, align: 'right', fixed: 'left' },
+    { title: '带材重量', dataIndex: 'coilWeight', width: 120, align: 'right', fixed: 'left' },
+    { title: '断头数(个)', dataIndex: 'breakCount', width: 100, align: 'right' },
+    { title: '单卷重量(kg)', dataIndex: 'singleCoilWeight', width: 120, align: 'right' },
     { title: '特性描述', dataIndex: 'featureSuffix', width: 120 },
     { title: '数据状态', dataIndex: 'isValidData', key: 'isValidData', width: 100, align: 'center' },
     { title: '错误信息', dataIndex: 'importError', width: 200 },
     { title: '录入日期', dataIndex: 'creatorTime', key: 'creatorTime', width: 160 },
+  ];
+
+  // 检测数据列（1-22列）
+  const rawDataDetectionColumns: BasicColumn[] = Array.from({ length: 22 }, (_, i) => ({
+    title: `检测${i + 1}`,
+    dataIndex: `detection${i + 1}`,
+    key: `detection${i + 1}`,
+    width: 100,
+    align: 'right' as const,
+  }));
+
+  // 原始数据完整列配置（基础列 + 检测列，检测列放在带材重量后面）
+  const rawDataColumns: BasicColumn[] = [
+    ...rawDataBaseColumns.slice(0, 10), // 行号到带材重量
+    ...rawDataDetectionColumns, // 检测列1-22
+    ...rawDataBaseColumns.slice(10), // 断头数及之后的列
   ];
 
   const [registerRawTable, { reload: reloadRawTable }] = useTable({
@@ -394,6 +401,18 @@
       }
       return params;
     },
+    afterFetch: data => {
+      data.forEach((record: any) => {
+        // 确保字段名映射正确
+        if (record.SortCode !== undefined && record.sortCode === undefined) {
+          record.sortCode = record.SortCode;
+        }
+        if (record.FurnaceBatchNo !== undefined && record.furnaceBatchNo === undefined) {
+          record.furnaceBatchNo = record.FurnaceBatchNo;
+        }
+      });
+      return data;
+    },
   });
 
   // 页签切换处理
@@ -401,6 +420,11 @@
     if (key === 'rawData') {
       nextTick(() => {
         reloadRawTable();
+      });
+    } else if (key === 'data') {
+      // 切换到检测数据页签时，刷新检测数据表格
+      nextTick(() => {
+        reload();
       });
     }
   }
@@ -416,6 +440,14 @@
     if (result.data.successCount > 0) {
       reload();
       reloadRawTable();
+      // 如果当前不在检测数据页签，切换到检测数据页签以便用户看到新导入的数据
+      if (activeTab.value !== 'data') {
+        activeTab.value = 'data';
+        // 切换到检测数据页签后，确保数据已刷新
+        nextTick(() => {
+          reload();
+        });
+      }
     }
   }
 
@@ -473,6 +505,9 @@
     return `${total} / ${success} ok`;
   }
 
+  // ========== 导入相关方法 ==========
+
+
   // ========== 分步导入向导相关方法 ==========
 
   // 处理分步导入
@@ -482,12 +517,20 @@
 
   // 分步导入成功回调
   function handleStepImportSuccess() {
+    // 刷新日志表格
+    reloadLogTable();
     // 刷新检测数据表格
     reload();
     // 刷新原始数据表格
     reloadRawTable();
-    // 刷新日志表格
-    reloadLogTable();
+    // 如果当前不在检测数据页签，切换到检测数据页签以便用户看到新导入的数据
+    if (activeTab.value !== 'data') {
+      activeTab.value = 'data';
+      // 切换到检测数据页签后，确保数据已刷新
+      nextTick(() => {
+        reload();
+      });
+    }
     createMessage.success('分步导入完成！');
   }
 </script>

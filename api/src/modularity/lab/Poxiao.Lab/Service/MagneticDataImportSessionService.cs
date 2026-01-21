@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
+using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
@@ -10,11 +11,14 @@ using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Core.Manager.Files;
 using Poxiao.Lab.Entity;
+using Poxiao.Lab.Entity.Config;
 using Poxiao.Lab.Entity.Dto.MagneticData;
+using Poxiao.Lab.Entity.Enum;
 using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
 using Poxiao.Systems.Interfaces.Common;
 using SqlSugar;
+using static Poxiao.Lab.Helpers.FurnaceNoHelper;
 
 namespace Poxiao.Lab.Service;
 
@@ -31,6 +35,7 @@ public class MagneticDataImportSessionService
     private readonly ISqlSugarRepository<MagneticDataImportSessionEntity> _sessionRepository;
     private readonly ISqlSugarRepository<IntermediateDataEntity> _intermediateDataRepository;
     private readonly ISqlSugarRepository<MagneticRawDataEntity> _magneticRawDataRepository;
+    private readonly ISqlSugarRepository<ExcelImportTemplateEntity> _templateRepository;
     private readonly IFileService _fileService;
     private readonly IUserManager _userManager;
     private readonly IFileManager _fileManager;
@@ -39,6 +44,7 @@ public class MagneticDataImportSessionService
         ISqlSugarRepository<MagneticDataImportSessionEntity> sessionRepository,
         ISqlSugarRepository<IntermediateDataEntity> intermediateDataRepository,
         ISqlSugarRepository<MagneticRawDataEntity> magneticRawDataRepository,
+        ISqlSugarRepository<ExcelImportTemplateEntity> templateRepository,
         IFileService fileService,
         IUserManager userManager,
         IFileManager fileManager
@@ -47,6 +53,7 @@ public class MagneticDataImportSessionService
         _sessionRepository = sessionRepository;
         _intermediateDataRepository = intermediateDataRepository;
         _magneticRawDataRepository = magneticRawDataRepository;
+        _templateRepository = templateRepository;
         _fileService = fileService;
         _userManager = userManager;
         _fileManager = fileManager;
@@ -166,8 +173,48 @@ public class MagneticDataImportSessionService
             throw Oops.Oh("文件数据不存在，请重新上传文件");
         }
 
-        // 3. 解析Excel文件
-        var parsedData = ParseExcel(fileBytes, input.FileName ?? existingSession.FileName);
+        // 3. 获取模板配置
+        ExcelTemplateConfig templateConfig = null;
+        var template = await _templateRepository.GetFirstAsync(t =>
+            t.TemplateCode == ExcelImportTemplateCode.MagneticDataImport.ToString()
+            && (t.DeleteMark == 0 || t.DeleteMark == null)
+        );
+
+        if (template != null && !string.IsNullOrWhiteSpace(template.ConfigJson))
+        {
+            try
+            {
+                var json = template.ConfigJson;
+                // 处理双重序列化
+                if (json.StartsWith("\"") && json.EndsWith("\""))
+                {
+                    try
+                    {
+                        json = System.Text.Json.JsonSerializer.Deserialize<string>(json);
+                    }
+                    catch
+                    {
+                        // 忽略，当作普通JSON处理
+                    }
+                }
+
+                templateConfig = System.Text.Json.JsonSerializer.Deserialize<ExcelTemplateConfig>(
+                    json
+                );
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[UploadAndParse] 解析模板配置失败: {ex.Message}");
+                // 继续使用默认配置
+            }
+        }
+
+        // 4. 解析Excel文件
+        var parsedData = ParseExcel(
+            fileBytes,
+            input.FileName ?? existingSession.FileName,
+            templateConfig
+        );
 
         // 4. 保存解析后的数据到临时文件
         var tempFilePath = await SaveParsedDataToFile(sessionId, parsedData);
@@ -200,6 +247,30 @@ public class MagneticDataImportSessionService
         var parsedData = await LoadParsedDataFromFile(sessionId);
         var validData = parsedData.Where(t => t.IsValid).ToList();
 
+        // 按炉号分组（不区分是否刻痕），每个炉号只选择一条最优数据
+        var dataByFurnaceNo = validData.GroupBy(t => t.FurnaceNo).ToList();
+
+        // 为每个炉号选择最优数据并标记
+        foreach (var group in dataByFurnaceNo)
+        {
+            var items = group.ToList();
+            MagneticDataImportItem bestItem;
+            if (items.Count > 1)
+            {
+                bestItem = SelectBestData(items);
+            }
+            else
+            {
+                bestItem = items[0];
+            }
+
+            // 标记最优数据
+            foreach (var item in items)
+            {
+                item.IsBest = item == bestItem;
+            }
+        }
+
         return new MagneticDataReviewOutput
         {
             Session = session,
@@ -208,6 +279,7 @@ public class MagneticDataImportSessionService
             UpdatedRows = 0, // 将在完成导入时计算
             SkippedRows = 0, // 将在完成导入时计算
             Errors = parsedData.Where(t => !t.IsValid).Select(t => t.ErrorMessage).ToList(),
+            ValidData = validData,
         };
     }
 
@@ -231,7 +303,7 @@ public class MagneticDataImportSessionService
             throw Oops.Oh("没有有效数据可以导入");
         }
 
-        // 2. 保存所有原始数据到磁性原始数据表（包括有效和无效数据）
+        // 2. 准备原始数据实体
         var rawDataEntities = new List<MagneticRawDataEntity>();
         foreach (var item in allData)
         {
@@ -255,15 +327,15 @@ public class MagneticDataImportSessionService
             };
 
             // 解析炉号信息
-            var parseResult = ParseMagneticFurnaceNo(item.FurnaceNo);
+            var parseResult = ParseMagneticFurnaceNo(item.FurnaceNo, out bool isScratched);
             if (parseResult.Success)
             {
                 rawDataEntity.LineNo = parseResult.LineNoNumeric;
                 rawDataEntity.Shift = parseResult.Shift;
                 rawDataEntity.ShiftNumeric = parseResult.ShiftNumeric;
-                rawDataEntity.FurnaceBatchNo = parseResult.FurnaceBatchNo;
-                rawDataEntity.CoilNo = parseResult.CoilNo;
-                rawDataEntity.SubcoilNo = parseResult.SubcoilNo;
+                rawDataEntity.FurnaceBatchNo = parseResult.FurnaceNoNumeric;
+                rawDataEntity.CoilNo = parseResult.CoilNoNumeric;
+                rawDataEntity.SubcoilNo = parseResult.SubcoilNoNumeric;
                 rawDataEntity.ProdDate = parseResult.ProdDate;
                 rawDataEntity.FurnaceNoParsed = parseResult.FurnaceNo;
             }
@@ -271,29 +343,20 @@ public class MagneticDataImportSessionService
             rawDataEntities.Add(rawDataEntity);
         }
 
-        // 批量插入原始数据
-        if (rawDataEntities.Count > 0)
-        {
-            var batches = rawDataEntities.Chunk(1000);
-            foreach (var batch in batches)
-            {
-                await _magneticRawDataRepository.AsInsertable(batch.ToList()).ExecuteCommandAsync();
-            }
-        }
-
-        // 3. 按炉号分组，处理多条数据的情况
+        // 3. 按炉号分组（不区分是否刻痕），每个炉号只选择一条最优数据
         var dataByFurnaceNo = validData.GroupBy(t => t.FurnaceNo).ToList();
 
-        int updatedRows = 0;
-        int skippedRows = 0;
-        var errors = new List<string>();
+        // 准备需要更新的中间数据实体列表
+        var intermediateDataToUpdate =
+            new List<(IntermediateDataEntity Entity, string OriginalFurnaceNo)>();
 
         foreach (var group in dataByFurnaceNo)
         {
-            var furnaceNo = group.Key;
             var items = group.ToList();
 
-            // 如果同一炉号有多条数据，需要选择最优数据
+            // 从该炉号的所有数据（包括带K和不带K）中选择一条最优数据
+            // 取值规则：值最小为最优数据，优先级分别是H(Ps铁损)、I(Ss激磁功率)、F(Hc)
+            // 如果以上数据还无法确定一条数据，以最后的检测时间作为最好的数据
             MagneticDataImportItem bestItem;
             if (items.Count > 1)
             {
@@ -304,102 +367,156 @@ public class MagneticDataImportSessionService
                 bestItem = items[0];
             }
 
-            // 4. 根据是否带K，更新中间数据表的不同字段
-            try
+            // 查找中间数据表中对应的记录
+            var magneticFurnaceNo = bestItem.FurnaceNo;
+
+            // 构建查询条件：使用 FurnaceNoFormatted 匹配
+            var query = _intermediateDataRepository
+                .AsQueryable()
+                .Where(t => t.DeleteMark == null)
+                .Where(t =>
+                    t.FurnaceNoFormatted != null && t.FurnaceNoFormatted.Equals(magneticFurnaceNo)
+                );
+
+            var intermediateData = await query.FirstAsync();
+
+            if (intermediateData == null)
             {
-                // 查找中间数据表中对应的记录
-                // 炉号格式：(产线数字)(班次汉字)(8位日期)-(炉号)
-                // 需要解析炉号，然后查找匹配的记录
-                var parseResult = ParseMagneticFurnaceNo(bestItem.FurnaceNo);
-                if (!parseResult.Success)
+                // 记录错误，但不立即抛出，等事务中统一处理
+                continue;
+            }
+
+            // 根据是否带K，更新不同的字段
+            if (bestItem.IsScratched)
+            {
+                // 带K：更新刻痕后性能字段
+                intermediateData.PerfAfterSsPower = bestItem.SsPower;
+                intermediateData.PerfAfterPsLoss = bestItem.PsLoss;
+                intermediateData.PerfAfterHc = bestItem.Hc;
+                // 设置是否刻痕标识为1（是）
+                intermediateData.IsScratched = 1;
+            }
+            else
+            {
+                // 不带K：更新正常性能字段
+                intermediateData.PerfSsPower = bestItem.SsPower;
+                intermediateData.PerfPsLoss = bestItem.PsLoss;
+                intermediateData.PerfHc = bestItem.Hc;
+                // 设置是否刻痕标识为0（否）
+                intermediateData.IsScratched = 0;
+            }
+
+            // 更新检测时间（如果有）
+            if (bestItem.DetectionTime.HasValue)
+            {
+                // 使用检测时间更新中间数据表的检测日期
+                intermediateData.DetectionDate = bestItem.DetectionTime.Value.Date;
+            }
+
+            // 更新编辑信息
+            intermediateData.PerfEditorId = _userManager.UserId;
+            intermediateData.PerfEditorName = _userManager.RealName;
+            intermediateData.PerfEditTime = DateTime.Now;
+            intermediateData.LastModifyUserId = _userManager.UserId;
+            intermediateData.LastModifyTime = DateTime.Now;
+
+            intermediateDataToUpdate.Add((intermediateData, bestItem.OriginalFurnaceNo));
+        }
+
+        // 4. 使用事务确保原始数据和中间数据的导入操作原子性（同时成功或同时失败）
+        var db = _sessionRepository.AsSugarClient();
+        int updatedRows = 0;
+        int skippedRows = 0;
+        var errors = new List<string>();
+
+        try
+        {
+            await db.Ado.BeginTranAsync();
+
+            // 4.1 将所有原始数据写入磁性原始数据表（包括有效和无效数据）
+            if (rawDataEntities.Count > 0)
+            {
+                // 先删除已存在的同名炉号数据，防止重复堆积
+                var furnaceNos = rawDataEntities
+                    .Select(x => x.OriginalFurnaceNo)
+                    .Distinct()
+                    .ToList();
+                if (furnaceNos.Count > 0)
                 {
-                    errors.Add(
-                        $"炉号 {bestItem.OriginalFurnaceNo} 解析失败: {parseResult.ErrorMessage}"
-                    );
+                    // 分批删除防止参数过多
+                    var deleteBatches = furnaceNos.Chunk(1000);
+                    foreach (var batch in deleteBatches)
+                    {
+                        var batchList = batch.ToList();
+                        await _magneticRawDataRepository.DeleteAsync(t =>
+                            batchList.Contains(t.OriginalFurnaceNo)
+                        );
+                    }
+                }
+
+                // 分批插入防止SQL太长
+                var batches = rawDataEntities.Chunk(1000);
+                foreach (var batch in batches)
+                {
+                    await _magneticRawDataRepository
+                        .AsInsertable(batch.ToList())
+                        .ExecuteCommandAsync();
+                }
+            }
+
+            // 4.2 更新中间数据表
+            foreach (var (entity, originalFurnaceNo) in intermediateDataToUpdate)
+            {
+                try
+                {
+                    await _intermediateDataRepository.UpdateAsync(entity);
+                    updatedRows++;
+                }
+                catch (Exception ex)
+                {
+                    errors.Add($"更新炉号 {originalFurnaceNo} 失败: {ex.Message}");
                     skippedRows++;
-                    continue;
                 }
+            }
 
-                // 构建查询条件：产线、班次、日期、炉号
-                var query = _intermediateDataRepository
-                    .AsQueryable()
-                    .Where(t => t.DeleteMark == null);
+            // 检查是否有未找到的记录
+            var foundFurnaceNos = intermediateDataToUpdate
+                .Select(x => x.OriginalFurnaceNo)
+                .ToHashSet();
+            foreach (var group in dataByFurnaceNo)
+            {
+                var items = group.ToList();
+                MagneticDataImportItem bestItem =
+                    items.Count > 1 ? SelectBestData(items) : items[0];
 
-                if (parseResult.LineNoNumeric.HasValue)
-                {
-                    // 中间数据表的LineNo是INT，直接比较
-                    query = query.Where(t => t.LineNo == parseResult.LineNoNumeric.Value);
-                }
-
-                if (!string.IsNullOrEmpty(parseResult.Shift))
-                {
-                    query = query.Where(t => t.Shift == parseResult.Shift);
-                }
-
-                if (parseResult.ProdDate.HasValue)
-                {
-                    query = query.Where(t =>
-                        t.ProdDate.HasValue
-                        && t.ProdDate.Value.Date == parseResult.ProdDate.Value.Date
-                    );
-                }
-
-                if (parseResult.FurnaceBatchNo.HasValue)
-                {
-                    // 中间数据表的FurnaceBatchNo是INT，直接比较
-                    query = query.Where(t => t.FurnaceBatchNo == parseResult.FurnaceBatchNo.Value);
-                }
-
-                var intermediateData = await query.FirstAsync();
-
-                if (intermediateData == null)
+                if (!foundFurnaceNos.Contains(bestItem.OriginalFurnaceNo))
                 {
                     errors.Add($"未找到炉号 {bestItem.OriginalFurnaceNo} 对应的中间数据记录");
                     skippedRows++;
-                    continue;
                 }
-
-                // 根据是否带K，更新不同的字段
-                if (bestItem.IsScratched)
-                {
-                    // 带K：更新刻痕后性能字段
-                    intermediateData.PerfAfterSsPower = bestItem.SsPower;
-                    intermediateData.PerfAfterPsLoss = bestItem.PsLoss;
-                    intermediateData.PerfAfterHc = bestItem.Hc;
-                }
-                else
-                {
-                    // 不带K：更新正常性能字段
-                    intermediateData.PerfSsPower = bestItem.SsPower;
-                    intermediateData.PerfPsLoss = bestItem.PsLoss;
-                    intermediateData.PerfHc = bestItem.Hc;
-                }
-
-                // 更新检测时间（如果有）
-                if (bestItem.DetectionTime.HasValue)
-                {
-                    // 注意：中间数据表可能没有检测时间字段，这里先不更新
-                    // 如果需要，可以在中间数据表中添加检测时间字段
-                }
-
-                // 更新编辑信息
-                intermediateData.PerfEditorId = _userManager.UserId;
-                intermediateData.PerfEditorName = _userManager.RealName;
-                intermediateData.PerfEditTime = DateTime.Now;
-                intermediateData.LastModifyUserId = _userManager.UserId;
-                intermediateData.LastModifyTime = DateTime.Now;
-
-                await _intermediateDataRepository.UpdateAsync(intermediateData);
-                updatedRows++;
             }
-            catch (Exception ex)
+
+            // 如果所有更新都失败，回滚事务
+            if (updatedRows == 0 && intermediateDataToUpdate.Count > 0)
             {
-                errors.Add($"更新炉号 {bestItem.OriginalFurnaceNo} 失败: {ex.Message}");
-                skippedRows++;
+                await db.Ado.RollbackTranAsync();
+                var errorSummary =
+                    errors.Count <= 10
+                        ? string.Join("; ", errors)
+                        : string.Join("; ", errors.Take(10)) + $"... (共 {errors.Count} 条错误)";
+                throw Oops.Oh($"导入失败，数据已回滚: {errorSummary}");
             }
+
+            // 提交事务
+            await db.Ado.CommitTranAsync();
+        }
+        catch (Exception ex)
+        {
+            await db.Ado.RollbackTranAsync();
+            throw Oops.Oh($"导入失败，数据已回滚: {ex.Message}");
         }
 
-        // 5. 更新会话状态
+        // 5. 更新会话状态（在事务外，确保状态正确反映）
         session.Status = errors.Count > 0 && updatedRows == 0 ? "failed" : "completed";
         session.CurrentStep = 2;
         await _sessionRepository.UpdateAsync(session);
@@ -468,9 +585,13 @@ public class MagneticDataImportSessionService
     // ================= Private Methods =================
 
     /// <summary>
-    /// 解析Excel文件，读取B、H、I、F、P列
+    /// 解析Excel文件，根据模板配置读取列
     /// </summary>
-    private List<MagneticDataImportItem> ParseExcel(byte[] fileBytes, string fileName)
+    private List<MagneticDataImportItem> ParseExcel(
+        byte[] fileBytes,
+        string fileName,
+        ExcelTemplateConfig templateConfig = null
+    )
     {
         var items = new List<MagneticDataImportItem>();
         using var stream = new MemoryStream(fileBytes);
@@ -479,12 +600,47 @@ public class MagneticDataImportSessionService
             : new HSSFWorkbook(stream);
         var sheet = workbook.GetSheetAt(0);
 
-        // Excel列索引：B=1, H=7, I=8, F=5, P=15
-        int colB = 1; // 原始炉号
-        int colH = 7; // Ps铁损
-        int colI = 8; // Ss激磁功率
-        int colF = 5; // Hc
-        int colP = 15; // 检测时间
+        // 解析表头，建立列名到列索引的映射
+        var headerRow = sheet.GetRow(0);
+        var columnNameToIndex = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        if (headerRow != null)
+        {
+            for (int i = 0; i <= headerRow.LastCellNum; i++)
+            {
+                var cell = headerRow.GetCell(i);
+                if (cell != null)
+                {
+                    var cellValue = cell.ToString()?.Trim();
+                    if (!string.IsNullOrEmpty(cellValue))
+                    {
+                        // 支持多个列名映射到同一列索引
+                        if (!columnNameToIndex.ContainsKey(cellValue))
+                        {
+                            columnNameToIndex[cellValue] = i;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 根据模板配置获取列索引，如果没有配置则使用默认值
+        int colOriginalFurnaceNo = GetColumnIndex(
+            templateConfig,
+            "OriginalFurnaceNo",
+            columnNameToIndex,
+            "B",
+            1
+        );
+        int colPsLoss = GetColumnIndex(templateConfig, "PsLoss", columnNameToIndex, "H", 7);
+        int colSsPower = GetColumnIndex(templateConfig, "SsPower", columnNameToIndex, "I", 8);
+        int colHc = GetColumnIndex(templateConfig, "Hc", columnNameToIndex, "F", 5);
+        int colDetectionTime = GetColumnIndex(
+            templateConfig,
+            "DetectionTime",
+            columnNameToIndex,
+            "P",
+            15
+        );
 
         // 从第2行开始读取（第1行是表头）
         for (int rowIndex = 1; rowIndex <= sheet.LastRowNum; rowIndex++)
@@ -500,8 +656,8 @@ public class MagneticDataImportSessionService
 
             try
             {
-                // 读取B列：原始炉号
-                item.OriginalFurnaceNo = GetCellValue<string>(row, colB);
+                // 读取原始炉号
+                item.OriginalFurnaceNo = GetCellValue<string>(row, colOriginalFurnaceNo);
                 if (string.IsNullOrWhiteSpace(item.OriginalFurnaceNo))
                 {
                     item.IsValid = false;
@@ -511,7 +667,10 @@ public class MagneticDataImportSessionService
                 }
 
                 // 解析炉号，检测是否带K
-                var parseResult = ParseMagneticFurnaceNo(item.OriginalFurnaceNo);
+                var parseResult = ParseMagneticFurnaceNo(
+                    item.OriginalFurnaceNo,
+                    out bool isScratched
+                );
                 if (!parseResult.Success)
                 {
                     item.IsValid = false;
@@ -522,19 +681,19 @@ public class MagneticDataImportSessionService
                 }
 
                 item.FurnaceNo = parseResult.FurnaceNo;
-                item.IsScratched = parseResult.IsScratched;
+                item.IsScratched = isScratched;
 
-                // 读取H列：Ps铁损
-                item.PsLoss = GetCellValue<decimal?>(row, colH);
+                // 读取Ps铁损
+                item.PsLoss = GetCellValue<decimal?>(row, colPsLoss);
 
-                // 读取I列：Ss激磁功率
-                item.SsPower = GetCellValue<decimal?>(row, colI);
+                // 读取Ss激磁功率
+                item.SsPower = GetCellValue<decimal?>(row, colSsPower);
 
-                // 读取F列：Hc
-                item.Hc = GetCellValue<decimal?>(row, colF);
+                // 读取Hc
+                item.Hc = GetCellValue<decimal?>(row, colHc);
 
-                // 读取P列：检测时间
-                item.DetectionTime = GetCellValue<DateTime?>(row, colP);
+                // 读取检测时间
+                item.DetectionTime = GetCellValue<DateTime?>(row, colDetectionTime);
 
                 // 验证至少有一个有效值
                 if (!item.PsLoss.HasValue && !item.SsPower.HasValue && !item.Hc.HasValue)
@@ -560,32 +719,112 @@ public class MagneticDataImportSessionService
     }
 
     /// <summary>
+    /// 根据模板配置获取列索引
+    /// </summary>
+    private int GetColumnIndex(
+        ExcelTemplateConfig templateConfig,
+        string fieldName,
+        Dictionary<string, int> columnNameToIndex,
+        string defaultColumnLetter,
+        int defaultColumnIndex
+    )
+    {
+        // 如果模板配置存在，尝试从配置中获取
+        if (templateConfig?.FieldMappings != null)
+        {
+            var mapping = templateConfig.FieldMappings.FirstOrDefault(m => m.Field == fieldName);
+            if (mapping != null)
+            {
+                // 优先使用 ExcelColumnIndex（列字母，如 "H"）
+                if (!string.IsNullOrEmpty(mapping.ExcelColumnIndex))
+                {
+                    var index = ConvertColumnLetterToIndex(mapping.ExcelColumnIndex);
+                    if (index >= 0)
+                    {
+                        return index;
+                    }
+                }
+
+                // 其次尝试使用 ExcelColumnNames（列名）
+                if (mapping.ExcelColumnNames != null && mapping.ExcelColumnNames.Count > 0)
+                {
+                    foreach (var columnName in mapping.ExcelColumnNames)
+                    {
+                        if (string.IsNullOrEmpty(columnName))
+                            continue;
+
+                        // 精确匹配
+                        if (columnNameToIndex.ContainsKey(columnName))
+                        {
+                            return columnNameToIndex[columnName];
+                        }
+
+                        // 部分匹配：支持列名中包含列字母的情况，如 "Ps铁损(H)" 匹配 "Ps铁损"
+                        var matchedKey = columnNameToIndex.Keys.FirstOrDefault(k =>
+                            k.Contains(columnName, StringComparison.OrdinalIgnoreCase)
+                            || columnName.Contains(k, StringComparison.OrdinalIgnoreCase)
+                        );
+                        if (matchedKey != null)
+                        {
+                            return columnNameToIndex[matchedKey];
+                        }
+                    }
+                }
+            }
+        }
+
+        // 如果模板配置不存在或未找到，使用默认值
+        return defaultColumnIndex;
+    }
+
+    /// <summary>
+    /// 将Excel列字母（如 "A", "B", "H", "AA"）转换为列索引（从0开始）
+    /// </summary>
+    private int ConvertColumnLetterToIndex(string columnLetter)
+    {
+        if (string.IsNullOrEmpty(columnLetter))
+            return -1;
+
+        columnLetter = columnLetter.Trim().ToUpper();
+        int index = 0;
+        for (int i = 0; i < columnLetter.Length; i++)
+        {
+            char c = columnLetter[i];
+            if (c < 'A' || c > 'Z')
+                return -1;
+            index = index * 26 + (c - 'A' + 1);
+        }
+        return index - 1; // 转换为从0开始的索引
+    }
+
+    /// <summary>
     /// 解析磁性数据炉号
     /// 格式：(产线数字)(班次汉字)(8位日期)-(炉号)(是否刻痕K)
     /// 例如：1甲20251101-1, 1甲20251101-1K
+    /// 也支持包含卷号和分卷号的格式，但只提取前面的部分：1丙20260110-1-1-1 -> 1丙20260110-1
     /// </summary>
-    private MagneticFurnaceNoParseResult ParseMagneticFurnaceNo(string furnaceNo)
+    private FurnaceNoParseResult ParseMagneticFurnaceNo(string furnaceNo, out bool isScratched)
     {
-        var result = new MagneticFurnaceNoParseResult();
+        var result = new FurnaceNoParseResult();
 
         if (string.IsNullOrWhiteSpace(furnaceNo))
         {
             result.ErrorMessage = "炉号为空";
+            isScratched = false;
             return result;
         }
 
+        // 检测是否带K（不区分大小写）
+        isScratched = furnaceNo.EndsWith("K", StringComparison.OrdinalIgnoreCase);
+
         furnaceNo = furnaceNo.Trim();
 
-        // 检测是否带K（不区分大小写）
-        bool isScratched = furnaceNo.EndsWith("K", StringComparison.OrdinalIgnoreCase);
         if (isScratched)
         {
             furnaceNo = furnaceNo.Substring(0, furnaceNo.Length - 1).TrimEnd();
         }
 
-        // 正则表达式：匹配 [产线数字][班次汉字][8位日期]-[炉号]
-        var pattern = @"^(\d+)([^\d]+?)(\d{8})-(\d+)$";
-        var match = Regex.Match(furnaceNo, pattern);
+        var match = FurnaceNoHelper.ParseFurnaceNo(furnaceNo);
 
         if (!match.Success)
         {
@@ -595,30 +834,9 @@ public class MagneticDataImportSessionService
 
         try
         {
-            result.LineNo = match.Groups[1].Value; // 产线
-            result.Shift = match.Groups[2].Value.Trim(); // 班次
-            var dateStr = match.Groups[3].Value; // 日期字符串
-            result.FurnaceNo = match.Groups[4].Value; // 炉号
-            result.IsScratched = isScratched;
-
-            // 解析日期
-            if (
-                DateTime.TryParseExact(
-                    dateStr,
-                    "yyyyMMdd",
-                    null,
-                    System.Globalization.DateTimeStyles.None,
-                    out var date
-                )
-            )
-            {
-                result.ProdDate = date;
-            }
-            else
-            {
-                result.ErrorMessage = $"日期格式错误：无法解析日期 {dateStr}";
-                return result;
-            }
+            result.LineNo = match.LineNo; // 产线
+            result.Shift = match.Shift; // 班次
+            var dateStr = match.ProdDate; // 日期字符串
 
             // 解析数字字段（参考原始数据表）
             if (int.TryParse(result.LineNo, out var lineNoNum))
@@ -626,18 +844,10 @@ public class MagneticDataImportSessionService
                 result.LineNoNumeric = lineNoNum;
             }
 
-            // 班次转换为数字：甲=1, 乙=2, 丙=3
-            result.ShiftNumeric = ConvertShiftToNumeric(result.Shift);
-
-            if (int.TryParse(result.FurnaceNo, out var furnaceNoNum))
-            {
-                result.FurnaceBatchNo = furnaceNoNum;
-            }
-
             // 磁性数据炉号格式不包含卷号和分卷号，设置为null
             result.CoilNo = null;
             result.SubcoilNo = null;
-
+            result.FurnaceNo = furnaceNo;
             result.Success = true;
         }
         catch (Exception ex)
@@ -646,25 +856,6 @@ public class MagneticDataImportSessionService
         }
 
         return result;
-    }
-
-    /// <summary>
-    /// 磁性数据炉号解析结果
-    /// </summary>
-    private class MagneticFurnaceNoParseResult
-    {
-        public bool Success { get; set; }
-        public string ErrorMessage { get; set; }
-        public string LineNo { get; set; }
-        public int? LineNoNumeric { get; set; }
-        public string Shift { get; set; }
-        public int? ShiftNumeric { get; set; }
-        public DateTime? ProdDate { get; set; }
-        public string FurnaceNo { get; set; }
-        public int? FurnaceBatchNo { get; set; }
-        public decimal? CoilNo { get; set; }
-        public decimal? SubcoilNo { get; set; }
-        public bool IsScratched { get; set; }
     }
 
     /// <summary>

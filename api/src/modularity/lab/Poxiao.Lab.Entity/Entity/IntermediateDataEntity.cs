@@ -108,44 +108,51 @@ public class IntermediateDataEntity : CLDEntityBase
     /// <summary>
     /// 1.35T 50Hz Ss激磁功率 (VA/kg).
     /// </summary>
-    [IntermediateDataColumn("Ss激磁功率", sort: 2, dataType: "decimal", showInFormulaMaintenance: false, description: "1.35T 50Hz Ss激磁功率")]
+    [IntermediateDataColumn("Ss激磁功率", sort: 2, dataType: "decimal", description: "1.35T 50Hz Ss激磁功率")]
     [SugarColumn(ColumnName = "F_PERF_SS_POWER", DecimalDigits = 4, IsNullable = true)]
     public decimal? PerfSsPower { get; set; }
 
     /// <summary>
     /// 1.35T 50Hz Ps铁损 (W/kg).
     /// </summary>
-    [IntermediateDataColumn("Ps铁损", sort: 3, dataType: "decimal", showInFormulaMaintenance: false, description: "1.35T 50Hz Ps铁损")]
+    [IntermediateDataColumn("Ps铁损", sort: 3, dataType: "decimal", description: "1.35T 50Hz Ps铁损")]
     [SugarColumn(ColumnName = "F_PERF_PS_LOSS", DecimalDigits = 4, IsNullable = true)]
     public decimal? PerfPsLoss { get; set; }
 
     /// <summary>
     /// 1.35T 50Hz Hc (A/m).
     /// </summary>
-    [IntermediateDataColumn("Hc", sort: 4, dataType: "decimal", showInFormulaMaintenance: false, description: "1.35T 50Hz Hc")]
+    [IntermediateDataColumn("Hc", sort: 4, dataType: "decimal", description: "1.35T 50Hz Hc")]
     [SugarColumn(ColumnName = "F_PERF_HC", DecimalDigits = 4, IsNullable = true)]
     public decimal? PerfHc { get; set; }
 
     /// <summary>
     /// 刻痕后性能 Ss激磁功率 (VA/kg).
     /// </summary>
-    [IntermediateDataColumn("刻痕后Ss激磁功率", sort: 5, dataType: "decimal", showInFormulaMaintenance: false, description: "刻痕后性能 Ss激磁功率")]
+    [IntermediateDataColumn("刻痕后Ss激磁功率", sort: 5, dataType: "decimal", description: "刻痕后性能 Ss激磁功率")]
     [SugarColumn(ColumnName = "F_AFTER_SS_POWER", DecimalDigits = 4, IsNullable = true)]
     public decimal? PerfAfterSsPower { get; set; }
 
     /// <summary>
     /// 刻痕后性能 Ps铁损 (W/kg).
     /// </summary>
-    [IntermediateDataColumn("刻痕后Ps铁损", sort: 6, dataType: "decimal", showInFormulaMaintenance: false, description: "刻痕后性能 Ps铁损")]
+    [IntermediateDataColumn("刻痕后Ps铁损", sort: 6, dataType: "decimal", description: "刻痕后性能 Ps铁损")]
     [SugarColumn(ColumnName = "F_AFTER_PS_LOSS", DecimalDigits = 4, IsNullable = true)]
     public decimal? PerfAfterPsLoss { get; set; }
 
     /// <summary>
     /// 刻痕后性能 Hc (A/m).
     /// </summary>
-    [IntermediateDataColumn("刻痕后Hc", sort: 7, dataType: "decimal", showInFormulaMaintenance: false, description: "刻痕后性能 Hc")]
+    [IntermediateDataColumn("刻痕后Hc", sort: 7, dataType: "decimal", description: "刻痕后性能 Hc")]
     [SugarColumn(ColumnName = "F_AFTER_HC", DecimalDigits = 4, IsNullable = true)]
     public decimal? PerfAfterHc { get; set; }
+
+    /// <summary>
+    /// 是否刻痕（0-否，1-是，标识是否有刻痕数据）.
+    /// </summary>
+    [IntermediateDataColumn("是否刻痕", sort: 7, dataType: "int", description: "是否刻痕 0-否，1-是")]
+    [SugarColumn(ColumnName = "F_IS_SCRATCHED", IsNullable = true)]
+    public int? IsScratched { get; set; }
 
     /// <summary>
     /// 性能数据编辑人ID.
@@ -183,7 +190,7 @@ public class IntermediateDataEntity : CLDEntityBase
     /// <summary>
     /// 宽度.
     /// </summary>
-    [IntermediateDataColumn("带宽", sort: 40, dataType: "decimal", showInFormulaMaintenance: false, description: "带宽")]
+    [IntermediateDataColumn("带宽", sort: 40, dataType: "decimal", description: "带宽")]
     [SugarColumn(ColumnName = "F_WIDTH", IsNullable = true)]
     public decimal? Width { get; set; }
 
@@ -381,21 +388,21 @@ public class IntermediateDataEntity : CLDEntityBase
     /// <summary>
     /// 产品长度（来自产品规格，导入时写入）.
     /// </summary>
-    [IntermediateDataColumn("产品长度", sort: 34_1, dataType: "decimal", showInFormulaMaintenance: false, description: "产品长度")]
+    [IntermediateDataColumn("产品长度", sort: 34_1, dataType: "decimal", description: "产品长度")]
     [SugarColumn(ColumnName = "F_PRODUCT_LENGTH", DecimalDigits = 2, IsNullable = true)]
     public decimal? ProductLength { get; set; }
 
     /// <summary>
     /// 产品层数（来自产品规格，导入时写入）.
     /// </summary>
-    [IntermediateDataColumn("产品层数", sort: 34_2, dataType: "int", showInFormulaMaintenance: false, description: "产品层数")]
+    [IntermediateDataColumn("产品层数", sort: 34_2, dataType: "int", description: "产品层数")]
     [SugarColumn(ColumnName = "F_PRODUCT_LAYERS", IsNullable = true)]
     public int? ProductLayers { get; set; }
 
     /// <summary>
     /// 产品密度（来自产品规格，导入时写入）.
     /// </summary>
-    [IntermediateDataColumn("产品密度", sort: 34_3, dataType: "decimal", showInFormulaMaintenance: false, description: "产品密度")]
+    [IntermediateDataColumn("产品密度", sort: 34_3, dataType: "decimal", description: "产品密度")]
     [SugarColumn(ColumnName = "F_PRODUCT_DENSITY", DecimalDigits = 3, IsNullable = true)]
     public decimal? ProductDensity { get; set; }
 
@@ -418,6 +425,7 @@ public class IntermediateDataEntity : CLDEntityBase
     /// <summary>
     /// 特性描述（从炉号解析）.
     /// </summary>
+    [IntermediateDataColumn("所有特性", sort: 36, dataType: "string", description: "所有特性")]
     [SugarColumn(ColumnName = "F_FEATURE_SUFFIX", Length = 50, IsNullable = true)]
     public string FeatureSuffix { get; set; }
 
@@ -434,6 +442,7 @@ public class IntermediateDataEntity : CLDEntityBase
     /// <summary>
     /// 断头数(个).
     /// </summary>
+    [IntermediateDataColumn("断头数", sort: 36, dataType: "int", description: "断头数")]
     [SugarColumn(ColumnName = "F_BREAK_COUNT", IsNullable = true)]
     public int? BreakCount { get; set; }
 
@@ -554,7 +563,7 @@ public class IntermediateDataEntity : CLDEntityBase
     /// <summary>
     /// 四米带材重量.
     /// </summary>
-    [IntermediateDataColumn("四米带材重量", sort: 40, dataType: "decimal", showInFormulaMaintenance: false, description: "四米带材重量")]
+    [IntermediateDataColumn("四米带材重量", sort: 40, dataType: "decimal", description: "四米带材重量")]
     [SugarColumn(ColumnName = "F_COIL_WEIGHT", IsNullable = true)]
     public decimal? CoilWeight { get; set; }
 
@@ -563,91 +572,91 @@ public class IntermediateDataEntity : CLDEntityBase
     /// <summary>
     /// 检测数据列1-22（固定22列）.
     /// </summary>
-    [IntermediateDataColumn("检测数据列1", sort: 201, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列1")]
+    [IntermediateDataColumn("检测数据列1", sort: 201, dataType: "decimal", description: "检测数据列1")]
     [SugarColumn(ColumnName = "F_DETECTION_1", IsNullable = true)]
     public decimal? Detection1 { get; set; }
 
-    [IntermediateDataColumn("检测数据列2", sort: 202, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列2")]
+    [IntermediateDataColumn("检测数据列2", sort: 202, dataType: "decimal", description: "检测数据列2")]
     [SugarColumn(ColumnName = "F_DETECTION_2", IsNullable = true)]
     public decimal? Detection2 { get; set; }
 
-    [IntermediateDataColumn("检测数据列3", sort: 203, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列3")]
+    [IntermediateDataColumn("检测数据列3", sort: 203, dataType: "decimal", description: "检测数据列3")]
     [SugarColumn(ColumnName = "F_DETECTION_3", IsNullable = true)]
     public decimal? Detection3 { get; set; }
 
-    [IntermediateDataColumn("检测数据列4", sort: 204, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列4")]
+    [IntermediateDataColumn("检测数据列4", sort: 204, dataType: "decimal", description: "检测数据列4")]
     [SugarColumn(ColumnName = "F_DETECTION_4", IsNullable = true)]
     public decimal? Detection4 { get; set; }
 
-    [IntermediateDataColumn("检测数据列5", sort: 205, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列5")]
+    [IntermediateDataColumn("检测数据列5", sort: 205, dataType: "decimal", description: "检测数据列5")]
     [SugarColumn(ColumnName = "F_DETECTION_5", IsNullable = true)]
     public decimal? Detection5 { get; set; }
 
-    [IntermediateDataColumn("检测数据列6", sort: 206, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列6")]
+    [IntermediateDataColumn("检测数据列6", sort: 206, dataType: "decimal", description: "检测数据列6")]
     [SugarColumn(ColumnName = "F_DETECTION_6", IsNullable = true)]
     public decimal? Detection6 { get; set; }
 
-    [IntermediateDataColumn("检测数据列7", sort: 207, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列7")]
+    [IntermediateDataColumn("检测数据列7", sort: 207, dataType: "decimal", description: "检测数据列7")]
     [SugarColumn(ColumnName = "F_DETECTION_7", IsNullable = true)]
     public decimal? Detection7 { get; set; }
 
-    [IntermediateDataColumn("检测数据列8", sort: 208, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列8")]
+    [IntermediateDataColumn("检测数据列8", sort: 208, dataType: "decimal", description: "检测数据列8")]
     [SugarColumn(ColumnName = "F_DETECTION_8", IsNullable = true)]
     public decimal? Detection8 { get; set; }
 
-    [IntermediateDataColumn("检测数据列9", sort: 209, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列9")]
+    [IntermediateDataColumn("检测数据列9", sort: 209, dataType: "decimal", description: "检测数据列9")]
     [SugarColumn(ColumnName = "F_DETECTION_9", IsNullable = true)]
     public decimal? Detection9 { get; set; }
 
-    [IntermediateDataColumn("检测数据列10", sort: 210, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列10")]
+    [IntermediateDataColumn("检测数据列10", sort: 210, dataType: "decimal", description: "检测数据列10")]
     [SugarColumn(ColumnName = "F_DETECTION_10", IsNullable = true)]
     public decimal? Detection10 { get; set; }
 
-    [IntermediateDataColumn("检测数据列11", sort: 211, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列11")]
+    [IntermediateDataColumn("检测数据列11", sort: 211, dataType: "decimal", description: "检测数据列11")]
     [SugarColumn(ColumnName = "F_DETECTION_11", IsNullable = true)]
     public decimal? Detection11 { get; set; }
 
-    [IntermediateDataColumn("检测数据列12", sort: 212, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列12")]
+    [IntermediateDataColumn("检测数据列12", sort: 212, dataType: "decimal", description: "检测数据列12")]
     [SugarColumn(ColumnName = "F_DETECTION_12", IsNullable = true)]
     public decimal? Detection12 { get; set; }
 
-    [IntermediateDataColumn("检测数据列13", sort: 213, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列13")]
+    [IntermediateDataColumn("检测数据列13", sort: 213, dataType: "decimal", description: "检测数据列13")]
     [SugarColumn(ColumnName = "F_DETECTION_13", IsNullable = true)]
     public decimal? Detection13 { get; set; }
 
-    [IntermediateDataColumn("检测数据列14", sort: 214, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列14")]
+    [IntermediateDataColumn("检测数据列14", sort: 214, dataType: "decimal", description: "检测数据列14")]
     [SugarColumn(ColumnName = "F_DETECTION_14", IsNullable = true)]
     public decimal? Detection14 { get; set; }
 
-    [IntermediateDataColumn("检测数据列15", sort: 215, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列15")]
+    [IntermediateDataColumn("检测数据列15", sort: 215, dataType: "decimal", description: "检测数据列15")]
     [SugarColumn(ColumnName = "F_DETECTION_15", IsNullable = true)]
     public decimal? Detection15 { get; set; }
 
-    [IntermediateDataColumn("检测数据列16", sort: 216, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列16")]
+    [IntermediateDataColumn("检测数据列16", sort: 216, dataType: "decimal", description: "检测数据列16")]
     [SugarColumn(ColumnName = "F_DETECTION_16", IsNullable = true)]
     public decimal? Detection16 { get; set; }
 
-    [IntermediateDataColumn("检测数据列17", sort: 217, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列17")]
+    [IntermediateDataColumn("检测数据列17", sort: 217, dataType: "decimal", description: "检测数据列17")]
     [SugarColumn(ColumnName = "F_DETECTION_17", IsNullable = true)]
     public decimal? Detection17 { get; set; }
 
-    [IntermediateDataColumn("检测数据列18", sort: 218, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列18")]
+    [IntermediateDataColumn("检测数据列18", sort: 218, dataType: "decimal", description: "检测数据列18")]
     [SugarColumn(ColumnName = "F_DETECTION_18", IsNullable = true)]
     public decimal? Detection18 { get; set; }
 
-    [IntermediateDataColumn("检测数据列19", sort: 219, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列19")]
+    [IntermediateDataColumn("检测数据列19", sort: 219, dataType: "decimal", description: "检测数据列19")]
     [SugarColumn(ColumnName = "F_DETECTION_19", IsNullable = true)]
     public decimal? Detection19 { get; set; }
 
-    [IntermediateDataColumn("检测数据列20", sort: 220, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列20")]
+    [IntermediateDataColumn("检测数据列20", sort: 220, dataType: "decimal", description: "检测数据列20")]
     [SugarColumn(ColumnName = "F_DETECTION_20", IsNullable = true)]
     public decimal? Detection20 { get; set; }
 
-    [IntermediateDataColumn("检测数据列21", sort: 221, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列21")]
+    [IntermediateDataColumn("检测数据列21", sort: 221, dataType: "decimal", description: "检测数据列21")]
     [SugarColumn(ColumnName = "F_DETECTION_21", IsNullable = true)]
     public decimal? Detection21 { get; set; }
 
-    [IntermediateDataColumn("检测数据列22", sort: 222, dataType: "decimal", showInFormulaMaintenance: false, description: "检测数据列22")]
+    [IntermediateDataColumn("检测数据列22", sort: 222, dataType: "decimal", description: "检测数据列22")]
     [SugarColumn(ColumnName = "F_DETECTION_22", IsNullable = true)]
     public decimal? Detection22 { get; set; }
 
@@ -714,7 +723,7 @@ public class IntermediateDataEntity : CLDEntityBase
     /// <summary>
     /// 检测列.
     /// </summary>
-    [IntermediateDataColumn("检测列", sort: 41, dataType: "int", showInFormulaMaintenance: false, description: "检测列")]
+    [IntermediateDataColumn("检测列", sort: 41, dataType: "int", description: "检测列")]
     [SugarColumn(ColumnName = "F_DETECTION_COLUMNS", IsNullable = true)]
     public int? DetectionColumns { get; set; }
 

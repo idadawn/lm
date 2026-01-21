@@ -1,0 +1,73 @@
+### 测试颜色API端点
+
+### 故障排除步骤：
+
+1. **检查服务是否已注册**
+   - 确保 IntermediateDataColorService 已正确实现 ITransient 接口
+   - 确认服务已被依赖注入容器扫描并注册
+
+2. **验证API路由**
+   - 基础路由：/api/lab/intermediate-data-color
+   - 具体端点：
+     - POST /api/lab/intermediate-data-color/get-colors
+     - POST /api/lab/intermediate-data-color/save-colors
+     - POST /api/lab/intermediate-data-color/delete-colors
+     - POST /api/lab/intermediate-data-color/save-cell-color
+
+3. **检查请求格式**
+   - 确保 Content-Type 设置为 application/json
+   - 对于查询参数，确保正确编码（如 # 编码为 %23）
+
+### 1. 获取颜色配置
+POST http://localhost:5000/api/lab/intermediate-data-color/get-colors
+Content-Type: application/json
+
+{
+  "productSpecId": "test-spec-id",
+  "intermediateDataIds": ["test-data-1", "test-data-2"]
+}
+
+### 2. 保存单个单元格颜色
+POST http://localhost:5000/api/lab/intermediate-data-color/save-cell-color?intermediateDataId=test-data-1&fieldName=testField&colorValue=%23FF0000&productSpecId=test-spec-id
+
+### 3. 保存颜色配置（批量）
+POST http://localhost:5000/api/lab/intermediate-data-color/save-colors
+Content-Type: application/json
+
+{
+  "productSpecId": "test-spec-id",
+  "colors": [
+    {
+      "intermediateDataId": "test-data-1",
+      "fieldName": "testField1",
+      "colorValue": "#FF0000"
+    },
+    {
+      "intermediateDataId": "test-data-2",
+      "fieldName": "testField2",
+      "colorValue": "#00FF00"
+    }
+  ]
+}
+
+### 4. 删除颜色配置
+POST http://localhost:5000/api/lab/intermediate-data-color/delete-colors
+Content-Type: application/json
+
+{
+  "productSpecId": "test-spec-id"
+}
+
+### 调试步骤：
+
+1. **查看Swagger文档**
+   - 访问：http://localhost:5000/swagger
+   - 查看是否有 intermediate-data-color 相关的API
+
+2. **检查日志**
+   - 查看后端启动日志，确认服务已注册
+   - 查看API调用时的错误日志
+
+3. **验证依赖注入**
+   - 确保 IntermediateDataColorService 实现了 ITransient
+   - 确认接口 IIntermediateDataColorService 已正确定义

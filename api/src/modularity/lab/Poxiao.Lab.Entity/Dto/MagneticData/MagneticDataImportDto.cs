@@ -67,6 +67,11 @@ public class MagneticDataImportItem
     /// 错误信息
     /// </summary>
     public string ErrorMessage { get; set; }
+
+    /// <summary>
+    /// 是否为最优数据（同一炉号同一类型中，按匹配规则选择的最优数据）
+    /// </summary>
+    public bool IsBest { get; set; }
 }
 
 /// <summary>
@@ -92,4 +97,9 @@ public class MagneticDataReviewOutput
     public int UpdatedRows { get; set; }
     public int SkippedRows { get; set; }
     public List<string> Errors { get; set; } = new();
+
+    /// <summary>
+    /// 有效数据列表（已标记最优数据）
+    /// </summary>
+    public List<MagneticDataImportItem> ValidData { get; set; } = new();
 }

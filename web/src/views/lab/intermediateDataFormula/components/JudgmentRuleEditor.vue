@@ -63,8 +63,20 @@
                 <div v-for="(condition, cIdx) in rule.rootGroup.conditions" :key="condition.id" class="condition-row">
                   <!-- Field Select -->
                   <div class="field-select">
-                    <Select v-model:value="condition.fieldId" size="small" class="w-full" :options="props.fields"
-                      :field-names="{ label: 'name', value: 'id' }" @change="emitChange" />
+                    <Select 
+                      v-model:value="condition.fieldId" 
+                      size="small" 
+                      class="w-full" 
+                      :options="fieldOptions"
+                      placeholder="请选择字段" 
+                      @change="emitChange"
+                      :loading="fieldOptions.length === 0 && props.fields.length === 0"
+                      show-search
+                      :filter-option="(input, option) => {
+                        const label = option?.label || '';
+                        return label.toLowerCase().includes(input.toLowerCase());
+                      }"
+                    />
                   </div>
 
                   <!-- Operator Select -->
@@ -130,14 +142,14 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, PropType } from 'vue';
+import { ref, watch, PropType, computed } from 'vue';
 import { Icon } from '/@/components/Icon';
 import { Select, Input } from 'ant-design-vue';
 import { RULE_OPERATORS, JudgmentRule } from './types';
 import { buildShortUUID } from '/@/utils/uuid';
 
 const props = defineProps({
-  value: { type: String, default: '' }, // JSON string of rules
+  value: { type: String, default: '' },
   defaultValue: { type: String, default: '' },
   fields: { type: Array as PropType<any[]>, default: () => [] }
 });
@@ -147,7 +159,46 @@ const emit = defineEmits(['update:value', 'update:defaultValue', 'change']);
 const rules = ref<JudgmentRule[]>([]);
 const defaultValueLocal = ref('');
 
-// Init from props
+// 关键：创建一个本地响应式副本
+const localFields = ref<any[]>([]);
+
+// 监听 props.fields 变化，同步到本地
+watch(
+  () => props.fields,
+  (newFields) => {
+    console.log('[JudgmentRuleEditor] ===== props.fields 变化 =====');
+    console.log('[JudgmentRuleEditor] newFields:', newFields);
+    console.log('[JudgmentRuleEditor] newFields 长度:', newFields?.length);
+    console.log('[JudgmentRuleEditor] newFields JSON:', JSON.stringify(newFields));
+    
+    if (newFields && Array.isArray(newFields) && newFields.length > 0) {
+      // 深拷贝到本地
+      localFields.value = JSON.parse(JSON.stringify(newFields));
+      console.log('[JudgmentRuleEditor] localFields 已更新:', localFields.value);
+    }
+  },
+  { immediate: true, deep: true }
+);
+
+// 使用 localFields 计算 options
+const fieldOptions = computed(() => {
+  console.log('[JudgmentRuleEditor] 计算 fieldOptions, localFields:', localFields.value);
+  
+  if (!localFields.value || localFields.value.length === 0) {
+    console.log('[JudgmentRuleEditor] localFields 为空，返回空数组');
+    return [];
+  }
+  
+  const options = localFields.value.map(f => ({
+    label: f.name || f.displayName || f.columnName || String(f),
+    value: f.id || f.columnName || f.code
+  }));
+  
+  console.log('[JudgmentRuleEditor] 生成的 options:', options);
+  return options;
+});
+
+// Init from props.value
 watch(
   () => props.value,
   (val) => {
@@ -190,8 +241,6 @@ function updateDefaultValue(e: any) {
   emit('update:defaultValue', val);
 }
 
-// --- Actions ---
-
 function addRule() {
   rules.value.push({
     id: buildShortUUID(),
@@ -221,8 +270,15 @@ function addCondition(ruleIndex: number) {
   const rule = rules.value[ruleIndex];
   if (!rule) return;
 
-  // Try to find a default field to select
-  const defaultFieldId = props.fields.length > 0 ? props.fields[0].id : '';
+  console.log('[JudgmentRuleEditor] 添加条件时 localFields:', localFields.value);
+  console.log('[JudgmentRuleEditor] 添加条件时 fieldOptions:', fieldOptions.value);
+  
+  // 使用 localFields 获取默认值
+  const defaultFieldId = localFields.value.length > 0 
+    ? (localFields.value[0].id || localFields.value[0].columnName || '') 
+    : '';
+  
+  console.log('[JudgmentRuleEditor] 默认字段ID:', defaultFieldId);
 
   rule.rootGroup.conditions.push({
     id: buildShortUUID(),

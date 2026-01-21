@@ -72,6 +72,21 @@ export async function getMagneticImportReview(sessionId: string): Promise<any> {
 
   // 处理后端返回的 PascalCase 字段名
   const data = response.data || response;
+  const validData = data.validData || data.ValidData || [];
+  // 转换字段名为 camelCase
+  const processedValidData = validData.map((item: any) => ({
+    rowIndex: item.rowIndex ?? item.RowIndex ?? 0,
+    originalFurnaceNo: item.originalFurnaceNo ?? item.OriginalFurnaceNo ?? '',
+    furnaceNo: item.furnaceNo ?? item.FurnaceNo ?? '',
+    isScratched: item.isScratched ?? item.IsScratched ?? false,
+    psLoss: item.psLoss ?? item.PsLoss ?? null,
+    ssPower: item.ssPower ?? item.SsPower ?? null,
+    hc: item.hc ?? item.Hc ?? null,
+    detectionTime: item.detectionTime ?? item.DetectionTime ?? null,
+    isValid: item.isValid ?? item.IsValid ?? true,
+    errorMessage: item.errorMessage ?? item.ErrorMessage ?? '',
+    isBest: item.isBest ?? item.IsBest ?? false,
+  }));
   return {
     session: data.session || data.Session,
     totalRows: data.totalRows ?? data.TotalRows ?? 0,
@@ -79,6 +94,7 @@ export async function getMagneticImportReview(sessionId: string): Promise<any> {
     updatedRows: data.updatedRows ?? data.UpdatedRows ?? 0,
     skippedRows: data.skippedRows ?? data.SkippedRows ?? 0,
     errors: data.errors || data.Errors || [],
+    validData: processedValidData,
   };
 }
 

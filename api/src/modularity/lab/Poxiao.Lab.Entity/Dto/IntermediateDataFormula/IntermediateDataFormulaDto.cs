@@ -156,6 +156,18 @@ public class IntermediateDataColumnInfo
     /// </summary>
     [JsonPropertyName("sort")]
     public int Sort { get; set; }
+
+    /// <summary>
+    /// 外观特性大类列表（仅在获取可用列时返回）.
+    /// </summary>
+    [JsonPropertyName("featureCategories")]
+    public List<AppearanceFeatureCategoryEntity> FeatureCategories { get; set; }
+
+    /// <summary>
+    /// 外观特性等级列表（仅在获取可用列时返回）.
+    /// </summary>
+    [JsonPropertyName("featureLevels")]
+    public List<AppearanceFeatureLevelEntity> FeatureLevels { get; set; }
 }
 
 /// <summary>

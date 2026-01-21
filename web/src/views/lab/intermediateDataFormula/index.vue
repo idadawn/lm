@@ -1,33 +1,49 @@
 <template>
   <div class="p-4 h-full flex flex-col gap-4">
-    <div class="bg-white p-4 rounded-lg shadow-sm flex justify-between items-center">
-      <div>
-        <h1 class="text-lg font-bold flex items-center gap-2">
-          <span class="text-blue-600">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <line x1="16" y1="13" x2="8" y2="13"></line>
-              <line x1="16" y1="17" x2="8" y2="17"></line>
-              <polyline points="10 9 9 9 8 9"></polyline>
-            </svg>
-          </span>
-          公式维护
-        </h1>
-        <p class="text-gray-500 text-sm mt-1">维护中间数据表中的计算公式，支持从多个数据源引用变量。</p>
+    <div class="bg-white p-4 rounded-lg shadow-sm">
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h1 class="text-lg font-bold flex items-center gap-2">
+            <span class="text-blue-600">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </span>
+            公式维护
+          </h1>
+          <p class="text-gray-500 text-sm mt-1">维护中间数据表中的计算公式，支持从多个数据源引用变量。</p>
+        </div>
+        <!-- 移除手动新增，改为初始化 -->
+        <a-button type="primary" @click="handleInitialize" :loading="initializing" class="bg-blue-600 border-blue-600 hover:bg-blue-500">
+          更新列
+        </a-button>
       </div>
-      <!-- 移除手动新增，改为初始化 -->
-      <a-button type="primary" @click="handleInitialize" :loading="initializing" class="bg-blue-600 border-blue-600 hover:bg-blue-500">
-        初始化公式
-      </a-button>
+      <!-- 类型筛选 -->
+      <div class="flex items-center gap-2">
+        <span class="text-gray-600 text-sm">类型筛选：</span>
+        <a-select
+          v-model:value="typeFilter"
+          style="width: 150px"
+          placeholder="请选择类型"
+          allow-clear
+        >
+          <a-select-option value="CALC">计算</a-select-option>
+          <a-select-option value="JUDGE">判定</a-select-option>
+          <a-select-option value="NO">只展示</a-select-option>
+        </a-select>
+      </div>
     </div>
 
     <div class="flex-1 overflow-auto bg-gray-50 p-4 rounded-lg">
       <a-spin :spinning="loading">
         <a-table
           :columns="columns"
-          :data-source="dataList"
+          :data-source="filteredDataList"
           :pagination="false"
           row-key="id"
           :scroll="{ x: 1300 }"
@@ -37,13 +53,21 @@
               {{ record.displayName || record.formulaName || record.columnName }}
             </template>
             <template v-else-if="column.key === 'formulaType'">
-               <a-tag :color="record.formulaType === 'CALC' ? 'blue' : 'orange'">
-                {{ record.formulaType === 'CALC' ? '计算' : '判定' }}
+               <a-tag :color="record.formulaType === 'CALC' ? 'blue' : record.formulaType === 'JUDGE' ? 'orange' : 'green'">
+                {{ record.formulaType === 'CALC' ? '计算' : record.formulaType === 'JUDGE' ? '判定' : '只展示' }}
               </a-tag>
             </template>
             <template v-else-if="column.key === 'formula'">
-              <code class="text-xs bg-gray-100 px-2 py-1 rounded" v-if="record.formula">{{ record.formula }}</code>
-              <span v-else class="text-gray-300 text-xs italic">未配置</span>
+              <template v-if="record.formulaType === 'JUDGE'">
+                <a-tag color="orange">判定规则（查看详情请编辑）</a-tag>
+              </template>
+              <template v-else-if="record.formulaType === 'NO'">
+                <span class="text-gray-400 text-xs italic">无需公式</span>
+              </template>
+              <template v-else>
+                <code class="text-xs bg-gray-100 px-2 py-1 rounded" v-if="record.formula">{{ record.formula }}</code>
+                <span v-else class="text-gray-300 text-xs italic">未配置</span>
+              </template>
             </template>
             <template v-else-if="column.key === 'isEnabled'">
               <a-tag :color="record.isEnabled ? 'green' : 'red'">
@@ -53,14 +77,12 @@
             <template v-else-if="column.key === 'action'">
               <a-space>
                 <a-button type="link" size="small" @click="handleEdit(record, 'Attributes')">编辑</a-button>
-                <a-button type="link" size="small" @click="handleOpenFormulaBuilder(record)">编辑公式</a-button>
-                <!-- 删除功能保留，防止脏数据，但主要操作应为禁用 -->
-                <a-button type="link" size="small" danger @click="handleDelete(record)">删除</a-button>
+                <a-button v-if="record.formulaType !== 'NO'" type="link" size="small" @click="handleOpenFormulaBuilder(record)">编辑公式</a-button>
               </a-space>
             </template>
           </template>
         </a-table>
-        <div v-if="dataList.length === 0 && !loading" class="flex flex-col items-center justify-center h-64 text-gray-400">
+        <div v-if="filteredDataList.length === 0 && !loading" class="flex flex-col items-center justify-center h-64 text-gray-400">
           <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none"
             stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="mb-4">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -81,26 +103,41 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useModal } from '/@/components/Modal';
 import { useMessage } from '/@/hooks/web/useMessage';
 import {
   getIntermediateDataFormulaList,
-  deleteIntermediateDataFormula,
   initializeIntermediateDataFormula,
 } from '/@/api/lab/intermediateDataFormula';
 import IntermediateDataFormulaForm from './components/IntermediateDataFormulaForm.vue';
 import FormulaBuilder from './components/FormulaBuilder.vue';
 import type { IntermediateDataFormula } from '/@/api/lab/types/intermediateDataFormula';
-import { updateIntermediateDataFormula, updateFormula } from '/@/api/lab/intermediateDataFormula';
+import { updateFormula } from '/@/api/lab/intermediateDataFormula';
 
 const [registerFormModal, { openModal: openFormModal }] = useModal();
 const [registerFormulaBuilderModal, { openModal: openFormulaBuilderModal }] = useModal();
-const { createMessage, createConfirm } = useMessage();
+const { createMessage } = useMessage();
 
 const dataList = ref<IntermediateDataFormula[]>([]);
 const loading = ref(false);
 const initializing = ref(false);
+const typeFilter = ref<string | undefined>(undefined);
+
+// 默认不显示类型为"只展示"的记录
+const filteredDataList = computed(() => {
+  let filtered = dataList.value;
+  
+  // 如果筛选器为空，默认过滤掉 NO 类型
+  if (!typeFilter.value) {
+    filtered = filtered.filter(item => item.formulaType !== 'NO');
+  } else {
+    // 如果选择了特定类型，只显示该类型
+    filtered = filtered.filter(item => item.formulaType === typeFilter.value);
+  }
+  
+  return filtered;
+});
 
 const columns = [
   {
@@ -207,23 +244,7 @@ const handleSaveFormula = async (data: { id: string; formula: string }) => {
   }
 };
 
-const handleDelete = (record: IntermediateDataFormula) => {
-  createConfirm({
-    iconType: 'warning',
-    title: '确认删除',
-    content: `确定要删除公式 "${record.formulaName}" 吗？建议仅禁用而非删除。`,
-    onOk: async () => {
-      try {
-        await deleteIntermediateDataFormula(record.id);
-        createMessage.success('删除成功');
-        loadData();
-      } catch (error) {
-        console.error('删除失败:', error);
-        createMessage.error('删除失败');
-      }
-    },
-  });
-};
+
 
 onMounted(() => {
   loadData();

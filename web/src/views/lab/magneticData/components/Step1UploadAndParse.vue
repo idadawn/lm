@@ -62,8 +62,11 @@
           <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'isScratched'">
               <a-tag :color="record.isScratched ? 'orange' : 'blue'">
-                {{ record.isScratched ? '刻痕' : '正常' }}
+                {{ record.isScratched ? '是' : '否' }}
               </a-tag>
+            </template>
+            <template v-else-if="column.key === 'detectionTime'">
+              {{ record.detectionTime ? formatToDateTime(record.detectionTime) : '-' }}
             </template>
             <template v-else-if="column.key === 'isValid'">
               <a-tag :color="record.isValid ? 'success' : 'error'">
@@ -86,6 +89,7 @@ import {
   FileExcelOutlined
 } from '@ant-design/icons-vue';
 import { createMagneticImportSession, uploadAndParseMagneticData } from '/@/api/lab/magneticData';
+import { formatToDateTime } from '/@/utils/dateUtil';
 
 // Props
 const props = defineProps<{

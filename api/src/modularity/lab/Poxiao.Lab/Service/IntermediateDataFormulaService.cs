@@ -29,6 +29,7 @@ public class IntermediateDataFormulaService
     private readonly ISqlSugarRepository<IntermediateDataFormulaEntity> _repository;
     private readonly ISqlSugarRepository<PublicDimensionEntity> _publicDimensionRepository;
     private readonly ISqlSugarRepository<AppearanceFeatureEntity> _appearanceFeatureRepository;
+    private readonly ISqlSugarRepository<AppearanceFeatureCategoryEntity> _appearanceFeatureCategoryRepository;
     private readonly ISqlSugarRepository<AppearanceFeatureLevelEntity> _severityLevelRepository;
     private readonly ISqlSugarRepository<ProductSpecAttributeEntity> _productSpecAttributeRepository;
     private readonly ISqlSugarRepository<UnitDefinitionEntity> _unitRepository;
@@ -38,6 +39,7 @@ public class IntermediateDataFormulaService
         ISqlSugarRepository<IntermediateDataFormulaEntity> repository,
         ISqlSugarRepository<PublicDimensionEntity> publicDimensionRepository,
         ISqlSugarRepository<AppearanceFeatureEntity> appearanceFeatureRepository,
+        ISqlSugarRepository<AppearanceFeatureCategoryEntity> appearanceFeatureCategoryRepository,
         ISqlSugarRepository<AppearanceFeatureLevelEntity> severityLevelRepository,
         ISqlSugarRepository<ProductSpecAttributeEntity> productSpecAttributeRepository,
         ISqlSugarRepository<UnitDefinitionEntity> unitRepository,
@@ -47,6 +49,7 @@ public class IntermediateDataFormulaService
         _repository = repository;
         _publicDimensionRepository = publicDimensionRepository;
         _appearanceFeatureRepository = appearanceFeatureRepository;
+        _appearanceFeatureCategoryRepository = appearanceFeatureCategoryRepository;
         _severityLevelRepository = severityLevelRepository;
         _productSpecAttributeRepository = productSpecAttributeRepository;
         _unitRepository = unitRepository;
@@ -60,10 +63,10 @@ public class IntermediateDataFormulaService
     {
         var dto = entity.Adapt<IntermediateDataFormulaDto>();
         dto.FormulaType = entity.FormulaType.ToString();
-        
+
         // 根据 columnName 查找对应的 displayName
         dto.DisplayName = GetColumnDisplayName(entity.ColumnName);
-        
+
         return dto;
     }
 
@@ -168,7 +171,7 @@ public class IntermediateDataFormulaService
         {
             entity.FormulaType = IntermediateDataFormulaType.CALC; // 默认值
         }
-        
+
         entity.Creator();
         entity.LastModifyUserId = entity.CreatorUserId;
         entity.LastModifyTime = entity.CreatorTime;
@@ -297,47 +300,84 @@ public class IntermediateDataFormulaService
     {
         var availableColumns = await GetAvailableColumnsAsync();
 
-        // 获取现有公式（无需先删除）
+        // 获取现有公式
         var existingFormulas = await _repository
             .AsQueryable()
             .Where(t => t.DeleteMark == null && t.TableName == "INTERMEDIATE_DATA")
             .ToListAsync();
 
         var newEntities = new List<IntermediateDataFormulaEntity>();
+        var updateEntities = new List<IntermediateDataFormulaEntity>();
 
         foreach (var col in availableColumns)
         {
-            // 如果已存在，则跳过（增量添加）
-            if (existingFormulas.Any(f => f.ColumnName == col.ColumnName))
+            var existing = existingFormulas.FirstOrDefault(f => f.ColumnName == col.ColumnName);
+            if (existing != null)
             {
-                continue;
-            }
+                // 更新现有记录的非用户定义字段
+                bool changed = false;
 
-            var entity = new IntermediateDataFormulaEntity
+                if (existing.SortOrder != col.Sort)
+                {
+                    existing.SortOrder = col.Sort;
+                    changed = true;
+                }
+
+                if (existing.Remark != col.Description)
+                {
+                    existing.Remark = col.Description;
+                    changed = true;
+                }
+
+                // 如果代码中定义了精度，则同步更新
+                if (col.DecimalDigits.HasValue && existing.Precision != col.DecimalDigits)
+                {
+                    existing.Precision = col.DecimalDigits;
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    existing.LastModify();
+                    updateEntities.Add(existing);
+                }
+            }
+            else
             {
-                // Id = col.ColumnName, // 保持与列名一致的ID策略 (如果之前是destructive set Id=ColumnName，这里继续保持一致较好)
-                TableName = "INTERMEDIATE_DATA",
-                ColumnName = col.ColumnName,
-                FormulaName = col.DisplayName ?? col.ColumnName,
-                Formula = "",
-                FormulaLanguage = "EXCEL", // 默认EXCEL
-                FormulaType = col.IsCalculable ? IntermediateDataFormulaType.CALC : IntermediateDataFormulaType.JUDGE,
-                UnitName = null, // 单位ID暂为空，后续编辑
-                Precision = col.DecimalDigits,
-                IsEnabled = true,
-                SortOrder = col.Sort,
-                Remark = col.Description,
-            };
-            entity.Creator();
-            entity.Id = col.ColumnName; // 覆盖默认生成的ID，确保ID一致性
-            entity.LastModifyUserId = entity.CreatorUserId;
-            entity.LastModifyTime = entity.CreatorTime;
-            newEntities.Add(entity);
+                // 新增
+                var entity = new IntermediateDataFormulaEntity
+                {
+                    // Id = col.ColumnName, // 保持与列名一致的ID策略
+                    TableName = "INTERMEDIATE_DATA",
+                    ColumnName = col.ColumnName,
+                    FormulaName = col.DisplayName ?? col.ColumnName,
+                    Formula = "",
+                    FormulaLanguage = "EXCEL", // 默认EXCEL
+                    FormulaType = col.IsCalculable
+                        ? IntermediateDataFormulaType.CALC
+                        : IntermediateDataFormulaType.JUDGE,
+                    UnitName = null, // 单位ID暂为空，后续编辑
+                    Precision = col.DecimalDigits,
+                    IsEnabled = true,
+                    SortOrder = col.Sort,
+                    Remark = col.Description,
+                };
+                entity.Creator();
+                entity.Id = col.ColumnName; // 覆盖默认生成的ID，确保ID一致性
+                entity.LastModifyUserId = entity.CreatorUserId;
+                entity.LastModifyTime = entity.CreatorTime;
+                newEntities.Add(entity);
+            }
         }
 
         if (newEntities.Any())
         {
             await _repository.InsertRangeAsync(newEntities);
+        }
+
+        if (updateEntities.Any())
+        {
+            await _repository.UpdateRangeAsync(updateEntities);
         }
     }
 
@@ -405,7 +445,33 @@ public class IntermediateDataFormulaService
         }
 
         // 按 Sort 排序，如果没有则按显示名称排序
-        return columns.OrderBy(c => c.Sort).ThenBy(c => c.DisplayName).ToList();
+        var sortedColumns = columns.OrderBy(c => c.Sort).ThenBy(c => c.DisplayName).ToList();
+
+        // 获取特性大类
+        var featureCategories = await _appearanceFeatureCategoryRepository
+            .AsQueryable()
+            .Where(t => t.DeleteMark == null)
+            .OrderBy(t => t.SortCode)
+            .ToListAsync();
+
+        // 获取特性等级
+        var featureLevels = await _severityLevelRepository
+            .AsQueryable()
+            .Where(t => t.DeleteMark == null && t.Enabled)
+            .OrderBy(t => t.SortCode)
+            .ToListAsync();
+
+        // 将特性大类和等级填充到每个列信息中
+        // 注意：虽然每个列都包含相同的数据比较冗余，但按需求由前端自行处理
+        // 或者只在第一项中填充？但通常列表返回最好保持一致性或使用单独的结构
+        // 既然用户要求放在 columns 中，这里选择填充每一项
+        foreach (var col in sortedColumns)
+        {
+            col.FeatureCategories = featureCategories;
+            col.FeatureLevels = featureLevels;
+        }
+
+        return sortedColumns;
     }
 
     /// <inheritdoc />

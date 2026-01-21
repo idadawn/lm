@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>颜色填充功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .color-palette {
+            display: flex;
+            gap: 4px;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border: 2px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .color-option:hover {
+            transform: scale(1.1);
+            border-color: #1890ff;
+        }
+        .color-option.active {
+            border-color: #1890ff;
+            box-shadow: 0 0 8px rgba(24,144,255,0.5);
+        }
+        .test-table {
+            margin-top: 20px;
+            border-collapse: collapse;
+            width: 100%;
+        }
+        .test-table th, .test-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        .test-table th {
+            background: #fafafa;
+            font-weight: bold;
+        }
+        .cell-content {
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .cell-content:hover {
+            opacity: 0.8;
+            transform: scale(1.02);
+        }
+        .instructions {
+            background: #e6f7ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎨 表格颜色填充功能测试</h1>
+
+        <div class="instructions">
+            <h3>使用说明：</h3>
+            <ol>
+                <li>点击下方颜色盘中的任意颜色进行选择</li>
+                <li>点击表格中的单元格，即可填充选中的颜色</li>
+                <li>点击"清除选择"可以取消当前选中的颜色</li>
+                <li>重新选择颜色可以覆盖已有的单元格颜色</li>
+            </ol>
+        </div>
+
+        <h3>颜色选择器：</h3>
+        <div class="color-palette" id="colorPalette">
+            <!-- 颜色选项将通过JS动态生成 -->
+        </div>
+        <button onclick="clearSelection()" style="margin-top: 10px; padding: 5px 15px;">清除选择</button>
+
+        <h3>测试表格：</h3>
+        <table class="test-table">
+            <thead>
+                <tr>
+                    <th>炉号</th>
+                    <th>喷次</th>
+                    <th>带厚1</th>
+                    <th>带厚2</th>
+                    <th>性能数据</th>
+                    <th>检测结果</th>
+                </tr>
+            </thead>
+            <tbody id="testTableBody">
+                <!-- 表格数据将通过JS动态生成 -->
+            </tbody>
+        </table>
+
+        <div class="status" id="status">
+            <strong>当前状态：</strong> <span id="statusText">未选择颜色</span>
+        </div>
+    </div>
+
+    <script>
+        // WPS标准色
+        const standardColors = [
+            '#C00000', '#FF0000', '#FFC000', '#FFFF00', '#92D050',
+            '#00B050', '#00B0F0', '#0070C0', '#002060', '#7030A0'
+        ];
+
+        let selectedColor = '';
+        const coloredCells = new Map();
+
+        // 初始化颜色选择器
+        function initColorPalette() {
+            const palette = document.getElementById('colorPalette');
+            standardColors.forEach(color => {
+                const colorDiv = document.createElement('div');
+                colorDiv.className = 'color-option';
+                colorDiv.style.backgroundColor = color;
+                colorDiv.title = color;
+                colorDiv.onclick = () => selectColor(color, colorDiv);
+                palette.appendChild(colorDiv);
+            });
+        }
+
+        // 初始化测试表格
+        function initTestTable() {
+            const tbody = document.getElementById('testTableBody');
+            const testData = [
+                ['A12345', 'P001', '0.25', '0.26', '1.35', '合格'],
+                ['A12346', 'P002', '0.24', '0.25', '1.36', '不合格'],
+                ['A12347', 'P003', '0.26', '0.27', '1.34', '合格'],
+                ['A12348', 'P004', '0.23', '0.24', '1.37', '合格'],
+                ['A12349', 'P005', '0.25', '0.26', '1.35', '不合格']
+            ];
+
+            testData.forEach((row, rowIndex) => {
+                const tr = document.createElement('tr');
+                row.forEach((cell, colIndex) => {
+                    const td = document.createElement('td');
+                    const cellDiv = document.createElement('div');
+                    cellDiv.className = 'cell-content';
+                    cellDiv.textContent = cell;
+                    cellDiv.onclick = () => handleCellClick(rowIndex, colIndex, cellDiv);
+                    td.appendChild(cellDiv);
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 选择颜色
+        function selectColor(color, element) {
+            // 移除之前的active类
+            document.querySelectorAll('.color-option').forEach(el => el.classList.remove('active'));
+            // 添加active类到当前选中的颜色
+            element.classList.add('active');
+            selectedColor = color;
+            updateStatus(`已选择颜色: ${color}`);
+        }
+
+        // 清除颜色选择
+        function clearSelection() {
+            document.querySelectorAll('.color-option').forEach(el => el.classList.remove('active'));
+            selectedColor = '';
+            updateStatus('未选择颜色');
+        }
+
+        // 处理单元格点击
+        function handleCellClick(rowIndex, colIndex, element) {
+            if (!selectedColor) {
+                updateStatus('请先选择一个颜色！');
+                return;
+            }
+
+            const key = `${rowIndex}-${colIndex}`;
+            coloredCells.set(key, selectedColor);
+            element.style.backgroundColor = selectedColor;
+            element.style.color = '#fff'; // 白色文字
+            element.style.textShadow = '0 0 2px rgba(0,0,0,0.5)';
+            updateStatus(`已为单元格[${rowIndex + 1}, ${colIndex + 1}]填充颜色: ${selectedColor}`);
+        }
+
+        // 更新状态显示
+        function updateStatus(message) {
+            document.getElementById('statusText').textContent = message;
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initColorPalette();
+            initTestTable();
+        });
+    </script>
+</body>
+</html>

@@ -5,22 +5,25 @@
     :title="getTitle"
     @ok="handleSubmit"
     @cancel="handleCancel"
-    :width="1000"
+    :width="1200"
+    :minHeight="600"
     :bodyStyle="{ height: 'calc(100vh - 200px)', padding: '16px' }">
     <BasicForm @register="registerForm"></BasicForm>
+    <FormulaBuilder @register="registerFormulaBuilderModal" @save="handleFormulaBuilderSave" />
   </BasicModal>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, h, onMounted } from 'vue';
-import { BasicModal, useModalInner } from '/@/components/Modal';
+import { ref, computed, h, nextTick, watch } from 'vue';
 import { BasicForm, useForm } from '/@/components/Form';
 import { useMessage } from '/@/hooks/web/useMessage';
 import type { IntermediateDataFormula } from '/@/api/lab/types/intermediateDataFormula';
-import { getIntermediateDataFormulaList, validateFormula, updateIntermediateDataFormula, getAvailableColumns } from '/@/api/lab/intermediateDataFormula';
+import { validateFormula, updateIntermediateDataFormula, getAvailableColumns } from '/@/api/lab/intermediateDataFormula';
 import { getUnitById } from '/@/utils/lab/unit';
 import UnitSelect from '/@/components/Lab/UnitSelect.vue';
-import JudgmentRuleEditor from './JudgmentRuleEditor.vue';
+import AdvancedJudgmentEditor from './AdvancedJudgmentEditor.vue';
+import FormulaBuilder from './FormulaBuilder.vue';
+import { BasicModal, useModalInner, useModal } from '/@/components/Modal';
 
 const emit = defineEmits(['register', 'reload']);
 
@@ -28,28 +31,99 @@ const recordId = ref<string>('');
 const formMode = ref<'Attributes' | 'Formula'>('Attributes');
 const originalRecord = ref<IntermediateDataFormula | null>(null);
 const availableFields = ref<any[]>([]);
+const fieldsRefreshKey = ref(0); // 用于强制刷新表单
+const isFormReady = ref(false); // 跟踪表单是否已准备好
 
-onMounted(() => {
-    refreshAvailableFields();
-});
+// 监听 availableFields 变化，确保表单能响应式更新
+watch(() => availableFields.value, async (newFields) => {
+  if (newFields && newFields.length > 0 && isFormReady.value) {
+    await nextTick();
+    fieldsRefreshKey.value++;
+    
+    // 强制更新 formula 字段，触发重新渲染
+    // 确保表单已经注册后再调用 updateSchema
+    await nextTick();
+    try {
+      await updateSchema({
+        field: 'formula',
+        componentProps: {
+          _updateTime: new Date().getTime()
+        }
+      });
+    } catch (error) {
+      // 如果表单还未准备好，延迟重试
+      setTimeout(async () => {
+        try {
+          await nextTick();
+          await updateSchema({
+            field: 'formula',
+            componentProps: {
+              _updateTime: new Date().getTime()
+            }
+          });
+        } catch (e) {
+          // 忽略错误，表单可能还未完全初始化
+        }
+      }, 100);
+    }
+  }
+}, { deep: true });
 
 async function refreshAvailableFields() {
-   try {
-     // 使用 getAvailableColumns 获取所有列，包括 showInFormulaMaintenance: false 的列
-     const result = await getAvailableColumns(true);
-     if (result && Array.isArray(result)) {
-        availableFields.value = result.map(item => ({
-             id: item.columnName, 
-             name: item.displayName || item.columnName,
-             code: item.columnName
-        }));
-     }
-   } catch (e) {
-     console.error('Failed to fetch available fields', e);
-   }
+  try {
+    const response = await getAvailableColumns(true);
+    
+    // 检查 response 的结构 - 可能需要访问 response.data
+    // 使用 any 类型来处理可能的嵌套结构
+    let dataArray: any = response;
+    if (response && (response as any).data && Array.isArray((response as any).data)) {
+      dataArray = (response as any).data;
+    }
+    
+    if (dataArray && Array.isArray(dataArray)) {
+      availableFields.value = dataArray.map(item => ({
+        id: item.columnName,
+        name: item.displayName || item.columnName,
+        code: item.columnName,
+        columnName: item.columnName,
+        displayName: item.displayName
+      }));
+      
+    } else {
+      console.error('[Form] 返回数据格式不正确:', response);
+    }
+  } catch (e) {
+    console.error('[Form] 获取可用字段失败:', e);
+  }
 }
 
-const [registerForm, { setFieldsValue, resetFields, validate, getFieldsValue }] = useForm({
+const [registerFormulaBuilderModal, { openModal: openFormulaBuilderModal }] = useModal();
+let currentFormulaCallback: ((formula: string) => void) | null = null;
+
+// 处理打开公式编辑器
+function handleOpenFormulaEditor(data: {
+  currentValue: string;
+  conditionId: string;
+  onSave: (formula: string) => void;
+}) {
+  currentFormulaCallback = data.onSave;
+  openFormulaBuilderModal(true, {
+    record: {
+      formula: data.currentValue || '',
+      formulaName: '条件表达式',
+      columnName: `condition_${data.conditionId}`,
+    }
+  });
+}
+
+function handleFormulaBuilderSave(data: { id: string; formula: string }) {
+  if (currentFormulaCallback) {
+    currentFormulaCallback(data.formula);
+    currentFormulaCallback = null;
+  }
+}
+
+const [registerForm, { setFieldsValue, resetFields, validate, getFieldsValue, updateSchema }] = useForm({
   schemas: [
     {
       field: 'tableName',
@@ -89,14 +163,18 @@ const [registerForm, { setFieldsValue, resetFields, validate, getFieldsValue }] 
       component: 'Select',
       componentProps: {
         options: [
-          { label: '计算公式', value: 'CALC' },
-          { label: '判定公式', value: 'JUDGE' },
+          { label: 'CALC-计算公式', value: 'CALC' },
+          { label: 'JUDGE-判定公式', value: 'JUDGE' },
+          { label: 'NO-只展示', value: 'NO' },
         ],
         fieldNames: { label: 'label', value: 'value' },
         onChange: (value: string) => {
           // 当切换为判定公式时，强制使用 EXCEL 语言，并隐藏公式语言下拉
           if (value === 'JUDGE') {
             setFieldsValue({ formulaLanguage: 'EXCEL', defaultValue: '', formula: '' });
+          } else if (value === 'NO') {
+            // 只展示类型不需要公式
+            setFieldsValue({ defaultValue: '', formula: '' });
           } else {
             // 计算公式默认值为 0
             setFieldsValue({ defaultValue: '0', formula: '' });
@@ -192,14 +270,15 @@ const [registerForm, { setFieldsValue, resetFields, validate, getFieldsValue }] 
       field: 'formula',
       label: '',
       component: 'Input',
-      ifShow: () => formMode.value === 'Formula',
+      ifShow: () => formMode.value === 'Formula' && getFieldsValue().formulaType !== 'NO',
       colProps: { span: 24 },
       labelWidth: 0,
-      labelCol: { span: 0 },
       wrapperCol: { span: 24 },
       render: ({ model, field }) => {
         const formulaType = model['formulaType'] || originalRecord.value?.formulaType || 'CALC';
         if (formulaType === 'JUDGE') {
+          // 直接访问 availableFields.value 确保响应式更新
+          // 使用 fieldsRefreshKey 作为 key 的一部分，确保数据更新时组件重新渲染
           return h('div', { 
             style: { 
               width: '100%',
@@ -207,7 +286,8 @@ const [registerForm, { setFieldsValue, resetFields, validate, getFieldsValue }] 
               boxSizing: 'border-box'
             } 
           }, [
-            h(JudgmentRuleEditor, {
+            h(AdvancedJudgmentEditor, {
+              key: `judgment-editor-${fieldsRefreshKey.value}-${availableFields.value.length}`,
               value: model[field],
               defaultValue: model['defaultValue'],
               fields: availableFields.value,
@@ -219,6 +299,7 @@ const [registerForm, { setFieldsValue, resetFields, validate, getFieldsValue }] 
                   model['defaultValue'] = val;
                   setFieldsValue({ defaultValue: val });
               },
+              onOpenFormulaEditor: handleOpenFormulaEditor,
             })
           ]);
         }
@@ -284,7 +365,8 @@ const [registerForm, { setFieldsValue, resetFields, validate, getFieldsValue }] 
       component: 'Select',
       ifShow: () =>
         formMode.value === 'Formula' &&
-        getFieldsValue().formulaType === 'CALC',
+        getFieldsValue().formulaType === 'CALC' &&
+        getFieldsValue().formulaType !== 'NO',
       componentProps: {
         placeholder: '请选择公式语言',
         options: [
@@ -307,6 +389,10 @@ const [registerModal, { setModalProps, closeModal }] = useModalInner(async (data
   recordId.value = data?.record?.id || '';
   formMode.value = data?.mode || 'Attributes';
   originalRecord.value = data?.record as IntermediateDataFormula | null;
+  
+  // 标记表单已准备好（resetFields 调用后表单应该已经注册）
+  await nextTick();
+  isFormReady.value = true;
   
   // Refresh fields when modal opens
   refreshAvailableFields();

@@ -285,10 +285,11 @@ watch(editorVisible, (newValue) => {
   }
 
   .ant-btn {
-    height: 32px;
-    padding: 4px 14px;
+    height: 40px;
+    width: 130px;
+    padding: 8px;
     font-size: 13px;
-    border-radius: 6px;
+    border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
@@ -297,12 +298,10 @@ watch(editorVisible, (newValue) => {
       align-items: center;
       gap: 6px;
       font-weight: 500;
-
       &:hover {
         transform: translateY(-1px);
         box-shadow: 0 4px 8px rgba(24, 144, 255, 0.2);
       }
-
       &:active {
         transform: translateY(0);
       }

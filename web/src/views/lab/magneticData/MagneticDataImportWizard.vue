@@ -69,10 +69,10 @@
   interface State {
     activeStep: number;
     importSessionId: string;
-    fileName: string;
     nextLoading: boolean;
     key: number;
   }
+
 
   const { t } = useI18n();
   const emit = defineEmits(['register', 'reload']);
@@ -83,12 +83,13 @@
   const state = reactive<State>({
     activeStep: 0,
     importSessionId: '',
-    fileName: '',
     nextLoading: false,
     key: +new Date(),
   });
 
-  const { activeStep, importSessionId, fileName, nextLoading, key } = toRefs(state);
+
+  const { activeStep, importSessionId, nextLoading, key } = toRefs(state);
+
 
   // 步骤组件引用
   const step1Ref = ref<InstanceType<typeof Step1UploadAndParse>>();
@@ -106,20 +107,25 @@
   });
 
   // 初始化
-  function init() {
-    state.activeStep = 0;
-    state.importSessionId = '';
-    state.fileName = '';
+  function init(params?: any) {
+    if (params && params.activeStep !== undefined) {
+      state.activeStep = params.activeStep;
+      state.importSessionId = params.importSessionId || '';
+    } else {
+      state.activeStep = 0;
+      state.importSessionId = '';
+    }
+
     state.nextLoading = false;
     state.key = +new Date();
   }
 
   // 步骤1完成（文件上传，文件数据已保存到后端）
-  async function handleStep1Next(data: { sessionId: string; fileName: string }) {
+  async function handleStep1Next(data: { sessionId: string }) {
     state.importSessionId = data.sessionId;
-    state.fileName = data.fileName;
     state.activeStep = 1;
   }
+
 
   // 下一步
   async function handleNext() {

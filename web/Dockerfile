@@ -21,10 +21,12 @@ COPY dist /usr/share/nginx/html
 # 复制 nginx 配置
 COPY conf/nginx.docker.conf /etc/nginx/conf.d/default.conf
 
-# 创建非 root 用户
-RUN addgroup -g 1001 -S www-data && \
-    adduser -S -D -H -u 1001 -h /usr/share/nginx/html -s /sbin/nologin -G www-data -g www-data www-data && \
-    chown -R www-data:www-data /usr/share/nginx/html
+# 创建非 root 用户并设置必要的目录权限
+RUN addgroup -g 1001 -S www-data 2>/dev/null || true && \
+    adduser -S -D -H -u 1001 -h /usr/share/nginx/html -s /sbin/nologin -G www-data -g www-data www-data 2>/dev/null || \
+    adduser -S -D -H -u 1001 -h /usr/share/nginx/html -s /sbin/nologin www-data && \
+    mkdir -p /var/cache/nginx /var/log/nginx /run/nginx && \
+    chown -R www-data:www-data /usr/share/nginx/html /var/cache/nginx /var/log/nginx /run
 
 # 暴露端口
 EXPOSE 80

@@ -2,8 +2,8 @@
 node_modules
 .pnpm-store
 
-# 构建输出
-dist
+# 构建输出（dist 需要被 Dockerfile 拷贝，所以不能忽略）
+# dist
 dist-ssr
 *.local
 

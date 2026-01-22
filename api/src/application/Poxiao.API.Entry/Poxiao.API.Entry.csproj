@@ -18,10 +18,7 @@
 
   <ItemGroup>
     <PackageReference Include="IGeekFan.AspNetCore.Knife4jUI" Version="0.0.13" />
-    <PackageReference
-      Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets"
-      Version="1.18.1"
-    />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.18.1" />
     <!-- 显式指定 Microsoft.Extensions.AI.Abstractions 版本以确保与其他 AI 包版本一致 -->
     <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.0.1-preview.1.24570.5" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.0" />
@@ -31,9 +28,6 @@
   <ItemGroup>
     <Content Update="Configurations\AI.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Update="Configurations\ConnectionStrings.YS.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Update="wwwroot\Template\appDetail.vue.vm">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

@@ -60,23 +60,6 @@ namespace Poxiao.UnitTests.Lab
             // Setup Product Spec Mock
             _mockProductSpecRepo.Setup(x => x.GetList()).Returns(new List<ProductSpecEntity>());
 
-            _service = new RawDataImportSessionService(
-                _mockSessionRepo.Object,
-                _mockRawDataRepo.Object,
-                _mockProductSpecRepo.Object,
-                _mockLogRepo.Object,
-                _mockFeatureRepo.Object,
-                _mockCategoryRepo.Object,
-                _mockFeatureLevelRepo.Object,
-                _mockFileService.Object,
-                _mockUserManager.Object,
-                _mockIntermediateDataService.Object,
-                _mockAppearanceFeatureService.Object,
-                _mockSpecAttrRepo.Object,
-                _mockFileManager.Object,
-                _mockValidationService.Object,
-                _mockExcelTemplateRepo.Object
-            );
         }
 
         [Fact]

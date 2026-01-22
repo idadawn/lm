@@ -97,11 +97,7 @@ public class FurnaceNo
     /// <returns>炉号实例</returns>
     public static FurnaceNo Parse(string furnaceNo)
     {
-        var result = new FurnaceNo
-        {
-            OriginalFurnaceNo = furnaceNo,
-            IsValid = false
-        };
+        var result = new FurnaceNo { OriginalFurnaceNo = furnaceNo, IsValid = false };
 
         if (string.IsNullOrWhiteSpace(furnaceNo))
         {
@@ -113,7 +109,8 @@ public class FurnaceNo
         // 例如：1甲20251101-1-4-1脆 或 1乙20251101-1-1-1
         // 卷号和分卷号支持小数：\d+(\.\d+)?
         // 允许炉号、卷号、分卷号前后有空格
-        var pattern = @"^\s*(\d+)(.*?)(\d{8})\s*-\s*(\d+)\s*-\s*(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*(.*)\s*$";
+        var pattern =
+            @"^\s*(\d+)(.*?)(\d{8})\s*-\s*(\d+)\s*-\s*(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*(.*)\s*$";
         var match = Regex.Match(furnaceNo.Trim(), pattern);
 
         if (!match.Success)
@@ -133,7 +130,15 @@ public class FurnaceNo
             result.FeatureSuffix = match.Groups[7].Value?.Trim(); // 特性描述（可选）
 
             // 解析日期
-            if (DateTime.TryParseExact(dateStr, "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out var date))
+            if (
+                DateTime.TryParseExact(
+                    dateStr,
+                    "yyyyMMdd",
+                    null,
+                    System.Globalization.DateTimeStyles.None,
+                    out var date
+                )
+            )
             {
                 result.ProdDate = date;
             }
@@ -208,7 +213,8 @@ public class FurnaceNo
         string furnaceBatchNo,
         string coilNo,
         string subcoilNo,
-        string featureSuffix = null)
+        string featureSuffix = null
+    )
     {
         var result = new FurnaceNo
         {
@@ -219,16 +225,18 @@ public class FurnaceNo
             CoilNo = coilNo,
             SubcoilNo = subcoilNo,
             FeatureSuffix = featureSuffix,
-            OriginalFurnaceNo = null
+            OriginalFurnaceNo = null,
         };
 
         // 验证必要字段
-        if (string.IsNullOrWhiteSpace(lineNo) ||
-            string.IsNullOrWhiteSpace(shift) ||
-            !prodDate.HasValue ||
-            string.IsNullOrWhiteSpace(furnaceBatchNo) ||
-            string.IsNullOrWhiteSpace(coilNo) ||
-            string.IsNullOrWhiteSpace(subcoilNo))
+        if (
+            string.IsNullOrWhiteSpace(lineNo)
+            || string.IsNullOrWhiteSpace(shift)
+            || !prodDate.HasValue
+            || string.IsNullOrWhiteSpace(furnaceBatchNo)
+            || string.IsNullOrWhiteSpace(coilNo)
+            || string.IsNullOrWhiteSpace(subcoilNo)
+        )
         {
             result.IsValid = false;
             result.ErrorMessage = "缺少必要的炉号组成部分";
@@ -260,7 +268,8 @@ public class FurnaceNo
 
         // 构建原始炉号字符串
         var dateStr = prodDate.Value.ToString("yyyyMMdd");
-        result.OriginalFurnaceNo = $"{lineNo}{shift}{dateStr}-{furnaceBatchNo}-{coilNo}-{subcoilNo}";
+        result.OriginalFurnaceNo =
+            $"{lineNo}{shift}{dateStr}-{furnaceBatchNo}-{coilNo}-{subcoilNo}";
         if (!string.IsNullOrWhiteSpace(featureSuffix))
         {
             result.OriginalFurnaceNo += featureSuffix;
@@ -309,6 +318,12 @@ public class FurnaceNo
     }
 
     /// <summary>
+    /// 获取标准炉号（等同于批次号，即 [产线数字][班次汉字][8位日期]-[炉次号]）
+    /// </summary>
+    /// <returns>标准炉号字符串</returns>
+    public string GetStandardFurnaceNo() => GetBatchNo();
+
+    /// <summary>
     /// 获取喷次
     /// 格式：[8位日期]-[炉次号]
     /// </summary>
@@ -345,14 +360,7 @@ public class FurnaceNo
         if (!IsValid)
             return this;
 
-        return Build(
-            LineNo,
-            Shift,
-            ProdDate,
-            FurnaceBatchNo,
-            CoilNo,
-            SubcoilNo,
-            null);
+        return Build(LineNo, Shift, ProdDate, FurnaceBatchNo, CoilNo, SubcoilNo, null);
     }
 
     /// <summary>

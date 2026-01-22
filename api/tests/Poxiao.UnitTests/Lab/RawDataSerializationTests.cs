@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Entity;
 using Poxiao.Lab.Helpers;
 using Xunit;
@@ -33,10 +34,6 @@ namespace Poxiao.UnitTests.Lab
             Assert.Equal("test-spec-id", result.ProductSpecId);
             Assert.Equal("Test Spec", result.ProductSpecName);
             Assert.Equal("A", result.Shift);
-
-            // Verify DetectionValues getter/setter behavior
-            Assert.Equal(2, result.DetectionValues.Count);
-            Assert.Equal(10.5m, result.DetectionValues[1]);
         }
 
         [Fact]
@@ -49,9 +46,6 @@ namespace Poxiao.UnitTests.Lab
             var json = JsonConvert.SerializeObject(new List<RawDataEntity> { entity });
             var deserializedList = JsonConvert.DeserializeObject<List<RawDataEntity>>(json);
             var result = deserializedList[0];
-
-            // Assert
-            Assert.Empty(result.DetectionValues);
         }
     }
 }

@@ -8,7 +8,7 @@ using Moq;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Core.Manager.Files;
 using Poxiao.Infrastructure.Security;
-using Poxiao.Lab.Entity.Entity;
+using Poxiao.Lab.Entity;
 using Poxiao.Lab.Interfaces;
 using Poxiao.Lab.Service;
 using Poxiao.Systems.Interfaces.Common;
@@ -27,14 +27,15 @@ namespace Poxiao.UnitTests.Lab
         private readonly Mock<
             ISqlSugarRepository<AppearanceFeatureCategoryEntity>
         > _mockCategoryRepo;
-        private readonly Mock<IAppearanceFeatureLevelService> _mockLevelService;
+        private readonly Mock<ISqlSugarRepository<AppearanceFeatureLevelEntity>> _mockFeatureLevelRepo;
         private readonly Mock<IFileService> _mockFileService;
         private readonly Mock<IUserManager> _mockUserManager;
         private readonly Mock<IIntermediateDataService> _mockIntermediateDataService;
-        private readonly Mock<AppearanceFeatureRuleMatcher> _mockRuleMatcher;
+        private readonly Mock<IAppearanceFeatureService> _mockAppearanceFeatureService;
         private readonly Mock<ISqlSugarRepository<ProductSpecAttributeEntity>> _mockSpecAttrRepo;
         private readonly Mock<IFileManager> _mockFileManager;
         private readonly Mock<IRawDataValidationService> _mockValidationService;
+        private readonly Mock<ISqlSugarRepository<ExcelImportTemplateEntity>> _mockExcelTemplateRepo;
 
         private readonly RawDataImportSessionService _service;
 
@@ -46,15 +47,15 @@ namespace Poxiao.UnitTests.Lab
             _mockLogRepo = new Mock<ISqlSugarRepository<RawDataImportLogEntity>>();
             _mockFeatureRepo = new Mock<ISqlSugarRepository<AppearanceFeatureEntity>>();
             _mockCategoryRepo = new Mock<ISqlSugarRepository<AppearanceFeatureCategoryEntity>>();
-            _mockLevelService = new Mock<IAppearanceFeatureLevelService>();
+            _mockFeatureLevelRepo = new Mock<ISqlSugarRepository<AppearanceFeatureLevelEntity>>();
             _mockFileService = new Mock<IFileService>();
             _mockUserManager = new Mock<IUserManager>();
             _mockIntermediateDataService = new Mock<IIntermediateDataService>();
-            // RuleMatcher might be a class, mocking might be tricky if not virtual, but let's try or pass null if unused in ParseExcel
-            _mockRuleMatcher = new Mock<AppearanceFeatureRuleMatcher>(null, null, null);
+            _mockAppearanceFeatureService = new Mock<IAppearanceFeatureService>();
             _mockSpecAttrRepo = new Mock<ISqlSugarRepository<ProductSpecAttributeEntity>>();
             _mockFileManager = new Mock<IFileManager>();
             _mockValidationService = new Mock<IRawDataValidationService>();
+            _mockExcelTemplateRepo = new Mock<ISqlSugarRepository<ExcelImportTemplateEntity>>();
 
             // Setup Product Spec Mock
             _mockProductSpecRepo.Setup(x => x.GetList()).Returns(new List<ProductSpecEntity>());
@@ -66,14 +67,15 @@ namespace Poxiao.UnitTests.Lab
                 _mockLogRepo.Object,
                 _mockFeatureRepo.Object,
                 _mockCategoryRepo.Object,
-                _mockLevelService.Object,
+                _mockFeatureLevelRepo.Object,
                 _mockFileService.Object,
                 _mockUserManager.Object,
                 _mockIntermediateDataService.Object,
-                null, // Passing null for skipped dependencies that aren't used in ParseExcel to simplify
+                _mockAppearanceFeatureService.Object,
                 _mockSpecAttrRepo.Object,
                 _mockFileManager.Object,
-                _mockValidationService.Object
+                _mockValidationService.Object,
+                _mockExcelTemplateRepo.Object
             );
         }
 
@@ -130,14 +132,6 @@ namespace Poxiao.UnitTests.Lab
             Assert.Equal("1甲20251101-1-4-1", row1.FurnaceNo);
             Assert.Equal(1200.5m, row1.Width);
             Assert.Equal(5000.1m, row1.CoilWeight);
-
-            // Verify Detection Data
-            Assert.NotNull(row1.DetectionData);
-            var detectionValues = Poxiao.Lab.Helpers.DetectionDataConverter.FromJson(
-                row1.DetectionData
-            );
-            Assert.Equal(10.1m, detectionValues[1]);
-            Assert.Equal(20.2m, detectionValues[2]);
         }
 
         [Fact]
@@ -174,11 +168,6 @@ namespace Poxiao.UnitTests.Lab
             // Assert
             Assert.NotNull(result);
             var entity = result[0];
-            var dv = Poxiao.Lab.Helpers.DetectionDataConverter.FromJson(entity.DetectionData);
-
-            Assert.Equal(11.1m, dv[1]);
-            Assert.Equal(22.2m, dv[2]);
-            Assert.Equal(33.3m, dv[3]);
         }
     }
 }

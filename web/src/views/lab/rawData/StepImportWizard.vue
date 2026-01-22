@@ -549,6 +549,11 @@ async function handleCancel() {
       display: none !important;
     }
 
+    // 移除激活步骤下方的样式
+    .ant-steps-item.ant-steps-item-active::before {
+      display: none !important;
+    }
+
     .ant-steps-item-content {
       order: 2;
       flex-shrink: 0;

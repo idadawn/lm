@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Entity;
 using Poxiao.Lab.Service;
 using Xunit;

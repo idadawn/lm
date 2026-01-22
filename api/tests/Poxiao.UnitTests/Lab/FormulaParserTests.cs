@@ -25,14 +25,12 @@ public class FormulaParserTests
         _unitConversionServiceMock = new Mock<IUnitConversionService>();
 
         // 设置默认模拟行为
-        _unitConversionServiceMock.Setup(x => x.ConvertAsync(
-            It.IsAny<decimal>(),
-            It.IsAny<string>(),
-            It.IsAny<string>()))
+        _unitConversionServiceMock
+            .Setup(x => x.ConvertAsync(It.IsAny<decimal>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync((decimal value, string from, string to) => value); // 默认返回原值
 
-        // FormulaParser现在使用无参构造函数
-        _formulaParser = new FormulaParser();
+        // FormulaParser需要RangeFormulaCalculator
+        _formulaParser = new FormulaParser(new RangeFormulaCalculator());
     }
 
     /// <summary>
@@ -67,11 +65,7 @@ public class FormulaParserTests
     {
         // Arrange
         string formula = "(width * height) / 2";
-        var variables = new Dictionary<string, object>
-        {
-            { "width", 10 },
-            { "height", 5 }
-        };
+        var variables = new Dictionary<string, object> { { "width", 10 }, { "height", 5 } };
 
         // Act
         var result = _formulaParser.Calculate(formula, variables);
@@ -95,7 +89,7 @@ public class FormulaParserTests
             { "b", 3 },
             { "c", 2 },
             { "d", 10 },
-            { "e", 2 }
+            { "e", 2 },
         };
 
         // Act
@@ -117,7 +111,7 @@ public class FormulaParserTests
         var variables = new Dictionary<string, object>
         {
             { "item_count", 10 },
-            { "price_per_item", 25.5m }
+            { "price_per_item", 25.5m },
         };
 
         // Act
@@ -281,11 +275,7 @@ public class FormulaParserTests
     {
         // Arrange
         string formula = "length * width";
-        var variables = new Dictionary<string, object>
-        {
-            { "length", 10 },
-            { "width", 5 }
-        };
+        var variables = new Dictionary<string, object> { { "length", 10 }, { "width", 5 } };
 
         // 阶段一：基本计算测试
         var result = _formulaParser.Calculate(formula, variables);
@@ -303,11 +293,7 @@ public class FormulaParserTests
     {
         // Arrange
         string formula = "a + b";
-        var variables = new Dictionary<string, object>
-        {
-            { "a", 10 },
-            { "b", null }
-        };
+        var variables = new Dictionary<string, object> { { "a", 10 }, { "b", null } };
 
         // Act
         var result = _formulaParser.Calculate(formula, variables);
@@ -331,7 +317,7 @@ public class FormulaParserTests
             { "a", 100 },
             { "b", 50 },
             { "c", 200 },
-            { "d", 4 }
+            { "d", 4 },
         };
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -349,6 +335,9 @@ public class FormulaParserTests
 
         // Assert
         _output.WriteLine($"{iterations}次计算耗时: {stopwatch.ElapsedMilliseconds}ms");
-        Assert.True(stopwatch.ElapsedMilliseconds < 1000, $"计算耗时过长: {stopwatch.ElapsedMilliseconds}ms");
+        Assert.True(
+            stopwatch.ElapsedMilliseconds < 1000,
+            $"计算耗时过长: {stopwatch.ElapsedMilliseconds}ms"
+        );
     }
 }

@@ -1,10 +1,10 @@
 # ============================================
 # 实验室数据分析系统 - API Dockerfile
-# 优化：使用阿里云镜像加速
+# 优化：使用国内镜像源加速构建
 # ============================================
 
-# 基础镜像 - ASP.NET Core 运行时（使用阿里云镜像）
-FROM registry.cn-hangzhou.aliyuncs.com/dotnet/aspnet:10.0 AS base
+# 基础镜像 - ASP.NET Core 运行时（官方镜像）
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
 
 # 安装必要的依赖（使用阿里云软件源）
@@ -63,7 +63,7 @@ ENV DOTNET_PRINT_TELEMETRY_MESSAGE=false
 # 暴露端口
 EXPOSE 9530
 
-# 健康检查（使用 wget 替代 curl，Alpine 镜像自带）
+# 健康检查（使用 wget 替代 curl）
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD wget --quiet --tries=1 --spider http://localhost:9530/health || exit 1
 

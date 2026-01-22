@@ -1,0 +1,180 @@
+# ============================================
+# GitHub Actions - Docker 自动构建
+# 当代码推送到 main 分支或创建 tag 时自动构建
+# ============================================
+
+name: Docker Build & Push
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*.*.*'
+  pull_request:
+    branches:
+      - main
+
+env:
+  # Docker 镜像名称
+  API_IMAGE: lm-api
+  WEB_IMAGE: lm-web
+
+jobs:
+  # ============================================
+  # 读取版本号
+  # ============================================
+  version:
+    name: Read Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      is_tag: ${{ steps.version.outputs.is_tag }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Read version from VERSION file
+        id: version
+        run: |
+          VERSION=$(cat VERSION | tr -d '[:space:]')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_ENV
+
+          # 检查是否是 tag
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "is_tag=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_tag=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Show version
+        run: |
+          echo "Version: ${{ steps.version.outputs.version }}"
+          echo "Is Tag: ${{ steps.version.outputs.is_tag }}"
+
+  # ============================================
+  # 构建 API 镜像
+  # ============================================
+  build-api:
+    name: Build API Image
+    runs-on: ubuntu-latest
+    needs: version
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub (可选)
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build API image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./api/Dockerfile.build
+          push: false
+          tags: |
+            ${{ env.API_IMAGE }}:${{ needs.version.outputs.version }}
+            ${{ env.API_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          load: true
+
+      - name: Test API image
+        run: |
+          docker images | grep ${{ env.API_IMAGE }}
+
+  # ============================================
+  # 构建 Web 镜像
+  # ============================================
+  build-web:
+    name: Build Web Image
+    runs-on: ubuntu-latest
+    needs: version
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub (可选)
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Web image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./web/Dockerfile.build
+          push: false
+          tags: |
+            ${{ env.WEB_IMAGE }}:${{ needs.version.outputs.version }}
+            ${{ env.WEB_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          load: true
+
+      - name: Test Web image
+        run: |
+          docker images | grep ${{ env.WEB_IMAGE }}
+
+  # ============================================
+  # 推送到镜像仓库（可选）
+  # ============================================
+  push:
+    name: Push to Registry
+    runs-on: ubuntu-latest
+    needs: [version, build-api, build-web]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push API
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./api/Dockerfile.build
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.API_IMAGE }}:${{ needs.version.outputs.version }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.API_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Web
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./web/Dockerfile.build
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.WEB_IMAGE }}:${{ needs.version.outputs.version }}
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.WEB_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

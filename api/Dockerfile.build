@@ -1,19 +1,21 @@
 # ============================================
 # 实验室数据分析系统 - API Dockerfile
-# 使用方式：
-#   1. 先运行 ./scripts/build-api.sh 发布 API
-#   2. 再运行 docker build -t lm-api:latest -f api/Dockerfile.build .
+# 优化：使用阿里云镜像加速
 # ============================================
 
-# 基础镜像 - ASP.NET Core 运行时
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+# 基础镜像 - ASP.NET Core 运行时（使用阿里云镜像）
+FROM registry.cn-hangzhou.aliyuncs.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
 
-# 安装必要的依赖
-RUN apt-get update && apt-get install -y \
-    libgdiplus \
-    libc6-dev \
-    && rm -rf /var/lib/apt/lists/*
+# 安装必要的依赖（使用阿里云软件源）
+RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources && \
+    sed -i 's/security.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources && \
+    apt-get update && \
+    apt-get install -y \
+        libgdiplus \
+        libc6-dev \
+        libx11-6 \
+        && rm -rf /var/lib/apt/lists/*
 
 # 设置时区
 ENV TZ=Asia/Shanghai
@@ -61,9 +63,9 @@ ENV DOTNET_PRINT_TELEMETRY_MESSAGE=false
 # 暴露端口
 EXPOSE 9530
 
-# 健康检查
+# 健康检查（使用 wget 替代 curl，Alpine 镜像自带）
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:9530/health || exit 1
+    CMD wget --quiet --tries=1 --spider http://localhost:9530/health || exit 1
 
 # 启动应用
 ENTRYPOINT ["dotnet", "Poxiao.API.Entry.dll"]

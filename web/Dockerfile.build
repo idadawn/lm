@@ -1,21 +1,26 @@
 # ============================================
 # 实验室数据分析系统 - 前端 Dockerfile
+# 优化：使用阿里云镜像加速
 # 多阶段构建：依赖安装 → 构建 → 生产镜像
 # ============================================
 
 # ============================================
-# 阶段1: 依赖安装
+# 阶段1: 依赖安装（使用阿里云镜像）
 # ============================================
-FROM node:20-alpine AS deps
+FROM registry.cn-hangzhou.aliyuncs.com/node/node:20-alpine AS deps
 WORKDIR /app
 
+# 使用阿里云 Alpine 镜像源
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
+    apk add --no-cache curl
+
 # 安装 pnpm
-RUN npm install -g pnpm@8
+RUN npm install -g pnpm@8 --registry=https://registry.npmmirror.com
 
 # 复制包管理文件
 COPY package.json pnpm-lock.yaml ./
 
-# 配置 npm 镜像（国内加速）
+# 使用阿里云 npm 镜像
 RUN pnpm config set registry https://registry.npmmirror.com
 
 # 安装依赖（利用 Docker 缓存）
@@ -24,33 +29,42 @@ RUN pnpm install --frozen-lockfile
 # ============================================
 # 阶段2: 构建阶段
 # ============================================
-FROM node:20-alpine AS builder
+FROM registry.cn-hangzhou.aliyuncs.com/node/node:20-alpine AS builder
 WORKDIR /app
 
 # 安装 pnpm
-RUN npm install -g pnpm@8
+RUN npm install -g pnpm@8 --registry=https://registry.npmmirror.com
 
 # 从 deps 阶段复制 node_modules
-COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/node_modules /app/node_modules
+
+# 复制源代码
 COPY . .
 
 # 设置构建环境变量
 ENV NODE_ENV=production
 ENV VITE_PUBLIC_PATH=/
 
+# 配置 npm 镜像
+RUN pnpm config set registry https://registry.npmmirror.com
+
 # 构建生产版本
 RUN pnpm build
 
 # ============================================
-# 阶段3: 生产镜像
+# 阶段3: 生产镜像（使用阿里云镜像）
 # ============================================
-FROM nginx:stable-alpine AS production
+FROM registry.cn-hangzhou.aliyuncs.com/acs/nginx-alpine-base:stable-alpine AS production
+
+# 使用阿里云 Alpine 镜像源
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
 
 # 安装 tzdata 设置时区
-RUN apk add --no-cache tzdata && \
-    cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
-    echo "Asia/Shanghai" > /etc/timezone && \
-    apk del tzdata
+RUN apk add --no-cache \
+    tzdata \
+    curl \
+    && cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+    && echo "Asia/Shanghai" > /etc/timezone
 
 # 从构建阶段复制构建产物
 COPY --from=builder /app/dist /usr/share/nginx/html

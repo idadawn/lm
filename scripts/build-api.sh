@@ -171,7 +171,7 @@ publish_fast() {
         /p:OptimizeModular=true \
         /p:BuildInParallel=true \
         -m:1 \
-        -v q
+        -v q || return 1
 
     log_info "发布完成!"
 }
@@ -311,7 +311,10 @@ main() {
     prepare_build_cache
 
     if [ "$BUILD_MODE" = "fast" ]; then
-        publish_fast
+        if ! publish_fast; then
+            log_warn "快速构建失败（可能是依赖未还原），尝试自动切换到完整构建..."
+            publish_full
+        fi
     else
         publish_full
     fi

@@ -129,13 +129,11 @@ jobs:
         with:
           version: 8
 
-      # 安装 Node.js
+      # 安装 Node.js（不使用缓存，避免路径问题）
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'pnpm'
-          cache-dependency-path: 'web/pnpm-lock.yaml'
 
       # 配置 npm 镜像
       - name: Configure npm registry

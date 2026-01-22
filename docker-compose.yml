@@ -117,7 +117,7 @@ services:
 
   # 后端 API
   api:
-    image: lm-api:latest
+    image: lm-api:${APP_VERSION:-latest}
     container_name: ${CONTAINER_PREFIX:-lm}-api
     restart: unless-stopped
     ports:
@@ -152,7 +152,7 @@ services:
 
   # 前端 Web
   web:
-    image: lm-web:latest
+    image: lm-web:${APP_VERSION:-latest}
     container_name: ${CONTAINER_PREFIX:-lm}-web
     restart: unless-stopped
     ports:

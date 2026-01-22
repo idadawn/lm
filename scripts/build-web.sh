@@ -16,6 +16,15 @@ WEB_DIR="${PROJECT_ROOT}/web"
 PUBLISH_DIR="${PROJECT_ROOT}/publish/web"
 BUILD_MODE="local"  # local 或 docker
 
+# 读取版本号
+VERSION_FILE="${PROJECT_ROOT}/VERSION"
+if [ -f "$VERSION_FILE" ]; then
+    APP_VERSION=$(cat "$VERSION_FILE" | tr -d '[:space:]')
+else
+    APP_VERSION="latest"
+    log_warn "VERSION 文件不存在，使用版本: $APP_VERSION"
+fi
+
 # 颜色输出
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -210,9 +219,13 @@ build_docker_image() {
 
     cd "$PROJECT_ROOT"
 
-    docker build -t lm-web:latest -f web/Dockerfile.build .
+    # 构建带版本标签的镜像
+    docker build -t lm-web:${APP_VERSION} -f web/Dockerfile.build .
 
-    log_info "Docker 镜像构建完成: lm-web:latest"
+    # 同时打 latest 标签
+    docker tag lm-web:${APP_VERSION} lm-web:latest
+
+    log_info "Docker 镜像构建完成: lm-web:${APP_VERSION}"
 }
 
 # ============================================

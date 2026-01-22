@@ -15,6 +15,15 @@ PUBLISH_DIR="${PROJECT_ROOT}/publish/api"
 RUNTIME="linux-x64"
 CONFIGURATION="Release"
 
+# 读取版本号
+VERSION_FILE="${PROJECT_ROOT}/VERSION"
+if [ -f "$VERSION_FILE" ]; then
+    APP_VERSION=$(cat "$VERSION_FILE" | tr -d '[:space:]')
+else
+    APP_VERSION="latest"
+    log_warn "VERSION 文件不存在，使用版本: $APP_VERSION"
+fi
+
 # 构建缓存目录
 BUILD_CACHE_DIR="${PROJECT_ROOT}/.build-cache"
 NUGET_PACKAGES_DIR="${BUILD_CACHE_DIR}/nuget"
@@ -227,9 +236,13 @@ build_docker_image() {
 
     cd "$PROJECT_ROOT"
 
-    docker build -t lm-api:latest -f api/Dockerfile.build .
+    # 构建带版本标签的镜像
+    docker build -t lm-api:${APP_VERSION} -f api/Dockerfile.build .
 
-    log_info "Docker 镜像构建完成: lm-api:latest"
+    # 同时打 latest 标签
+    docker tag lm-api:${APP_VERSION} lm-api:latest
+
+    log_info "Docker 镜像构建完成: lm-api:${APP_VERSION}"
 }
 
 # ============================================

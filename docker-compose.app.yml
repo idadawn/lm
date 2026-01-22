@@ -1,0 +1,99 @@
+# ============================================
+# 应用服务 - Docker Compose 配置
+# 包含：后端 API、前端 Web、Nginx 反向代理
+# 使用方式：
+#   docker-compose -f docker-compose.app.yml up -d
+# 注意：需要先启动基础设施服务（docker-compose.infra.yml）
+# ============================================
+
+services:
+  # 后端 API
+  api:
+    image: lm-api
+    container_name: ${CONTAINER_PREFIX:-lm}-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-9530}:9530"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=production
+      - ASPNETCORE_URLS=http://+:9530
+      - DOTNET_PRINT_TELEMETRY_MESSAGE=false
+    volumes:
+      - ${DEPLOY_DIR:-./deploy}/api/logs:/app/logs
+      - ${DEPLOY_DIR:-./deploy}/api/uploads:/app/uploads
+    networks:
+      - lm-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9530/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # 前端 Web (静态文件服务)
+  web:
+    image: lm-web
+    container_name: ${CONTAINER_PREFIX:-lm}-web
+    restart: unless-stopped
+    # 内部端口，不对外暴露
+    expose:
+      - "80"
+    networks:
+      - lm-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Nginx 反向代理
+  nginx:
+    image: nginx:${NGINX_VERSION:-1.27-alpine}
+    container_name: ${CONTAINER_PREFIX:-lm}-nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-80}:80"
+    volumes:
+      - ${DEPLOY_DIR:-./deploy}/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${DEPLOY_DIR:-./deploy}/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ${DEPLOY_DIR:-./deploy}/nginx/ssl:/etc/nginx/ssl:ro
+    networks:
+      - lm-network
+    depends_on:
+      - api
+      - web
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  lm-network:
+    name: ${NETWORK_NAME:-lm-network}
+    driver: bridge
+    external: true  # 使用基础设施服务创建的网络

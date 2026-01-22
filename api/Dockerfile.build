@@ -1,21 +1,24 @@
 # ============================================
 # 实验室数据分析系统 - API Dockerfile
-# 使用方式：
-#   1. 先运行 ./scripts/build-api.sh 发布 API
-#   2. 再运行 docker build -t lm-api:latest -f api/Dockerfile.build .
+# 使用中国大陆镜像源优化构建速度
 # ============================================
 
 # 基础镜像 - ASP.NET Core 运行时
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
 
-# 安装必要的依赖
-RUN apt-get update && apt-get install -y \
-    libgdiplus \
-    libc6-dev \
-    && rm -rf /var/lib/apt/lists/*
+# 配置 APT 使用阿里云镜像源（大幅提升下载速度）
+RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources && \
+    sed -i 's/security.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources
 
-# 设置时区
+# 安装必要的依赖
+RUN apt-get update && \
+    apt-get install -y \
+        libgdiplus \
+        curl \
+        && rm -rf /var/lib/apt/lists/*
+
+# 设置时区为中国时区
 ENV TZ=Asia/Shanghai
 RUN ln -sf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
@@ -29,7 +32,7 @@ FROM base AS build
 
 # 从本地发布目录复制文件
 # 注意：需要先运行 ./scripts/build-api.sh
-COPY publish/api/ ./app/
+COPY publish/api/ /app/
 
 # ============================================
 # 最终镜像
@@ -40,7 +43,7 @@ FROM base AS final
 WORKDIR /app
 
 # 从构建阶段复制应用文件
-COPY --from=build /app/./
+COPY --from=build /app /app
 
 # 创建必要的目录
 RUN mkdir -p /app/logs \

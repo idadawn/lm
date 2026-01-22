@@ -85,6 +85,8 @@ public class RawDataFeatureMatchOutput
     public string FurnaceNo { get; set; }
     public string FeatureSuffix { get; set; } // 原始特性汉字
     public List<string> AppearanceFeatureIds { get; set; } // 匹配的特性ID列表
+    public List<string> AppearanceFeatureCategoryIds { get; set; } // 匹配的特性大类ID列表
+    public List<string> AppearanceFeatureLevelIds { get; set; } // 匹配的特性等级ID列表
     public double? MatchConfidence { get; set; } // 匹配置信度
     public List<FeatureMatchDetail> MatchDetails { get; set; } // 匹配详情
 }
@@ -94,6 +96,10 @@ public class FeatureMatchDetail
     public string FeatureId { get; set; }
     public string FeatureName { get; set; }
     public string Confidence { get; set; }
+    public string CategoryId { get; set; }
+    public string CategoryName { get; set; }
+    public string SeverityLevelId { get; set; }
+    public string SeverityLevelName { get; set; }
 }
 
 /// <summary>

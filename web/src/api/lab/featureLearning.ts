@@ -27,6 +27,10 @@ export interface AppearanceFeatureCorrection {
     scenario: string;
     remark: string;
     creatorTime: string;
+    status?: string;
+    correctedFeatureName?: string;
+    autoMatchedFeatureName?: string;
+    matchModeText?: string;
 }
 
 export const getSuggestedKeywords = () => {
@@ -53,6 +57,12 @@ export const confirmCorrection = (id: string) => {
     return defHttp.post({ url: `${Api.ConfirmCorrection}/${id}/confirm` });
 };
 
-export const updateCorrection = (id: string, input: { featureId: string }) => {
-    return defHttp.put({ url: `${Api.GetCorrectionList}/${id}`, params: input });
+export const updateCorrection = (
+    id: string,
+    input: { featureId?: string; status?: string; remark?: string }
+) => {
+    return defHttp.put({
+        url: `${Api.GetCorrectionList}/${id}`,
+        params: input,
+    });
 };

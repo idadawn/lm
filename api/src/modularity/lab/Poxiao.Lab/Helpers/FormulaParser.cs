@@ -12,7 +12,15 @@ public interface IFormulaParser
     /// <summary>
     /// 计算公式表达式.
     /// </summary>
+    /// <summary>
+    /// 计算公式表达式.
+    /// </summary>
     decimal? Calculate(string formula, Dictionary<string, object> variables);
+
+    /// <summary>
+    /// 计算公式表达式 (支持对象上下文和范围公式).
+    /// </summary>
+    decimal? Calculate(string formula, object context);
 
     /// <summary>
     /// 验证表达式语法.
@@ -27,6 +35,43 @@ public interface IFormulaParser
 
 public class FormulaParser : IFormulaParser, ITransient
 {
+    private readonly RangeFormulaCalculator _rangeCalculator;
+
+    public FormulaParser(RangeFormulaCalculator rangeCalculator)
+    {
+        _rangeCalculator = rangeCalculator;
+    }
+
+    public decimal? Calculate(string formula, object context)
+    {
+        if (string.IsNullOrWhiteSpace(formula))
+            return null;
+
+        // 检查是否为范围公式
+        if (formula.Contains("RANGE(") || formula.Contains("DIFF_FIRST_LAST"))
+        {
+            return _rangeCalculator.Calculate(formula, context);
+        }
+
+        // 普通公式，如果context是字典直接调用
+        if (context is Dictionary<string, object> dict)
+        {
+            return Calculate(formula, dict);
+        }
+
+        // 如果context是实体对象，需要转换为字典?
+        // 实际上现有逻辑中，IntermediateDataService 已经在外部转换了。
+        // 为了支持 Calculate(string, object) 通用性，这里可以暂时抛错或者尝试转换
+        // 但鉴于性能，最好让调用方传入字典，或者 RangeFormulaCalculator 专用 object。
+
+        // 此处为了兼容 IntermediateDataService 可能直接传入 Dictionary 的情况 (它是 object)
+        // 但我们已经处理了 dict。
+
+        throw new NotSupportedException(
+            "普通公式计算必须传入 Dictionary<string, object> 类型的上下文"
+        );
+    }
+
     public decimal? Calculate(string formula, Dictionary<string, object> variables)
     {
         try

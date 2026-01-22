@@ -78,8 +78,8 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         if (!string.IsNullOrEmpty(input.Keyword))
         {
             query = query.Where(t =>
-                (t.FurnaceNoFormatted != null && t.FurnaceNoFormatted.Contains(input.Keyword)) ||
-                (t.LineNo.HasValue && t.LineNo.Value.ToString().Contains(input.Keyword))
+                (t.FurnaceNoFormatted != null && t.FurnaceNoFormatted.Contains(input.Keyword))
+                || (t.LineNo.HasValue && t.LineNo.Value.ToString().Contains(input.Keyword))
             );
         }
 
@@ -105,7 +105,6 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             query = query.Where(t => t.DetectionDate < detectionEndDate);
         }
 
-
         // 按产线筛选
         if (!string.IsNullOrEmpty(input.LineNo))
         {
@@ -128,7 +127,9 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         {
             try
             {
-                var sortRules = System.Text.Json.JsonSerializer.Deserialize<List<SortRule>>(input.SortRules);
+                var sortRules = System.Text.Json.JsonSerializer.Deserialize<List<SortRule>>(
+                    input.SortRules
+                );
                 if (sortRules != null && sortRules.Count > 0)
                 {
                     allData = ApplySortRules(allData, sortRules);
@@ -167,7 +168,8 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         var userDict = users.ToDictionary(u => u.Id, u => u.RealName);
 
         // 转换输出
-        var outputList = pagedData.Select(item =>
+        var outputList = pagedData
+            .Select(item =>
             {
                 var output = item.Adapt<IntermediateDataListOutput>();
                 output.CreatorUserName = userDict.GetValueOrDefault(item.CreatorUserId ?? "", "");
@@ -183,7 +185,16 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             })
             .ToList();
 
-        return new { list = outputList, pagination = new { total = total, pageSize = pageSize, current = currentPage } };
+        return new
+        {
+            list = outputList,
+            pagination = new
+            {
+                total = total,
+                pageSize = pageSize,
+                current = currentPage,
+            },
+        };
     }
 
     /// <inheritdoc />
@@ -616,6 +627,8 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             DetectionColumns = productSpec.DetectionColumns,
             // 外观特性相关
             AppearanceFeatureIds = rawData.AppearanceFeatureIds,
+            AppearanceFeatureCategoryIds = rawData.AppearanceFeatureCategoryIds,
+            AppearanceFeatureLevelIds = rawData.AppearanceFeatureLevelIds,
             MatchConfidence = rawData.MatchConfidence,
             // 外观数据
             BreakCount = rawData.BreakCount,
@@ -652,8 +665,8 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         {
             // 如果解析失败，使用简单格式
             entity.SprayNo = $"{rawData.ProdDate?.ToString("yyyyMMdd")}-{rawData.FurnaceBatchNo}";
-            entity.ShiftNo = $"{rawData.LineNo}{rawData.Shift}{rawData.ProdDate?.ToString("yyyyMMdd")}-{rawData.FurnaceBatchNo}";
-
+            entity.ShiftNo =
+                $"{rawData.LineNo}{rawData.Shift}{rawData.ProdDate?.ToString("yyyyMMdd")}-{rawData.FurnaceBatchNo}";
         }
 
         // 四米带材重量（原始数据带材重量）
@@ -803,11 +816,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         {
             var lengthCm = length * 100; // 转换为厘米
             var divisor =
-                entity.Width.Value
-                * lengthCm
-                * entity.AvgThickness.Value
-                * density
-                * 0.0000001m;
+                entity.Width.Value * lengthCm * entity.AvgThickness.Value * density * 0.0000001m;
             if (divisor > 0)
             {
                 entity.LaminationFactor = Math.Round(entity.CoilWeight.Value / divisor, 2);
@@ -855,6 +864,14 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         {
             entity.AppearanceFeatureIds = rawData.AppearanceFeatureIds;
         }
+        if (!string.IsNullOrWhiteSpace(rawData.AppearanceFeatureCategoryIds))
+        {
+            entity.AppearanceFeatureCategoryIds = rawData.AppearanceFeatureCategoryIds;
+        }
+        if (!string.IsNullOrWhiteSpace(rawData.AppearanceFeatureLevelIds))
+        {
+            entity.AppearanceFeatureLevelIds = rawData.AppearanceFeatureLevelIds;
+        }
 
         // 设置是否需要人工确认：如果特性匹配置信度 < 90%，则需要人工确认
         if (rawData.MatchConfidence.HasValue && rawData.MatchConfidence.Value < 0.9)
@@ -881,8 +898,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     private async Task CalculateIndicatorsAsync(
         IntermediateDataEntity entity,
         string productSpecId
-    )
-    { }
+    ) { }
 
     /// <summary>
     /// 批量计算公式（用于后台任务）.
@@ -1019,7 +1035,8 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
                     entity.CalcErrorMessage = null; // 清空之前的错误信息
                     await _repository
                         .AsUpdateable(entity)
-                        .UpdateColumns(t => new {
+                        .UpdateColumns(t => new
+                        {
                             t.CalcStatus,
                             t.CalcStatusTime,
                             t.CalcErrorMessage,
@@ -1035,7 +1052,8 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
                     entity.CalcErrorMessage = null;
                     await _repository
                         .AsUpdateable(entity)
-                        .UpdateColumns(t => new {
+                        .UpdateColumns(t => new
+                        {
                             t.CalcStatus,
                             t.CalcStatusTime,
                             t.CalcErrorMessage,
@@ -1056,7 +1074,8 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
                     entity.CalcErrorMessage = errorMessage;
                     await _repository
                         .AsUpdateable(entity)
-                        .UpdateColumns(t => new {
+                        .UpdateColumns(t => new
+                        {
                             t.CalcStatus,
                             t.CalcStatusTime,
                             t.CalcErrorMessage,
@@ -1120,7 +1139,18 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
                     decimal? calculatedValue = null;
                     try
                     {
-                        calculatedValue = _formulaParser.Calculate(formulaDto.Formula, contextData);
+                        // 根据公式类型选择上下文
+                        object calcContext = contextData;
+                        // 如果是范围公式，需要传入实体对象以便使用反射获取动态列
+                        if (
+                            formulaDto.Formula.Contains("RANGE(")
+                            || formulaDto.Formula.Contains("DIFF_FIRST_LAST")
+                        )
+                        {
+                            calcContext = entity;
+                        }
+
+                        calculatedValue = _formulaParser.Calculate(formulaDto.Formula, calcContext);
                     }
                     catch (Exception calcEx)
                     {
@@ -1616,7 +1646,10 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     /// <summary>
     /// 应用排序规则.
     /// </summary>
-    private List<IntermediateDataEntity> ApplySortRules(List<IntermediateDataEntity> data, List<SortRule> sortRules)
+    private List<IntermediateDataEntity> ApplySortRules(
+        List<IntermediateDataEntity> data,
+        List<SortRule> sortRules
+    )
     {
         if (sortRules == null || sortRules.Count == 0)
             return ApplyDefaultSort(data);

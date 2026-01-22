@@ -262,6 +262,26 @@ public class RawDataEntity : CLDEntityBase
     public string AppearanceFeatureIds { get; set; }
 
     /// <summary>
+    /// 匹配后的特性大类ID列表（JSON格式，数组：["category-id-1", ...]）.
+    /// </summary>
+    [SugarColumn(
+        ColumnName = "F_APPEARANCE_FEATURE_CATEGORY_IDS",
+        ColumnDataType = "json",
+        IsNullable = true
+    )]
+    public string AppearanceFeatureCategoryIds { get; set; }
+
+    /// <summary>
+    /// 匹配后的特性等级ID列表（JSON格式，数组：["level-id-1", ...]）.
+    /// </summary>
+    [SugarColumn(
+        ColumnName = "F_APPEARANCE_FEATURE_LEVEL_IDS",
+        ColumnDataType = "json",
+        IsNullable = true
+    )]
+    public string AppearanceFeatureLevelIds { get; set; }
+
+    /// <summary>
     /// 特性匹配置信度（0-1）.
     /// </summary>
     [SugarColumn(ColumnName = "F_MATCH_CONFIDENCE", IsNullable = true)]
@@ -310,6 +330,62 @@ public class RawDataEntity : CLDEntityBase
         set
         {
             AppearanceFeatureIds =
+                value == null || value.Count == 0 ? null : JsonConvert.SerializeObject(value);
+        }
+    }
+
+    /// <summary>
+    /// 特性大类ID列表（辅助属性，从JSON字段解析）.
+    /// </summary>
+    [SugarColumn(IsIgnore = true)]
+    public List<string> AppearanceFeatureCategoryIdsList
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(AppearanceFeatureCategoryIds))
+                return new List<string>();
+
+            try
+            {
+                return JsonConvert.DeserializeObject<List<string>>(AppearanceFeatureCategoryIds)
+                    ?? new List<string>();
+            }
+            catch
+            {
+                return new List<string>();
+            }
+        }
+        set
+        {
+            AppearanceFeatureCategoryIds =
+                value == null || value.Count == 0 ? null : JsonConvert.SerializeObject(value);
+        }
+    }
+
+    /// <summary>
+    /// 特性等级ID列表（辅助属性，从JSON字段解析）.
+    /// </summary>
+    [SugarColumn(IsIgnore = true)]
+    public List<string> AppearanceFeatureLevelIdsList
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(AppearanceFeatureLevelIds))
+                return new List<string>();
+
+            try
+            {
+                return JsonConvert.DeserializeObject<List<string>>(AppearanceFeatureLevelIds)
+                    ?? new List<string>();
+            }
+            catch
+            {
+                return new List<string>();
+            }
+        }
+        set
+        {
+            AppearanceFeatureLevelIds =
                 value == null || value.Count == 0 ? null : JsonConvert.SerializeObject(value);
         }
     }

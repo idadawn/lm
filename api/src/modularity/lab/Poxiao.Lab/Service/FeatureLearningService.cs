@@ -435,8 +435,24 @@ public class FeatureLearningService : IDynamicApiController, ITransient
         if (correction.Status == "Confirmed")
             throw Oops.Oh("已确认的记录无法修改");
 
-        correction.CorrectedFeatureId = input.FeatureId;
-        correction.Status = "Pending"; // 修改后重置为待处理
+        if (!string.IsNullOrWhiteSpace(input.FeatureId))
+        {
+            correction.CorrectedFeatureId = input.FeatureId;
+        }
+
+        if (!string.IsNullOrWhiteSpace(input.Status))
+        {
+            correction.Status = input.Status;
+        }
+        else
+        {
+            correction.Status = "Pending"; // 修改后重置为待处理
+        }
+
+        if (input.Remark != null)
+        {
+            correction.Remark = input.Remark;
+        }
         correction.LastModify();
 
         await _correctionRepository
@@ -445,6 +461,7 @@ public class FeatureLearningService : IDynamicApiController, ITransient
             {
                 c.CorrectedFeatureId,
                 c.Status,
+                c.Remark,
                 c.LastModifyTime,
                 c.LastModifyUserId,
             })
@@ -520,6 +537,8 @@ public class KeywordSuggestion
 public class UpdateCorrectionInput
 {
     public string FeatureId { get; set; }
+    public string Status { get; set; }
+    public string Remark { get; set; }
 }
 
 /// <summary>

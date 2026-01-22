@@ -38,6 +38,9 @@
         <a-button @click="handleBatchMatch" :disabled="!hasUnmatchedData">
           <ThunderboltOutlined /> 批量匹配
         </a-button>
+        <a-button @click="handleOpenCorrection">
+          人工匹配修正
+        </a-button>
         <a-select
           v-model:value="filterStatus"
           style="width: 140px"
@@ -96,14 +99,13 @@
               <div v-if="record.appearanceFeatureIds?.length" class="feature-list">
                 <a-space wrap size="small">
                   <a-tag
-                    v-for="featureId in record.appearanceFeatureIds.slice(0, 3)"
-                    :key="featureId"
+                    v-for="feature in getMatchedFeatureLabels(record).slice(0, 3)"
+                    :key="feature.id"
                     color="blue">
-                    {{ getFeatureName(featureId) }}
+                    {{ feature.label }}
                   </a-tag>
-                  <a-tag v-if="record.appearanceFeatureIds.length > 3"
-                    color="default">
-                    +{{ record.appearanceFeatureIds.length - 3 }}
+                  <a-tag v-if="getMatchedFeatureLabels(record).length > 3" color="default">
+                    +{{ getMatchedFeatureLabels(record).length - 3 }}
                   </a-tag>
                 </a-space>
               </div>
@@ -147,14 +149,6 @@
                 @click.stop="handleEditFeatures(record)">
                 <EditOutlined /> 编辑
               </a-button>
-              <a-button
-                v-if="record.appearanceFeatureIds?.length"
-                type="link"
-                danger
-                size="small"
-                @click.stop="handleClearFeatures(record)">
-                <ClearOutlined /> 清除
-              </a-button>
             </a-space>
             <span v-else class="no-action">-</span>
           </template>
@@ -163,76 +157,13 @@
     </div>
 
     <!-- 特性选择弹窗 -->
-    <a-modal
-      v-model:open="featureModalVisible"
-      title="选择外观特性"
-      :width="900"
-      :mask-closable="false"
-      @ok="handleFeatureModalOk"
-      @cancel="handleFeatureModalCancel">
-      <div class="feature-selection-content">
-        <!-- 当前特性汉字 -->
-        <div class="current-feature" v-if="currentRecord?.featureSuffix">
-          <a-alert
-            :message="`原始特性汉字：${currentRecord.featureSuffix}`"
-            type="info"
-            show-icon
-            style="margin-bottom: 16px" />
-        </div>
+    <FeatureSelectDialog
+      ref="featureSelectDialogRef"
+      @confirm="handleFeatureConfirm"
+      @cancel="handleFeatureCancel"
+    />
 
-        <!-- 特性分类展示 -->
-        <div class="feature-categories">
-          <a-collapse v-model:activeKey="activeCategories" accordion>
-            <a-collapse-panel
-              v-for="category in featureCategories"
-              :key="category.id"
-              :header="category.name">
-              <div class="category-features">
-                <a-row :gutter="[16, 16]">
-                  <a-col
-                    v-for="feature in getFeaturesByCategory(category.id)"
-                    :key="feature.id"
-                    :span="8">
-                    <div
-                      class="feature-item"
-                      :class="{ selected: isFeatureSelected(feature) }"
-                      @click="toggleFeature(feature)">
-                      <div class="feature-header">
-                        <div class="feature-name">{{ feature.name }}</div>
-                        <div class="feature-level" v-if="feature.severityLevelName">
-                          <a-tag size="small">{{ feature.severityLevelName }}</a-tag>
-                        </div>
-                      </div>
-                      <div class="feature-desc" v-if="feature.description">
-                        {{ feature.description }}
-                      </div>
-                      <div class="feature-confidence" v-if="feature.confidence">
-                        置信度：{{ Math.round(feature.confidence * 100) }}%
-                      </div>
-                    </div>
-                  </a-col>
-                </a-row>
-              </div>
-            </a-collapse-panel>
-          </a-collapse>
-        </div>
-
-        <!-- 已选特性预览 -->
-        <div class="selected-features" v-if="selectedFeatures.length > 0">
-          <h4>已选择的特性（{{ selectedFeatures.length }}）：</h4>
-          <a-space wrap>
-            <a-tag
-              v-for="feature in selectedFeatures"
-              :key="feature.id"
-              closable
-              @close="removeFeature(feature)">
-              {{ feature.name }}
-              <span v-if="feature.severityLevelName">（{{ feature.severityLevelName }}）</span>
-            </a-tag>
-          </a-space>
-        </div>
-      </div>
-    </a-modal>
+    <CorrectionDialog ref="correctionDialogRef" />
 
     <!-- 加载状态 -->
     <div v-if="loading" class="loading-overlay">
@@ -248,17 +179,18 @@ import {
   ReloadOutlined,
   ThunderboltOutlined,
   EditOutlined,
-  ClearOutlined,
   ExclamationCircleOutlined
 } from '@ant-design/icons-vue';
 import { getAppearanceFeatureMatches, updateAppearanceFeatureMatches } from '/@/api/lab/rawData';
-import { getAppearanceFeatureList, getAppearanceFeatureCategoryList } from '/@/api/lab/appearanceFeature';
+import { getAppearanceFeatureList } from '/@/api/lab/appearanceFeature';
 import type {
   RawDataRow,
   AppearanceFeature,
-  AppearanceFeatureCategory,
   Step3AppearanceFeatureInput
 } from '/@/api/lab/types/rawData';
+import FeatureSelectDialog from '/@/views/lab/appearance/components/FeatureSelectDialog.vue';
+import type { AppearanceFeatureInfo } from '/@/api/lab/appearance';
+import CorrectionDialog from '/@/views/lab/appearance/correction.vue';
 
 const props = defineProps({
   importSessionId: {
@@ -273,17 +205,15 @@ const emit = defineEmits(['prev', 'next', 'cancel']);
 const loading = ref(false);
 const data = ref<RawDataRow[]>([]);
 const allFeatures = ref<AppearanceFeature[]>([]);
-const featureCategories = ref<AppearanceFeatureCategory[]>([]);
 const filterStatus = ref('');
 const searchText = ref('');
 const hasLoaded = ref(false); // 标记是否已经加载过数据（避免重复加载）
 const selectedRowKeys = ref<string[]>([]);
 
 // 弹窗状态
-const featureModalVisible = ref(false);
+const featureSelectDialogRef = ref<InstanceType<typeof FeatureSelectDialog> | null>(null);
+const correctionDialogRef = ref<InstanceType<typeof CorrectionDialog> | null>(null);
 const currentRecord = ref<RawDataRow | null>(null);
-const selectedFeatures = ref<AppearanceFeature[]>([]);
-const activeCategories = ref<string[]>([]);
 
 // 分页配置
 const paginationConfig = reactive({
@@ -434,45 +364,35 @@ async function loadData() {
 
 async function loadFeatures() {
   try {
-    const [featuresResponse, categoriesResponse] = await Promise.all([
-      getAppearanceFeatureList({ keyword: '' }),
-      getAppearanceFeatureCategoryList({ keyword: '' })
-    ]);
-
+    const featuresResponse = await getAppearanceFeatureList({ keyword: '' });
     allFeatures.value = featuresResponse.list || [];
-    featureCategories.value = categoriesResponse.list || [];
   } catch (error) {
     message.error('加载特性数据失败');
   }
 }
-
 function getFeatureName(featureId: string): string {
   const feature = allFeatures.value.find(f => f.id === featureId);
   return feature ? feature.name : featureId;
 }
 
-function getFeaturesByCategory(categoryId: string): AppearanceFeature[] {
-  return allFeatures.value.filter(f => f.categoryId === categoryId);
-}
-
-function isFeatureSelected(feature: AppearanceFeature): boolean {
-  return selectedFeatures.value.some(f => f.id === feature.id);
-}
-
-function toggleFeature(feature: AppearanceFeature) {
-  const index = selectedFeatures.value.findIndex(f => f.id === feature.id);
-  if (index > -1) {
-    selectedFeatures.value.splice(index, 1);
-  } else {
-    selectedFeatures.value.push(feature);
+function getMatchedFeatureLabels(record: RawDataRow): Array<{ id: string; label: string }> {
+  if (record.matchDetails && record.matchDetails.length > 0) {
+    return record.matchDetails.map(detail => ({
+      id: detail.featureId,
+      label: [detail.categoryName, detail.severityLevelName, detail.featureName]
+        .filter(Boolean)
+        .join(' / '),
+    }));
   }
-}
 
-function removeFeature(feature: AppearanceFeature) {
-  const index = selectedFeatures.value.findIndex(f => f.id === feature.id);
-  if (index > -1) {
-    selectedFeatures.value.splice(index, 1);
+  if (record.appearanceFeatureIds && record.appearanceFeatureIds.length > 0) {
+    return record.appearanceFeatureIds.map(id => ({
+      id,
+      label: getFeatureName(id),
+    }));
   }
+
+  return [];
 }
 
 function getConfidenceColor(confidence: number): string {
@@ -492,6 +412,10 @@ function handleBatchMatch() {
     return;
   }
   message.info('批量匹配功能开发中...');
+}
+
+function handleOpenCorrection() {
+  correctionDialogRef.value?.open({ autoOpen: false });
 }
 
 function handleFilterChange() {
@@ -515,50 +439,28 @@ async function handleEditFeatures(record: RawDataRow) {
     return;
   }
   
-  // 确保特性数据已加载
-  if (allFeatures.value.length === 0 || featureCategories.value.length === 0) {
-    await loadFeatures();
-  }
-  
   currentRecord.value = record;
-  selectedFeatures.value = [];
-
-  // 加载当前记录已匹配的特性
-  if (record.appearanceFeatureIds?.length) {
-    record.appearanceFeatureIds.forEach(id => {
-      const feature = allFeatures.value.find(f => f.id === id);
-      if (feature) {
-        selectedFeatures.value.push(feature);
-      }
-    });
-  }
-
-  featureModalVisible.value = true;
-  // 默认展开第一个分类
-  if (featureCategories.value.length > 0) {
-    activeCategories.value = [featureCategories.value[0].id];
-  }
+  const existingIds = record.appearanceFeatureIds || [];
+  featureSelectDialogRef.value?.open(existingIds);
 }
 
-function handleClearFeatures(record: RawDataRow) {
-  record.appearanceFeatureIds = [];
-  // record.matchConfidence = undefined;
-}
-
-async function handleFeatureModalOk() {
+function handleFeatureConfirm(features: AppearanceFeatureInfo[]) {
   if (!currentRecord.value) return;
-
-  // 更新特性ID列表
-  currentRecord.value.appearanceFeatureIds = selectedFeatures.value.map(f => f.id);
-  currentRecord.value.matchConfidence = selectedFeatures.value.length > 0 ? 1.0 : undefined;
-
-  featureModalVisible.value = false;
+  currentRecord.value.appearanceFeatureIds = features.map(f => f.id);
+  currentRecord.value.matchDetails = features.map(f => ({
+    featureId: f.id,
+    featureName: f.name,
+    categoryId: f.categoryId,
+    categoryName: f.category,
+    severityLevelId: f.severityLevelId,
+    severityLevelName: f.severityLevel,
+  }));
+  currentRecord.value.matchConfidence = features.length > 0 ? 1.0 : undefined;
+  currentRecord.value = null;
 }
 
-function handleFeatureModalCancel() {
-  featureModalVisible.value = false;
+function handleFeatureCancel() {
   currentRecord.value = null;
-  selectedFeatures.value = [];
 }
 
 // 暴露给父组件的方法

@@ -39,6 +39,12 @@ public class IntermediateDataColumnAttribute : Attribute
     /// </summary>
     public string Description { get; set; }
 
+    // 新增: 范围计算配置
+    public bool IsRange { get; set; } = false;
+    public int RangeStart { get; set; } // 起始列序号或列名
+    public string RangeEnd { get; set; } // 结束列序号或列名
+    public string RangePrefix { get; set; } // 范围列前缀 (如 "Detection", "Thickness")
+
     /// <summary>
     /// 是否忽略（不映射到数据库）.
     /// </summary>
@@ -83,7 +89,8 @@ public class IntermediateDataColumnAttribute : Attribute
         string description = null,
         bool isIgnore = false,
         string columnDescription = null,
-        string unit = null)
+        string unit = null
+    )
     {
         DisplayName = displayName;
         Sort = sort;
@@ -94,5 +101,9 @@ public class IntermediateDataColumnAttribute : Attribute
         IsIgnore = isIgnore;
         ColumnDescription = columnDescription;
         Unit = unit;
+        IsRange = false;
+        RangeStart = 1;
+        RangeEnd = "";
+        RangePrefix = "";
     }
 }

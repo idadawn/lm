@@ -13,11 +13,7 @@
     <!-- 导入结果 -->
     <div v-else class="result-section">
       <!-- 成功状态 -->
-      <a-result
-        v-if="importSuccess"
-        status="success"
-        title="数据导入成功"
-        :sub-title="`成功导入 ${stats.validDataRows} 条数据`">
+      <a-result v-if="importSuccess" status="success" title="数据导入成功" :sub-title="`成功导入 ${stats.validDataRows} 条数据`">
         <template #extra>
           <div class="result-stats">
             <a-row :gutter="24" style="margin-bottom: 24px">
@@ -28,7 +24,8 @@
                 <a-statistic title="有效数据" :value="stats.validDataRows" :value-style="{ color: '#52c41a' }" />
               </a-col>
               <a-col :span="6">
-                <a-statistic title="产品规格已匹配" :value="stats.productSpecMatchedRows" :value-style="{ color: '#722ed1' }" />
+                <a-statistic title="产品规格已匹配" :value="stats.productSpecMatchedRows"
+                  :value-style="{ color: '#722ed1' }" />
               </a-col>
               <a-col :span="6">
                 <a-statistic title="特性已匹配" :value="stats.featureMatchedRows" :value-style="{ color: '#13c2c2' }" />
@@ -39,11 +36,7 @@
       </a-result>
 
       <!-- 失败状态 -->
-      <a-result
-        v-else-if="importError"
-        status="error"
-        title="数据导入失败"
-        :sub-title="importError">
+      <a-result v-else-if="importError" status="error" title="数据导入失败" :sub-title="importError">
         <template #extra>
           <a-button type="primary" @click="handleRetry">重试</a-button>
         </template>
@@ -51,13 +44,9 @@
 
       <!-- 核对数据状态（默认显示） -->
       <div v-else class="review-section">
-        <a-alert
-          message="第五步：数据核对与完成导入"
-          description="请核对以下数据统计信息，确认无误后点击完成导入。"
-          type="info"
-          show-icon
+        <a-alert message="第五步：数据核对与完成导入" description="请核对以下数据统计信息，确认无误后点击完成导入。" type="info" show-icon
           style="margin-bottom: 24px" />
-        
+
         <!-- 统计数据 -->
         <div class="review-stats">
           <a-row :gutter="24">
@@ -78,9 +67,7 @@
 
         <!-- 错误提示 -->
         <div v-if="reviewData.errors && reviewData.errors.length > 0" class="error-alert" style="margin-top: 24px">
-          <a-alert
-            type="warning"
-            show-icon>
+          <a-alert type="warning" show-icon>
             <template #message>数据核对发现问题</template>
             <template #description>
               <ul style="margin: 0; padding-left: 20px">
@@ -173,12 +160,12 @@ async function loadReviewData() {
       hasLoadedReview.value = false; // 允许重试
       return;
     }
-    
+
     // 检查是否有有效数据
     const validCount = review.validDataRows || 0;
     const totalCount = review.totalRows || 0;
     console.log(`[Step4] Total: ${totalCount}, Valid: ${validCount}`); // 调试日志
-    
+
     if (validCount === 0) {
       if (totalCount > 0) {
         importError.value = `共解析 ${totalCount} 行数据，但没有有效数据。请检查炉号格式是否正确。`;
@@ -233,6 +220,8 @@ async function handleStartImport() {
     await completeImport(props.importSessionId);
     importSuccess.value = true;
     message.success('数据导入成功');
+    // 导入成功后自动通知父组件关闭弹窗
+    emit('complete');
   } catch (error: any) {
     // 处理后端返回的特定错误消息
     const errorMsg = error.message || error.msg || '';

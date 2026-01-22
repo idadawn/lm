@@ -83,12 +83,24 @@
 
     <!-- 右侧值 -->
     <div class="value-input">
-      <a-input
-        v-if="!['IS_NULL', 'NOT_NULL'].includes(condition.operator)"
-        :value="condition.rightValue"
-        placeholder="比较值"
-        @change="(e) => emit('update', { rightValue: e.target.value })"
-      />
+      <template v-if="!['IS_NULL', 'NOT_NULL'].includes(condition.operator)">
+        <a-select
+          v-if="useFeatureValueSelect"
+          :value="condition.rightValue"
+          class="w-full"
+          show-search
+          allow-clear
+          :options="featureValueOptions"
+          option-filter-prop="label"
+          @change="(val) => emit('update', { rightValue: val })"
+        />
+        <a-input
+          v-else
+          :value="condition.rightValue"
+          placeholder="比较值"
+          @change="(e) => emit('update', { rightValue: e.target.value })"
+        />
+      </template>
       <span v-else class="no-value-hint">(无需输入)</span>
     </div>
 
@@ -116,7 +128,14 @@ const props = defineProps({
     required: true,
   },
   fieldOptions: {
-    type: Array as PropType<{ label: string; value: string }[]>,
+    type: Array as PropType<
+      {
+        label: string;
+        value: string;
+        featureCategories?: { id: string; name: string }[];
+        featureLevels?: { id: string; name: string }[];
+      }[]
+    >,
     default: () => [],
   },
   size: {
@@ -129,6 +148,38 @@ const emit = defineEmits(['update', 'remove', 'openFormulaEditor']);
 
 const searchValue = ref('');
 const searchNotFound = ref('未找到匹配字段');
+
+const selectedField = computed(() => {
+  return props.fieldOptions.find(f => f.value === props.condition.leftExpr);
+});
+
+const useFeatureValueSelect = computed(() => {
+  if (!selectedField.value) return false;
+  if (props.condition.leftExpr === 'AppearanceFeatureCategoryIds') {
+    return (selectedField.value.featureCategories?.length || 0) > 0;
+  }
+  if (props.condition.leftExpr === 'AppearanceFeatureLevelIds') {
+    return (selectedField.value.featureLevels?.length || 0) > 0;
+  }
+  return false;
+});
+
+const featureValueOptions = computed(() => {
+  if (!selectedField.value) return [];
+  if (props.condition.leftExpr === 'AppearanceFeatureCategoryIds') {
+    return (selectedField.value.featureCategories || []).map(item => ({
+      label: item.name,
+      value: item.id,
+    }));
+  }
+  if (props.condition.leftExpr === 'AppearanceFeatureLevelIds') {
+    return (selectedField.value.featureLevels || []).map(item => ({
+      label: item.name,
+      value: item.id,
+    }));
+  }
+  return [];
+});
 
 // 判断当前是否为自定义表达式模式
 const isCustomExprMode = computed(() => {

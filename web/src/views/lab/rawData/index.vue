@@ -447,11 +447,11 @@ function handleImportSuccess(result: any) {
 
 // 导入日志表格
 const logColumns: BasicColumn[] = [
-  { title: '文件名', dataIndex: 'fileName', key: 'fileName', width: 200 },
-  { title: '导入时间', dataIndex: 'importTime', key: 'importTime', width: 180 },
-  { title: '操作人', dataIndex: 'operatorName', key: 'operatorName', width: 120 },
-  { title: '总行数', dataIndex: 'totalRows', key: 'totalRows', width: 150 },
-  { title: '状态', dataIndex: 'status', key: 'status', width: 120 },
+  { title: '文件名', dataIndex: 'fileName', key: 'fileName', align: 'center', width: 200 },
+  { title: '导入时间', dataIndex: 'importTime', key: 'importTime', align: 'center', width: 180 },
+  { title: '操作人', dataIndex: 'operatorName', key: 'operatorName', align: 'center', width: 120 },
+  { title: '总行数', dataIndex: 'totalRows', key: 'totalRows', align: 'center', width: 150 },
+  { title: '状态', dataIndex: 'status', key: 'status', align: 'center', width: 120 },
 ];
 
 const [registerLogTable, { reload: reloadLogTable }] = useTable({

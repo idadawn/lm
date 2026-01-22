@@ -1,0 +1,100 @@
+-- =============================================
+-- 添加外观特性大类/等级字段（原始数据与中间数据）
+-- 用于保存匹配到的特性大类与特性等级信息（JSON数组）
+-- =============================================
+
+/*
+-- SQL Server 版本（MySQL请忽略）
+IF EXISTS (SELECT * FROM sysobjects WHERE name='LAB_RAW_DATA' AND xtype='U')
+BEGIN
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('LAB_RAW_DATA') AND name = 'F_APPEARANCE_FEATURE_CATEGORY_IDS')
+    BEGIN
+        ALTER TABLE [dbo].[LAB_RAW_DATA] ADD [F_APPEARANCE_FEATURE_CATEGORY_IDS] NVARCHAR(MAX) NULL;
+    END
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('LAB_RAW_DATA') AND name = 'F_APPEARANCE_FEATURE_LEVEL_IDS')
+    BEGIN
+        ALTER TABLE [dbo].[LAB_RAW_DATA] ADD [F_APPEARANCE_FEATURE_LEVEL_IDS] NVARCHAR(MAX) NULL;
+    END
+END
+
+IF EXISTS (SELECT * FROM sysobjects WHERE name='LAB_INTERMEDIATE_DATA' AND xtype='U')
+BEGIN
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('LAB_INTERMEDIATE_DATA') AND name = 'F_APPEARANCE_FEATURE_CATEGORY_IDS')
+    BEGIN
+        ALTER TABLE [dbo].[LAB_INTERMEDIATE_DATA] ADD [F_APPEARANCE_FEATURE_CATEGORY_IDS] NVARCHAR(MAX) NULL;
+    END
+
+    IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('LAB_INTERMEDIATE_DATA') AND name = 'F_APPEARANCE_FEATURE_LEVEL_IDS')
+    BEGIN
+        ALTER TABLE [dbo].[LAB_INTERMEDIATE_DATA] ADD [F_APPEARANCE_FEATURE_LEVEL_IDS] NVARCHAR(MAX) NULL;
+    END
+END
+*/
+
+-- MySQL 版本
+SET @dbname = DATABASE();
+
+-- LAB_RAW_DATA
+SET @tablename = 'LAB_RAW_DATA';
+SET @preparedStatement = (SELECT IF(
+    (
+        SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE
+            (TABLE_SCHEMA = @dbname)
+            AND (TABLE_NAME = @tablename)
+            AND (COLUMN_NAME = 'F_APPEARANCE_FEATURE_CATEGORY_IDS')
+    ) > 0,
+    "SELECT 'F_APPEARANCE_FEATURE_CATEGORY_IDS already exists in LAB_RAW_DATA'",
+    "ALTER TABLE `LAB_RAW_DATA` ADD COLUMN `F_APPEARANCE_FEATURE_CATEGORY_IDS` JSON NULL COMMENT '特性大类ID列表(JSON)'"
+));
+PREPARE alterIfNotExists FROM @preparedStatement;
+EXECUTE alterIfNotExists;
+DEALLOCATE PREPARE alterIfNotExists;
+
+SET @preparedStatement = (SELECT IF(
+    (
+        SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE
+            (TABLE_SCHEMA = @dbname)
+            AND (TABLE_NAME = @tablename)
+            AND (COLUMN_NAME = 'F_APPEARANCE_FEATURE_LEVEL_IDS')
+    ) > 0,
+    "SELECT 'F_APPEARANCE_FEATURE_LEVEL_IDS already exists in LAB_RAW_DATA'",
+    "ALTER TABLE `LAB_RAW_DATA` ADD COLUMN `F_APPEARANCE_FEATURE_LEVEL_IDS` JSON NULL COMMENT '特性等级ID列表(JSON)'"
+));
+PREPARE alterIfNotExists FROM @preparedStatement;
+EXECUTE alterIfNotExists;
+DEALLOCATE PREPARE alterIfNotExists;
+
+-- LAB_INTERMEDIATE_DATA
+SET @tablename = 'LAB_INTERMEDIATE_DATA';
+SET @preparedStatement = (SELECT IF(
+    (
+        SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE
+            (TABLE_SCHEMA = @dbname)
+            AND (TABLE_NAME = @tablename)
+            AND (COLUMN_NAME = 'F_APPEARANCE_FEATURE_CATEGORY_IDS')
+    ) > 0,
+    "SELECT 'F_APPEARANCE_FEATURE_CATEGORY_IDS already exists in LAB_INTERMEDIATE_DATA'",
+    "ALTER TABLE `LAB_INTERMEDIATE_DATA` ADD COLUMN `F_APPEARANCE_FEATURE_CATEGORY_IDS` JSON NULL COMMENT '特性大类ID列表(JSON)'"
+));
+PREPARE alterIfNotExists FROM @preparedStatement;
+EXECUTE alterIfNotExists;
+DEALLOCATE PREPARE alterIfNotExists;
+
+SET @preparedStatement = (SELECT IF(
+    (
+        SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE
+            (TABLE_SCHEMA = @dbname)
+            AND (TABLE_NAME = @tablename)
+            AND (COLUMN_NAME = 'F_APPEARANCE_FEATURE_LEVEL_IDS')
+    ) > 0,
+    "SELECT 'F_APPEARANCE_FEATURE_LEVEL_IDS already exists in LAB_INTERMEDIATE_DATA'",
+    "ALTER TABLE `LAB_INTERMEDIATE_DATA` ADD COLUMN `F_APPEARANCE_FEATURE_LEVEL_IDS` JSON NULL COMMENT '特性等级ID列表(JSON)'"
+));
+PREPARE alterIfNotExists FROM @preparedStatement;
+EXECUTE alterIfNotExists;
+DEALLOCATE PREPARE alterIfNotExists;

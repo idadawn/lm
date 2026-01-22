@@ -108,14 +108,24 @@ public class IntermediateDataEntity : CLDEntityBase
     /// <summary>
     /// 1.35T 50Hz Ss激磁功率 (VA/kg).
     /// </summary>
-    [IntermediateDataColumn("Ss激磁功率", sort: 2, dataType: "decimal", description: "1.35T 50Hz Ss激磁功率")]
+    [IntermediateDataColumn(
+        "Ss激磁功率",
+        sort: 2,
+        dataType: "decimal",
+        description: "1.35T 50Hz Ss激磁功率"
+    )]
     [SugarColumn(ColumnName = "F_PERF_SS_POWER", DecimalDigits = 4, IsNullable = true)]
     public decimal? PerfSsPower { get; set; }
 
     /// <summary>
     /// 1.35T 50Hz Ps铁损 (W/kg).
     /// </summary>
-    [IntermediateDataColumn("Ps铁损", sort: 3, dataType: "decimal", description: "1.35T 50Hz Ps铁损")]
+    [IntermediateDataColumn(
+        "Ps铁损",
+        sort: 3,
+        dataType: "decimal",
+        description: "1.35T 50Hz Ps铁损"
+    )]
     [SugarColumn(ColumnName = "F_PERF_PS_LOSS", DecimalDigits = 4, IsNullable = true)]
     public decimal? PerfPsLoss { get; set; }
 
@@ -129,14 +139,24 @@ public class IntermediateDataEntity : CLDEntityBase
     /// <summary>
     /// 刻痕后性能 Ss激磁功率 (VA/kg).
     /// </summary>
-    [IntermediateDataColumn("刻痕后Ss激磁功率", sort: 5, dataType: "decimal", description: "刻痕后性能 Ss激磁功率")]
+    [IntermediateDataColumn(
+        "刻痕后Ss激磁功率",
+        sort: 5,
+        dataType: "decimal",
+        description: "刻痕后性能 Ss激磁功率"
+    )]
     [SugarColumn(ColumnName = "F_AFTER_SS_POWER", DecimalDigits = 4, IsNullable = true)]
     public decimal? PerfAfterSsPower { get; set; }
 
     /// <summary>
     /// 刻痕后性能 Ps铁损 (W/kg).
     /// </summary>
-    [IntermediateDataColumn("刻痕后Ps铁损", sort: 6, dataType: "decimal", description: "刻痕后性能 Ps铁损")]
+    [IntermediateDataColumn(
+        "刻痕后Ps铁损",
+        sort: 6,
+        dataType: "decimal",
+        description: "刻痕后性能 Ps铁损"
+    )]
     [SugarColumn(ColumnName = "F_AFTER_PS_LOSS", DecimalDigits = 4, IsNullable = true)]
     public decimal? PerfAfterPsLoss { get; set; }
 
@@ -150,7 +170,12 @@ public class IntermediateDataEntity : CLDEntityBase
     /// <summary>
     /// 是否刻痕（0-否，1-是，标识是否有刻痕数据）.
     /// </summary>
-    [IntermediateDataColumn("是否刻痕", sort: 7, dataType: "int", description: "是否刻痕 0-否，1-是")]
+    [IntermediateDataColumn(
+        "是否刻痕",
+        sort: 7,
+        dataType: "int",
+        description: "是否刻痕 0-否，1-是"
+    )]
     [SugarColumn(ColumnName = "F_IS_SCRATCHED", IsNullable = true)]
     public int? IsScratched { get; set; }
 
@@ -183,7 +208,12 @@ public class IntermediateDataEntity : CLDEntityBase
     /// <summary>
     /// 一米带材重量(g)：F_FOUR_METER_WT / STD_LENGTH.
     /// </summary>
-    [IntermediateDataColumn("一米带材重量", sort: 8, dataType: "decimal", description: "一米带材重量")]
+    [IntermediateDataColumn(
+        "一米带材重量",
+        sort: 8,
+        dataType: "decimal",
+        description: "一米带材重量"
+    )]
     [SugarColumn(ColumnName = "F_ONE_METER_WT", DecimalDigits = 2, IsNullable = true)]
     public decimal? OneMeterWeight { get; set; }
 
@@ -440,6 +470,28 @@ public class IntermediateDataEntity : CLDEntityBase
     public string AppearanceFeatureIds { get; set; }
 
     /// <summary>
+    /// 匹配后的特性大类ID列表（JSON格式，数组：["category-id-1", ...]）.
+    /// </summary>
+    [IntermediateDataColumn("特性大类", sort: 36_1, dataType: "string", description: "特性大类ID列表")]
+    [SugarColumn(
+        ColumnName = "F_APPEARANCE_FEATURE_CATEGORY_IDS",
+        ColumnDataType = "json",
+        IsNullable = true
+    )]
+    public string AppearanceFeatureCategoryIds { get; set; }
+
+    /// <summary>
+    /// 匹配后的特性等级ID列表（JSON格式，数组：["level-id-1", ...]）.
+    /// </summary>
+    [IntermediateDataColumn("特性等级", sort: 36_2, dataType: "string", description: "特性等级ID列表")]
+    [SugarColumn(
+        ColumnName = "F_APPEARANCE_FEATURE_LEVEL_IDS",
+        ColumnDataType = "json",
+        IsNullable = true
+    )]
+    public string AppearanceFeatureLevelIds { get; set; }
+
+    /// <summary>
     /// 断头数(个).
     /// </summary>
     [IntermediateDataColumn("断头数", sort: 36, dataType: "int", description: "断头数")]
@@ -556,14 +608,24 @@ public class IntermediateDataEntity : CLDEntityBase
     /// <summary>
     /// 叠片系数判定，叠片系数达标判定.
     /// </summary>
-    [IntermediateDataColumn("叠片系数判定", sort: 40, dataType: "string", description: "叠片系数判定")]
+    [IntermediateDataColumn(
+        "叠片系数判定",
+        sort: 40,
+        dataType: "string",
+        description: "叠片系数判定"
+    )]
     [SugarColumn(ColumnName = "F_LAM_FACTOR_RES", Length = 50, IsNullable = true)]
     public string LaminationResult { get; set; }
 
     /// <summary>
     /// 四米带材重量.
     /// </summary>
-    [IntermediateDataColumn("四米带材重量", sort: 40, dataType: "decimal", description: "四米带材重量")]
+    [IntermediateDataColumn(
+        "四米带材重量",
+        sort: 40,
+        dataType: "decimal",
+        description: "四米带材重量"
+    )]
     [SugarColumn(ColumnName = "F_COIL_WEIGHT", IsNullable = true)]
     public decimal? CoilWeight { get; set; }
 
@@ -572,91 +634,201 @@ public class IntermediateDataEntity : CLDEntityBase
     /// <summary>
     /// 检测数据列1-22（固定22列）.
     /// </summary>
-    [IntermediateDataColumn("检测数据列1", sort: 201, dataType: "decimal", description: "检测数据列1")]
+    [IntermediateDataColumn(
+        "检测数据列1",
+        sort: 201,
+        dataType: "decimal",
+        description: "检测数据列1"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_1", IsNullable = true)]
     public decimal? Detection1 { get; set; }
 
-    [IntermediateDataColumn("检测数据列2", sort: 202, dataType: "decimal", description: "检测数据列2")]
+    [IntermediateDataColumn(
+        "检测数据列2",
+        sort: 202,
+        dataType: "decimal",
+        description: "检测数据列2"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_2", IsNullable = true)]
     public decimal? Detection2 { get; set; }
 
-    [IntermediateDataColumn("检测数据列3", sort: 203, dataType: "decimal", description: "检测数据列3")]
+    [IntermediateDataColumn(
+        "检测数据列3",
+        sort: 203,
+        dataType: "decimal",
+        description: "检测数据列3"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_3", IsNullable = true)]
     public decimal? Detection3 { get; set; }
 
-    [IntermediateDataColumn("检测数据列4", sort: 204, dataType: "decimal", description: "检测数据列4")]
+    [IntermediateDataColumn(
+        "检测数据列4",
+        sort: 204,
+        dataType: "decimal",
+        description: "检测数据列4"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_4", IsNullable = true)]
     public decimal? Detection4 { get; set; }
 
-    [IntermediateDataColumn("检测数据列5", sort: 205, dataType: "decimal", description: "检测数据列5")]
+    [IntermediateDataColumn(
+        "检测数据列5",
+        sort: 205,
+        dataType: "decimal",
+        description: "检测数据列5"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_5", IsNullable = true)]
     public decimal? Detection5 { get; set; }
 
-    [IntermediateDataColumn("检测数据列6", sort: 206, dataType: "decimal", description: "检测数据列6")]
+    [IntermediateDataColumn(
+        "检测数据列6",
+        sort: 206,
+        dataType: "decimal",
+        description: "检测数据列6"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_6", IsNullable = true)]
     public decimal? Detection6 { get; set; }
 
-    [IntermediateDataColumn("检测数据列7", sort: 207, dataType: "decimal", description: "检测数据列7")]
+    [IntermediateDataColumn(
+        "检测数据列7",
+        sort: 207,
+        dataType: "decimal",
+        description: "检测数据列7"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_7", IsNullable = true)]
     public decimal? Detection7 { get; set; }
 
-    [IntermediateDataColumn("检测数据列8", sort: 208, dataType: "decimal", description: "检测数据列8")]
+    [IntermediateDataColumn(
+        "检测数据列8",
+        sort: 208,
+        dataType: "decimal",
+        description: "检测数据列8"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_8", IsNullable = true)]
     public decimal? Detection8 { get; set; }
 
-    [IntermediateDataColumn("检测数据列9", sort: 209, dataType: "decimal", description: "检测数据列9")]
+    [IntermediateDataColumn(
+        "检测数据列9",
+        sort: 209,
+        dataType: "decimal",
+        description: "检测数据列9"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_9", IsNullable = true)]
     public decimal? Detection9 { get; set; }
 
-    [IntermediateDataColumn("检测数据列10", sort: 210, dataType: "decimal", description: "检测数据列10")]
+    [IntermediateDataColumn(
+        "检测数据列10",
+        sort: 210,
+        dataType: "decimal",
+        description: "检测数据列10"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_10", IsNullable = true)]
     public decimal? Detection10 { get; set; }
 
-    [IntermediateDataColumn("检测数据列11", sort: 211, dataType: "decimal", description: "检测数据列11")]
+    [IntermediateDataColumn(
+        "检测数据列11",
+        sort: 211,
+        dataType: "decimal",
+        description: "检测数据列11"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_11", IsNullable = true)]
     public decimal? Detection11 { get; set; }
 
-    [IntermediateDataColumn("检测数据列12", sort: 212, dataType: "decimal", description: "检测数据列12")]
+    [IntermediateDataColumn(
+        "检测数据列12",
+        sort: 212,
+        dataType: "decimal",
+        description: "检测数据列12"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_12", IsNullable = true)]
     public decimal? Detection12 { get; set; }
 
-    [IntermediateDataColumn("检测数据列13", sort: 213, dataType: "decimal", description: "检测数据列13")]
+    [IntermediateDataColumn(
+        "检测数据列13",
+        sort: 213,
+        dataType: "decimal",
+        description: "检测数据列13"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_13", IsNullable = true)]
     public decimal? Detection13 { get; set; }
 
-    [IntermediateDataColumn("检测数据列14", sort: 214, dataType: "decimal", description: "检测数据列14")]
+    [IntermediateDataColumn(
+        "检测数据列14",
+        sort: 214,
+        dataType: "decimal",
+        description: "检测数据列14"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_14", IsNullable = true)]
     public decimal? Detection14 { get; set; }
 
-    [IntermediateDataColumn("检测数据列15", sort: 215, dataType: "decimal", description: "检测数据列15")]
+    [IntermediateDataColumn(
+        "检测数据列15",
+        sort: 215,
+        dataType: "decimal",
+        description: "检测数据列15"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_15", IsNullable = true)]
     public decimal? Detection15 { get; set; }
 
-    [IntermediateDataColumn("检测数据列16", sort: 216, dataType: "decimal", description: "检测数据列16")]
+    [IntermediateDataColumn(
+        "检测数据列16",
+        sort: 216,
+        dataType: "decimal",
+        description: "检测数据列16"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_16", IsNullable = true)]
     public decimal? Detection16 { get; set; }
 
-    [IntermediateDataColumn("检测数据列17", sort: 217, dataType: "decimal", description: "检测数据列17")]
+    [IntermediateDataColumn(
+        "检测数据列17",
+        sort: 217,
+        dataType: "decimal",
+        description: "检测数据列17"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_17", IsNullable = true)]
     public decimal? Detection17 { get; set; }
 
-    [IntermediateDataColumn("检测数据列18", sort: 218, dataType: "decimal", description: "检测数据列18")]
+    [IntermediateDataColumn(
+        "检测数据列18",
+        sort: 218,
+        dataType: "decimal",
+        description: "检测数据列18"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_18", IsNullable = true)]
     public decimal? Detection18 { get; set; }
 
-    [IntermediateDataColumn("检测数据列19", sort: 219, dataType: "decimal", description: "检测数据列19")]
+    [IntermediateDataColumn(
+        "检测数据列19",
+        sort: 219,
+        dataType: "decimal",
+        description: "检测数据列19"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_19", IsNullable = true)]
     public decimal? Detection19 { get; set; }
 
-    [IntermediateDataColumn("检测数据列20", sort: 220, dataType: "decimal", description: "检测数据列20")]
+    [IntermediateDataColumn(
+        "检测数据列20",
+        sort: 220,
+        dataType: "decimal",
+        description: "检测数据列20"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_20", IsNullable = true)]
     public decimal? Detection20 { get; set; }
 
-    [IntermediateDataColumn("检测数据列21", sort: 221, dataType: "decimal", description: "检测数据列21")]
+    [IntermediateDataColumn(
+        "检测数据列21",
+        sort: 221,
+        dataType: "decimal",
+        description: "检测数据列21"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_21", IsNullable = true)]
     public decimal? Detection21 { get; set; }
 
-    [IntermediateDataColumn("检测数据列22", sort: 222, dataType: "decimal", description: "检测数据列22")]
+    [IntermediateDataColumn(
+        "检测数据列22",
+        sort: 222,
+        dataType: "decimal",
+        description: "检测数据列22"
+    )]
     [SugarColumn(ColumnName = "F_DETECTION_22", IsNullable = true)]
     public decimal? Detection22 { get; set; }
 
@@ -672,7 +844,12 @@ public class IntermediateDataEntity : CLDEntityBase
     /// <summary>
     /// 最大平均厚度（最大值/层数）.
     /// </summary>
-    [IntermediateDataColumn("最大平均厚度", sort: 43, dataType: "decimal", description: "最大平均厚度")]
+    [IntermediateDataColumn(
+        "最大平均厚度",
+        sort: 43,
+        dataType: "decimal",
+        description: "最大平均厚度"
+    )]
     [SugarColumn(ColumnName = "F_MAX_AVG_THICKNESS", DecimalDigits = 2, IsNullable = true)]
     public decimal? MaxAvgThickness { get; set; }
 
@@ -795,6 +972,90 @@ public class IntermediateDataEntity : CLDEntityBase
                 value == null || value.Count == 0 ? null : JsonConvert.SerializeObject(value);
         }
     }
+
+    /// <summary>
+    /// 特性大类ID列表（辅助属性，从JSON字段解析）.
+    /// </summary>
+    [SugarColumn(IsIgnore = true)]
+    public List<string> AppearanceFeatureCategoryIdsList
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(AppearanceFeatureCategoryIds))
+                return new List<string>();
+
+            try
+            {
+                return JsonConvert.DeserializeObject<List<string>>(AppearanceFeatureCategoryIds)
+                    ?? new List<string>();
+            }
+            catch
+            {
+                return new List<string>();
+            }
+        }
+        set
+        {
+            AppearanceFeatureCategoryIds =
+                value == null || value.Count == 0 ? null : JsonConvert.SerializeObject(value);
+        }
+    }
+
+    /// <summary>
+    /// 特性等级ID列表（辅助属性，从JSON字段解析）.
+    /// </summary>
+    [SugarColumn(IsIgnore = true)]
+    public List<string> AppearanceFeatureLevelIdsList
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(AppearanceFeatureLevelIds))
+                return new List<string>();
+
+            try
+            {
+                return JsonConvert.DeserializeObject<List<string>>(AppearanceFeatureLevelIds)
+                    ?? new List<string>();
+            }
+            catch
+            {
+                return new List<string>();
+            }
+        }
+        set
+        {
+            AppearanceFeatureLevelIds =
+                value == null || value.Count == 0 ? null : JsonConvert.SerializeObject(value);
+        }
+    }
+
+    /// <summary>
+    /// 带厚(范围虚拟列).
+    /// </summary>
+    [IntermediateDataColumn(
+        "带厚",
+        sort: 201,
+        IsRange = true,
+        RangePrefix = "Thickness",
+        RangeStart = 1,
+        RangeEnd = "$DetectionColumns"
+    )]
+    [SugarColumn(IsIgnore = true)]
+    public decimal Thickness { get; set; }
+
+    /// <summary>
+    /// 检测数据列(范围虚拟列).
+    /// </summary>
+    [IntermediateDataColumn(
+        "检测数据列",
+        sort: 202,
+        IsRange = true,
+        RangePrefix = "Detection",
+        RangeStart = 1,
+        RangeEnd = "$DetectionColumns"
+    )]
+    [SugarColumn(IsIgnore = true)]
+    public decimal Detection { get; set; }
 
     #endregion
 }

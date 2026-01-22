@@ -39,11 +39,11 @@ public class RawDataImportSessionService
     private readonly ISqlSugarRepository<RawDataImportLogEntity> _logRepository;
     private readonly ISqlSugarRepository<AppearanceFeatureEntity> _featureRepository;
     private readonly ISqlSugarRepository<AppearanceFeatureCategoryEntity> _featureCategoryRepository;
-    private readonly IAppearanceFeatureLevelService _levelService;
+    private readonly ISqlSugarRepository<AppearanceFeatureLevelEntity> _featureLevelRepository;
     private readonly IFileService _fileService;
     private readonly IUserManager _userManager;
     private readonly IIntermediateDataService _intermediateDataService;
-    private readonly AppearanceFeatureRuleMatcher _featureRuleMatcher;
+    private readonly IAppearanceFeatureService _appearanceFeatureService;
     private readonly ISqlSugarRepository<ProductSpecAttributeEntity> _productSpecAttributeRepository;
     private readonly IFileManager _fileManager;
     private readonly IRawDataValidationService _validationService;
@@ -55,11 +55,11 @@ public class RawDataImportSessionService
         ISqlSugarRepository<RawDataImportLogEntity> logRepository,
         ISqlSugarRepository<AppearanceFeatureEntity> featureRepository,
         ISqlSugarRepository<AppearanceFeatureCategoryEntity> featureCategoryRepository,
-        IAppearanceFeatureLevelService levelService,
+        ISqlSugarRepository<AppearanceFeatureLevelEntity> featureLevelRepository,
         IFileService fileService,
         IUserManager userManager,
         IIntermediateDataService intermediateDataService,
-        AppearanceFeatureRuleMatcher featureRuleMatcher,
+        IAppearanceFeatureService appearanceFeatureService,
         ISqlSugarRepository<ProductSpecAttributeEntity> productSpecAttributeRepository,
         IFileManager fileManager,
         IRawDataValidationService validationService
@@ -71,11 +71,11 @@ public class RawDataImportSessionService
         _logRepository = logRepository;
         _featureRepository = featureRepository;
         _featureCategoryRepository = featureCategoryRepository;
-        _levelService = levelService;
+        _featureLevelRepository = featureLevelRepository;
         _fileService = fileService;
         _userManager = userManager;
         _intermediateDataService = intermediateDataService;
-        _featureRuleMatcher = featureRuleMatcher;
+        _appearanceFeatureService = appearanceFeatureService;
         _productSpecAttributeRepository = productSpecAttributeRepository;
         _fileManager = fileManager;
         _validationService = validationService;
@@ -89,8 +89,6 @@ public class RawDataImportSessionService
         {
             Id = Guid.NewGuid().ToString(),
             FileName = input.FileName,
-            // ImportStrategy 已废弃，固定为 "incremental" 以保持向后兼容性
-            ImportStrategy = "incremental",
             Status = "pending",
             CurrentStep = 0,
             CreatorUserId = _userManager.UserId,
@@ -581,37 +579,88 @@ public class RawDataImportSessionService
             .ToList();
 
         var features = await _featureRepository.GetListAsync();
+        var featureDict = features
+            .Where(f => !string.IsNullOrEmpty(f.Id))
+            .GroupBy(f => f.Id)
+            .ToDictionary(g => g.Key, g => g.First());
+        var categories = await _featureCategoryRepository.GetListAsync();
+        var levels = await _featureLevelRepository.GetListAsync(l => l.DeleteMark == null);
+        var categoryNameDict = categories.ToDictionary(c => c.Id, c => c.Name);
+        var levelNameDict = levels.ToDictionary(l => l.Id, l => l.Name);
+        var categoryNameToId = categories
+            .Where(c => !string.IsNullOrWhiteSpace(c.Name))
+            .GroupBy(c => c.Name, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First().Id, StringComparer.OrdinalIgnoreCase);
+        var levelNameToId = levels
+            .Where(l => !string.IsNullOrWhiteSpace(l.Name))
+            .GroupBy(l => l.Name, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First().Id, StringComparer.OrdinalIgnoreCase);
 
         bool needSave = false;
         if (unMatchedEntities.Count > 0)
         {
             // 执行自动匹配
-            var levels = await _levelService.GetEnabledLevels();
-            var categories = await _featureCategoryRepository.GetListAsync();
-
-            var degreeWords = levels.Select(l => l.Name).ToList();
-            var categoryMap = categories.ToDictionary(c => c.Id, c => c.Name);
-            var levelMap = levels.ToDictionary(l => l.Id, l => l.Name);
+            var batchInput = new BatchMatchInput
+            {
+                Items = unMatchedEntities
+                    .Select(e => new MatchItemInput { Id = e.Id, Query = e.FeatureSuffix })
+                    .ToList(),
+            };
+            var batchMatches = await _appearanceFeatureService.BatchMatch(batchInput);
+            var matchGroups = batchMatches
+                .GroupBy(m => m.Id)
+                .ToDictionary(g => g.Key, g => g.ToList());
 
             foreach (var entity in unMatchedEntities)
             {
-                var matches = _featureRuleMatcher.Match(
-                    entity.FeatureSuffix,
-                    features,
-                    degreeWords,
-                    categoryMap,
-                    levelMap
-                );
-                var matchedIds = matches.Select(m => m.Feature.Id).ToList();
-                entity.AppearanceFeatureIds = JsonConvert.SerializeObject(matchedIds);
-                // 存储最高置信度
-                if (matches.Any())
+                if (!matchGroups.TryGetValue(entity.Id, out var group))
                 {
-                    entity.MatchConfidence = matches.Max(m => m.Confidence);
+                    continue;
+                }
+
+                var matchedIdSet = new HashSet<string>();
+                foreach (var match in group)
+                {
+                    if (!match.IsPerfectMatch || string.IsNullOrWhiteSpace(match.FeatureName))
+                    {
+                        continue;
+                    }
+
+                    var featureId = ResolveFeatureId(
+                        match,
+                        features,
+                        categoryNameToId,
+                        levelNameToId
+                    );
+                    if (!string.IsNullOrWhiteSpace(featureId))
+                    {
+                        matchedIdSet.Add(featureId);
+                    }
+                }
+
+                if (matchedIdSet.Count > 0)
+                {
+                    entity.AppearanceFeatureIds = JsonConvert.SerializeObject(matchedIdSet.ToList());
+                    entity.MatchConfidence = 1.0;
+                    needSave = true;
+                }
+
+                if (UpdateFeatureCategoryAndLevelFields(entity, featureDict))
+                {
+                    needSave = true;
                 }
             }
+        }
 
-            needSave = true;
+        foreach (var entity in validEntities)
+        {
+            if (!string.IsNullOrWhiteSpace(entity.AppearanceFeatureIds))
+            {
+                if (UpdateFeatureCategoryAndLevelFields(entity, featureDict))
+                {
+                    needSave = true;
+                }
+            }
         }
 
         // 保存回JSON文件
@@ -645,18 +694,52 @@ public class RawDataImportSessionService
                         entity.AppearanceFeatureIds
                     );
 
+                    if (!string.IsNullOrEmpty(entity.AppearanceFeatureCategoryIds))
+                    {
+                        item.AppearanceFeatureCategoryIds =
+                            JsonConvert.DeserializeObject<List<string>>(
+                                entity.AppearanceFeatureCategoryIds
+                            );
+                    }
+
+                    if (!string.IsNullOrEmpty(entity.AppearanceFeatureLevelIds))
+                    {
+                        item.AppearanceFeatureLevelIds =
+                            JsonConvert.DeserializeObject<List<string>>(
+                                entity.AppearanceFeatureLevelIds
+                            );
+                    }
+
                     // 填充匹配详情
                     if (item.AppearanceFeatureIds != null && item.AppearanceFeatureIds.Any())
                     {
                         item.MatchDetails = item
                             .AppearanceFeatureIds.Select(id =>
                             {
-                                var f = features.FirstOrDefault(x => x.Id == id);
+                                var f = featureDict.TryGetValue(id, out var feature)
+                                    ? feature
+                                    : null;
                                 return new FeatureMatchDetail
                                 {
                                     FeatureId = id,
                                     FeatureName = f?.Name ?? id,
                                     Confidence = item.MatchConfidence?.ToString() ?? "1.0",
+                                    CategoryId = f?.CategoryId,
+                                    CategoryName = f?.CategoryId != null
+                                        && categoryNameDict.TryGetValue(
+                                            f.CategoryId,
+                                            out var categoryName
+                                        )
+                                            ? categoryName
+                                            : null,
+                                    SeverityLevelId = f?.SeverityLevelId,
+                                    SeverityLevelName = f?.SeverityLevelId != null
+                                        && levelNameDict.TryGetValue(
+                                            f.SeverityLevelId,
+                                            out var levelName
+                                        )
+                                            ? levelName
+                                            : null,
                                 };
                             })
                             .ToList();
@@ -674,6 +757,11 @@ public class RawDataImportSessionService
     {
         // 从JSON文件加载数据
         var entities = await LoadParsedDataFromFile(sessionId);
+        var features = await _featureRepository.GetListAsync();
+        var featureDict = features
+            .Where(f => !string.IsNullOrEmpty(f.Id))
+            .GroupBy(f => f.Id)
+            .ToDictionary(g => g.Key, g => g.First());
 
         // 检查输入是否有效
         if (input?.Items == null || input.Items.Count == 0)
@@ -693,11 +781,115 @@ public class RawDataImportSessionService
             if (entityDict.TryGetValue(item.RawDataId, out var entity))
             {
                 entity.AppearanceFeatureIds = json;
+                UpdateFeatureCategoryAndLevelFields(entity, featureDict);
             }
         }
 
         // 保存回JSON文件
         await SaveParsedDataToFile(sessionId, entities);
+    }
+
+    /// <summary>
+    /// 根据匹配到的特性ID，填充特性大类和等级ID列表
+    /// </summary>
+    private bool UpdateFeatureCategoryAndLevelFields(
+        RawDataEntity entity,
+        Dictionary<string, AppearanceFeatureEntity> featureDict
+    )
+    {
+        if (entity == null)
+            return false;
+
+        var originalCategoryIds = entity.AppearanceFeatureCategoryIds;
+        var originalLevelIds = entity.AppearanceFeatureLevelIds;
+
+        var featureIds = entity.AppearanceFeatureIdsList;
+        if (featureIds == null || featureIds.Count == 0)
+        {
+            entity.AppearanceFeatureCategoryIds = null;
+            entity.AppearanceFeatureLevelIds = null;
+            return originalCategoryIds != entity.AppearanceFeatureCategoryIds
+                || originalLevelIds != entity.AppearanceFeatureLevelIds;
+        }
+
+        var categoryIds = new List<string>();
+        var levelIds = new List<string>();
+        var categorySet = new HashSet<string>();
+        var levelSet = new HashSet<string>();
+
+        foreach (var id in featureIds)
+        {
+            if (string.IsNullOrEmpty(id) || !featureDict.TryGetValue(id, out var feature))
+            {
+                continue;
+            }
+
+            if (!string.IsNullOrEmpty(feature.CategoryId) && categorySet.Add(feature.CategoryId))
+            {
+                categoryIds.Add(feature.CategoryId);
+            }
+
+            if (
+                !string.IsNullOrEmpty(feature.SeverityLevelId)
+                && levelSet.Add(feature.SeverityLevelId)
+            )
+            {
+                levelIds.Add(feature.SeverityLevelId);
+            }
+        }
+
+        entity.AppearanceFeatureCategoryIds = categoryIds.Count > 0
+            ? JsonConvert.SerializeObject(categoryIds)
+            : null;
+        entity.AppearanceFeatureLevelIds = levelIds.Count > 0
+            ? JsonConvert.SerializeObject(levelIds)
+            : null;
+
+        return originalCategoryIds != entity.AppearanceFeatureCategoryIds
+            || originalLevelIds != entity.AppearanceFeatureLevelIds;
+    }
+
+    /// <summary>
+    /// 根据匹配结果名称解析特性ID
+    /// </summary>
+    private string ResolveFeatureId(
+        MatchItemOutput match,
+        List<AppearanceFeatureEntity> features,
+        Dictionary<string, string> categoryNameToId,
+        Dictionary<string, string> levelNameToId
+    )
+    {
+        if (match == null || string.IsNullOrWhiteSpace(match.FeatureName))
+        {
+            return null;
+        }
+
+        string categoryId = null;
+        if (
+            !string.IsNullOrWhiteSpace(match.Category)
+            && categoryNameToId.TryGetValue(match.Category, out var resolvedCategoryId)
+        )
+        {
+            categoryId = resolvedCategoryId;
+        }
+
+        string levelId = null;
+        if (
+            !string.IsNullOrWhiteSpace(match.SeverityLevel)
+            && levelNameToId.TryGetValue(match.SeverityLevel, out var resolvedLevelId)
+        )
+        {
+            levelId = resolvedLevelId;
+        }
+
+        var feature = features.FirstOrDefault(f =>
+            !string.IsNullOrWhiteSpace(f.Name)
+            && f.Name.Equals(match.FeatureName, StringComparison.OrdinalIgnoreCase)
+            && (string.IsNullOrWhiteSpace(categoryId) || f.CategoryId == categoryId)
+            && (string.IsNullOrWhiteSpace(levelId) || f.SeverityLevelId == levelId)
+        );
+
+        return feature?.Id;
     }
 
     /// <inheritdoc />
@@ -889,8 +1081,7 @@ public class RawDataImportSessionService
                     && e.ProdDate.HasValue
                     && e.FurnaceBatchNo.HasValue
                 )
-                .Select(e => new
-                {
+                .Select(e => new {
                     e.LineNo,
                     e.Shift,
                     e.ProdDate,
@@ -1703,8 +1894,7 @@ public class RawDataImportSessionService
                 && e.ProdDate.HasValue
                 && e.FurnaceBatchNo.HasValue
             )
-            .Select(e => new
-            {
+            .Select(e => new {
                 e.LineNo,
                 e.Shift,
                 e.ProdDate,

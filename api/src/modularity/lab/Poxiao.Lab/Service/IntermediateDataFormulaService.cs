@@ -408,8 +408,9 @@ public class IntermediateDataFormulaService
 
             var sugarColumn = prop.GetCustomAttribute<SugarColumn>();
 
-            // 如果 SugarColumn 中指定了 IsIgnore，则跳过
-            if (sugarColumn != null && sugarColumn.IsIgnore)
+            // 如果 SugarColumn 中指定了 IsIgnore，默认跳过
+            // 但对于范围虚拟列（InRange=true），即使数据库忽略，也要保留在公式配置中
+            if (sugarColumn != null && sugarColumn.IsIgnore && !columnAttr.IsRange)
                 continue;
 
             // 使用特性中的信息
@@ -439,6 +440,10 @@ public class IntermediateDataFormulaService
                 DecimalDigits = decimalDigits,
                 Description = description,
                 Sort = sort,
+                IsRange = columnAttr.IsRange,
+                RangeStart = columnAttr.RangeStart,
+                RangeEnd = columnAttr.RangeEnd,
+                RangePrefix = columnAttr.RangePrefix,
             };
 
             columns.Add(columnInfo);

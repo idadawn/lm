@@ -36,6 +36,14 @@ export interface IntermediateDataColumnInfo {
     decimalDigits?: number;
     description?: string;
     sort?: number;
+    // 范围列属性
+    isRange?: boolean;
+    rangePrefix?: string;
+    rangeStart?: number;
+    rangeEnd?: number;
+    // 外观特性分类与等级选项
+    featureCategories?: Array<{ id: string; name: string }>;
+    featureLevels?: Array<{ id: string; name: string }>;
 }
 
 export interface FormulaVariableSource {

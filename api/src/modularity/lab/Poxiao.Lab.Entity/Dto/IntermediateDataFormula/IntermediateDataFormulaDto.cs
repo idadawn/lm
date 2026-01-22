@@ -152,6 +152,30 @@ public class IntermediateDataColumnInfo
     public string Description { get; set; }
 
     /// <summary>
+    /// 是否为范围列.
+    /// </summary>
+    [JsonPropertyName("isRange")]
+    public bool IsRange { get; set; }
+
+    /// <summary>
+    /// 范围起始.
+    /// </summary>
+    [JsonPropertyName("rangeStart")]
+    public int RangeStart { get; set; }
+
+    /// <summary>
+    /// 范围结束.
+    /// </summary>
+    [JsonPropertyName("rangeEnd")]
+    public string RangeEnd { get; set; }
+
+    /// <summary>
+    /// 范围列前缀.
+    /// </summary>
+    [JsonPropertyName("rangePrefix")]
+    public string RangePrefix { get; set; }
+
+    /// <summary>
     /// 排序码（用于界面显示顺序）.
     /// </summary>
     [JsonPropertyName("sort")]

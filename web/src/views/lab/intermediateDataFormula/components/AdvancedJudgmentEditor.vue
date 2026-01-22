@@ -406,6 +406,8 @@ const fieldOptions = computed(() => {
   return localFields.value.map(f => ({
     label: f.name || f.displayName || f.columnName || String(f),
     value: f.id || f.columnName || f.code,
+    featureCategories: f.featureCategories || [],
+    featureLevels: f.featureLevels || [],
   }));
 });
 

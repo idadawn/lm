@@ -86,7 +86,9 @@ async function refreshAvailableFields() {
         name: item.displayName || item.columnName,
         code: item.columnName,
         columnName: item.columnName,
-        displayName: item.displayName
+        displayName: item.displayName,
+        featureCategories: item.featureCategories || item.FeatureCategories || [],
+        featureLevels: item.featureLevels || item.FeatureLevels || [],
       }));
       
     } else {

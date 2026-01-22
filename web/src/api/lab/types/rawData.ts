@@ -40,6 +40,8 @@ export interface RawDataRow {
   productSpecName?: string;
   featureSuffix?: string; // 特性汉字
   appearanceFeatureIds?: string[]; // 匹配后的特性ID列表
+  appearanceFeatureCategoryIds?: string[]; // 匹配后的特性大类ID列表
+  appearanceFeatureLevelIds?: string[]; // 匹配后的特性等级ID列表
   isValidData?: boolean; // 是否为有效数据
   importStatus?: number; // 导入状态：0-成功，1-失败
   importSessionId?: string;
@@ -55,6 +57,15 @@ export interface RawDataRow {
   productSpecMatchStatus?: 'matched' | 'unmatched' | 'partial';
   appearanceFeatureMatchStatus?: 'matched' | 'unmatched' | 'partial';
   matchConfidence?: number; // 匹配置信度
+  matchDetails?: Array<{
+    featureId: string;
+    featureName: string;
+    confidence?: string;
+    categoryId?: string;
+    categoryName?: string;
+    severityLevelId?: string;
+    severityLevelName?: string;
+  }>;
   // 炉号重复相关字段
   status?: string; // 状态：success/failed/duplicate/exists_in_db
   errorMessage?: string; // 错误信息

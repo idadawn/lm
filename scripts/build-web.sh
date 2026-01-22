@@ -198,6 +198,24 @@ clean() {
 }
 
 # ============================================
+# 构建 Docker 镜像
+# ============================================
+build_docker_image() {
+    log_step "构建 Docker 镜像..."
+
+    if ! command -v docker &> /dev/null; then
+        log_warn "Docker 未安装，跳过镜像构建"
+        return 0
+    fi
+
+    cd "$PROJECT_ROOT"
+
+    docker build -t lm-web:latest -f web/Dockerfile.build .
+
+    log_info "Docker 镜像构建完成: lm-web:latest"
+}
+
+# ============================================
 # 显示构建信息
 # ============================================
 show_info() {
@@ -205,14 +223,6 @@ show_info() {
     echo ""
     echo "发布目录: $PUBLISH_DIR"
     echo "大小: $(du -sh "$PUBLISH_DIR" | cut -f1)"
-    echo ""
-    log_info "现在可以运行以下命令构建 Docker 镜像:"
-    echo ""
-    echo "  docker build -t lm-web:latest -f web/Dockerfile.build ."
-    echo ""
-    echo "或使用一键部署脚本:"
-    echo ""
-    echo "  ./scripts/deploy-web.sh"
     echo ""
 }
 
@@ -259,6 +269,7 @@ main() {
         build_docker
     fi
 
+    build_docker_image
     show_info
 
     echo "=========================================="

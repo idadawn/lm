@@ -33,7 +33,8 @@
       <!-- 第二步：数据解析与预览 -->
       <div v-show="activeStep === 1">
         <Step2DataPreview ref="step2PreviewRef" :import-session-id="importSessionId" :file-name="fileName"
-          :import-strategy="importStrategy" @next="handleStep2PreviewNext" @prev="handlePrev" @cancel="handleCancel" />
+          :import-strategy="importStrategy" @next="handleStep2PreviewNext" @prev="handlePrev" @cancel="handleCancel"
+          @complete="handleNoChangesComplete" />
       </div>
 
       <!-- 第三步：产品规格识别 -->
@@ -236,6 +237,18 @@ async function handleComplete() {
     createMessage.error('完成导入失败，请重试');
   } finally {
     changeOkLoading(false);
+  }
+}
+
+async function handleNoChangesComplete() {
+  try {
+    init();
+    closePopup();
+    emit('reload');
+    createMessage.success('数据无变化，导入完成');
+  } catch (error) {
+    console.error('完成导入失败:', error);
+    createMessage.error('完成导入失败，请重试');
   }
 }
 

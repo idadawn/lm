@@ -36,6 +36,12 @@ public class RawDataImportSessionEntity : CLDEntityBase
     public string SourceFileMd5 { get; set; }
 
     /// <summary>
+    /// 有效数据哈希（用于判断导入数据是否变化）.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_VALID_DATA_HASH", Length = 128, IsNullable = true)]
+    public string ValidDataHash { get; set; }
+
+    /// <summary>
     /// 解析后的数据JSON文件路径（临时存储，完成导入后才写入数据库）.
     /// </summary>
     [SugarColumn(ColumnName = "F_PARSED_DATA_FILE", Length = 500, IsNullable = true)]

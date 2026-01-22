@@ -233,7 +233,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['next', 'prev', 'cancel']);
+const emit = defineEmits(['next', 'prev', 'cancel', 'complete']);
 
 // 状态
 const parsing = ref(false);
@@ -625,6 +625,12 @@ async function parseData() {
       importStrategy: props.importStrategy,
       importSessionId: props.importSessionId,
     });
+
+    if (result.noChanges) {
+      message.success(result.noChangesMessage || '数据无变化，已完成导入');
+      emit('complete');
+      return;
+    }
 
     // 保存预览数据
     previewData.value = result.preview;

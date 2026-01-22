@@ -79,6 +79,17 @@ public class RawDataImportLogEntity : CLDEntityBase
     public string SourceFileMd5 { get; set; }
 
     /// <summary>
+    /// 有效数据哈希（用于判断导入数据是否变化）.
+    /// </summary>
+    [SugarColumn(
+        ColumnName = "F_VALID_DATA_HASH",
+        Length = 128,
+        IsNullable = true,
+        ColumnDescription = "有效数据哈希"
+    )]
+    public string ValidDataHash { get; set; }
+
+    /// <summary>
     /// 有效数据行数（符合炉号解析规则的有效数据行数）.
     /// </summary>
     [SugarColumn(ColumnName = "F_VALID_DATA_COUNT", IsNullable = true, ColumnDescription = "有效数据行数")]

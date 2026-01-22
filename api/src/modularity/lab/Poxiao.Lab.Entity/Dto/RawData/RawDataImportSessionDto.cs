@@ -44,6 +44,8 @@ public class RawDataImportStep1Output
     public RawDataPreviewOutput PreviewData { get; set; }
     public int TotalRows { get; set; }
     public int ValidDataRows { get; set; }
+    public bool NoChanges { get; set; } = false;
+    public string NoChangesMessage { get; set; }
 }
 
 /// <summary>

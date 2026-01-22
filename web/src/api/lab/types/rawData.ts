@@ -159,6 +159,8 @@ export interface Step1UploadAndParseInput {
 export interface Step1UploadAndParseOutput {
   importSessionId: string;
   preview: DataPreviewResult;
+  noChanges?: boolean;
+  noChangesMessage?: string;
 }
 
 // 第二步：产品规格识别

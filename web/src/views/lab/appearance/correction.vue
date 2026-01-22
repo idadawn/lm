@@ -1,11 +1,21 @@
 <template>
-  <a-modal v-model:visible="visible" title="人工修正匹配列表" :width="1100" :confirm-loading="confirmLoading" ok-text="确定"
-    cancel-text="取消" @ok="handleOk" @cancel="handleCancel" destroy-on-close>
+  <a-modal v-model:visible="visible" title="人工修正匹配列表" :width="1100" :confirm-loading="confirmLoading"
+    :ok-button-props="{ style: { display: 'none' } }" cancel-text="关闭" @cancel="handleCancel" destroy-on-close>
     <div class="page-content-wrapper" style="height: 640px">
       <div class="page-content-wrapper-center">
         <div class="page-content-wrapper-content">
           <!-- 表格 -->
           <BasicTable @register="registerTable">
+            <template #tableTitle>
+              <a-upload :show-upload-list="false" :before-upload="handleBeforeUpload" accept=".xlsx,.xls">
+                <a-button type="primary" :loading="uploadLoading">
+                  <template #icon>
+                    <UploadOutlined />
+                  </template>
+                  上传Excel生成修正列表
+                </a-button>
+              </a-upload>
+            </template>
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'action'">
                 <TableAction :actions="[
@@ -63,9 +73,10 @@
 
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue';
+import { UploadOutlined } from '@ant-design/icons-vue';
 import { BasicTable, useTable, TableAction, BasicColumn } from '/@/components/Table';
 import { useMessage } from '/@/hooks/web/useMessage';
-import { getCorrectionList, deleteCorrection, confirmCorrection, updateCorrection, AppearanceFeatureCorrection } from '/@/api/lab/featureLearning';
+import { getCorrectionList, deleteCorrection, confirmCorrection, updateCorrection, uploadExcelForCorrection, AppearanceFeatureCorrection } from '/@/api/lab/featureLearning';
 import FeatureSelectDialog from './components/FeatureSelectDialog.vue';
 import { batchMatchAppearanceFeature, type AppearanceFeatureInfo } from '/@/api/lab/appearance';
 import { getAppearanceFeatureList } from '/@/api/lab/appearanceFeature';
@@ -77,6 +88,24 @@ const visible = ref(false);
 const confirmLoading = ref(false);
 const autoOpen = ref(false);
 const matchConfidenceMap = ref<Record<string, number>>({});
+const uploadLoading = ref(false);
+
+// 处理Excel上传
+async function handleBeforeUpload(file: File) {
+  uploadLoading.value = true;
+  try {
+    const result = await uploadExcelForCorrection(file);
+    createMessage.success(result.message || '上传处理完成');
+    // 刷新列表
+    reload();
+  } catch (error: any) {
+    const errorMsg = error?.response?.data?.msg || error?.message || '上传失败';
+    createMessage.error(errorMsg);
+  } finally {
+    uploadLoading.value = false;
+  }
+  return false; // 阻止默认上传行为
+}
 
 const columns: BasicColumn[] = [
   { title: '输入文本', dataIndex: 'inputText', width: 200 },
@@ -108,10 +137,6 @@ const [registerTable, { reload, setTableData }] = useTable({
 });
 
 function handleCancel() {
-  visible.value = false;
-}
-
-function handleOk() {
   visible.value = false;
 }
 

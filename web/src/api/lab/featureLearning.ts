@@ -66,3 +66,21 @@ export const updateCorrection = (
         params: input,
     });
 };
+
+export interface UploadExcelResult {
+    totalRows: number;
+    uniqueFeatureTexts: number;
+    perfectMatches: number;
+    newCorrections: number;
+    message: string;
+}
+
+export const uploadExcelForCorrection = (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return defHttp.post<UploadExcelResult>({
+        url: '/api/lab/feature-learning/upload-excel',
+        params: formData,
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+};

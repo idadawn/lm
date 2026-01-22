@@ -14,9 +14,11 @@ using Poxiao.Infrastructure.Core.Manager.Files;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Security;
 using Poxiao.Lab.Entity;
+using Poxiao.Lab.Entity.Config;
 using Poxiao.Lab.Entity.Dto.AppearanceFeature;
 using Poxiao.Lab.Entity.Dto.RawData;
 using Poxiao.Lab.Entity.Models;
+using Poxiao.Lab.Entity.Enum;
 using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
 using Poxiao.Systems.Interfaces.Common;
@@ -49,6 +51,7 @@ public class RawDataImportSessionService
     private readonly ISqlSugarRepository<ProductSpecAttributeEntity> _productSpecAttributeRepository;
     private readonly IFileManager _fileManager;
     private readonly IRawDataValidationService _validationService;
+    private readonly ISqlSugarRepository<ExcelImportTemplateEntity> _excelTemplateRepository;
 
     public RawDataImportSessionService(
         ISqlSugarRepository<RawDataImportSessionEntity> sessionRepository,
@@ -64,7 +67,8 @@ public class RawDataImportSessionService
         IAppearanceFeatureService appearanceFeatureService,
         ISqlSugarRepository<ProductSpecAttributeEntity> productSpecAttributeRepository,
         IFileManager fileManager,
-        IRawDataValidationService validationService
+        IRawDataValidationService validationService,
+        ISqlSugarRepository<ExcelImportTemplateEntity> excelTemplateRepository
     )
     {
         _sessionRepository = sessionRepository;
@@ -81,6 +85,7 @@ public class RawDataImportSessionService
         _productSpecAttributeRepository = productSpecAttributeRepository;
         _fileManager = fileManager;
         _validationService = validationService;
+        _excelTemplateRepository = excelTemplateRepository;
     }
 
     /// <inheritdoc />
@@ -264,7 +269,50 @@ public class RawDataImportSessionService
             // throw Oops.Oh($"文件保存失败: {ex.Message}");
         }
 
-        var entities = ParseExcel(fileBytes, input.FileName, skipRows);
+        var templateConfig = await LoadRawDataTemplateConfigAsync();
+        var entities = ParseExcel(fileBytes, input.FileName, skipRows, templateConfig);
+
+        var fileHash = ComputeFileHashSha256(fileBytes);
+        var fileMd5 = ComputeFileHashMd5(fileBytes);
+        if (string.IsNullOrWhiteSpace(existingSession.SourceFileHash))
+        {
+            existingSession.SourceFileHash = fileHash;
+        }
+        if (string.IsNullOrWhiteSpace(existingSession.SourceFileMd5))
+        {
+            existingSession.SourceFileMd5 = fileMd5;
+        }
+
+        var validDataHash = ComputeValidDataHash(entities, templateConfig);
+        existingSession.ValidDataHash = validDataHash;
+
+        var lastLog = await FindDuplicateLogAsync(fileHash, fileMd5, existingSession.FileName);
+        if (lastLog != null && !string.IsNullOrWhiteSpace(validDataHash))
+        {
+            var lastValidHash = await EnsureLogValidDataHashAsync(lastLog, templateConfig);
+            if (!string.IsNullOrWhiteSpace(lastValidHash) && lastValidHash == validDataHash)
+            {
+                existingSession.Status = "completed";
+                existingSession.TotalRows = entities.Count;
+                existingSession.ValidDataRows = entities.Count(x => x.IsValidData == 1);
+                existingSession.CurrentStep = 4;
+                await _sessionRepository.UpdateAsync(existingSession);
+
+                return new RawDataImportStep1Output
+                {
+                    ImportSessionId = sessionId,
+                    TotalRows = existingSession.TotalRows ?? 0,
+                    ValidDataRows = existingSession.ValidDataRows ?? 0,
+                    PreviewData = new RawDataPreviewOutput
+                    {
+                        ParsedData = new List<RawDataPreviewItem>(),
+                        SkippedRows = skipRows,
+                    },
+                    NoChanges = true,
+                    NoChangesMessage = "有效数据未发生变化，已完成导入。",
+                };
+            }
+        }
 
         // 3. 将解析后的数据保存为JSON文件（不写入数据库，等待CompleteImport时才写入）
         // 为每条数据分配ID
@@ -300,6 +348,9 @@ public class RawDataImportSessionService
         session.CurrentStep = 1;
         session.SourceFileId = sourceFileId;
         session.ParsedDataFile = parsedDataFile;
+        session.SourceFileHash = existingSession.SourceFileHash;
+        session.SourceFileMd5 = existingSession.SourceFileMd5;
+        session.ValidDataHash = existingSession.ValidDataHash;
         await _sessionRepository.UpdateAsync(session);
 
         // 5. 转换为预览项并检查重复和数据库中已存在的炉号
@@ -542,6 +593,54 @@ public class RawDataImportSessionService
         }
 
         return null;
+    }
+
+    private async Task<string> EnsureLogValidDataHashAsync(
+        RawDataImportLogEntity log,
+        ExcelTemplateConfig templateConfig
+    )
+    {
+        if (log == null)
+            return null;
+
+        if (!string.IsNullOrWhiteSpace(log.ValidDataHash))
+            return log.ValidDataHash;
+
+        if (string.IsNullOrWhiteSpace(log.SourceFileId))
+            return null;
+
+        var hash = ComputeValidDataHashFromFile(log.SourceFileId, templateConfig);
+        if (!string.IsNullOrWhiteSpace(hash))
+        {
+            log.ValidDataHash = hash;
+            await _logRepository.UpdateAsync(log);
+        }
+
+        return hash;
+    }
+
+    private string ComputeValidDataHashFromFile(
+        string sourceFileId,
+        ExcelTemplateConfig templateConfig
+    )
+    {
+        if (string.IsNullOrWhiteSpace(sourceFileId))
+            return null;
+
+        try
+        {
+            if (!File.Exists(sourceFileId))
+                return null;
+
+            var bytes = File.ReadAllBytes(sourceFileId);
+            var entities = ParseExcel(bytes, Path.GetFileName(sourceFileId), 0, templateConfig);
+            return ComputeValidDataHash(entities, templateConfig);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ComputeValidDataHashFromFile] Failed: {ex.Message}");
+            return null;
+        }
     }
 
     private (string Hash, string Md5) TryComputeHashesFromSourceFile(string sourceFileId)
@@ -1195,6 +1294,8 @@ public class RawDataImportSessionService
         if (session == null)
             throw Oops.Oh("导入会话不存在");
 
+        var templateConfig = await LoadRawDataTemplateConfigAsync();
+
         // 1. 从JSON文件加载数据
         var allData = await LoadParsedDataFromFile(sessionId);
         var validData = allData.Where(t => t.IsValidData == 1).ToList();
@@ -1204,6 +1305,11 @@ public class RawDataImportSessionService
             session.Status = "failed";
             await _sessionRepository.UpdateAsync(session);
             throw Oops.Oh("没有有效数据可以导入");
+        }
+
+        if (string.IsNullOrWhiteSpace(session.ValidDataHash))
+        {
+            session.ValidDataHash = ComputeValidDataHash(allData, templateConfig);
         }
 
         // 1.0 处理重复的炉号（保留第一条，移除其他）
@@ -1251,7 +1357,24 @@ public class RawDataImportSessionService
                 .ToList();
         }
 
-        // 1.1 检查数据库中已存在的炉号，忽略这些数据
+        var compareLog = await FindDuplicateLogAsync(
+            session.SourceFileHash,
+            session.SourceFileMd5,
+            session.FileName
+        );
+        var shouldUpdateExisting = false;
+        if (compareLog != null && !string.IsNullOrWhiteSpace(session.ValidDataHash))
+        {
+            var compareHash = await EnsureLogValidDataHashAsync(compareLog, templateConfig);
+            if (!string.IsNullOrWhiteSpace(compareHash) && compareHash != session.ValidDataHash)
+            {
+                shouldUpdateExisting = true;
+            }
+        }
+
+        var existingRawDataMap = new Dictionary<string, RawDataEntity>();
+
+        // 1.1 检查数据库中已存在的炉号，忽略这些数据（非更新模式）
         validDataToCheck = validData
             .Where(t =>
                 t.LineNo.HasValue
@@ -1261,7 +1384,7 @@ public class RawDataImportSessionService
             )
             .ToList();
 
-        if (validDataToCheck.Count > 0)
+        if (validDataToCheck.Count > 0 && !shouldUpdateExisting)
         {
             // 构建标准炉号列表
             var standardFurnaceNos = validDataToCheck
@@ -1329,6 +1452,63 @@ public class RawDataImportSessionService
                 .ToList();
         }
 
+        if (validDataToCheck.Count > 0 && shouldUpdateExisting)
+        {
+            var standardFurnaceNos = validDataToCheck
+                .Select(t => GetFurnaceNo(t))
+                .Where(f => !string.IsNullOrEmpty(f))
+                .Distinct()
+                .ToList();
+
+            if (standardFurnaceNos.Count > 0)
+            {
+                var dbEntities = await _rawDataRepository
+                    .AsQueryable()
+                    .Where(e =>
+                        e.IsValidData == 1
+                        && e.LineNo.HasValue
+                        && !string.IsNullOrWhiteSpace(e.Shift)
+                        && e.ProdDate.HasValue
+                        && e.FurnaceBatchNo.HasValue
+                    )
+                    .Select(e => new RawDataEntity
+                    {
+                        Id = e.Id,
+                        LineNo = e.LineNo,
+                        Shift = e.Shift,
+                        ProdDate = e.ProdDate,
+                        FurnaceBatchNo = e.FurnaceBatchNo,
+                        CoilNo = e.CoilNo,
+                        SubcoilNo = e.SubcoilNo,
+                        CreatorUserId = e.CreatorUserId,
+                        CreatorTime = e.CreatorTime,
+                    })
+                    .ToListAsync();
+
+                foreach (var entity in dbEntities)
+                {
+                    var furnaceNoObj = FurnaceNo.Build(
+                        entity.LineNo.Value.ToString(),
+                        entity.Shift,
+                        entity.ProdDate,
+                        entity.FurnaceBatchNo.Value.ToString(),
+                        entity.CoilNo?.ToString() ?? "1",
+                        entity.SubcoilNo?.ToString() ?? "1"
+                    );
+
+                    var standardFurnaceNo = furnaceNoObj?.GetFurnaceNo();
+                    if (
+                        !string.IsNullOrEmpty(standardFurnaceNo)
+                        && standardFurnaceNos.Contains(standardFurnaceNo)
+                        && !existingRawDataMap.ContainsKey(standardFurnaceNo)
+                    )
+                    {
+                        existingRawDataMap[standardFurnaceNo] = entity;
+                    }
+                }
+            }
+        }
+
         // 1.1 检查是否有未匹配产品规格的数据，尝试重新匹配
         var unmatchedSpecData = validData
             .Where(t => string.IsNullOrEmpty(t.ProductSpecId))
@@ -1345,6 +1525,30 @@ public class RawDataImportSessionService
                     entity.ProductSpecCode = spec.Code;
                     entity.ProductSpecName = spec.Name;
                     entity.DetectionColumns = spec.DetectionColumns;
+                }
+            }
+        }
+
+        // 1.2 如果是更新模式，设置已有数据ID并准备更新列表
+        var updateRawDataList = new List<RawDataEntity>();
+        var updateIdSet = new HashSet<string>();
+        if (shouldUpdateExisting && existingRawDataMap.Count > 0)
+        {
+            foreach (var entity in validData)
+            {
+                var standardFurnaceNo = GetFurnaceNo(entity);
+                if (string.IsNullOrEmpty(standardFurnaceNo))
+                    continue;
+
+                if (existingRawDataMap.TryGetValue(standardFurnaceNo, out var existing))
+                {
+                    entity.Id = existing.Id;
+                    entity.CreatorUserId = existing.CreatorUserId;
+                    entity.CreatorTime = existing.CreatorTime;
+                    entity.LastModifyUserId = _userManager.UserId;
+                    entity.LastModifyTime = DateTime.Now;
+                    updateRawDataList.Add(entity);
+                    updateIdSet.Add(entity.Id);
                 }
             }
         }
@@ -1431,19 +1635,41 @@ public class RawDataImportSessionService
             await db.Ado.BeginTranAsync();
 
             // 3.1 将所有数据写入原始数据表（包括有效和无效数据）
-            if (allData.Count > 0)
+            var insertRawDataList = allData
+                .Where(t => !updateIdSet.Contains(t.Id))
+                .ToList();
+
+            if (insertRawDataList.Count > 0)
             {
                 // 分批插入防止SQL太长
-                var batches = allData.Chunk(1000);
+                var batches = insertRawDataList.Chunk(1000);
                 foreach (var batch in batches)
                 {
                     await _rawDataRepository.AsInsertable(batch.ToList()).ExecuteCommandAsync();
                 }
             }
 
+            if (updateRawDataList.Count > 0)
+            {
+                var updateBatches = updateRawDataList.Chunk(200);
+                foreach (var batch in updateBatches)
+                {
+                    await db.Updateable(batch.ToList()).ExecuteCommandAsync();
+                }
+            }
+
             // 3.2 将中间数据写入中间数据表
             if (intermediateEntities.Count > 0)
             {
+                var updateRawIds = updateRawDataList.Select(t => t.Id).Distinct().ToList();
+                if (updateRawIds.Count > 0)
+                {
+                    await db
+                        .Deleteable<IntermediateDataEntity>()
+                        .In(t => t.RawDataId, updateRawIds)
+                        .ExecuteCommandAsync();
+                }
+
                 await db.Insertable(intermediateEntities).ExecuteCommandAsync();
             }
 
@@ -1509,6 +1735,7 @@ public class RawDataImportSessionService
         session.Status = "completed";
         session.TotalRows = allData.Count; // 更新总数据行数
         session.ValidDataRows = validData.Count; // 更新有效数据行数
+        session.ValidDataHash = ComputeValidDataHash(validData, templateConfig);
         await _sessionRepository.UpdateAsync(session);
 
         // 4. Create Log
@@ -1536,6 +1763,7 @@ public class RawDataImportSessionService
             SourceFileId = session.SourceFileId,
             SourceFileHash = session.SourceFileHash,
             SourceFileMd5 = session.SourceFileMd5,
+            ValidDataHash = session.ValidDataHash,
             ValidDataCount = validData.Count,
             LastRowsHash = GenerateLastRowHash(allData.LastOrDefault()),
             LastRowsCount = 1,
@@ -1682,139 +1910,88 @@ public class RawDataImportSessionService
         return furnaceNoObj?.GetFurnaceNo();
     }
 
-    private List<RawDataEntity> ParseExcel(byte[] fileBytes, string fileName, int skipRows)
+    private List<RawDataEntity> ParseExcel(
+        byte[] fileBytes,
+        string fileName,
+        int skipRows,
+        ExcelTemplateConfig templateConfig
+    )
     {
         var entities = new List<RawDataEntity>();
+        templateConfig ??= BuildDefaultRawDataTemplateConfig();
 
-        // 先获取所有列名，用于通过索引访问列（AA列=索引26，AB列=索引27）
-        string breakCountColumnName = null;
-        string singleCoilWeightColumnName = null;
-
+        // 先获取所有列名，用于模板映射与检测列识别
+        List<string> columns;
         using (var streamForColumns = new MemoryStream(fileBytes))
         {
-            var columns = MiniExcelLibs
-                .MiniExcel.GetColumns(streamForColumns, useHeaderRow: true)
-                .ToList();
-
-            // AA列是第27列（索引26），AB列是第28列（索引27）
-            if (columns.Count > 26)
-            {
-                breakCountColumnName = columns[26]; // AA列
-            }
-            if (columns.Count > 27)
-            {
-                singleCoilWeightColumnName = columns[27]; // AB列
-            }
+            columns = MiniExcelLibs.MiniExcel.GetColumns(streamForColumns, useHeaderRow: true).ToList();
         }
 
-        // 使用新的流读取数据行
+        var fieldHeaderMap = BuildFieldHeaderMap(templateConfig, columns);
+        var requiredFields = GetRequiredFields(templateConfig);
+        var fieldLabelMap = templateConfig.FieldMappings
+            .Where(m => !string.IsNullOrWhiteSpace(m.Field))
+            .ToDictionary(m => m.Field, m => m.Label, StringComparer.OrdinalIgnoreCase);
+        var detectionHeaderMap = BuildDetectionHeaderMap(templateConfig, columns);
+
+        // 读取数据行
         using var stream = new MemoryStream(fileBytes);
-        // Use HeaderRow = true to get key-value pairs
         var rows = stream.Query(useHeaderRow: true).Cast<IDictionary<string, object>>().ToList();
 
-        // Cache Product Specs for matching
         var productSpecs = _productSpecRepository.GetList();
 
-        foreach (var row in rows)
+        for (int i = 0; i < rows.Count; i++)
         {
+            if (i < skipRows)
+                continue;
+
+            var row = rows[i];
             var entity = new RawDataEntity();
-            entity.DetectionDate = GetValue<DateTime?>(row, "日期");
-            entity.FurnaceNo = GetValue<string>(row, "炉号");
-            entity.Width = GetValue<decimal?>(row, "宽度");
-            entity.CoilWeight = GetValue<decimal?>(row, "带材重量");
 
-            // 读取断头数：先尝试通过表头名称读取，如果失败则通过列索引读取
-            if (!entity.BreakCount.HasValue)
+            // 根据模板字段映射赋值
+            foreach (var mapping in templateConfig.FieldMappings)
             {
-                var breakCountHeaders = new[] { "断头数", "断头", "BreakCount", "AA" };
-                foreach (var header in breakCountHeaders)
+                if (string.IsNullOrWhiteSpace(mapping.Field))
+                    continue;
+                if (!fieldHeaderMap.TryGetValue(mapping.Field, out var headerName))
+                    continue;
+
+                TrySetEntityValue(entity, row, headerName, mapping);
+            }
+
+            // 补充断头数、单卷重量（兼容列索引方式）
+            ApplyFallbackColumns(entity, row, columns);
+
+            // 检测数据列（根据模板配置识别）
+            foreach (var kvp in detectionHeaderMap)
+            {
+                var colIndex = kvp.Key;
+                var headerName = kvp.Value;
+                if (!row.ContainsKey(headerName))
+                    continue;
+                var detectionValue = GetValue<decimal?>(row, headerName);
+                if (!detectionValue.HasValue)
+                    continue;
+                var propName = $"Detection{colIndex}";
+                var prop = typeof(RawDataEntity).GetProperty(propName);
+                if (prop != null && prop.GetValue(entity) == null)
                 {
-                    if (row.ContainsKey(header))
-                    {
-                        var value = GetValue<int?>(row, header);
-                        if (value.HasValue)
-                        {
-                            entity.BreakCount = value;
-                            break;
-                        }
-                    }
+                    prop.SetValue(entity, detectionValue.Value);
                 }
             }
 
-            // 如果通过表头名称读取失败，尝试通过列索引读取（AA列=索引26）
-            if (
-                !entity.BreakCount.HasValue
-                && !string.IsNullOrEmpty(breakCountColumnName)
-                && row.ContainsKey(breakCountColumnName)
-            )
+            // 必填字段校验
+            var missingFields = GetMissingRequiredFields(entity, requiredFields, fieldLabelMap);
+            if (missingFields.Count > 0)
             {
-                entity.BreakCount = GetValue<int?>(row, breakCountColumnName);
+                entity.ImportStatus = 1;
+                entity.ImportError = $"缺少必填字段: {string.Join("、", missingFields)}";
+                entity.IsValidData = 0;
+                entities.Add(entity);
+                continue;
             }
 
-            // 读取单卷重量：先尝试通过表头名称读取，如果失败则通过列索引读取
-            if (!entity.SingleCoilWeight.HasValue)
-            {
-                var singleCoilWeightHeaders = new[]
-                {
-                    "单卷重量",
-                    "单卷重",
-                    "SingleCoilWeight",
-                    "AB",
-                };
-                foreach (var header in singleCoilWeightHeaders)
-                {
-                    if (row.ContainsKey(header))
-                    {
-                        var value = GetValue<decimal?>(row, header);
-                        if (value.HasValue)
-                        {
-                            entity.SingleCoilWeight = value;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // 如果通过表头名称读取失败，尝试通过列索引读取（AB列=索引27）
-            if (
-                !entity.SingleCoilWeight.HasValue
-                && !string.IsNullOrEmpty(singleCoilWeightColumnName)
-                && row.ContainsKey(singleCoilWeightColumnName)
-            )
-            {
-                entity.SingleCoilWeight = GetValue<decimal?>(row, singleCoilWeightColumnName);
-            }
-
-            // 检测数据列1-22（固定22列）
-            for (int colIndex = 1; colIndex <= 22; colIndex++)
-            {
-                decimal? detectionValue = null;
-                var possibleHeaders = new[]
-                {
-                    colIndex.ToString(),
-                    $"检测{colIndex}",
-                    $"列{colIndex}",
-                    $"第{colIndex}列",
-                    $"检测列{colIndex}",
-                };
-                foreach (var h in possibleHeaders)
-                {
-                    if (row.ContainsKey(h))
-                    {
-                        detectionValue = GetValue<decimal?>(row, h);
-                        if (detectionValue.HasValue)
-                        {
-                            // 使用反射设置对应的Detection属性
-                            var propName = $"Detection{colIndex}";
-                            var prop = typeof(RawDataEntity).GetProperty(propName);
-                            prop?.SetValue(entity, detectionValue.Value);
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // Furnace Parse using Helper
+            // 炉号解析
             if (!string.IsNullOrWhiteSpace(entity.FurnaceNo))
             {
                 var furnaceNoObj = FurnaceNo.Parse(entity.FurnaceNo);
@@ -1827,8 +2004,6 @@ public class RawDataImportSessionService
                     entity.CoilNo = furnaceNoObj.CoilNoNumeric;
                     entity.SubcoilNo = furnaceNoObj.SubcoilNoNumeric;
                     entity.FeatureSuffix = furnaceNoObj.FeatureSuffix;
-                    // 生产日期（ProdDate）：优先使用从原始炉号（FurnaceNo）中解析出的日期
-                    // 如果炉号解析失败，使用检测日期（DetectionDate，从Excel"日期"列读取）作为后备
                     if (furnaceNoObj.ProdDate.HasValue)
                     {
                         entity.ProdDate = furnaceNoObj.ProdDate;
@@ -1837,10 +2012,7 @@ public class RawDataImportSessionService
                     {
                         entity.ProdDate = entity.DetectionDate;
                     }
-
-                    // 计算格式化炉号（格式：[产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号]）
                     entity.FurnaceNoFormatted = furnaceNoObj.GetFurnaceNo();
-
                     entity.IsValidData = 1;
                 }
                 else
@@ -1857,7 +2029,6 @@ public class RawDataImportSessionService
                 entity.IsValidData = 0;
             }
 
-            // Product Spec Match (Initial Guess)
             if (entity.IsValidData == 1)
             {
                 var spec = IdentifyProductSpec(entity, productSpecs);
@@ -1903,6 +2074,524 @@ public class RawDataImportSessionService
         {
             return default;
         }
+    }
+
+    private async Task<ExcelTemplateConfig> LoadRawDataTemplateConfigAsync()
+    {
+        var template = await _excelTemplateRepository.GetFirstAsync(t =>
+            t.TemplateCode == ExcelImportTemplateCode.RawDataImport.ToString()
+            && (t.DeleteMark == 0 || t.DeleteMark == null)
+        );
+
+        if (template == null || string.IsNullOrWhiteSpace(template.ConfigJson))
+            return BuildDefaultRawDataTemplateConfig();
+
+        var config = TryParseTemplateConfig(template.ConfigJson);
+        return config ?? BuildDefaultRawDataTemplateConfig();
+    }
+
+    private ExcelTemplateConfig TryParseTemplateConfig(string configJson)
+    {
+        if (string.IsNullOrWhiteSpace(configJson))
+            return null;
+
+        try
+        {
+            var json = configJson.Trim();
+            if (json.StartsWith("\"") && json.EndsWith("\""))
+            {
+                try
+                {
+                    json = System.Text.Json.JsonSerializer.Deserialize<string>(json);
+                }
+                catch
+                {
+                    // ignore
+                }
+            }
+
+            return System.Text.Json.JsonSerializer.Deserialize<ExcelTemplateConfig>(json);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private ExcelTemplateConfig BuildDefaultRawDataTemplateConfig()
+    {
+        var config = new ExcelTemplateConfig
+        {
+            Version = "1.0",
+            Description = "检测数据默认模板",
+            DetectionColumns = new DetectionColumnConfig
+            {
+                MinColumn = 1,
+                MaxColumn = 100,
+                Patterns = new List<string>
+                {
+                    "{col}",
+                    "检测{col}",
+                    "列{col}",
+                    "第{col}列",
+                    "检测列{col}",
+                },
+            },
+        };
+
+        var mappings = new List<TemplateColumnMapping>();
+        var props = typeof(RawDataEntity).GetProperties();
+        foreach (var prop in props)
+        {
+            var importAttr =
+                prop.GetCustomAttributes(
+                        typeof(Poxiao.Lab.Entity.Attributes.ExcelImportColumnAttribute),
+                        false
+                    )
+                    .FirstOrDefault() as Poxiao.Lab.Entity.Attributes.ExcelImportColumnAttribute;
+            if (importAttr == null || !importAttr.IsImportField)
+                continue;
+
+            var dataType = "string";
+            var underlyingType = Nullable.GetUnderlyingType(prop.PropertyType) ?? prop.PropertyType;
+            if (
+                underlyingType == typeof(decimal)
+                || underlyingType == typeof(double)
+                || underlyingType == typeof(float)
+            )
+                dataType = "decimal";
+            else if (underlyingType == typeof(int) || underlyingType == typeof(long))
+                dataType = "int";
+            else if (underlyingType == typeof(DateTime))
+                dataType = "datetime";
+
+            mappings.Add(
+                new TemplateColumnMapping
+                {
+                    Field = prop.Name,
+                    Label = importAttr.Name,
+                    ExcelColumnNames = new List<string> { importAttr.Name },
+                    DataType = dataType,
+                    Required = false,
+                }
+            );
+        }
+
+        config.FieldMappings = mappings.OrderBy(m => m.Field).ToList();
+        return config;
+    }
+
+    private Dictionary<string, string> BuildFieldHeaderMap(
+        ExcelTemplateConfig templateConfig,
+        List<string> columns
+    )
+    {
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (templateConfig?.FieldMappings == null || columns == null)
+            return map;
+
+        var columnMap = columns
+            .Where(c => !string.IsNullOrWhiteSpace(c))
+            .ToDictionary(c => c.Trim(), c => c, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var mapping in templateConfig.FieldMappings)
+        {
+            if (string.IsNullOrWhiteSpace(mapping.Field))
+                continue;
+
+            string headerName = null;
+
+            if (!string.IsNullOrWhiteSpace(mapping.ExcelColumnIndex))
+            {
+                var idx = ExcelColumnIndexToNumber(mapping.ExcelColumnIndex);
+                if (idx >= 0 && idx < columns.Count)
+                {
+                    headerName = columns[idx];
+                }
+            }
+
+            if (headerName == null && mapping.ExcelColumnNames != null)
+            {
+                foreach (var name in mapping.ExcelColumnNames)
+                {
+                    if (string.IsNullOrWhiteSpace(name))
+                        continue;
+                    if (columnMap.TryGetValue(name.Trim(), out var matched))
+                    {
+                        headerName = matched;
+                        break;
+                    }
+                }
+            }
+
+            if (headerName == null && !string.IsNullOrWhiteSpace(mapping.Label))
+            {
+                if (columnMap.TryGetValue(mapping.Label.Trim(), out var matched))
+                    headerName = matched;
+            }
+
+            if (!string.IsNullOrWhiteSpace(headerName))
+                map[mapping.Field] = headerName;
+        }
+
+        return map;
+    }
+
+    private Dictionary<int, string> BuildDetectionHeaderMap(
+        ExcelTemplateConfig templateConfig,
+        List<string> columns
+    )
+    {
+        var result = new Dictionary<int, string>();
+        if (columns == null || columns.Count == 0)
+            return result;
+
+        var detectionConfig = templateConfig?.DetectionColumns ?? new DetectionColumnConfig();
+        foreach (var header in columns)
+        {
+            if (string.IsNullOrWhiteSpace(header))
+                continue;
+
+            if (!IsDetectionHeaderMatch(header, detectionConfig))
+                continue;
+
+            var match = Regex.Match(header, @"\d+");
+            if (match.Success && int.TryParse(match.Value, out var colNum))
+            {
+                if (colNum >= 1 && colNum <= 22 && !result.ContainsKey(colNum))
+                    result[colNum] = header;
+            }
+        }
+
+        return result;
+    }
+
+    private bool IsDetectionHeaderMatch(string header, DetectionColumnConfig config)
+    {
+        var name = header?.Trim() ?? "";
+        if (string.IsNullOrEmpty(name))
+            return false;
+
+        if (config?.Patterns != null && config.Patterns.Count > 0)
+        {
+            foreach (var pattern in config.Patterns)
+            {
+                if (string.IsNullOrWhiteSpace(pattern))
+                    continue;
+                try
+                {
+                    var regexPattern = pattern.Replace("{col}", @"\d+");
+                    var regex = new Regex($"^{regexPattern}$", RegexOptions.IgnoreCase);
+                    if (regex.IsMatch(name))
+                        return true;
+                }
+                catch
+                {
+                    var simplePattern = pattern.Replace("{col}", "");
+                    if (name.Contains(simplePattern, StringComparison.OrdinalIgnoreCase))
+                        return true;
+                }
+            }
+            return false;
+        }
+
+        return name.Contains("检测", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private HashSet<string> GetRequiredFields(ExcelTemplateConfig templateConfig)
+    {
+        var required = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (templateConfig?.FieldMappings != null)
+        {
+            foreach (var mapping in templateConfig.FieldMappings)
+            {
+                if (mapping.Required && !string.IsNullOrWhiteSpace(mapping.Field))
+                    required.Add(mapping.Field);
+            }
+        }
+
+        if (templateConfig?.Validation?.RequiredFields != null)
+        {
+            foreach (var field in templateConfig.Validation.RequiredFields)
+            {
+                if (!string.IsNullOrWhiteSpace(field))
+                    required.Add(field);
+            }
+        }
+
+        return required;
+    }
+
+    private List<string> GetMissingRequiredFields(
+        RawDataEntity entity,
+        HashSet<string> requiredFields,
+        Dictionary<string, string> fieldLabelMap
+    )
+    {
+        var missing = new List<string>();
+        if (entity == null || requiredFields == null || requiredFields.Count == 0)
+            return missing;
+
+        foreach (var field in requiredFields)
+        {
+            var prop = typeof(RawDataEntity).GetProperty(field);
+            if (prop == null)
+                continue;
+
+            var value = prop.GetValue(entity);
+            var isMissing =
+                value == null
+                || (value is string s && string.IsNullOrWhiteSpace(s))
+                || (value is DateTime dt && dt == default)
+                || (value is decimal d && d == default && !prop.PropertyType.IsGenericType);
+
+            if (isMissing)
+            {
+                if (fieldLabelMap != null && fieldLabelMap.TryGetValue(field, out var label))
+                {
+                    missing.Add(label);
+                }
+                else
+                {
+                    missing.Add(field);
+                }
+            }
+        }
+
+        return missing;
+    }
+
+    private void TrySetEntityValue(
+        RawDataEntity entity,
+        IDictionary<string, object> row,
+        string headerName,
+        TemplateColumnMapping mapping
+    )
+    {
+        if (entity == null || mapping == null || string.IsNullOrWhiteSpace(mapping.Field))
+            return;
+        if (!row.ContainsKey(headerName))
+            return;
+
+        var prop = typeof(RawDataEntity).GetProperty(mapping.Field);
+        if (prop == null)
+            return;
+
+        var rawValue = row[headerName];
+        if (rawValue == null || string.IsNullOrWhiteSpace(rawValue.ToString()))
+        {
+            if (!string.IsNullOrWhiteSpace(mapping.DefaultValue))
+            {
+                rawValue = mapping.DefaultValue;
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        var converted = ConvertValue(rawValue, mapping.DataType, prop.PropertyType);
+        if (converted != null)
+            prop.SetValue(entity, converted);
+    }
+
+    private object ConvertValue(object value, string dataType, Type targetType)
+    {
+        try
+        {
+            var underlyingType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+            var text = value?.ToString();
+            if (string.Equals(dataType, "datetime", StringComparison.OrdinalIgnoreCase))
+            {
+                if (value is double d)
+                    return DateTime.FromOADate(d);
+                if (DateTime.TryParse(text, out var dt))
+                    return dt;
+                return null;
+            }
+
+            if (string.Equals(dataType, "decimal", StringComparison.OrdinalIgnoreCase))
+            {
+                if (decimal.TryParse(text, out var dec))
+                    return Convert.ChangeType(dec, underlyingType);
+                return null;
+            }
+
+            if (string.Equals(dataType, "int", StringComparison.OrdinalIgnoreCase))
+            {
+                if (int.TryParse(text, out var num))
+                    return Convert.ChangeType(num, underlyingType);
+                return null;
+            }
+
+            if (underlyingType == typeof(DateTime))
+            {
+                if (value is double od)
+                    return DateTime.FromOADate(od);
+                if (DateTime.TryParse(text, out var dt))
+                    return dt;
+            }
+
+            return Convert.ChangeType(value, underlyingType);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private void ApplyFallbackColumns(
+        RawDataEntity entity,
+        IDictionary<string, object> row,
+        List<string> columns
+    )
+    {
+        if (entity == null || row == null || columns == null)
+            return;
+
+        if (!entity.BreakCount.HasValue)
+        {
+            var breakCountHeaders = new[] { "断头数", "断头", "BreakCount", "AA" };
+            foreach (var header in breakCountHeaders)
+            {
+                if (row.ContainsKey(header))
+                {
+                    var value = GetValue<int?>(row, header);
+                    if (value.HasValue)
+                    {
+                        entity.BreakCount = value;
+                        break;
+                    }
+                }
+            }
+
+            if (!entity.BreakCount.HasValue && columns.Count > 26)
+            {
+                var colName = columns[26];
+                if (row.ContainsKey(colName))
+                    entity.BreakCount = GetValue<int?>(row, colName);
+            }
+        }
+
+        if (!entity.SingleCoilWeight.HasValue)
+        {
+            var singleCoilWeightHeaders = new[]
+            {
+                "单卷重量",
+                "单卷重",
+                "SingleCoilWeight",
+                "AB",
+            };
+            foreach (var header in singleCoilWeightHeaders)
+            {
+                if (row.ContainsKey(header))
+                {
+                    var value = GetValue<decimal?>(row, header);
+                    if (value.HasValue)
+                    {
+                        entity.SingleCoilWeight = value;
+                        break;
+                    }
+                }
+            }
+
+            if (!entity.SingleCoilWeight.HasValue && columns.Count > 27)
+            {
+                var colName = columns[27];
+                if (row.ContainsKey(colName))
+                    entity.SingleCoilWeight = GetValue<decimal?>(row, colName);
+            }
+        }
+    }
+
+    private int ExcelColumnIndexToNumber(string columnIndex)
+    {
+        if (string.IsNullOrWhiteSpace(columnIndex))
+            return -1;
+
+        int number = 0;
+        foreach (char c in columnIndex.Trim().ToUpperInvariant())
+        {
+            if (c < 'A' || c > 'Z')
+                return -1;
+            number = number * 26 + (c - 'A' + 1);
+        }
+
+        return number - 1;
+    }
+
+    private string ComputeValidDataHash(
+        List<RawDataEntity> entities,
+        ExcelTemplateConfig templateConfig
+    )
+    {
+        if (entities == null || entities.Count == 0)
+            return null;
+
+        var validEntities = entities.Where(t => t.IsValidData == 1).ToList();
+        if (validEntities.Count == 0)
+            return null;
+
+        var fingerprints = validEntities
+            .Select(e => ComputeValidRowFingerprint(e, templateConfig))
+            .Where(v => !string.IsNullOrEmpty(v))
+            .OrderBy(v => v)
+            .ToList();
+
+        var combined = string.Join("|", fingerprints);
+        return ComputeFileHashSha256(Encoding.UTF8.GetBytes(combined));
+    }
+
+    private string ComputeValidRowFingerprint(RawDataEntity entity, ExcelTemplateConfig templateConfig)
+    {
+        if (entity == null)
+            return null;
+
+        var fields = new List<string>();
+        if (templateConfig?.FieldMappings != null && templateConfig.FieldMappings.Count > 0)
+        {
+            foreach (var mapping in templateConfig.FieldMappings)
+            {
+                if (string.IsNullOrWhiteSpace(mapping.Field))
+                    continue;
+                fields.Add(mapping.Field);
+            }
+        }
+
+        for (int i = 1; i <= 22; i++)
+        {
+            fields.Add($"Detection{i}");
+        }
+
+        var distinctFields = fields.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(f => f).ToList();
+        var parts = new List<string>();
+        foreach (var field in distinctFields)
+        {
+            var prop = typeof(RawDataEntity).GetProperty(field);
+            if (prop == null)
+                continue;
+            var value = prop.GetValue(entity);
+            var normalized = NormalizeValue(value);
+            parts.Add($"{field}={normalized}");
+        }
+
+        var raw = string.Join("|", parts);
+        return ComputeFileHashSha256(Encoding.UTF8.GetBytes(raw));
+    }
+
+    private string NormalizeValue(object value)
+    {
+        if (value == null)
+            return "";
+        if (value is DateTime dt)
+            return dt.ToString("yyyy-MM-dd");
+        if (value is decimal dec)
+            return dec.ToString("G29");
+        if (value is double dbl)
+            return dbl.ToString("G29");
+        if (value is float flt)
+            return flt.ToString("G29");
+        return value.ToString().Trim();
     }
 
     /// <summary>
@@ -2406,7 +3095,9 @@ public class RawDataImportSessionService
             }
 
             // 2. 解析Excel数据
-            var entities = ParseExcel(fileBytes, input.FileName, skipRows: 0);
+            var templateConfig = await LoadRawDataTemplateConfigAsync();
+            var entities = ParseExcel(fileBytes, input.FileName, skipRows: 0, templateConfig);
+            var validDataHash = ComputeValidDataHash(entities, templateConfig);
             output.TotalRows = entities.Count;
 
             if (entities.Count == 0)
@@ -2504,6 +3195,7 @@ public class RawDataImportSessionService
                 ValidDataCount = output.SuccessRows,
                 SourceFileHash = fileHash,
                 SourceFileMd5 = fileMd5,
+                ValidDataHash = validDataHash,
             };
             log.Creator();
             await _logRepository.InsertAsync(log);

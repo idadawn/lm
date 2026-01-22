@@ -219,6 +219,8 @@ export async function uploadAndParse(data: Step1UploadAndParseInput): Promise<St
     return {
       importSessionId: response.importSessionId || response.ImportSessionId,
       preview: convertedPreview,
+      noChanges: actualData.noChanges ?? actualData.NoChanges ?? false,
+      noChangesMessage: actualData.noChangesMessage || actualData.NoChangesMessage,
     };
   }
 

@@ -1,10 +1,13 @@
 using Mapster;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.AppearanceFeature;
+using Poxiao.Lab.Entity.Models;
+using Poxiao.Lab.Interfaces;
 using SqlSugar;
 
 namespace Poxiao.Lab.Service;
@@ -19,16 +22,19 @@ public class FeatureLearningService : IDynamicApiController, ITransient
     private readonly ISqlSugarRepository<AppearanceFeatureCorrectionEntity> _correctionRepository;
     private readonly ISqlSugarRepository<AppearanceFeatureEntity> _featureRepository;
     private readonly ISqlSugarRepository<AppearanceFeatureCategoryEntity> _categoryRepository;
+    private readonly IAppearanceFeatureService _appearanceFeatureService;
 
     public FeatureLearningService(
         ISqlSugarRepository<AppearanceFeatureCorrectionEntity> correctionRepository,
         ISqlSugarRepository<AppearanceFeatureEntity> featureRepository,
-        ISqlSugarRepository<AppearanceFeatureCategoryEntity> categoryRepository
+        ISqlSugarRepository<AppearanceFeatureCategoryEntity> categoryRepository,
+        IAppearanceFeatureService appearanceFeatureService
     )
     {
         _correctionRepository = correctionRepository;
         _featureRepository = featureRepository;
         _categoryRepository = categoryRepository;
+        _appearanceFeatureService = appearanceFeatureService;
     }
 
     /// <summary>
@@ -496,6 +502,156 @@ public class FeatureLearningService : IDynamicApiController, ITransient
 
         return text.Trim();
     }
+
+    /// <summary>
+    /// 上传Excel生成人工修正列表
+    /// </summary>
+    /// <param name="file">Excel文件</param>
+    /// <returns>生成的修正记录数量</returns>
+    [HttpPost("upload-excel")]
+    public async Task<UploadExcelResult> UploadExcelForCorrection(IFormFile file)
+    {
+        if (file == null || file.Length == 0)
+            throw Oops.Oh("请上传Excel文件");
+
+        var result = new UploadExcelResult();
+
+        try
+        {
+            // 1. 读取Excel文件
+            using var stream = file.OpenReadStream();
+            var rows = MiniExcelLibs.MiniExcel.Query(stream, useHeaderRow: true).ToList();
+
+            if (rows == null || rows.Count == 0)
+            {
+                result.Message = "Excel文件没有数据";
+                return result;
+            }
+
+            // 2. 使用默认的炉号列名
+            // 注意: ExcelImportTemplateDto 没有 ConfigJson 属性，简化处理直接使用默认列名
+            string furnaceNoColumnName = "炉号"; // 默认列名
+
+            // 3. 提取所有炉号和解析特性后缀
+            var featureTexts = new Dictionary<string, string>(); // FeatureSuffix -> 原始输入文本示例
+            foreach (var row in rows)
+            {
+                var rowDict = row as IDictionary<string, object>;
+                if (rowDict == null)
+                    continue;
+
+                // 尝试获取炉号列的值
+                string furnaceNoValue = null;
+                foreach (var key in rowDict.Keys)
+                {
+                    if (
+                        key.Contains(furnaceNoColumnName, StringComparison.OrdinalIgnoreCase)
+                        || key.Contains("炉号", StringComparison.OrdinalIgnoreCase)
+                    )
+                    {
+                        furnaceNoValue = rowDict[key]?.ToString();
+                        break;
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(furnaceNoValue))
+                    continue;
+
+                // 解析炉号提取特性后缀
+                var furnaceNo = FurnaceNo.Parse(furnaceNoValue);
+                if (furnaceNo.IsValid && !string.IsNullOrWhiteSpace(furnaceNo.FeatureSuffix))
+                {
+                    var suffix = furnaceNo.FeatureSuffix.Trim();
+                    if (!featureTexts.ContainsKey(suffix))
+                    {
+                        featureTexts[suffix] = furnaceNoValue;
+                    }
+                }
+            }
+
+            result.TotalRows = rows.Count;
+            result.UniqueFeatureTexts = featureTexts.Count;
+
+            if (featureTexts.Count == 0)
+            {
+                result.Message = $"解析了 {rows.Count} 行数据，未发现任何特性后缀文字";
+                return result;
+            }
+
+            // 4. 批量匹配特性
+            var matchInput = new BatchMatchInput
+            {
+                Items = featureTexts
+                    .Select(
+                        (kvp, idx) => new MatchItemInput { Id = idx.ToString(), Query = kvp.Key }
+                    )
+                    .ToList(),
+            };
+
+            var matchResults = await _appearanceFeatureService.BatchMatch(matchInput);
+
+            // 5. 筛选非100%匹配的结果，创建修正记录
+            var newCorrectionCount = 0;
+            foreach (var matchResult in matchResults)
+            {
+                // 跳过100%匹配
+                if (matchResult.IsPerfectMatch)
+                    continue;
+
+                var featureText = matchResult.Query;
+                var originalInput = featureTexts.ContainsKey(featureText)
+                    ? featureTexts[featureText]
+                    : featureText;
+
+                // 检查是否已存在相同InputText的记录
+                var existingCorrection = await _correctionRepository.GetFirstAsync(c =>
+                    c.InputText == featureText && c.DeleteMark == null
+                );
+
+                if (existingCorrection != null)
+                    continue; // 跳过重复
+
+                // 创建新的修正记录
+                var correction = new AppearanceFeatureCorrectionEntity
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    InputText = featureText,
+                    MatchMode = "excel_import",
+                    Scenario = "import",
+                    Status = "Pending",
+                    Remark = $"从Excel导入，原始炉号: {originalInput}",
+                };
+                correction.Create();
+
+                await _correctionRepository.InsertAsync(correction);
+                newCorrectionCount++;
+            }
+
+            result.NewCorrections = newCorrectionCount;
+            result.PerfectMatches = matchResults.Count(r => r.IsPerfectMatch);
+            result.Message =
+                $"处理完成：解析 {rows.Count} 行，{featureTexts.Count} 个唯一特性文字，{result.PerfectMatches} 个100%匹配，新增 {newCorrectionCount} 条待修正记录";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[FeatureLearning] Excel上传处理失败: {ex.Message}");
+            throw Oops.Oh($"处理Excel失败: {ex.Message}");
+        }
+
+        return result;
+    }
+}
+
+/// <summary>
+/// Excel上传结果
+/// </summary>
+public class UploadExcelResult
+{
+    public int TotalRows { get; set; }
+    public int UniqueFeatureTexts { get; set; }
+    public int PerfectMatches { get; set; }
+    public int NewCorrections { get; set; }
+    public string Message { get; set; }
 }
 
 /// <summary>

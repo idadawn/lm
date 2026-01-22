@@ -126,7 +126,7 @@
                     <template #icon><DownloadOutlined /></template>
                     导出数据
                   </a-button>
-                  <a-button @click="handleBatchDeleteData" :disabled="!selectedDataRowKeys.length" danger
+                  <a-button @click="handleBatchDeleteData" :disabled="!selectedDataRowKeys.length" danger>
                     <template #icon><DeleteOutlined /></template>
                     批量删除
                   </a-button>

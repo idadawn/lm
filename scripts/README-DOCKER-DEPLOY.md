@@ -5,7 +5,7 @@
 ```
 lm/
 ├── scripts/
-│   ├── build-api.sh           # 本地构建脚本（发布到 publish/api）
+│   ├── build-api.sh           # 本地构建脚本（发布到 publish/api，支持快速/完整构建）
 │   └── deploy-api.sh          # Docker 一键部署脚本
 ├── api/
 │   ├── Dockerfile.build       # API Dockerfile
@@ -39,13 +39,24 @@ lm/
 #### 1. 构建 API
 
 ```bash
+# 快速构建（推荐，日常开发）- 增量编译，跳过依赖恢复
 ./scripts/build-api.sh
+
+# 或
+./scripts/build-api.sh --fast
+
+# 完整构建（首次构建或依赖变化时）- 包含依赖恢复
+./scripts/build-api.sh --full
+
+# 清理构建缓存
+./scripts/build-api.sh --clean-cache
 ```
 
 此脚本会：
 - 编译发布 API 到 `publish/api/`
 - 复制 `resources` 目录
 - 复制 `Configurations` 目录
+- 支持增量编译和 NuGet 包缓存
 
 #### 2. 构建 Docker 镜像
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================
-# 实验室数据分析系统 - API 本地构建脚本
-# 用于在本地发布 API 到指定目录，供 Docker 构建
+# 实验室数据分析系统 - API 构建脚本
+# 优化版本：增量构建 + 并行编译 + 缓存优化
 # ============================================
 
 set -e
@@ -14,6 +14,10 @@ API_ENTRY_DIR="${PROJECT_ROOT}/api/src/application/Poxiao.API.Entry"
 PUBLISH_DIR="${PROJECT_ROOT}/publish/api"
 RUNTIME="linux-x64"
 CONFIGURATION="Release"
+
+# 构建缓存目录
+BUILD_CACHE_DIR="${PROJECT_ROOT}/.build-cache"
+NUGET_PACKAGES_DIR="${BUILD_CACHE_DIR}/nuget"
 
 # 颜色输出
 RED='\033[0;31m'
@@ -44,7 +48,6 @@ log_step() {
 check_and_install_dotnet() {
     log_step "检查 .NET SDK..."
 
-    # 检查是否已安装 dotnet
     if command -v dotnet &> /dev/null; then
         local dotnet_version=$(dotnet --version 2>&1)
         log_info ".NET SDK 已安装: $dotnet_version"
@@ -53,35 +56,28 @@ check_and_install_dotnet() {
 
     log_warn ".NET SDK 未安装，开始自动安装..."
 
-    # 配置
     DOTNET_VERSION="10.0.102"
     DOTNET_INSTALL_DIR="$HOME/dotnet"
     DOTNET_FILE="dotnet-sdk-${DOTNET_VERSION}-linux-x64.tar.gz"
     DOTNET_URL="https://builds.dotnet.microsoft.com/dotnet/Sdk/${DOTNET_VERSION}/${DOTNET_FILE}"
     TEMP_DIR="/tmp/dotnet_install"
 
-    # 创建临时目录
     mkdir -p "$TEMP_DIR"
     cd "$TEMP_DIR"
 
-    # 下载 .NET SDK
     log_info "下载 .NET SDK ${DOTNET_VERSION}..."
     if [ ! -f "$DOTNET_FILE" ]; then
         wget -O "$DOTNET_FILE" "$DOTNET_URL"
     fi
 
-    # 创建安装目录
     mkdir -p "$DOTNET_INSTALL_DIR"
 
-    # 解压
     log_info "安装 .NET SDK 到 $DOTNET_INSTALL_DIR..."
     tar zxf "$DOTNET_FILE" -C "$DOTNET_INSTALL_DIR"
 
-    # 设置环境变量
     export DOTNET_ROOT="$DOTNET_INSTALL_DIR"
     export PATH="$PATH:$DOTNET_INSTALL_DIR"
 
-    # 添加到 ~/.bashrc（如果还没有）
     if ! grep -q "DOTNET_ROOT=$DOTNET_INSTALL_DIR" ~/.bashrc 2>/dev/null; then
         echo "" >> ~/.bashrc
         echo "# .NET SDK" >> ~/.bashrc
@@ -90,11 +86,9 @@ check_and_install_dotnet() {
         log_info "已将 .NET SDK 添加到 ~/.bashrc"
     fi
 
-    # 清理临时文件
     cd "$PROJECT_ROOT"
     rm -rf "$TEMP_DIR"
 
-    # 验证安装
     if command -v dotnet &> /dev/null; then
         local installed_version=$(dotnet --version 2>&1)
         log_info ".NET SDK 安装成功: $installed_version"
@@ -102,6 +96,32 @@ check_and_install_dotnet() {
         log_error ".NET SDK 安装失败"
         exit 1
     fi
+}
+
+# ============================================
+# 准备构建缓存
+# ============================================
+prepare_build_cache() {
+    log_step "准备构建缓存..."
+
+    mkdir -p "$BUILD_CACHE_DIR"
+    mkdir -p "$NUGET_PACKAGES_DIR"
+
+    # 配置 NuGet 使用本地缓存
+    export NUGET_PACKAGES="$NUGET_PACKAGES_DIR"
+
+    log_info "NuGet 缓存目录: $NUGET_PACKAGES_DIR"
+}
+
+# ============================================
+# 检查是否有代码变更
+# ============================================
+has_code_changes() {
+    # 检查是否有编译输出
+    if [ -d "$PUBLISH_DIR" ] && [ -f "$PUBLISH_DIR/Poxiao.API.Entry.dll" ]; then
+        return 1  # 无变更
+    fi
+    return 0  # 有变更
 }
 
 # ============================================
@@ -117,10 +137,41 @@ clean() {
 }
 
 # ============================================
-# 发布 API
+# 快速发布 API（增量构建）
 # ============================================
-publish() {
-    log_step "发布 API..."
+publish_fast() {
+    log_step "快速发布 API（增量构建）..."
+    log_info "项目目录: $API_ENTRY_DIR"
+    log_info "输出目录: $PUBLISH_DIR"
+    log_info "运行时: $RUNTIME"
+    log_info "配置: $CONFIGURATION"
+
+    cd "$API_ENTRY_DIR"
+
+    # 使用优化的构建参数
+    dotnet publish "Poxiao.API.Entry.csproj" \
+        -c "$CONFIGURATION" \
+        -r "$RUNTIME" \
+        --self-contained false \
+        -o "$PUBLISH_DIR" \
+        --no-restore \
+        /p:IncrementalBuild=true \
+        /p:SkipCompilerExecution=true \
+        /p:UseSharedCompilation=true \
+        /p:Deterministic=false \
+        /p:OptimizeModular=true \
+        /p:BuildInParallel=true \
+        -m:1 \
+        -v q
+
+    log_info "发布完成!"
+}
+
+# ============================================
+# 完整发布 API（用于首次构建或重大变更）
+# ============================================
+publish_full() {
+    log_step "完整发布 API..."
     log_info "项目目录: $API_ENTRY_DIR"
     log_info "输出目录: $PUBLISH_DIR"
     log_info "运行时: $RUNTIME"
@@ -133,7 +184,13 @@ publish() {
         -r "$RUNTIME" \
         --self-contained false \
         -o "$PUBLISH_DIR" \
-        /p:PublishTrimmed=false
+        /p:IncrementalBuild=true \
+        /p:UseSharedCompilation=true \
+        /p:Deterministic=false \
+        /p:OptimizeModular=true \
+        /p:BuildInParallel=true \
+        -m:1 \
+        -v q
 
     log_info "发布完成!"
 }
@@ -144,7 +201,6 @@ publish() {
 copy_resources() {
     log_step "复制必要文件..."
 
-    # 复制 resources 目录
     if [ -d "${PROJECT_ROOT}/api/resources" ]; then
         cp -r "${PROJECT_ROOT}/api/resources" "$PUBLISH_DIR/"
         log_info "已复制: resources"
@@ -152,7 +208,6 @@ copy_resources() {
         log_warn "resources 目录不存在: ${PROJECT_ROOT}/api/resources"
     fi
 
-    # 确保 Configurations 目录存在
     if [ ! -d "$PUBLISH_DIR/Configurations" ]; then
         cp -r "${API_ENTRY_DIR}/Configurations" "$PUBLISH_DIR/"
         log_info "已复制: Configurations"
@@ -175,17 +230,82 @@ show_info() {
 }
 
 # ============================================
+# 清理构建缓存
+# ============================================
+clean_cache() {
+    log_step "清理构建缓存..."
+    if [ -d "$BUILD_CACHE_DIR" ]; then
+        rm -rf "$BUILD_CACHE_DIR"
+        log_info "已清理构建缓存"
+    fi
+}
+
+# ============================================
+# 显示帮助信息
+# ============================================
+show_help() {
+    echo "用法: $0 [选项]"
+    echo ""
+    echo "选项:"
+    echo "  --fast, -f       快速构建（增量编译，默认）"
+    echo "  --full, -F       完整构建（包括依赖恢复）"
+    echo "  --clean-cache    清理构建缓存"
+    echo "  --help, -h       显示此帮助信息"
+    echo ""
+    echo "示例:"
+    echo "  $0              # 快速构建（推荐）"
+    echo "  $0 --full       # 完整构建"
+    echo "  $0 --clean-cache # 清理缓存"
+    echo ""
+}
+
+# ============================================
 # 主流程
 # ============================================
 main() {
+    local BUILD_MODE="fast"  # 默认使用快速构建
+
+    # 解析命令行参数
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --fast|-f)
+                BUILD_MODE="fast"
+                shift
+                ;;
+            --full|-F)
+                BUILD_MODE="full"
+                shift
+                ;;
+            --clean-cache)
+                clean_cache
+                exit 0
+                ;;
+            --help|-h)
+                show_help
+                exit 0
+                ;;
+            *)
+                log_error "未知选项: $1"
+                show_help
+                exit 1
+                ;;
+        esac
+    done
+
     echo "=========================================="
-    echo "API 本地构建脚本"
+    echo "API 构建脚本 (模式: $BUILD_MODE)"
     echo "=========================================="
     echo ""
 
     check_and_install_dotnet
-    clean
-    publish
+    prepare_build_cache
+
+    if [ "$BUILD_MODE" = "fast" ]; then
+        publish_fast
+    else
+        publish_full
+    fi
+
     copy_resources
     show_info
 

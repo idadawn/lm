@@ -7,7 +7,8 @@
 # ============================================
 # 阶段1: 依赖安装
 # ============================================
-FROM node:20-alpine AS deps
+FROM node:20.12.2-alpine AS deps
+
 WORKDIR /app
 
 # 使用阿里云 Alpine 镜像源
@@ -15,7 +16,7 @@ RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
     apk add --no-cache curl
 
 # 安装 pnpm（使用国内镜像）
-RUN npm install -g pnpm@8 --registry=https://registry.npmmirror.com
+RUN npm install -g pnpm@10.27.0 --registry=https://registry.npmmirror.com
 
 # 复制包管理文件
 COPY package.json pnpm-lock.yaml ./
@@ -29,11 +30,11 @@ RUN pnpm install --frozen-lockfile
 # ============================================
 # 阶段2: 构建阶段
 # ============================================
-FROM node:20-alpine AS builder
+FROM node:20.12.2-alpine AS builder
 WORKDIR /app
 
 # 安装 pnpm（使用国内镜像）
-RUN npm install -g pnpm@8 --registry=https://registry.npmmirror.com && \
+RUN npm install -g pnpm@10.27.0 --registry=https://registry.npmmirror.com && \
     pnpm config set registry https://registry.npmmirror.com
 
 # 从 deps 阶段复制 node_modules

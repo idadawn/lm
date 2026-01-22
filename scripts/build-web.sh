@@ -90,26 +90,26 @@ check_nodejs() {
 # ============================================
 # 检查并安装 pnpm (已弃用，改为检查 npm)
 # ============================================
-check_npm() {
+check_pnpm() {
     log_step "检查 npm..."
 
     if command -v npm &> /dev/null; then
-        local npm_version=$(npm -v)
-        log_info "npm 已安装: $npm_version"
+        local pnpm_version=$(pnpm -v)
+        log_info "pnpm 已安装: $pnpm_version"
         return 0
     fi
 
-    log_error "npm 未安装"
+    log_error "pnpm 未安装"
     exit 1
 }
 
 # ============================================
 # 配置 npm 镜像（国内加速）
 # ============================================
-setup_npm_registry() {
-    log_step "配置 npm 镜像..."
-    npm config set registry https://registry.npmmirror.com
-    log_info "已设置 npm 镜像: https://registry.npmmirror.com"
+setup_pnpm_registry() {
+    log_step "配置 pnpm 镜像..."
+    pnpm config set registry https://registry.npmmirror.com
+    log_info "已设置 pnpm 镜像: https://registry.npmmirror.com"
 }
 
 # ============================================
@@ -122,11 +122,11 @@ build_local() {
 
     # 安装依赖
     log_info "安装依赖..."
-    npm install
+    pnpm install
 
     # 构建生产版本
     log_info "开始构建..."
-    npm run build
+    pnpm run build
 
     # 复制到发布目录
     log_info "复制构建产物..."
@@ -226,8 +226,8 @@ main() {
 
     if [ "$BUILD_MODE" = "local" ] || [ "$BUILD_MODE" = "docker" ]; then
         check_nodejs
-        check_npm
-        setup_npm_registry
+        check_pnpm
+        setup_pnpm_registry
         build_local
     fi
 

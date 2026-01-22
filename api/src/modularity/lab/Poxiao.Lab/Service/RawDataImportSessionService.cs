@@ -1420,16 +1420,14 @@ public class RawDataImportSessionService
 
                 foreach (var entity in dbEntities)
                 {
-                    var furnaceNoObj = FurnaceNo.Build(
-                        entity.LineNo.Value.ToString(),
+                    var standardFurnaceNo = BuildFurnaceNo(
+                        entity.LineNo,
                         entity.Shift,
                         entity.ProdDate,
-                        entity.FurnaceBatchNo.Value.ToString(),
-                        entity.CoilNo?.ToString() ?? "1",
-                        entity.SubcoilNo?.ToString() ?? "1"
+                        entity.FurnaceBatchNo,
+                        entity.CoilNo,
+                        entity.SubcoilNo
                     );
-
-                    var standardFurnaceNo = furnaceNoObj?.GetFurnaceNo();
                     if (
                         !string.IsNullOrEmpty(standardFurnaceNo)
                         && standardFurnaceNos.Contains(standardFurnaceNo)
@@ -1863,16 +1861,14 @@ public class RawDataImportSessionService
             return null;
         }
 
-        var furnaceNoObj = FurnaceNo.Build(
-            entity.LineNo.Value.ToString(),
+        return BuildFurnaceNo(
+            entity.LineNo,
             entity.Shift,
             entity.ProdDate,
-            entity.FurnaceBatchNo.Value.ToString(),
-            entity.CoilNo?.ToString() ?? "1",
-            entity.SubcoilNo?.ToString() ?? "1"
+            entity.FurnaceBatchNo,
+            entity.CoilNo,
+            entity.SubcoilNo
         );
-
-        return furnaceNoObj?.GetFurnaceNo();
     }
 
     /// <summary>
@@ -1892,16 +1888,55 @@ public class RawDataImportSessionService
             return null;
         }
 
-        var furnaceNoObj = FurnaceNo.Build(
-            item.LineNo.Value.ToString(),
+        return BuildFurnaceNo(
+            item.LineNo,
             item.Shift,
             item.ProdDate,
-            item.FurnaceBatchNo.Value.ToString(),
-            item.CoilNo?.ToString() ?? "1",
-            item.SubcoilNo?.ToString() ?? "1"
+            item.FurnaceBatchNo,
+            item.CoilNo,
+            item.SubcoilNo
+        );
+    }
+
+    private string BuildFurnaceNo(
+        int? lineNo,
+        string shift,
+        DateTime? prodDate,
+        int? furnaceBatchNo,
+        decimal? coilNo,
+        decimal? subcoilNo
+    )
+    {
+        if (
+            !lineNo.HasValue
+            || string.IsNullOrWhiteSpace(shift)
+            || !prodDate.HasValue
+            || !furnaceBatchNo.HasValue
+        )
+        {
+            return null;
+        }
+
+        var furnaceNoObj = FurnaceNo.Build(
+            lineNo.Value.ToString(),
+            shift,
+            prodDate,
+            furnaceBatchNo.Value.ToString(),
+            FormatFurnaceNoPart(coilNo, "1"),
+            FormatFurnaceNoPart(subcoilNo, "1")
         );
 
         return furnaceNoObj?.GetFurnaceNo();
+    }
+
+    private string FormatFurnaceNoPart(decimal? value, string fallback)
+    {
+        if (!value.HasValue)
+        {
+            return fallback;
+        }
+
+        return NormalizeDecimal(value.Value);
     }
 
     private List<RawDataEntity> ParseExcel(
@@ -2980,21 +3015,21 @@ public class RawDataImportSessionService
                 e.Shift,
                 e.ProdDate,
                 e.FurnaceBatchNo,
+                e.CoilNo,
+                e.SubcoilNo,
             })
             .ToListAsync();
 
         foreach (var entity in dbEntities)
         {
-            var furnaceNoObj = FurnaceNo.Build(
-                entity.LineNo.Value.ToString(),
+            var standardFurnaceNo = BuildFurnaceNo(
+                entity.LineNo,
                 entity.Shift,
                 entity.ProdDate,
-                entity.FurnaceBatchNo.Value.ToString(),
-                "1", // 卷号默认为1
-                "1" // 分卷号默认为1
+                entity.FurnaceBatchNo,
+                entity.CoilNo,
+                entity.SubcoilNo
             );
-
-            var standardFurnaceNo = furnaceNoObj?.GetFurnaceNo();
             if (
                 !string.IsNullOrEmpty(standardFurnaceNo)
                 && standardFurnaceNos.Contains(standardFurnaceNo)

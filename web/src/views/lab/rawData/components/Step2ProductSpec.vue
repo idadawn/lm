@@ -232,6 +232,14 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  active: {
+    type: Boolean,
+    default: false,
+  },
+  skipAutoLoad: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits(['prev', 'next', 'cancel']);
@@ -790,18 +798,21 @@ const hasLoaded = ref(false);
 
 // 生命周期
 onMounted(() => {
-  // 如果有 importSessionId 且还没有加载过，则加载数据
-  if (props.importSessionId && !hasLoaded.value) {
+  // 只在激活步骤且允许自动加载时加载
+  if (props.active && !props.skipAutoLoad && props.importSessionId && !hasLoaded.value) {
     loadData();
   }
 });
 
 // 监听 importSessionId 变化，当从空变为有值时自动加载数据
 watch(
-  () => props.importSessionId,
-  (newId, oldId) => {
-    // 当 importSessionId 从空变为有值，且还没有加载过时，触发加载
-    if (newId && !oldId && !hasLoaded.value) {
+  () => [props.importSessionId, props.active, props.skipAutoLoad],
+  ([newId, isActive, skip], [oldId]) => {
+    if (skip) {
+      return;
+    }
+    // 当 importSessionId 从空变为有值，且处于激活步骤时，触发加载
+    if (isActive && newId && !oldId && !hasLoaded.value) {
       loadData();
     }
   },
@@ -811,7 +822,10 @@ watch(
 // 添加一个方法来手动触发加载（供父组件调用）
 function triggerLoad() {
   console.log('Step2ProductSpec: triggerLoad 被调用');
-  if (props.importSessionId && props.importSessionId.trim() !== '') {
+  if (props.skipAutoLoad) {
+    return;
+  }
+  if (props.active && props.importSessionId && props.importSessionId.trim() !== '') {
     hasLoaded.value = false; // 重置加载标记，允许重新加载
     retryCount.value = 0; // 重置重试计数器
     isProcessing.value = false; // 重置处理状态

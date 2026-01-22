@@ -1,6 +1,7 @@
 <template>
-  <BasicPopup v-bind="$attrs" @register="registerPopup" title="原始数据导入向导" showOkBtn @ok="handleSubmit" @close="handleCancel" destroyOnClose
-    class="full-popup raw-data-import-wizard" :continueLoading="activeStep < getStepList.length - 1">
+  <BasicPopup v-bind="$attrs" @register="registerPopup" title="原始数据导入向导" showOkBtn @ok="handleSubmit"
+    @close="handleCancel" destroyOnClose class="full-popup raw-data-import-wizard"
+    :continueLoading="activeStep < getStepList.length - 1">
     <!-- 步骤导航在标题栏 -->
     <template #title>
       <div class="steps-wrapper">
@@ -39,19 +40,20 @@
 
       <!-- 第三步：产品规格识别 -->
       <div v-show="activeStep === 2">
-        <Step2ProductSpec ref="step2Ref" :import-session-id="importSessionId" @next="handleStep2Next" @prev="handlePrev"
-          @cancel="handleCancel" />
+        <Step2ProductSpec ref="step2Ref" :import-session-id="importSessionId" :active="activeStep === 2"
+          :skip-auto-load="noChanges" @next="handleStep2Next" @prev="handlePrev" @cancel="handleCancel" />
       </div>
 
       <!-- 第四步：特性匹配 -->
       <div v-show="activeStep === 3">
-        <Step3AppearanceFeature ref="step3Ref" :import-session-id="importSessionId" @next="handleStep3Next"
-          @prev="handlePrev" @cancel="handleCancel" />
+        <Step3AppearanceFeature ref="step3Ref" :import-session-id="importSessionId" :active="activeStep === 3"
+          :skip-auto-load="noChanges" @next="handleStep3Next" @prev="handlePrev" @cancel="handleCancel" />
       </div>
 
       <!-- 第五步：数据核对与完成 -->
       <div v-show="activeStep === 4">
-        <Step4ReviewAndComplete ref="step4Ref" :import-session-id="importSessionId" @complete="handleComplete"
+        <Step4ReviewAndComplete ref="step4Ref" :import-session-id="importSessionId" :no-changes="noChanges"
+          :no-changes-message="noChangesMessage" :no-changes-stats="noChangesStats" @complete="handleComplete"
           @prev="handlePrev" @cancel="handleCancel" />
       </div>
     </div>
@@ -81,6 +83,12 @@ interface State {
   importStrategy: ImportStrategy;
   nextLoading: boolean;
   key: number;
+  noChanges: boolean;
+  noChangesMessage: string;
+  noChangesStats: {
+    totalRows: number;
+    validDataRows: number;
+  };
 }
 
 const { t } = useI18n();
@@ -97,9 +105,25 @@ const state = reactive<State>({
   importStrategy: 'incremental',
   nextLoading: false,
   key: +new Date(),
+  noChanges: false,
+  noChangesMessage: '',
+  noChangesStats: {
+    totalRows: 0,
+    validDataRows: 0,
+  },
 });
 
-const { activeStep, importSessionId, fileName, importStrategy, nextLoading, key } = toRefs(state);
+const {
+  activeStep,
+  importSessionId,
+  fileName,
+  importStrategy,
+  nextLoading,
+  key,
+  noChanges,
+  noChangesMessage,
+  noChangesStats,
+} = toRefs(state);
 
 // 步骤组件引用
 const step1Ref = ref<InstanceType<typeof Step1UploadAndParse>>();
@@ -127,6 +151,12 @@ function init() {
   state.importStrategy = 'incremental';
   state.nextLoading = false;
   state.key = +new Date();
+  state.noChanges = false;
+  state.noChangesMessage = '';
+  state.noChangesStats = {
+    totalRows: 0,
+    validDataRows: 0,
+  };
 }
 
 // 步骤1完成（文件上传，文件数据已保存到后端）
@@ -240,12 +270,18 @@ async function handleComplete() {
   }
 }
 
-async function handleNoChangesComplete() {
+async function handleNoChangesComplete(payload?: { message?: string; totalRows?: number; validDataRows?: number }) {
   try {
-    init();
-    closePopup();
-    emit('reload');
-    createMessage.success('数据无变化，导入完成');
+    state.noChanges = true;
+    state.noChangesMessage = payload?.message || '数据无变化，导入完成';
+    state.noChangesStats = {
+      totalRows: payload?.totalRows ?? 0,
+      validDataRows: payload?.validDataRows ?? 0,
+    };
+    state.activeStep = 4;
+    nextTick(() => {
+      step4Ref.value?.triggerLoad?.();
+    });
   } catch (error) {
     console.error('完成导入失败:', error);
     createMessage.error('完成导入失败，请重试');
@@ -336,7 +372,7 @@ async function handleCancel() {
     .ant-steps-item::after {
       position: absolute;
       top: 50%;
-      left: calc(100% - 8px);
+      left: calc(100% - 13px);
       display: inline-block;
       width: 10px;
       height: 10px;

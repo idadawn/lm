@@ -627,8 +627,13 @@ async function parseData() {
     });
 
     if (result.noChanges) {
-      message.success(result.noChangesMessage || '数据无变化，已完成导入');
-      emit('complete');
+      const noChangesMessage = result.noChangesMessage || '数据无变化，已完成导入';
+      message.success(noChangesMessage);
+      emit('complete', {
+        message: noChangesMessage,
+        totalRows: result.totalRows || 0,
+        validDataRows: result.validDataRows || 0,
+      });
       return;
     }
 

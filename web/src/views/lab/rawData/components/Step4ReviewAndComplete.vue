@@ -13,8 +13,19 @@
     <!-- 导入结果 -->
     <div v-else class="result-section">
       <!-- 成功状态 -->
-      <a-result v-if="importSuccess" status="success" title="数据导入成功" :sub-title="`成功导入 ${stats.validDataRows} 条数据`">
+      <a-result
+        v-if="importSuccess"
+        status="success"
+        :title="noChanges ? '数据无变化' : '数据导入成功'"
+        :sub-title="noChanges ? (noChangesMessage || '数据无变化，导入已完成') : `成功导入 ${stats.validDataRows} 条数据`">
         <template #extra>
+          <a-alert
+            v-if="noChanges"
+            type="info"
+            show-icon
+            style="margin-bottom: 16px"
+            :message="noChangesMessage || '数据无变化，导入已完成'"
+            description="你可以直接关闭该窗口或返回列表查看结果。" />
           <div class="result-stats">
             <a-row :gutter="24" style="margin-bottom: 24px">
               <a-col :span="6">
@@ -104,6 +115,18 @@ const props = defineProps({
     type: String,
     required: true,
   },
+  noChanges: {
+    type: Boolean,
+    default: false,
+  },
+  noChangesMessage: {
+    type: String,
+    default: '',
+  },
+  noChangesStats: {
+    type: Object as () => { totalRows: number; validDataRows: number },
+    default: () => ({ totalRows: 0, validDataRows: 0 }),
+  },
 });
 
 const emit = defineEmits(['complete', 'prev', 'cancel']);
@@ -118,12 +141,22 @@ const reviewData = ref<any>({});
 const hasLoadedReview = ref(false); // 标记是否已加载过核对数据
 
 // 统计数据
-const stats = computed(() => ({
-  totalRows: reviewData.value?.totalRows || 0,
-  validDataRows: reviewData.value?.validDataRows || 0,
-  productSpecMatchedRows: reviewData.value?.matchedSpecRows || 0,
-  featureMatchedRows: reviewData.value?.matchedFeatureRows || 0,
-}));
+const stats = computed(() => {
+  if (props.noChanges) {
+    return {
+      totalRows: props.noChangesStats?.totalRows || 0,
+      validDataRows: props.noChangesStats?.validDataRows || 0,
+      productSpecMatchedRows: 0,
+      featureMatchedRows: 0,
+    };
+  }
+  return {
+    totalRows: reviewData.value?.totalRows || 0,
+    validDataRows: reviewData.value?.validDataRows || 0,
+    productSpecMatchedRows: reviewData.value?.matchedSpecRows || 0,
+    featureMatchedRows: reviewData.value?.matchedFeatureRows || 0,
+  };
+});
 
 // 暴露给父组件的方法
 const canGoNext = computed(() => importSuccess.value);
@@ -136,6 +169,12 @@ async function saveAndNext() {
 
 // 加载核对数据
 async function loadReviewData() {
+  if (props.noChanges) {
+    loading.value = false;
+    importError.value = '';
+    importSuccess.value = true;
+    return;
+  }
   // 验证导入会话ID
   if (!props.importSessionId || props.importSessionId.trim() === '') {
     loading.value = false;
@@ -288,6 +327,12 @@ onMounted(() => {
 
 // 添加一个方法来手动触发加载（供父组件调用）
 function triggerLoad() {
+  if (props.noChanges) {
+    loading.value = false;
+    importError.value = '';
+    importSuccess.value = true;
+    return;
+  }
   if (props.importSessionId && props.importSessionId.trim() !== '' && !hasLoadedReview.value) {
     hasLoadedReview.value = false;
     loadReviewData();

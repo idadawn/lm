@@ -13,6 +13,7 @@ using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Core.Manager.Files;
 using Poxiao.Infrastructure.Enums;
+using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Security;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Config;
@@ -53,6 +54,8 @@ public class RawDataImportSessionService
     private readonly IFileManager _fileManager;
     private readonly IRawDataValidationService _validationService;
     private readonly ISqlSugarRepository<ExcelImportTemplateEntity> _excelTemplateRepository;
+    private readonly ICacheManager _cacheManager;
+    private readonly ITenant _db;
 
     public RawDataImportSessionService(
         ISqlSugarRepository<RawDataImportSessionEntity> sessionRepository,
@@ -69,7 +72,9 @@ public class RawDataImportSessionService
         ISqlSugarRepository<ProductSpecAttributeEntity> productSpecAttributeRepository,
         IFileManager fileManager,
         IRawDataValidationService validationService,
-        ISqlSugarRepository<ExcelImportTemplateEntity> excelTemplateRepository
+        ISqlSugarRepository<ExcelImportTemplateEntity> excelTemplateRepository,
+        ICacheManager cacheManager,
+        ISqlSugarClient context
     )
     {
         _sessionRepository = sessionRepository;
@@ -87,6 +92,8 @@ public class RawDataImportSessionService
         _fileManager = fileManager;
         _validationService = validationService;
         _excelTemplateRepository = excelTemplateRepository;
+        _cacheManager = cacheManager;
+        _db = context.AsTenant();
     }
 
     /// <inheritdoc />
@@ -1624,10 +1631,9 @@ public class RawDataImportSessionService
         }
 
         // 3. 使用事务确保原始数据和中间数据的导入操作原子性（同时成功或同时失败）
-        var db = _sessionRepository.AsSugarClient();
         try
         {
-            await db.Ado.BeginTranAsync();
+            _db.BeginTran();
 
             // 3.1 将所有数据写入原始数据表（包括有效和无效数据）
             var insertRawDataList = allData.Where(t => !updateIdSet.Contains(t.Id)).ToList();
@@ -1638,7 +1644,10 @@ public class RawDataImportSessionService
                 var batches = insertRawDataList.Chunk(1000);
                 foreach (var batch in batches)
                 {
-                    await _rawDataRepository.AsInsertable(batch.ToList()).ExecuteCommandAsync();
+                    await _sessionRepository
+                        .AsSugarClient()
+                        .Insertable(batch.ToList())
+                        .ExecuteCommandAsync();
                 }
             }
 
@@ -1647,7 +1656,10 @@ public class RawDataImportSessionService
                 var updateBatches = updateRawDataList.Chunk(200);
                 foreach (var batch in updateBatches)
                 {
-                    await db.Updateable(batch.ToList()).ExecuteCommandAsync();
+                    await _sessionRepository
+                        .AsSugarClient()
+                        .Updateable(batch.ToList())
+                        .ExecuteCommandAsync();
                 }
             }
 
@@ -1657,20 +1669,26 @@ public class RawDataImportSessionService
                 var updateBatches = updateIntermediateList.Chunk(200);
                 foreach (var batch in updateBatches)
                 {
-                    await db.Updateable(batch.ToList()).ExecuteCommandAsync();
+                    await _sessionRepository
+                        .AsSugarClient()
+                        .Updateable(batch.ToList())
+                        .ExecuteCommandAsync();
                 }
             }
 
             if (insertIntermediateList.Count > 0)
             {
-                await db.Insertable(insertIntermediateList).ExecuteCommandAsync();
+                await _sessionRepository
+                    .AsSugarClient()
+                    .Insertable(insertIntermediateList)
+                    .ExecuteCommandAsync();
             }
 
-            await db.Ado.CommitTranAsync();
+            _db.CommitTran();
         }
         catch (Exception ex)
         {
-            await db.Ado.RollbackTranAsync();
+            _db.RollbackTran();
             session.Status = "failed";
             await _sessionRepository.UpdateAsync(session);
             throw Oops.Oh($"导入失败，数据已回滚: {ex.Message}");
@@ -2109,16 +2127,38 @@ public class RawDataImportSessionService
 
     private async Task<ExcelTemplateConfig> LoadRawDataTemplateConfigAsync()
     {
+        var cacheKey = BuildTemplateCacheKey(ExcelImportTemplateCode.RawDataImport.ToString());
+        if (_cacheManager.Exists(cacheKey))
+        {
+            var cached = _cacheManager.Get<ExcelTemplateConfig>(cacheKey);
+            if (cached != null)
+            {
+                return cached;
+            }
+        }
+
         var template = await _excelTemplateRepository.GetFirstAsync(t =>
             t.TemplateCode == ExcelImportTemplateCode.RawDataImport.ToString()
             && (t.DeleteMark == 0 || t.DeleteMark == null)
         );
 
         if (template == null || string.IsNullOrWhiteSpace(template.ConfigJson))
-            return BuildDefaultRawDataTemplateConfig();
+        {
+            var defaultConfig = BuildDefaultRawDataTemplateConfig();
+            _cacheManager.Set(cacheKey, defaultConfig, TimeSpan.FromHours(6));
+            return defaultConfig;
+        }
 
         var config = TryParseTemplateConfig(template.ConfigJson);
-        return config ?? BuildDefaultRawDataTemplateConfig();
+        config ??= BuildDefaultRawDataTemplateConfig();
+        _cacheManager.Set(cacheKey, config, TimeSpan.FromHours(6));
+        return config;
+    }
+
+    private string BuildTemplateCacheKey(string templateCode)
+    {
+        var tenantId = _userManager?.TenantId ?? "global";
+        return $"LAB:ExcelTemplateConfig:{tenantId}:{templateCode}";
     }
 
     private ExcelTemplateConfig TryParseTemplateConfig(string configJson)

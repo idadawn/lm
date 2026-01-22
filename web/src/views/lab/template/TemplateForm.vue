@@ -76,6 +76,11 @@
               <span v-else class="text-gray-400">-</span>
             </template>
 
+            <!-- 默认值 -->
+            <template v-if="column.key === 'defaultValue'">
+              <a-input v-model:value="record.defaultValue" placeholder="默认值(可选)" />
+            </template>
+
             <!-- 是否必填 -->
             <template v-if="column.key === 'required'">
               <a-checkbox v-model:checked="record.required"></a-checkbox>
@@ -142,6 +147,7 @@ async function doLoadSystemFields() {
       decimalPlaces: f.decimalPlaces ?? 2, // 默认保留2位小数
       unitId: f.unitId,
       required: f.required === true,
+      defaultValue: f.defaultValue ?? null,
     }));
 
     createMessage.success(`已加载 ${fields.length} 个系统字段`);
@@ -254,7 +260,8 @@ const columns = [
   { title: 'Excel列名 (选择)', key: 'excelColumnNames', width: '25%' },
   { title: '数据类型', key: 'dataType', width: '12%' },
   { title: '小数位数', key: 'decimalPlaces', width: '10%', align: 'center' },
-  { title: '单位', key: 'unitId', width: '20%' },
+  { title: '单位', key: 'unitId', width: '18%' },
+  { title: '默认值', key: 'defaultValue', width: '9%' },
   { title: '必填', key: 'required', width: '8%', align: 'center' },
   // 移除操作列
 ];
@@ -510,7 +517,7 @@ async function handleSubmit() {
         decimalPlaces: item.decimalPlaces, // 小数点保留位数
         unitId: item.unitId,
         required: item.required,
-        defaultValue: null
+        defaultValue: item.defaultValue ?? null
       })),
       detectionColumns: { // 默认检测列配置，后续可由界面配置
         minColumn: 1,

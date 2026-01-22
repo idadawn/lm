@@ -1,7 +1,10 @@
+using System.Globalization;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
@@ -993,22 +996,29 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
 
         try
         {
-            // 1. 从公式维护中获取所有启用的计算公式（类型为CALC），只查询一次
+            // 1. 从公式维护中获取所有启用的公式（计算+判定），只查询一次
             var allFormulas = await _formulaService.GetListAsync();
-            var calcFormulas = allFormulas
+            var enabledFormulas = allFormulas
+                .Where(f => f.IsEnabled && f.TableName == "INTERMEDIATE_DATA")
+                .ToList();
+
+            var calcFormulas = enabledFormulas
                 .Where(f =>
-                    f.FormulaType == "CALC"
-                    && f.IsEnabled
-                    && !string.IsNullOrWhiteSpace(f.Formula)
-                    && f.TableName == "INTERMEDIATE_DATA"
+                    f.FormulaType == "CALC" && !string.IsNullOrWhiteSpace(f.Formula)
                 )
                 .OrderBy(f => f.SortOrder) // 按排序序号排序
                 .ThenBy(f => f.CreatorTime) // 如果排序序号相同，按创建时间排序
                 .ToList();
 
-            if (calcFormulas.Count == 0)
+            var judgeFormulas = enabledFormulas
+                .Where(f => f.FormulaType == "JUDGE")
+                .OrderBy(f => f.SortOrder)
+                .ThenBy(f => f.CreatorTime)
+                .ToList();
+
+            if (calcFormulas.Count == 0 && judgeFormulas.Count == 0)
             {
-                result.Message = "没有启用的计算公式";
+                result.Message = "没有启用的公式";
                 return result;
             }
 
@@ -1044,7 +1054,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
                         .ExecuteCommandAsync();
 
                     // 执行公式计算
-                    await CalculateFormulasForEntityAsync(entity, calcFormulas);
+                    await CalculateFormulasForEntityAsync(entity, calcFormulas, judgeFormulas);
 
                     // 更新状态为成功
                     entity.CalcStatus = IntermediateDataCalcStatus.SUCCESS;
@@ -1117,112 +1127,157 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     /// </summary>
     private async Task CalculateFormulasForEntityAsync(
         IntermediateDataEntity entity,
-        List<IntermediateDataFormulaDto> calcFormulas
+        List<IntermediateDataFormulaDto> calcFormulas,
+        List<IntermediateDataFormulaDto> judgeFormulas
     )
     {
         try
         {
-            if (calcFormulas == null || calcFormulas.Count == 0)
+            if (
+                (calcFormulas == null || calcFormulas.Count == 0)
+                && (judgeFormulas == null || judgeFormulas.Count == 0)
+            )
             {
-                return; // 没有计算公式，直接返回
+                return; // 没有公式，直接返回
             }
 
             // 1. 提取中间数据实体的上下文数据（用于公式计算）
             var contextData = ExtractContextDataFromEntity(entity);
 
-            // 3. 按顺序计算每个公式
-            foreach (var formulaDto in calcFormulas)
+            if (calcFormulas != null && calcFormulas.Count > 0)
             {
-                try
+                // 3. 按顺序计算每个计算公式
+                foreach (var formulaDto in calcFormulas)
                 {
-                    // 计算公式值
-                    decimal? calculatedValue = null;
                     try
                     {
-                        // 根据公式类型选择上下文
-                        object calcContext = contextData;
-                        // 如果是范围公式，需要传入实体对象以便使用反射获取动态列
-                        if (
-                            formulaDto.Formula.Contains("RANGE(")
-                            || formulaDto.Formula.Contains("DIFF_FIRST_LAST")
-                        )
+                        // 计算公式值
+                        decimal? calculatedValue = null;
+                        try
                         {
-                            calcContext = entity;
+                            // 根据公式类型选择上下文
+                            object calcContext = contextData;
+                            // 如果是范围公式，需要传入实体对象以便使用反射获取动态列
+                            if (
+                                formulaDto.Formula.Contains("RANGE(")
+                                || formulaDto.Formula.Contains("DIFF_FIRST_LAST")
+                            )
+                            {
+                                calcContext = entity;
+                            }
+
+                            calculatedValue = _formulaParser.Calculate(
+                                formulaDto.Formula,
+                                calcContext
+                            );
+                        }
+                        catch (Exception calcEx)
+                        {
+                            // 计算失败，如果公式有默认值，使用默认值
+                            if (!string.IsNullOrWhiteSpace(formulaDto.DefaultValue))
+                            {
+                                if (
+                                    decimal.TryParse(formulaDto.DefaultValue, out var defaultVal)
+                                )
+                                {
+                                    calculatedValue = defaultVal;
+                                }
+                            }
+                            // 如果没有默认值，抛出异常以便记录错误
+                            if (!calculatedValue.HasValue)
+                            {
+                                throw new Exception(
+                                    $"公式计算失败 - 列名: {formulaDto.ColumnName}, 公式: {formulaDto.Formula}, 错误: {calcEx.Message}"
+                                );
+                            }
                         }
 
-                        calculatedValue = _formulaParser.Calculate(formulaDto.Formula, calcContext);
-                    }
-                    catch (Exception calcEx)
-                    {
-                        // 计算失败，如果公式有默认值，使用默认值
-                        if (!string.IsNullOrWhiteSpace(formulaDto.DefaultValue))
+                        // 如果计算值为null，使用默认值（注意：公式维护中定义的默认值）
+                        if (
+                            !calculatedValue.HasValue
+                            && !string.IsNullOrWhiteSpace(formulaDto.DefaultValue)
+                        )
                         {
                             if (decimal.TryParse(formulaDto.DefaultValue, out var defaultVal))
                             {
                                 calculatedValue = defaultVal;
                             }
                         }
-                        // 如果没有默认值，抛出异常以便记录错误
-                        if (!calculatedValue.HasValue)
+
+                        // 应用精度（公式维护中定义的精度）
+                        if (calculatedValue.HasValue && formulaDto.Precision.HasValue)
                         {
+                            calculatedValue = Math.Round(
+                                calculatedValue.Value,
+                                formulaDto.Precision.Value
+                            );
+                        }
+
+                        // 4. 将计算结果设置到中间数据实体的对应属性
+                        SetFormulaValueToEntity(entity, formulaDto.ColumnName, calculatedValue);
+
+                        // 5. 更新上下文数据，以便后续公式可以使用已计算的值
+                        if (calculatedValue.HasValue)
+                        {
+                            contextData[formulaDto.ColumnName] = calculatedValue.Value;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // 公式计算失败，使用默认值（如果公式维护中定义了默认值）
+                        if (!string.IsNullOrWhiteSpace(formulaDto.DefaultValue))
+                        {
+                            if (decimal.TryParse(formulaDto.DefaultValue, out var defaultVal))
+                            {
+                                // 应用精度
+                                if (formulaDto.Precision.HasValue)
+                                {
+                                    defaultVal = Math.Round(
+                                        defaultVal,
+                                        formulaDto.Precision.Value
+                                    );
+                                }
+                                SetFormulaValueToEntity(entity, formulaDto.ColumnName, defaultVal);
+                                contextData[formulaDto.ColumnName] = defaultVal;
+                            }
+                        }
+                        else
+                        {
+                            // 没有默认值，抛出异常以便上层记录错误
                             throw new Exception(
-                                $"公式计算失败 - 列名: {formulaDto.ColumnName}, 公式: {formulaDto.Formula}, 错误: {calcEx.Message}"
+                                $"公式计算失败 - 列名: {formulaDto.ColumnName}, 公式: {formulaDto.Formula}, 错误: {ex.Message}"
                             );
                         }
                     }
-
-                    // 如果计算值为null，使用默认值（注意：公式维护中定义的默认值）
-                    if (
-                        !calculatedValue.HasValue
-                        && !string.IsNullOrWhiteSpace(formulaDto.DefaultValue)
-                    )
-                    {
-                        if (decimal.TryParse(formulaDto.DefaultValue, out var defaultVal))
-                        {
-                            calculatedValue = defaultVal;
-                        }
-                    }
-
-                    // 应用精度（公式维护中定义的精度）
-                    if (calculatedValue.HasValue && formulaDto.Precision.HasValue)
-                    {
-                        calculatedValue = Math.Round(
-                            calculatedValue.Value,
-                            formulaDto.Precision.Value
-                        );
-                    }
-
-                    // 4. 将计算结果设置到中间数据实体的对应属性
-                    SetFormulaValueToEntity(entity, formulaDto.ColumnName, calculatedValue);
-
-                    // 5. 更新上下文数据，以便后续公式可以使用已计算的值
-                    if (calculatedValue.HasValue)
-                    {
-                        contextData[formulaDto.ColumnName] = calculatedValue.Value;
-                    }
                 }
-                catch (Exception ex)
+            }
+
+            if (judgeFormulas != null && judgeFormulas.Count > 0)
+            {
+                foreach (var formulaDto in judgeFormulas)
                 {
-                    // 公式计算失败，使用默认值（如果公式维护中定义了默认值）
-                    if (!string.IsNullOrWhiteSpace(formulaDto.DefaultValue))
+                    try
                     {
-                        if (decimal.TryParse(formulaDto.DefaultValue, out var defaultVal))
-                        {
-                            // 应用精度
-                            if (formulaDto.Precision.HasValue)
-                            {
-                                defaultVal = Math.Round(defaultVal, formulaDto.Precision.Value);
-                            }
-                            SetFormulaValueToEntity(entity, formulaDto.ColumnName, defaultVal);
-                            contextData[formulaDto.ColumnName] = defaultVal;
-                        }
-                    }
-                    else
-                    {
-                        // 没有默认值，抛出异常以便上层记录错误
-                        throw new Exception(
-                            $"公式计算失败 - 列名: {formulaDto.ColumnName}, 公式: {formulaDto.Formula}, 错误: {ex.Message}"
+                        var resultValue = EvaluateJudgeFormula(
+                            formulaDto.Formula,
+                            formulaDto.DefaultValue,
+                            entity,
+                            contextData
                         );
+                        SetJudgeValueToEntity(entity, formulaDto.ColumnName, resultValue);
+                    }
+                    catch (Exception ex)
+                    {
+                        if (formulaDto.DefaultValue != null)
+                        {
+                            SetJudgeValueToEntity(entity, formulaDto.ColumnName, formulaDto.DefaultValue);
+                        }
+                        else
+                        {
+                            throw new Exception(
+                                $"判定公式计算失败 - 列名: {formulaDto.ColumnName}, 错误: {ex.Message}"
+                            );
+                        }
                     }
                 }
             }
@@ -1230,15 +1285,600 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             // 7. 保存更新后的实体到数据库
             entity.LastModifyTime = DateTime.Now;
             await _repository.UpdateAsync(entity);
-
-            // TODO: 判定公式（JUDGE类型）的计算逻辑，待前端代码完成后实现
-            // 判定公式通常用于判断数据是否符合某些条件，返回布尔值或文本结果
         }
         catch (Exception ex)
         {
             // 重新抛出异常，以便上层记录错误
             throw;
         }
+    }
+
+    private string EvaluateJudgeFormula(
+        string formulaJson,
+        string defaultValue,
+        IntermediateDataEntity entity,
+        Dictionary<string, object> numericContext
+    )
+    {
+        if (string.IsNullOrWhiteSpace(formulaJson))
+        {
+            return defaultValue;
+        }
+
+        try
+        {
+            var rulesToken = JArray.Parse(formulaJson);
+            foreach (var token in rulesToken)
+            {
+                if (token.Type != JTokenType.Object)
+                {
+                    continue;
+                }
+
+                var ruleObject = (JObject)token;
+                if (ruleObject["rootGroup"] != null)
+                {
+                    var rule = ruleObject.ToObject<SimpleJudgmentRule>();
+                    if (rule != null && EvaluateSimpleRule(rule, entity, numericContext))
+                    {
+                        return rule.ResultValue;
+                    }
+                }
+                else if (ruleObject["groups"] != null)
+                {
+                    var rule = ruleObject.ToObject<AdvancedJudgmentRule>();
+                    if (rule != null && EvaluateAdvancedRule(rule, entity, numericContext))
+                    {
+                        return rule.ResultValue;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            if (defaultValue != null)
+            {
+                Console.WriteLine($"判定公式解析失败，使用默认值: {ex.Message}");
+                return defaultValue;
+            }
+
+            throw new Exception($"判定公式解析失败: {ex.Message}", ex);
+        }
+
+        return defaultValue;
+    }
+
+    private bool EvaluateSimpleRule(
+        SimpleJudgmentRule rule,
+        IntermediateDataEntity entity,
+        Dictionary<string, object> numericContext
+    )
+    {
+        if (rule?.RootGroup == null)
+        {
+            return false;
+        }
+
+        return EvaluateSimpleGroup(rule.RootGroup, entity, numericContext);
+    }
+
+    private bool EvaluateSimpleGroup(
+        SimpleConditionGroup group,
+        IntermediateDataEntity entity,
+        Dictionary<string, object> numericContext
+    )
+    {
+        if (group?.Conditions == null || group.Conditions.Count == 0)
+        {
+            return false;
+        }
+
+        var isAnd = string.Equals(group.Logic, "AND", StringComparison.OrdinalIgnoreCase);
+        return isAnd
+            ? group.Conditions.All(c => EvaluateCondition(c.FieldId, c.Operator, c.Value, entity, numericContext))
+            : group.Conditions.Any(c => EvaluateCondition(c.FieldId, c.Operator, c.Value, entity, numericContext));
+    }
+
+    private bool EvaluateAdvancedRule(
+        AdvancedJudgmentRule rule,
+        IntermediateDataEntity entity,
+        Dictionary<string, object> numericContext
+    )
+    {
+        if (rule?.Groups == null || rule.Groups.Count == 0)
+        {
+            return false;
+        }
+
+        return rule.Groups.All(group => EvaluateAdvancedGroup(group, entity, numericContext));
+    }
+
+    private bool EvaluateAdvancedGroup(
+        AdvancedConditionGroup group,
+        IntermediateDataEntity entity,
+        Dictionary<string, object> numericContext
+    )
+    {
+        if (group == null)
+        {
+            return false;
+        }
+
+        if (string.Equals(group.Mode, "nested", StringComparison.OrdinalIgnoreCase))
+        {
+            if (group.SubGroups == null || group.SubGroups.Count == 0)
+            {
+                return false;
+            }
+
+            var isAnd = string.Equals(group.Logic, "AND", StringComparison.OrdinalIgnoreCase);
+            return isAnd
+                ? group.SubGroups.All(sub => EvaluateSubGroup(sub, entity, numericContext))
+                : group.SubGroups.Any(sub => EvaluateSubGroup(sub, entity, numericContext));
+        }
+
+        if (group.Conditions == null || group.Conditions.Count == 0)
+        {
+            return false;
+        }
+
+        var simpleAnd = string.Equals(group.Logic, "AND", StringComparison.OrdinalIgnoreCase);
+        return simpleAnd
+            ? group.Conditions.All(c => EvaluateCondition(c.LeftExpr, c.Operator, c.RightValue, entity, numericContext))
+            : group.Conditions.Any(c => EvaluateCondition(c.LeftExpr, c.Operator, c.RightValue, entity, numericContext));
+    }
+
+    private bool EvaluateSubGroup(
+        AdvancedSubConditionGroup subGroup,
+        IntermediateDataEntity entity,
+        Dictionary<string, object> numericContext
+    )
+    {
+        if (subGroup?.Conditions == null || subGroup.Conditions.Count == 0)
+        {
+            return false;
+        }
+
+        var isAnd = string.Equals(subGroup.Logic, "AND", StringComparison.OrdinalIgnoreCase);
+        return isAnd
+            ? subGroup.Conditions.All(c => EvaluateCondition(c.LeftExpr, c.Operator, c.RightValue, entity, numericContext))
+            : subGroup.Conditions.Any(c => EvaluateCondition(c.LeftExpr, c.Operator, c.RightValue, entity, numericContext));
+    }
+
+    private bool EvaluateCondition(
+        string leftExpr,
+        string operatorValue,
+        string rightValue,
+        IntermediateDataEntity entity,
+        Dictionary<string, object> numericContext
+    )
+    {
+        if (string.IsNullOrWhiteSpace(operatorValue))
+        {
+            return false;
+        }
+
+        var normalizedOp = operatorValue.Trim().ToUpperInvariant();
+        if (normalizedOp == "!=")
+        {
+            normalizedOp = "<>";
+        }
+
+        var leftValue = ResolveLeftValue(leftExpr, entity, numericContext);
+
+        if (normalizedOp == "IS_NULL")
+        {
+            return IsNullValue(leftValue);
+        }
+
+        if (normalizedOp == "NOT_NULL")
+        {
+            return !IsNullValue(leftValue);
+        }
+
+        if (leftValue == null)
+        {
+            return false;
+        }
+
+        if (leftValue is IEnumerable<string> listValue)
+        {
+            return CompareList(listValue, normalizedOp, rightValue);
+        }
+
+        if (leftValue is bool boolValue)
+        {
+            if (TryParseBool(rightValue, out var rightBool))
+            {
+                return normalizedOp switch
+                {
+                    "=" => boolValue == rightBool,
+                    "<>" => boolValue != rightBool,
+                    _ => false,
+                };
+            }
+        }
+
+        if (TryConvertToDecimal(leftValue, out var leftNumber) && TryConvertToDecimal(rightValue, out var rightNumber))
+        {
+            return normalizedOp switch
+            {
+                "=" => leftNumber == rightNumber,
+                "<>" => leftNumber != rightNumber,
+                ">" => leftNumber > rightNumber,
+                ">=" => leftNumber >= rightNumber,
+                "<" => leftNumber < rightNumber,
+                "<=" => leftNumber <= rightNumber,
+                _ => false,
+            };
+        }
+
+        var leftStr = Convert.ToString(leftValue) ?? string.Empty;
+        var rightStr = rightValue ?? string.Empty;
+
+        return normalizedOp switch
+        {
+            "=" => string.Equals(leftStr, rightStr, StringComparison.OrdinalIgnoreCase),
+            "<>" => !string.Equals(leftStr, rightStr, StringComparison.OrdinalIgnoreCase),
+            _ => false,
+        };
+    }
+
+    private object ResolveLeftValue(
+        string leftExpr,
+        IntermediateDataEntity entity,
+        Dictionary<string, object> numericContext
+    )
+    {
+        if (string.IsNullOrWhiteSpace(leftExpr))
+        {
+            return null;
+        }
+
+        var expr = leftExpr.Trim();
+        if (IsFormulaExpression(expr))
+        {
+            try
+            {
+                return _formulaParser.Calculate(expr, numericContext);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        var prop = typeof(IntermediateDataEntity).GetProperty(
+            expr,
+            System.Reflection.BindingFlags.IgnoreCase
+                | System.Reflection.BindingFlags.Public
+                | System.Reflection.BindingFlags.Instance
+        );
+        if (prop != null)
+        {
+            var value = prop.GetValue(entity);
+            return NormalizeJudgeValue(expr, value);
+        }
+
+        if (numericContext != null && numericContext.TryGetValue(expr, out var contextValue))
+        {
+            return contextValue;
+        }
+
+        return null;
+    }
+
+    private bool IsFormulaExpression(string expr)
+    {
+        if (string.IsNullOrWhiteSpace(expr))
+        {
+            return false;
+        }
+
+        return expr.Contains("RANGE(", StringComparison.OrdinalIgnoreCase)
+            || expr.Contains("DIFF_FIRST_LAST", StringComparison.OrdinalIgnoreCase)
+            || expr.Contains("[")
+            || expr.Contains("]")
+            || Regex.IsMatch(expr, @"[+\-*/()]");
+    }
+
+    private object NormalizeJudgeValue(string fieldName, object value)
+    {
+        if (value == null)
+        {
+            return null;
+        }
+
+        if (value is string strValue)
+        {
+            if (IsJsonListField(fieldName))
+            {
+                try
+                {
+                    return JsonConvert.DeserializeObject<List<string>>(strValue) ?? new List<string>();
+                }
+                catch
+                {
+                    return new List<string>();
+                }
+            }
+
+            return strValue;
+        }
+
+        return value;
+    }
+
+    private bool IsJsonListField(string fieldName)
+    {
+        if (string.IsNullOrWhiteSpace(fieldName))
+        {
+            return false;
+        }
+
+        return string.Equals(fieldName, "AppearanceFeatureCategoryIds", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(fieldName, "AppearanceFeatureLevelIds", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool CompareList(IEnumerable<string> listValue, string op, string rightValue)
+    {
+        var list = listValue?.Where(item => !string.IsNullOrWhiteSpace(item)).ToList() ?? new List<string>();
+        var right = rightValue?.Trim() ?? string.Empty;
+
+        if (op == "IS_NULL")
+        {
+            return list.Count == 0;
+        }
+
+        if (op == "NOT_NULL")
+        {
+            return list.Count > 0;
+        }
+
+        var contains = list.Any(item => string.Equals(item, right, StringComparison.OrdinalIgnoreCase));
+        return op switch
+        {
+            "=" => contains,
+            "<>" => !contains,
+            _ => false,
+        };
+    }
+
+    private bool IsNullValue(object value)
+    {
+        if (value == null)
+        {
+            return true;
+        }
+
+        if (value is string strValue)
+        {
+            return string.IsNullOrWhiteSpace(strValue);
+        }
+
+        if (value is IEnumerable<string> listValue)
+        {
+            return !listValue.Any();
+        }
+
+        return false;
+    }
+
+    private bool TryConvertToDecimal(object value, out decimal result)
+    {
+        result = 0m;
+        if (value == null)
+        {
+            return false;
+        }
+
+        switch (value)
+        {
+            case decimal d:
+                result = d;
+                return true;
+            case int i:
+                result = i;
+                return true;
+            case long l:
+                result = l;
+                return true;
+            case double db:
+                result = Convert.ToDecimal(db);
+                return true;
+            case float f:
+                result = Convert.ToDecimal(f);
+                return true;
+            case short s:
+                result = s;
+                return true;
+            case byte b:
+                result = b;
+                return true;
+            case string str:
+                return decimal.TryParse(
+                        str,
+                        NumberStyles.Any,
+                        CultureInfo.InvariantCulture,
+                        out result
+                    )
+                    || decimal.TryParse(str, NumberStyles.Any, CultureInfo.CurrentCulture, out result);
+        }
+
+        try
+        {
+            result = Convert.ToDecimal(value);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private bool TryParseBool(string value, out bool result)
+    {
+        result = false;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        var normalized = value.Trim();
+        if (bool.TryParse(normalized, out var boolValue))
+        {
+            result = boolValue;
+            return true;
+        }
+
+        if (normalized == "1")
+        {
+            result = true;
+            return true;
+        }
+
+        if (normalized == "0")
+        {
+            result = false;
+            return true;
+        }
+
+        return false;
+    }
+
+    private void SetJudgeValueToEntity(
+        IntermediateDataEntity entity,
+        string columnName,
+        string value
+    )
+    {
+        if (string.IsNullOrWhiteSpace(columnName))
+        {
+            return;
+        }
+
+        var property = typeof(IntermediateDataEntity).GetProperty(columnName);
+        if (property == null || !property.CanWrite)
+        {
+            Console.WriteLine($"未找到可写属性 - 属性名: {columnName}");
+            return;
+        }
+
+        var targetType = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+
+        if (string.IsNullOrEmpty(value))
+        {
+            if (targetType == typeof(string))
+            {
+                property.SetValue(entity, value);
+                return;
+            }
+
+            property.SetValue(entity, null);
+            return;
+        }
+
+        try
+        {
+            object convertedValue = value;
+
+            if (targetType == typeof(string))
+            {
+                convertedValue = value;
+            }
+            else if (targetType == typeof(int))
+            {
+                if (int.TryParse(value, out var intValue))
+                {
+                    convertedValue = intValue;
+                }
+                else
+                {
+                    Console.WriteLine($"无法将判定结果转换为 int: {value}");
+                    return;
+                }
+            }
+            else if (targetType == typeof(decimal))
+            {
+                if (decimal.TryParse(value, out var decimalValue))
+                {
+                    convertedValue = decimalValue;
+                }
+                else
+                {
+                    Console.WriteLine($"无法将判定结果转换为 decimal: {value}");
+                    return;
+                }
+            }
+            else if (targetType == typeof(bool))
+            {
+                if (TryParseBool(value, out var boolValue))
+                {
+                    convertedValue = boolValue;
+                }
+                else
+                {
+                    Console.WriteLine($"无法将判定结果转换为 bool: {value}");
+                    return;
+                }
+            }
+            else
+            {
+                convertedValue = Convert.ChangeType(value, targetType);
+            }
+
+            property.SetValue(entity, convertedValue);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"设置判定结果失败 - 列名: {columnName}, 错误: {ex.Message}");
+        }
+    }
+
+    private class SimpleJudgmentRule
+    {
+        public string ResultValue { get; set; }
+        public SimpleConditionGroup RootGroup { get; set; }
+    }
+
+    private class SimpleConditionGroup
+    {
+        public string Logic { get; set; }
+        public List<SimpleCondition> Conditions { get; set; }
+    }
+
+    private class SimpleCondition
+    {
+        public string FieldId { get; set; }
+        public string Operator { get; set; }
+        public string Value { get; set; }
+    }
+
+    private class AdvancedJudgmentRule
+    {
+        public string ResultValue { get; set; }
+        public List<AdvancedConditionGroup> Groups { get; set; }
+    }
+
+    private class AdvancedConditionGroup
+    {
+        public string Mode { get; set; }
+        public string Logic { get; set; }
+        public List<AdvancedCondition> Conditions { get; set; }
+        public List<AdvancedSubConditionGroup> SubGroups { get; set; }
+    }
+
+    private class AdvancedSubConditionGroup
+    {
+        public string Logic { get; set; }
+        public List<AdvancedCondition> Conditions { get; set; }
+    }
+
+    private class AdvancedCondition
+    {
+        public string LeftExpr { get; set; }
+        public string Operator { get; set; }
+        public string RightValue { get; set; }
     }
 
     /// <summary>

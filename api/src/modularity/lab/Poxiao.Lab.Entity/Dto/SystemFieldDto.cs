@@ -79,4 +79,11 @@ public class SystemFieldDto
     [JsonPropertyName("decimalPlaces")]
     [JsonProperty("decimalPlaces")]
     public int? DecimalPlaces { get; set; }
+
+    /// <summary>
+    /// 默认值（字符串形式）.
+    /// </summary>
+    [JsonPropertyName("defaultValue")]
+    [JsonProperty("defaultValue")]
+    public string DefaultValue { get; set; }
 }

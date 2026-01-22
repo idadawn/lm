@@ -1,3 +1,4 @@
+using System;
 using System.Reflection;
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
@@ -6,6 +7,8 @@ using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Enums;
+using Poxiao.Infrastructure.Core.Manager;
+using Poxiao.Infrastructure.Manager;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Attributes;
 using Poxiao.Lab.Entity.Dto.IntermediateDataFormula;
@@ -34,6 +37,10 @@ public class IntermediateDataFormulaService
     private readonly ISqlSugarRepository<ProductSpecAttributeEntity> _productSpecAttributeRepository;
     private readonly ISqlSugarRepository<UnitDefinitionEntity> _unitRepository;
     private readonly IFormulaParser _formulaParser;
+    private readonly ICacheManager _cacheManager;
+    private readonly IUserManager _userManager;
+
+    private const string FormulaCachePrefix = "LAB:IntermediateDataFormula";
 
     public IntermediateDataFormulaService(
         ISqlSugarRepository<IntermediateDataFormulaEntity> repository,
@@ -43,7 +50,9 @@ public class IntermediateDataFormulaService
         ISqlSugarRepository<AppearanceFeatureLevelEntity> severityLevelRepository,
         ISqlSugarRepository<ProductSpecAttributeEntity> productSpecAttributeRepository,
         ISqlSugarRepository<UnitDefinitionEntity> unitRepository,
-        IFormulaParser formulaParser
+        IFormulaParser formulaParser,
+        ICacheManager cacheManager,
+        IUserManager userManager
     )
     {
         _repository = repository;
@@ -54,6 +63,8 @@ public class IntermediateDataFormulaService
         _productSpecAttributeRepository = productSpecAttributeRepository;
         _unitRepository = unitRepository;
         _formulaParser = formulaParser;
+        _cacheManager = cacheManager;
+        _userManager = userManager;
     }
 
     /// <summary>
@@ -96,6 +107,16 @@ public class IntermediateDataFormulaService
     [HttpGet("")]
     public async Task<List<IntermediateDataFormulaDto>> GetListAsync()
     {
+        var cacheKey = BuildFormulaCacheKey();
+        if (_cacheManager.Exists(cacheKey))
+        {
+            var cached = _cacheManager.Get<List<IntermediateDataFormulaDto>>(cacheKey);
+            if (cached != null)
+            {
+                return cached;
+            }
+        }
+
         var list = await _repository
             .AsQueryable()
             .Where(t => t.DeleteMark == null)
@@ -103,7 +124,10 @@ public class IntermediateDataFormulaService
             .OrderBy(t => t.CreatorTime)
             .ToListAsync();
 
-        return list.Select(ToDto).ToList();
+        var result = list.Select(ToDto).ToList();
+        await _cacheManager.SetAsync(cacheKey, result, TimeSpan.FromHours(6));
+
+        return result;
     }
 
     /// <inheritdoc />
@@ -179,6 +203,8 @@ public class IntermediateDataFormulaService
         var isOk = await _repository.InsertAsync(entity);
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1000);
+
+        await ClearFormulaCacheAsync();
 
         return ToDto(entity);
     }
@@ -261,6 +287,8 @@ public class IntermediateDataFormulaService
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1001);
 
+        await ClearFormulaCacheAsync();
+
         return ToDto(entity);
     }
 
@@ -282,6 +310,8 @@ public class IntermediateDataFormulaService
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1001);
 
+        await ClearFormulaCacheAsync();
+
         return ToDto(entity);
     }
 
@@ -292,6 +322,8 @@ public class IntermediateDataFormulaService
         var isOk = await _repository.DeleteAsync(u => u.Id == id);
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1002);
+
+        await ClearFormulaCacheAsync();
     }
 
     /// <inheritdoc />
@@ -379,6 +411,8 @@ public class IntermediateDataFormulaService
         {
             await _repository.UpdateRangeAsync(updateEntities);
         }
+
+        await ClearFormulaCacheAsync();
     }
 
     /// <inheritdoc />
@@ -590,6 +624,17 @@ public class IntermediateDataFormulaService
             result.ErrorMessage = $"验证过程中发生错误: {ex.Message}";
             return result;
         }
+    }
+
+    private string BuildFormulaCacheKey()
+    {
+        var tenantId = _userManager?.TenantId ?? "global";
+        return $"{FormulaCachePrefix}:{tenantId}";
+    }
+
+    private async Task ClearFormulaCacheAsync()
+    {
+        await _cacheManager.DelAsync(BuildFormulaCacheKey());
     }
 
     #region 辅助方法

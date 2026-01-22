@@ -1,3 +1,4 @@
+using System;
 using Mapster;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -5,6 +6,7 @@ using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
+using Poxiao.Infrastructure.Manager;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Config;
 using Poxiao.Lab.Entity.Dto;
@@ -26,14 +28,19 @@ public class ExcelImportTemplateService
 {
     private readonly ISqlSugarRepository<ExcelImportTemplateEntity> _repository;
     private readonly IUserManager _userManager;
+    private readonly ICacheManager _cacheManager;
+
+    private const string TemplateCachePrefix = "LAB:ExcelTemplateConfig";
 
     public ExcelImportTemplateService(
         ISqlSugarRepository<ExcelImportTemplateEntity> repository,
-        IUserManager userManager
+        IUserManager userManager,
+        ICacheManager cacheManager
     )
     {
         _repository = repository;
         _userManager = userManager;
+        _cacheManager = cacheManager;
     }
 
     /// <inheritdoc />
@@ -123,6 +130,51 @@ public class ExcelImportTemplateService
         var isOk = await _repository.UpdateAsync(entity);
         if (!isOk)
             throw Oops.Bah("更新失败");
+
+        var cacheKey = BuildTemplateCacheKey(entity.TemplateCode);
+        var cacheConfig = TryParseTemplateConfig(configJson);
+        if (cacheConfig != null)
+        {
+            await _cacheManager.SetAsync(cacheKey, cacheConfig, TimeSpan.FromHours(6));
+        }
+        else
+        {
+            await _cacheManager.DelAsync(cacheKey);
+        }
+    }
+
+    private string BuildTemplateCacheKey(string templateCode)
+    {
+        var tenantId = _userManager?.TenantId ?? "global";
+        return $"{TemplateCachePrefix}:{tenantId}:{templateCode}";
+    }
+
+    private ExcelTemplateConfig TryParseTemplateConfig(string configJson)
+    {
+        if (string.IsNullOrWhiteSpace(configJson))
+            return null;
+
+        try
+        {
+            var json = configJson.Trim();
+            if (json.StartsWith("\"") && json.EndsWith("\""))
+            {
+                try
+                {
+                    json = System.Text.Json.JsonSerializer.Deserialize<string>(json);
+                }
+                catch
+                {
+                    // ignore
+                }
+            }
+
+            return System.Text.Json.JsonSerializer.Deserialize<ExcelTemplateConfig>(json);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     /// <summary>
@@ -474,6 +526,7 @@ public class ExcelImportTemplateService
                         SortCode = importAttr.Sort,
                         ExcelColumnNames = new List<string> { importAttr.Name },
                         ExcelColumnIndex = null,
+                        DefaultValue = null,
                     };
 
                     // 如果有保存的配置，覆盖默认值
@@ -488,6 +541,7 @@ public class ExcelImportTemplateService
                         }
                         dto.Required = mapping.Required;
                         dto.DecimalPlaces = mapping.DecimalPlaces;
+                        dto.DefaultValue = mapping.DefaultValue;
 
                         if (!string.IsNullOrEmpty(mapping.ExcelColumnIndex))
                         {

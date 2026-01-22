@@ -1,68 +1,23 @@
 # 自动构建使用指南
 
-## 🎯 两种自动构建方案
+## 🎯 通过 .env 文件控制自动构建
 
-### 方案 1：Git Hook 本地自动构建（推荐开发阶段）
-
-每次提交代码时，如果 `VERSION` 文件有变更，自动触发后台构建。
-
-#### 启用自动构建
-
-```bash
-./scripts/auto-build-setup.sh enable
-```
-
-#### 禁用自动构建
-
-```bash
-./scripts/auto-build-setup.sh disable
-```
-
-#### 查看状态
-
-```bash
-./scripts/auto-build-setup.sh status
-```
-
-#### 工作流程
-
-```bash
-# 1. 启用自动构建
-./scripts/auto-build-setup.sh enable
-
-# 2. 修改代码
-vim api/...
-
-# 3. 增加版本号
-./scripts/version.sh bump patch
-
-# 4. 提交代码（会自动触发构建）
-git add .
-git commit -m "feat: 新功能"
-
-# 5. 查看构建日志
-tail -f .build.log
-
-# 6. 构建完成后启动服务
-docker-compose up -d
-```
+每台机器可以通过 `.env` 文件独立配置是否启用自动构建。
 
 ---
 
-### 方案 2：GitHub Actions CI/CD（推荐生产环境）
+## 🚀 快速开始
 
-推送到 GitHub 后，在云端自动构建并推送镜像。
+### 步骤 1：启用自动构建
 
-#### 配置 GitHub Secrets
+编辑项目根目录的 `.env` 文件：
 
-在 GitHub 仓库设置中添加以下 Secrets：
+```bash
+# 启用自动构建
+AUTO_BUILD=true
+```
 
-1. 进入 `Settings` → `Secrets and variables` → `Actions`
-2. 添加以下 secrets：
-   - `DOCKER_USERNAME` - Docker Hub 用户名
-   - `DOCKER_PASSWORD` - Docker Hub 密码或访问令牌
-
-#### 工作流程
+### 步骤 2：提交代码
 
 ```bash
 # 1. 修改代码
@@ -71,100 +26,144 @@ vim api/...
 # 2. 增加版本号
 ./scripts/version.sh bump patch
 
-# 3. 提交并推送
+# 3. 提交代码（会自动触发构建）
 git add .
 git commit -m "feat: 新功能"
-git push
+```
 
-# 4. GitHub Actions 自动构建
-# 查看: https://github.com/idadawn/lm/actions
+### 步骤 3：查看构建日志
 
-# 5. 拉取最新镜像（从 Docker Hub）
-docker pull your-username/lm-api:1.0.1
-docker pull your-username/lm-web:1.0.1
+```bash
+# 实时查看构建日志
+tail -f .build.log
+```
 
-# 6. 启动服务
+### 步骤 4：启动服务
+
+```bash
+# 构建成功后启动服务
 docker-compose up -d
 ```
 
-#### Tag 发布
+---
+
+## ⚙️ 配置说明
+
+### .env 文件配置
 
 ```bash
-# 创建 tag 触发正式发布
-./scripts/version.sh set 1.0.0
-git add .
-git commit -m "release: v1.0.0"
-
-git tag -a v1.0.0 -m "Release version 1.0.0"
-git push --tags
-
-# GitHub Actions 会自动构建并推送带版本标签的镜像
+# ============================================
+# 自动构建配置
+# ============================================
+# 是否在提交代码时自动构建 Docker 镜像
+# 设置为 true 时，每次提交代码（如果 VERSION 文件变更）会自动触发构建
+# 默认为 false，每台机器可独立配置
+AUTO_BUILD=false
 ```
 
----
+### 配置选项
 
-## 🔧 配置对比
-
-| 特性 | Git Hook（本地） | GitHub Actions（云端） |
-|------|-----------------|---------------------|
-| 构建位置 | 本地机器 | GitHub 服务器 |
-| 触发时机 | 提交代码 | 推送到 main/tag |
-| 镜像推送 | 手动 | 自动到 Docker Hub |
-| 适用场景 | 开发测试 | 生产部署 |
-| 配置难度 | 简单 | 需要 GitHub Secrets |
+| 选项 | 说明 | 推荐场景 |
+|------|------|----------|
+| `AUTO_BUILD=true` | 启用自动构建 | 开发机、构建服务器 |
+| `AUTO_BUILD=false` | 禁用自动构建 | 生产机、其他开发机 |
 
 ---
 
-## 📋 开发阶段推荐配置
+## 📋 工作流程
+
+### 开发机器（启用自动构建）
 
 ```bash
-# 1. 启用本地自动构建
-./scripts/auto-build-setup.sh enable
+# 1. 在 .env 中启用
+echo "AUTO_BUILD=true" >> .env
 
-# 2. 配置 GitHub Actions（可选，用于团队协作）
-# 在 GitHub 设置中添加 DOCKER_USERNAME 和 DOCKER_PASSWORD
+# 2. 修改代码
+vim api/...
 
-# 3. 日常开发流程
+# 3. 更新版本
 ./scripts/version.sh bump patch
+
+# 4. 提交（自动触发构建）
 git add .
 git commit -m "feat: 新功能"
-# 本地自动构建...
 
-# 4. 测试
+# 5. 等待构建完成
+tail -f .build.log
+
+# 6. 启动服务
 docker-compose up -d
+```
 
-# 5. 如果有问题，回滚
-docker-compose down
-APP_VERSION=1.0.0 docker-compose up -d
+### 其他机器（禁用自动构建）
+
+```bash
+# .env 中 AUTO_BUILD=false
+
+# 提交代码不会触发构建
+git add .
+git commit -m "feat: 新功能"
+
+# 如需构建，手动执行
+./scripts/build.sh
 ```
 
 ---
 
-## 🚀 生产环境推荐配置
+## 🔧 构建日志
+
+### 日志位置
+
+- 构建日志：`.build.log`（项目根目录）
+- 实时查看：`tail -f .build.log`
+
+### 日志格式
+
+```
+[2025-01-22 13:45:30] 开始构建 Docker 镜像...
+版本: 1.0.1
+[2025-01-22 13:48:15] ✅ 构建成功！
+镜像标签: lm-api:1.0.1, lm-web:1.0.1
+
+使用以下命令启动服务:
+  docker-compose up -d
+```
+
+---
+
+## 🌍 多机器协作场景
+
+### 场景 1：专用构建服务器
 
 ```bash
-# 1. 禁用本地自动构建
-./scripts/auto-build-setup.sh disable
+# 构建服务器
+cd /path/to/project
+echo "AUTO_BUILD=true" >> .env
 
-# 2. 配置 GitHub Actions
-# 添加 GitHub Secrets
+# 每次推送代码后，构建服务器拉取并构建
+git pull
+# 如果 VERSION 变更，自动构建
+```
 
-# 3. 发布流程
-./scripts/version.sh bump minor
-git add .
-git commit -m "release: v1.1.0"
-git tag -a v1.1.0 -m "Release 1.1.0"
-git push
-git push --tags
+### 场景 2：开发机器
 
-# 4. 等待 GitHub Actions 构建完成
+```bash
+# 开发者 A 的机器（启用自动构建）
+echo "AUTO_BUILD=true" >> .env
 
-# 5. 在生产服务器拉取镜像
-docker pull your-username/lm-api:1.1.0
-docker pull your-username/lm-web:1.1.0
+# 开发者 B 的机器（禁用自动构建）
+echo "AUTO_BUILD=false" >> .env
+```
 
-# 6. 启动服务
-export APP_VERSION=1.1.0
+### 场景 3：生产环境
+
+```bash
+# 生产服务器（禁用自动构建）
+echo "AUTO_BUILD=false" >> .env
+
+# 生产环境只拉取镜像，不构建
+docker pull your-registry/lm-api:1.0.1
+docker pull your-registry/lm-web:1.0.1
 docker-compose up -d
 ```
 
@@ -172,30 +171,27 @@ docker-compose up -d
 
 ## 🛠️ 故障排查
 
-### Git Hook 不工作
+### 自动构建不触发
 
 ```bash
-# 检查 hook 文件权限
+# 1. 检查 .env 配置
+grep AUTO_BUILD .env
+
+# 2. 检查 VERSION 文件是否变更
+git diff HEAD~1 HEAD -- VERSION
+
+# 3. 检查 hook 文件权限
 ls -la .git/hooks/post-commit
 
-# 如果没有执行权限
-chmod +x .git/hooks/post-commit
-
-# 检查是否启用
-./scripts/auto-build-setup.sh status
+# 4. 手动测试 hook
+.git/hooks/post-commit
 ```
 
-### GitHub Actions 失败
-
-1. 查看构建日志：`https://github.com/idadawn/lm/actions`
-2. 检查 GitHub Secrets 是否正确配置
-3. 检查 Dockerfile 是否有语法错误
-
-### 本地构建失败
+### 构建失败
 
 ```bash
-# 查看构建日志
-tail -f .build.log
+# 查看完整构建日志
+cat .build.log
 
 # 手动构建
 ./scripts/build.sh
@@ -205,8 +201,46 @@ tail -f .build.log
 
 ## 📚 最佳实践
 
-1. **开发阶段**：使用 Git Hook 本地自动构建
-2. **测试阶段**：使用 GitHub Actions PR 构建
-3. **生产发布**：使用 GitHub Actions Tag 构建
-4. **版本管理**：每次提交都增加版本号
-5. **回滚机制**：保留旧版本镜像，便于快速回滚
+1. **开发机器**：设置 `AUTO_BUILD=true`，方便本地测试
+2. **生产服务器**：设置 `AUTO_BUILD=false`，使用预构建镜像
+3. **CI/CD**：使用 GitHub Actions 自动构建并推送到镜像仓库
+4. **版本管理**：每次提交都更新版本号
+5. **日志管理**：定期清理 `.build.log`
+
+---
+
+## 🔄 与 GitHub Actions 配合
+
+### 本地开发（使用自动构建）
+
+```bash
+# .env: AUTO_BUILD=true
+./scripts/version.sh bump patch
+git commit -m "feat: 新功能"
+# 本地自动构建...
+```
+
+### 生产发布（使用 GitHub Actions）
+
+```bash
+# .env: AUTO_BUILD=false
+
+# 1. 创建发布版本
+./scripts/version.sh set 1.0.0
+git commit -m "release: v1.0.0"
+git tag -a v1.0.0 -m "Release 1.0.0"
+git push --tags
+
+# 2. GitHub Actions 自动构建
+# 3. 生产服务器拉取镜像
+docker pull your-registry/lm-api:1.0.0
+docker-compose up -d
+```
+
+---
+
+## 📖 相关文档
+
+- 部署指南：`scripts/README-DEPLOY.md`
+- 版本管理：`./scripts/version.sh help`
+- GitHub Actions：`.github/workflows/docker-build.yml`

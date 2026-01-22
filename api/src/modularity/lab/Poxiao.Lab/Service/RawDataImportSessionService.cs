@@ -4,7 +4,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
 using MiniExcelLibs;
 using Newtonsoft.Json;
 using Poxiao.DependencyInjection;
@@ -24,7 +23,6 @@ using Poxiao.Lab.Entity.Models;
 using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
 using Poxiao.Systems.Interfaces.Common;
-using Poxiao.TaskQueue;
 using SqlSugar;
 
 namespace Poxiao.Lab.Service;
@@ -1630,6 +1628,9 @@ public class RawDataImportSessionService
             }
         }
 
+        var calcTargets = updateIntermediateList.Concat(insertIntermediateList).ToList();
+        await _intermediateDataService.ApplyCalcFormulasForEntitiesAsync(calcTargets);
+
         // 3. 使用事务确保原始数据和中间数据的导入操作原子性（同时成功或同时失败）
         try
         {
@@ -1694,53 +1695,7 @@ public class RawDataImportSessionService
             throw Oops.Oh($"导入失败，数据已回滚: {ex.Message}");
         }
 
-        if (intermediateEntities.Count > 0)
-        {
-            // 异步触发公式计算任务（根据批次ID后台执行，不阻塞导入流程）
-            TaskQueued.Enqueue(
-                (serviceProvider) =>
-                {
-                    try
-                    {
-                        var intermediateDataService =
-                            serviceProvider.GetRequiredService<IntermediateDataService>();
-                        // 使用 Task.Run 异步执行，避免阻塞任务队列
-                        Task.Run(async () =>
-                        {
-                            try
-                            {
-                                // 根据批次ID批量计算公式
-                                var result =
-                                    await intermediateDataService.BatchCalculateFormulasByBatchIdInternalAsync(
-                                        sessionId
-                                    );
-                                // 可以在这里记录计算结果或发送通知
-                                Console.WriteLine(
-                                    $"批次 {sessionId} 公式计算完成 - 成功: {result?.SuccessCount}, 失败: {result?.FailedCount}"
-                                );
-                                if (result?.FailedCount > 0)
-                                {
-                                    Console.WriteLine(
-                                        $"批次 {sessionId} 公式计算失败详情: {string.Join("; ", result.Errors.Select(e => $"{e.FurnaceNo}: {e.ErrorMessage}"))}"
-                                    );
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine(
-                                    $"批次 {sessionId} 后台公式计算任务执行失败: {ex.Message}"
-                                );
-                            }
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"创建批次 {sessionId} 公式计算任务失败: {ex.Message}");
-                    }
-                },
-                delay: 1000 // 延迟1秒执行，确保数据已完全保存
-            );
-        }
+        // TODO: 触发判定(JUDGE)公式计算
 
         // 3. Mark Session Complete
         session.Status = "completed";

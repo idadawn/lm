@@ -97,6 +97,12 @@ public interface IIntermediateDataService
         int? specVersion,
         string batchId = null
     );
+
+    /// <summary>
+    /// 同步计算CALC公式（不持久化）.
+    /// </summary>
+    /// <param name="entities">中间数据实体列表</param>
+    Task ApplyCalcFormulasForEntitiesAsync(List<IntermediateDataEntity> entities);
 }
 
 /// <summary>

@@ -20,7 +20,6 @@ using Poxiao.Lab.Entity.Models;
 using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
 using Poxiao.Systems.Entitys.Permission;
-using Poxiao.TaskQueue;
 using SqlSugar;
 
 namespace Poxiao.Lab.Service;
@@ -929,6 +928,37 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     }
 
     /// <summary>
+    /// 同步计算CALC公式（不持久化）.
+    /// </summary>
+    /// <param name="entities">中间数据实体列表</param>
+    public async System.Threading.Tasks.Task ApplyCalcFormulasForEntitiesAsync(
+        List<IntermediateDataEntity> entities
+    )
+    {
+        if (entities == null || entities.Count == 0)
+        {
+            return;
+        }
+
+        var (calcFormulas, _) = await GetEnabledFormulasAsync();
+        if (calcFormulas.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var entity in entities)
+        {
+            if (entity == null)
+            {
+                continue;
+            }
+
+            var contextData = ExtractContextDataFromEntity(entity);
+            ApplyCalcFormulasToEntity(entity, calcFormulas, contextData);
+        }
+    }
+
+    /// <summary>
     /// 获取批次计算状态.
     /// </summary>
     /// <param name="batchId">批次ID</param>
@@ -974,6 +1004,31 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         return await BatchCalculateFormulasInternalAsync(intermediateDataIds);
     }
 
+    private async Task<(
+        List<IntermediateDataFormulaDto> CalcFormulas,
+        List<IntermediateDataFormulaDto> JudgeFormulas
+    )> GetEnabledFormulasAsync()
+    {
+        var allFormulas = await _formulaService.GetListAsync();
+        var enabledFormulas = allFormulas
+            .Where(f => f.IsEnabled && f.TableName == "INTERMEDIATE_DATA")
+            .ToList();
+
+        var calcFormulas = enabledFormulas
+            .Where(f => f.FormulaType == "CALC" && !string.IsNullOrWhiteSpace(f.Formula))
+            .OrderBy(f => f.SortOrder)
+            .ThenBy(f => f.CreatorTime)
+            .ToList();
+
+        var judgeFormulas = enabledFormulas
+            .Where(f => f.FormulaType == "JUDGE")
+            .OrderBy(f => f.SortOrder)
+            .ThenBy(f => f.CreatorTime)
+            .ToList();
+
+        return (calcFormulas, judgeFormulas);
+    }
+
     /// <summary>
     /// 批量计算公式内部实现（可被后台任务调用）.
     /// </summary>
@@ -997,24 +1052,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         try
         {
             // 1. 从公式维护中获取所有启用的公式（计算+判定），只查询一次
-            var allFormulas = await _formulaService.GetListAsync();
-            var enabledFormulas = allFormulas
-                .Where(f => f.IsEnabled && f.TableName == "INTERMEDIATE_DATA")
-                .ToList();
-
-            var calcFormulas = enabledFormulas
-                .Where(f =>
-                    f.FormulaType == "CALC" && !string.IsNullOrWhiteSpace(f.Formula)
-                )
-                .OrderBy(f => f.SortOrder) // 按排序序号排序
-                .ThenBy(f => f.CreatorTime) // 如果排序序号相同，按创建时间排序
-                .ToList();
-
-            var judgeFormulas = enabledFormulas
-                .Where(f => f.FormulaType == "JUDGE")
-                .OrderBy(f => f.SortOrder)
-                .ThenBy(f => f.CreatorTime)
-                .ToList();
+            var (calcFormulas, judgeFormulas) = await GetEnabledFormulasAsync();
 
             if (calcFormulas.Count == 0 && judgeFormulas.Count == 0)
             {
@@ -1146,140 +1184,12 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
 
             if (calcFormulas != null && calcFormulas.Count > 0)
             {
-                // 3. 按顺序计算每个计算公式
-                foreach (var formulaDto in calcFormulas)
-                {
-                    try
-                    {
-                        // 计算公式值
-                        decimal? calculatedValue = null;
-                        try
-                        {
-                            // 根据公式类型选择上下文
-                            object calcContext = contextData;
-                            // 如果是范围公式，需要传入实体对象以便使用反射获取动态列
-                            if (
-                                formulaDto.Formula.Contains("RANGE(")
-                                || formulaDto.Formula.Contains("DIFF_FIRST_LAST")
-                            )
-                            {
-                                calcContext = entity;
-                            }
-
-                            calculatedValue = _formulaParser.Calculate(
-                                formulaDto.Formula,
-                                calcContext
-                            );
-                        }
-                        catch (Exception calcEx)
-                        {
-                            // 计算失败，如果公式有默认值，使用默认值
-                            if (!string.IsNullOrWhiteSpace(formulaDto.DefaultValue))
-                            {
-                                if (
-                                    decimal.TryParse(formulaDto.DefaultValue, out var defaultVal)
-                                )
-                                {
-                                    calculatedValue = defaultVal;
-                                }
-                            }
-                            // 如果没有默认值，抛出异常以便记录错误
-                            if (!calculatedValue.HasValue)
-                            {
-                                throw new Exception(
-                                    $"公式计算失败 - 列名: {formulaDto.ColumnName}, 公式: {formulaDto.Formula}, 错误: {calcEx.Message}"
-                                );
-                            }
-                        }
-
-                        // 如果计算值为null，使用默认值（注意：公式维护中定义的默认值）
-                        if (
-                            !calculatedValue.HasValue
-                            && !string.IsNullOrWhiteSpace(formulaDto.DefaultValue)
-                        )
-                        {
-                            if (decimal.TryParse(formulaDto.DefaultValue, out var defaultVal))
-                            {
-                                calculatedValue = defaultVal;
-                            }
-                        }
-
-                        // 应用精度（公式维护中定义的精度）
-                        if (calculatedValue.HasValue && formulaDto.Precision.HasValue)
-                        {
-                            calculatedValue = Math.Round(
-                                calculatedValue.Value,
-                                formulaDto.Precision.Value
-                            );
-                        }
-
-                        // 4. 将计算结果设置到中间数据实体的对应属性
-                        SetFormulaValueToEntity(entity, formulaDto.ColumnName, calculatedValue);
-
-                        // 5. 更新上下文数据，以便后续公式可以使用已计算的值
-                        if (calculatedValue.HasValue)
-                        {
-                            contextData[formulaDto.ColumnName] = calculatedValue.Value;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        // 公式计算失败，使用默认值（如果公式维护中定义了默认值）
-                        if (!string.IsNullOrWhiteSpace(formulaDto.DefaultValue))
-                        {
-                            if (decimal.TryParse(formulaDto.DefaultValue, out var defaultVal))
-                            {
-                                // 应用精度
-                                if (formulaDto.Precision.HasValue)
-                                {
-                                    defaultVal = Math.Round(
-                                        defaultVal,
-                                        formulaDto.Precision.Value
-                                    );
-                                }
-                                SetFormulaValueToEntity(entity, formulaDto.ColumnName, defaultVal);
-                                contextData[formulaDto.ColumnName] = defaultVal;
-                            }
-                        }
-                        else
-                        {
-                            // 没有默认值，抛出异常以便上层记录错误
-                            throw new Exception(
-                                $"公式计算失败 - 列名: {formulaDto.ColumnName}, 公式: {formulaDto.Formula}, 错误: {ex.Message}"
-                            );
-                        }
-                    }
-                }
+                ApplyCalcFormulasToEntity(entity, calcFormulas, contextData);
             }
 
             if (judgeFormulas != null && judgeFormulas.Count > 0)
             {
-                foreach (var formulaDto in judgeFormulas)
-                {
-                    try
-                    {
-                        var resultValue = EvaluateJudgeFormula(
-                            formulaDto.Formula,
-                            formulaDto.DefaultValue,
-                            entity,
-                            contextData
-                        );
-                        SetJudgeValueToEntity(entity, formulaDto.ColumnName, resultValue);
-                    }
-                    catch (Exception ex)
-                    {
-                        if (formulaDto.DefaultValue != null)
-                        {
-                            SetJudgeValueToEntity(entity, formulaDto.ColumnName, formulaDto.DefaultValue);
-                        }
-                        else
-                        {
-                            throw new Exception(
-                                $"判定公式计算失败 - 列名: {formulaDto.ColumnName}, 错误: {ex.Message}"
-                            );
-                        }
-                    }
-                }
+                ApplyJudgeFormulasToEntity(entity, judgeFormulas, contextData);
             }
 
             // 7. 保存更新后的实体到数据库
@@ -1290,6 +1200,144 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         {
             // 重新抛出异常，以便上层记录错误
             throw;
+        }
+    }
+
+    private void ApplyCalcFormulasToEntity(
+        IntermediateDataEntity entity,
+        List<IntermediateDataFormulaDto> calcFormulas,
+        Dictionary<string, object> contextData
+    )
+    {
+        // 按顺序计算每个计算公式
+        foreach (var formulaDto in calcFormulas)
+        {
+            try
+            {
+                // 计算公式值
+                decimal? calculatedValue = null;
+                try
+                {
+                    // 根据公式类型选择上下文
+                    object calcContext = contextData;
+                    // 如果是范围公式，需要传入实体对象以便使用反射获取动态列
+                    if (
+                        formulaDto.Formula.Contains("RANGE(")
+                        || formulaDto.Formula.Contains("DIFF_FIRST_LAST")
+                    )
+                    {
+                        calcContext = entity;
+                    }
+
+                    calculatedValue = _formulaParser.Calculate(formulaDto.Formula, calcContext);
+                }
+                catch (Exception calcEx)
+                {
+                    // 计算失败，如果公式有默认值，使用默认值
+                    if (!string.IsNullOrWhiteSpace(formulaDto.DefaultValue))
+                    {
+                        if (decimal.TryParse(formulaDto.DefaultValue, out var defaultVal))
+                        {
+                            calculatedValue = defaultVal;
+                        }
+                    }
+                    // 如果没有默认值，抛出异常以便记录错误
+                    if (!calculatedValue.HasValue)
+                    {
+                        throw new Exception(
+                            $"公式计算失败 - 列名: {formulaDto.ColumnName}, 公式: {formulaDto.Formula}, 错误: {calcEx.Message}"
+                        );
+                    }
+                }
+
+                // 如果计算值为null，使用默认值（注意：公式维护中定义的默认值）
+                if (
+                    !calculatedValue.HasValue
+                    && !string.IsNullOrWhiteSpace(formulaDto.DefaultValue)
+                )
+                {
+                    if (decimal.TryParse(formulaDto.DefaultValue, out var defaultVal))
+                    {
+                        calculatedValue = defaultVal;
+                    }
+                }
+
+                // 应用精度（公式维护中定义的精度）
+                if (calculatedValue.HasValue && formulaDto.Precision.HasValue)
+                {
+                    calculatedValue = Math.Round(
+                        calculatedValue.Value,
+                        formulaDto.Precision.Value
+                    );
+                }
+
+                // 将计算结果设置到中间数据实体的对应属性
+                SetFormulaValueToEntity(entity, formulaDto.ColumnName, calculatedValue);
+
+                // 更新上下文数据，以便后续公式可以使用已计算的值
+                if (calculatedValue.HasValue)
+                {
+                    contextData[formulaDto.ColumnName] = calculatedValue.Value;
+                }
+            }
+            catch (Exception ex)
+            {
+                // 公式计算失败，使用默认值（如果公式维护中定义了默认值）
+                if (!string.IsNullOrWhiteSpace(formulaDto.DefaultValue))
+                {
+                    if (decimal.TryParse(formulaDto.DefaultValue, out var defaultVal))
+                    {
+                        // 应用精度
+                        if (formulaDto.Precision.HasValue)
+                        {
+                            defaultVal = Math.Round(defaultVal, formulaDto.Precision.Value);
+                        }
+                        SetFormulaValueToEntity(entity, formulaDto.ColumnName, defaultVal);
+                        contextData[formulaDto.ColumnName] = defaultVal;
+                    }
+                }
+                else
+                {
+                    // 没有默认值，抛出异常以便上层记录错误
+                    throw new Exception(
+                        $"公式计算失败 - 列名: {formulaDto.ColumnName}, 公式: {formulaDto.Formula}, 错误: {ex.Message}"
+                    );
+                }
+            }
+        }
+    }
+
+    private void ApplyJudgeFormulasToEntity(
+        IntermediateDataEntity entity,
+        List<IntermediateDataFormulaDto> judgeFormulas,
+        Dictionary<string, object> contextData
+    )
+    {
+        foreach (var formulaDto in judgeFormulas)
+        {
+            try
+            {
+                var resultValue = EvaluateJudgeFormula(
+                    formulaDto.Formula,
+                    formulaDto.DefaultValue,
+                    entity,
+                    contextData
+                );
+                SetJudgeValueToEntity(entity, formulaDto.ColumnName, resultValue);
+            }
+            catch (Exception ex)
+            {
+                if (formulaDto.DefaultValue != null)
+                {
+                    SetJudgeValueToEntity(entity, formulaDto.ColumnName, formulaDto.DefaultValue);
+                }
+                else
+                {
+                    throw new Exception(
+                        $"判定公式计算失败 - 列名: {formulaDto.ColumnName}, 错误: {ex.Message}"
+                    );
+                }
+            }
         }
     }
 

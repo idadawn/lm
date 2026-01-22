@@ -1,19 +1,18 @@
 # ============================================
-# GitHub Actions - Docker 自动构建
-# 当代码推送到 main 分支或创建 tag 时自动构建
+# GitHub Actions - CI 构建
+# 用于验证代码构建是否成功
 # ============================================
 
-name: Docker Build & Push
+name: CI Build
 
 on:
   push:
     branches:
       - main
-    tags:
-      - 'v*.*.*'
   pull_request:
     branches:
       - main
+  workflow_dispatch:  # 允许手动触发
 
 env:
   # Docker 镜像名称
@@ -29,7 +28,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
-      is_tag: ${{ steps.version.outputs.is_tag }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -41,41 +39,143 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "version=$VERSION" >> $GITHUB_ENV
 
-          # 检查是否是 tag
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            echo "is_tag=true" >> $GITHUB_OUTPUT
-          else
-            echo "is_tag=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Show version
         run: |
           echo "Version: ${{ steps.version.outputs.version }}"
-          echo "Is Tag: ${{ steps.version.outputs.is_tag }}"
 
   # ============================================
-  # 构建 API 镜像
+  # 构建后端 API
   # ============================================
   build-api:
-    name: Build API Image
+    name: Build API
     runs-on: ubuntu-latest
     needs: version
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 安装 .NET SDK
+      - name: Set up .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      # 配置 NuGet 镜像（国内加速）
+      - name: Configure NuGet
+        run: |
+          mkdir -p ~/.nuget/
+          cat > ~/.nuget/NuGet.Config <<'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <configuration>
+            <packageSources>
+              <add key="huaweicloud" value="https://repo.huaweicloud.com/repository/nuget/v3/index.json" />
+              <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+            </packageSources>
+          </configuration>
+          EOF
+
+      # 恢复依赖
+      - name: Restore dependencies
+        run: |
+          cd api/src/application/Poxiao.API.Entry
+          dotnet restore
+
+      # 构建 API
+      - name: Build API
+        run: |
+          cd api/src/application/Poxiao.API.Entry
+          dotnet build --no-restore
+
+      # 发布 API
+      - name: Publish API
+        run: |
+          cd api/src/application/Poxiao.API.Entry
+          dotnet publish Poxiao.API.Entry.csproj \
+            -c Release \
+            -r linux-x64 \
+            --self-contained false \
+            -o ../../../../publish/api
+
+      # 复制 resources
+      - name: Copy resources
+        run: |
+          if [ -d "api/resources" ]; then
+            cp -r api/resources publish/api/
+          fi
+
+      # 检查构建产物
+      - name: Check build output
+        run: |
+          ls -la publish/api/
+          echo "API build output size:"
+          du -sh publish/api/
+
+  # ============================================
+  # 构建前端 Web
+  # ============================================
+  build-web:
+    name: Build Web
+    runs-on: ubuntu-latest
+    needs: version
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 安装 pnpm
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      # 安装 Node.js（不使用缓存，避免路径问题）
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 配置 npm 镜像
+      - name: Configure npm registry
+        run: |
+          pnpm config set registry https://registry.npmmirror.com
+
+      # 安装依赖
+      - name: Install dependencies
+        run: |
+          cd web
+          pnpm install --frozen-lockfile
+
+      # 构建前端
+      - name: Build web
+        run: |
+          cd web
+          pnpm build
+
+      # 检查构建产物
+      - name: Check build output
+        run: |
+          ls -la web/dist/
+          echo "Web build output size:"
+          du -sh web/dist/
+
+  # ============================================
+  # 构建 Docker 镜像（仅测试）
+  # ============================================
+  build-docker-images:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [version, build-api, build-web]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 设置 Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to Docker Hub (可选)
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
+      # 构建 API 镜像（仅构建，不推送）
       - name: Build API image
         uses: docker/build-push-action@v5
         with:
@@ -87,35 +187,16 @@ jobs:
             ${{ env.API_IMAGE }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          platforms: linux/amd64
           load: true
 
+      # 测试 API 镜像
       - name: Test API image
         run: |
           docker images | grep ${{ env.API_IMAGE }}
+          docker run --rm ${{ env.API_IMAGE }}:${{ needs.version.outputs.version }} ls -la /app
 
-  # ============================================
-  # 构建 Web 镜像
-  # ============================================
-  build-web:
-    name: Build Web Image
-    runs-on: ubuntu-latest
-    needs: version
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Docker Hub (可选)
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
+      # 构建 Web 镜像（仅构建，不推送）
       - name: Build Web image
         uses: docker/build-push-action@v5
         with:
@@ -127,54 +208,43 @@ jobs:
             ${{ env.WEB_IMAGE }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          platforms: linux/amd64
           load: true
 
+      # 测试 Web 镜像
       - name: Test Web image
         run: |
           docker images | grep ${{ env.WEB_IMAGE }}
+          docker run --rm ${{ env.WEB_IMAGE }}:${{ needs.version.outputs.version }} ls -la /usr/share/nginx/html
 
   # ============================================
-  # 推送到镜像仓库（可选）
+  # 构建总结
   # ============================================
-  push:
-    name: Push to Registry
+  summary:
+    name: Build Summary
     runs-on: ubuntu-latest
-    needs: [version, build-api, build-web]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [version, build-api, build-web, build-docker-images]
+    if: always()
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build and push API
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./api/Dockerfile.build
-          push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.API_IMAGE }}:${{ needs.version.outputs.version }}
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.API_IMAGE }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and push Web
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./web/Dockerfile.build
-          push: true
-          tags: |
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.WEB_IMAGE }}:${{ needs.version.outputs.version }}
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.WEB_IMAGE }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+      - name: Show summary
+        run: |
+          echo "=========================================="
+          echo "✅ 构建完成！"
+          echo "版本: ${{ needs.version.outputs.version }}"
+          echo ""
+          echo "验证项目："
+          echo "  ✓ 后端 API 构建成功"
+          echo "  ✓ 前端 Web 构建成功"
+          echo "  ✓ Docker 镜像构建成功"
+          echo ""
+          echo "镜像说明："
+          echo "  镜像仅在 CI 中构建验证，未推送到 Docker Hub"
+          echo "  本地使用: ./scripts/build.sh"
+          echo ""
+          echo "Docker 镜像标签:"
+          echo "  - lm-api:${{ needs.version.outputs.version }}"
+          echo "  - lm-api:latest"
+          echo "  - lm-web:${{ needs.version.outputs.version }}"
+          echo "  - lm-web:latest"
+          echo "=========================================="

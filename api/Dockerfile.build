@@ -1,15 +1,28 @@
 # ============================================
 # 实验室数据分析系统 - API Dockerfile
+<<<<<<< HEAD
 # 使用中国大陆镜像源优化构建速度
+=======
+# 使用官方镜像和默认配置
+>>>>>>> d8a5a9e8d87a07e27255e40814babf9f4dd2d651
 # ============================================
 
-# 基础镜像 - ASP.NET Core 运行时
+# 基础镜像 - ASP.NET Core 运行时（官方镜像）
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
 
+<<<<<<< HEAD
 # 配置 APT 使用阿里云镜像源（大幅提升下载速度）
 RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources && \
     sed -i 's/security.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources
+=======
+# 安装必要的依赖（使用官方源，避免网络问题）
+RUN apt-get update && \
+    apt-get install -y \
+        libgdiplus \
+        curl \
+        && rm -rf /var/lib/apt/lists/*
+>>>>>>> d8a5a9e8d87a07e27255e40814babf9f4dd2d651
 
 # 安装必要的依赖
 RUN apt-get update && \

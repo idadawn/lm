@@ -27,8 +27,8 @@ temp/
 *.tmp
 *.temp
 
-# 发布目录（会被 Dockerfile 复制）
-publish/
+# 注意：publish 目录不被忽略，因为 Dockerfile 需要它
+# publish/api 和 publish/web 会被 Dockerfile 复制到镜像中
 
 # IDE
 .vs/

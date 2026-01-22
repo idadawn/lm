@@ -4,7 +4,7 @@ services:
   # 1. MySQL 数据库 - 主数据库
   mysql:
     image: mysql:${MYSQL_VERSION}
-    container_name: mysql_db
+    container_name: ${CONTAINER_PREFIX}-mysql
     restart: always
     ports:
       - "${MYSQL_PORT}:3306"
@@ -28,7 +28,7 @@ services:
   # 2. Redis 缓存 - 缓存和会话存储
   redis:
     image: redis:${REDIS_VERSION}
-    container_name: redis_cache
+    container_name: ${CONTAINER_PREFIX}-redis
     restart: always
     ports:
       - "${REDIS_PORT}:6379"
@@ -45,7 +45,7 @@ services:
   # 3. 向量数据库 (Qdrant) - 存储外观特性定义与指标定义
   qdrant:
     image: qdrant/qdrant:${QDRANT_VERSION}
-    container_name: qdrant_db
+    container_name: ${CONTAINER_PREFIX}-qdrant
     restart: always
     ports:
       - "${QDRANT_HTTP_PORT}:6333"
@@ -58,7 +58,7 @@ services:
   # 4. 向量推理引擎 (TEI) - 用于外观特性语义匹配 (SRS 4.1)
   tei-embedding:
     image: ghcr.io/huggingface/text-embeddings-inference:${TEI_VERSION}
-    container_name: tei_api
+    container_name: ${CONTAINER_PREFIX}-tei
     runtime: nvidia
     restart: always
     ports:
@@ -84,7 +84,7 @@ services:
   # 5. 大模型推理引擎 (vLLM) - 用于自然语言问数 (SRS 4.5)
   vllm:
     image: vllm/vllm-openai:${VLLM_VERSION}
-    container_name: qwen_vllm
+    container_name: ${CONTAINER_PREFIX}-vllm
     runtime: nvidia
     restart: always
     ports:

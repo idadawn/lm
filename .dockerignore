@@ -1,0 +1,70 @@
+# ============================================
+# Docker 构建忽略文件
+# ============================================
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# 文档
+*.md
+docs/
+README*
+
+# 日志
+logs/
+*.log
+
+# 临时文件
+tmp/
+temp/
+*.tmp
+*.temp
+
+# 发布目录（会被 Dockerfile 复制）
+publish/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.sln.cache
+
+# Node (如果有前端)
+node_modules/
+web/
+web-dist/
+
+# 测试
+**/*Tests/
+**/*.Tests.csproj
+test/
+tests/
+
+# 备份文件
+*.bak
+*~
+*.swp
+
+# 操作系统
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 敏感配置
+*.pfx
+*.cert
+*.key
+secrets/
+
+# 其他
+.env.local
+.env.*.local

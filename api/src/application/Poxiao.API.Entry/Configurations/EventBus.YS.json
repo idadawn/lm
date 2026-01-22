@@ -1,8 +1,0 @@
-{
-  "EventBus": {
-    "EventBusType": "Memory", //Memory,RabbitMQ
-    "HostName": "rabbitmq.kpi-prod-middleware.svc.cluster.local:5672",
-    "UserName": "admin",
-    "Password": "LeOYRBBeCat8fK/9huTt"
-  }
-}

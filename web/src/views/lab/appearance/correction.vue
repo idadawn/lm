@@ -1,7 +1,7 @@
 <template>
-  <a-modal v-model:visible="visible" title="人工修正匹配列表" :width="1100" :confirm-loading="confirmLoading"
+  <a-modal v-model:visible="visible" title="人工修正匹配列表" :width="1400" :confirm-loading="confirmLoading"
     :ok-button-props="{ style: { display: 'none' } }" cancel-text="关闭" @cancel="handleCancel" destroy-on-close>
-    <div class="page-content-wrapper" style="height: 640px">
+    <div class="page-content-wrapper" style="width: 100%; height: 640px">
       <div class="page-content-wrapper-center">
         <div class="page-content-wrapper-content">
           <!-- 表格 -->

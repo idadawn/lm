@@ -1,6 +1,7 @@
+using System.Globalization;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Security.Cryptography;
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,8 +18,8 @@ using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Config;
 using Poxiao.Lab.Entity.Dto.AppearanceFeature;
 using Poxiao.Lab.Entity.Dto.RawData;
-using Poxiao.Lab.Entity.Models;
 using Poxiao.Lab.Entity.Enum;
+using Poxiao.Lab.Entity.Models;
 using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
 using Poxiao.Systems.Interfaces.Common;
@@ -111,14 +112,16 @@ public class RawDataImportSessionService
             if (!input.ForceUpload && !string.IsNullOrWhiteSpace(fileHash))
             {
                 var existingLog = await FindDuplicateLogAsync(fileHash, fileMd5, input.FileName);
-                var existingSession = await FindDuplicateSessionAsync(fileHash, fileMd5, input.FileName);
+                var existingSession = await FindDuplicateSessionAsync(
+                    fileHash,
+                    fileMd5,
+                    input.FileName
+                );
 
                 if (existingLog != null || existingSession != null)
                 {
                     var lastTime =
-                        existingLog?.ImportTime
-                        ?? existingSession?.CreatorTime
-                        ?? DateTime.Now;
+                        existingLog?.ImportTime ?? existingSession?.CreatorTime ?? DateTime.Now;
                     var message =
                         $"[DUPLICATE_UPLOAD] 文件已上传过，最近一次时间：{lastTime:yyyy-MM-dd HH:mm:ss}，是否继续上传？";
                     throw Oops.Oh(ErrorCode.COM1026, message);
@@ -283,7 +286,7 @@ public class RawDataImportSessionService
             existingSession.SourceFileMd5 = fileMd5;
         }
 
-        var validDataHash = ComputeValidDataHash(entities, templateConfig);
+        var validDataHash = ComputeValidDataHashFromRawRows(fileBytes, templateConfig);
         existingSession.ValidDataHash = validDataHash;
 
         var lastLog = await FindDuplicateLogAsync(fileHash, fileMd5, existingSession.FileName);
@@ -603,20 +606,24 @@ public class RawDataImportSessionService
         if (log == null)
             return null;
 
-        if (!string.IsNullOrWhiteSpace(log.ValidDataHash))
-            return log.ValidDataHash;
+        string computedHash = null;
 
-        if (string.IsNullOrWhiteSpace(log.SourceFileId))
-            return null;
-
-        var hash = ComputeValidDataHashFromFile(log.SourceFileId, templateConfig);
-        if (!string.IsNullOrWhiteSpace(hash))
+        if (!string.IsNullOrWhiteSpace(log.SourceFileId))
         {
-            log.ValidDataHash = hash;
-            await _logRepository.UpdateAsync(log);
+            computedHash = ComputeValidDataHashFromFile(log.SourceFileId, templateConfig);
         }
 
-        return hash;
+        if (!string.IsNullOrWhiteSpace(computedHash))
+        {
+            if (!string.Equals(log.ValidDataHash, computedHash, StringComparison.OrdinalIgnoreCase))
+            {
+                log.ValidDataHash = computedHash;
+                await _logRepository.UpdateAsync(log);
+            }
+            return computedHash;
+        }
+
+        return log.ValidDataHash;
     }
 
     private string ComputeValidDataHashFromFile(
@@ -633,8 +640,7 @@ public class RawDataImportSessionService
                 return null;
 
             var bytes = File.ReadAllBytes(sourceFileId);
-            var entities = ParseExcel(bytes, Path.GetFileName(sourceFileId), 0, templateConfig);
-            return ComputeValidDataHash(entities, templateConfig);
+            return ComputeValidDataHashFromRawRows(bytes, templateConfig);
         }
         catch (Exception ex)
         {
@@ -938,7 +944,9 @@ public class RawDataImportSessionService
 
                 if (matchedIdSet.Count > 0)
                 {
-                    entity.AppearanceFeatureIds = JsonConvert.SerializeObject(matchedIdSet.ToList());
+                    entity.AppearanceFeatureIds = JsonConvert.SerializeObject(
+                        matchedIdSet.ToList()
+                    );
                     entity.MatchConfidence = 1.0;
                     needSave = true;
                 }
@@ -994,18 +1002,16 @@ public class RawDataImportSessionService
 
                     if (!string.IsNullOrEmpty(entity.AppearanceFeatureCategoryIds))
                     {
-                        item.AppearanceFeatureCategoryIds =
-                            JsonConvert.DeserializeObject<List<string>>(
-                                entity.AppearanceFeatureCategoryIds
-                            );
+                        item.AppearanceFeatureCategoryIds = JsonConvert.DeserializeObject<
+                            List<string>
+                        >(entity.AppearanceFeatureCategoryIds);
                     }
 
                     if (!string.IsNullOrEmpty(entity.AppearanceFeatureLevelIds))
                     {
-                        item.AppearanceFeatureLevelIds =
-                            JsonConvert.DeserializeObject<List<string>>(
-                                entity.AppearanceFeatureLevelIds
-                            );
+                        item.AppearanceFeatureLevelIds = JsonConvert.DeserializeObject<
+                            List<string>
+                        >(entity.AppearanceFeatureLevelIds);
                     }
 
                     // 填充匹配详情
@@ -1023,7 +1029,8 @@ public class RawDataImportSessionService
                                     FeatureName = f?.Name ?? id,
                                     Confidence = item.MatchConfidence?.ToString() ?? "1.0",
                                     CategoryId = f?.CategoryId,
-                                    CategoryName = f?.CategoryId != null
+                                    CategoryName =
+                                        f?.CategoryId != null
                                         && categoryNameDict.TryGetValue(
                                             f.CategoryId,
                                             out var categoryName
@@ -1031,7 +1038,8 @@ public class RawDataImportSessionService
                                             ? categoryName
                                             : null,
                                     SeverityLevelId = f?.SeverityLevelId,
-                                    SeverityLevelName = f?.SeverityLevelId != null
+                                    SeverityLevelName =
+                                        f?.SeverityLevelId != null
                                         && levelNameDict.TryGetValue(
                                             f.SeverityLevelId,
                                             out var levelName
@@ -1136,12 +1144,10 @@ public class RawDataImportSessionService
             }
         }
 
-        entity.AppearanceFeatureCategoryIds = categoryIds.Count > 0
-            ? JsonConvert.SerializeObject(categoryIds)
-            : null;
-        entity.AppearanceFeatureLevelIds = levelIds.Count > 0
-            ? JsonConvert.SerializeObject(levelIds)
-            : null;
+        entity.AppearanceFeatureCategoryIds =
+            categoryIds.Count > 0 ? JsonConvert.SerializeObject(categoryIds) : null;
+        entity.AppearanceFeatureLevelIds =
+            levelIds.Count > 0 ? JsonConvert.SerializeObject(levelIds) : null;
 
         return originalCategoryIds != entity.AppearanceFeatureCategoryIds
             || originalLevelIds != entity.AppearanceFeatureLevelIds;
@@ -1309,7 +1315,14 @@ public class RawDataImportSessionService
 
         if (string.IsNullOrWhiteSpace(session.ValidDataHash))
         {
-            session.ValidDataHash = ComputeValidDataHash(allData, templateConfig);
+            session.ValidDataHash = ComputeValidDataHashFromFile(
+                session.SourceFileId,
+                templateConfig
+            );
+            if (string.IsNullOrWhiteSpace(session.ValidDataHash))
+            {
+                session.ValidDataHash = ComputeValidDataHash(allData, templateConfig);
+            }
         }
 
         // 1.0 处理重复的炉号（保留第一条，移除其他）
@@ -1403,7 +1416,8 @@ public class RawDataImportSessionService
                     && e.ProdDate.HasValue
                     && e.FurnaceBatchNo.HasValue
                 )
-                .Select(e => new {
+                .Select(e => new
+                {
                     e.LineNo,
                     e.Shift,
                     e.ProdDate,
@@ -1635,9 +1649,7 @@ public class RawDataImportSessionService
             await db.Ado.BeginTranAsync();
 
             // 3.1 将所有数据写入原始数据表（包括有效和无效数据）
-            var insertRawDataList = allData
-                .Where(t => !updateIdSet.Contains(t.Id))
-                .ToList();
+            var insertRawDataList = allData.Where(t => !updateIdSet.Contains(t.Id)).ToList();
 
             if (insertRawDataList.Count > 0)
             {
@@ -1664,8 +1676,7 @@ public class RawDataImportSessionService
                 var updateRawIds = updateRawDataList.Select(t => t.Id).Distinct().ToList();
                 if (updateRawIds.Count > 0)
                 {
-                    await db
-                        .Deleteable<IntermediateDataEntity>()
+                    await db.Deleteable<IntermediateDataEntity>()
                         .In(t => t.RawDataId, updateRawIds)
                         .ExecuteCommandAsync();
                 }
@@ -1735,7 +1746,6 @@ public class RawDataImportSessionService
         session.Status = "completed";
         session.TotalRows = allData.Count; // 更新总数据行数
         session.ValidDataRows = validData.Count; // 更新有效数据行数
-        session.ValidDataHash = ComputeValidDataHash(validData, templateConfig);
         await _sessionRepository.UpdateAsync(session);
 
         // 4. Create Log
@@ -1924,13 +1934,15 @@ public class RawDataImportSessionService
         List<string> columns;
         using (var streamForColumns = new MemoryStream(fileBytes))
         {
-            columns = MiniExcelLibs.MiniExcel.GetColumns(streamForColumns, useHeaderRow: true).ToList();
+            columns = MiniExcelLibs
+                .MiniExcel.GetColumns(streamForColumns, useHeaderRow: true)
+                .ToList();
         }
 
         var fieldHeaderMap = BuildFieldHeaderMap(templateConfig, columns);
         var requiredFields = GetRequiredFields(templateConfig);
-        var fieldLabelMap = templateConfig.FieldMappings
-            .Where(m => !string.IsNullOrWhiteSpace(m.Field))
+        var fieldLabelMap = templateConfig
+            .FieldMappings.Where(m => !string.IsNullOrWhiteSpace(m.Field))
             .ToDictionary(m => m.Field, m => m.Label, StringComparer.OrdinalIgnoreCase);
         var detectionHeaderMap = BuildDetectionHeaderMap(templateConfig, columns);
 
@@ -2412,7 +2424,7 @@ public class RawDataImportSessionService
 
             if (string.Equals(dataType, "decimal", StringComparison.OrdinalIgnoreCase))
             {
-                if (decimal.TryParse(text, out var dec))
+                if (TryParseDecimal(text, out var dec))
                     return Convert.ChangeType(dec, underlyingType);
                 return null;
             }
@@ -2475,13 +2487,7 @@ public class RawDataImportSessionService
 
         if (!entity.SingleCoilWeight.HasValue)
         {
-            var singleCoilWeightHeaders = new[]
-            {
-                "单卷重量",
-                "单卷重",
-                "SingleCoilWeight",
-                "AB",
-            };
+            var singleCoilWeightHeaders = new[] { "单卷重量", "单卷重", "SingleCoilWeight", "AB" };
             foreach (var header in singleCoilWeightHeaders)
             {
                 if (row.ContainsKey(header))
@@ -2542,7 +2548,192 @@ public class RawDataImportSessionService
         return ComputeFileHashSha256(Encoding.UTF8.GetBytes(combined));
     }
 
-    private string ComputeValidRowFingerprint(RawDataEntity entity, ExcelTemplateConfig templateConfig)
+    private string ComputeValidDataHashFromRawRows(
+        byte[] fileBytes,
+        ExcelTemplateConfig templateConfig
+    )
+    {
+        if (fileBytes == null || fileBytes.Length == 0)
+            return null;
+
+        templateConfig ??= BuildDefaultRawDataTemplateConfig();
+
+        List<string> columns;
+        using (var streamForColumns = new MemoryStream(fileBytes))
+        {
+            columns = MiniExcelLibs
+                .MiniExcel.GetColumns(streamForColumns, useHeaderRow: true)
+                .ToList();
+        }
+
+        var fieldHeaderMap = BuildFieldHeaderMap(templateConfig, columns);
+        var requiredFields = GetRequiredFields(templateConfig);
+        var detectionHeaderMap = BuildDetectionHeaderMap(templateConfig, columns);
+
+        using var stream = new MemoryStream(fileBytes);
+        var rows = stream.Query(useHeaderRow: true).Cast<IDictionary<string, object>>();
+
+        var fingerprints = new List<string>();
+        foreach (var row in rows)
+        {
+            if (!IsValidRawRow(row, fieldHeaderMap, requiredFields))
+                continue;
+
+            var fingerprint = ComputeRawRowFingerprint(
+                row,
+                fieldHeaderMap,
+                detectionHeaderMap,
+                templateConfig
+            );
+            if (!string.IsNullOrWhiteSpace(fingerprint))
+                fingerprints.Add(fingerprint);
+        }
+
+        if (fingerprints.Count == 0)
+            return null;
+
+        var combined = string.Join("|", fingerprints.OrderBy(v => v));
+        return ComputeFileHashSha256(Encoding.UTF8.GetBytes(combined));
+    }
+
+    private bool IsValidRawRow(
+        IDictionary<string, object> row,
+        Dictionary<string, string> fieldHeaderMap,
+        HashSet<string> requiredFields
+    )
+    {
+        if (row == null)
+            return false;
+
+        if (requiredFields != null && requiredFields.Count > 0)
+        {
+            foreach (var field in requiredFields)
+            {
+                if (
+                    !fieldHeaderMap.TryGetValue(field, out var headerName)
+                    || !row.TryGetValue(headerName, out var value)
+                    || IsEmptyRawValue(value)
+                )
+                {
+                    return false;
+                }
+            }
+        }
+
+        if (
+            fieldHeaderMap.TryGetValue("FurnaceNo", out var furnaceHeader)
+            && row.TryGetValue(furnaceHeader, out var furnaceValue)
+        )
+        {
+            var furnaceText = NormalizeRawValue(furnaceValue);
+            if (!string.IsNullOrWhiteSpace(furnaceText))
+            {
+                var furnaceNoObj = FurnaceNo.Parse(furnaceText);
+                return furnaceNoObj.IsValid;
+            }
+        }
+
+        return false;
+    }
+
+    private string ComputeRawRowFingerprint(
+        IDictionary<string, object> row,
+        Dictionary<string, string> fieldHeaderMap,
+        Dictionary<int, string> detectionHeaderMap,
+        ExcelTemplateConfig templateConfig
+    )
+    {
+        if (row == null)
+            return null;
+
+        var fields = new List<string>();
+        if (templateConfig?.FieldMappings != null && templateConfig.FieldMappings.Count > 0)
+        {
+            foreach (var mapping in templateConfig.FieldMappings)
+            {
+                if (string.IsNullOrWhiteSpace(mapping.Field))
+                    continue;
+                fields.Add(mapping.Field);
+            }
+        }
+
+        for (int i = 1; i <= 22; i++)
+        {
+            fields.Add($"Detection{i}");
+        }
+
+        var distinctFields = fields
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(f => f)
+            .ToList();
+        var parts = new List<string>();
+
+        foreach (var field in distinctFields)
+        {
+            if (field.StartsWith("Detection", StringComparison.OrdinalIgnoreCase))
+            {
+                if (
+                    int.TryParse(field.Substring("Detection".Length), out var index)
+                    && detectionHeaderMap.TryGetValue(index, out var header)
+                    && row.TryGetValue(header, out var value)
+                )
+                {
+                    parts.Add($"{field}={NormalizeRawValue(value)}");
+                }
+                else
+                {
+                    parts.Add($"{field}=");
+                }
+                continue;
+            }
+
+            if (
+                fieldHeaderMap.TryGetValue(field, out var headerName)
+                && row.TryGetValue(headerName, out var val)
+            )
+            {
+                parts.Add($"{field}={NormalizeRawValue(val)}");
+            }
+            else
+            {
+                parts.Add($"{field}=");
+            }
+        }
+
+        var raw = string.Join("|", parts);
+        return ComputeFileHashSha256(Encoding.UTF8.GetBytes(raw));
+    }
+
+    private bool IsEmptyRawValue(object value)
+    {
+        if (value == null)
+            return true;
+        if (value is string s)
+            return string.IsNullOrWhiteSpace(s);
+        return false;
+    }
+
+    private string NormalizeRawValue(object value)
+    {
+        if (value == null)
+            return "";
+        if (value is DateTime dt)
+            return dt.ToString("yyyy-MM-dd");
+        if (value is decimal dec)
+            return NormalizeDecimal(dec);
+        if (value is double dbl)
+            return NormalizeDecimal(Convert.ToDecimal(dbl));
+        if (value is float flt)
+            return NormalizeDecimal(Convert.ToDecimal(flt));
+        if (value is int or long or short or byte)
+            return Convert.ToString(value, CultureInfo.InvariantCulture);
+        return value.ToString().Trim();
+    }
+
+    private string ComputeValidRowFingerprint(
+        RawDataEntity entity,
+        ExcelTemplateConfig templateConfig
+    )
     {
         if (entity == null)
             return null;
@@ -2563,7 +2754,10 @@ public class RawDataImportSessionService
             fields.Add($"Detection{i}");
         }
 
-        var distinctFields = fields.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(f => f).ToList();
+        var distinctFields = fields
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(f => f)
+            .ToList();
         var parts = new List<string>();
         foreach (var field in distinctFields)
         {
@@ -2586,12 +2780,24 @@ public class RawDataImportSessionService
         if (value is DateTime dt)
             return dt.ToString("yyyy-MM-dd");
         if (value is decimal dec)
-            return dec.ToString("G29");
+            return NormalizeDecimal(dec);
         if (value is double dbl)
-            return dbl.ToString("G29");
+            return NormalizeDecimal(Convert.ToDecimal(dbl));
         if (value is float flt)
-            return flt.ToString("G29");
+            return NormalizeDecimal(Convert.ToDecimal(flt));
         return value.ToString().Trim();
+    }
+
+    private bool TryParseDecimal(string text, out decimal value)
+    {
+        return decimal.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out value)
+            || decimal.TryParse(text, NumberStyles.Any, CultureInfo.CurrentCulture, out value);
+    }
+
+    private string NormalizeDecimal(decimal value)
+    {
+        var rounded = decimal.Round(value, 8, MidpointRounding.AwayFromZero);
+        return rounded.ToString("G29", CultureInfo.InvariantCulture);
     }
 
     /// <summary>
@@ -2784,7 +2990,8 @@ public class RawDataImportSessionService
                 && e.ProdDate.HasValue
                 && e.FurnaceBatchNo.HasValue
             )
-            .Select(e => new {
+            .Select(e => new
+            {
                 e.LineNo,
                 e.Shift,
                 e.ProdDate,
@@ -3097,7 +3304,7 @@ public class RawDataImportSessionService
             // 2. 解析Excel数据
             var templateConfig = await LoadRawDataTemplateConfigAsync();
             var entities = ParseExcel(fileBytes, input.FileName, skipRows: 0, templateConfig);
-            var validDataHash = ComputeValidDataHash(entities, templateConfig);
+            var validDataHash = ComputeValidDataHashFromRawRows(fileBytes, templateConfig);
             output.TotalRows = entities.Count;
 
             if (entities.Count == 0)

@@ -5,6 +5,7 @@ using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
 using Poxiao.Lab.Entity;
+using Poxiao.Lab.Entity.Config;
 using Poxiao.Lab.Entity.Dto.AppearanceFeature;
 using Poxiao.Lab.Entity.Models;
 using Poxiao.Lab.Interfaces;
@@ -22,18 +23,21 @@ public class FeatureLearningService : IDynamicApiController, ITransient
     private readonly ISqlSugarRepository<AppearanceFeatureCorrectionEntity> _correctionRepository;
     private readonly ISqlSugarRepository<AppearanceFeatureEntity> _featureRepository;
     private readonly ISqlSugarRepository<AppearanceFeatureCategoryEntity> _categoryRepository;
+    private readonly ISqlSugarRepository<ExcelImportTemplateEntity> _templateRepository;
     private readonly IAppearanceFeatureService _appearanceFeatureService;
 
     public FeatureLearningService(
         ISqlSugarRepository<AppearanceFeatureCorrectionEntity> correctionRepository,
         ISqlSugarRepository<AppearanceFeatureEntity> featureRepository,
         ISqlSugarRepository<AppearanceFeatureCategoryEntity> categoryRepository,
+        ISqlSugarRepository<ExcelImportTemplateEntity> templateRepository,
         IAppearanceFeatureService appearanceFeatureService
     )
     {
         _correctionRepository = correctionRepository;
         _featureRepository = featureRepository;
         _categoryRepository = categoryRepository;
+        _templateRepository = templateRepository;
         _appearanceFeatureService = appearanceFeatureService;
     }
 
@@ -504,6 +508,87 @@ public class FeatureLearningService : IDynamicApiController, ITransient
     }
 
     /// <summary>
+    /// 将Excel列字母转换为数字索引 (A=0, B=1, C=2, ..., Z=25, AA=26, AB=27, ...)
+    /// </summary>
+    private int ConvertColumnLetterToIndex(string columnLetter)
+    {
+        if (string.IsNullOrWhiteSpace(columnLetter))
+            return 0;
+
+        columnLetter = columnLetter.Trim().ToUpper();
+        int result = 0;
+        for (int i = 0; i < columnLetter.Length; i++)
+        {
+            result *= 26;
+            result += (columnLetter[i] - 'A' + 1);
+        }
+        return result - 1; // 转为0-based索引
+    }
+
+    /// <summary>
+    /// 忽略的关键字列表（这些文字不是特性）
+    /// </summary>
+    private static readonly HashSet<string> IgnoredKeywords = new HashSet<string>(
+        StringComparer.OrdinalIgnoreCase
+    )
+    {
+        "合并",
+        "取消",
+        "正常",
+        "无",
+        "空",
+        "N/A",
+        "NA",
+        "-",
+        "—",
+        "/",
+        "待定",
+        "暂无",
+        "略",
+        "见备注",
+        "同上",
+        "参考",
+        "见",
+        "详见",
+        "合格",
+        "不合格",
+        "OK",
+        "NG",
+        "PASS",
+        "FAIL",
+        "是",
+        "否",
+        "有",
+        "无异常",
+        "正常品",
+    };
+
+    /// <summary>
+    /// 检查关键字是否应该被忽略
+    /// </summary>
+    private bool IsIgnoredKeyword(string keyword)
+    {
+        if (string.IsNullOrWhiteSpace(keyword))
+            return true;
+
+        keyword = keyword.Trim();
+
+        // 检查完全匹配
+        if (IgnoredKeywords.Contains(keyword))
+            return true;
+
+        // 检查纯数字（如 "1", "2", "123"）
+        if (decimal.TryParse(keyword, out _))
+            return true;
+
+        // 检查单个字符（可能是编号）
+        if (keyword.Length == 1 && !char.IsLetter(keyword[0]))
+            return true;
+
+        return false;
+    }
+
+    /// <summary>
     /// 上传Excel生成人工修正列表
     /// </summary>
     /// <param name="file">Excel文件</param>
@@ -518,63 +603,145 @@ public class FeatureLearningService : IDynamicApiController, ITransient
 
         try
         {
-            // 1. 读取Excel文件
-            using var stream = file.OpenReadStream();
-            var rows = MiniExcelLibs.MiniExcel.Query(stream, useHeaderRow: true).ToList();
+            // 1. 获取RawDataImport模板配置
+            var templateEntity = await _templateRepository.GetFirstAsync(t =>
+                t.TemplateCode == "RawDataImport" && (t.DeleteMark == 0 || t.DeleteMark == null)
+            );
 
-            if (rows == null || rows.Count == 0)
+            if (templateEntity == null || string.IsNullOrWhiteSpace(templateEntity.ConfigJson))
+            {
+                throw Oops.Oh("未找到RawDataImport模板配置，请先配置导入模板");
+            }
+
+            // 解析模板配置
+            ExcelTemplateConfig config;
+            try
+            {
+                var json = templateEntity.ConfigJson;
+                // 处理可能的双重序列化
+                if (json.StartsWith("\"") && json.EndsWith("\""))
+                {
+                    json = System.Text.Json.JsonSerializer.Deserialize<string>(json);
+                }
+                config = System.Text.Json.JsonSerializer.Deserialize<ExcelTemplateConfig>(json);
+            }
+            catch (Exception ex)
+            {
+                throw Oops.Oh($"解析模板配置失败: {ex.Message}");
+            }
+
+            // 2. 找到炉号字段的列索引
+            var furnaceNoMapping = config.FieldMappings?.FirstOrDefault(m =>
+                m.Field.Equals("FurnaceNo", StringComparison.OrdinalIgnoreCase)
+            );
+
+            if (
+                furnaceNoMapping == null
+                || string.IsNullOrWhiteSpace(furnaceNoMapping.ExcelColumnIndex)
+            )
+            {
+                throw Oops.Oh("模板中未配置炉号(FurnaceNo)字段的列索引，请先在模板中配置");
+            }
+
+            var furnaceNoColumnIndex = furnaceNoMapping.ExcelColumnIndex; // 例如 "A", "B", "C"
+            Console.WriteLine($"[Excel] 使用模板配置，炉号列索引: {furnaceNoColumnIndex}");
+
+            // 3. 读取Excel文件
+            using var stream = file.OpenReadStream();
+            var rows = MiniExcelLibs.MiniExcel.Query(stream, useHeaderRow: false).ToList();
+
+            if (rows == null || rows.Count <= 1) // 至少要有表头行+数据行
             {
                 result.Message = "Excel文件没有数据";
                 return result;
             }
 
-            // 2. 使用默认的炉号列名
-            // 注意: ExcelImportTemplateDto 没有 ConfigJson 属性，简化处理直接使用默认列名
-            string furnaceNoColumnName = "炉号"; // 默认列名
+            // 将列索引转换为数字索引 (A=0, B=1, C=2...)
+            int columnIndex = ConvertColumnLetterToIndex(furnaceNoColumnIndex);
 
-            // 3. 提取所有炉号和解析特性后缀
+            // 4. 提取所有炉号和解析特性后缀（跳过第一行表头）
             var featureTexts = new Dictionary<string, string>(); // FeatureSuffix -> 原始输入文本示例
-            foreach (var row in rows)
+            var featureCounts = new Dictionary<string, int>(); // 统计每个特性出现次数
+            int noColumnCount = 0;
+            int parseFailCount = 0;
+            int noFeatureSuffixCount = 0;
+
+            for (int i = 1; i < rows.Count; i++) // 从1开始，跳过表头
             {
+                var row = rows[i];
                 var rowDict = row as IDictionary<string, object>;
                 if (rowDict == null)
                     continue;
 
-                // 尝试获取炉号列的值
+                // 根据列索引获取炉号值
                 string furnaceNoValue = null;
-                foreach (var key in rowDict.Keys)
+                var keys = rowDict.Keys.ToList();
+                if (columnIndex < keys.Count)
                 {
-                    if (
-                        key.Contains(furnaceNoColumnName, StringComparison.OrdinalIgnoreCase)
-                        || key.Contains("炉号", StringComparison.OrdinalIgnoreCase)
-                    )
-                    {
-                        furnaceNoValue = rowDict[key]?.ToString();
-                        break;
-                    }
+                    furnaceNoValue = rowDict[keys[columnIndex]]?.ToString();
                 }
 
                 if (string.IsNullOrWhiteSpace(furnaceNoValue))
+                {
+                    noColumnCount++;
                     continue;
+                }
 
                 // 解析炉号提取特性后缀
                 var furnaceNo = FurnaceNo.Parse(furnaceNoValue);
-                if (furnaceNo.IsValid && !string.IsNullOrWhiteSpace(furnaceNo.FeatureSuffix))
+                if (!furnaceNo.IsValid)
                 {
-                    var suffix = furnaceNo.FeatureSuffix.Trim();
-                    if (!featureTexts.ContainsKey(suffix))
-                    {
-                        featureTexts[suffix] = furnaceNoValue;
-                    }
+                    parseFailCount++;
+                    Console.WriteLine(
+                        $"[Excel] 炉号解析失败: {furnaceNoValue} - {furnaceNo.ErrorMessage}"
+                    );
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(furnaceNo.FeatureSuffix))
+                {
+                    noFeatureSuffixCount++;
+                    continue;
+                }
+
+                var suffix = furnaceNo.FeatureSuffix.Trim();
+
+                // 检查是否在忽略列表中
+                if (IsIgnoredKeyword(suffix))
+                {
+                    noFeatureSuffixCount++; // 计入无特性后缀
+                    continue;
+                }
+
+                if (!featureTexts.ContainsKey(suffix))
+                {
+                    featureTexts[suffix] = furnaceNoValue;
+                    featureCounts[suffix] = 1;
+                }
+                else
+                {
+                    featureCounts[suffix]++;
                 }
             }
 
-            result.TotalRows = rows.Count;
+            result.TotalRows = rows.Count - 1; // 减去表头行
             result.UniqueFeatureTexts = featureTexts.Count;
+
+            // 构建详细的统计信息
+            var statsMessage =
+                $"总行数: {rows.Count}, 未找到炉号列: {noColumnCount}, 炉号解析失败: {parseFailCount}, 无特性后缀: {noFeatureSuffixCount}, 唯一特性文字: {featureTexts.Count}";
+            Console.WriteLine($"[Excel] {statsMessage}");
+            if (featureCounts.Count > 0)
+            {
+                Console.WriteLine(
+                    $"[Excel] 特性统计: {string.Join(", ", featureCounts.Select(kv => $"{kv.Key}={kv.Value}次"))}"
+                );
+            }
 
             if (featureTexts.Count == 0)
             {
-                result.Message = $"解析了 {rows.Count} 行数据，未发现任何特性后缀文字";
+                result.Message =
+                    $"解析了 {rows.Count} 行数据，未发现任何特性后缀文字。{statsMessage}";
                 return result;
             }
 
@@ -629,8 +796,15 @@ public class FeatureLearningService : IDynamicApiController, ITransient
 
             result.NewCorrections = newCorrectionCount;
             result.PerfectMatches = matchResults.Count(r => r.IsPerfectMatch);
+
+            // 构建特性统计字符串
+            var featureStatsStr =
+                featureCounts.Count > 0
+                    ? string.Join(", ", featureCounts.Select(kv => $"'{kv.Key}'出现{kv.Value}次"))
+                    : "";
+
             result.Message =
-                $"处理完成：解析 {rows.Count} 行，{featureTexts.Count} 个唯一特性文字，{result.PerfectMatches} 个100%匹配，新增 {newCorrectionCount} 条待修正记录";
+                $"处理完成：总{rows.Count}行，找到{featureTexts.Count}种唯一特性（{featureStatsStr}），{result.PerfectMatches}个100%匹配（跳过），新增{newCorrectionCount}条待修正记录。「无特性后缀:{noFeatureSuffixCount}行，解析失败:{parseFailCount}行」";
         }
         catch (Exception ex)
         {

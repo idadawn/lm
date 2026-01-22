@@ -1,7 +1,7 @@
 <template>
   <a-modal v-model:visible="visible" title="选择特性" :width="1000" :confirm-loading="confirmLoading" @ok="handleConfirm"
     @cancel="handleCancel" :body-style="{ padding: '0' }" class="common-container-modal" destroy-on-close>
-    <div class="page-content-wrapper" style="height: 600px; padding: 10px">
+    <div class="page-content-wrapper" style="height: 100%; padding: 10px">
       <!-- 左侧：特性大类树 -->
       <div class="page-content-wrapper-left">
         <BasicLeftTree title="特性大类" ref="leftTreeRef" :treeData="treeData" :loading="treeLoading" @reload="reloadTree"
@@ -13,6 +13,14 @@
         <div class="page-content-wrapper-content">
           <BasicTable @register="registerTable" :searchInfo="searchInfo" @row-click="handleRowClick"
             class="jnpf-sub-table">
+            <template #tableTitle>
+              <a-button type="primary" @click="handleCreateFeature">
+                <template #icon>
+                  <PlusOutlined />
+                </template>
+                新建特性
+              </a-button>
+            </template>
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'category'">
                 <a-tag color="purple">{{ record.category || '-' }}</a-tag>
@@ -25,13 +33,18 @@
         </div>
       </div>
     </div>
+
+    <!-- 新建特性弹窗 -->
+    <FeatureModal @register="registerFeatureModal" @success="handleFeatureCreated" />
   </a-modal>
 </template>
 
 <script lang="ts" setup>
 import { ref, reactive, unref, nextTick, watch } from 'vue';
+import { PlusOutlined } from '@ant-design/icons-vue';
 import { BasicLeftTree, TreeItem, TreeActionType } from '/@/components/Tree';
 import { BasicTable, useTable, BasicColumn } from '/@/components/Table';
+import { useModal } from '/@/components/Modal';
 import { useMessage } from '/@/hooks/web/useMessage';
 import { Nullable } from '/@/utils/types';
 import {
@@ -40,10 +53,12 @@ import {
   AppearanceFeatureInfo,
 } from '/@/api/lab/appearance';
 import { getAllAppearanceFeatureCategories, AppearanceFeatureCategoryInfo } from '/@/api/lab/appearanceCategory';
+import FeatureModal from './FeatureModal.vue';
 
 const emit = defineEmits(['confirm', 'cancel']);
 
 const { createMessage } = useMessage();
+const [registerFeatureModal, { openModal: openFeatureModal }] = useModal();
 
 // 对话框状态
 const visible = ref(false);
@@ -211,6 +226,17 @@ function convertToTreeData(categories: AppearanceFeatureCategoryInfo[]): TreeIte
 function reloadTree() {
   treeData.value = [];
   initData();
+}
+
+// 新建特性
+function handleCreateFeature() {
+  openFeatureModal(true, { isUpdate: false });
+}
+
+// 特性创建成功后刷新列表
+function handleFeatureCreated() {
+  createMessage.success('特性创建成功');
+  reload();
 }
 
 // 处理树节点选择

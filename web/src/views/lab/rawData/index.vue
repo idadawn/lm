@@ -120,7 +120,7 @@
       </div>
       <ProductSpecModal @register="registerProductSpecModal" />
       <DataReviewModal @register="registerDataReviewModal" @success="handleImportSuccess" />
-      <StepImportWizard @register="registerStepImportModal" @reload="handleStepImportSuccess" />
+      <StepImportWizard @register="registerStepImportModal" @reload="handleStepImportSuccess" @cancel="handleStepImportCancel" />
     </div>
   </div>
 </template>
@@ -425,7 +425,7 @@ function handleTabChange(key: string) {
 
 // ========== 导入与日志相关 ==========
 // 分步导入向导相关
-const [registerStepImportModal, { openPopup: openStepImportModal }] = usePopup();
+const [registerStepImportModal, { openPopup: openStepImportModal, closePopup: closeStepImportModal }] = usePopup();
 
 // 导入成功回调
 function handleImportSuccess(result: any) {
@@ -507,6 +507,10 @@ function formatTotalRows(record: any) {
 // 处理分步导入
 function handleStepImport() {
   openStepImportModal(true);
+}
+
+function handleStepImportCancel() {
+  closeStepImportModal();
 }
 
 // 分步导入成功回调

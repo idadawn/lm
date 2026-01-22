@@ -1,5 +1,5 @@
 <template>
-  <BasicPopup v-bind="$attrs" @register="registerPopup" title="原始数据导入向导" showOkBtn @ok="handleSubmit" destroyOnClose
+  <BasicPopup v-bind="$attrs" @register="registerPopup" title="原始数据导入向导" showOkBtn @ok="handleSubmit" @close="handleCancel" destroyOnClose
     class="full-popup raw-data-import-wizard" :continueLoading="activeStep < getStepList.length - 1">
     <!-- 步骤导航在标题栏 -->
     <template #title>
@@ -27,7 +27,7 @@
       <!-- 第一步：文件上传 -->
       <div v-show="activeStep === 0">
         <Step1UploadAndParse ref="step1Ref" :import-session-id="importSessionId" @next="handleStep1Next"
-          @file-cleared="handleFileCleared" />
+          @file-cleared="handleFileCleared" @cancel="handleCancel" />
       </div>
 
       <!-- 第二步：数据解析与预览 -->
@@ -83,7 +83,7 @@ interface State {
 }
 
 const { t } = useI18n();
-const emit = defineEmits(['register', 'reload']);
+const emit = defineEmits(['register', 'reload', 'cancel']);
 const [registerPopup, { closePopup, changeOkLoading }] = usePopupInner(init);
 const { createMessage } = useMessage();
 const { refreshPage } = useTabs();
@@ -249,30 +249,28 @@ function handleFileCleared() {
 
 // 取消
 async function handleCancel() {
+  // 先关闭弹窗，避免等待清理时卡住界面
+  init();
+  closePopup();
+  emit('cancel');
+
   try {
-    // 先清空第一步的文件（会同时删除Session）
+    // 再清空第一步的文件（会同时删除Session）
     if (step1Ref.value) {
       await step1Ref.value?.clearFile?.();
     } else if (importSessionId.value) {
       // 如果第一步组件不存在，直接删除Session
       await deleteImportSession(importSessionId.value);
     }
-    // 重置状态
-    init();
-    closePopup();
-    // 刷新当前页签
-    await refreshPage();
   } catch (error) {
     console.error('取消导入失败:', error);
-    // 重置状态
-    init();
-    closePopup();
-    // 即使出错也尝试刷新页签
-    try {
-      await refreshPage();
-    } catch (refreshError) {
-      console.error('刷新页签失败:', refreshError);
-    }
+  }
+
+  // 即使出错也尝试刷新页签
+  try {
+    await refreshPage();
+  } catch (refreshError) {
+    console.error('刷新页签失败:', refreshError);
   }
 }
 </script>

@@ -243,7 +243,7 @@ function handleRowClick(record: AppearanceFeatureInfo) {
 }
 
 // 打开对话框
-function open(existingFeatureIds?: string | string[]) {
+async function open(existingFeatureIds?: string | string[]) {
   console.log('[FeatureSelectDialog] open 方法被调用, existingFeatureIds:', existingFeatureIds);
   visible.value = true;
   selectedFeatures.value = [];
@@ -252,6 +252,23 @@ function open(existingFeatureIds?: string | string[]) {
     : existingFeatureIds
       ? [existingFeatureIds]
       : [];
+
+  if (preSelectedFeatureIds.value.length > 0) {
+    try {
+      const promises = preSelectedFeatureIds.value.map(id => getAppearanceFeatureInfo(id));
+      const features = await Promise.all(promises);
+      const validFeatures = features.filter(f => f && f.id) as AppearanceFeatureInfo[];
+
+      if (validFeatures.length > 0) {
+        selectedFeatures.value = validFeatures;
+        setSelectedRowKeys(validFeatures.map(f => f.id));
+      }
+    } catch (error) {
+      console.error('[FeatureSelectDialog] 获取预选特性详情失败:', error);
+      setSelectedRowKeys(preSelectedFeatureIds.value);
+    }
+  }
+
   console.log('[FeatureSelectDialog] visible 设置为:', visible.value);
   // 参考 productModal.vue，在对话框打开后初始化数据
   initData();

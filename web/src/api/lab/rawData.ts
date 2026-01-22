@@ -1,5 +1,6 @@
 import { defHttp } from '/@/utils/http/axios';
 import { downloadByData } from '/@/utils/file/download';
+import { ResultEnum } from '/@/enums/httpEnum';
 import type {
   ImportSession,
   Step1UploadAndParseInput,
@@ -20,10 +21,20 @@ enum Api {
 
 // 创建导入会话（后端返回的是字符串 sessionId，不是对象）
 export async function createImportSession(data): Promise<string> {
-  const res = await defHttp.post({ url: Api.ImportSessionPrefix + '/create', data });
-  // Handle case where result is wrapped in { code, data, ... } or direct string
-  if (typeof res === 'string') return res;
-  return res.data || res.id || res.Id || '';
+  const res: any = await defHttp.post(
+    { url: Api.ImportSessionPrefix + '/create', data },
+    { isTransformResponse: false, errorMessageMode: 'none' },
+  );
+  const result = res?.data ?? res;
+  const code = result?.code;
+  if (code && code !== ResultEnum.SUCCESS) {
+    const err: any = new Error(result?.msg || result?.message || '创建导入会话失败');
+    err.code = code;
+    throw err;
+  }
+
+  if (typeof result === 'string') return result;
+  return result?.data || result?.id || result?.Id || '';
 }
 
 // 获取导入会话详情

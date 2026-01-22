@@ -189,6 +189,9 @@
     <!-- 特性大类管理抽屉 -->
     <CategoryDrawer @register="registerDrawer" @visible-change="onCategoryDrawerVisibleChange" />
 
+    <!-- 人工匹配修正列表弹窗 -->
+    <CorrectionDialog ref="correctionDialogRef" />
+
     <!-- 人工匹配对话框 - 暂时保留用于兼容 -->
     <!-- <FeatureMatchDialog
       ref="featureMatchDialogRef"
@@ -217,6 +220,7 @@ import { useDrawer } from '/@/components/Drawer';
 import { useMessage } from '/@/hooks/web/useMessage';
 import { Nullable } from '/@/utils/types';
 import FeatureModal from './components/FeatureModal.vue';
+import CorrectionDialog from './correction.vue';
 // import FeatureMatchDialog from './components/FeatureMatchDialog.vue'; // 暂时注释，新的批量匹配已包含人工修正选项
 import CategoryDrawer from './components/CategoryDrawer.vue';
 import {
@@ -241,6 +245,7 @@ const [registerDrawer, { openDrawer }] = useDrawer();
 const leftTreeRef = ref<Nullable<TreeActionType>>(null);
 const treeLoading = ref(false);
 const treeData = ref<TreeItem[]>([]);
+const correctionDialogRef = ref<InstanceType<typeof CorrectionDialog> | null>(null);
 
 // 打开特性大类管理抽屉
 function handleGoToCategories() {
@@ -553,7 +558,12 @@ const getMatchMethodText = (method: string | undefined): string => {
 
 // 人工匹配 (查看修正列表)
 const handleManualMatch = () => {
-  router.push('/lab/appearance/correction');
+  console.log('handleManualMatch clicked', correctionDialogRef.value);
+  if (correctionDialogRef.value) {
+    correctionDialogRef.value.open({ autoOpen: true });
+  } else {
+    console.error('correctionDialogRef is null');
+  }
 };
 
 // 人工匹配确认

@@ -24,6 +24,8 @@
     />
     <!-- 显式指定 Microsoft.Extensions.AI.Abstractions 版本以确保与其他 AI 包版本一致 -->
     <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="9.0.1-preview.1.24570.5" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Systemd" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>

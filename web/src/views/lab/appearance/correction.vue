@@ -1,12 +1,6 @@
 <template>
-  <a-modal
-    v-model:open="visible"
-    title="人工修正匹配列表"
-    :width="1100"
-    :confirm-loading="confirmLoading"
-    :footer="null"
-    @cancel="handleCancel"
-    destroy-on-close>
+  <a-modal v-model:visible="visible" title="人工修正匹配列表" :width="1100" :confirm-loading="confirmLoading" ok-text="确定"
+    cancel-text="取消" @ok="handleOk" @cancel="handleCancel" destroy-on-close>
     <div class="page-content-wrapper" style="height: 640px">
       <div class="page-content-wrapper-center">
         <div class="page-content-wrapper-content">
@@ -114,6 +108,10 @@ const [registerTable, { reload, setTableData }] = useTable({
 });
 
 function handleCancel() {
+  visible.value = false;
+}
+
+function handleOk() {
   visible.value = false;
 }
 

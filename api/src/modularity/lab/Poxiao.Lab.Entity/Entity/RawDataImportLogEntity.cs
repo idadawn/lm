@@ -57,6 +57,28 @@ public class RawDataImportLogEntity : CLDEntityBase
     public string SourceFileId { get; set; }
 
     /// <summary>
+    /// Excel源文件哈希（用于重复上传识别）.
+    /// </summary>
+    [SugarColumn(
+        ColumnName = "F_SOURCE_FILE_HASH",
+        Length = 128,
+        IsNullable = true,
+        ColumnDescription = "Excel源文件哈希"
+    )]
+    public string SourceFileHash { get; set; }
+
+    /// <summary>
+    /// Excel源文件MD5（用于重复上传识别）.
+    /// </summary>
+    [SugarColumn(
+        ColumnName = "F_SOURCE_FILE_MD5",
+        Length = 32,
+        IsNullable = true,
+        ColumnDescription = "Excel源文件MD5"
+    )]
+    public string SourceFileMd5 { get; set; }
+
+    /// <summary>
     /// 有效数据行数（符合炉号解析规则的有效数据行数）.
     /// </summary>
     [SugarColumn(ColumnName = "F_VALID_DATA_COUNT", IsNullable = true, ColumnDescription = "有效数据行数")]

@@ -68,6 +68,18 @@
 
     </div>
 
+    <!-- 重复上传提示（无遮罩层） -->
+    <div v-if="showDuplicateDialog" class="duplicate-dialog">
+      <div class="duplicate-dialog-card">
+        <div class="duplicate-dialog-title">文件已上传过</div>
+        <div class="duplicate-dialog-message">{{ duplicateDialogMessage }}</div>
+        <div class="duplicate-dialog-actions">
+          <a-button @click="handleDuplicateCancel">取消导入</a-button>
+          <a-button type="primary" :loading="uploading" @click="handleDuplicateConfirm">仍然上传</a-button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -89,7 +101,7 @@ const props = defineProps<{
   importSessionId?: string;
 }>();
 
-const emit = defineEmits(['next', 'fileCleared']);
+const emit = defineEmits(['next', 'fileCleared', 'cancel']);
 
 // 状态
 const fileList = ref<any[]>([]);
@@ -100,6 +112,8 @@ const fileBase64 = ref<string>('');
 const fileName = ref<string>('');
 const validationErrors = ref<string[]>([]);
 const validating = ref(false);
+const showDuplicateDialog = ref(false);
+const duplicateDialogMessage = ref('');
 
 // 监听 prop 变化，同步到内部状态
 watch(
@@ -196,21 +210,7 @@ async function handleFile(file: File) {
 
     // 如果已有 sessionId（从 prop 传入），直接使用；否则创建新的会话
     if (!sessionId.value) {
-      // 创建导入会话（上传文件并保存到后端）
-      const result = await createImportSession({
-        fileName: file.name,
-        fileData: base64,  // 将文件数据一起发送到后端保存
-      });
-
-      // 保存 sessionId（后端直接返回字符串 sessionId）
-      if (!result || (typeof result !== 'string' && !result)) {
-        throw new Error('创建导入会话失败：未返回有效的会话ID');
-      }
-      sessionId.value = result;
-
-      if (!sessionId.value) {
-        throw new Error('创建导入会话失败：会话ID为空');
-      }
+      await createSession(false);
     } else {
       // 如果已有 sessionId，更新会话的文件信息（如果需要）
       // 注意：这里假设文件已经在创建会话时保存，所以不需要再次上传
@@ -219,7 +219,13 @@ async function handleFile(file: File) {
 
     message.success('文件上传成功，下一步将进行数据解析');
   } catch (error: any) {
-    message.error(error.message || '文件上传失败');
+    const duplicateMessage = extractDuplicateMessage(error);
+    if (duplicateMessage) {
+      showDuplicateConfirm(duplicateMessage);
+      return;
+    }
+
+    message.error(getErrorMessage(error) || '文件上传失败');
     fileList.value = [];
     // 只有在创建新会话失败时才清空 sessionId
     // 如果是从 prop 传入的，不清空
@@ -325,6 +331,82 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
+async function createSession(forceUpload: boolean) {
+  const result = await createImportSession({
+    fileName: fileName.value,
+    fileData: fileBase64.value,
+    forceUpload,
+  });
+
+  if (!result || (typeof result !== 'string' && !result)) {
+    throw new Error('创建导入会话失败：未返回有效的会话ID');
+  }
+  sessionId.value = result;
+
+  if (!sessionId.value) {
+    throw new Error('创建导入会话失败：会话ID为空');
+  }
+}
+
+function getErrorMessage(error: any): string {
+  return (
+    error?.message ||
+    error?.response?.data?.message ||
+    error?.response?.data?.Message ||
+    error?.msg ||
+    ''
+  );
+}
+
+function extractDuplicateMessage(error: any): string | null {
+  const messageText = getErrorMessage(error);
+  const marker = '[DUPLICATE_UPLOAD]';
+  const code = error?.code || error?.response?.data?.code;
+  if (code === 'COM1026' || code === 1026) {
+    return messageText?.replace(marker, '').trim() || '文件已上传过，是否继续上传？';
+  }
+  if (!messageText) return null;
+  if (messageText.includes(marker)) {
+    return messageText.replace(marker, '').trim();
+  }
+  if (messageText.includes('已上传过') || messageText.includes('已上传') || messageText.includes('已存在')) {
+    return messageText.trim();
+  }
+  return null;
+}
+
+function showDuplicateConfirm(content: string) {
+  duplicateDialogMessage.value = content || '文件已上传过，是否继续上传？';
+  showDuplicateDialog.value = true;
+}
+
+async function handleDuplicateConfirm() {
+  try {
+    uploading.value = true;
+    await createSession(true);
+    message.success('已确认继续上传');
+  } catch (error: any) {
+    message.error(getErrorMessage(error) || '文件上传失败');
+    fileList.value = [];
+    if (!props.importSessionId) {
+      sessionId.value = '';
+    }
+    fileBase64.value = '';
+    fileName.value = '';
+    validationErrors.value = [];
+  } finally {
+    uploading.value = false;
+    showDuplicateDialog.value = false;
+  }
+}
+
+function handleDuplicateCancel() {
+  showDuplicateDialog.value = false;
+  emit('cancel');
+  message.info('已取消导入');
+  void clearFile();
+}
+
 async function handleNext() {
   if (!fileList.value.length) {
     message.warning('请先选择文件');
@@ -380,6 +462,45 @@ defineExpose({
 
 .upload-section {
   padding: 0;
+}
+
+.duplicate-dialog {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2000;
+  pointer-events: none;
+}
+
+.duplicate-dialog-card {
+  width: 360px;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+  padding: 16px;
+  pointer-events: auto;
+}
+
+.duplicate-dialog-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #262626;
+  margin-bottom: 8px;
+}
+
+.duplicate-dialog-message {
+  font-size: 13px;
+  color: #595959;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.duplicate-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .section-title {

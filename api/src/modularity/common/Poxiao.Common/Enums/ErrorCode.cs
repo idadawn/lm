@@ -2270,6 +2270,12 @@ public enum ErrorCode
     [ErrorCodeItemMetadata("编码重复，请重新输入")]
     COM1025,
 
+    /// <summary>
+    /// 文件已上传过.
+    /// </summary>
+    [ErrorCodeItemMetadata("文件已上传过")]
+    COM1026,
+
     #endregion
 
 

@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Security.Cryptography;
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,6 +11,7 @@ using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Core.Manager.Files;
+using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Security;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.AppearanceFeature;
@@ -85,6 +87,40 @@ public class RawDataImportSessionService
     [HttpPost("create")]
     public async Task<string> Create([FromBody] RawDataImportSessionInput input)
     {
+        byte[] fileBytes = null;
+        string fileHash = null;
+        string fileMd5 = null;
+        if (!string.IsNullOrEmpty(input.FileData))
+        {
+            try
+            {
+                fileBytes = Convert.FromBase64String(input.FileData);
+                fileHash = ComputeFileHashSha256(fileBytes);
+                fileMd5 = ComputeFileHashMd5(fileBytes);
+            }
+            catch (Exception ex)
+            {
+                throw Oops.Oh($"文件数据格式错误: {ex.Message}");
+            }
+
+            if (!input.ForceUpload && !string.IsNullOrWhiteSpace(fileHash))
+            {
+                var existingLog = await FindDuplicateLogAsync(fileHash, fileMd5, input.FileName);
+                var existingSession = await FindDuplicateSessionAsync(fileHash, fileMd5, input.FileName);
+
+                if (existingLog != null || existingSession != null)
+                {
+                    var lastTime =
+                        existingLog?.ImportTime
+                        ?? existingSession?.CreatorTime
+                        ?? DateTime.Now;
+                    var message =
+                        $"[DUPLICATE_UPLOAD] 文件已上传过，最近一次时间：{lastTime:yyyy-MM-dd HH:mm:ss}，是否继续上传？";
+                    throw Oops.Oh(ErrorCode.COM1026, message);
+                }
+            }
+        }
+
         var session = new RawDataImportSessionEntity
         {
             Id = Guid.NewGuid().ToString(),
@@ -93,6 +129,8 @@ public class RawDataImportSessionService
             CurrentStep = 0,
             CreatorUserId = _userManager.UserId,
             CreatorTime = DateTime.Now,
+            SourceFileHash = fileHash,
+            SourceFileMd5 = fileMd5,
         };
 
         // 如果提供了文件数据，保存文件
@@ -100,7 +138,10 @@ public class RawDataImportSessionService
         {
             try
             {
-                var fileBytes = Convert.FromBase64String(input.FileData);
+                if (fileBytes == null)
+                {
+                    fileBytes = Convert.FromBase64String(input.FileData);
+                }
                 var saveFileName = $"{DateTime.Now:yyyyMMddHHmmss}_{input.FileName}";
                 var basePath = _fileService.GetPathByType("RawData");
                 if (string.IsNullOrEmpty(basePath))
@@ -383,6 +424,164 @@ public class RawDataImportSessionService
             "failed" => "失败",
             _ => status,
         };
+    }
+
+    private async Task<RawDataImportLogEntity> FindDuplicateLogAsync(
+        string fileHash,
+        string fileMd5,
+        string fileName
+    )
+    {
+        var existingLog = await _logRepository
+            .AsQueryable()
+            .Where(t =>
+                (t.SourceFileHash == fileHash && fileHash != null && fileHash != "")
+                || (t.SourceFileMd5 == fileMd5 && fileMd5 != null && fileMd5 != "")
+            )
+            .OrderByDescending(t => t.ImportTime)
+            .FirstAsync();
+
+        if (existingLog != null)
+            return existingLog;
+
+        if (string.IsNullOrWhiteSpace(fileName))
+            return null;
+
+        var logsWithoutHash = await _logRepository
+            .AsQueryable()
+            .Where(t =>
+                t.FileName == fileName
+                && (
+                    t.SourceFileHash == null
+                    || t.SourceFileHash == ""
+                    || t.SourceFileMd5 == null
+                    || t.SourceFileMd5 == ""
+                )
+            )
+            .OrderByDescending(t => t.ImportTime)
+            .Take(5)
+            .ToListAsync();
+
+        foreach (var log in logsWithoutHash)
+        {
+            var (hash, md5) = TryComputeHashesFromSourceFile(log.SourceFileId);
+            if (string.IsNullOrEmpty(hash) && string.IsNullOrEmpty(md5))
+                continue;
+
+            if (
+                (!string.IsNullOrEmpty(hash) && hash == fileHash)
+                || (!string.IsNullOrEmpty(md5) && md5 == fileMd5)
+            )
+            {
+                log.SourceFileHash = fileHash;
+                log.SourceFileMd5 = fileMd5;
+                await _logRepository.UpdateAsync(log);
+                return log;
+            }
+        }
+
+        return null;
+    }
+
+    private async Task<RawDataImportSessionEntity> FindDuplicateSessionAsync(
+        string fileHash,
+        string fileMd5,
+        string fileName
+    )
+    {
+        var existingSession = await _sessionRepository
+            .AsQueryable()
+            .Where(t =>
+                t.Status != "cancelled"
+                && (
+                    (t.SourceFileHash == fileHash && fileHash != null && fileHash != "")
+                    || (t.SourceFileMd5 == fileMd5 && fileMd5 != null && fileMd5 != "")
+                )
+            )
+            .OrderByDescending(t => t.CreatorTime)
+            .FirstAsync();
+
+        if (existingSession != null)
+            return existingSession;
+
+        if (string.IsNullOrWhiteSpace(fileName))
+            return null;
+
+        var sessionsWithoutHash = await _sessionRepository
+            .AsQueryable()
+            .Where(t =>
+                t.FileName == fileName
+                && (
+                    t.SourceFileHash == null
+                    || t.SourceFileHash == ""
+                    || t.SourceFileMd5 == null
+                    || t.SourceFileMd5 == ""
+                )
+                && t.Status != "cancelled"
+            )
+            .OrderByDescending(t => t.CreatorTime)
+            .Take(5)
+            .ToListAsync();
+
+        foreach (var session in sessionsWithoutHash)
+        {
+            var (hash, md5) = TryComputeHashesFromSourceFile(session.SourceFileId);
+            if (string.IsNullOrEmpty(hash) && string.IsNullOrEmpty(md5))
+                continue;
+
+            if (
+                (!string.IsNullOrEmpty(hash) && hash == fileHash)
+                || (!string.IsNullOrEmpty(md5) && md5 == fileMd5)
+            )
+            {
+                session.SourceFileHash = fileHash;
+                session.SourceFileMd5 = fileMd5;
+                await _sessionRepository.UpdateAsync(session);
+                return session;
+            }
+        }
+
+        return null;
+    }
+
+    private (string Hash, string Md5) TryComputeHashesFromSourceFile(string sourceFileId)
+    {
+        if (string.IsNullOrWhiteSpace(sourceFileId))
+            return (null, null);
+
+        try
+        {
+            if (!File.Exists(sourceFileId))
+                return (null, null);
+
+            var bytes = File.ReadAllBytes(sourceFileId);
+            return (ComputeFileHashSha256(bytes), ComputeFileHashMd5(bytes));
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[TryComputeHashesFromSourceFile] Failed: {ex.Message}");
+            return (null, null);
+        }
+    }
+
+    private static string ComputeFileHashSha256(byte[] fileBytes)
+    {
+        if (fileBytes == null || fileBytes.Length == 0)
+            return null;
+
+        using var sha256 = SHA256.Create();
+        var hashBytes = sha256.ComputeHash(fileBytes);
+        return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+    }
+
+    private static string ComputeFileHashMd5(byte[] fileBytes)
+    {
+        if (fileBytes == null || fileBytes.Length == 0)
+            return null;
+
+        using var md5 = MD5.Create();
+        var hashBytes = md5.ComputeHash(fileBytes);
+        return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
     }
 
     /// <summary>
@@ -1335,6 +1534,8 @@ public class RawDataImportSessionService
             ImportTime = DateTime.Now,
             ImportSessionId = sessionId,
             SourceFileId = session.SourceFileId,
+            SourceFileHash = session.SourceFileHash,
+            SourceFileMd5 = session.SourceFileMd5,
             ValidDataCount = validData.Count,
             LastRowsHash = GenerateLastRowHash(allData.LastOrDefault()),
             LastRowsCount = 1,
@@ -2191,9 +2392,13 @@ public class RawDataImportSessionService
         {
             // 1. 解析Excel文件
             byte[] fileBytes;
+            string fileHash = null;
+            string fileMd5 = null;
             try
             {
                 fileBytes = Convert.FromBase64String(input.FileData);
+                fileHash = ComputeFileHashSha256(fileBytes);
+                fileMd5 = ComputeFileHashMd5(fileBytes);
             }
             catch (Exception ex)
             {
@@ -2297,6 +2502,8 @@ public class RawDataImportSessionService
                 Status = output.FailRows == 0 ? "success" : "partial",
                 ImportTime = DateTime.Now,
                 ValidDataCount = output.SuccessRows,
+                SourceFileHash = fileHash,
+                SourceFileMd5 = fileMd5,
             };
             log.Creator();
             await _logRepository.InsertAsync(log);

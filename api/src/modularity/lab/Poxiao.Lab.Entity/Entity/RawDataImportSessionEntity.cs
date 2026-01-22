@@ -24,6 +24,18 @@ public class RawDataImportSessionEntity : CLDEntityBase
     public string SourceFileId { get; set; }
 
     /// <summary>
+    /// Excel源文件哈希（用于重复上传识别）.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_SOURCE_FILE_HASH", Length = 128, IsNullable = true)]
+    public string SourceFileHash { get; set; }
+
+    /// <summary>
+    /// Excel源文件MD5（用于重复上传识别）.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_SOURCE_FILE_MD5", Length = 32, IsNullable = true)]
+    public string SourceFileMd5 { get; set; }
+
+    /// <summary>
     /// 解析后的数据JSON文件路径（临时存储，完成导入后才写入数据库）.
     /// </summary>
     [SugarColumn(ColumnName = "F_PARSED_DATA_FILE", Length = 500, IsNullable = true)]

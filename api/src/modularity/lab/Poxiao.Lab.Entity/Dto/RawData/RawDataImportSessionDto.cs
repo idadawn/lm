@@ -17,6 +17,11 @@ public class RawDataImportSessionInput
     /// 文件数据（Base64）- 可选，如果提供则在创建会话时保存文件
     /// </summary>
     public string FileData { get; set; }
+
+    /// <summary>
+    /// 是否允许重复上传（用于已上传文件的二次确认）
+    /// </summary>
+    public bool ForceUpload { get; set; } = false;
 }
 
 /// <summary>

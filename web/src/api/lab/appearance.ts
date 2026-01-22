@@ -86,6 +86,7 @@ export interface ManualCorrectionOption {
     severityLevel: string;    // 特性等级
     actionType: 'add_keyword' | 'select_existing';  // 建议操作类型
     suggestion: string;       // 建议说明
+    correctionId?: string;    // 关联的修正记录ID
 }
 
 /** 匹配结果项 */
@@ -141,8 +142,8 @@ export function matchAppearanceFeature(data: MatchInput) {
 // 获取启用的严重程度等级列表（用于下拉选择）
 // 注意：此函数已移至 severityLevel.ts，保留此导出以保持向后兼容
 export function getEnabledSeverityLevels() {
-    return defHttp.get<SeverityLevelInfo[]>({ 
-        url: '/api/lab/appearance-feature-levels/enabled' 
+    return defHttp.get<SeverityLevelInfo[]>({
+        url: '/api/lab/appearance-feature-levels/enabled'
     });
 }
 
@@ -220,16 +221,16 @@ export interface AddFeatureVariantInput {
 export async function addFeatureVariant(featureId: string, data: AddFeatureVariantInput) {
     // 获取现有特性信息
     const feature = await getAppearanceFeatureInfo(featureId);
-    
+
     // 获取所有启用的严重程度等级
     const severityLevelsRes = await getEnabledSeverityLevelsFromApi();
     const severityLevels = Array.isArray(severityLevelsRes) ? severityLevelsRes : (severityLevelsRes as any)?.data || [];
     const severityLevel = severityLevels.find((level: SeverityLevelInfo) => level.name === data.severity);
-    
+
     if (!severityLevel) {
         throw new Error(`未找到严重程度等级 "${data.severity}"`);
     }
-    
+
     // 使用现有特性的信息创建新变体
     return addFeatureWithSeverity({
         categoryId: feature.categoryId,

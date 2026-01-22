@@ -221,6 +221,11 @@ copy_resources() {
         cp -r "${API_ENTRY_DIR}/Configurations" "$PUBLISH_DIR/"
         log_info "已复制: Configurations"
     fi
+
+    if [ -d "${API_ENTRY_DIR}/lib" ]; then
+        cp -r "${API_ENTRY_DIR}/lib" "$PUBLISH_DIR/"
+        log_info "已复制: lib"
+    fi
 }
 
 # ============================================

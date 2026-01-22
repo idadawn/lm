@@ -17,17 +17,15 @@ services:
       - "${MYSQL_PORT:-3307}:3306"
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
-      MYSQL_ROOT_HOST: "%"  # Allow root to connect from any host (fixes 172.24.0.1 access denied)
+      MYSQL_ROOT_HOST: "%"
       MYSQL_DATABASE: ${MYSQL_DATABASE:-lumei}
       MYSQL_USER: ${MYSQL_USER:-lumei}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-lumei123}
       TZ: ${MYSQL_TIMEZONE:-Asia/Shanghai}
     volumes:
       - ${DEPLOY_DIR:-./deploy}/mysql/data:/var/lib/mysql
+      - ${DEPLOY_DIR:-./deploy}/mysql/conf/my.cnf:/etc/mysql/my.cnf
       - ${DEPLOY_DIR:-./deploy}/mysql/init:/docker-entrypoint-initdb.d
-    command:
-      - --character-set-server=utf8mb4
-      - --collation-server=utf8mb4_unicode_ci
     networks:
       - lm-network
     healthcheck:

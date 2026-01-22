@@ -98,7 +98,7 @@ build_image() {
     log_info "Dockerfile: $DOCKERFILE"
 
     # 构建带版本标签的镜像
-    docker build -t ${IMAGE_NAME}:${APP_VERSION} -f api/Dockerfile.build .
+    docker build --progress=plain --network=host -t ${IMAGE_NAME}:${APP_VERSION} -f api/Dockerfile.build .
 
     # 同时打 latest 标签
     docker tag ${IMAGE_NAME}:${APP_VERSION} ${IMAGE_NAME}:latest

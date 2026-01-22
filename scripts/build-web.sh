@@ -220,7 +220,7 @@ build_docker_image() {
     cd "$PROJECT_ROOT"
 
     # 构建带版本标签的镜像
-    docker build -t lm-web:${APP_VERSION} -f web/Dockerfile.build .
+    docker build --progress=plain --network=host -t lm-web:${APP_VERSION} -f web/Dockerfile.build .
 
     # 同时打 latest 标签
     docker tag lm-web:${APP_VERSION} lm-web:latest

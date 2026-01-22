@@ -1,0 +1,26 @@
+{
+  "ConnectionStrings": {
+    "ConnectionConfigs": [
+      {
+        "ConfigId": "default",
+        "DBName": "lumei",
+        "DBType": "MySql",
+        "Host": "lm-mysql",
+        "Port": "3307",
+        "UserName": "poxiao",
+        "Password": "Lm@Mysql#2025$App!",
+        "DefaultConnection": "server=lm-mysql;Port=3307;Database={0};Uid=poxiao;Pwd=Lm@Mysql#2025$App!;AllowLoadLocalInfile=true;Charset=utf8mb4;"
+      },
+      {
+        "ConfigId": "Poxiao-Job",
+        "DBName": "lumei",
+        "DBType": "MySql",
+        "Host": "lm-mysql",
+        "Port": "3307",
+        "UserName": "poxiao",
+        "Password": "Lm@Mysql#2025$App!",
+        "DefaultConnection": "server=lm-mysql;Port=3307;Database={0};Uid=poxiao;Pwd=Lm@Mysql#2025$App!;AllowLoadLocalInfile=true;Charset=utf8mb4;"
+      }
+    ]
+  }
+}

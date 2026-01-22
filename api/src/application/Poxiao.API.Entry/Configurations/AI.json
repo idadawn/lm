@@ -1,18 +1,18 @@
 {
   "AI": {
     "Chat": {
-      "Endpoint": "http://47.105.59.151:8920/v1",
+      "Endpoint": "http://lm-vllm:8082/v1",
       "ModelId": "/data/qwen2.5-7b",
       "Key": "dummy-key"
     },
     "Embedding": {
-      "Endpoint": "http://47.105.59.151:8919",
+      "Endpoint": "http://lm-tei:80",
       "Model": "bge-m3"
     }
   },
   "VectorDB": {
     "Qdrant": {
-      "Endpoint": "http://47.105.59.151:8918",
+      "Endpoint": "http://lm-qdrant:6333",
       "CollectionName": "appearance_features"
     }
   }

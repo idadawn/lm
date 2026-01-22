@@ -15,6 +15,10 @@ wwwroot/
 .env.local
 .env.*.local
 
+# Local configuration files (sensitive)
+SERVICES-CONFIG.local.md
+*.local.md
+
 # IDE files
 .vscode/
 .idea/

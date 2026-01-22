@@ -1,302 +1,184 @@
+# ============================================
+# 实验室数据分析系统 - Docker Compose 配置
+# 包含：基础设施 + 后端 API + 前端 Web
+# ============================================
+
 version: '3.8'
 
-# ===============================================
-# LM - Laboratory Management System
-# 检测室数据分析系统
-# ===============================================
-
 services:
-  # ===============================================
-  # 数据库服务组 (Database Services)
-  # ===============================================
-  # MySQL 8.0 - 主数据库
-  mysql:
-    image: mysql:8.0
-    container_name: lm_mysql
-    restart: always
-    ports:
-      - "3306:3306"
-    env_file:
-      - ./env/mysql.env
-    environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-root123}
-      - MYSQL_DATABASE=${MYSQL_DATABASE:-poxiao_db}
-      - MYSQL_USER=${MYSQL_USER:-poxiao}
-      - MYSQL_PASSWORD=${MYSQL_PASSWORD:-poxiao123}
-      - MYSQL_LOWER_CASE_TABLE_NAMES=1
-    volumes:
-      - ./mysql_data:/var/lib/mysql
-      - ./mysql_config:/etc/mysql/conf.d
-    command: >
-      --default-authentication-plugin=mysql_native_password
-      --lower-case-table-names=1
-      --character-set-server=utf8mb4
-      --collation-server=utf8mb4_unicode_ci
-    networks:
-      - lm_network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 20s
-      retries: 10
+  # ============================================
+  # 基础设施服务
+  # ============================================
 
-  # Redis - 缓存数据库
-  redis:
-    image: redis:7-alpine
-    container_name: lm_redis
-    restart: always
+  # MySQL 数据库
+  mysql:
+    image: mysql:${MYSQL_VERSION:-8.0}
+    container_name: ${CONTAINER_PREFIX:-lm}-mysql
+    restart: unless-stopped
     ports:
-      - "6379:6379"
-    env_file:
-      - ./env/redis.env
+      - "${MYSQL_PORT:-3307}:3306"
     environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis123}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-lumei}
+      MYSQL_USER: ${MYSQL_USER:-lumei}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-lumei123}
+      TZ: ${MYSQL_TIMEZONE:-Asia/Shanghai}
     volumes:
-      - ./redis_data:/data
-    command: >
-      redis-server --appendonly yes
-      --requirepass ${REDIS_PASSWORD:-redis123}
-      --maxmemory 512mb
-      --maxmemory-policy allkeys-lru
+      - ${DEPLOY_DIR:-./deploy}/mysql/data:/var/lib/mysql
+      - ${DEPLOY_DIR:-./deploy}/mysql/init:/docker-entrypoint-initdb.d
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
     networks:
-      - lm_network
+      - lm-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root123}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Redis 缓存
+  redis:
+    image: redis:${REDIS_VERSION:-8.0-alpine}
+    container_name: ${CONTAINER_PREFIX:-lm}-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6380}:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redis123456}
+    volumes:
+      - ${DEPLOY_DIR:-./deploy}/redis/data:/data
+    networks:
+      - lm-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-  # Qdrant - 向量数据库
-  qdrant:
-    image: qdrant/qdrant:v1.12.1
-    container_name: lm_qdrant
-    restart: always
-    ports:
-      - "6333:6333"
-      - "6334:6334"
-    volumes:
-      - ./qdrant_storage:/qdrant/storage
-    env_file:
-      - ./env/qdrant.env
-    environment:
-      - QDRANT__SERVICE__HTTP_PORT=6333
-      - QDRANT__SERVICE__GRPC_PORT=6334
-    networks:
-      - lm_network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ===============================================
-  # AI 服务组 (AI Services)
-  # ===============================================
-  # TEI - 文本嵌入推理引擎
-  tei-embedding:
-    image: ghcr.io/huggingface/text-embeddings-inference:1.6
-    container_name: lm_tei
-    runtime: nvidia
-    restart: always
+  # Qdrant 向量数据库
+  qdrant:
+    image: qdrant/qdrant:${QDRANT_VERSION:-v1.12.1}
+    container_name: ${CONTAINER_PREFIX:-lm}-qdrant
+    restart: unless-stopped
     ports:
-      - "8080:80"
-    env_file:
-      - ./env/tei.env
-    environment:
-      - HF_HUB_OFFLINE=1
-      - HUGGINGFACE_HUB_CACHE=/data
-      - PORT=80
+      - "${QDRANT_HTTP_PORT:-6333}:6333"
+      - "${QDRANT_GRPC_PORT:-6334}:6334"
     volumes:
-      - ./models/bge-m3:/data/model
-    command: --model-id /data/model --max-client-batch-size 32
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [ gpu ]
+      - ${DEPLOY_DIR:-./deploy}/qdrant/storage:/qdrant/storage
     networks:
-      - lm_network
-    depends_on:
-      - qdrant
+      - lm-network
 
-  # vLLM - 大语言模型推理引擎
+  # TEI 文本嵌入服务（可选，需要 GPU）
+  tei:
+    image: ghcr.io/huggingface/text-embeddings-inference:cpu-${TEI_VERSION:-1.6.0}
+    container_name: ${CONTAINER_PREFIX:-lm}-tei
+    restart: unless-stopped
+    ports:
+      - "${TEI_PORT:-8081}:80"
+    environment:
+      - MODEL_ID=BAAI/bge-m3
+    volumes:
+      - ${DEPLOY_DIR:-./deploy}/tei/cache:/data
+    networks:
+      - lm-network
+    profiles:
+      - ai  # 使用 --profile ai 启动
+
+  # vLLM 大模型推理服务（可选，需要 GPU）
   vllm:
-    image: vllm/vllm-openai:latest
-    container_name: lm_vllm
-    runtime: nvidia
-    restart: always
+    image: vllm/vllm-openai:${VLLM_VERSION:-latest}
+    container_name: ${CONTAINER_PREFIX:-lm}-vllm
+    restart: unless-stopped
     ports:
-      - "8000:8000"
-    env_file:
-      - ./env/vllm.env
+      - "${VLLM_PORT:-8082}:8000"
     environment:
-      - HF_HUB_OFFLINE=1
-      - PORT=8000
+      - MODEL_PATH=${VLLM_MODEL_PATH:-Qwen/Qwen2.5-7B-Instruct}
+      - GPU_MEMORY_UTILIZATION=${VLLM_GPU_MEMORY_UTILIZATION:-0.7}
+      - MAX_MODEL_LEN=${VLLM_MAX_MODEL_LEN:-4096}
     volumes:
-      - ./models/qwen2.5-7b:/data/qwen2.5-7b
-    command: >
-      --model /data/qwen2.5-7b --host 0.0.0.0 --port 8000 --trust-remote-code
-      --gpu-memory-utilization 0.7 --max-model-len 4096
+      - ${DEPLOY_DIR:-./deploy}/vllm/models:/models
+    networks:
+      - lm-network
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [ gpu ]
-    networks:
-      - lm_network
-    depends_on:
-      - qdrant
+              capabilities: [gpu]
+    profiles:
+      - ai  # 使用 --profile ai 启动
 
-  # ===============================================
-  # 消息队列服务 (Message Queue Services)
-  # ===============================================
-  # RabbitMQ - 消息总线
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    container_name: lm_rabbitmq
-    restart: always
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-guest}
-      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-guest}
-      - RABBITMQ_DEFAULT_VHOST=/
-    volumes:
-      - ./rabbitmq_data:/var/lib/rabbitmq
-    networks:
-      - lm_network
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+  # ============================================
+  # 应用服务
+  # ============================================
 
-  # ===============================================
-  # 应用服务组 (Application Services)
-  # ===============================================
-  # API 服务
+  # 后端 API
   api:
-    build:
-      context: ./api
-      dockerfile: Dockerfile
-    container_name: lm_api
-    restart: always
+    image: lm-api:${APP_VERSION:-latest}
+    container_name: ${CONTAINER_PREFIX:-lm}-api
+    restart: unless-stopped
     ports:
-      - "5000:80"
-      - "5001:443"
+      - "${API_PORT:-9530}:9530"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=http://+:80;https://+:443
-      - ConnectionStrings__DefaultConnection=server=${MYSQL_HOST};Port=${MYSQL_PORT};Database=${MYSQL_DATABASE};Uid=${MYSQL_USER};Pwd=${MYSQL_PASSWORD};AllowLoadLocalInfile=true
-      - Cache__RedisConnectionString=${REDIS_HOST}:${REDIS_PORT},password=${REDIS_PASSWORD},poolsize=500,ssl=false,defaultDatabase=8
-    env_file:
-      - ./api/.env.production
+      - ASPNETCORE_ENVIRONMENT=production
+      - ASPNETCORE_URLS=http://+:9530
+      - DOTNET_PRINT_TELEMETRY_MESSAGE=false
     volumes:
-      - ./api/resources:/app/resources
-      - ./api/logs:/app/logs
+      - ${DEPLOY_DIR:-./deploy}/api/logs:/app/logs
+      - ${DEPLOY_DIR:-./deploy}/api/uploads:/app/uploads
     networks:
-      - lm_network
+      - lm-network
     depends_on:
       mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-
-  # ===============================================
-  # 前端服务组 (Frontend Services)
-  # ===============================================
-  # Web 前端
-  web:
-    build:
-      context: ./web
-      dockerfile: Dockerfile
-    container_name: lm_web
-    restart: always
-    ports:
-      - "3000:80"
-    environment:
-      - NODE_ENV=production
-      - VUE_APP_API_BASE_URL=http://localhost:5000
-    volumes:
-      - ./web/dist:/usr/share/nginx/html
-      - ./web/nginx.conf:/etc/nginx/nginx.conf
-    networks:
-      - lm_network
-    depends_on:
-      - api
-
-  # ===============================================
-  # 工具服务组 (Utility Services)
-  # ===============================================
-  # Nginx - 反向代理
-  nginx:
-    image: nginx:alpine
-    container_name: lm_nginx
-    restart: always
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./nginx/ssl:/etc/nginx/ssl
-      - ./nginx/logs:/var/log/nginx
-    networks:
-      - lm_network
-    depends_on:
-      - web
-      - api
-
-  # MinIO - 对象存储 (可选)
-  minio:
-    image: minio/minio:latest
-    container_name: lm_minio
-    restart: always
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
-      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
-    volumes:
-      - ./minio_data:/data
-    command: server /data --console-address ":9001"
-    networks:
-      - lm_network
+      qdrant:
+        condition: service_started
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "curl", "-f", "http://localhost:9530/health"]
       interval: 30s
-      timeout: 20s
+      timeout: 10s
       retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-# ===============================================
-# 网络配置
-# ===============================================
+  # 前端 Web
+  web:
+    image: lm-web:${APP_VERSION:-latest}
+    container_name: ${CONTAINER_PREFIX:-lm}-web
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-80}:80"
+    networks:
+      - lm-network
+    depends_on:
+      - api
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
 networks:
-  lm_network:
+  lm-network:
+    name: ${NETWORK_NAME:-lm-network}
     driver: bridge
-    name: lm_network
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.20.0.0/16
 
-# ===============================================
-# 数据卷配置
-# ===============================================
 volumes:
-  mysql_data:
-    name: lm_mysql_data
-  redis_data:
-    name: lm_redis_data
-  qdrant_storage:
-    name: lm_qdrant_data
-  rabbitmq_data:
-    name: lm_rabbitmq_data
-  minio_data:
-    name: lm_minio_data
+  mysql-data:
+  redis-data:
+  qdrant-storage:

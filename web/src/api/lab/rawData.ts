@@ -11,6 +11,7 @@ import type {
   DataPreviewResult,
   ImportLog,
 } from './types/rawData';
+import { getProductSpecList as getProductSpecListFromApi } from './productSpec';
 
 enum Api {
   Prefix = '/api/lab/raw-data',
@@ -342,9 +343,24 @@ export function delRawData(id) {
   return defHttp.delete({ url: Api.Prefix + '/' + id });
 }
 
+// 删除（别名）
+export function deleteRawData(id) {
+  return delRawData(id);
+}
+
 // 获取导入日志列表
 export function getImportLogList(params?: any): Promise<ImportLog[]> {
   return defHttp.get({ url: Api.Prefix + '/import-log', params });
+}
+
+// 获取导入历史列表（别名）
+export function getImportHistoryList(params?: any): Promise<ImportLog[]> {
+  return getImportLogList(params);
+}
+
+// 获取导入日志详情
+export function getImportLogDetail(id: string): Promise<any> {
+  return defHttp.get({ url: Api.Prefix + '/import-log/' + id });
 }
 
 // 删除导入日志
@@ -370,3 +386,6 @@ export async function downloadErrorReport(importLogId: string): Promise<void> {
   const fileName = `错误报告_${importLogId}.xlsx`;
   downloadByData((response as any).data || response, fileName);
 }
+
+// 重新导出产品规格列表（从productSpec API）
+export const getProductSpecList = getProductSpecListFromApi;

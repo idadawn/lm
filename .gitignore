@@ -15,6 +15,11 @@ wwwroot/
 .env.local
 .env.*.local
 
+# Development environment specific files (sensitive)
+*.dev.json
+*.dev.bat
+appsettings.Development.json
+
 # Local configuration files (sensitive)
 SERVICES-CONFIG.local.md
 *.local.md

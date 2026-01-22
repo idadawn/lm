@@ -487,6 +487,7 @@ public class ExcelImportTemplateService
                             dto.UnitId = mapping.UnitId;
                         }
                         dto.Required = mapping.Required;
+                        dto.DecimalPlaces = mapping.DecimalPlaces;
 
                         if (!string.IsNullOrEmpty(mapping.ExcelColumnIndex))
                         {
@@ -550,7 +551,9 @@ public class ExcelImportTemplateService
 
     /// <inheritdoc />
     [HttpPost("validate-excel")]
-    public async Task<ExcelTemplateValidationResult> ValidateExcelAgainstTemplate([FromBody] ExcelTemplateValidationInput input)
+    public async Task<ExcelTemplateValidationResult> ValidateExcelAgainstTemplate(
+        [FromBody] ExcelTemplateValidationInput input
+    )
     {
         if (input == null || string.IsNullOrEmpty(input.FileData))
             throw Oops.Bah("请上传Excel文件");
@@ -587,7 +590,8 @@ public class ExcelImportTemplateService
                         }
                     }
 
-                    templateConfig = System.Text.Json.JsonSerializer.Deserialize<ExcelTemplateConfig>(json);
+                    templateConfig =
+                        System.Text.Json.JsonSerializer.Deserialize<ExcelTemplateConfig>(json);
                 }
                 catch (Exception ex)
                 {
@@ -611,7 +615,9 @@ public class ExcelImportTemplateService
             {
                 var fileBytes = Convert.FromBase64String(input.FileData);
                 using var stream = new MemoryStream(fileBytes);
-                var columns = MiniExcelLibs.MiniExcel.GetColumns(stream, useHeaderRow: true).ToList();
+                var columns = MiniExcelLibs
+                    .MiniExcel.GetColumns(stream, useHeaderRow: true)
+                    .ToList();
 
                 excelHeaders = new List<ExcelHeaderDto>();
                 for (int i = 0; i < columns.Count; i++)
@@ -655,13 +661,18 @@ public class ExcelImportTemplateService
             {
                 foreach (var field in templateConfig.FieldMappings)
                 {
-                    if (field.Required && field.ExcelColumnNames != null && field.ExcelColumnNames.Count > 0)
+                    if (
+                        field.Required
+                        && field.ExcelColumnNames != null
+                        && field.ExcelColumnNames.Count > 0
+                    )
                     {
                         // 检查是否至少有一个列名在Excel中存在
                         var found = field.ExcelColumnNames.Any(colName =>
                         {
                             var normalizedColName = colName?.Trim()?.ToLower();
-                            return !string.IsNullOrEmpty(normalizedColName) && excelHeaderMap.ContainsKey(normalizedColName);
+                            return !string.IsNullOrEmpty(normalizedColName)
+                                && excelHeaderMap.ContainsKey(normalizedColName);
                         });
 
                         if (!found)
@@ -678,36 +689,45 @@ public class ExcelImportTemplateService
             if (templateConfig.DetectionColumns != null)
             {
                 var detectionConfig = templateConfig.DetectionColumns;
-                var detectionHeaders = excelHeaders.Where(h =>
-                {
-                    var name = h.Name?.Trim() ?? "";
-                    if (string.IsNullOrEmpty(name)) return false;
-
-                    // 检查是否符合检测列模式
-                    if (detectionConfig.Patterns != null && detectionConfig.Patterns.Count > 0)
+                var detectionHeaders = excelHeaders
+                    .Where(h =>
                     {
-                        return detectionConfig.Patterns.Any(pattern =>
-                        {
-                            try
-                            {
-                                // 将模式中的 {col} 替换为数字匹配
-                                var regexPattern = pattern.Replace("{col}", @"\d+");
-                                // 构建正则表达式，使用忽略大小写选项
-                                var regex = new System.Text.RegularExpressions.Regex($"^{regexPattern}$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-                                return regex.IsMatch(name);
-                            }
-                            catch
-                            {
-                                // 如果正则表达式构建失败，尝试简单的字符串匹配
-                                var simplePattern = pattern.Replace("{col}", "");
-                                return name.Contains(simplePattern, StringComparison.OrdinalIgnoreCase);
-                            }
-                        });
-                    }
+                        var name = h.Name?.Trim() ?? "";
+                        if (string.IsNullOrEmpty(name))
+                            return false;
 
-                    // 如果没有模式，检查是否包含"检测"关键字
-                    return name.Contains("检测", StringComparison.OrdinalIgnoreCase);
-                }).ToList();
+                        // 检查是否符合检测列模式
+                        if (detectionConfig.Patterns != null && detectionConfig.Patterns.Count > 0)
+                        {
+                            return detectionConfig.Patterns.Any(pattern =>
+                            {
+                                try
+                                {
+                                    // 将模式中的 {col} 替换为数字匹配
+                                    var regexPattern = pattern.Replace("{col}", @"\d+");
+                                    // 构建正则表达式，使用忽略大小写选项
+                                    var regex = new System.Text.RegularExpressions.Regex(
+                                        $"^{regexPattern}$",
+                                        System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                                    );
+                                    return regex.IsMatch(name);
+                                }
+                                catch
+                                {
+                                    // 如果正则表达式构建失败，尝试简单的字符串匹配
+                                    var simplePattern = pattern.Replace("{col}", "");
+                                    return name.Contains(
+                                        simplePattern,
+                                        StringComparison.OrdinalIgnoreCase
+                                    );
+                                }
+                            });
+                        }
+
+                        // 如果没有模式，检查是否包含"检测"关键字
+                        return name.Contains("检测", StringComparison.OrdinalIgnoreCase);
+                    })
+                    .ToList();
 
                 // 提取检测列号
                 var detectionColumnNumbers = new List<int>();
@@ -722,7 +742,10 @@ public class ExcelImportTemplateService
                 }
 
                 // 去重并排序
-                var uniqueColumnNumbers = detectionColumnNumbers.Distinct().OrderBy(x => x).ToList();
+                var uniqueColumnNumbers = detectionColumnNumbers
+                    .Distinct()
+                    .OrderBy(x => x)
+                    .ToList();
 
                 if (uniqueColumnNumbers.Count == 0)
                 {
@@ -731,14 +754,24 @@ public class ExcelImportTemplateService
                 else
                 {
                     // 检查检测列数量范围
-                    if (detectionConfig.MinColumn > 0 && uniqueColumnNumbers.Count < detectionConfig.MinColumn)
+                    if (
+                        detectionConfig.MinColumn > 0
+                        && uniqueColumnNumbers.Count < detectionConfig.MinColumn
+                    )
                     {
-                        errors.Add($"检测列数量不足：至少需要 {detectionConfig.MinColumn} 列检测数据，当前找到 {uniqueColumnNumbers.Count} 列（{string.Join(", ", uniqueColumnNumbers)}）");
+                        errors.Add(
+                            $"检测列数量不足：至少需要 {detectionConfig.MinColumn} 列检测数据，当前找到 {uniqueColumnNumbers.Count} 列（{string.Join(", ", uniqueColumnNumbers)}）"
+                        );
                     }
 
-                    if (detectionConfig.MaxColumn > 0 && uniqueColumnNumbers.Count > detectionConfig.MaxColumn)
+                    if (
+                        detectionConfig.MaxColumn > 0
+                        && uniqueColumnNumbers.Count > detectionConfig.MaxColumn
+                    )
                     {
-                        errors.Add($"检测列数量超出：最多允许 {detectionConfig.MaxColumn} 列检测数据，当前找到 {uniqueColumnNumbers.Count} 列（{string.Join(", ", uniqueColumnNumbers)}）");
+                        errors.Add(
+                            $"检测列数量超出：最多允许 {detectionConfig.MaxColumn} 列检测数据，当前找到 {uniqueColumnNumbers.Count} 列（{string.Join(", ", uniqueColumnNumbers)}）"
+                        );
                     }
                 }
             }

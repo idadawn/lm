@@ -60,7 +60,7 @@
           </template>
           <template #description>
             <div>
-              <p style="margin-bottom: 0;">部分炉号在数据库中已存在，这些数据将被忽略，不会保存到数据库中。</p>
+              <p style="margin-bottom: 0;">部分炉号在数据库中已存在，这些数据将被更新并覆盖原有检测数据。</p>
             </div>
           </template>
         </a-alert>
@@ -150,7 +150,7 @@
                     </a-checkbox>
                   </template>
                   <template v-else-if="record.existsInDatabase">
-                    <a-tag color="orange" style="font-size: 12px; margin: 0;">数据库中已存在，将被忽略</a-tag>
+                    <a-tag color="orange" style="font-size: 12px; margin: 0;">数据库中已存在，将被更新</a-tag>
                   </template>
                 </div>
               </template>

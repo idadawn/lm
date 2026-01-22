@@ -12,20 +12,30 @@
 
     <!-- 导入结果 -->
     <div v-else class="result-section">
-      <!-- 成功状态 -->
-      <a-result
-        v-if="importSuccess"
-        status="success"
-        :title="noChanges ? '数据无变化' : '数据导入成功'"
-        :sub-title="noChanges ? (noChangesMessage || '数据无变化，导入已完成') : `成功导入 ${stats.validDataRows} 条数据`">
+      <!-- 提示状态 (无新数据) -->
+      <a-result v-if="importSuccess && noChanges" status="info" title="数据无变化"
+        :sub-title="noChangesMessage || 'Excel中有效数据全部已存在于数据库，未导入新数据'">
         <template #extra>
-          <a-alert
-            v-if="noChanges"
-            type="info"
-            show-icon
-            style="margin-bottom: 16px"
-            :message="noChangesMessage || '数据无变化，导入已完成'"
-            description="你可以直接关闭该窗口或返回列表查看结果。" />
+          <a-alert type="info" show-icon style="margin-bottom: 24px; text-align: left" message="提示"
+            description="本次导入的Excel文件中所有有效数据在系统中已存在，因此未执行新增或更新操作。您可以直接关闭窗口或返回。" />
+
+          <div class="result-stats">
+            <a-row :gutter="24" style="margin-bottom: 24px">
+              <a-col :span="12">
+                <a-statistic title="总读取行数" :value="stats.totalRows" />
+              </a-col>
+              <a-col :span="12">
+                <a-statistic title="重复/已存在行数" :value="stats.totalRows" :value-style="{ color: '#1890ff' }" />
+              </a-col>
+            </a-row>
+          </div>
+        </template>
+      </a-result>
+
+      <!-- 成功状态 -->
+      <a-result v-else-if="importSuccess" status="success" title="数据导入成功"
+        :sub-title="`成功导入 ${stats.validDataRows} 条数据`">
+        <template #extra>
           <div class="result-stats">
             <a-row :gutter="24" style="margin-bottom: 24px">
               <a-col :span="6">

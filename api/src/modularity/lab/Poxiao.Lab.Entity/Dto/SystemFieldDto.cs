@@ -72,4 +72,11 @@ public class SystemFieldDto
     [JsonPropertyName("required")]
     [JsonProperty("required")]
     public bool Required { get; set; }
+
+    /// <summary>
+    /// 小数点保留位数（数值类型有效，默认2位）.
+    /// </summary>
+    [JsonPropertyName("decimalPlaces")]
+    [JsonProperty("decimalPlaces")]
+    public int? DecimalPlaces { get; set; }
 }

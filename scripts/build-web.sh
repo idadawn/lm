@@ -88,27 +88,19 @@ check_nodejs() {
 }
 
 # ============================================
-# 检查并安装 pnpm
+# 检查并安装 pnpm (已弃用，改为检查 npm)
 # ============================================
-check_and_install_pnpm() {
-    log_step "检查 pnpm..."
+check_npm() {
+    log_step "检查 npm..."
 
-    if command -v pnpm &> /dev/null; then
-        local pnpm_version=$(pnpm -v)
-        log_info "pnpm 已安装: $pnpm_version"
+    if command -v npm &> /dev/null; then
+        local npm_version=$(npm -v)
+        log_info "npm 已安装: $npm_version"
         return 0
     fi
 
-    log_warn "pnpm 未安装，开始自动安装..."
-    npm install -g pnpm@8
-
-    if command -v pnpm &> /dev/null; then
-        local installed_version=$(pnpm -v)
-        log_info "pnpm 安装成功: $installed_version"
-    else
-        log_error "pnpm 安装失败"
-        exit 1
-    fi
+    log_error "npm 未安装"
+    exit 1
 }
 
 # ============================================
@@ -116,7 +108,7 @@ check_and_install_pnpm() {
 # ============================================
 setup_npm_registry() {
     log_step "配置 npm 镜像..."
-    pnpm config set registry https://registry.npmmirror.com
+    npm config set registry https://registry.npmmirror.com
     log_info "已设置 npm 镜像: https://registry.npmmirror.com"
 }
 
@@ -130,11 +122,11 @@ build_local() {
 
     # 安装依赖
     log_info "安装依赖..."
-    pnpm install
+    npm install
 
     # 构建生产版本
     log_info "开始构建..."
-    pnpm build
+    npm run build
 
     # 复制到发布目录
     log_info "复制构建产物..."
@@ -146,52 +138,11 @@ build_local() {
 }
 
 # ============================================
-# Docker 构建
+# Docker 构建 (已简化，改为直接拷贝 dist)
 # ============================================
 build_docker() {
-    log_step "Docker 构建前端..."
-
-    if ! command -v docker &> /dev/null; then
-        log_error "Docker 未安装"
-        exit 1
-    fi
-
-    cd "$PROJECT_ROOT"
-
-    # 使用 Docker 构建并提取产物
-    docker run --rm \
-        -v "$WEB_DIR:/app:rw" \
-        -w "/app" \
-        -e NODE_ENV=production \
-        -e CI=true \
-        node:20-alpine \
-        sh -c "
-            npm install -g pnpm@8 && \
-            pnpm config set registry https://registry.npmmirror.com && \
-            pnpm install --frozen-lockfile && \
-            pnpm build && \
-            cp -r dist/* /tmp/dist/
-        "
-
-    # 从容器复制构建产物
-    log_info "复制构建产物..."
-    mkdir -p "$PUBLISH_DIR"
-    rm -rf "${PUBLISH_DIR:?}"/*
-    # 这里需要重新运行容器来复制文件
-    docker run --rm \
-        -v "$WEB_DIR:/app:ro" \
-        -v "$PUBLISH_DIR:/out:rw" \
-        -w "/app" \
-        node:20-alpine \
-        sh -c "
-            apk add --no-cache rsync && \
-            npm install -g pnpm@8 && \
-            pnpm install --frozen-lockfile && \
-            pnpm build && \
-            rsync -av --delete dist/ /out/
-        "
-
-    log_info "构建完成!"
+    log_step "Docker 构建前端 (使用本地 dist)..."
+    build_local
 }
 
 # ============================================
@@ -220,7 +171,7 @@ build_docker_image() {
     cd "$PROJECT_ROOT"
 
     # 构建带版本标签的镜像
-    docker build --progress=plain --network=host -t lm-web:${APP_VERSION} -f web/Dockerfile.build .
+    docker build --progress=plain --network=host -t lm-web:${APP_VERSION} -f web/Dockerfile web/
 
     # 同时打 latest 标签
     docker tag lm-web:${APP_VERSION} lm-web:latest
@@ -273,13 +224,11 @@ main() {
 
     clean
 
-    if [ "$BUILD_MODE" = "local" ]; then
+    if [ "$BUILD_MODE" = "local" ] || [ "$BUILD_MODE" = "docker" ]; then
         check_nodejs
-        check_and_install_pnpm
+        check_npm
         setup_npm_registry
         build_local
-    else
-        build_docker
     fi
 
     build_docker_image

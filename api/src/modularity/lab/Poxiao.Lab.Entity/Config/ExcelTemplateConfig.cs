@@ -98,6 +98,12 @@ public class TemplateColumnMapping
     /// </summary>
     [JsonPropertyName("unitId")]
     public string UnitId { get; set; }
+
+    /// <summary>
+    /// 小数点保留位数（数值类型有效，默认2位）.
+    /// </summary>
+    [JsonPropertyName("decimalPlaces")]
+    public int? DecimalPlaces { get; set; } = 2;
 }
 
 /// <summary>

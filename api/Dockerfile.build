@@ -7,29 +7,29 @@
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
 
-# 配置 APT 使用阿里云镜像源（兼容不同 Debian 版本）
-RUN if [ -f /etc/apt/sources.list ]; then \
-        sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list && \
-        sed -i 's/security.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list; \
-    fi && \
-    if [ -f /etc/apt/sources.list.d/debian.sources ]; then \
-        sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources && \
-        sed -i 's/security.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources; \
-    fi
+# 配置 APT 使用中国镜像源（阿里云）
+# 直接覆写源文件，适配 Ubuntu 24.04 (Noble) DEB822 格式
+RUN rm -f /etc/apt/sources.list.d/ubuntu.sources /etc/apt/sources.list 2>/dev/null || true && \
+    echo "deb http://mirrors.aliyun.com/ubuntu/ noble main restricted universe multiverse" > /etc/apt/sources.list && \
+    echo "deb http://mirrors.aliyun.com/ubuntu/ noble-updates main restricted universe multiverse" >> /etc/apt/sources.list && \
+    echo "deb http://mirrors.aliyun.com/ubuntu/ noble-backports main restricted universe multiverse" >> /etc/apt/sources.list && \
+    echo "deb http://mirrors.aliyun.com/ubuntu/ noble-security main restricted universe multiverse" >> /etc/apt/sources.list
 
 # 安装必要的依赖
 RUN apt-get update && \
-    apt-get install -y \
+    apt-get install -y --no-install-recommends \
         libgdiplus \
         curl \
-        && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 # 设置时区为中国时区
 ENV TZ=Asia/Shanghai
 RUN ln -sf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# 创建非 root 用户
-RUN groupadd -r www-data && useradd -r -g www-data www-data
+# 创建非 root 用户（www-data 在 Ubuntu 镜像中通常已存在）
+RUN if ! id -u www-data > /dev/null 2>&1; then \
+        groupadd -r www-data && useradd -r -g www-data www-data; \
+    fi
 
 # ============================================
 # 构建阶段 - 使用本地已发布的文件

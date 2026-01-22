@@ -224,28 +224,6 @@ copy_resources() {
 }
 
 # ============================================
-# 构建 Docker 镜像
-# ============================================
-build_docker_image() {
-    log_step "构建 Docker 镜像..."
-
-    if ! command -v docker &> /dev/null; then
-        log_warn "Docker 未安装，跳过镜像构建"
-        return 0
-    fi
-
-    cd "$PROJECT_ROOT"
-
-    # 构建带版本标签的镜像
-    docker build -t lm-api:${APP_VERSION} -f api/Dockerfile.build .
-
-    # 同时打 latest 标签
-    docker tag lm-api:${APP_VERSION} lm-api:latest
-
-    log_info "Docker 镜像构建完成: lm-api:${APP_VERSION}"
-}
-
-# ============================================
 # 显示发布信息
 # ============================================
 show_info() {
@@ -334,7 +312,6 @@ main() {
     fi
 
     copy_resources
-    build_docker_image
     show_info
 
     echo "=========================================="

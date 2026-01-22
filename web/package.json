@@ -12,8 +12,8 @@
     "bootstrap": "pnpm install",
     "serve": "npm run dev",
     "dev": "vite",
-    "build": "cross-env NODE_ENV=production NODE_OPTIONS=--max-old-space-size=8192 vite build && esno ./build/script/postBuild.ts",
-    "build:test": "cross-env NODE_OPTIONS=--max-old-space-size=8192 vite build --mode test && esno ./build/script/postBuild.ts",
+    "build": "cross-env NODE_ENV=production NODE_OPTIONS=--max-old-space-size=8192 vite build && cross-env NODE_NO_WARNINGS=1 esno ./build/script/postBuild.ts",
+    "build:test": "cross-env NODE_OPTIONS=--max-old-space-size=8192 vite build --mode test && cross-env NODE_NO_WARNINGS=1 esno ./build/script/postBuild.ts",
     "build:no-cache": "pnpm clean:cache && npm run build",
     "report": "cross-env REPORT=true npm run build",
     "type:check": "vue-tsc --noEmit --skipLibCheck",
@@ -161,7 +161,7 @@
     "eslint-config-prettier": "^8.10.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-vue": "^9.17.0",
-    "esno": "^0.16.3",
+    "esno": "^0.17.0",
     "fs-extra": "^11.1.1",
     "inquirer": "^9.2.10",
     "less": "^4.2.0",
@@ -204,5 +204,10 @@
   "engines": {
     "node": ">=16.15.0",
     "pnpm": ">=8.1.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "tsx": "3.13.0"
+    }
   }
 }

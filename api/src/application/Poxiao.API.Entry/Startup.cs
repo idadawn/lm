@@ -265,6 +265,17 @@ public class Startup : AppStartup
 
         app.UseCorsAccessor();
 
+        // 健康检查端点（在认证之前）
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapGet("/health", async context =>
+            {
+                context.Response.StatusCode = 200;
+                context.Response.ContentType = "text/plain";
+                await context.Response.WriteAsync("healthy");
+            }).AllowAnonymous();
+        });
+
         app.UseAuthentication();
         app.UseAuthorization();
 

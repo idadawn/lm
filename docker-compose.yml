@@ -21,6 +21,7 @@ services:
     volumes:
       - ${DEPLOY_DIR:-./deploy}/api/logs:/app/logs
       - ${DEPLOY_DIR:-./deploy}/api/uploads:/app/uploads
+      - ${DEPLOY_DIR:-./deploy}/api/Configurations:/app/Configurations
     networks:
       - lm-network
     healthcheck:
@@ -46,7 +47,7 @@ services:
     networks:
       - lm-network
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -74,7 +75,7 @@ services:
       - api
       - web
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 30s
       timeout: 10s
       retries: 3

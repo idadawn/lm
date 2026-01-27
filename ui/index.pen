@@ -1,0 +1,1014 @@
+{
+  "version": "2.6",
+  "children": [
+    {
+      "type": "frame",
+      "id": "bi8Au",
+      "x": 0,
+      "y": 0,
+      "name": "首页可视化驾驶舱",
+      "clip": true,
+      "width": 1920,
+      "height": 1080,
+      "fill": "#F5F7FA",
+      "layout": "vertical",
+      "gap": 16,
+      "padding": 24,
+      "children": [
+        {
+          "type": "frame",
+          "id": "header",
+          "name": "顶部标题栏",
+          "width": "fill_container",
+          "height": 80,
+          "fill": "#FFFFFF",
+          "padding": [
+            0,
+            24
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "title",
+              "name": "页面标题",
+              "fill": "#111827",
+              "content": "首页可视化驾驶舱",
+              "fontFamily": "Inter",
+              "fontSize": 32,
+              "fontWeight": "700"
+            },
+            {
+              "type": "frame",
+              "id": "filters",
+              "name": "全局过滤器",
+              "gap": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "dateFilter",
+                  "name": "日期范围选择器",
+                  "width": 200,
+                  "height": 40,
+                  "fill": "#F9FAFB",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#E5E7EB"
+                  },
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "dateLabel",
+                      "fill": "#6B7280",
+                      "content": "日期范围",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "furnaceFilter",
+                  "name": "炉号前缀选择器",
+                  "width": 150,
+                  "height": 40,
+                  "fill": "#F9FAFB",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#E5E7EB"
+                  },
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "furnaceLabel",
+                      "fill": "#6B7280",
+                      "content": "炉号前缀",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "sprayFilter",
+                  "name": "喷次选择器",
+                  "width": 120,
+                  "height": 40,
+                  "fill": "#F9FAFB",
+                  "cornerRadius": 6,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#E5E7EB"
+                  },
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "sprayLabel",
+                      "fill": "#6B7280",
+                      "content": "喷次",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "mainContent",
+          "name": "主内容区",
+          "width": "fill_container",
+          "height": "fill_container",
+          "gap": 16,
+          "children": [
+            {
+              "type": "frame",
+              "id": "leftColumn",
+              "name": "左侧列",
+              "width": "fill_container",
+              "height": "fill_container",
+              "layout": "vertical",
+              "gap": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "topLeft",
+                  "name": "左上-核心指标区",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#E5E7EB"
+                  },
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 20,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "topLeftTitle",
+                      "name": "区域标题",
+                      "fill": "#111827",
+                      "content": "核心指标区",
+                      "fontFamily": "Inter",
+                      "fontSize": 20,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "kpiCards",
+                      "name": "KPI卡片组",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "gap": 16,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "passRateCard",
+                          "name": "合格率仪表盘卡片",
+                          "width": "fill_container",
+                          "height": 200,
+                          "fill": "#F0F9FF",
+                          "cornerRadius": 8,
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "#BAE6FD"
+                          },
+                          "layout": "vertical",
+                          "gap": 8,
+                          "padding": 16,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "passRateLabel",
+                              "fill": "#0369A1",
+                              "content": "合格率",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "passRateValue",
+                              "fill": "#0C4A6E",
+                              "content": "98.5%",
+                              "fontFamily": "Inter",
+                              "fontSize": 36,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "passRateTrend",
+                              "fill": "#059669",
+                              "content": "↑ 2.3%",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "totalWeightCard",
+                          "name": "总产量卡片",
+                          "width": "fill_container",
+                          "height": 200,
+                          "fill": "#F0FDF4",
+                          "cornerRadius": 8,
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "#BBF7D0"
+                          },
+                          "layout": "vertical",
+                          "gap": 8,
+                          "padding": 16,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "totalWeightLabel",
+                              "fill": "#166534",
+                              "content": "累计总重量",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "totalWeightValue",
+                              "fill": "#14532D",
+                              "content": "1,234.5",
+                              "fontFamily": "Inter",
+                              "fontSize": 36,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "totalWeightUnit",
+                              "fill": "#15803D",
+                              "content": "吨",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "todayWeightCard",
+                          "name": "今日新增卡片",
+                          "width": "fill_container",
+                          "height": 200,
+                          "fill": "#FEF3C7",
+                          "cornerRadius": 8,
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "#FDE68A"
+                          },
+                          "layout": "vertical",
+                          "gap": 8,
+                          "padding": 16,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "todayWeightLabel",
+                              "fill": "#92400E",
+                              "content": "今日新增",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "todayWeightValue",
+                              "fill": "#78350F",
+                              "content": "45.8",
+                              "fontFamily": "Inter",
+                              "fontSize": 36,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "todayWeightUnit",
+                              "fill": "#A16207",
+                              "content": "吨",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "statusIndicator",
+                      "name": "实时状态指示器",
+                      "width": "fill_container",
+                      "height": 60,
+                      "fill": "#F9FAFB",
+                      "cornerRadius": 6,
+                      "gap": 16,
+                      "padding": 16,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "statusLight",
+                          "name": "状态灯",
+                          "width": 12,
+                          "height": 12,
+                          "fill": "#10B981",
+                          "cornerRadius": 6
+                        },
+                        {
+                          "type": "text",
+                          "id": "statusText",
+                          "fill": "#374151",
+                          "content": "系统运行正常 | 当前批次：2025-001 | 生产时间：08:30",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "bottomLeft",
+                  "name": "左下-工艺监控区",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#E5E7EB"
+                  },
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 20,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "bottomLeftTitle",
+                      "name": "区域标题",
+                      "fill": "#111827",
+                      "content": "工艺监控区",
+                      "fontFamily": "Inter",
+                      "fontSize": 20,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "thicknessChart",
+                      "name": "厚度一致性曲线图",
+                      "width": "fill_container",
+                      "height": 200,
+                      "fill": "#F9FAFB",
+                      "cornerRadius": 6,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "#E5E7EB"
+                      },
+                      "layout": "vertical",
+                      "padding": 16,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "thicknessChartTitle",
+                          "fill": "#374151",
+                          "content": "厚度极差分布图（20个测量点）",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "thicknessChartArea",
+                          "name": "图表区域",
+                          "width": "fill_container",
+                          "height": "fill_container",
+                          "fill": "#FFFFFF",
+                          "cornerRadius": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "thicknessChartPlaceholder",
+                              "fill": "#9CA3AF",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "[厚度波动曲线图 - 展示N到AB列20个测量点的波动]",
+                              "textAlign": "center",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "stackingFactorChart",
+                      "name": "叠片系数分布图",
+                      "width": "fill_container",
+                      "height": 200,
+                      "fill": "#F9FAFB",
+                      "cornerRadius": 6,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "#E5E7EB"
+                      },
+                      "layout": "vertical",
+                      "padding": 16,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "stackingFactorChartTitle",
+                          "fill": "#374151",
+                          "content": "叠片系数分布",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "stackingFactorChartArea",
+                          "name": "图表区域",
+                          "width": "fill_container",
+                          "height": "fill_container",
+                          "fill": "#FFFFFF",
+                          "cornerRadius": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "stackingFactorChartPlaceholder",
+                              "fill": "#9CA3AF",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "[叠片系数分布直方图]",
+                              "textAlign": "center",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "rightColumn",
+              "name": "右侧列",
+              "width": "fill_container",
+              "height": "fill_container",
+              "layout": "vertical",
+              "gap": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "topRight",
+                  "name": "右上-质量诊断区",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#E5E7EB"
+                  },
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 20,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "topRightTitle",
+                      "name": "区域标题",
+                      "fill": "#111827",
+                      "content": "质量诊断区",
+                      "fontFamily": "Inter",
+                      "fontSize": 20,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "qualityPieChart",
+                      "name": "判定结果下钻饼图",
+                      "width": "fill_container",
+                      "height": 250,
+                      "fill": "#F9FAFB",
+                      "cornerRadius": 6,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "#E5E7EB"
+                      },
+                      "layout": "vertical",
+                      "padding": 16,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "qualityPieChartTitle",
+                          "fill": "#374151",
+                          "content": "判定结果下钻分析",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "qualityPieChartArea",
+                          "name": "饼图区域",
+                          "width": "fill_container",
+                          "height": "fill_container",
+                          "fill": "#FFFFFF",
+                          "cornerRadius": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "qualityPieChartPlaceholder",
+                              "fill": "#9CA3AF",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "[第一层：合格/不合格 | 点击不合格展开：性能不合、外观不合、尺寸超差]",
+                              "textAlign": "center",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "defectRanking",
+                      "name": "缺陷Top 5排行榜",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "fill": "#F9FAFB",
+                      "cornerRadius": 6,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "#E5E7EB"
+                      },
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 16,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "defectRankingTitle",
+                          "fill": "#374151",
+                          "content": "缺陷Top 5排行榜",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "defectList",
+                          "name": "缺陷列表",
+                          "width": "fill_container",
+                          "height": "fill_container",
+                          "layout": "vertical",
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "defect1",
+                              "name": "缺陷项1",
+                              "width": "fill_container",
+                              "height": 40,
+                              "fill": "#FEF2F2",
+                              "cornerRadius": 4,
+                              "padding": [
+                                0,
+                                12
+                              ],
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "defect1Rank",
+                                  "fill": "#DC2626",
+                                  "content": "1.",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "600"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "defect1Name",
+                                  "fill": "#991B1B",
+                                  "content": "划痕",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "defect1Count",
+                                  "fill": "#7F1D1D",
+                                  "content": "23次",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "defect2",
+                              "name": "缺陷项2",
+                              "width": "fill_container",
+                              "height": 40,
+                              "fill": "#FEF2F2",
+                              "cornerRadius": 4,
+                              "padding": [
+                                0,
+                                12
+                              ],
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "defect2Rank",
+                                  "fill": "#DC2626",
+                                  "content": "2.",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "600"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "defect2Name",
+                                  "fill": "#991B1B",
+                                  "content": "麻点",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "defect2Count",
+                                  "fill": "#7F1D1D",
+                                  "content": "15次",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "defect3",
+                              "name": "缺陷项3",
+                              "width": "fill_container",
+                              "height": 40,
+                              "fill": "#FEF2F2",
+                              "cornerRadius": 4,
+                              "padding": [
+                                0,
+                                12
+                              ],
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "defect3Rank",
+                                  "fill": "#DC2626",
+                                  "content": "3.",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "600"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "defect3Name",
+                                  "fill": "#991B1B",
+                                  "content": "尺寸超差",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "defect3Count",
+                                  "fill": "#7F1D1D",
+                                  "content": "8次",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "bottomRight",
+                  "name": "右下-趋势预测区",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 8,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#E5E7EB"
+                  },
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 20,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "bottomRightTitle",
+                      "name": "区域标题",
+                      "fill": "#111827",
+                      "content": "趋势预测区",
+                      "fontFamily": "Inter",
+                      "fontSize": 20,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "trendChart",
+                      "name": "关键指标趋势图",
+                      "width": "fill_container",
+                      "height": 250,
+                      "fill": "#F9FAFB",
+                      "cornerRadius": 6,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "#E5E7EB"
+                      },
+                      "layout": "vertical",
+                      "padding": 16,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "trendChartTitle",
+                          "fill": "#374151",
+                          "content": "关键指标波动趋势（时间序列）",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "trendChartArea",
+                          "name": "趋势图区域",
+                          "width": "fill_container",
+                          "height": "fill_container",
+                          "fill": "#FFFFFF",
+                          "cornerRadius": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "trendChartPlaceholder",
+                              "fill": "#9CA3AF",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "[时间序列趋势图 - 展示合格率、叠片系数等关键指标随时间的变化]",
+                              "textAlign": "center",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "correlationChart",
+                      "name": "关键指标关联散点图",
+                      "width": "fill_container",
+                      "height": 200,
+                      "fill": "#F9FAFB",
+                      "cornerRadius": 6,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "#E5E7EB"
+                      },
+                      "layout": "vertical",
+                      "padding": 16,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "correlationChartTitle",
+                          "fill": "#374151",
+                          "content": "关键指标关联分析（平均厚度 vs 叠片系数）",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "correlationChartArea",
+                          "name": "散点图区域",
+                          "width": "fill_container",
+                          "height": "fill_container",
+                          "fill": "#FFFFFF",
+                          "cornerRadius": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "correlationChartPlaceholder",
+                              "fill": "#9CA3AF",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "[散点图 - 横轴：平均厚度，纵轴：叠片系数，点大小：铁损]",
+                              "textAlign": "center",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "riskWarning",
+                      "name": "质量风险预警",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "fill": "#F9FAFB",
+                      "cornerRadius": 6,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "#E5E7EB"
+                      },
+                      "layout": "vertical",
+                      "gap": 12,
+                      "padding": 16,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "riskWarningTitle",
+                          "fill": "#374151",
+                          "content": "质量风险预警灯",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "warningLights",
+                          "name": "预警灯组",
+                          "width": "fill_container",
+                          "gap": 16,
+                          "justifyContent": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "greenLight",
+                              "name": "绿灯",
+                              "width": 60,
+                              "height": 60,
+                              "fill": "#10B981",
+                              "cornerRadius": 30,
+                              "layout": "vertical",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "greenLightLabel",
+                                  "fill": "#FFFFFF",
+                                  "content": "正常",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "yellowLight",
+                              "name": "黄灯",
+                              "width": 60,
+                              "height": 60,
+                              "fill": "#F59E0B",
+                              "cornerRadius": 30,
+                              "layout": "vertical",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "yellowLightLabel",
+                                  "fill": "#FFFFFF",
+                                  "content": "预警",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "redLight",
+                              "name": "红灯",
+                              "width": 60,
+                              "height": 60,
+                              "fill": "#EF4444",
+                              "cornerRadius": 30,
+                              "layout": "vertical",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "redLightLabel",
+                                  "fill": "#FFFFFF",
+                                  "content": "异常",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 12,
+                                  "fontWeight": "500"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "warningMessage",
+                          "name": "预警消息",
+                          "width": "fill_container",
+                          "fill": "#FEF3C7",
+                          "cornerRadius": 4,
+                          "padding": 12,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "warningMessageText",
+                              "fill": "#92400E",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "⚠️ 连续3卷产品叠片系数呈下降趋势，建议检查设备状态",
+                              "fontFamily": "Inter",
+                              "fontSize": 13,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

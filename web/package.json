@@ -207,7 +207,8 @@
   },
   "pnpm": {
     "overrides": {
-      "tsx": "3.13.0"
+      "tsx": "3.13.0",
+      "@ctrl/tinycolor": "^4.2.0"
     }
   }
 }

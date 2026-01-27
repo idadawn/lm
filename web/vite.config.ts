@@ -51,6 +51,8 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
           replacement: pathResolve('types') + '/',
         },
       ],
+      // 修复 Node 20 对 CommonJS 模块解析的问题
+      extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json'],
     },
     server: {
       https: false,
@@ -122,6 +124,8 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
     optimizeDeps: {
       esbuildOptions: {
         target: 'es2020',
+        // 修复 Node 20 对 CommonJS 模块解析的问题
+        mainFields: ['module', 'jsnext:main', 'jsnext'],
       },
       // @iconify/iconify: The dependency is dynamically and virtually loaded by @purge-icons/generated, so it needs to be specified explicitly
       include: [
@@ -136,6 +140,8 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
         `monaco-editor/esm/vs/language/html/html.worker`,
         `monaco-editor/esm/vs/language/typescript/ts.worker`,
         `monaco-editor/esm/vs/editor/editor.worker`,
+        '@ctrl/tinycolor',
+        '@ant-design/colors',
       ],
     },
   };

@@ -88,18 +88,19 @@ check_nodejs() {
 }
 
 # ============================================
-# 检查并安装 pnpm (已弃用，改为检查 npm)
+# 检查 pnpm
 # ============================================
 check_pnpm() {
-    log_step "检查 npm..."
+    log_step "检查 pnpm..."
 
-    if command -v npm &> /dev/null; then
+    if command -v pnpm &> /dev/null; then
         local pnpm_version=$(pnpm -v)
         log_info "pnpm 已安装: $pnpm_version"
         return 0
     fi
 
-    log_error "pnpm 未安装"
+    log_error "pnpm 未安装，请先安装 pnpm"
+    log_info "安装命令: npm install -g pnpm"
     exit 1
 }
 

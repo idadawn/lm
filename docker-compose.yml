@@ -94,8 +94,9 @@ services:
     ports:
       - "${TEI_PORT:-8081}:80"
     environment:
-      - MODEL_ID=BAAI/bge-m3
+      - MODEL_ID=BAAI/${TEI_MODEL_NAME:-bge-m3}
     volumes:
+      - ${MODELS_HOST_PATH:-/opt/models}:/models
       - ${DEPLOY_DIR:-./deploy}/tei/cache:/data
     networks:
       - lm-network
@@ -119,11 +120,11 @@ services:
     ports:
       - "${VLLM_PORT:-8082}:8000"
     environment:
-      - MODEL_PATH=${VLLM_MODEL_PATH:-Qwen/Qwen2.5-7B-Instruct}
+      - MODEL_PATH=/models/${VLLM_MODEL_NAME:-Qwen2.5-7B-Instruct}
       - GPU_MEMORY_UTILIZATION=${VLLM_GPU_MEMORY_UTILIZATION:-0.7}
       - MAX_MODEL_LEN=${VLLM_MAX_MODEL_LEN:-4096}
     volumes:
-      - ${DEPLOY_DIR:-./deploy}/vllm/models:/models
+      - ${MODELS_HOST_PATH:-/opt/models}:/models
     networks:
       - lm-network
     deploy:
@@ -182,6 +183,9 @@ services:
   # 前端 Web (静态文件服务)
   web:
     image: lm-web
+    build:
+      context: ./web
+      dockerfile: Dockerfile.build
     container_name: ${CONTAINER_PREFIX:-lm}-web
     restart: unless-stopped
     # 内部端口，不对外暴露

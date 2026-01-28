@@ -99,6 +99,11 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       // Suppress warning
       __INTLIFY_PROD_DEVTOOLS__: false,
       __APP_INFO__: JSON.stringify(__APP_INFO__),
+      // Color plugin output file name
+      __COLOR_PLUGIN_OUTPUT_FILE_NAME__: false,
+      // Define Vue global flags
+      __PROD__: JSON.stringify(isBuild),
+      __DEV__: JSON.stringify(!isBuild),
     },
     css: {
       preprocessorOptions: {

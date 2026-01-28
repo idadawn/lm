@@ -109,7 +109,6 @@ export function registerGlobComp(app: App) {
     .use(Form)
     .use(Switch)
     .use(Dropdown)
-    .use(DropdownButton)
     .use(Empty)
     .use(Descriptions)
     .use(DescriptionsItem)
@@ -201,4 +200,8 @@ export function registerGlobComp(app: App) {
     .use(JnpfUploadImg)
     .use(JnpfUploadImgSingle)
     .use(JnpfUploadBtn);
+
+  // DropdownButton is not a plugin, register it as a component
+  // Register with ADropdownButton to match Ant Design Vue's naming convention (a-dropdown-button)
+  app.component('ADropdownButton', DropdownButton);
 }

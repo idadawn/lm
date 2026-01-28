@@ -8,6 +8,7 @@ using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Core.Manager;
+using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Security;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.IntermediateData;
@@ -29,10 +30,26 @@ namespace Poxiao.Lab.Service
             ITransient
     {
         private readonly ISqlSugarClient _db;
+        private readonly ICacheManager _cacheManager;
+        private readonly IUserManager _userManager;
 
-        public IntermediateDataColorService(ISqlSugarClient db)
+        private const string CachePrefix = "LAB:IntermediateDataColor";
+
+        public IntermediateDataColorService(
+            ISqlSugarClient db,
+            ICacheManager cacheManager,
+            IUserManager userManager
+        )
         {
             _db = db;
+            _cacheManager = cacheManager;
+            _userManager = userManager;
+        }
+
+        private string GetCacheKey(string suffix)
+        {
+            var tenantId = _userManager?.TenantId ?? "global";
+            return $"{CachePrefix}:{tenantId}:{suffix}";
         }
 
         /// <summary>
@@ -97,6 +114,11 @@ namespace Poxiao.Lab.Service
             {
                 throw Oops.Oh($"保存颜色配置失败: {ex.Message}");
             }
+            finally
+            {
+                // 清除缓存
+                await ClearCacheAsync(input.ProductSpecId);
+            }
         }
 
         /// <summary>
@@ -107,22 +129,34 @@ namespace Poxiao.Lab.Service
         [HttpPost("get-colors")]
         public async Task<IntermediateDataColorDto> GetColors(GetIntermediateDataColorInput input)
         {
-            var query = _db.Queryable<IntermediateDataColorEntity>()
-                .Where(x => x.ProductSpecId == input.ProductSpecId);
+            // 尝试从缓存获取
+            var cacheKey = GetCacheKey($"spec:{input.ProductSpecId}");
+            var cachedColors = await _cacheManager.GetAsync<List<IntermediateDataColorEntity>>(cacheKey);
+
+            if (cachedColors == null)
+            {
+                cachedColors = await _db.Queryable<IntermediateDataColorEntity>()
+                    .Where(x => x.ProductSpecId == input.ProductSpecId)
+                    .ToListAsync();
+                
+                await _cacheManager.SetAsync(cacheKey, cachedColors, TimeSpan.FromHours(6));
+            }
+
+            var query = cachedColors.AsEnumerable();
 
             if (input.IntermediateDataIds != null && input.IntermediateDataIds.Any())
             {
                 query = query.Where(x => input.IntermediateDataIds.Contains(x.IntermediateDataId));
             }
 
-            var colors = await query
+            var colors = query
                 .Select(x => new CellColorInfo
                 {
                     IntermediateDataId = x.IntermediateDataId,
                     FieldName = x.FieldName,
                     ColorValue = x.ColorValue,
                 })
-                .ToListAsync();
+                .ToList();
 
             return new IntermediateDataColorDto
             {
@@ -163,6 +197,11 @@ namespace Poxiao.Lab.Service
             {
                 throw Oops.Oh($"删除颜色配置失败: {ex.Message}");
             }
+            finally
+            {
+                // 清除缓存
+                await ClearCacheAsync(input.ProductSpecId);
+            }
         }
 
         /// <summary>
@@ -179,14 +218,24 @@ namespace Poxiao.Lab.Service
             if (intermediateDataIds == null || !intermediateDataIds.Any())
                 return new Dictionary<string, Dictionary<string, string>>();
 
-            var colors = await _db.Queryable<IntermediateDataColorEntity>()
-                .Where(x =>
-                    intermediateDataIds.Contains(x.IntermediateDataId)
-                    && x.ProductSpecId == productSpecId
-                )
-                .ToListAsync();
+            // 尝试从缓存获取
+            var cacheKey = GetCacheKey($"spec:{productSpecId}");
+            var cachedColors = await _cacheManager.GetAsync<List<IntermediateDataColorEntity>>(cacheKey);
+            
+            if (cachedColors == null)
+            {
+                // 获取该产品规格的所有颜色配置
+                cachedColors = await _db.Queryable<IntermediateDataColorEntity>()
+                    .Where(x => x.ProductSpecId == productSpecId)
+                    .ToListAsync();
+                
+                // 缓存6小时
+                await _cacheManager.SetAsync(cacheKey, cachedColors, TimeSpan.FromHours(6));
+            }
 
-            return colors
+            // 过滤出需要的数据
+            return cachedColors
+                .Where(x => intermediateDataIds.Contains(x.IntermediateDataId))
                 .GroupBy(x => x.IntermediateDataId)
                 .ToDictionary(g => g.Key, g => g.ToDictionary(x => x.FieldName, x => x.ColorValue));
         }
@@ -262,6 +311,19 @@ namespace Poxiao.Lab.Service
             catch (Exception ex)
             {
                 throw Oops.Oh($"保存单元格颜色失败: {ex.Message}");
+            }
+            finally
+            {
+                // 清除缓存
+                await ClearCacheAsync(input.ProductSpecId);
+            }
+        }
+
+        private async Task ClearCacheAsync(string productSpecId)
+        {
+            if (!string.IsNullOrEmpty(productSpecId))
+            {
+                await _cacheManager.DelAsync(GetCacheKey($"spec:{productSpecId}"));
             }
         }
     }

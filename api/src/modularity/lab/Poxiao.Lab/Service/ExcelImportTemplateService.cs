@@ -47,6 +47,15 @@ public class ExcelImportTemplateService
     [HttpGet("")]
     public async Task<List<ExcelImportTemplateDto>> GetList()
     {
+        var cacheKey = BuildTemplateCacheKey("list:all");
+
+        // 尝试从缓存获取
+        var cached = await _cacheManager.GetAsync<List<ExcelImportTemplateDto>>(cacheKey);
+        if (cached != null && cached.Count > 0)
+        {
+            return cached;
+        }
+
         // 确保默认模板存在
         await EnsureDefaultTemplates();
 
@@ -60,7 +69,15 @@ public class ExcelImportTemplateService
             dtos.Add(dto);
         }
 
-        return dtos.OrderByDescending(t => t.Id).ToList();
+        var result = dtos.OrderByDescending(t => t.Id).ToList();
+
+        // 写入缓存（6小时过期）
+        if (result.Count > 0)
+        {
+            await _cacheManager.SetAsync(cacheKey, result, TimeSpan.FromHours(6));
+        }
+
+        return result;
     }
 
     /// <inheritdoc />
@@ -141,6 +158,10 @@ public class ExcelImportTemplateService
         {
             await _cacheManager.DelAsync(cacheKey);
         }
+
+        // 清除列表缓存和GetSystemFields缓存
+        await _cacheManager.DelAsync(BuildTemplateCacheKey("list:all"));
+        await _cacheManager.DelAsync(BuildTemplateCacheKey($"system-fields:{entity.TemplateCode}"));
     }
 
     private string BuildTemplateCacheKey(string templateCode)
@@ -406,6 +427,15 @@ public class ExcelImportTemplateService
     [HttpGet("system-fields")]
     public async Task<SystemFieldResult> GetSystemFields(string templateCode)
     {
+        var cacheKey = BuildTemplateCacheKey($"system-fields:{templateCode}");
+
+        // 尝试从缓存获取
+        var cached = await _cacheManager.GetAsync<SystemFieldResult>(cacheKey);
+        if (cached != null)
+        {
+            return cached;
+        }
+
         var fields = new List<SystemFieldDto>();
         Type targetType = null;
         ExcelTemplateConfig savedConfig = null;
@@ -600,7 +630,10 @@ public class ExcelImportTemplateService
             }
         }
 
-        return await Task.FromResult(result);
+        // 写入缓存（6小时过期）
+        await _cacheManager.SetAsync(cacheKey, result, TimeSpan.FromHours(6));
+
+        return result;
     }
 
     /// <inheritdoc />

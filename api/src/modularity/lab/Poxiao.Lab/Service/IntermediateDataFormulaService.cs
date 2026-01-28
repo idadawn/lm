@@ -131,14 +131,28 @@ public class IntermediateDataFormulaService
     }
 
     /// <inheritdoc />
+    /// <inheritdoc />
     [HttpGet("{id}")]
     public async Task<IntermediateDataFormulaDto> GetByIdAsync(string id)
     {
+        var cacheKey = BuildFormulaCacheKey($"info:{id}");
+        if (_cacheManager.Exists(cacheKey))
+        {
+            var cached = _cacheManager.Get<IntermediateDataFormulaDto>(cacheKey);
+            if (cached != null)
+            {
+                return cached;
+            }
+        }
+
         var entity = await _repository.GetFirstAsync(t => t.Id == id && t.DeleteMark == null);
         if (entity == null)
             throw Oops.Oh(ErrorCode.COM1005);
 
-        return ToDto(entity);
+        var result = ToDto(entity);
+        await _cacheManager.SetAsync(cacheKey, result, TimeSpan.FromHours(6));
+
+        return result;
     }
 
     /// <inheritdoc />
@@ -204,7 +218,7 @@ public class IntermediateDataFormulaService
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1000);
 
-        await ClearFormulaCacheAsync();
+        await ClearFormulaCacheAsync(entity.Id);
 
         return ToDto(entity);
     }
@@ -287,7 +301,7 @@ public class IntermediateDataFormulaService
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1001);
 
-        await ClearFormulaCacheAsync();
+        await ClearFormulaCacheAsync(id);
 
         return ToDto(entity);
     }
@@ -310,7 +324,7 @@ public class IntermediateDataFormulaService
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1001);
 
-        await ClearFormulaCacheAsync();
+        await ClearFormulaCacheAsync(id);
 
         return ToDto(entity);
     }
@@ -323,7 +337,7 @@ public class IntermediateDataFormulaService
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1002);
 
-        await ClearFormulaCacheAsync();
+        await ClearFormulaCacheAsync(id);
     }
 
     /// <inheritdoc />
@@ -626,15 +640,19 @@ public class IntermediateDataFormulaService
         }
     }
 
-    private string BuildFormulaCacheKey()
+    private string BuildFormulaCacheKey(string suffix = "list")
     {
         var tenantId = _userManager?.TenantId ?? "global";
-        return $"{FormulaCachePrefix}:{tenantId}";
+        return $"{FormulaCachePrefix}:{tenantId}:{suffix}";
     }
 
-    private async Task ClearFormulaCacheAsync()
+    private async Task ClearFormulaCacheAsync(string? id = null)
     {
-        await _cacheManager.DelAsync(BuildFormulaCacheKey());
+        await _cacheManager.DelAsync(BuildFormulaCacheKey("list"));
+        if (!string.IsNullOrEmpty(id))
+        {
+            await _cacheManager.DelAsync(BuildFormulaCacheKey($"info:{id}"));
+        }
     }
 
     #region 辅助方法

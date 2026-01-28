@@ -4,7 +4,9 @@ using Poxiao.DatabaseAccessor;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
+using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
+using Poxiao.Infrastructure.Manager;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.ProductSpec;
 using Poxiao.Lab.Entity.Extensions;
@@ -25,24 +27,57 @@ public class ProductSpecService : IProductSpecService, IDynamicApiController, IT
     private readonly ISqlSugarRepository<ProductSpecAttributeEntity> _attributeRepository;
     private readonly ISqlSugarRepository<ProductSpecPublicAttributeEntity> _publicAttributeRepository;
     private readonly ProductSpecVersionService _versionService;
+    private readonly ICacheManager _cacheManager;
+    private readonly IUserManager _userManager;
+
+    /// <summary>
+    /// 缓存键前缀
+    /// </summary>
+    private const string CachePrefix = "LAB:ProductSpec";
 
     public ProductSpecService(
         ISqlSugarRepository<ProductSpecEntity> repository,
         ISqlSugarRepository<ProductSpecAttributeEntity> attributeRepository,
         ISqlSugarRepository<ProductSpecPublicAttributeEntity> publicAttributeRepository,
-        ProductSpecVersionService versionService
+        ProductSpecVersionService versionService,
+        ICacheManager cacheManager,
+        IUserManager userManager
     )
     {
         _repository = repository;
         _attributeRepository = attributeRepository;
         _publicAttributeRepository = publicAttributeRepository;
         _versionService = versionService;
+        _cacheManager = cacheManager;
+        _userManager = userManager;
+    }
+
+    /// <summary>
+    /// 获取缓存键（带租户隔离）
+    /// </summary>
+    private string GetCacheKey(string suffix)
+    {
+        var tenantId = _userManager?.TenantId ?? "global";
+        return $"{CachePrefix}:{tenantId}:{suffix}";
     }
 
     /// <inheritdoc />
     [HttpGet("")]
     public async Task<List<ProductSpecListOutput>> GetList([FromQuery] ProductSpecListQuery input)
     {
+        // 如果没有搜索关键字，尝试从缓存获取
+        var useCache = string.IsNullOrEmpty(input.Keyword);
+        var cacheKey = GetCacheKey("list:all");
+
+        if (useCache)
+        {
+            var cached = await _cacheManager.GetAsync<List<ProductSpecListOutput>>(cacheKey);
+            if (cached != null && cached.Count > 0)
+            {
+                return cached;
+            }
+        }
+
         var data = await _repository
             .AsQueryable()
             .WhereIF(
@@ -104,6 +139,12 @@ public class ProductSpecService : IProductSpecService, IDynamicApiController, IT
             }
         }
 
+        // 只有无关键字时才写入缓存（6小时过期）
+        if (useCache && result.Count > 0)
+        {
+            await _cacheManager.SetAsync(cacheKey, result, TimeSpan.FromHours(6));
+        }
+
         return result;
     }
 
@@ -111,6 +152,15 @@ public class ProductSpecService : IProductSpecService, IDynamicApiController, IT
     [HttpGet("{id}")]
     public async Task<ProductSpecInfoOutput> GetInfo(string id)
     {
+        var cacheKey = GetCacheKey($"info:{id}");
+
+        // 尝试从缓存获取
+        var cached = await _cacheManager.GetAsync<ProductSpecInfoOutput>(cacheKey);
+        if (cached != null)
+        {
+            return cached;
+        }
+
         var entity = await _repository.GetFirstAsync(t => t.Id == id && t.DeleteMark == null);
         var output = entity.Adapt<ProductSpecInfoOutput>();
 
@@ -120,6 +170,9 @@ public class ProductSpecService : IProductSpecService, IDynamicApiController, IT
 
         // 将扩展属性添加到输出对象（用于前端展示）
         output.Attributes = attributes;
+
+        // 写入缓存（6小时过期）
+        await _cacheManager.SetAsync(cacheKey, output, TimeSpan.FromHours(6));
 
         return output;
     }
@@ -176,6 +229,9 @@ public class ProductSpecService : IProductSpecService, IDynamicApiController, IT
             // 创建初始版本快照（版本1）
             await _versionService.CreateInitialVersionAsync(entity.Id, "初始版本");
         }
+
+        // 清除缓存
+        await ClearCacheAsync();
     }
 
     /// <inheritdoc />
@@ -242,6 +298,9 @@ public class ProductSpecService : IProductSpecService, IDynamicApiController, IT
             }
         }
         // 如果用户不选择创建新版本，不更新属性（保持当前版本不变）
+
+        // 清除缓存
+        await ClearCacheAsync(id);
     }
 
     /// <inheritdoc />
@@ -284,6 +343,9 @@ public class ProductSpecService : IProductSpecService, IDynamicApiController, IT
                 })
                 .ExecuteCommandAsync();
         }
+
+        // 清除缓存
+        await ClearCacheAsync(id);
     }
 
     /// <summary>
@@ -472,6 +534,25 @@ public class ProductSpecService : IProductSpecService, IDynamicApiController, IT
         }
 
         return changeInfo;
+    }
+
+    /// <summary>
+    /// 清除产品规格相关缓存
+    /// </summary>
+    /// <param name="id">可选的产品规格ID，用于清除特定记录的缓存</param>
+    private async Task ClearCacheAsync(string? id = null)
+    {
+        // 始终清除列表缓存（因为任何变更都会影响列表）
+        await _cacheManager.DelAsync(GetCacheKey("list:all"));
+
+        // 如果指定了ID，清除该记录的详情缓存
+        if (!string.IsNullOrEmpty(id))
+        {
+            await _cacheManager.DelAsync(GetCacheKey($"info:{id}"));
+
+            // 同时清除版本相关缓存
+            await _versionService.ClearCacheAsync(id);
+        }
     }
 }
 

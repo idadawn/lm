@@ -5,7 +5,9 @@ using Microsoft.Extensions.Configuration;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
+using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
+using Poxiao.Infrastructure.Manager;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.AppearanceFeature;
 using Poxiao.Lab.Interfaces;
@@ -27,6 +29,10 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
     private readonly IConfiguration _configuration;
     private readonly IAppearanceAnalysisService _analysisService;
     private readonly IAppearanceFeatureLevelService _featureLevelService;
+    private readonly ICacheManager _cacheManager;
+    private readonly IUserManager _userManager;
+
+    private const string CachePrefix = "LAB:AppearanceFeature";
 
     public AppearanceFeatureService(
         ISqlSugarRepository<AppearanceFeatureEntity> repository,
@@ -35,7 +41,9 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
         ISqlSugarRepository<AppearanceFeatureLevelEntity> featureLevelRepository,
         IConfiguration configuration,
         IAppearanceAnalysisService analysisService,
-        IAppearanceFeatureLevelService featureLevelService
+        IAppearanceFeatureLevelService featureLevelService,
+        ICacheManager cacheManager,
+        IUserManager userManager
     )
     {
         _repository = repository;
@@ -45,6 +53,14 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
         _configuration = configuration;
         _analysisService = analysisService;
         _featureLevelService = featureLevelService;
+        _cacheManager = cacheManager;
+        _userManager = userManager;
+    }
+
+    private string GetCacheKey(string suffix)
+    {
+        var tenantId = _userManager?.TenantId ?? "global";
+        return $"{CachePrefix}:{tenantId}:{suffix}";
     }
 
     /// <summary>
@@ -304,12 +320,21 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
     [HttpGet("{id}")]
     public async Task<AppearanceFeatureInfoOutput> GetInfo(string id)
     {
+        var cacheKey = GetCacheKey($"info:{id}");
+        var cached = await _cacheManager.GetAsync<AppearanceFeatureInfoOutput>(cacheKey);
+        if (cached != null)
+        {
+            return cached;
+        }
+
         var entity = await _repository.GetFirstAsync(t => t.Id == id && t.DeleteMark == null);
         if (entity == null)
             throw Oops.Oh(ErrorCode.COM1005);
 
         var output = entity.Adapt<AppearanceFeatureInfoOutput>();
         await FillOutputNamesAsync(output);
+
+        await _cacheManager.SetAsync(cacheKey, output, TimeSpan.FromHours(6));
         return output;
     }
 
@@ -388,6 +413,8 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
             }
             throw Oops.Oh("创建失败: " + ex.Message);
         }
+
+        await ClearCacheAsync();
     }
 
     /// <inheritdoc />
@@ -447,6 +474,8 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
             .ExecuteCommandHasChangeAsync();
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1001);
+
+        await ClearCacheAsync(id);
     }
 
     /// <inheritdoc />
@@ -469,6 +498,8 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
             .ExecuteCommandHasChangeAsync();
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1002);
+
+        await ClearCacheAsync(id);
     }
 
     /// <summary>
@@ -2126,6 +2157,14 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
     }
 
     #endregion
+
+    private async Task ClearCacheAsync(string? id = null)
+    {
+        if (!string.IsNullOrEmpty(id))
+        {
+            await _cacheManager.DelAsync(GetCacheKey($"info:{id}"));
+        }
+    }
 }
 
 /// <summary>

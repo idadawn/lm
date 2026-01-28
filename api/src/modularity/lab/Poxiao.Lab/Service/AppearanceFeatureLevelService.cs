@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Mvc;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
+using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
+using Poxiao.Infrastructure.Manager;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.AppearanceFeatureLevel;
 using Poxiao.Lab.Interfaces;
@@ -24,14 +26,28 @@ public class AppearanceFeatureLevelService
 {
     private readonly ISqlSugarRepository<AppearanceFeatureLevelEntity> _repository;
     private readonly ISqlSugarRepository<AppearanceFeatureEntity> _featureRepository;
+    private readonly ICacheManager _cacheManager;
+    private readonly IUserManager _userManager;
+
+    private const string CachePrefix = "LAB:AppearanceFeatureLevel";
 
     public AppearanceFeatureLevelService(
         ISqlSugarRepository<AppearanceFeatureLevelEntity> repository,
-        ISqlSugarRepository<AppearanceFeatureEntity> featureRepository
+        ISqlSugarRepository<AppearanceFeatureEntity> featureRepository,
+        ICacheManager cacheManager,
+        IUserManager userManager
     )
     {
         _repository = repository;
         _featureRepository = featureRepository;
+        _cacheManager = cacheManager;
+        _userManager = userManager;
+    }
+
+    private string GetCacheKey(string suffix)
+    {
+        var tenantId = _userManager?.TenantId ?? "global";
+        return $"{CachePrefix}:{tenantId}:{suffix}";
     }
 
     /// <inheritdoc />
@@ -66,11 +82,20 @@ public class AppearanceFeatureLevelService
     [HttpGet("{id}")]
     public async Task<AppearanceFeatureLevelInfoOutput> GetInfo(string id)
     {
+        var cacheKey = GetCacheKey($"info:{id}");
+        var cached = await _cacheManager.GetAsync<AppearanceFeatureLevelInfoOutput>(cacheKey);
+        if (cached != null)
+        {
+            return cached;
+        }
+
         var entity = await _repository.GetFirstAsync(t => t.Id == id && t.DeleteMark == null);
         if (entity == null)
             throw Oops.Oh(ErrorCode.COM1005);
 
-        return entity.Adapt<AppearanceFeatureLevelInfoOutput>();
+        var result = entity.Adapt<AppearanceFeatureLevelInfoOutput>();
+        await _cacheManager.SetAsync(cacheKey, result, TimeSpan.FromHours(6));
+        return result;
     }
 
     /// <inheritdoc />
@@ -127,6 +152,8 @@ public class AppearanceFeatureLevelService
         var isOk = await _repository.AsInsertable(entity).ExecuteCommandAsync();
         if (isOk < 1)
             throw Oops.Oh(ErrorCode.COM1000);
+
+        await ClearCacheAsync();
     }
 
     /// <inheritdoc />
@@ -204,6 +231,8 @@ public class AppearanceFeatureLevelService
             .ExecuteCommandHasChangeAsync();
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1001);
+
+        await ClearCacheAsync(id);
     }
 
     /// <inheritdoc />
@@ -237,12 +266,21 @@ public class AppearanceFeatureLevelService
             .ExecuteCommandHasChangeAsync();
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1002);
+
+        await ClearCacheAsync(id);
     }
 
     /// <inheritdoc />
     [HttpGet("enabled")]
     public async Task<List<AppearanceFeatureLevelListOutput>> GetEnabledLevels()
     {
+        var cacheKey = GetCacheKey("enabled:list");
+        var cached = await _cacheManager.GetAsync<List<AppearanceFeatureLevelListOutput>>(cacheKey);
+        if (cached != null && cached.Count > 0)
+        {
+            return cached;
+        }
+
         var data = await _repository
             .AsQueryable()
             .Where(t => t.Enabled == true && t.DeleteMark == null)
@@ -252,6 +290,23 @@ public class AppearanceFeatureLevelService
         // 如果SortCode相同，按Name排序（在内存中排序）
         data = data.OrderBy(x => x.SortCode ?? 0).ThenBy(x => x.Name).ToList();
 
-        return data.Adapt<List<AppearanceFeatureLevelListOutput>>();
+        var result = data.Adapt<List<AppearanceFeatureLevelListOutput>>();
+        if (result.Count > 0)
+        {
+            await _cacheManager.SetAsync(cacheKey, result, TimeSpan.FromHours(6));
+        }
+        return result;
+    }
+
+    private async Task ClearCacheAsync(string? id = null)
+    {
+        // 清除已启用列表缓存
+        await _cacheManager.DelAsync(GetCacheKey("enabled:list"));
+
+        // 如果指定了ID，清除该记录的详情缓存
+        if (!string.IsNullOrEmpty(id))
+        {
+            await _cacheManager.DelAsync(GetCacheKey($"info:{id}"));
+        }
     }
 }

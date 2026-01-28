@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
+using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
+using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Security;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.AppearanceFeature;
@@ -21,14 +23,28 @@ public class AppearanceFeatureCategoryService : IAppearanceFeatureCategoryServic
 {
     private readonly ISqlSugarRepository<AppearanceFeatureCategoryEntity> _categoryRepository;
     private readonly ISqlSugarRepository<AppearanceFeatureEntity> _featureRepository;
+    private readonly ICacheManager _cacheManager;
+    private readonly IUserManager _userManager;
+
+    private const string CachePrefix = "LAB:AppearanceFeatureCategory";
 
     public AppearanceFeatureCategoryService(
         ISqlSugarRepository<AppearanceFeatureCategoryEntity> categoryRepository,
-        ISqlSugarRepository<AppearanceFeatureEntity> featureRepository
+        ISqlSugarRepository<AppearanceFeatureEntity> featureRepository,
+        ICacheManager cacheManager,
+        IUserManager userManager
     )
     {
         _categoryRepository = categoryRepository;
         _featureRepository = featureRepository;
+        _cacheManager = cacheManager;
+        _userManager = userManager;
+    }
+
+    private string GetCacheKey(string suffix)
+    {
+        var tenantId = _userManager?.TenantId ?? "global";
+        return $"{CachePrefix}:{tenantId}:{suffix}";
     }
 
     /// <inheritdoc />
@@ -79,6 +95,13 @@ public class AppearanceFeatureCategoryService : IAppearanceFeatureCategoryServic
     [HttpGet("all")]
     public async Task<List<AppearanceFeatureCategoryListOutput>> GetAllCategories()
     {
+        var cacheKey = GetCacheKey("all:tree");
+        var cached = await _cacheManager.GetAsync<List<AppearanceFeatureCategoryListOutput>>(cacheKey);
+        if (cached != null && cached.Count > 0)
+        {
+            return cached;
+        }
+
         var data = await _categoryRepository
             .AsQueryable()
             .Where(t => t.DeleteMark == null)
@@ -99,7 +122,12 @@ public class AppearanceFeatureCategoryService : IAppearanceFeatureCategoryServic
         }).ToList();
 
         // 构建树形结构（使用 "-1" 作为根节点标识，参考 OrganizeEntity）
-        return outputs.ToTree("-1");
+        var result = outputs.ToTree("-1");
+        if (result.Count > 0)
+        {
+            await _cacheManager.SetAsync(cacheKey, result, TimeSpan.FromHours(6));
+        }
+        return result;
     }
 
     /// <inheritdoc />
@@ -207,6 +235,8 @@ public class AppearanceFeatureCategoryService : IAppearanceFeatureCategoryServic
             .ExecuteCommandAsync();
         if (isOk < 1)
             throw Oops.Oh(ErrorCode.COM1000);
+
+        await ClearCacheAsync();
     }
 
     /// <inheritdoc />
@@ -365,6 +395,8 @@ public class AppearanceFeatureCategoryService : IAppearanceFeatureCategoryServic
             .ExecuteCommandHasChangeAsync();
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1001);
+
+        await ClearCacheAsync();
     }
 
     /// <inheritdoc />
@@ -411,6 +443,8 @@ public class AppearanceFeatureCategoryService : IAppearanceFeatureCategoryServic
             .ExecuteCommandHasChangeAsync();
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1002);
+
+        await ClearCacheAsync();
     }
 
     /// <summary>
@@ -436,5 +470,8 @@ public class AppearanceFeatureCategoryService : IAppearanceFeatureCategoryServic
         return childIds;
     }
 
-
+    private async Task ClearCacheAsync()
+    {
+        await _cacheManager.DelAsync(GetCacheKey("all:tree"));
+    }
 }

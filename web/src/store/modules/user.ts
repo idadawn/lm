@@ -120,7 +120,7 @@ export const useUserStore = defineStore({
           grant_type: 'password',
         };
         const res = await loginApi(loginRequestParams);
-        const { token } = res.data;
+        const { token } = res.data?.data || {};
         this.setToken(token);
         const baseStore = useBaseStore();
         const organizeStore = useOrganizeStore();

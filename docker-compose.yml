@@ -1,9 +1,8 @@
 # ============================================
 # 实验室数据分析系统 - Docker Compose 完整配置
-# 包含：基础设施 + 应用服务
+# 包含：基础设施 + 应用服务 + AI 服务
 # 使用方式：
-#   docker-compose up -d                              # 启动基础服务 + 应用
-#   docker-compose --profile ai up -d                 # 包含 AI 服务（TEI、vLLM）
+#   docker-compose up -d                              # 启动所有服务
 #   docker-compose -f docker-compose-infra.yml up -d  # 仅启动基础设施（独立配置）
 # ============================================
 
@@ -84,7 +83,7 @@ services:
         max-file: "3"
 
   # ============================================
-  # AI 服务（可选，需要 --profile ai 启动）
+  # AI 服务（默认启动）
   # ============================================
 
   # TEI 文本嵌入服务
@@ -111,8 +110,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    profiles:
-      - ai
 
   # vLLM 大模型推理服务（需要 GPU）
   vllm:
@@ -141,8 +138,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-    profiles:
-      - ai
 
   # ============================================
   # 应用服务

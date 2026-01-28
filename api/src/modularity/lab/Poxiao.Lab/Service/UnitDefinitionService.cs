@@ -4,6 +4,8 @@ using Poxiao.DatabaseAccessor;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
+using Poxiao.Infrastructure.Core.Manager;
+using Poxiao.Infrastructure.Manager;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.Unit;
 using Poxiao.Lab.Interfaces;
@@ -20,20 +22,50 @@ public class UnitDefinitionService : IUnitDefinitionService, IDynamicApiControll
 {
     private readonly ISqlSugarRepository<UnitDefinitionEntity> _repository;
     private readonly ISqlSugarRepository<UnitCategoryEntity> _categoryRepository;
+    private readonly ICacheManager _cacheManager;
+    private readonly IUserManager _userManager;
+
+    /// <summary>
+    /// 缓存键前缀
+    /// </summary>
+    private const string CachePrefix = "LAB:UnitDefinition";
 
     public UnitDefinitionService(
         ISqlSugarRepository<UnitDefinitionEntity> repository,
-        ISqlSugarRepository<UnitCategoryEntity> categoryRepository
+        ISqlSugarRepository<UnitCategoryEntity> categoryRepository,
+        ICacheManager cacheManager,
+        IUserManager userManager
     )
     {
         _repository = repository;
         _categoryRepository = categoryRepository;
+        _cacheManager = cacheManager;
+        _userManager = userManager;
+    }
+
+    /// <summary>
+    /// 获取缓存键（带租户隔离）
+    /// </summary>
+    private string GetCacheKey(string suffix)
+    {
+        var tenantId = _userManager?.TenantId ?? "global";
+        return $"{CachePrefix}:{tenantId}:{suffix}";
     }
 
     /// <inheritdoc />
     [HttpGet("")]
     public async Task<List<UnitDefinitionDto>> GetList([FromQuery] string? categoryId = null)
     {
+        var cacheKey = GetCacheKey($"list:{categoryId ?? "all"}");
+
+        // 尝试从缓存获取
+        var cachedList = await _cacheManager.GetAsync<List<UnitDefinitionDto>>(cacheKey);
+        if (cachedList != null && cachedList.Count > 0)
+        {
+            return cachedList;
+        }
+
+        // 从数据库获取
         var query = _repository.AsQueryable().Where(u => u.DeleteMark == 0 || u.DeleteMark == null);
 
         if (!string.IsNullOrWhiteSpace(categoryId))
@@ -42,23 +74,45 @@ public class UnitDefinitionService : IUnitDefinitionService, IDynamicApiControll
         }
 
         var list = await query.ToListAsync();
-        return list.OrderBy(u => u.SortCode ?? 0)
+        var result = list.OrderBy(u => u.SortCode ?? 0)
             .ThenBy(u => u.IsBase == 1 ? 0 : 1)
             .Select(u => u.Adapt<UnitDefinitionDto>())
             .ToList();
+
+        // 写入缓存（6小时过期）
+        if (result.Count > 0)
+        {
+            await _cacheManager.SetAsync(cacheKey, result, TimeSpan.FromHours(6));
+        }
+
+        return result;
     }
 
     /// <inheritdoc />
     [HttpGet("{id}")]
     public async Task<UnitDefinitionDto> GetInfo(string id)
     {
+        var cacheKey = GetCacheKey($"info:{id}");
+
+        // 尝试从缓存获取
+        var cached = await _cacheManager.GetAsync<UnitDefinitionDto>(cacheKey);
+        if (cached != null)
+        {
+            return cached;
+        }
+
         var entity = await _repository.GetFirstAsync(u =>
             u.Id == id && (u.DeleteMark == 0 || u.DeleteMark == null)
         );
         if (entity == null)
             throw Oops.Oh("单位定义不存在");
 
-        return entity.Adapt<UnitDefinitionDto>();
+        var result = entity.Adapt<UnitDefinitionDto>();
+
+        // 写入缓存（6小时过期）
+        await _cacheManager.SetAsync(cacheKey, result, TimeSpan.FromHours(6));
+
+        return result;
     }
 
     /// <inheritdoc />
@@ -95,6 +149,9 @@ public class UnitDefinitionService : IUnitDefinitionService, IDynamicApiControll
         var isOk = await _repository.InsertAsync(entity);
         if (!isOk)
             throw Oops.Oh("创建失败");
+
+        // 清除缓存
+        await ClearCacheAsync(input.CategoryId);
     }
 
     /// <inheritdoc />
@@ -220,6 +277,9 @@ public class UnitDefinitionService : IUnitDefinitionService, IDynamicApiControll
                 throw Oops.Oh($"更换基准单位时重新计算换算比例失败：{ex.Message}");
             }
         }
+
+        // 清除缓存
+        await ClearCacheAsync(input.CategoryId, id);
     }
 
     /// <inheritdoc />
@@ -241,6 +301,9 @@ public class UnitDefinitionService : IUnitDefinitionService, IDynamicApiControll
         var isOk = await _repository.UpdateAsync(entity);
         if (!isOk)
             throw Oops.Oh("删除失败");
+
+        // 清除缓存
+        await ClearCacheAsync(entity.CategoryId, id);
     }
 
     /// <summary>
@@ -301,6 +364,9 @@ public class UnitDefinitionService : IUnitDefinitionService, IDynamicApiControll
             unit.ScaleToBase = newScaleToBase;
             unit.LastModify();
             await _repository.UpdateAsync(unit);
+
+            // 清除该单位的详情缓存
+            await _cacheManager.DelAsync(GetCacheKey($"info:{unit.Id}"));
         }
 
         // 更新旧基准单位：它现在不再是基准单位，需要计算它相对于新基准单位的比例
@@ -308,5 +374,31 @@ public class UnitDefinitionService : IUnitDefinitionService, IDynamicApiControll
         oldBaseUnit.ScaleToBase = oldBaseToNewBaseRatio;
         oldBaseUnit.LastModify();
         await _repository.UpdateAsync(oldBaseUnit);
+
+        // 清除旧基准单位的详情缓存
+        await _cacheManager.DelAsync(GetCacheKey($"info:{oldBaseUnitId}"));
+    }
+
+    /// <summary>
+    /// 清除缓存
+    /// </summary>
+    /// <param name="categoryId">维度ID，用于清除按维度过滤的列表缓存</param>
+    /// <param name="id">可选的ID，用于清除特定记录的缓存</param>
+    private async Task ClearCacheAsync(string? categoryId = null, string? id = null)
+    {
+        // 清除全部列表缓存
+        await _cacheManager.DelAsync(GetCacheKey("list:all"));
+
+        // 如果指定了维度ID，清除该维度的列表缓存
+        if (!string.IsNullOrEmpty(categoryId))
+        {
+            await _cacheManager.DelAsync(GetCacheKey($"list:{categoryId}"));
+        }
+
+        // 如果指定了ID，清除该记录的详情缓存
+        if (!string.IsNullOrEmpty(id))
+        {
+            await _cacheManager.DelAsync(GetCacheKey($"info:{id}"));
+        }
     }
 }

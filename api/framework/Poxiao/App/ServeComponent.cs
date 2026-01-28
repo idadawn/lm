@@ -33,6 +33,9 @@ public sealed class ServeServiceComponent : IServiceComponent
                     options.JsonSerializerOptions.Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping;
                 })
                 .AddInjectWithUnifyResult();
+
+        // 注册健康检查
+        services.AddHealthChecks();
     }
 }
 
@@ -82,6 +85,9 @@ public sealed class ServeApplicationComponent : IApplicationComponent
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapControllers();
+
+            // 健康检查路由
+            endpoints.MapHealthChecks("/health");
         });
     }
 }

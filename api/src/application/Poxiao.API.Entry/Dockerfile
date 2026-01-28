@@ -17,7 +17,10 @@ RUN dotnet build "Poxiao.API.Entry.csproj" -c Release -o /app/build
 FROM build AS publish
 RUN dotnet publish "Poxiao.API.Entry.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
+
 FROM base AS final
 WORKDIR /app
+# Install curl for health check
+RUN apt-get update && apt-get install -y curl
 COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "Poxiao.API.Entry.dll"]

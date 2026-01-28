@@ -163,7 +163,7 @@ export const useUserStore = defineStore({
       //   duration: 1,
       // });
       const res = await getUserInfo();
-      const { userInfo, sysConfigInfo, routerList = [], menuList = [], permissionList = [] } = res.data;
+      const { userInfo, sysConfigInfo, routerList = [], menuList = [], permissionList = [] } = res.data?.data || {};
       const { changeLocale } = useLocale();
       // changeLocale('zh_CN');
       let menus: BackMenu[] = [];
@@ -188,7 +188,7 @@ export const useUserStore = defineStore({
       this.setBackRouterList(routerList);
       const appStore = useAppStore();
       appStore.setProjectConfig({ sysConfigInfo });
-      return res.data;
+      return res.data?.data;
     },
     /**
      * @description: logout

@@ -73,7 +73,22 @@ public class UserManager : IUserManager, IScoped
     /// </summary>
     public string UserId
     {
-        get => _user.FindFirst(ClaimConst.CLAINMUSERID)?.Value;
+        get
+        {
+            // 直接从 _httpContext.User 读取，而不是从构造时固定的 _user 读取
+            var currentUser = _httpContext?.User ?? _user;
+            var userId = currentUser?.FindFirst(ClaimConst.CLAINMUSERID)?.Value
+                ?? currentUser?.FindFirst("UserId")?.Value;
+
+            Console.WriteLine($"[UserManager.UserId] Attempting to get UserId");
+            Console.WriteLine($"[UserManager.UserId] _httpContext.User is null: {_httpContext?.User == null}");
+            Console.WriteLine($"[UserManager.UserId] _user is null: {_user == null}");
+            Console.WriteLine($"[UserManager.UserId] Using currentUser from: {(_httpContext?.User != null ? "_httpContext.User" : "_user")}");
+            Console.WriteLine($"[UserManager.UserId] ClaimConst.CLAINMUSERID: {ClaimConst.CLAINMUSERID}");
+            Console.WriteLine($"[UserManager.UserId] All claims: {string.Join(", ", currentUser?.Claims?.Select(c => $"{c.Type}={c.Value}") ?? new List<string>())}");
+            Console.WriteLine($"[UserManager.UserId] Result: {userId}");
+            return userId;
+        }
     }
 
     /// <summary>
@@ -93,7 +108,11 @@ public class UserManager : IUserManager, IScoped
     /// </summary>
     public string Account
     {
-        get => _user.FindFirst(ClaimConst.CLAINMACCOUNT)?.Value;
+        get
+        {
+            var currentUser = _httpContext?.User ?? _user;
+            return currentUser?.FindFirst(ClaimConst.CLAINMACCOUNT)?.Value;
+        }
     }
 
     /// <summary>
@@ -101,7 +120,11 @@ public class UserManager : IUserManager, IScoped
     /// </summary>
     public string RealName
     {
-        get => _user.FindFirst(ClaimConst.CLAINMREALNAME)?.Value;
+        get
+        {
+            var currentUser = _httpContext?.User ?? _user;
+            return currentUser?.FindFirst(ClaimConst.CLAINMREALNAME)?.Value;
+        }
     }
 
     /// <summary>
@@ -109,7 +132,12 @@ public class UserManager : IUserManager, IScoped
     /// </summary>
     public string TenantId
     {
-        get => _user.FindFirst(ClaimConst.TENANTID)?.Value;
+        get
+        {
+            // 直接从 _httpContext.User 读取，而不是从构造时固定的 _user 读取
+            var currentUser = _httpContext?.User ?? _user;
+            return currentUser?.FindFirst(ClaimConst.TENANTID)?.Value;
+        }
     }
 
     /// <summary>
@@ -138,7 +166,11 @@ public class UserManager : IUserManager, IScoped
     /// </summary>
     public bool IsAdministrator
     {
-        get => _user.FindFirst(ClaimConst.CLAINMADMINISTRATOR)?.Value == ((int)AccountType.Administrator).ToString();
+        get
+        {
+            var currentUser = _httpContext?.User ?? _user;
+            return currentUser?.FindFirst(ClaimConst.CLAINMADMINISTRATOR)?.Value == ((int)AccountType.Administrator).ToString();
+        }
     }
 
     /// <summary>
@@ -222,9 +254,27 @@ public class UserManager : IUserManager, IScoped
     /// <returns></returns>
     public async Task<UserInfoModel> GetUserInfo()
     {
+        Console.WriteLine($"[UserManager.GetUserInfo] Start");
+        Console.WriteLine($"[UserManager.GetUserInfo] _httpContext is null: {_httpContext == null}");
+        Console.WriteLine($"[UserManager.GetUserInfo] _httpContext.User is null: {_httpContext?.User == null}");
+        Console.WriteLine($"[UserManager.GetUserInfo] _httpContext.User.Identity is null: {_httpContext?.User?.Identity == null}");
+        Console.WriteLine($"[UserManager.GetUserInfo] _httpContext.User.Identity.IsAuthenticated: {_httpContext?.User?.Identity?.IsAuthenticated}");
+        Console.WriteLine($"[UserManager.GetUserInfo] _user is null: {_user == null}");
+        Console.WriteLine($"[UserManager.GetUserInfo] UserId: {UserId}");
+        Console.WriteLine($"[UserManager.GetUserInfo] TenantId: {TenantId}");
+
+        // 如果 UserId 为空，说明用户未认证
+        if (string.IsNullOrEmpty(UserId))
+        {
+            Console.WriteLine($"[UserManager.GetUserInfo] ERROR: UserId is null or empty - User not authenticated!");
+            throw new UnauthorizedAccessException("User not authenticated - UserId is null");
+        }
+
         UserAgent userAgent = new UserAgent(_httpContext);
         var data = new UserInfoModel();
         var userCache = string.Format("{0}:{1}:{2}", TenantId, CommonConst.CACHEKEYUSER, UserId);
+        Console.WriteLine($"[UserManager.GetUserInfo] UserCache Key: {userCache}");
+
         var userDataScope = await GetUserDataScopeAsync(UserId);
 
         var ipAddress = NetHelper.Ip;
@@ -319,7 +369,36 @@ public class UserManager : IUserManager, IScoped
         data.tenantId = TenantId;
 
         // 根据系统配置过期时间自动过期
-        await SetUserInfo(userCache, data, TimeSpan.FromMinutes(sysConfigInfo.Value.ParseToDouble()));
+        Console.WriteLine($"[UserManager.GetUserInfo] ========== REDIS WRITE SECTION ==========");
+        Console.WriteLine($"[UserManager.GetUserInfo] Cache Key: {userCache}");
+        Console.WriteLine($"[UserManager.GetUserInfo] Timeout: {sysConfigInfo.Value} minutes");
+        Console.WriteLine($"[UserManager.GetUserInfo] UserId in data: {data.userId}");
+        Console.WriteLine($"[UserManager.GetUserInfo] UserName in data: {data.userName}");
+        Console.WriteLine($"[UserManager.GetUserInfo] TenantId in data: {data.tenantId}");
+
+        try
+        {
+            var setResult = await SetUserInfo(userCache, data, TimeSpan.FromMinutes(sysConfigInfo.Value.ParseToDouble()));
+            Console.WriteLine($"[UserManager.GetUserInfo] SetUserInfo returned: {setResult}");
+
+            if (setResult)
+            {
+                Console.WriteLine($"[UserManager.GetUserInfo] ✅ Session SUCCESSFULLY written to Redis!");
+                Console.WriteLine($"[UserManager.GetUserInfo] Key: {userCache}");
+            }
+            else
+            {
+                Console.WriteLine($"[UserManager.GetUserInfo] ❌ Session write to Redis FAILED - SetUserInfo returned false");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[UserManager.GetUserInfo] ❌ EXCEPTION writing to Redis: {ex.Message}");
+            Console.WriteLine($"[UserManager.GetUserInfo] StackTrace: {ex.StackTrace}");
+            throw;
+        }
+
+        Console.WriteLine($"[UserManager.GetUserInfo] ========== END REDIS WRITE SECTION ==========");
 
         return data;
     }
@@ -2084,7 +2163,22 @@ public class UserManager : IUserManager, IScoped
     /// <returns></returns>
     private async Task<bool> SetUserInfo(string cacheKey, UserInfoModel userInfo, TimeSpan timeSpan)
     {
-        return await _cacheManager.SetAsync(cacheKey, userInfo, timeSpan);
+        Console.WriteLine($"[UserManager.SetUserInfo] Called with key: {cacheKey}");
+        Console.WriteLine($"[UserManager.SetUserInfo] TimeSpan: {timeSpan.TotalMinutes} minutes");
+        Console.WriteLine($"[UserManager.SetUserInfo] _cacheManager is null: {_cacheManager == null}");
+
+        try
+        {
+            var result = await _cacheManager.SetAsync(cacheKey, userInfo, timeSpan);
+            Console.WriteLine($"[UserManager.SetUserInfo] _cacheManager.SetAsync returned: {result}");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[UserManager.SetUserInfo] EXCEPTION in _cacheManager.SetAsync: {ex.Message}");
+            Console.WriteLine($"[UserManager.SetUserInfo] StackTrace: {ex.StackTrace}");
+            throw;
+        }
     }
 
     /// <summary>

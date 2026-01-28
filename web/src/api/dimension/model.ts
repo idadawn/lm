@@ -17,7 +17,6 @@ export function getDimensionList(data: any): Promise<any> {
 }
 //删除列中的某一条
 export function deleteDimension(id: string): Promise<any> {
-  console.log(Url.deleteDimension + `${id}`);
   return defHttp.delete({ url: Url.deleteDimension + `${id}` });
 }
 

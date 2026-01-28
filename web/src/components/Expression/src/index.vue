@@ -68,7 +68,7 @@
   const emit = defineEmits(['visible_expression', 'expression_dimensions', 'expression_value', 'expression_id']);
   const props = defineProps(_props);
 
-  // console.log('props---', props);
+  // 
   const state = reactive({
     visible_expression: false,
     formularOptions: [],
@@ -113,7 +113,7 @@
 
   // 点击左侧的指标
   function expressionListClick(value) {
-    // console.log(' state.cursorPosition---', state.cursorPosition);
+    // 
     if (typeof state.cursorPosition == 'number') {
       //插入到指定光标处
       let right = state.expressionValue.slice(0, state.cursorPosition);
@@ -156,9 +156,9 @@
 
   // 公式检查
   function inspectCheck() {
-    // console.log(' state.expressionValue-----', state.expressionValue);
+    // 
     var result = replaceNameWithValue(state.formularOptionsNew, state.expressionValue);
-    // console.log('result----', result);
+    // 
     postMetricCompositeFormulaCheck({ formulaData: result }).then(res => {
       if (res.data) {
         createMessage.success('检查成功');
@@ -183,7 +183,7 @@
     let uniqueArray = Array.from(new Set(extractedArrId));
 
     var result = replaceNameWithValue(state.formularOptionsNew, state.expressionValue);
-    // console.log('extractedArrId-----', extractedArrId);
+    // 
     emit('expression_id', result);
     emit('expression_value', state.expressionValue);
     emit('expression_dimensions', uniqueArray);
@@ -191,7 +191,7 @@
   }
   // 取消
   function cancelExpression() {
-    // console.log('取消-----');
+    // 
     emit('visible_expression', false);
   }
 </script>

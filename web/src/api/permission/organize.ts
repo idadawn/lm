@@ -9,7 +9,7 @@ enum Api {
 // 获取组织/公司列表
 export function getOrganizeList(data) {
   // 模拟数据，后面使用Mock插件生成
-  // console.log(Api.Prefix);
+  // 
   // return Promise.resolve({
   //   code: 200,
   //   msg: '操作成功',

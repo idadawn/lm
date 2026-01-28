@@ -2,7 +2,6 @@
 (function() {
     'use strict';
 
-    console.log('=== 模态框清理功能测试开始 ===\n');
 
     // 测试结果对象
     const testResults = {
@@ -16,10 +15,8 @@
     function test(name, fn) {
         testResults.total++;
         try {
-            console.log(`\n🧪 测试: ${name}`);
             fn();
             testResults.passed++;
-            console.log('✅ 通过');
         } catch (error) {
             testResults.failed++;
             testResults.errors.push({ test: name, error: error.message });
@@ -228,25 +225,16 @@
     });
 
     // 运行所有测试
-    console.log('开始运行测试套件...\n');
 
     // 由于有些测试是异步的，我们需要等待它们完成
     setTimeout(() => {
-        console.log('\n=== 测试总结 ===');
-        console.log(`总测试数: ${testResults.total}`);
-        console.log(`通过: ${testResults.passed}`);
-        console.log(`失败: ${testResults.failed}`);
 
         if (testResults.failed > 0) {
-            console.log('\n❌ 失败的测试:');
             testResults.errors.forEach(({ test, error }) => {
-                console.log(`  - ${test}: ${error}`);
             });
         } else {
-            console.log('\n✅ 所有测试通过！');
         }
 
-        console.log('\n=== 模态框清理功能测试完成 ===');
     }, 200);
 
 })();

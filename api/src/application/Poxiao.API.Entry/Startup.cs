@@ -38,6 +38,10 @@ public class Startup : AppStartup
             enableGlobalAuthorize: true,
             jwtBearerConfigure: options =>
             {
+                // 配置 JWT 中间件使用自定义 Claim 作为 Name
+                options.TokenValidationParameters.NameClaimType = "Account";
+                Console.WriteLine($"[JWT Configuration] Set NameClaimType to: {options.TokenValidationParameters.NameClaimType}");
+
                 // 实现 JWT 身份验证过程控制
                 options.Events = new JwtBearerEvents
                 {
@@ -45,20 +49,84 @@ public class Startup : AppStartup
                     OnMessageReceived = context =>
                     {
                         var httpContext = context.HttpContext;
+                        var authHeader = httpContext.Request.Headers["Authorization"].ToString();
+                        Console.WriteLine($"[JWT OnMessageReceived] Path: {httpContext.Request.Path}, Authorization: {authHeader}");
 
                         // 判断请求是否包含 token 参数，如果有就设置给 Token
                         if (httpContext.Request.Query.ContainsKey("token"))
                         {
                             // 设置 Token
                             context.Token = httpContext.Request.Query["token"];
+                            Console.WriteLine($"[JWT OnMessageReceived] Token from query: {context.Token}");
                         }
 
+                        return Task.CompletedTask;
+                    },
+
+                    // Token 验证失败处理
+                    OnAuthenticationFailed = context =>
+                    {
+                        Console.WriteLine($"[JWT OnAuthenticationFailed] Exception: {context.Exception.Message}");
+                        Console.WriteLine($"[JWT OnAuthenticationFailed] StackTrace: {context.Exception.StackTrace}");
                         return Task.CompletedTask;
                     },
 
                     // Token 验证通过处理
                     OnTokenValidated = context =>
                     {
+                        try
+                        {
+                            Console.WriteLine($"[JWT OnTokenValidated] START");
+                            Console.WriteLine($"[JWT OnTokenValidated] Token validated successfully");
+                            Console.WriteLine($"[JWT OnTokenValidated] Principal.Identity.Name: {context.Principal?.Identity?.Name}");
+                            Console.WriteLine($"[JWT OnTokenValidated] Principal.Identity.IsAuthenticated: {context.Principal?.Identity?.IsAuthenticated}");
+
+                            // 打印所有 Claims
+                            if (context.Principal != null)
+                            {
+                                var claims = context.Principal.Claims.Select(c => $"{c.Type}={c.Value}");
+                                Console.WriteLine($"[JWT OnTokenValidated] Claims: {string.Join(", ", claims)}");
+
+                                // 由于我们在 tokenValidationParametersConfigure 中设置了 NameClaimType = "Account"
+                                // Identity.Name 应该自动从 "Account" claim 获取值
+                                Console.WriteLine($"[JWT OnTokenValidated] Identity.Name (should be auto-populated): {context.Principal.Identity?.Name}");
+
+                                // 确保 HttpContext.User 被正确设置
+                                context.HttpContext.User = context.Principal;
+                                Console.WriteLine($"[JWT OnTokenValidated] Set HttpContext.User from Principal");
+                            }
+
+                            Console.WriteLine($"[JWT OnTokenValidated] END - Returning Task.CompletedTask");
+                            return Task.CompletedTask;
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[JWT OnTokenValidated] EXCEPTION: {ex.Message}");
+                            Console.WriteLine($"[JWT OnTokenValidated] StackTrace: {ex.StackTrace}");
+                            throw;
+                        }
+                    },
+
+                    // Challenge 事件 - 认证挑战
+                    OnChallenge = context =>
+                    {
+                        Console.WriteLine($"[JWT OnChallenge] Challenge triggered");
+                        Console.WriteLine($"[JWT OnChallenge] Path: {context.Request.Path}");
+                        Console.WriteLine($"[JWT OnChallenge] Error: {context.Error}");
+                        Console.WriteLine($"[JWT OnChallenge] ErrorDescription: {context.ErrorDescription}");
+                        Console.WriteLine($"[JWT OnChallenge] HttpContext.User.IsAuthenticated: {context.HttpContext.User?.Identity?.IsAuthenticated}");
+                        Console.WriteLine($"[JWT OnChallenge] HttpContext.User.Name: {context.HttpContext.User?.Identity?.Name}");
+
+                        // 不做任何自定义处理，让默认行为执行（会返回 401）
+                        Console.WriteLine($"[JWT OnChallenge] Allowing default challenge behavior");
+                        return Task.CompletedTask;
+                    },
+
+                    // Forbidden 事件 - 禁止访问
+                    OnForbidden = context =>
+                    {
+                        Console.WriteLine($"[JWT OnForbidden] Forbidden triggered");
+                        Console.WriteLine($"[JWT OnForbidden] Path: {context.Request.Path}");
                         return Task.CompletedTask;
                     },
                 };
@@ -265,19 +333,47 @@ public class Startup : AppStartup
 
         app.UseCorsAccessor();
 
-        // 健康检查端点（在认证之前）
-        app.UseEndpoints(endpoints =>
+        // 添加请求追踪中间件
+        app.Use(async (context, next) =>
         {
-            endpoints.MapGet("/health", async context =>
-            {
-                context.Response.StatusCode = 200;
-                context.Response.ContentType = "text/plain";
-                await context.Response.WriteAsync("healthy");
-            }).AllowAnonymous();
+            Console.WriteLine($"[Middleware] Before Authentication - Path: {context.Request.Path}, IsAuthenticated: {context.User?.Identity?.IsAuthenticated}");
+            await next();
+            Console.WriteLine($"[Middleware] After Authorization - Path: {context.Request.Path}, StatusCode: {context.Response.StatusCode}");
         });
 
         app.UseAuthentication();
+
+        // 在认证之后立即添加追踪
+        app.Use(async (context, next) =>
+        {
+            Console.WriteLine($"[Middleware Right After Authentication] Path: {context.Request.Path}");
+            Console.WriteLine($"[Middleware Right After Authentication] IsAuthenticated: {context.User?.Identity?.IsAuthenticated}");
+            Console.WriteLine($"[Middleware Right After Authentication] Name: {context.User?.Identity?.Name}");
+            Console.WriteLine($"[Middleware Right After Authentication] Claims: {string.Join(", ", context.User?.Claims?.Select(c => $"{c.Type}={c.Value}") ?? new List<string>())}");
+
+            // 如果用户已认证但请求路径是 /api/oauth/CurrentUser，确保请求继续
+            if (context.User?.Identity?.IsAuthenticated == true && context.Request.Path.StartsWithSegments("/api/oauth/CurrentUser"))
+            {
+                Console.WriteLine($"[Middleware Right After Authentication] User authenticated and accessing CurrentUser - Ensuring continuation");
+            }
+
+            await next();
+            Console.WriteLine($"[Middleware Right After Authentication] AFTER next() - StatusCode: {context.Response.StatusCode}");
+        });
+
         app.UseAuthorization();
+
+        // 在授权之后立即添加追踪
+        app.Use(async (context, next) =>
+        {
+            Console.WriteLine($"[Middleware Right After Authorization] Path: {context.Request.Path}");
+            Console.WriteLine($"[Middleware Right After Authorization] IsAuthenticated: {context.User?.Identity?.IsAuthenticated}");
+            Console.WriteLine($"[Middleware Right After Authorization] Name: {context.User?.Identity?.Name}");
+            Console.WriteLine($"[Middleware Right After Authorization] UserId Claim: {context.User?.FindFirst("UserId")?.Value}");
+            Console.WriteLine($"[Middleware Right After Authorization] Account Claim: {context.User?.FindFirst("Account")?.Value}");
+            await next();
+            Console.WriteLine($"[Middleware Right After Authorization] AFTER endpoint - StatusCode: {context.Response.StatusCode}");
+        });
 
         // 任务调度看板
         app.UseScheduleUI();
@@ -293,6 +389,14 @@ public class Startup : AppStartup
 
         app.UseInject(string.Empty);
 
+        // 添加请求追踪中间件（在端点执行前）
+        app.Use(async (context, next) =>
+        {
+            Console.WriteLine($"[Middleware After Auth] Path: {context.Request.Path}, IsAuthenticated: {context.User?.Identity?.IsAuthenticated}, Name: {context.User?.Identity?.Name}");
+            await next();
+            Console.WriteLine($"[Middleware After Endpoint] Path: {context.Request.Path}, StatusCode: {context.Response.StatusCode}");
+        });
+
         app.MapWebSocketManager("/api/message/websocket", serviceProvider.GetService<IMHandler>());
 
         // 初始化数据库表
@@ -304,6 +408,14 @@ public class Startup : AppStartup
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}"
             );
+
+            // 健康检查端点
+            endpoints.MapGet("/health", async context =>
+            {
+                context.Response.StatusCode = 200;
+                context.Response.ContentType = "text/plain";
+                await context.Response.WriteAsync("healthy");
+            }).AllowAnonymous();
         });
 
         // serviceProvider.GetService<ITimeTaskService>().StartTimerJob();

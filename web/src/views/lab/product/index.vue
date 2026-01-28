@@ -348,7 +348,6 @@
 
   // 删除按钮点击处理（中间函数，用于调试和验证）
   function handleDeleteClick(record: any) {
-    console.log('[删除] 点击删除按钮', { record });
     
     if (!record) {
       createMessage.error('删除失败：记录对象不存在');
@@ -357,7 +356,6 @@
     }
 
     const id = record.id || record.Id || record.ID || '';
-    console.log('[删除] 提取的ID:', id);
     
     if (!id) {
       createMessage.error('删除失败：记录ID不存在');
@@ -407,7 +405,6 @@
       },
       onCancel: () => {
         // 用户取消删除，确保没有残留的遮罩层
-        console.log('用户取消了删除操作');
       }
     });
   }

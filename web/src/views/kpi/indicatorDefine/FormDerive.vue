@@ -357,7 +357,7 @@
   }
   // 格式-回传格式参数
   function format_obj_change(obj) {
-    // console.log('回传格式参数---', obj);
+    // 
 
     formatInfo.value = {
       type: obj.type,
@@ -369,7 +369,7 @@
   }
   // 格式-回传的样例
   function format_value_format_change(value) {
-    // console.log('value----', value);
+    // 
     formState.format = value;
   }
   // ----------------------
@@ -389,11 +389,11 @@
   });
   // 标签回显
   function depSelectEmitsTagFun(val) {
-    // console.log('标签回显depSelectEmitsTagFun-------', val);
+    // 
     nameDescribe.metricTag = val;
   }
   function depSelectItemEmitsTagFun(val) {
-    // console.log('标签回显depSelectItemEmitsTagFun-------', val);
+    // 
   }
   // 指标目录
   getMetriccategoryList({}).then(res => {
@@ -435,9 +435,9 @@
 
   // 提交
   async function createFun() {
-    // console.log('formatInfo------', formatInfo);
-    // console.log('nameDescribe------', nameDescribe);
-    // console.log('formState----------', formState);
+    // 
+    // 
+    // 
     formRefDescribe.value.validate().then(async () => {
       let data = {
         type: 'Derive', //指标类型,基础指标Basic,派生指标Derive,复合指标Composite
@@ -474,7 +474,7 @@
         filters: shaixuanTable.value, //筛选
         timeDimensions: dateSetting.value, //时间设置
       };
-      // console.log('提交------', data);
+      // 
       if (route.query && route.query.queryId) {
         putMetricDerive(route.query.queryId, data).then(res => {
           if (res.code == 200) {
@@ -496,7 +496,7 @@
   // --------获取详情------------
   if (route.query && route.query.queryId) {
     getMetricDerive(route.query.queryId).then(res => {
-      // console.log('res-------', res);
+      // 
       formState.derivedFromValue = res.data.parentId; //派生自
       formState.derivedTypeValue = res.data.deriveType; //派生类型
       formState.polymerization = res.data.aggType; //聚合方式

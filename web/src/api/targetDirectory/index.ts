@@ -17,7 +17,7 @@ export function getMetriccategory(id) {
 }
 // 更新指标分类信息
 export function putMetriccategory(data) {
-  // console.log('data-------', data);
+  // 
   let obj = {
     fullName: data.fullName,
     description: data.description,

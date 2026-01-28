@@ -39,7 +39,6 @@
     }),
   });
   const addNode = item => {
-    console.log(item, 'dragendNode');
     dashboardRef.value.addNode(item);
   };
   const layoutsStyle = ref({

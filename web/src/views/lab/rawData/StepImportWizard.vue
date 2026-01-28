@@ -174,7 +174,6 @@ async function handleStep2PreviewNext() {
   nextTick(() => {
     const step2Component = step2Ref.value as any;
     if (step2Component && typeof step2Component.triggerLoad === 'function') {
-      console.log('StepImportWizard: 调用 step2Ref.triggerLoad');
       step2Component.triggerLoad();
     } else {
       console.warn('StepImportWizard: step2Ref.triggerLoad 不存在');

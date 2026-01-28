@@ -130,7 +130,6 @@
         reload();
       })
       .catch(() => {
-        console.log('error删除失败');
       });
   }
 </script>

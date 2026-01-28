@@ -198,7 +198,7 @@ async function loadReviewData() {
   try {
     // 获取核对数据
     const review = await getImportReview(props.importSessionId);
-    console.log('[Step4] Review data:', review); // 调试日志
+     // 调试日志
     reviewData.value = review;
 
     // 检查是否有错误（例如：需要先完成前面的步骤）
@@ -213,7 +213,7 @@ async function loadReviewData() {
     // 检查是否有有效数据
     const validCount = review.validDataRows || 0;
     const totalCount = review.totalRows || 0;
-    console.log(`[Step4] Total: ${totalCount}, Valid: ${validCount}`); // 调试日志
+     // 调试日志
 
     if (validCount === 0) {
       if (totalCount > 0) {

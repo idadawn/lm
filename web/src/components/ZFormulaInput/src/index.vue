@@ -31,7 +31,6 @@
     name: 'ZFormulaInput',
   });
   const emit = defineEmits(['input', 'change', 'update:value']);
-  console.log(props, '==================');
 
   const props = defineProps(_props);
   const formulaRef = ref<any>(null);
@@ -93,7 +92,6 @@
     }
   };
   const initDisplay = () => {
-    console.log('initDisplay');
 
     const { vars, formula } = state.innerModel;
     let result = formula;
@@ -152,7 +150,6 @@
     const selection = selectionRef.value;
     if (!formulaRef.value) return;
     const { top, left, height, width } = formula.getBoundingClientRect();
-    console.log('setSelectionStyle', top, left, height, width, '==================');
 
     selection &&
       selection.setAttribute('style', `left: ${left}px; top: ${top + height}px; width: ${width > 300 ? width : 300}px`);

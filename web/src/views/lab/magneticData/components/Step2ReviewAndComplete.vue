@@ -322,13 +322,13 @@ async function loadReviewData() {
   try {
     // 获取核对数据
     const review = await getMagneticImportReview(props.importSessionId);
-    console.log('[Step2] Review data:', review); // 调试日志
+     // 调试日志
     reviewData.value = review;
 
     // 检查是否有有效数据
     const validCount = review.validDataRows || 0;
     const totalCount = review.totalRows || 0;
-    console.log(`[Step2] Total: ${totalCount}, Valid: ${validCount}`); // 调试日志
+     // 调试日志
     
     if (validCount === 0) {
       if (totalCount > 0) {

@@ -30,7 +30,7 @@ configChart(router);
 //   const file = ctx.request.files.file;
 //   const readStream = fs.createReadStream(file.path);
 //   const filePath = path.resolve(__dirname, `../static/uploads/${file.name}`);
-//   console.log(filePath);
+//   
 //   const writeStream = fs.createWriteStream(filePath);
 //   readStream.pipe(writeStream);
 //   ctx.body = {

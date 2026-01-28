@@ -14,7 +14,6 @@
     name: 'config',
   });
   const route = useRoute();
-  console.log(route.params.id, 'route.params.id');
   const state = reactive<any>({
     kpiModel: {
       name: 'kpi',

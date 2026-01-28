@@ -345,7 +345,6 @@ async function initData(isInit = false) {
 
   try {
     const res: any = await getAllAppearanceFeatureCategories();
-    console.log('[外观特性管理] API 响应:', res);
 
     let data: AppearanceFeatureCategoryInfo[] = [];
 
@@ -366,8 +365,6 @@ async function initData(isInit = false) {
       }
     }
 
-    console.log('[外观特性管理] 提取的数据:', data);
-    console.log('[外观特性管理] 数据数量:', data?.length || 0);
 
     // 如果数据为空，给出提示
     if (!data || data.length === 0) {
@@ -386,13 +383,11 @@ async function initData(isInit = false) {
       { id: 'all', title: '所有大类', key: 'all' },
       ...categoryNodes
     ];
-    console.log('[外观特性管理] 转换后的树形数据:', treeData.value);
 
     nextTick(() => {
       if (isInit && treeData.value.length > 0) {
         // 默认选择第一个节点 (所有大类)
         searchInfo.categoryId = 'all';
-        console.log('[外观特性管理] 默认选择节点: All Categories');
       }
       const leftTree = unref(leftTreeRef);
       if (searchInfo.categoryId) {
@@ -558,7 +553,6 @@ const getMatchMethodText = (method: string | undefined): string => {
 
 // 人工匹配 (查看修正列表)
 const handleManualMatch = () => {
-  console.log('handleManualMatch clicked', correctionDialogRef.value);
   if (correctionDialogRef.value) {
     correctionDialogRef.value.open({ autoOpen: true });
   } else {
@@ -589,7 +583,6 @@ const handleMatchConfirm = async (data: any) => {
 
 // 人工匹配取消
 const handleMatchCancel = () => {
-  console.log('人工匹配取消');
 };
 
 // 创建特性等级

@@ -85,7 +85,6 @@ const chartOptions = {
  * @returns
  */
 export async function optionAdapter(option, data) {
-  console.log('optionAdapter');
   const { type, chartTheme } = option;
   switch (type) {
     case 'date':
@@ -147,7 +146,6 @@ export function chartAdapter(data, theme = '明亮') {
   chartOptions.type = data.type;
   chartOptions.chartType = data.chartType;
 
-  console.log('chartOptions', chartOptions);
   return JSON.parse(JSON.stringify(chartOptions));
 }
 /**
@@ -238,7 +236,6 @@ export async function getOptionMap(layout, flag) {
       case ChartTypeEnum.MARKAREA:
       case ChartTypeEnum.BAR:
       case ChartTypeEnum.PIE:
-        console.log(ChartTypeEnum, 'ChartTypeEnum');
         item.class = 'chart';
         const query = getChartParams(commonFilters, item);
         optionData = await getChartData(query);

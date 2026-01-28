@@ -179,12 +179,10 @@ watch(
   () => props.sortRules,
   (newRules) => {
     try {
-      console.log('CustomSortEditor: sortRules prop changed', newRules);
       localSortRules.value = newRules.map((rule, index) => ({
         ...rule,
         id: rule.id || `rule-${index}`,
       }));
-      console.log('CustomSortEditor: updated localSortRules', localSortRules.value);
     } catch (error) {
       console.error('CustomSortEditor: Error updating local sort rules:', error);
       lastError.value = (error as Error).message;
@@ -198,11 +196,9 @@ watch(
 // 计算是否可见
 const visible = computed({
   get: () => {
-    console.log('CustomSortEditor: Getting visible state:', props.visible);
     return props.visible;
   },
   set: (val) => {
-    console.log('CustomSortEditor: Setting visible state:', val);
     emit('update:visible', val);
   },
 });
@@ -210,10 +206,6 @@ const visible = computed({
 // 渲染计数
 watch(() => [props.visible, localSortRules.value], () => {
   renderCount.value++;
-  console.log(`CustomSortEditor: Render #${renderCount.value}`, {
-    visible: props.visible,
-    localSortRulesCount: localSortRules.value.length
-  });
 }, { immediate: true });
 
 // 获取容器元素
@@ -224,27 +216,18 @@ function getContainer() {
 
 // 模态框打开状态变化后的回调
 function onAfterOpenChange(open: boolean) {
-  console.log('CustomSortEditor: After open change, open =', open);
 
   if (open) {
-    console.log('CustomSortEditor: Modal opened');
     emit('open');
 
     // 强制检查DOM
     nextTick(() => {
       const modalElement = document.querySelector('.ant-modal-wrap');
-      console.log('CustomSortEditor: Found modal element after open:', modalElement);
 
       if (modalElement) {
-        console.log('Modal styles:', {
-          display: window.getComputedStyle(modalElement).display,
-          visibility: window.getComputedStyle(modalElement).visibility,
-          zIndex: window.getComputedStyle(modalElement).zIndex
-        });
       }
     });
   } else {
-    console.log('CustomSortEditor: Modal closed');
     emit('close');
   }
 }
@@ -264,7 +247,6 @@ function addRule() {
       order: 'asc',
     };
     localSortRules.value.push(newRule);
-    console.log('CustomSortEditor: Added new rule:', newRule);
   } catch (error) {
     console.error('CustomSortEditor: Error adding rule:', error);
     lastError.value = (error as Error).message;
@@ -277,7 +259,6 @@ function addRule() {
 function removeRule(index: number) {
   try {
     localSortRules.value.splice(index, 1);
-    console.log('CustomSortEditor: Removed rule at index:', index);
     onRuleChange();
   } catch (error) {
     console.error('CustomSortEditor: Error removing rule:', error);
@@ -290,7 +271,6 @@ function removeRule(index: number) {
 // 规则变化处理
 function onRuleChange() {
   try {
-    console.log('CustomSortEditor: Rule changed, emitting update');
     emit('update:sortRules', [...localSortRules.value]);
   } catch (error) {
     console.error('CustomSortEditor: Error on rule change:', error);
@@ -303,7 +283,6 @@ function onRuleChange() {
 // 规则顺序变化
 function onRulesChange() {
   try {
-    console.log('CustomSortEditor: Rules order changed');
     onRuleChange();
   } catch (error) {
     console.error('CustomSortEditor: Error on rules change:', error);
@@ -322,7 +301,6 @@ function isFieldDisabled(field: string, currentRuleId: string) {
 async function handleOk() {
   try {
     confirmLoading.value = true;
-    console.log('CustomSortEditor: Confirming changes');
 
     // 过滤掉未选择字段的规则
     const validRules = localSortRules.value.filter(rule => rule.field);
@@ -333,7 +311,6 @@ async function handleOk() {
       return;
     }
 
-    console.log('CustomSortEditor: Valid rules to save:', validRules);
     emit('update:sortRules', validRules);
     emit('change', validRules);
 
@@ -356,7 +333,6 @@ async function handleOk() {
 // 取消
 function handleCancel() {
   try {
-    console.log('CustomSortEditor: Canceling editor');
     // 恢复原始规则
     localSortRules.value = props.sortRules.map((rule, index) => ({
       ...rule,
@@ -378,7 +354,6 @@ function toggleDebug() {
 
 // 强制显示模态框
 function forceShow() {
-  console.log('CustomSortEditor: Force showing modal');
   visible.value = true;
   nextTick(() => {
     // 强制修改DOM样式
@@ -398,10 +373,8 @@ function clearError() {
 
 // 监听可见性变化
 watch(visible, (newValue) => {
-  console.log('CustomSortEditor: Visibility changed to:', newValue);
   if (newValue) {
     // 模态框打开时重新同步数据
-    console.log('CustomSortEditor: Syncing data on open');
     localSortRules.value = props.sortRules.map((rule, index) => ({
       ...rule,
       id: rule.id || `rule-${index}`,

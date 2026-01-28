@@ -165,7 +165,7 @@ export function normalDistributionMethod(source, isSample = true) {
     //   const y = (1 / (Math.sqrt(2 * Math.PI) * a)) * Math.exp((-1 * ((x - u) * (x - u))) / (2 * a * a));
     //   dataSet.normalDistribution.push(y);
     //   // 正态分布峰值，用于验证 ，目前没有用到,，随便写的
-    //   if (x == 11.8) console.log(y);
+    //   if (x == 11.8) 
     // }
   }
   return dataSet;

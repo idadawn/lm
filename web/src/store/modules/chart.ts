@@ -236,7 +236,6 @@ export const useChartStore = defineStore({
      * @returns
      */
     async saveLayout(id) {
-      console.log('saveLayout');
       const params = {
         gotId: id,
         gotType: 'Dash',

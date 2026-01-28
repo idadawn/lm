@@ -230,7 +230,6 @@ const handleEditUnit = async (record: any) => {
 };
 
 const handleDeleteUnit = (record: any) => {
-  console.log('[删除] 点击删除单位定义按钮', { record });
   if (!record || !record.id) {
     createMessage.error('删除失败：记录ID不存在');
     console.error('[删除] 记录或ID为空', { record });

@@ -134,14 +134,12 @@
     }
   };
   watch(value, val => {
-    console.log(`selected:`, val);
     // if (val.includes('all')) {
     //   value.value = ['usa', 'japan', 'korea'];
     // }
   });
 
   const onFinish = values => {
-    console.log('Received values of form:', values);
   };
 
   const formTailLayout = {
@@ -657,10 +655,8 @@
   const formRef = ref<FormInstance>();
 
   const changeItem = e => {
-    console.log('inputChange', e);
   };
   const afterChange = v => {
-    console.log(JSON.stringify(v));
   };
   const { dataForm, radioOptions, radioOptions1, checkboxOptions, options, treeData, options1 } = toRefs(state);
   const baseStore = useBaseStore();

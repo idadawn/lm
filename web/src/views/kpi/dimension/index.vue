@@ -111,7 +111,6 @@
         reload();
       })
       .catch(() => {
-        console.log('error删除失败');
       });
   }
   function viewMember(id, fullName) {

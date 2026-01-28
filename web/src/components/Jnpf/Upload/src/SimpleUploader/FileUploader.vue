@@ -213,12 +213,11 @@
         handelSuccess(file);
       } else {
         // 上传错误
-        console.log(res.msg);
       }
     }, 300);
   }
   function onFileProgress(_rootFile, _file, _chunk) {
-    // console.log(`上传中 ${_file.name}，chunk：${_chunk.startByte / 1024 / 1024} ~ ${_chunk.endByte / 1024 / 1024}`);
+    // 
   }
   function onFileError(_rootFile, file, _response, _chunk) {
     file.cancel();

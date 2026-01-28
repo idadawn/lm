@@ -68,7 +68,6 @@ export function useWebSocket() {
     }
 
     function onError(e) {
-      console.log('[WebSocket] 连接发生错误: ', e);
     }
 
     function onMessage(res) {

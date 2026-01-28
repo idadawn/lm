@@ -385,26 +385,22 @@
   };
 
   const onFinish = values => {
-    console.log('Received values of form:', values);
     // emit('update', values);
   };
 
   // 添加筛选条件
   const addCondition = () => {
-    console.log('open filter');
     state.isEdit = false;
     filterModalRef.value?.openModal();
   };
   // 编辑筛选条件
   const editCondition = (item, index) => {
-    console.log('edit filter');
     state.isEdit = true;
     state.editIndex = index;
     filterModalRef.value?.openModal(item);
   };
   // 筛选条件确认
   const filterConfirm = item => {
-    console.log('filterConfirm', item);
     const {
       operator,
       field,

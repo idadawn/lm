@@ -428,7 +428,7 @@
   // 筛选选择维度的change事件
   function shaixuanChange(value, item, record) {
     // 初始化数据
-    // console.log('formState_shaixuan----', formState_shaixuan);
+    // 
     formState_shaixuan.checkAll = false;
     formState_shaixuan.indeterminate = false;
 
@@ -520,7 +520,7 @@
             dateSettingOptions.value.push(item);
           }
         });
-        // console.log('dateSettingOptions---', dateSettingOptions.value);
+        // 
       } else {
         timeSetting.value = false;
       }
@@ -562,14 +562,14 @@
     } else {
       shaixuanTable.value.push(obj);
     }
-    // console.log('shaixuanTable.value-------', shaixuanTable.value);
+    // 
   }
 
   // ----------------
 
   // 创建提交
   async function createFun() {
-    // console.log('提交-------');
+    // 
 
     formRefDescribe.value.validate().then(async () => {
       let date_name;
@@ -612,7 +612,7 @@
         metricTag: nameDescribe.metricTag, //指标标签
       };
 
-      // console.log('data----提交---', data);
+      // 
       if (route.query && route.query.queryId) {
         putMetricComposite(route.query.queryId, data).then(res => {
           if (res.code == 200) {
@@ -677,7 +677,7 @@
 
   // 取消
   function cancelFun() {
-    // console.log('取消-------');
+    // 
     router.push('/kpi/indicatorDefine');
   }
 
@@ -689,15 +689,15 @@
   //标签
   getMetrictagSelector().then(res => {
     metricTagArr.value = res.data;
-    // console.log('metricTagArr.value ------', metricTagArr.value);
+    // 
   });
   // 标签回显
   function depSelectEmitsTagFun(val) {
-    // console.log('标签回显depSelectEmitsTagFun-------', val);
+    // 
     nameDescribe.metricTag = val;
   }
   function depSelectItemEmitsTagFun(val) {
-    // console.log('标签回显depSelectItemEmitsTagFun-------', val);
+    // 
   }
   // 指标目录
   getMetriccategoryList({}).then(res => {
@@ -744,7 +744,7 @@
   }
   // 格式-回传格式参数
   function format_obj_change(obj) {
-    // console.log('回传格式参数---', obj);
+    // 
     formatInfo.value = {
       type: obj.type,
       decimalPlaces: obj.decimal_place,
@@ -755,7 +755,7 @@
   }
   // 格式-回传的样例
   function format_value_format_change(value) {
-    // console.log('value----', value);
+    // 
     formState.format = value;
   }
   // --------------

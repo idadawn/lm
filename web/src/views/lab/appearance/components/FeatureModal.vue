@@ -226,7 +226,6 @@
           },
         },
       });
-      console.log('模态框打开后重新更新特征等级选项，共', options.length, '个选项');
     }
     
     setModalProps({ loading: false });
@@ -354,9 +353,7 @@
   // 加载特征等级列表
   const loadSeverityLevels = async (updateSchemaOnLoad = true) => {
     try {
-      console.log('开始加载特征等级列表...');
       const res: any = await getEnabledSeverityLevels();
-      console.log('特征等级API响应:', res);
       
       // 处理多种可能的响应格式
       let levels: SeverityLevelInfo[] = [];
@@ -377,15 +374,10 @@
       }
       
       severityLevels.value = levels;
-      console.log('特征等级数据:', severityLevels.value);
-      console.log('特征等级数据数量:', severityLevels.value.length);
-      console.log('特征等级选项:', getSeverityOptions.value);
       
       // 确保数据加载后再更新 schema（虽然已经在 schema 中使用 computed，但为了确保更新，还是调用一次）
       if (severityLevels.value.length > 0) {
         const options = getSeverityOptions.value;
-        console.log('特征等级数据已加载，共', severityLevels.value.length, '条');
-        console.log('特征等级选项:', options);
         
         // 只有在需要更新 schema 且表单已注册的情况下才更新
         if (updateSchemaOnLoad) {
@@ -404,7 +396,6 @@
                 },
               },
             });
-            console.log('特征等级选项已更新，共', options.length, '个选项');
           } catch (error) {
             // 表单还未注册，这是正常的（例如在 onMounted 时调用）
             console.debug('表单尚未注册，跳过 schema 更新（将在模态框打开时更新）');

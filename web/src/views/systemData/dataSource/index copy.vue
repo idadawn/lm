@@ -149,7 +149,6 @@
     initData();
   }
   function handleTreeSelect(id, _node, nodePath) {
-    console.log(id);
     // if (searchInfo.menuId === id) return;
     // searchInfo.menuId = id;
     // reload();

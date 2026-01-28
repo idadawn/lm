@@ -179,7 +179,8 @@
         });
       }
     } catch (error) {
-      createMessage.error(error as unknown as string);
+      const errorMsg = (error as any)?.message || (error as any)?.toString() || String(error);
+      createMessage.error(errorMsg);
     } finally {
       loading.value = false;
     }

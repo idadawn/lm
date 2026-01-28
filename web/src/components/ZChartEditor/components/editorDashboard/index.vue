@@ -149,11 +149,9 @@
   };
 
   const deactivateEv = index => {
-    console.log(index);
   };
 
   const resizing = () => {
-    console.log('resizing');
   };
 
   const init = () => {

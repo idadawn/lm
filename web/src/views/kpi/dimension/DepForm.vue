@@ -113,17 +113,16 @@
   function reloadTree() {
     treeLoading.value = true;
     getMetricSchema().then(res => {
-      console.log('数据源', res.data);
       treeData.value = res.data;
       treeLoading.value = false;
     });
   }
   function init(data) {
-    // console.log('33333', data);
+    // 
     id.value = data.id;
     //根据ID获取详细信息
     if (id.value) {
-      // console.log('4444444444编辑');
+      // 
       getDimensionDetail(data.id).then(res => {
         state.addInfo = {
           ...res.data,
@@ -142,7 +141,7 @@
         targetCheckedArrWeidu.value = targetCheckedArrWeiduArr.value;
       });
     } else {
-      // console.log('4444444444新增');
+      // 
       state.addInfo = {
         DateModelType: 'Db',
         DataModelId: {},
@@ -155,7 +154,7 @@
     }
   }
   function handleTreeSelect(id, node, nodePath) {
-    // console.log('node------', node);
+    // 
     // 数据源信息
     dataModelIdInfo.value = {
       // children: node.children,
@@ -179,7 +178,7 @@
       schemaName: node.id,
     };
     getMetricLinkIdSchemaSchemaName(data).then(res => {
-      // console.log('res----1111---', res.data);
+      // 
       const { tableFieldList, tableInfo } = res.data;
       // // 表结构列表
       // tableList.value = tableFieldList;
@@ -197,7 +196,6 @@
   }
   function depSelectItemEmitsFun(val, node) {
     targetCheckedArrWeiduItem.value = node;
-    console.log('888888888888', node);
     // const nameArr = ref([]);
     // val.map(item => {
     //   nameArr.value.push(item.fieldName);

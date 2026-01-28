@@ -112,8 +112,6 @@
       });
     };
     traverse(tree);
-    console.log('[展平树] 展平后的数据数量:', result.length);
-    console.log('[展平树] 前3条数据的ID:', result.slice(0, 3).map(r => r.id));
     return result;
   };
 
@@ -206,9 +204,6 @@
   }
 
   function handleEdit(record: AppearanceFeatureCategoryInfo) {
-    console.log('[编辑] 点击编辑，record:', record);
-    console.log('[编辑] record.id:', record.id);
-    console.log('[编辑] record 的所有键:', Object.keys(record));
     openModal(true, { isUpdate: true, record });
   }
 
@@ -237,7 +232,6 @@
         }
       },
       onCancel: () => {
-        console.log('用户取消了删除操作');
       }
     });
   }

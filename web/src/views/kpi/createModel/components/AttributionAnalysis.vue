@@ -131,17 +131,14 @@
     if (indexParams.timeStart && indexParams.timeEnd) {
       state.elements.map((v, index) => {
         if (v[0] == indexParams.timeStart) {
-          console.log('vvvvv', v[0], index);
           indexParams.gtData = index;
         } else if (v[0] == indexParams.timeEnd) {
           indexParams.ltData = index;
-          console.log('vvvvv', v[0], index);
         }
       });
     }
     // state.elements['gtData'] = indexParams.gtData;
     // state.elements['ltData'] = indexParams.ltData;
-    console.log('-----', indexParams.gtData, indexParams.ltData);
     random.value = crypto.randomUUID();
   }
   function getData(n) {

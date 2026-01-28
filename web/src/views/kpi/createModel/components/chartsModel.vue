@@ -73,7 +73,6 @@
     { title: 'Y轴', dataIndex: 'name' },
   ];
   onMounted(() => {
-    console.log('onMounted---------', props);
   });
   watch(
     () => props,
@@ -86,14 +85,12 @@
   watch(
     () => props.gtData,
     (newValue, oldValue) => {
-      console.log('7777777');
     },
     { deep: true },
   );
   watch(
     () => props.ltData,
     (newValue, oldValue) => {
-      console.log('3333', props.ltData);
     },
     { deep: true },
   );
@@ -129,8 +126,6 @@
         // basicPropsClone.OptionsData.default.visualMap.pieces[0].gt = 0;
         // basicPropsClone.OptionsData.default.visualMap.pieces[0].lt = 1;
 
-        console.log('tttttt', props.gtData);
-        console.log('ffffff', props.ltData);
         // basicPropsClone.OptionsData.default.series[0].data = [
         //   ['2019-10-10', 200],
         //   ['2019-10-11', 560],
@@ -148,7 +143,6 @@
     state.basicParamsObj = basicPropsClone;
     state.basicParamsList = [];
     state.basicParamsList.push(state.basicParamsObj);
-    console.log('---------', state.basicParamsObj);
   }
   const [registerTable, { reload }] = useTable({
     api: () => {
@@ -168,7 +162,7 @@
     pagination: false,
     // formConfig: getFormConfig(),
     afterFetch: data => {
-      // console.log('444444', data);
+      // 
     },
   });
 

@@ -2,7 +2,6 @@
 (function() {
     'use strict';
 
-    console.log('=== 模态框关闭按钮功能测试 ===\n');
 
     // 这是E:\project\2025\lm\web\src\views\systemData\dictionary\index.vue中handleDelete函数里的清理代码
     function cleanupComprehensive() {
@@ -50,7 +49,6 @@
 
     // 测试函数
     function testCleanupFunction(cleanupFn, name) {
-        console.log(`\n--- 测试 ${name} ---`);
 
         // 创建测试模态框
         const modal1 = document.createElement('div');
@@ -70,7 +68,6 @@
 
         // 验证模态框存在
         const beforeCount = document.querySelectorAll('.ant-modal-confirm-centered, .ant-modal-mask').length;
-        console.log(`清理前元素数量: ${beforeCount}`);
 
         if (beforeCount === 0) {
             console.error('❌ 测试失败: 没有创建模态框元素');
@@ -82,7 +79,6 @@
 
         // 验证模态框已清理
         const afterCount = document.querySelectorAll('.ant-modal-confirm-centered, .ant-modal-mask').length;
-        console.log(`清理后元素数量: ${afterCount}`);
 
         if (afterCount > 0) {
             console.error('❌ 测试失败: 还有残留的模态框元素');
@@ -94,7 +90,6 @@
             return false;
         }
 
-        console.log('✅ 测试通过: 所有元素已正确清理');
         return true;
     }
 
@@ -103,15 +98,12 @@
         let allPassed = true;
 
         // 测试ModelConfirmButton.vue的清理函数
-        console.log('\n1. 测试ModelConfirmButton.vue的cleanupModal函数:');
         allPassed &= testCleanupFunction(cleanupModal, 'cleanupModal');
 
         // 测试综合清理函数
-        console.log('\n2. 测试系统字典页面的cleanupComprehensive函数:');
         allPassed &= testCleanupFunction(cleanupComprehensive, 'cleanupComprehensive');
 
         // 测试edge case: 多个模态框
-        console.log('\n3. 测试多个模态框:');
         for (let i = 0; i < 3; i++) {
             const modal = document.createElement('div');
             modal.className = 'ant-modal-confirm ant-modal-confirm-centered';
@@ -121,26 +113,16 @@
         cleanupComprehensive();
         const remaining = document.querySelectorAll('.ant-modal-confirm-centered, .ant-modal-mask').length;
         if (remaining === 0) {
-            console.log('✅ 测试通过: 多个模态框已正确清理');
         } else {
             console.error(`❌ 测试失败: 还有${remaining}个残留元素`);
             allPassed = false;
         }
 
         // 最终结果
-        console.log('\n=== 测试总结 ===');
         if (allPassed) {
-            console.log('✅ 所有测试通过！');
-            console.log('\n结论：');
-            console.log('1. ModelConfirmButton.vue的cleanupModal函数能正确清理模态框');
-            console.log('2. 系统字典页面的cleanupComprehensive函数能更彻底地清理所有相关元素');
-            console.log('3. 关闭按钮(X)和确定按钮都会触发清理逻辑');
-            console.log('4. 无论是快速点击还是网络延迟，清理函数都能正常工作');
         } else {
-            console.log('❌ 部分测试失败');
         }
 
-        console.log('\n=== 测试完成 ===');
     }
 
     // 启动测试
@@ -149,9 +131,6 @@
         document.addEventListener('DOMContentLoaded', runTests);
     } else {
         // 在Node.js中提示需要浏览器环境
-        console.log('❌ 此测试需要在浏览器环境中运行');
-        console.log('请打开包含jQuery和Ant Design的HTML页面');
-        console.log('测试将自动检测并运行');
     }
 
 })();

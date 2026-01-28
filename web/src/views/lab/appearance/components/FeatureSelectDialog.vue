@@ -270,7 +270,6 @@ function handleRowClick(record: AppearanceFeatureInfo) {
 
 // 打开对话框
 async function open(existingFeatureIds?: string | string[]) {
-  console.log('[FeatureSelectDialog] open 方法被调用, existingFeatureIds:', existingFeatureIds);
   visible.value = true;
   selectedFeatures.value = [];
   preSelectedFeatureIds.value = Array.isArray(existingFeatureIds)
@@ -295,7 +294,6 @@ async function open(existingFeatureIds?: string | string[]) {
     }
   }
 
-  console.log('[FeatureSelectDialog] visible 设置为:', visible.value);
   // 参考 productModal.vue，在对话框打开后初始化数据
   initData();
 }

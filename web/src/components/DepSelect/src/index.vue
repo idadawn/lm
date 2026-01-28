@@ -61,8 +61,8 @@
 
   // 切换维度
   function targetWeiduChange(value, node) {
-    // console.log('value---', value);
-    // console.log('node---', node);
+    // 
+    // 
     if (value.includes('all')) {
       const arr = [];
       const arrItem = [];

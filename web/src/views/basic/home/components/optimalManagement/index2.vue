@@ -18,7 +18,7 @@
   const { height, width, OptionsData } = toRefs(basicProps?.value);
 
   watchEffect(() => {
-    // console.log('9999999999', props.basicProps);
+    // 
     setOptions(props.basicProps.OptionsData.default);
   });
 </script>

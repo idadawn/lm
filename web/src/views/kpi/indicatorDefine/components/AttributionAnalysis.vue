@@ -200,7 +200,6 @@
     const dimensionArr = [];
     if (!state.ChartsDataparams.dimensionsValue) {
       //默认进来
-      console.log('00000', dimensionOptionsList.value);
       // state.ChartsDataparams.dimensions = dimensionOptionsList.value[0];
       state.ChartsDataparams.dimensionsValue = dimensionOptionsList.value[0].field; //默认值带上第一条的值
     } else {
@@ -248,7 +247,6 @@
       }
     });
     state.AnaLysisParams.metric_id = props.recordId;
-    console.log('6666666666', state.AnaLysisParams);
     try {
       const res = await createAnalysis({
         ...state.AnaLysisParams,
@@ -292,7 +290,6 @@
           state.basePeriodArr.push(item.base_period_value);
         });
       });
-      console.log('33333', state.leftMenuArr);
 
       // state.tableDataList = {
       //   task_id: 'anakqbikunti',
@@ -330,7 +327,7 @@
       //     },
       //   ],
       // };
-      // console.log('44444444', state.tableDataList);
+      // 
     } catch (_) {}
   }
   function timeChange(e) {
@@ -341,21 +338,20 @@
 
     //如果用户选了时间，就去做阴影面积索引设定
     if (indexParams.timeStart && indexParams.timeEnd) {
-      // console.log('11111', indexParams.timeStart, indexParams.timeEnd);
+      // 
       state.elements.map((v, index) => {
-        // console.log('2222222', Date.parse(v[0].slice(0, 10)), Date.parse(indexParams.timeStart));
+        // 
         if (Date.parse(v[0].slice(0, 10)) == Date.parse(indexParams.timeStart)) {
           indexParams.gtData = index;
-          // console.log('3333', index);
+          // 
         } else if (Date.parse(v[0].slice(0, 10)) == Date.parse(indexParams.timeEnd)) {
           indexParams.ltData = index;
-          // console.log('vvvvv', v[0], index);
+          // 
         }
       });
     }
     // state.elements['gtData'] = indexParams.gtData;
     // state.elements['ltData'] = indexParams.ltData;
-    console.log('-----', indexParams.gtData, indexParams.ltData);
     random.value = crypto.randomUUID();
   }
   function getData(n) {

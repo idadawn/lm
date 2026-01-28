@@ -468,8 +468,8 @@
   });
   // -----------------
   function handleTreeSelect(id, node) {
-    // console.log('id------', id);
-    // console.log('node------', node);
+    // 
+    // 
     if (node.schemaStorageType === 'RealTime') {
       formState.data_type = 'RealTime';
       disabled_dataType.value = true;
@@ -502,7 +502,7 @@
       // schemaName: 'retail_stores',
     };
     getMetricLinkIdSchemaSchemaName(data).then(res => {
-      // console.log('res----1111---', res.data);
+      // 
       const { tableFieldList, tableInfo } = res.data;
       // 表结构列表
       tableList.value = tableFieldList;
@@ -524,8 +524,8 @@
   }
   // 切换指标的列
   function targetColumnChange(value, item) {
-    // console.log('value---', value);
-    // console.log('item---', item);
+    // 
+    // 
     polymerizationArr.value = [];
     formState.polymerization = undefined;
     const obj = {
@@ -541,7 +541,7 @@
 
     postMetricAgg_type(obj).then(res => {
       // 聚合方式
-      // console.log('res.data-----', res.data);
+      // 
       polymerizationArr.value = res.data as any[];
     });
   }
@@ -549,7 +549,7 @@
   function initData() {
     treeLoading.value = true;
     getMetricSchema().then(res => {
-      // console.log('数据源', res.data);
+      // 
       treeData.value = res.data;
       treeLoading.value = false;
     });
@@ -610,7 +610,7 @@
   // 筛选选择维度的change事件
   function shaixuanChange(value, item, record) {
     // 初始化数据
-    // console.log('formState_shaixuan----', formState_shaixuan);
+    // 
     formState_shaixuan.checkAll = false;
     formState_shaixuan.indeterminate = false;
 
@@ -676,7 +676,7 @@
   watch(
     () => formState_shaixuan.checkedList,
     val => {
-      // console.log('formState_shaixuan.checkedList----', formState_shaixuan.checkedList);
+      // 
       if (formState_shaixuan.checkedList.length > 0) {
         formState_shaixuan.indeterminate = !!val.length && val.length < formState_shaixuan.plainOptions.length;
         formState_shaixuan.checkAll = val.length === formState_shaixuan.plainOptions.length;
@@ -705,7 +705,7 @@
             dateSettingOptions.value.push(item);
           }
         });
-        // console.log('dateSettingOptions---', dateSettingOptions.value);
+        // 
       } else {
         timeSetting.value = false;
       }
@@ -747,7 +747,7 @@
     } else {
       shaixuanTable.value.push(obj);
     }
-    // console.log('shaixuanTable.value-------', shaixuanTable.value);
+    // 
   }
 
   // 选择模型中表示指标的列下拉框搜索
@@ -757,7 +757,7 @@
 
   // 创建提交
   async function createFun() {
-    // console.log('提交-------');
+    // 
 
     formRefDescribe.value.validate().then(async () => {
       let date_name;
@@ -779,7 +779,7 @@
         date_name = '秒';
       }
 
-      // console.log('shaixuanTable---------', shaixuanTable.value);
+      // 
 
       // 筛选
       // filtersArrNew = [
@@ -831,7 +831,7 @@
         },
       };
 
-      // console.log('data----提交---', data);
+      // 
       if (route.query && route.query.queryId) {
         putMetric(route.query.queryId, data).then(res => {
           if (res.code == 200) {
@@ -851,22 +851,22 @@
   }
   // 取消
   function cancelFun() {
-    // console.log('取消-------');
+    // 
     router.push('/kpi/indicatorDefine');
   }
 
   //标签
   getMetrictagSelector().then(res => {
     metricTagArr.value = res.data;
-    // console.log('metricTagArr.value ------', metricTagArr.value);
+    // 
   });
   // 标签回显
   function depSelectEmitsTagFun(val) {
-    // console.log('标签回显depSelectEmitsTagFun-------', val);
+    // 
     nameDescribe.metricTag = val;
   }
   function depSelectItemEmitsTagFun(val) {
-    // console.log('标签回显depSelectItemEmitsTagFun-------', val);
+    // 
   }
   // 指标目录
   getMetriccategoryList({}).then(res => {
@@ -888,7 +888,7 @@
   }
   // 格式-回传格式参数
   function format_obj_change(obj) {
-    // console.log('回传格式参数---', obj);
+    // 
     formatInfo.value = {
       type: obj.type,
       decimalPlaces: obj.decimal_place,
@@ -899,7 +899,7 @@
   }
   // 格式-回传的样例
   function format_value_format_change(value) {
-    // console.log('value----', value);
+    // 
     formState.format = value;
   }
 

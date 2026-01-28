@@ -163,8 +163,6 @@
     }
 
     if (unref(isUpdate)) {
-      console.log('[编辑分类] 接收到的 data:', data);
-      console.log('[编辑分类] data.record:', data.record);
       
       // 检查 record 是否存在
       if (!data.record) {
@@ -177,12 +175,9 @@
       // 处理可能的 API 响应格式：如果 record 是完整的响应对象，则提取 data 字段
       let record = data.record;
       if (record && record.data && typeof record.data === 'object') {
-        console.log('[编辑分类] 检测到 API 响应格式，提取 data 字段');
         record = record.data;
       }
       
-      console.log('[编辑分类] 处理后的 record:', record);
-      console.log('[编辑分类] record 的所有键:', record ? Object.keys(record) : 'record 为空');
       
       // 尝试多种可能的 ID 字段名称
       const recordId = record.id || record.Id || record.ID || record.F_Id || record.f_Id;
@@ -195,7 +190,6 @@
       }
       
       rowId.value = recordId;
-      console.log('[编辑分类] 设置 rowId:', rowId.value);
       
       // 编辑时，过滤掉当前项及其子项
       parentTreeOptions.value = convertToTreeSelectOptions(allCategories.value, recordId);
@@ -232,7 +226,6 @@
           createMessage.error('缺少分类ID，无法更新');
           return;
         }
-        console.log('[编辑分类] 提交 - ID:', rowId.value, 'Values:', values);
         
         // 确保 id 字段正确设置
         const updateData = {
@@ -245,7 +238,6 @@
           updateData.parentId = undefined;
         }
         
-        console.log('[编辑分类] 最终提交数据:', updateData);
         await updateAppearanceFeatureCategory(updateData);
       } else {
         await createAppearanceFeatureCategory(values);

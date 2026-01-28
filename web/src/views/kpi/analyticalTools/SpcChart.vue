@@ -227,7 +227,6 @@
         columns.value.splice(-1, 0, SpcColumn.individual, SpcColumn.movingRange);
         return xmRControl(titles, tableData.value!);
       default:
-        console.log(`进入默认！`);
     }
   };
 
@@ -321,9 +320,6 @@
   const editableData: UnwrapRef<Record<string, DataItem>> = reactive({});
 
   const onRangeChange = (value: [Dayjs, Dayjs], dateString: [string, string]) => {
-    console.log(formState.dateTime);
-    console.log('Selected Time: ', value);
-    console.log('Formatted Selected Time: ', dateString);
     // const [startDate, endDate] = dateString;
     //
     // formState.dateTime = [dayjs(startDate).unix(), dayjs(endDate).unix()];
@@ -332,7 +328,7 @@
   // const handleTableChange = () => {};
 
   // const onRangeOk = (value: [Dayjs, Dayjs]) => {
-  //   console.log('onOk: ', value);
+  //   
   // };
 
   /**
@@ -358,7 +354,6 @@
           });
       })
       .catch(error => {
-        console.log('error', error);
       });
   };
 

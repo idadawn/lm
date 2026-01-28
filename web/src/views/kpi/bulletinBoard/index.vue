@@ -69,7 +69,7 @@
   });
   function getTagInfo(item) {
     activeName.value = item.name;
-    // console.log('9999', item, activeName.value);
+    // 
     getTagMsgList(item.id);
   }
   function tabChanges(key) {
@@ -80,7 +80,6 @@
   }
   //获取KPI看板信息
   function getTagMsgList(id) {
-    console.log('接受id', id);
     // 获取建模数据
     loading.value = true;
     getTagMsg(id).then(async res => {

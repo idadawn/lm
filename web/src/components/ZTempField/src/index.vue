@@ -259,7 +259,6 @@
     }
     emit('update:value', state.result);
     emit('change', item);
-    console.log(state.result, 'state.result');
   };
 
   const setRules = () => {

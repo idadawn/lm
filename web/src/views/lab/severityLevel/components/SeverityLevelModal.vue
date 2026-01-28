@@ -97,7 +97,6 @@
         enabled: values.enabled !== undefined ? Boolean(values.enabled) : true,
         isDefault: values.isDefault !== undefined ? Boolean(values.isDefault) : false,
       };
-      console.log('提交的数据:', finalValues);
       setModalProps({ confirmLoading: true });
       if (unref(isUpdate)) {
         await updateSeverityLevel({ ...finalValues, id: rowId.value });

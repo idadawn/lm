@@ -17,14 +17,12 @@
   const emit = defineEmits(['register', 'reload']);
   function init(data) {
     changeLoading(false);
-    console.log(data,'data')
     id.value = data.id
   }
   const [registerPopup, { closePopup, changeLoading, changeOkLoading }] = usePopupInner(init);
   const id = ref('');
   const getTitle = computed(() => (!unref(id) ? '新建问题树' : '编辑问题树'));
   async function handleSubmit() {
-    console.log('handleSubmit')
     changeOkLoading(true);
     const query = {
       id: 1,

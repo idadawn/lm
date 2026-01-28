@@ -82,12 +82,10 @@
   const init = async () => {
     const res = await getNodes({ userId: '1' });
     state.source = res.data;
-    console.log(res);
   };
   init();
   onMounted(() => {
     const route = useRoute();
-    console.log('传递过来的指标编码-------', route.query.config);
     if (route.query.config) {
       state.activeKey = route.query.config == '1' ? '1' : '2';
       nextTick(() => {

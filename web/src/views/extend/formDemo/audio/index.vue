@@ -66,37 +66,31 @@
     // 获取麦克风权限
     Recorder.getPermission().then(
       () => {
-        console.log('开始录音');
 
         recorder.value.start(); // 开始录音
       },
       error => {
         createMessage.info('请先允许该网页使用麦克风');
 
-        console.log(`${error.name} : ${error.message}`);
       },
     );
   }
   function handlePause() {
-    console.log('暂停录音');
 
     recorder.value.pause(); // 暂停录音
   }
 
   function handleResume() {
-    console.log('恢复录音');
 
     recorder.value.resume(); // 恢复录音
   }
 
   function handleStop() {
-    console.log('停止录音');
 
     recorder.value.stop(); // 停止录音
   }
 
   function handlePlay() {
-    console.log('播放录音');
 
     recorder.value.play(); // 播放录音 // 播放时长
 
@@ -110,7 +104,6 @@
   }
 
   function handlePausePlay() {
-    console.log('暂停播放');
 
     recorder.value.pausePlay(); // 暂停播放 // 播放时长
 
@@ -120,7 +113,6 @@
   }
 
   function handleResumePlay() {
-    console.log('恢复播放');
 
     recorder.value.resumePlay(); // 恢复播放 // 播放时长
 
@@ -134,7 +126,6 @@
   }
 
   function handleStopPlay() {
-    console.log('停止播放');
 
     recorder.value.stopPlay(); // 停止播放 // 播放时长
 
@@ -144,7 +135,6 @@
   }
 
   function handleDestroy() {
-    console.log('销毁实例');
 
     recorder.value.destroy(); // 毁实例
 
@@ -162,7 +152,7 @@
 
     timer.value = null;
 
-    console.log('上传录音'); // 上传录音
+     // 上传录音
 
     const formData = new FormData();
 
@@ -177,11 +167,9 @@
     const url = window.URL.createObjectURL(fileOfBlob);
 
     src.value = url;
-    console.log(src.value);
-    console.log(formData);
     // const axios = require('axios');
     // axios.post(url, formData).then(res => {
-    //   console.log(res.data.data[0].url);
+    //   
     // });
   }
 </script>

@@ -73,7 +73,7 @@ async function bootstrap() {
 
   // TODO:与fastgpt交互
   window.addEventListener('message', function (e) {
-    // console.log('Received message:', e.data);
+    // 
     const { id } = e.data;
     if (!id) {
       return;

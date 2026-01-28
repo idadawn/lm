@@ -16,7 +16,6 @@ export function getStatusList(data: any): Promise<any> {
 }
 //删除列中的某一条
 export function deleteStatus(id: string): Promise<any> {
-  console.log(Url.deleteStatus + `${id}`);
   return defHttp.delete({ url: Url.deleteStatus + `${id}` });
 }
 // 获取价值链状态下拉选项

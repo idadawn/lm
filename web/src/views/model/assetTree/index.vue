@@ -50,7 +50,6 @@
       dataIndex: 'action',
     },
     afterFetch: data => {
-      console.log(data);
     },
   });
 
@@ -122,7 +121,6 @@
         reload();
       })
       .finally(() => {
-        console.log('执行删除操作');
       });
   }
 

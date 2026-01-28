@@ -74,7 +74,6 @@
         state.statusOptions = res.data;
       }
     } catch (err) {
-      console.log(err);
     }
   };
 

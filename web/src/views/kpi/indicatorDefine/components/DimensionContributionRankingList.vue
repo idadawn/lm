@@ -66,7 +66,6 @@
   const activeType = ref(DimensionContributionTypeEnum.Chart);
 
   const callback: TabsProps['onTabScroll'] = val => {
-    console.log(val);
   };
 
   const columns: BasicColumn[] = [
@@ -81,7 +80,7 @@
   watch(
     () => props,
     (newValue, oldValue) => {
-      // console.log('========', newValue);
+      // 
       // state.tableDataMsg = newValue.tableDataMsg;
       // state.leftMenu = newValue.leftMenu;
       // activeKey.value = leftMenu[0];
@@ -129,7 +128,6 @@
     showTableSetting: false,
     useSearchForm: false,
     afterFetch: data => {
-      console.log(data);
     },
   });
 

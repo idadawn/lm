@@ -31,7 +31,6 @@
   const defaultValue = computed({
     get: () => chartStore.getLayout.canvas.layouts[0].layout[props.currentLayout].filter?.values,
     set: value => {
-      console.log('filter change')
       chartStore.setLayout({type:'update'});
       chartStore.getLayout.canvas.layouts[0].layout[props.currentLayout].filter.values = value
     },
@@ -63,7 +62,6 @@
     keyword: '',
   });
   function valueChange(key, value) {
-    console.log(key, value, 'values');
     chartStore.setLayout({type:'update'});
   }
   function handleReset() {

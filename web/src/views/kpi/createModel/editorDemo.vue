@@ -169,7 +169,6 @@
     // 获取建模数据
     const res = await getNodes({ userId: '', nodeId: data.id });
     if (res.data) {
-      console.log(res.data, '建模数据');
       state.source = res.data;
     }
   }

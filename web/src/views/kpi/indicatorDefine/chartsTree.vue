@@ -79,7 +79,7 @@
   const route = useRoute();
   const Dates = [];
   const onChange = (time: '', timeString: string) => {
-    // console.log(time, timeString);
+    // 
   };
 
   const tabListTitle = [
@@ -242,7 +242,6 @@
 
         state.ChartsObj.valueData = valueData;
         // state.ChartsObj.seriesData[0].type='pie'
-        console.log('====', state.ChartsObj);
       } else if (state.chartsFlag == 'gudge') {
         //图表区域
         let valueData = [];
@@ -253,7 +252,6 @@
           valueData.push(valueDataObj);
         });
         state.ChartsObj.valueData = valueData;
-        console.log('图表区域的值', state.ChartsObj);
       } else if (state.chartsFlag == 'histogram') {
         //柱状图
         //初始化XY轴数据

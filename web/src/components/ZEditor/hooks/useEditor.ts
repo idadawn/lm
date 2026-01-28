@@ -298,7 +298,6 @@ export function useEditor({ source, graphRef }) {
               if (e.target) {
                 targetAnchorIdx = e.target.get('anchorPointIdx');
                 e.target.set('links', e.target.get('links') + 1); // cache the number of edge connected to this anchor-point circle
-                console.log('shouldEnd')
                 return true;
               }
               targetAnchorIdx = undefined;
@@ -317,7 +316,6 @@ export function useEditor({ source, graphRef }) {
               lineWidth: 1,
             },
             onSelect: (nodes, edges) => {
-              console.log('onSelect', nodes, edges);
             },
             trigger: 'drag',
           },
@@ -373,7 +371,6 @@ export function useEditor({ source, graphRef }) {
     _graph.render();
 
     _graph.on('aftercreateedge', (e: any) => {
-      console.log('aftercreateedge')
       // update the sourceAnchor and targetAnchor for the newly added edge
       _graph.updateItem(e.edge, {
         sourceAnchor: sourceAnchorIdx,
@@ -393,7 +390,6 @@ export function useEditor({ source, graphRef }) {
 
     // after drag from the first node, the edge is created, update the sourceAnchor
     _graph.on('afteradditem', e => {
-      console.log('afteradditem')
       if (e.item && e.item.getType() === 'node') {
         _graph.updateItem(e.item, {
           type: 'rect-node',
@@ -425,12 +421,10 @@ export function useEditor({ source, graphRef }) {
 
     // some listeners to control the state of nodes to show and hide anchor-point circles
     _graph.on('node:mouseenter', (e: any) => {
-      console.log('hover');
 
       _graph.setItemState(e.item, 'showAnchors', true);
     });
     _graph.on('node:mouseleave', (e: any) => {
-      console.log('leave');
 
       _graph.setItemState(e.item, 'showAnchors', false);
     });
@@ -463,7 +457,6 @@ export function useEditor({ source, graphRef }) {
       setNodesState();
     });
     _graph.on('node:click', (e: any) => {
-      console.log(e.item.getModel(), 'node');
       setNodesState(e.item.getModel().id);
       // 清空所有edge节点的active状态
       _graph.getEdges().forEach(edge => {
@@ -474,8 +467,6 @@ export function useEditor({ source, graphRef }) {
     });
 
     _graph.on('close-shape:click', (e: any) => {
-      console.log('rect-shape:click');
-      console.log(e.item);
       _graph.removeItem(e.item);
       setNodesState();
     });

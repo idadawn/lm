@@ -111,14 +111,10 @@ export function registerGlobComp(app: App) {
     .use(Dropdown)
     .use(Empty)
     .use(Descriptions)
-    .use(DescriptionsItem)
     .use(Menu)
     .use(Select)
-    .use(SelectOption)
-    .use(SelectOptGroup)
     .use(Table)
     .use(Checkbox)
-    .use(CheckboxGroup)
     .use(Tabs)
     .use(Card)
     .use(Collapse)
@@ -144,8 +140,6 @@ export function registerGlobComp(app: App) {
     .use(Breadcrumb)
     .use(Steps)
     .use(Radio)
-    .use(RadioGroup)
-    .use(RadioButton)
     .use(Progress)
     .use(Image)
     .use(Upload)
@@ -201,7 +195,7 @@ export function registerGlobComp(app: App) {
     .use(JnpfUploadImgSingle)
     .use(JnpfUploadBtn);
 
-  // DropdownButton is not a plugin, register it as a component
-  // Register with ADropdownButton to match Ant Design Vue's naming convention (a-dropdown-button)
-  app.component('ADropdownButton', DropdownButton);
+  // These components are not plugins and are automatically registered by their parent components
+  // (Select registers SelectOption/SelectOptGroup, Radio registers RadioGroup/RadioButton, etc.)
+  // No need to register them manually - they're already available as a-select-option, a-radio-button, etc.
 }

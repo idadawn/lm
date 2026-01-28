@@ -129,7 +129,6 @@ const [register, { setModalProps, closeModal }] = useModalInner(async (data) => 
     try {
       const res: any = await getUnitCategoryList();
       categoryList.value = res.data || res || [];
-      console.log('[单位定义Modal] 重新获取单位维度列表:', categoryList.value);
     } catch (error) {
       console.error('[单位定义Modal] 获取单位维度列表失败:', error);
       createMessage.error('获取单位维度列表失败');
@@ -144,8 +143,6 @@ const [register, { setModalProps, closeModal }] = useModalInner(async (data) => 
       fullName: cat.name,
     }));
     
-    console.log('[单位定义Modal] 最终的单位维度选项:', categoryOptions);
-    console.log('[单位定义Modal] categoryList.value:', categoryList.value);
     
     // updateSchema 需要传入数组格式
     updateSchema([

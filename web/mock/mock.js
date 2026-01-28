@@ -48,9 +48,7 @@ app.use(async (ctx, next) => {
     ctx.set({
       'X-Response-Time': `${ms}ms`,
     });
-    console.log(`${ctx.url} ${ctx.method} ${ms}`);
   } catch (err) {
-    console.log('捕获了程序的异常', new Date(), err);
   }
 });
 
@@ -59,5 +57,4 @@ app.use(router.routes());
 
 app.use(router.allowedMethods());
 app.listen(19003, () => {
-  console.log(`mock 服务器已开启\nhttp://${ip.address()}:19003\nhttp://localhost:19003`);
 });

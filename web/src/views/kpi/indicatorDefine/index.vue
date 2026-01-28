@@ -345,7 +345,7 @@
 
   // 编辑
   function updateHandle(record) {
-    // console.log('record--------', record);
+    // 
     // type: 'Basic', //指标类型,基础指标Basic,派生指标Derive,复合指标Composite
     if (record.type == 'Basic') {
       router.push({
@@ -408,7 +408,7 @@
         const query = {
           list: selectData.map(item => item.id),
         };
-        // console.log('query------', query);
+        // 
         deleteMetric(query.list).then(res => {
           createMessage.success(res.msg);
           clearSelectedRowKeys();
@@ -429,7 +429,7 @@
         const query = {
           list: selectData.map(item => item.id),
         };
-        // console.log('query------', query);
+        // 
         putMetricOnline(query.list).then(res => {
           createMessage.success(res.msg);
           clearSelectedRowKeys();
@@ -450,7 +450,7 @@
         const query = {
           list: selectData.map(item => item.id),
         };
-        // console.log('query------', query);
+        // 
         putMetricOffline(query.list).then(res => {
           createMessage.success(res.msg);
           clearSelectedRowKeys();
@@ -536,7 +536,7 @@
 
   // 提交分级
   function createHandleOk() {
-    // console.log('createAddInfo----', createAddInfo);
+    // 
     if (activeKey.value == '1') {
       // 新建分级当值提交时，趋势和区间要初始化
       createAddInfo.trend = undefined;
@@ -604,7 +604,7 @@
   });
   // 选中的标签id
   function depSelectEmitsTagFun(val) {
-    // console.log('标签回显depSelectEmitsTagFun-------', val);
+    // 
     searchInfo.tags = val;
   }
 

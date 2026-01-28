@@ -120,7 +120,18 @@ export const useUserStore = defineStore({
           grant_type: 'password',
         };
         const res = await loginApi(loginRequestParams);
-        const { token } = res.data?.data || {};
+
+        // Robust token extraction
+        // Priority 1: res.data.token (Standard payload)
+        // Priority 2: res.token (Direct payload if transform returns data.data)
+        // Priority 3: res.data.data.token (Nested data wrapper)
+        const token = res.data?.token || res.token || res.data?.data?.token;
+
+
+        if (!token) {
+          console.error('FAILED TO EXTRACT TOKEN. Keys in res:', Object.keys(res));
+          if (res.data) console.error('Keys in res.data:', Object.keys(res.data));
+        }
         this.setToken(token);
         const baseStore = useBaseStore();
         const organizeStore = useOrganizeStore();
@@ -163,7 +174,7 @@ export const useUserStore = defineStore({
       //   duration: 1,
       // });
       const res = await getUserInfo();
-      const { userInfo, sysConfigInfo, routerList = [], menuList = [], permissionList = [] } = res.data?.data || {};
+      const { userInfo, sysConfigInfo, routerList = [], menuList = [], permissionList = [] } = res.data || {};
       const { changeLocale } = useLocale();
       // changeLocale('zh_CN');
       let menus: BackMenu[] = [];
@@ -188,7 +199,7 @@ export const useUserStore = defineStore({
       this.setBackRouterList(routerList);
       const appStore = useAppStore();
       appStore.setProjectConfig({ sysConfigInfo });
-      return res.data?.data;
+      return res.data;
     },
     /**
      * @description: logout
@@ -198,7 +209,6 @@ export const useUserStore = defineStore({
         try {
           await doLogout();
         } catch {
-          console.log('注销Token失败');
         }
       }
       this.resetToken();

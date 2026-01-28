@@ -424,7 +424,6 @@
           scenario: 'import',
           remark: `导入数据核对时人工修正，炉号: ${targetRecord.furnaceNo}`,
         });
-        console.log('人工修正记录已保存');
       } catch (error) {
         console.error('保存人工修正记录失败:', error);
         // 不显示错误提示，避免影响用户体验

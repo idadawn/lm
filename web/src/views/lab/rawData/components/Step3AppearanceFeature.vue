@@ -441,7 +441,6 @@ function handleTableChange(pagination: any) {
 }
 
 async function handleEditFeatures(record: RawDataRow) {
-  console.log('handleEditFeatures called', record);
   if (!record) {
     console.error('record is null or undefined');
     return;

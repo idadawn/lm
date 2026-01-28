@@ -120,7 +120,7 @@ temp/
 *.suo
 *.ntvs*
 *.njsproj
-*.sln
+
 *.sw?
 
 # .NET specific
@@ -292,3 +292,26 @@ deploy/
 
 # Build cache
 .build-cache/
+
+# -------------------------------------------------------------------------
+# Merged from api/.gitignore
+# -------------------------------------------------------------------------
+.vs/
+nupkgs/
+# docker/volumes/ is already covered by docker-volumes/ but ensuring specific paths
+docker/volumes/
+**/*.pubxml
+**/*.pubxml.user
+
+# -------------------------------------------------------------------------
+# Merged from web/.gitignore
+# -------------------------------------------------------------------------
+.npmrc
+tests/server/static
+_local
+
+# -------------------------------------------------------------------------
+# Merged from api/resources/.gitignore
+# -------------------------------------------------------------------------
+codeTemp
+TemporaryFile/

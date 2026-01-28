@@ -64,7 +64,7 @@ import { isArray } from '@vue/shared';
   const router = useRouter();
   const Dates = [];
   const onChange = (time: '', timeString: string) => {
-    // console.log(time, timeString);
+    // 
   };
 
   const tabListTitle = [
@@ -177,7 +177,6 @@ import { isArray } from '@vue/shared';
           valueData.push(valueDataObj)
       })
       state.ChartsObj.valueData=valueData;
-      console.log('====',state.ChartsObj)
       }else{
         //初始化XY轴数据
         state.ChartsObj.xAxisData=[];

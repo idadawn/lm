@@ -124,9 +124,6 @@ const displayRules = computed(() => {
 
 // 生命周期钩子
 onMounted(() => {
-  console.log('CustomSortControl mounted');
-  console.log('Initial sort rules:', sortRules.value);
-  console.log('Initial editor visible:', editorVisible.value);
 
   // 添加全局错误监听
   window.addEventListener('error', handleGlobalError);
@@ -142,19 +139,13 @@ function handleGlobalError(event: ErrorEvent) {
 }
 
 function onButtonMouseDown() {
-  console.log('Button mouse down');
 }
 
 function onButtonMouseUp() {
-  console.log('Button mouse up');
 }
 
 // 打开编辑器
 function openEditor() {
-  console.log('=== 开始打开自定义排序编辑器 ===');
-  console.log('当前时间:', new Date().toLocaleString());
-  console.log('当前sortRules:', sortRules.value);
-  console.log('当前editorVisible:', editorVisible.value);
 
   buttonLoading.value = true;
   lastError.value = '';
@@ -162,12 +153,9 @@ function openEditor() {
   try {
     // 直接设置可见性
     editorVisible.value = true;
-    console.log('已设置 editorVisible = true');
 
     // 使用 nextTick 确保 DOM 更新
     nextTick(() => {
-      console.log('nextTick 回调执行');
-      console.log('更新后的 editorVisible:', editorVisible.value);
       buttonLoading.value = false;
 
       // 如果模态框仍然没有显示，尝试强制显示
@@ -176,25 +164,16 @@ function openEditor() {
         lastError.value = '模态框未能成功显示';
         message.error('无法打开自定义排序编辑器，请检查控制台错误信息');
       } else {
-        console.log('✅ 模态框显示成功');
       }
     });
 
     // 延迟检查，确保模态框已经渲染
     setTimeout(() => {
-      console.log('延迟检查 - editorVisible:', editorVisible.value);
 
       // 检查 DOM 中是否有模态框元素
       const modalElements = document.querySelectorAll('.ant-modal-root, .ant-modal-mask, .ant-modal-wrap');
-      console.log('DOM 中找到的模态框元素数量:', modalElements.length);
 
       modalElements.forEach((el, index) => {
-        console.log(`模态框元素 ${index + 1}:`, {
-          className: el.className,
-          display: window.getComputedStyle(el).display,
-          visibility: window.getComputedStyle(el).visibility,
-          zIndex: window.getComputedStyle(el).zIndex
-        });
       });
     }, 500);
 
@@ -208,7 +187,6 @@ function openEditor() {
 
 // 清除排序
 function clearSort() {
-  console.log('清除排序规则');
   sortRules.value = [];
   emit('update:modelValue', []);
   emit('change', []);
@@ -216,7 +194,6 @@ function clearSort() {
 
 // 处理排序变化
 function handleSortChange(newRules: SortRule[]) {
-  console.log('Sort rules changed:', newRules);
   sortRules.value = newRules;
   emit('update:modelValue', newRules);
   emit('change', newRules);
@@ -231,12 +208,10 @@ function handleEditorError(error: Error) {
 
 // 编辑器打开事件
 function onEditorOpen() {
-  console.log('CustomSortEditor opened');
 }
 
 // 编辑器关闭事件
 function onEditorClose() {
-  console.log('CustomSortEditor closed');
 }
 
 // 获取规则提示
@@ -248,7 +223,6 @@ function getRuleTooltip(rule: SortRule & { label: string }) {
 watch(
   () => props.modelValue,
   (newValue) => {
-    console.log('modelValue changed:', newValue);
     sortRules.value = newValue || [];
   },
   { deep: true }
@@ -256,13 +230,11 @@ watch(
 
 // 监听编辑器可见性变化
 watch(editorVisible, (newValue) => {
-  console.log('Editor visibility changed to:', newValue);
 
   // 如果变为true，检查模态框是否真的显示
   if (newValue) {
     setTimeout(() => {
       const visibleModals = document.querySelectorAll('.ant-modal[style*="display: block"], .ant-modal:not([style*="display: none"])');
-      console.log('实际显示的模态框数量:', visibleModals.length);
     }, 300);
   }
 });

@@ -564,9 +564,6 @@ const [registerTable, { reload, getForm }] = useTable({
     return params;
   },
   afterFetch: async data => {
-    console.log('=== afterFetch called ===');
-    console.log('Original data count:', Array.isArray(data) ? data.length : 0);
-    console.log('selectedProductSpecId:', selectedProductSpecId.value);
 
     // 数据映射：将后端返回的 Detection1, Thickness1 等字段映射为小写
     if (Array.isArray(data)) {
@@ -598,23 +595,16 @@ const [registerTable, { reload, getForm }] = useTable({
         return mapped;
       });
 
-      console.log('Mapped data count:', mappedData.length);
 
       // 加载颜色数据
       if (mappedData.length > 0) {
         const dataIds = mappedData.map(item => item.id);
-        console.log('About to load colors for IDs:', dataIds.slice(0, 5), '...');
-        console.log('Full ID list for debugging:', dataIds);
 
         // 检查ID格式 - 对比保存时使用的ID格式
         dataIds.forEach(id => {
-          console.log('Data ID format check:', id, 'length:', id?.length, 'has dash:', id?.includes('-'));
           // 检查原始数据对象，看看是否有其他ID字段
           const originalItem = data.find(d => d.id === id);
           if (originalItem) {
-            console.log('Original item keys:', Object.keys(originalItem));
-            console.log('Original item ID:', originalItem.id);
-            console.log('RawDataId field:', originalItem.rawDataId || originalItem.RawDataId);
           }
         });
 
@@ -624,10 +614,8 @@ const [registerTable, { reload, getForm }] = useTable({
         await nextTick();
         // 创建一个延迟，确保颜色应用到DOM
         setTimeout(() => {
-          console.log('Colors should be applied after delay');
         }, 100);
       } else {
-        console.log('No data to load colors for');
       }
 
       // 保存表格数据用于行/列填充
@@ -717,11 +705,9 @@ async function loadProductSpecOptions() {
 
 // 监听产品规格变化
 watch(selectedProductSpecId, async (newVal, oldVal) => {
-  console.log('Product spec changed from', oldVal, 'to', newVal);
   if (newVal && newVal !== oldVal) {
     // 清空现有颜色数据
     coloredCells.value = {};
-    console.log('Cleared color data due to spec change');
 
     // 重新加载表格数据（会触发afterFetch重新加载颜色）
     await nextTick();
@@ -952,15 +938,12 @@ function getCellColor(rowId: string, field: string): string {
   if (Object.keys(coloredCells.value).length > 0 && !color) {
     // 只打印前几次查询，避免日志过多
     const existingKeys = Object.keys(coloredCells.value).slice(0, 3);
-    console.log('getCellColor - key:', key, 'found:', !!color, 'sample keys:', existingKeys);
   }
   return color;
 }
 
 // 处理单元格颜色选择
 async function handleCellColor(rowId: string, field: string) {
-  console.log('=== handleCellColor called ===');
-  console.log('rowId:', rowId, 'field:', field, 'selectedColor:', selectedColor.value, 'isClearMode:', isClearMode.value, 'fillMode:', fillMode.value);
 
   // 根据填充模式获取需要处理的单元格
   let cellsToProcess: { rowId: string; field: string }[] = [];
@@ -982,7 +965,6 @@ async function handleCellColor(rowId: string, field: string) {
     cellsToProcess = tableData.value.map(row => ({ rowId: row.id, field }));
   }
 
-  console.log('Cells to process:', cellsToProcess.length);
 
   // 清除模式
   if (isClearMode.value) {
@@ -1055,42 +1037,32 @@ function clearSelectedColor() {
 
 // 根据ID列表加载颜色数据
 async function loadColorsByIds(dataIds: string[]) {
-  console.log('=== loadColorsByIds called ===');
-  console.log('selectedProductSpecId:', selectedProductSpecId.value);
-  console.log('dataIds:', dataIds);
 
   if (!selectedProductSpecId.value || !dataIds || dataIds.length === 0) {
-    console.log('Skip loading colors due to missing params');
     return;
   }
 
   try {
-    console.log('Fetching colors for spec:', selectedProductSpecId.value, 'dataIds count:', dataIds.length);
     const response = await getIntermediateDataColors({
       productSpecId: selectedProductSpecId.value,
       intermediateDataIds: dataIds,
     });
 
-    console.log('Color API response:', response);
 
     // 处理嵌套的响应结构 - colors 可能在 response.colors 或 response.data.colors
     const result = (response as any)?.data || response;
     const colors = result?.colors;
 
     if (colors && colors.length > 0) {
-      console.log('Loading', colors.length, 'colors');
       // 创建新的对象以确保响应式更新
       const newColorMap: Record<string, string> = { ...coloredCells.value };
       colors.forEach((color: CellColorInfo) => {
         const key = `${color.intermediateDataId}::${color.fieldName}`;
         newColorMap[key] = color.colorValue;
-        console.log('Set color for key:', key, 'value:', color.colorValue);
       });
       // 使用新对象替换，确保触发响应式更新
       coloredCells.value = newColorMap;
-      console.log('coloredCells updated, keys:', Object.keys(coloredCells.value));
     } else {
-      console.log('No colors returned from API');
       // 如果没有颜色数据，清空颜色映射
       coloredCells.value = {};
     }
@@ -1136,7 +1108,6 @@ async function saveColorsBatch() {
   try {
     const colors: CellColorInfo[] = Object.entries(coloredCells.value).map(([key, color]) => {
       const [intermediateDataId, fieldName] = key.split('::');
-      console.log('Batch save - ID from key:', intermediateDataId, 'length:', intermediateDataId?.length);
       return {
         intermediateDataId,
         fieldName,
@@ -1144,8 +1115,6 @@ async function saveColorsBatch() {
       };
     });
 
-    console.log('Batch saving colors count:', colors.length);
-    console.log('First few colors:', colors.slice(0, 3));
 
     await saveIntermediateDataColors({
       colors,

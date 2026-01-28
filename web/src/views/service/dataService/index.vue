@@ -150,7 +150,6 @@
   }
 
   const changeItem = () => {
-    console.log('changeItem');
   };
 
   // -------------------
@@ -184,7 +183,7 @@
       dataIndex: 'action',
     },
     // afterFetch: function (data) {
-    // console.log('data----', data);
+    // 
     // },
   });
   // 表格操作

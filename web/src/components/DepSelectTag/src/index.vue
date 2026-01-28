@@ -33,7 +33,7 @@
   watch(
     () => props.dataArr,
     val => {
-      // console.log('props.dataArr;---', props.dataArr);
+      // 
       targetColumnArrWeidu.value = props.dataArr;
       targetColumnArr.value = props.dataArr;
       targetColumnArrWeidu.value = [
@@ -60,8 +60,8 @@
 
   // 切换
   function targetWeiduChange(value, node) {
-    // console.log('value---', value);
-    // console.log('node---', node);
+    // 
+    // 
     if (value.includes('all')) {
       const arr = [];
       const arrItem = [];

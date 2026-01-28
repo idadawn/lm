@@ -51,7 +51,6 @@
   const [registerMessageDrawer, { openDrawer: openMessageDrawer }] = useDrawer();
   const Dates = []
   const onChange = (time: '', timeString: string) => {
-  console.log(time, timeString);
 };
 
   const tabListTitle = [

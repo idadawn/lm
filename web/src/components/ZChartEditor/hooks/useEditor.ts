@@ -7,7 +7,6 @@ export const useEditor = () => {
   const chartStore = useChartStore();
 
   const addNode = async (data, isOnChart, currentKey) => {
-    console.log('addNode', data);
     // 获取鼠标位置
     const { e, item } = data;
     const x = e?.offsetX;

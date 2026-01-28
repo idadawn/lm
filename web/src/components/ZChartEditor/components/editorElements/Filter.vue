@@ -200,7 +200,6 @@
   // 筛选选择维度的change事件
   function dimensionChange(value, item, editData) {
     // 初始化数据
-    console.log('dimensionChange----', value, item);
     resetForm();
     filterState.fieldName = item.fieldName;
     filterState.field = item.value;

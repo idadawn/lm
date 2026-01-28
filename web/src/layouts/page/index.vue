@@ -2,9 +2,11 @@
   <RouterView>
     <template #default="{ Component, route }">
       <keep-alive v-if="openCache" :include="getCaches">
-        <component :is="Component" :key="route.fullPath" />
+        <component v-if="Component" :is="Component" :key="route.fullPath" />
+        <component v-else :is="ExceptionComponent" :key="route.fullPath" />
       </keep-alive>
-      <component v-else :is="Component" :key="route.fullPath" />
+      <component v-else-if="Component" :is="Component" :key="route.fullPath" />
+      <component v-else :is="ExceptionComponent" :key="route.fullPath" />
     </template>
   </RouterView>
   <FrameLayout v-if="getCanEmbedIFramePage" />
@@ -14,6 +16,7 @@
   import { computed, defineComponent, unref } from 'vue';
 
   import FrameLayout from '/@/layouts/iframe/index.vue';
+  import { EXCEPTION_COMPONENT } from '/@/router/constant';
 
   import { useRootSetting } from '/@/hooks/setting/useRootSetting';
 
@@ -50,6 +53,7 @@
         getBasicTransition,
         getCaches,
         getCanEmbedIFramePage,
+        ExceptionComponent: EXCEPTION_COMPONENT,
       };
     },
   });

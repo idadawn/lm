@@ -166,15 +166,10 @@ const localFields = ref<any[]>([]);
 watch(
   () => props.fields,
   (newFields) => {
-    console.log('[JudgmentRuleEditor] ===== props.fields 变化 =====');
-    console.log('[JudgmentRuleEditor] newFields:', newFields);
-    console.log('[JudgmentRuleEditor] newFields 长度:', newFields?.length);
-    console.log('[JudgmentRuleEditor] newFields JSON:', JSON.stringify(newFields));
     
     if (newFields && Array.isArray(newFields) && newFields.length > 0) {
       // 深拷贝到本地
       localFields.value = JSON.parse(JSON.stringify(newFields));
-      console.log('[JudgmentRuleEditor] localFields 已更新:', localFields.value);
     }
   },
   { immediate: true, deep: true }
@@ -182,10 +177,8 @@ watch(
 
 // 使用 localFields 计算 options
 const fieldOptions = computed(() => {
-  console.log('[JudgmentRuleEditor] 计算 fieldOptions, localFields:', localFields.value);
   
   if (!localFields.value || localFields.value.length === 0) {
-    console.log('[JudgmentRuleEditor] localFields 为空，返回空数组');
     return [];
   }
   
@@ -194,7 +187,6 @@ const fieldOptions = computed(() => {
     value: f.id || f.columnName || f.code
   }));
   
-  console.log('[JudgmentRuleEditor] 生成的 options:', options);
   return options;
 });
 
@@ -270,15 +262,12 @@ function addCondition(ruleIndex: number) {
   const rule = rules.value[ruleIndex];
   if (!rule) return;
 
-  console.log('[JudgmentRuleEditor] 添加条件时 localFields:', localFields.value);
-  console.log('[JudgmentRuleEditor] 添加条件时 fieldOptions:', fieldOptions.value);
   
   // 使用 localFields 获取默认值
   const defaultFieldId = localFields.value.length > 0 
     ? (localFields.value[0].id || localFields.value[0].columnName || '') 
     : '';
   
-  console.log('[JudgmentRuleEditor] 默认字段ID:', defaultFieldId);
 
   rule.rootGroup.conditions.push({
     id: buildShortUUID(),

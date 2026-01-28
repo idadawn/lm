@@ -10,7 +10,7 @@ export function getMetrickinship(id) {
 
 // 更新指标定义
 export function putMetrickinship(data) {
-  // console.log('data-------', data);
+  // 
   // let obj = {
   //   fullName: data.fullName,
   //   description: data.description,

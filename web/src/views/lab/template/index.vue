@@ -102,7 +102,6 @@ const loadData = async () => {
 
 
 const handleEdit = (record: any) => {
-  console.log('handleEdit clicked', record);
   openFormModal(true, { id: record.id });
 };
 

@@ -53,7 +53,6 @@ export const useBaseStore = defineStore({
           json: DicChildItem[] | DicChildItem = [];
         if (!this.dictionaryList.length) {
           list = await this.getDictionaryAll();
-          console.log(list)
         } else {
           list = this.dictionaryList;
         }
@@ -94,7 +93,6 @@ export const useBaseStore = defineStore({
           }
           return json;
         }
-        console.log(json)
         return json;
       } catch (error) {
         return [];

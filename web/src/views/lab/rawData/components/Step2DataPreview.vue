@@ -379,7 +379,6 @@ function getStatusText(record: any): string {
 
 // 处理重复炉号选择
 function handleDuplicateSelection(record: any) {
-  console.log('handleDuplicateSelection: 被调用', record);
   if (!previewData.value?.rows) {
     console.warn('handleDuplicateSelection: previewData.value?.rows 为空');
     return;
@@ -763,7 +762,6 @@ function handleRetry() {
 
 // 下一步
 async function handleNext() {
-  console.log('handleNext: 被调用');
   if (!previewData.value) {
     console.warn('handleNext: previewData.value 为空');
     message.warning('数据尚未解析完成，请稍候');
@@ -800,10 +798,8 @@ async function handleNext() {
       }
       
       // 保存重复数据的选择结果到后端
-      console.log('开始保存重复数据选择结果...');
       try {
         await saveDuplicateSelections();
-        console.log('重复数据选择结果保存完成');
         // 保存成功后，等待一小段时间确保后端数据已更新
         await new Promise(resolve => setTimeout(resolve, 500));
       } catch (error: any) {
@@ -812,7 +808,6 @@ async function handleNext() {
         return;
       }
     } else {
-      console.log('没有重复数据，跳过保存');
     }
   }
 
@@ -826,7 +821,6 @@ async function saveDuplicateSelections() {
     return;
   }
   
-  console.log('saveDuplicateSelections: 开始处理，总数据行数:', previewData.value.rows.length);
   
   // 找出所有需要更新的重复数据
   const updates: { rawDataId: string; isValidData: boolean }[] = [];
@@ -842,20 +836,16 @@ async function saveDuplicateSelections() {
     }
   });
   
-  console.log(`saveDuplicateSelections: 找到 ${duplicateGroups.size} 个重复炉号组`);
   
   if (duplicateGroups.size === 0) {
-    console.log('saveDuplicateSelections: 没有重复数据，无需保存');
     return;
   }
   
   // 对于每个重复组，更新所有数据的状态
   for (const [furnaceNo, rows] of duplicateGroups) {
-    console.log(`处理重复炉号组: ${furnaceNo}, 共 ${rows.length} 条数据`);
     
     // 检查是否有被选中的数据
     const selectedRows = rows.filter((r: any) => r.selectedForImport === true);
-    console.log(`  - 被选中的数据: ${selectedRows.length} 条`);
     
     rows.forEach((row: any) => {
       // 根据 selectedForImport 确定是否有效
@@ -871,7 +861,6 @@ async function saveDuplicateSelections() {
         row.isValidData = isValid;
       }
       
-      console.log(`  - 数据ID: ${row.id}, selectedForImport: ${row.selectedForImport}, isValidData: ${row.isValidData}, 保存为: ${isValid}`);
       updates.push({
         rawDataId: row.id,
         isValidData: isValid
@@ -880,17 +869,13 @@ async function saveDuplicateSelections() {
   }
   
   if (updates.length === 0) {
-    console.log('saveDuplicateSelections: 没有需要更新的重复数据');
     return;
   }
   
-  console.log(`saveDuplicateSelections: 准备保存 ${updates.length} 条重复数据的更新:`, updates);
-  console.log(`saveDuplicateSelections: 调用API，会话ID: ${props.importSessionId}`);
   
   try {
     // 调用API保存更新
     await updateDuplicateSelections(props.importSessionId, updates);
-    console.log('saveDuplicateSelections: 重复数据选择结果已保存到后端成功:', updates.length, '条数据');
   } catch (error: any) {
     console.error('saveDuplicateSelections: 保存重复数据选择结果失败:', error);
     // 抛出错误，阻止进入下一步，确保数据一致性

@@ -65,16 +65,14 @@
       state.isUploading = false;
 
       // 文件上传成功后的处理
-      console.log(info.file.response); // 这里可以获取到接口返回的数据
+       // 这里可以获取到接口返回的数据
       state.answer = info.file.response;
       state.imageUrl = URL.createObjectURL(info.file.originFileObj);
     }
   };
   const handleBlur = () => {
-    console.log('blur');
   };
   const handleFocus = () => {
-    console.log('focus');
   };
   const filterOption = (input: string, option: any) => {
     return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0;
@@ -103,7 +101,6 @@
 
   // 一键分析
   const handleAnalysisFast = async () => {
-    console.log('getAnalysisResult');
     const btn = document.getElementById('fastgpt-chatbot-button');
 
     const iframe = document.getElementById('fastgpt-chatbot-window');
@@ -127,12 +124,10 @@
       state.isFastgptPending = true;
       const prompt = `标准钢坏重量W=7587kg、标准钢坏长度L=2100mm，上一次估计的真实重量West=7580kg，以及上一次切割时的切割长度Length=2091，以及称所称出的对应重量Weight=7582kg`;
       const res = await completions({ prompt });
-      console.log(res);
       state.fastgptAnswer = res.choices[0].message.content;
       state.isFastgptPending = false;
     } catch (err) {
       state.isFastgptPending = false;
-      console.log(err);
     }
   };
 </script>

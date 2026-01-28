@@ -15,7 +15,6 @@ async function testGetColors() {
 
     if (response.ok) {
       const data = await response.json();
-      console.log('✅ GetColors API 成功:', data);
     } else {
       console.error('❌ GetColors API 失败:', response.status, response.statusText);
     }
@@ -36,7 +35,6 @@ async function testSaveCellColor() {
 
     if (response.ok) {
       const data = await response.json();
-      console.log('✅ SaveCellColor API 成功:', data);
     } else {
       console.error('❌ SaveCellColor API 失败:', response.status, response.statusText);
     }
@@ -46,6 +44,5 @@ async function testSaveCellColor() {
 }
 
 // 运行测试
-console.log('开始测试颜色API...');
 testGetColors();
 testSaveCellColor();

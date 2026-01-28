@@ -41,7 +41,6 @@
   }
   function submitForm(data, callback) {
     changeOkLoading(true);
-    console.log('提交数据：', data);
     if (callback && typeof callback === 'function') callback();
     changeOkLoading(false);
   }

@@ -64,7 +64,7 @@
   function init(data) {
     // resetFields();
     // getStatusOptionsList().then(res => {
-    //   console.log('00000', res);
+    //   
     //   state.statusOptions.value = res.data.map(({ id, name }) => ({ id, fullName: name }));
     // });
     id.value = data.id;
@@ -88,7 +88,6 @@
   }
   async function handleSubmit() {
     // const values = ; //获取详情当前所有的字段
-    console.log('values---', state.form.id);
     if (!state.form) return;
     changeOkLoading(true);
     const query = {
@@ -96,7 +95,6 @@
     };
 
     const formMethod = state.form.id ? updateStatus : addStatus;
-    console.log('values---', formMethod);
     formMethod(query)
       .then(res => {
         createMessage.success(res.msg);

@@ -62,7 +62,7 @@
   const emit = defineEmits(['visible_format', 'format_obj', 'format_value_format']);
   const props = defineProps(_props);
 
-  // console.log('props---', props);
+  // 
   const state = reactive({
     visible_format: false,
   });
@@ -276,7 +276,7 @@
   }
   // 取消
   function cancelFormat() {
-    // console.log('取消-----');
+    // 
     emit('visible_format', false);
   }
 </script>

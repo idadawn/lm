@@ -74,7 +74,6 @@
     editType: '',
   });
   const getNodelist = async () => {
-    console.log('getNodelist');
     const indicatorRes = await getAllIndicatorList();
     const dimensionsRes = await getDimensions();
     state.nodeList[0].children = indicatorRes.data.map(item => {
@@ -100,7 +99,6 @@
   function init(data) {
     changeLoading(false);
     getNodelist();
-    console.log(data, 'data');
     state.dashboardId = data.id;
     state.editType = data.type;
   }

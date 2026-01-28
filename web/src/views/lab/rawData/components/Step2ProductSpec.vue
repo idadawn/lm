@@ -439,7 +439,6 @@ const specRowSelection = computed(() => ({
 
 // 方法
 async function loadData(isRetry = false) {
-  console.log('Step2ProductSpec: loadData 被调用', { isRetry, importSessionId: props.importSessionId });
   
   // 如果是重试，更新重试计数
   if (isRetry) {
@@ -452,9 +451,7 @@ async function loadData(isRetry = false) {
 
   loading.value = true;
   try {
-    console.log('Step2ProductSpec: 调用 getProductSpecMatches API');
     const response = await getProductSpecMatches(props.importSessionId);
-    console.log('Step2ProductSpec: getProductSpecMatches 返回:', response);
 
     // 确保返回的是数组
     let result = response;
@@ -471,7 +468,6 @@ async function loadData(isRetry = false) {
     // 检查是否为空数组（可能表示数据还在处理中）
     if (result.length === 0 && retryCount.value < maxRetries) {
       // 数据可能还在处理中，延迟重试
-      console.log(`数据可能还在处理中，第${retryCount.value + 1}次重试，${retryDelay}ms后重试...`);
 
       // 显示处理中的提示
       isProcessing.value = true;
@@ -525,7 +521,6 @@ async function loadData(isRetry = false) {
     const errorMsg = error?.message || '';
     if (errorMsg.includes('解析数据文件不存在') && retryCount.value < maxRetries) {
       // 数据可能还在处理中，延迟重试
-      console.log(`数据可能还在处理中（服务端错误），第${retryCount.value + 1}次重试，${retryDelay}ms后重试...`);
 
       // 显示处理中的提示
       isProcessing.value = true;
@@ -821,7 +816,6 @@ watch(
 
 // 添加一个方法来手动触发加载（供父组件调用）
 function triggerLoad() {
-  console.log('Step2ProductSpec: triggerLoad 被调用');
   if (props.skipAutoLoad) {
     return;
   }

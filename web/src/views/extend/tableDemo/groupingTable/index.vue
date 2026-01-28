@@ -89,7 +89,6 @@
       dataIndex: 'action',
     },
     afterFetch: data => {
-      console.log(data)
       let list = JSON.parse(JSON.stringify(state.industryTypeList));
       for (let i = 0; i < list.length; i++) {
         let e = list[i];
@@ -101,7 +100,6 @@
         e.projectName = `${e.fullName} 【${e.children.length}】`;
       }
       list = list.filter(o => o.children.length);
-      console.log(list)
       return list;
     },
   });
@@ -131,7 +129,7 @@
   }
   async function init() {
     state.industryTypeList = (await baseStore.getDictionaryData('IndustryType')) as any[];
-    // console.log(state.industryTypeList)
+    // 
     reload();
   }
 

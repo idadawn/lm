@@ -91,9 +91,7 @@
     displayGoBack.value = false;
   };
   const changeTab = current => {
-    console.log('current--', current);
     state.currentItem = data.value[current];
-    console.log('state.currentItem---', state.currentItem);
     state.currentIndex = current;
   };
   // 点击合同

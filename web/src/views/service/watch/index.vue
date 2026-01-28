@@ -107,19 +107,19 @@
           itm.tagIndex = `tagIndex_${item.id}`;
         });
       });
-      // console.log('allCollectorTags_treeData---', allCollectorTags_treeData.value);
+      // 
     }
   }
 
   function allCollectorTags_onCheck(checked, e) {
-    // console.log('e.checkedNodes--1111-', e.checkedNodes);
+    // 
     // 将数据进行整理成自己想要的
     e.checkedNodes.forEach((item, index) => {
       if (item.name) {
         delete e.checkedNodes[index];
       }
     });
-    // console.log('e.checkedNodes22--', e.checkedNodes);
+    // 
     allCollectorTags_checkedNodes.value = e.checkedNodes;
   }
 
@@ -129,7 +129,7 @@
       // 将数据拆解成接口想要的数据
       const groupedData = groupByTagIndex(allCollectorTags_checkedNodes.value);
       const watchListArr = extractTagIndexes(groupedData);
-      // console.log('watchListArr------', watchListArr);
+      // 
       let data = {
         id: state.parentId,
         watchList: watchListArr,
@@ -167,7 +167,7 @@
           itm.tagIndex = `tagIndex_${item.id}`;
         });
       });
-      // console.log('watchlist_treeData---', watchlist_treeData.value);
+      // 
     }
   }
 
@@ -184,7 +184,7 @@
     if (watchlist_checkedNodes.value && watchlist_checkedNodes.value.length > 0) {
       const groupedData = groupByTagIndex(watchlist_checkedNodes.value);
       const watchListArr = extractTagIndexes(groupedData);
-      // console.log('watchListArr------', watchListArr);
+      // 
 
       let data = {
         id: state.parentId,

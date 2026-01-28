@@ -78,7 +78,6 @@
   watch(
     () => (props.chartsFlag == 'gudge' ? props.chartsData.valueData : ''),
     (newValue, oldValue) => {
-      console.log('组件内表格的值', newValue);
       if (props.chartsFlag == 'gudge') {
         reload();
       }
@@ -94,7 +93,6 @@
   watch(
     () => props.ltData,
     (newValue, oldValue) => {
-      console.log('3333', props.ltData);
     },
     { deep: true },
   );
@@ -104,7 +102,7 @@
     //都占取100%的位置
     state.flag.push(100);
     var basicPropsClone: any = {};
-    // console.log('222222', props.chartsFlag);
+    // 
     const chartsFlag = props.chartsFlag ? props.chartsFlag : 'axis';
     switch (chartsFlag) {
       case 'axis' /* 折线图 */:
@@ -114,7 +112,6 @@
         basicPropsClone.OptionsData.default.legend.data = itemOptions.legendData;
         basicPropsClone.OptionsData.default.xAxis.data = itemOptions.xAxisData;
         basicPropsClone.OptionsData.default.series = itemOptions.seriesData;
-        console.log('333333', basicPropsClone);
         break;
       case 'pie' /* 饼图 */:
         basicPropsClone = JSON.parse(JSON.stringify(basicProps4));
@@ -160,7 +157,6 @@
     pagination: false,
     // formConfig: getFormConfig(),
     afterFetch: data => {
-      console.log('444444', data);
     },
   });
   // }

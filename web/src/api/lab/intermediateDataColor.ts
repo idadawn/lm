@@ -26,8 +26,6 @@ export function saveIntermediateDataColors(params: SaveIntermediateDataColorInpu
  * 获取颜色配置
  */
 export function getIntermediateDataColors(params: GetIntermediateDataColorInput) {
-  console.log('API请求URL:', Api.GetColors);
-  console.log('API请求参数:', params);
   return defHttp.post<IntermediateDataColorDto>({
     url: Api.GetColors,
     data: params,
@@ -53,8 +51,6 @@ export function saveIntermediateDataCellColor(
   colorValue: string,
   productSpecId: string
 ) {
-  console.log('API请求URL:', Api.SaveCellColor);
-  console.log('API请求参数:', { intermediateDataId, fieldName, colorValue, productSpecId });
   return defHttp.post<boolean>({
     url: Api.SaveCellColor,
     data: {

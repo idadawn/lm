@@ -50,12 +50,10 @@
   });
 
   onMounted(() => {
-    console.log('----+++++++++00--------', props.tableData);
   });
   watch(
     () => props,
     (newValue, oldValue) => {
-      console.log('----+++++++++--------', newValue);
       state.tableData = newValue.tableData;
     },
     { deep: true },
@@ -63,7 +61,7 @@
   // watch(
   //   () => props.tableData.value,
   //   () => {
-  //     console.log(props);
+  //     
   //   },
   //   {
   //     deep: true,

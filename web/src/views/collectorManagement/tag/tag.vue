@@ -170,7 +170,7 @@
   }
 
   // const changeItem = () => {
-  //   console.log('changeItem');
+  //   
   // };
 
   // -------------------
@@ -386,16 +386,15 @@
   }
   // 标签历史
   function handleHistory(id, record) {
-    console.log('record.valueType--', record.valueType);
     if (record.valueType != -1 && record.valueType != 0 && record.valueType != 1 && record.valueType != 10) {
-      // console.log('曲线');
+      // 
       state.history_visible = true;
 
       let start = dayjs().subtract(2, 'day').format('YYYY/MM/DD HH:mm:ss');
       let end = dayjs().format('YYYY/MM/DD HH:mm:ss');
 
-      // console.log(start);
-      // console.log(end);
+      // 
+      // 
       let data = {
         tagId: id,
         start: start,
@@ -417,7 +416,7 @@
         }
       });
     } else {
-      // console.log('表格');
+      // 
       state.history_visible_table = true;
       dataTable.id = id;
       let start = dayjs().subtract(2, 'day').format('YYYY/MM/DD HH:mm:ss');

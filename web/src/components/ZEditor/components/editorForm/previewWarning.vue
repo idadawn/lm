@@ -101,7 +101,6 @@
   });
 
   const onFinish = values => {
-    console.log('Received values of form:', values);
     // emit('update', values);
   };
 
@@ -109,7 +108,6 @@
     emit('delete');
   };
   const updateItem = () => {
-    console.log('---------------', state.form);
     emit('update', state.form);
   };
 
@@ -127,9 +125,7 @@
       try {
         const res = await getOptimalNodeElements({ nodeId: val, userId: '1' });
         state.elements = res.data.elements;
-        console.log('state.elements', state.elements);
       } catch (e) {
-        console.log(e);
       }
     },
   );

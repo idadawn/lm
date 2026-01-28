@@ -776,7 +776,7 @@ export const calendar = {
    * @param mPara  solar month
    * @param dPara  solar day
    * @return JSON object
-   * @eg:console.log(calendar.solar2lunar(1987,11,01));
+   * @eg:
    */
   solar2lunar: function (yPara, mPara, dPara) {
     let y = parseInt(yPara);
@@ -950,7 +950,7 @@ export const calendar = {
    * @param d  lunar day
    * @param isLeapMonth  lunar month is leap or not.[如果是农历闰月第四个参数赋值true即可]
    * @return JSON object
-   * @eg:console.log(calendar.lunar2solar(1987,9,10));
+   * @eg:
    */
   lunar2solar: function (y, m, d, isLeapMonth) {
     y = parseInt(y);

@@ -142,13 +142,10 @@ function handleCancel() {
 
 // 打开特性选择对话框
 function handleOpenFeatureDialog(record: AppearanceFeatureCorrection) {
-  console.log('点击选择特性，record:', record);
   currentRecord.value = record;
-  console.log('featureSelectDialogRef.value:', featureSelectDialogRef.value);
   if (featureSelectDialogRef.value) {
     // 传入已绑定的特性ID，用于默认选中
     featureSelectDialogRef.value.open(record.correctedFeatureId);
-    console.log('已调用 open 方法');
   } else {
     console.error('featureSelectDialogRef 未初始化');
   }

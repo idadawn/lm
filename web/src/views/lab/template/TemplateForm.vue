@@ -97,7 +97,6 @@
 <script lang="ts" setup>
 import { ref, unref, computed, reactive, onMounted } from 'vue';
 
-console.log('TemplateForm setup script start');
 
 import { BasicModal, useModalInner } from '/@/components/Modal';
 import { useMessage } from '/@/hooks/web/useMessage';
@@ -121,7 +120,6 @@ const excelHeaderOptions = ref<any[]>([]); // Excel表头选项
 // 移除 handleLoadSystemFields
 
 async function doLoadSystemFields() {
-  console.log('doLoadSystemFields start', formData.templateCode);
   systemFieldLoading.value = true;
   try {
     const res: any = await getSystemFields(formData.templateCode);
@@ -326,7 +324,6 @@ function restoreFieldMappingsFromConfig(config: any) {
 
 // 初始化
 async function init(data: any) {
-  console.log('TemplateForm init', data);
   loading.value = true;
   requestAnimationFrame(async () => {
     id.value = data.id || '';
@@ -410,7 +407,6 @@ async function init(data: any) {
               const sysRes: any = await getSystemFields(code);
               // 提取字段列表
               systemFields = sysRes.data?.fields || sysRes.fields || [];
-              console.log('Loader System Fields:', systemFields);
             } catch (err) {
               console.error('Failed to load system fields', err);
             }

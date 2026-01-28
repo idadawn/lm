@@ -43,10 +43,13 @@ function asyncImportRoute(routes: AppRouteRecordRaw[] | undefined) {
       if (layoutFound) {
         item.component = layoutFound;
       } else {
-        item.component = dynamicImport(dynamicViewsModules, component as string);
+        const dynamicComponent = dynamicImport(dynamicViewsModules, component as string);
+        item.component = dynamicComponent || EXCEPTION_COMPONENT;
       }
     } else if (name) {
       item.component = getParentLayout();
+    } else {
+      item.component = EXCEPTION_COMPONENT;
     }
     children && asyncImportRoute(children);
   });
@@ -70,7 +73,7 @@ function dynamicImport(dynamicViewsModules: Record<string, () => Promise<Recorda
     warn(
       'Please do not create `.vue` and `.TSX` files with the same file name in the same hierarchical directory under the views folder. This will cause dynamic introduction failure',
     );
-    return;
+    return EXCEPTION_COMPONENT;
   } else {
     // warn('在src/views/下找不到`' + component + '.vue` 或 `' + component + '.tsx`, 请自行创建!');
     return EXCEPTION_COMPONENT;

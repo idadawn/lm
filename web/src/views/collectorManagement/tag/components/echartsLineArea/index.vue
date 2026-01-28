@@ -180,11 +180,11 @@
   // function tabsChange() {
   //   if (activeKey.value === '1') {
   //     // 曲线
-  //     console.log('曲线');
+  //     
   //     echartFun();
   //   } else {
   //     // 表格
-  //     console.log('表格');
+  //     
   //     reload();
   //   }
   // }

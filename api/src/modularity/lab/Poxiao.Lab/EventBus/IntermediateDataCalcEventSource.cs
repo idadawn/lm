@@ -12,7 +12,8 @@ public class IntermediateDataCalcEventSource : IEventSource
         string tenantId,
         string sessionId,
         string batchId,
-        int dataCount
+        int dataCount,
+        Dictionary<string, UnitPrecisionInfo> unitPrecisions = null
     )
     {
         EventId = eventId;
@@ -20,6 +21,7 @@ public class IntermediateDataCalcEventSource : IEventSource
         SessionId = sessionId;
         BatchId = batchId;
         DataCount = dataCount;
+        UnitPrecisions = unitPrecisions ?? new Dictionary<string, UnitPrecisionInfo>();
     }
 
     public string TenantId { get; set; }
@@ -30,6 +32,8 @@ public class IntermediateDataCalcEventSource : IEventSource
 
     public int DataCount { get; set; }
 
+    public Dictionary<string, UnitPrecisionInfo> UnitPrecisions { get; set; }
+
     public string EventId { get; }
 
     public object Payload => null;
@@ -37,4 +41,11 @@ public class IntermediateDataCalcEventSource : IEventSource
     public CancellationToken CancellationToken { get; }
 
     public DateTime CreatedTime { get; } = DateTime.UtcNow;
+}
+
+public class UnitPrecisionInfo
+{
+    public string UnitId { get; set; }
+
+    public int? DecimalPlaces { get; set; }
 }

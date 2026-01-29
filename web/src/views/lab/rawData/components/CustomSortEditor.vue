@@ -305,8 +305,12 @@ async function handleOk() {
     // 过滤掉未选择字段的规则
     const validRules = localSortRules.value.filter(rule => rule.field);
 
-    if (validRules.length === 0 && localSortRules.value.length > 0) {
-      message.warning('请为所有排序规则选择字段');
+    if (validRules.length === 0) {
+      if (localSortRules.value.length === 0) {
+        message.warning('请至少保留一条排序规则');
+      } else {
+        message.warning('请为所有排序规则选择字段');
+      }
       confirmLoading.value = false;
       return;
     }

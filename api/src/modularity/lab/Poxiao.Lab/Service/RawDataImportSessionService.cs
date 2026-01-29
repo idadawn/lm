@@ -214,7 +214,7 @@ public class RawDataImportSessionService
         [FromBody] RawDataImportStep1Input input
     )
     {
-        // 1. 获取已存在的会话
+        // 1. 获取已存在的导入会话
         if (string.IsNullOrEmpty(input.ImportSessionId))
             throw Oops.Oh("导入会话ID不能为空");
 
@@ -257,7 +257,7 @@ public class RawDataImportSessionService
             throw Oops.Oh("文件数据不存在，请重新上传文件");
         }
 
-        // 导入策略已废弃，不再支持增量导入，始终从第0行开始解析
+        // 导入策略已废弃，不再支持增量导入，始终从第1行开始解析
         int skipRows = 0;
 
         // 保存文件
@@ -277,7 +277,7 @@ public class RawDataImportSessionService
         catch (Exception ex)
         {
             Console.WriteLine($"[UploadAndParse] File upload failed: {ex.Message}");
-            // Optional: throw if file saving is critical
+            // Optional: 这里文件保存失败不影响后续解析流程
             // throw Oops.Oh($"文件保存失败: {ex.Message}");
         }
 
@@ -1076,7 +1076,7 @@ public class RawDataImportSessionService
     [HttpPut("{sessionId}/features")]
     public async Task UpdateFeatures(string sessionId, [FromBody] RawDataUpdateFeaturesInput input)
     {
-        // 从JSON文件加载数据
+        // 浠嶫SON鏂囦欢鍔犺浇鏁版嵁
         var entities = await LoadParsedDataFromFile(sessionId);
         var featuresList = await _appearanceFeatureService.GetList(new AppearanceFeatureListQuery());
         var features = featuresList.Cast<AppearanceFeatureEntity>().ToList();
@@ -1382,8 +1382,25 @@ public class RawDataImportSessionService
             throw Oops.Oh("导入会话不存在");
 
         var templateConfig = await LoadRawDataTemplateConfigAsync();
+        var unitPrecisions = new Dictionary<string, UnitPrecisionInfo>();
+        if (templateConfig?.FieldMappings != null && templateConfig.FieldMappings.Count > 0)
+        {
+            foreach (var mapping in templateConfig.FieldMappings)
+            {
+                if (string.IsNullOrWhiteSpace(mapping.Field))
+                {
+                    continue;
+                }
 
-        // 1. 从JSON文件加载数据
+                unitPrecisions[mapping.Field] = new UnitPrecisionInfo
+                {
+                    UnitId = mapping.UnitId,
+                    DecimalPlaces = mapping.DecimalPlaces
+                };
+            }
+        }
+
+        // 从JSON文件读取数据
         var allData = await LoadParsedDataFromFile(sessionId);
         var validData = allData.Where(t => t.IsValidData == 1).ToList();
 
@@ -1525,7 +1542,8 @@ public class RawDataImportSessionService
                     tenantId,
                     sessionId,
                     batchId,
-                    intermediateEntities.Count
+                    intermediateEntities.Count,
+                    unitPrecisions
                 )
             );
         }
@@ -1579,14 +1597,14 @@ public class RawDataImportSessionService
                 File.Delete(session.ParsedDataFile);
                 session.ParsedDataFile = null;
             }
-            // 更新 session 状态为已完成，但不删除（保留用于查询）
+            // 更新 session 状态为已完成，但不删除记录（保留用于查询）
             session.Status = "completed";
             await _sessionRepository.UpdateAsync(session);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[CompleteImport] Failed to cleanup: {ex.Message}");
-            // 不影响主流程，但尝试标记 session 状态
+            // 不影响主流程，但尽量更新 session 状态
             try
             {
                 session.Status = "completed";
@@ -1634,7 +1652,7 @@ public class RawDataImportSessionService
             Console.WriteLine(
                 $"[CancelImport] Failed to cleanup session {sessionId}: {ex.Message}"
             );
-            // 即使清理失败，也尝试标记为已取消
+            // 即使清理失败，也尽量标记为已取消
             try
             {
                 session.Status = "cancelled";
@@ -1651,8 +1669,8 @@ public class RawDataImportSessionService
     // ================= Private Methods =================
 
     /// <summary>
-    /// 从RawDataEntity获取标准炉号
-    /// 格式：[产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号]
+    /// 从 RawDataEntity 构建标准炉号。
+    /// 格式：[产线编号][班次字母][8 位日期]-[炉次号]-[卷号]-[子卷号]
     /// </summary>
     private string GetFurnaceNo(RawDataEntity entity)
     {
@@ -1678,8 +1696,8 @@ public class RawDataImportSessionService
     }
 
     /// <summary>
-    /// 从RawDataPreviewItem获取标准炉号
-    /// 格式：[产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号]
+    /// 从 RawDataPreviewItem 构建标准炉号。
+    /// 格式：[产线编号][班次字母][8 位日期]-[炉次号]-[卷号]-[子卷号]
     /// </summary>
     private string GetFurnaceNo(RawDataPreviewItem item)
     {
@@ -1756,7 +1774,7 @@ public class RawDataImportSessionService
         var entities = new List<RawDataEntity>();
         templateConfig ??= BuildDefaultRawDataTemplateConfig();
 
-        // 先获取所有列名，用于模板映射与检测列识别
+        // 先获取所有列名，用于模板映射和检测列识别
         List<string> columns;
         using (var streamForColumns = new MemoryStream(fileBytes))
         {
@@ -1821,7 +1839,8 @@ public class RawDataImportSessionService
             if (missingFields.Count > 0)
             {
                 entity.ImportStatus = 1;
-                entity.ImportError = $"缺少必填字段: {string.Join("、", missingFields)}";
+                entity.ImportError =
+                    $"缺少必填字段: {string.Join("，", missingFields)}";
                 entity.IsValidData = 0;
                 entities.Add(entity);
                 continue;
@@ -2647,19 +2666,19 @@ public class RawDataImportSessionService
     }
 
     /// <summary>
-    /// 检查炉号重复.
-    /// 炉号格式：[产线数字][班次汉字][8位日期]-[炉次号]
-    /// 只检查符合规则的有效数据，标记为重复但不直接设为失败
+    /// 检查炉号在本次导入数据中的重复情况。
+    /// 炉号格式：[产线编号][班次字母][8 位日期]-[炉次号]-[卷号]-[子卷号]
+    /// 只检查符合规则的有效数据，标记为重复但不直接视为失败。
     /// </summary>
     private void CheckDuplicateFurnaceNo(List<RawDataEntity> entities)
     {
-        // 构建标准炉号字典：标准炉号 -> 行号列表
+        // 鏋勫缓鏍囧噯鐐夊彿瀛楀吀锛氭爣鍑嗙倝鍙?-> 琛屽彿鍒楄〃
         var furnaceNoDict = new Dictionary<string, List<int>>();
 
         for (int i = 0; i < entities.Count; i++)
         {
             var entity = entities[i];
-            // 只检查解析成功的有效数据（符合规则的数据）
+            // 只检查解析成功且满足规则的有效数据
             if (
                 entity.IsValidData == 1
                 && entity.LineNo.HasValue
@@ -2668,7 +2687,7 @@ public class RawDataImportSessionService
                 && entity.FurnaceBatchNo.HasValue
             )
             {
-                // 构建标准炉号：[产线数字][班次汉字][8位日期]-[炉次号]
+                // 构建标准炉号
                 var standardFurnaceNo = GetFurnaceNo(entity);
 
                 if (!string.IsNullOrEmpty(standardFurnaceNo))
@@ -2682,25 +2701,25 @@ public class RawDataImportSessionService
             }
         }
 
-        // 检查重复并标记（不直接设为失败，在CompleteImport时处理）
+        // 检查重复并打标（不直接视为失败，在 CompleteImport 时再处理）
         foreach (var kvp in furnaceNoDict)
         {
             if (kvp.Value.Count > 1)
             {
-                // 有重复的炉号，标记为重复状态
+                // 对存在重复的炉号，标记为重复状态
                 var duplicateRowNumbers = string.Join(
-                    "、",
+                    "，",
                     kvp.Value.Select(idx => $"第{entities[idx].SortCode}行")
                 );
                 var warningMessage =
-                    $"炉号重复：标准炉号 {kvp.Key} 在以下行出现重复：{duplicateRowNumbers}，将保留第一条数据";
+                    $"炉号重复：炉号 {kvp.Key} 在以下行出现重复：{duplicateRowNumbers}，将保留第一条数据。";
 
                 // 保留第一条，标记其他为重复
                 for (int i = 1; i < kvp.Value.Count; i++)
                 {
                     var rowIndex = kvp.Value[i];
                     var entity = entities[rowIndex];
-                    // 标记为无效，但不改变IsValidData（在CompleteImport时处理）
+                    // 标记为无效，但不修改 IsValidData（在 CompleteImport 时处理）
                     entity.ImportStatus = 1;
                     // 追加警告信息
                     if (string.IsNullOrWhiteSpace(entity.ImportError))
@@ -2717,19 +2736,19 @@ public class RawDataImportSessionService
     }
 
     /// <summary>
-    /// 检查炉号重复（用于预览项）.
-    /// 炉号格式：[产线数字][班次汉字][8位日期]-[炉次号]
-    /// 只检查符合规则的有效数据，标记为重复但不直接设为失败
+    /// 检查炉号在本次导入数据中的重复情况（用于预览界面）。
+    /// 炉号格式：[产线编号][班次字母][8 位日期]-[炉次号]-[卷号]-[子卷号]
+    /// 只检查符合规则的有效数据，标记为重复但不直接视为失败。
     /// </summary>
     private void CheckDuplicateFurnaceNoForPreview(List<RawDataPreviewItem> items)
     {
-        // 构建标准炉号字典：标准炉号 -> 行号列表
+        // 鏋勫缓鏍囧噯鐐夊彿瀛楀吀锛氭爣鍑嗙倝鍙?-> 琛屽彿鍒楄〃
         var furnaceNoDict = new Dictionary<string, List<int>>();
 
         for (int i = 0; i < items.Count; i++)
         {
             var item = items[i];
-            // 只检查解析成功的有效数据（符合规则的数据）
+            // 只检查解析成功且满足规则的有效数据
             if (
                 item.IsValidData == 1
                 && item.LineNo.HasValue
@@ -2750,25 +2769,25 @@ public class RawDataImportSessionService
             }
         }
 
-        // 检查重复并标记（不直接设为失败，让用户选择保留哪条）
+        // 检查重复并打标（不直接视为失败，由用户选择保留哪一条）
         foreach (var kvp in furnaceNoDict)
         {
             if (kvp.Value.Count > 1)
             {
-                // 有重复的炉号，标记为重复状态
+                // 对存在重复的炉号，标记为重复状态
                 var duplicateRowNumbers = string.Join(
-                    "、",
+                    "，",
                     kvp.Value.Select(idx => $"第{items[idx].SortCode}行")
                 );
                 var warningMessage =
-                    $"炉号重复：标准炉号 {kvp.Key} 在以下行出现重复：{duplicateRowNumbers}，请选择保留哪条数据";
+                    $"炉号重复：炉号 {kvp.Key} 在以下行出现重复：{duplicateRowNumbers}，请在导入时选择保留哪一条数据。";
 
                 foreach (var rowIndex in kvp.Value)
                 {
                     var item = items[rowIndex];
-                    // 标记为重复，但不直接设为失败
+                    // 标记为重复，但不直接视为失败
                     item.IsDuplicateInFile = true;
-                    // 如果状态还是success，改为duplicate
+                    // 如果当前状态还是 success，则改为 duplicate
                     if (item.Status == "success")
                     {
                         item.Status = "duplicate";
@@ -2788,8 +2807,8 @@ public class RawDataImportSessionService
     }
 
     /// <summary>
-    /// 检查数据库中已存在的炉号（用于预览项）.
-    /// 如果本次Excel导入的炉号在数据库中已经存在，标记为将被忽略
+    /// 检查数据库中已经存在的炉号（用于预览界面）。
+    /// 如果本次 Excel 导入的炉号在数据库中已经存在，则标记为将被忽略。
     /// </summary>
     private async Task CheckExistingFurnaceNoInDatabaseForPreview(List<RawDataPreviewItem> items)
     {
@@ -2823,7 +2842,7 @@ public class RawDataImportSessionService
 
         standardFurnaceNos = standardFurnaceNos.Distinct().ToList();
 
-        // 查询数据库中已存在的标准炉号
+        // 查询数据库中已经存在的标准炉号
         var existingFurnaceNos = new HashSet<string>();
 
         // 查询数据库中所有有效数据，构建标准炉号并检查
@@ -2997,18 +3016,18 @@ public class RawDataImportSessionService
     }
 
     /// <summary>
-    /// 识别产品规格.
-    /// 根据原始数据中实际存在的有效数据列去匹配产品规格配置。
-    /// 例如：如果产品规格120配置的检测列是13，那么数据的有效列应该是1-13（第1-13列有值，第14列开始为空）。
-    /// 判断逻辑：根据产品规格配置的检测列，检查数据的有效列是否正好匹配（从1到检测列都有值，检测列+1开始为空）。
-    /// 使用detection1-detection22字段进行匹配（固定22列）.
+    /// 识别产品规格。
+    /// 根据原始数据中实际存在的有效检测列，与产品规格配置进行匹配。
+    /// 例如：如果产品规格配置的检测列为 20，实际存在的检测列为 3，那么数据的有效列应为 1-13（第 1-13 列有值，第 14 列开始为空）。
+    /// 判断规则：根据产品规格配置的检测列，检查数据的有效列是否连续匹配（从 1 到检测列都必须有值，检测列 + 1 开始为空）。
+    /// 使用 detection1-detection22 字段进行匹配（默认最多 22 列）。
     /// </summary>
     private ProductSpecEntity IdentifyProductSpec(
         RawDataEntity entity,
         List<ProductSpecEntity> productSpecs
     )
     {
-        // 1. 从detection1-detection22字段获取检测数据
+        // 1. 从 detection1-detection22 字段获取检测数据
         var detectionData = new Dictionary<int, decimal?>();
         var detectionProps = new[]
         {
@@ -3123,7 +3142,7 @@ public class RawDataImportSessionService
     }
 
     /// <summary>
-    /// 简化导入：直接上传、解析、保存，根据炉号去重
+    /// 简化导入：一次性上传、解析并保存，根据炉号去重。
     /// </summary>
     [HttpPost("simple-import")]
     public async Task<SimpleImportOutput> SimpleImport([FromBody] SimpleImportInput input)
@@ -3132,7 +3151,7 @@ public class RawDataImportSessionService
 
         try
         {
-            // 1. 解析Excel文件
+            // 1. 解析 Excel 文件
             byte[] fileBytes;
             string fileHash = null;
             string fileMd5 = null;
@@ -3147,17 +3166,23 @@ public class RawDataImportSessionService
                 throw Oops.Oh($"文件数据格式错误: {ex.Message}");
             }
 
-            // 2. 解析Excel数据
+            // 2. 解析 Excel 数据
             var templateConfig = await LoadRawDataTemplateConfigAsync();
             var productSpecList = await _productSpecService.GetList(new ProductSpecListQuery());
             var productSpecs = productSpecList.Cast<ProductSpecEntity>().ToList();
-            var entities = ParseExcel(fileBytes, input.FileName, skipRows: 0, templateConfig, productSpecs);
+            var entities = ParseExcel(
+                fileBytes,
+                input.FileName,
+                skipRows: 0,
+                templateConfig,
+                productSpecs
+            );
             var validDataHash = ComputeValidDataHashFromRawRows(fileBytes, templateConfig);
             output.TotalRows = entities.Count;
 
             if (entities.Count == 0)
             {
-                output.Errors.Add("Excel文件中没有有效数据");
+                output.Errors.Add("Excel 文件中没有有效数据");
                 return output;
             }
 

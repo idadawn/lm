@@ -23,14 +23,7 @@
           </a-tooltip>
         </template>
       </span>
-      <a-button
-        type="link"
-        size="small"
-        @click="clearSort"
-        class="clear-btn"
-      >
-        清除
-      </a-button>
+
     </div>
     <div v-else class="sort-rules-placeholder">
       默认排序：生产日期→炉次号→卷号→分卷号→产线
@@ -190,12 +183,7 @@ function openEditor() {
   }
 }
 
-// 清除排序
-function clearSort() {
-  sortRules.value = [];
-  emit('update:modelValue', []);
-  emit('change', []);
-}
+
 
 // 处理排序变化
 function handleSortChange(newRules: SortRule[]) {

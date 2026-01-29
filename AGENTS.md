@@ -4,7 +4,7 @@
 > 
 > **Project Name:** 检测室数据分析系统 (Laboratory Data Analysis System)
 > **Primary Language:** Chinese (UI, comments, documentation)
-> **Last Updated:** 2026-01-28
+> **Last Updated:** 2026-01-29
 
 ---
 
@@ -143,6 +143,12 @@ lm/
 │   │       ├── generator/        # Code generation UI
 │   │       ├── kpi/              # KPI analytics
 │   │       ├── lab/              # Laboratory data (ACTIVE)
+│   │       │   ├── dashboard/    # 生产驾驶舱 (首页)
+│   │       │   ├── rawData/      # 原始数据管理
+│   │       │   ├── intermediateData/  # 中间数据管理
+│   │       │   ├── appearance/   # 外观特征管理
+│   │       │   ├── product/      # 产品规格管理
+│   │       │   └── ...
 │   │       ├── permission/       # User/role/organize management
 │   │       ├── system/           # System settings
 │   │       ├── systemData/       # Data dictionary, data source
@@ -562,6 +568,28 @@ The system has a powerful code generator:
 3. Configure generation options
 4. Download generated code
 5. Copy to appropriate locations in project
+
+### Lab Dashboard (生产驾驶舱)
+
+The lab dashboard is the home page for the lab module, providing real-time production and quality monitoring:
+
+**Location:** `web/src/views/lab/dashboard/`
+
+**Components:**
+- `KpiCards.vue` - KPI cards showing qualification rate, production output, lamination coefficient, and warnings
+- `QualityDistribution.vue` - Donut chart for quality grade distribution
+- `LaminationTrend.vue` - Line chart with confidence bands for lamination coefficient trends
+- `DefectTop5.vue` - Horizontal bar chart for top 5 defect types
+- `ProductionHeatmap.vue` - Heatmap showing quality by day/hour
+- `ThicknessCorrelation.vue` - Scatter plot showing thickness vs lamination coefficient
+- `AiAssistant.vue` - Floating AI assistant chat widget
+
+**Features:**
+- Responsive grid layout (4 → 2 → 1 columns based on screen width)
+- Interactive charts with ECharts 5
+- Real-time data refresh capability
+- Date range filtering
+- AI-powered assistant for data analysis
 
 ---
 

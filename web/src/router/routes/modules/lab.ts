@@ -7,13 +7,22 @@ const lab: AppRouteModule = {
     path: '/lab',
     name: 'Lab',
     component: LAYOUT,
-    redirect: '/lab/metric',
+    redirect: '/lab/dashboard',
     meta: {
         orderNo: 100,
         icon: 'ion:flask-outline',
         title: t('routes.lab.lab'),
     },
     children: [
+        {
+            path: 'dashboard',
+            name: 'LabDashboard',
+            component: () => import('/@/views/lab/dashboard/index.vue'),
+            meta: {
+                title: '生产驾驶舱',
+                affix: true,
+            },
+        },
         {
             path: 'metric/form/:id?',
             name: 'MetricForm',

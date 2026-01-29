@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Poxiao.DependencyInjection;
 using Poxiao.EventBus;
 using Poxiao.Lab.EventBus;
-using Poxiao.Lab.Interfaces;
+using Poxiao.Lab.Service;
 
 namespace Poxiao.EventHandler;
 
@@ -32,15 +32,15 @@ public class IntermediateDataCalcEventSubscriber : IEventSubscriber, ISingleton
         }
 
         using var scope = _serviceProvider.CreateScope();
-        var service = scope.ServiceProvider.GetService<IIntermediateDataService>();
-        if (service == null)
+        var calculator = scope.ServiceProvider.GetService<IntermediateDataFormulaBatchCalculator>();
+        if (calculator == null)
         {
             return;
         }
 
         try
         {
-            await service.BatchCalculateFormulasByBatchIdAsync(source.BatchId);
+            await calculator.CalculateByBatchAsync(source.BatchId, source.UnitPrecisions);
         }
         catch (Exception ex)
         {

@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -1076,7 +1076,7 @@ public class RawDataImportSessionService
     [HttpPut("{sessionId}/features")]
     public async Task UpdateFeatures(string sessionId, [FromBody] RawDataUpdateFeaturesInput input)
     {
-        // 浠嶫SON鏂囦欢鍔犺浇鏁版嵁
+        // 从JSON文件加载数据
         var entities = await LoadParsedDataFromFile(sessionId);
         var featuresList = await _appearanceFeatureService.GetList(new AppearanceFeatureListQuery());
         var features = featuresList.Cast<AppearanceFeatureEntity>().ToList();
@@ -2672,7 +2672,7 @@ public class RawDataImportSessionService
     /// </summary>
     private void CheckDuplicateFurnaceNo(List<RawDataEntity> entities)
     {
-        // 鏋勫缓鏍囧噯鐐夊彿瀛楀吀锛氭爣鍑嗙倝鍙?-> 琛屽彿鍒楄〃
+        // 构建标准炉号字典：标准炉号 -> 行号列表
         var furnaceNoDict = new Dictionary<string, List<int>>();
 
         for (int i = 0; i < entities.Count; i++)
@@ -2742,7 +2742,7 @@ public class RawDataImportSessionService
     /// </summary>
     private void CheckDuplicateFurnaceNoForPreview(List<RawDataPreviewItem> items)
     {
-        // 鏋勫缓鏍囧噯鐐夊彿瀛楀吀锛氭爣鍑嗙倝鍙?-> 琛屽彿鍒楄〃
+        // 构建标准炉号字典：标准炉号 -> 行号列表
         var furnaceNoDict = new Dictionary<string, List<int>>();
 
         for (int i = 0; i < items.Count; i++)

@@ -1,6 +1,7 @@
 import type { AppRouteRecordRaw } from '/@/router/types';
 
 import { PAGE_NOT_FOUND_ROUTE, REDIRECT_ROUTE, COMMON_ROUTE } from '/@/router/routes/basic';
+import { LAYOUT } from '/@/router/constant';
 
 import { mainOutRoutes } from './mainOut';
 import { PageEnum } from '/@/enums/pageEnum';
@@ -34,12 +35,36 @@ export const FormShortLinkRoute: AppRouteRecordRaw = {
   },
 };
 
+// Lab Dashboard Route (for development)
+export const LabDashboardRoute: AppRouteRecordRaw = {
+  path: '/lab',
+  name: 'Lab',
+  component: LAYOUT,
+  redirect: '/lab/dashboard',
+  meta: {
+    title: '生产驾驶舱',
+    hideChildrenInMenu: true,
+  },
+  children: [
+    {
+      path: 'dashboard',
+      name: 'LabDashboard',
+      component: () => import('/@/views/lab/dashboard/index.vue'),
+      meta: {
+        title: '生产驾驶舱',
+        affix: true,
+      },
+    },
+  ],
+};
+
 // Basic routing without permission
 // 未经许可的基本路由
 export const basicRoutes = [
   LoginRoute,
   FormShortLinkRoute,
   RootRoute,
+  LabDashboardRoute,
   ...mainOutRoutes,
   REDIRECT_ROUTE,
   PAGE_NOT_FOUND_ROUTE,

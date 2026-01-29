@@ -27,7 +27,13 @@
         <!-- 主表格 -->
         <div class="table-container">
           <BasicTable @register="registerTable">
+
             <template #tableTitle>
+              <div class="spec-tabs-wrap">
+                <a-tabs v-model:activeKey="selectedProductSpecId" type="card" size="small" class="spec-tabs">
+                  <a-tab-pane v-for="spec in productSpecOptions" :key="spec.id" :tab="spec.name" />
+                </a-tabs>
+              </div>
               <a-space>
                 <a-upload :before-upload="handleQuickImport" :show-upload-list="false" accept=".xlsx,.xls">
                   <a-button>
@@ -88,6 +94,29 @@
                 </div>
               </template>
 
+              <template v-else-if="column.key === 'calcStatus'">
+                <div class="cell-content">
+                  <a-tooltip v-if="isCalcFailed(record)" :title="record.calcErrorMessage">
+                    <a-tag :color="getCalcStatusInfo(record.calcStatus).color" class="cursor-pointer" @click.stop="handleRecalculate(record)">
+                      <template #icon>
+                        <ReloadOutlined :spin="record.recalculating" />
+                      </template>
+                      {{ record.recalculating ? '计算中' : getCalcStatusInfo(record.calcStatus).text }}
+                    </a-tag>
+                  </a-tooltip>
+                  <a-tag v-else :color="getCalcStatusInfo(record.calcStatus).color">
+                    {{ getCalcStatusInfo(record.calcStatus).text }}
+                  </a-tag>
+                </div>
+              </template>
+
+              <!-- 计算日志 -->
+              <template v-else-if="column.key === 'calcLog'">
+                <div class="cell-content cell-content--no-pointer" @click.stop>
+                  <a-button type="link" size="small" @click.stop="openCalcLogDrawer(record)">日志</a-button>
+                </div>
+              </template>
+
               <!-- 数值列 - 负数红色显示 -->
               <template v-else-if="isNumericColumn(column.key)">
                 <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
@@ -126,6 +155,17 @@
 
       </div>
       <MagneticDataImportQuickModal @register="registerQuickModal" @reload="handleImportSuccess" />
+      <a-drawer v-model:visible="calcLogDrawerVisible" title="计算日志" width="720">
+        <a-table
+          :columns="calcLogColumns"
+          :data-source="calcLogData"
+          :pagination="calcLogPagination"
+          :loading="calcLogLoading"
+          row-key="id"
+          size="small"
+          @change="handleCalcLogTableChange"
+        />
+      </a-drawer>
     </div>
   </div>
 </template>
@@ -140,9 +180,11 @@ import { dateUtil } from '/@/utils/dateUtil';
 import {
   getIntermediateDataList,
   getProductSpecOptions,
+  getIntermediateDataCalcLogs,
   updatePerformance,
   updateAppearance,
   updateBaseInfo,
+  recalculateIntermediateData,
 } from '/@/api/lab/intermediateData';
 import {
   saveIntermediateDataColors,
@@ -157,9 +199,10 @@ import NumericTableCell from './components/NumericTableCell.vue';
 import CustomSortControl from '../rawData/components/CustomSortControl.vue';
 
 import { useModal } from '/@/components/Modal';
-import { UploadOutlined } from '@ant-design/icons-vue';
+import { UploadOutlined, ReloadOutlined } from '@ant-design/icons-vue';
 import MagneticDataImportQuickModal from '../magneticData/MagneticDataImportQuickModal.vue';
 import { createMagneticImportSession, uploadAndParseMagneticData } from '/@/api/lab/magneticData';
+import type { IntermediateDataCalcLogItem } from '/@/api/lab/model/intermediateDataCalcLogModel';
 
 
 
@@ -170,6 +213,17 @@ const { createMessage } = useMessage();
 // 产品规格选项
 const productSpecOptions = ref<any[]>([]);
 const selectedProductSpecId = ref<string>('');
+
+const calcLogDrawerVisible = ref<boolean>(false);
+const calcLogLoading = ref<boolean>(false);
+const calcLogData = ref<IntermediateDataCalcLogItem[]>([]);
+const calcLogPagination = ref({
+  current: 1,
+  pageSize: 20,
+  total: 0,
+  showSizeChanger: true,
+});
+const calcLogTargetId = ref<string>('');
 
 // 特性大类列表
 const appearanceCategories = ref<AppearanceFeatureCategoryInfo[]>([]);
@@ -211,6 +265,55 @@ const sortRules = ref([
   { field: 'subcoilNo', order: 'asc' as 'asc' | 'desc' },
   { field: 'lineNo', order: 'asc' as 'asc' | 'desc' }
 ]);
+
+const calcStatusMap: Record<string, { text: string; color: string }> = {
+  PENDING: { text: '未计算', color: 'default' },
+  PROCESSING: { text: '计算中', color: 'processing' },
+  SUCCESS: { text: '成功', color: 'success' },
+  FAILED: { text: '失败', color: 'error' },
+};
+
+const calcStatusNumberMap: Record<number, string> = {
+  0: 'PENDING',
+  1: 'PROCESSING',
+  2: 'SUCCESS',
+  3: 'FAILED',
+};
+
+function normalizeCalcStatus(status: any) {
+  if (status === null || status === undefined) {
+    return 'PENDING';
+  }
+  if (typeof status === 'number') {
+    return calcStatusNumberMap[status] || 'PENDING';
+  }
+  const key = String(status).toUpperCase();
+  return calcStatusMap[key] ? key : 'PENDING';
+}
+
+function getCalcStatusInfo(status: any) {
+  const key = normalizeCalcStatus(status);
+  return calcStatusMap[key];
+}
+
+function isCalcFailed(record: any) {
+  const key = normalizeCalcStatus(record?.calcStatus);
+  return key === 'FAILED' && !!record?.calcErrorMessage;
+}
+
+function formatDateTime(value: any) {
+  if (!value) return '-';
+  return dateUtil(value).format('YYYY-MM-DD HH:mm:ss');
+}
+
+const calcLogColumns = [
+  { title: '时间', dataIndex: 'creatorTime', key: 'creatorTime', width: 160, customRender: ({ text }) => formatDateTime(text) },
+  { title: '公式名称', dataIndex: 'formulaName', key: 'formulaName', width: 120, customRender: ({ record }) => record.formulaName || record.columnName },
+  { title: '公式类型', dataIndex: 'formulaType', key: 'formulaType', width: 90 },
+  { title: '错误类型', dataIndex: 'errorType', key: 'errorType', width: 110 },
+  { title: '错误消息', dataIndex: 'errorMessage', key: 'errorMessage' },
+  { title: '详情', dataIndex: 'errorDetail', key: 'errorDetail' },
+];
 
 // 合并所有列
 const allColumns = computed(() => {
@@ -478,12 +581,15 @@ const allColumns = computed(() => {
     { title: '一次交检', dataIndex: 'firstInspection', key: 'firstInspection', width: 80, align: 'center' },
     { title: '班次', dataIndex: 'shiftNo', key: 'shiftNo', width: 100, align: 'center' },
 
+    // --- 计算状态与日志（固定右侧） ---
+    { title: '计算状态', dataIndex: 'calcStatus', key: 'calcStatus', width: 90, fixed: 'right', align: 'center' },
+    { title: '日志', dataIndex: 'calcLog', key: 'calcLog', width: 70, fixed: 'right', align: 'center' },
   ];
 
   return columns;
 });
 
-const [registerTable, { reload, getForm }] = useTable({
+const [registerTable, { reload }] = useTable({
   api: getIntermediateDataList,
   columns: allColumns,
   useSearchForm: true,
@@ -491,25 +597,13 @@ const [registerTable, { reload, getForm }] = useTable({
   scroll: { x: 4000 },
   bordered: true,
   size: 'small',
-  pagination: false,
+  pagination: { pageSize: 50, showSizeChanger: true },
   showIndexColumn: false,
   formConfig: {
     baseColProps: { span: 6 },
     labelWidth: 100,
     showAdvancedButton: false,
     schemas: [
-      {
-        field: 'productSpecId',
-        label: '产品规格',
-        component: 'Select',
-        colProps: { span: 4 },
-        componentProps: {
-          placeholder: '请选择产品规格',
-          options: productSpecOptions,
-          fieldNames: { label: 'name', value: 'id' },
-          allowClear: false,
-        },
-      },
       {
         field: 'keyword',
         label: '关键词',
@@ -575,20 +669,20 @@ const [registerTable, { reload, getForm }] = useTable({
         const detectionCount = spec?.detectionColumns || 15;
         for (let i = 1; i <= detectionCount; i++) {
           // 尝试大写和小写两种格式
-          const detectionUpper = item[`Detection${i}`];
-          const detectionLower = item[`detection${i}`];
+          const detectionUpper = item['Detection' + i];
+          const detectionLower = item['detection' + i];
           if (detectionUpper !== undefined) {
-            mapped[`detection${i}`] = detectionUpper;
+            mapped['detection' + i] = detectionUpper;
           } else if (detectionLower !== undefined) {
-            mapped[`detection${i}`] = detectionLower;
+            mapped['detection' + i] = detectionLower;
           }
 
-          const thicknessUpper = item[`Thickness${i}`];
-          const thicknessLower = item[`thickness${i}`];
+          const thicknessUpper = item['Thickness' + i];
+          const thicknessLower = item['thickness' + i];
           if (thicknessUpper !== undefined) {
-            mapped[`thickness${i}`] = thicknessUpper;
+            mapped['thickness' + i] = thicknessUpper;
           } else if (thicknessLower !== undefined) {
-            mapped[`thickness${i}`] = thicknessLower;
+            mapped['thickness' + i] = thicknessLower;
           }
         }
 
@@ -690,14 +784,9 @@ async function loadProductSpecOptions() {
     productSpecOptions.value = result.data || result || [];
     if (productSpecOptions.value.length > 0 && !selectedProductSpecId.value) {
       selectedProductSpecId.value = productSpecOptions.value[0].id;
-      // 设置表单默认值
-      const form = getForm();
-      if (form) {
-        form.setFieldsValue({ productSpecId: selectedProductSpecId.value });
-      }
       // 使用 nextTick 确保表格已经注册
       await nextTick();
-      reload();
+      reload({ page: 1 });
     }
   } catch (error) {
   }
@@ -711,7 +800,7 @@ watch(selectedProductSpecId, async (newVal, oldVal) => {
 
     // 重新加载表格数据（会触发afterFetch重新加载颜色）
     await nextTick();
-    reload();
+    reload({ page: 1 });
   }
 });
 
@@ -719,7 +808,45 @@ watch(selectedProductSpecId, async (newVal, oldVal) => {
 function handleSortChange(newSortRules: any[]) {
   sortRules.value = newSortRules;
   // 重新加载表格数据
-  reload();
+  reload({ page: 1 });
+}
+
+function handleCalcLogTableChange(pagination: any) {
+  loadCalcLogs(pagination?.current || 1, pagination?.pageSize || 20);
+}
+
+async function openCalcLogDrawer(record: any) {
+  if (!record?.id) {
+    return;
+  }
+  calcLogTargetId.value = record.id;
+  calcLogDrawerVisible.value = true;
+  await loadCalcLogs(1, calcLogPagination.value.pageSize);
+}
+
+async function loadCalcLogs(page = 1, pageSize = 20) {
+  if (!calcLogTargetId.value) {
+    return;
+  }
+  calcLogLoading.value = true;
+  try {
+    const res = await getIntermediateDataCalcLogs({
+      intermediateDataId: calcLogTargetId.value,
+      currentPage: page,
+      pageSize,
+    });
+    const data = (res as any)?.data ?? res;
+    const pageInfo = data?.pagination;
+    calcLogData.value = data?.list || [];
+    calcLogPagination.value = {
+      ...calcLogPagination.value,
+      current: pageInfo?.currentPage ?? page,
+      pageSize: pageInfo?.pageSize ?? pageSize,
+      total: pageInfo?.total ?? calcLogData.value.length,
+    };
+  } finally {
+    calcLogLoading.value = false;
+  }
 }
 
 // 单元格编辑
@@ -789,6 +916,24 @@ async function handleAppearanceSave(record: any, field: string, value: any) {
     reload();
   } catch (error) {
     createMessage.error('保存失败');
+  }
+}
+
+// 重新计算
+async function handleRecalculate(record: any) {
+  if (record.recalculating) return;
+  
+  try {
+    record.recalculating = true;
+    await recalculateIntermediateData([record.id]);
+    createMessage.success('已触发重新计算');
+    // 稍后刷新
+    setTimeout(() => {
+      reload();
+    }, 1000);
+  } catch (error) {
+    createMessage.error('触发计算失败');
+    record.recalculating = false;
   }
 }
 
@@ -885,25 +1030,6 @@ function isNumericString(value: any): boolean {
   return parts.every(part => !isNaN(parseFloat(part)) && isFinite(parseFloat(part)));
 }
 
-// 监听产品规格变化
-watch(
-  selectedProductSpecId,
-  async (newValue) => {
-    if (newValue) {
-      // 清除之前的颜色数据
-      coloredCells.value = {};
-      colorLoaded.value = false;
-
-      const form = getForm();
-      if (form) {
-        form.setFieldsValue({ productSpecId: newValue });
-        // 使用 nextTick 确保表格已经注册
-        await nextTick();
-        reload();
-      }
-    }
-  }
-);
 
 // 加载特性大类列表
 async function loadAppearanceCategories() {
@@ -1140,7 +1266,7 @@ const [registerQuickModal, { openModal: openQuickModal }] = useModal();
 
 function handleImportSuccess() {
   createMessage.success('导入完成，相关数据已更新');
-  reload(); // 刷新中间数据表
+  reload({ page: 1 }); // 刷新中间数据表
 }
 
 
@@ -1207,6 +1333,10 @@ async function handleQuickImport(file: File) {
   gap: 16px;
 }
 
+.spec-tabs {
+  margin-bottom: 8px;
+}
+
 /* 颜色填充控制 */
 .color-fill-control {
   display: flex;
@@ -1260,6 +1390,14 @@ async function handleQuickImport(file: File) {
   opacity: 0.8;
 }
 
+.cell-content--no-pointer {
+  cursor: default;
+}
+
+.cell-content--no-pointer:hover {
+  opacity: 1;
+}
+
 .editable-cell {
   cursor: pointer;
   padding: 4px px;
@@ -1268,6 +1406,35 @@ async function handleQuickImport(file: File) {
 
 .editable-cell:hover {
   background: #f0f0f0;
+}
+
+/* 产品规格 Tab 放在查询下方，紧凑布局 */
+.spec-tabs-wrap {
+  display: inline-block;
+  margin-right: 16px;
+  vertical-align: middle;
+}
+
+.spec-tabs-wrap :deep(.ant-tabs) {
+  margin-bottom: 0;
+}
+
+.spec-tabs-wrap :deep(.ant-tabs-card .ant-tabs-tab) {
+  padding: 2px 12px;
+  font-size: 12px;
+}
+
+.spec-tabs-wrap :deep(.ant-tabs-nav) {
+  margin-bottom: 0;
+}
+
+/* 查询表单与 Tab 之间减小间距 */
+.page-content-wrapper-content :deep(.search-form) {
+  margin-bottom: 0;
+}
+
+.page-content-wrapper-content :deep(.search-form .ant-form-item) {
+  margin-bottom: 8px;
 }
 
 /* 表格容器样式 */
@@ -1323,3 +1490,4 @@ async function handleQuickImport(file: File) {
   font-size: 12px;
 }
 </style>
+

@@ -66,6 +66,13 @@ public interface IIntermediateDataService
     Task BatchDelete(List<string> ids);
 
     /// <summary>
+    /// 重新计算.
+    /// </summary>
+    /// <param name="ids">数据ID列表</param>
+    /// <returns>计算结果</returns>
+    Task<FormulaCalculationResult> Recalculate(List<string> ids);
+
+    /// <summary>
     /// 获取产品规格列表（用于筛选）.
     /// </summary>
     /// <returns>产品规格列表</returns>

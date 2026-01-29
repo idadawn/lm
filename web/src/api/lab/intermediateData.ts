@@ -1,4 +1,5 @@
 import { defHttp } from '/@/utils/http/axios';
+import type { IntermediateDataCalcLogPage, IntermediateDataCalcLogQuery } from './model/intermediateDataCalcLogModel';
 
 enum Api {
     Prefix = '/api/lab/intermediate-data',
@@ -39,6 +40,11 @@ export function deleteIntermediateData(id: string) {
     return defHttp.delete({ url: Api.Prefix + '/' + id });
 }
 
+// 重新计算
+export function recalculateIntermediateData(ids: string[]) {
+    return defHttp.post({ url: Api.Prefix + '/recalculate', data: ids });
+}
+
 // 批量删除中间数据
 export function batchDeleteIntermediateData(ids: string[]) {
     return defHttp.delete({ url: Api.Prefix + '/batch', data: ids });
@@ -47,4 +53,9 @@ export function batchDeleteIntermediateData(ids: string[]) {
 // 获取产品规格选项
 export function getProductSpecOptions() {
     return defHttp.get({ url: Api.Prefix + '/product-spec-options' });
+}
+
+// 计算日志分页列表
+export function getIntermediateDataCalcLogs(params: IntermediateDataCalcLogQuery) {
+    return defHttp.get<IntermediateDataCalcLogPage>({ url: Api.Prefix + '/calc-logs', params });
 }

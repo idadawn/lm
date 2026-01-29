@@ -284,12 +284,13 @@ public class FormulaParser : IFormulaParser, ITransient
         // 这样可以精确匹配
         foreach (var key in sortedKeys)
         {
-            string bracketPattern = $@"\[{key}\]";
-            if (formula.Contains(bracketPattern))
+            // 使用字面字符串而非正则转义模式进行匹配和替换
+            string bracketLiteral = $"[{key}]";
+            if (formula.Contains(bracketLiteral))
             {
                 var val = variables[key];
                 string valStr = (val == null || val is DBNull) ? "0" : val.ToString();
-                formula = formula.Replace(bracketPattern, valStr);
+                formula = formula.Replace(bracketLiteral, valStr);
             }
         }
 

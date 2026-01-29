@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
+using Poxiao.EventBus;
 using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Filter;
@@ -15,6 +16,7 @@ using Poxiao.Lab.Entity.Dto.IntermediateData;
 using Poxiao.Lab.Entity.Dto.IntermediateDataFormula;
 using Poxiao.Lab.Entity.Dto.RawData;
 using Poxiao.Lab.Entity.Enums;
+using Poxiao.Lab.EventBus;
 using Poxiao.Lab.Entity.Extensions;
 using Poxiao.Lab.Entity.Models;
 using Poxiao.Lab.Helpers;
@@ -36,10 +38,13 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     private readonly ISqlSugarRepository<ProductSpecEntity> _productSpecRepository;
     private readonly ISqlSugarRepository<ProductSpecAttributeEntity> _productSpecAttributeRepository;
     private readonly ISqlSugarRepository<UserEntity> _userRepository;
+    private readonly ISqlSugarRepository<IntermediateDataFormulaCalcLogEntity> _calcLogRepository;
     private readonly IUserManager _userManager;
     private readonly ProductSpecVersionService _versionService;
     private readonly IIntermediateDataFormulaService _formulaService;
     private readonly IFormulaParser _formulaParser;
+    private readonly IntermediateDataFormulaBatchCalculator _formulaBatchCalculator;
+    private readonly IEventPublisher _eventPublisher;
 
     public IntermediateDataService(
         ISqlSugarRepository<IntermediateDataEntity> repository,
@@ -47,10 +52,13 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         ISqlSugarRepository<ProductSpecAttributeEntity> productSpecAttributeRepository,
         ISqlSugarRepository<ProductSpecEntity> productSpecRepository,
         ISqlSugarRepository<UserEntity> userRepository,
+        ISqlSugarRepository<IntermediateDataFormulaCalcLogEntity> calcLogRepository,
         IUserManager userManager,
         ProductSpecVersionService versionService,
         IIntermediateDataFormulaService formulaService,
-        IFormulaParser formulaParser
+        IFormulaParser formulaParser,
+        IntermediateDataFormulaBatchCalculator formulaBatchCalculator,
+        IEventPublisher eventPublisher
     )
     {
         _repository = repository;
@@ -58,10 +66,13 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         _productSpecRepository = productSpecRepository;
         _productSpecAttributeRepository = productSpecAttributeRepository;
         _userRepository = userRepository;
+        _calcLogRepository = calcLogRepository;
         _userManager = userManager;
         _versionService = versionService;
         _formulaService = formulaService;
         _formulaParser = formulaParser;
+        _formulaBatchCalculator = formulaBatchCalculator;
+        _eventPublisher = eventPublisher;
     }
 
     /// <inheritdoc />
@@ -194,7 +205,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             {
                 total = total,
                 pageSize = pageSize,
-                current = currentPage,
+                currentPage = currentPage,
             },
         };
     }
@@ -232,6 +243,55 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         output.LaminationDistList = BuildLaminationDistList(entity);
 
         return output;
+    }
+
+    /// <summary>
+    /// 计算日志分页列表.
+    /// </summary>
+    [HttpGet("calc-logs")]
+    public async Task<dynamic> GetCalcLogs([FromQuery] IntermediateDataCalcLogQuery input)
+    {
+        var query = _calcLogRepository.AsQueryable().Where(t => t.DeleteMark == null);
+
+        query = query.WhereIF(
+            !string.IsNullOrWhiteSpace(input.BatchId),
+            t => t.BatchId == input.BatchId
+        );
+        query = query.WhereIF(
+            !string.IsNullOrWhiteSpace(input.IntermediateDataId),
+            t => t.IntermediateDataId == input.IntermediateDataId
+        );
+        query = query.WhereIF(
+            !string.IsNullOrWhiteSpace(input.ColumnName),
+            t => t.ColumnName.Contains(input.ColumnName)
+        );
+        query = query.WhereIF(
+            !string.IsNullOrWhiteSpace(input.FormulaType),
+            t => t.FormulaType == input.FormulaType
+        );
+        query = query.WhereIF(
+            !string.IsNullOrWhiteSpace(input.ErrorType),
+            t => t.ErrorType == input.ErrorType
+        );
+
+        var page = await query
+            .OrderBy(t => t.CreatorTime, OrderByType.Desc)
+            .Select(t => new IntermediateDataCalcLogOutput
+            {
+                Id = t.Id,
+                BatchId = t.BatchId,
+                IntermediateDataId = t.IntermediateDataId,
+                ColumnName = t.ColumnName,
+                FormulaName = t.FormulaName,
+                FormulaType = t.FormulaType,
+                ErrorType = t.ErrorType,
+                ErrorMessage = t.ErrorMessage,
+                ErrorDetail = t.ErrorDetail,
+                CreatorTime = t.CreatorTime
+            })
+            .ToPagedListAsync(input.CurrentPage, input.PageSize);
+
+        return PageResult<IntermediateDataCalcLogOutput>.SqlSugarPageResult(page);
     }
 
     /// <inheritdoc />
@@ -390,18 +450,16 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         if (generatedIds.Count > 0)
         {
             output.BatchId = batchId;
-            // 使用后台任务队列异步执行公式计算
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await BatchCalculateFormulasByBatchIdInternalAsync(batchId);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"后台公式计算任务失败: {ex.Message}");
-                }
-            });
+            var tenantId = _userManager?.TenantId ?? "global";
+            await _eventPublisher.PublishAsync(
+                new IntermediateDataCalcEventSource(
+                    "IntermediateData:CalcByBatch",
+                    tenantId,
+                    string.Empty,
+                    batchId,
+                    generatedIds.Count
+                )
+            );
         }
 
         return output;
@@ -518,6 +576,13 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             .SetColumns(t => t.DeleteTime == DateTime.Now)
             .Where(t => ids.Contains(t.Id) && t.DeleteMark == null)
             .ExecuteCommandAsync();
+    }
+
+    /// <inheritdoc />
+    [HttpPost("recalculate")]
+    public async Task<FormulaCalculationResult> Recalculate([FromBody] List<string> ids)
+    {
+        return await _formulaBatchCalculator.CalculateByIdsAsync(ids);
     }
 
     /// <inheritdoc />
@@ -913,7 +978,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         [FromBody] List<string> intermediateDataIds
     )
     {
-        return await BatchCalculateFormulasInternalAsync(intermediateDataIds);
+        return await _formulaBatchCalculator.CalculateByIdsAsync(intermediateDataIds);
     }
 
     /// <summary>
@@ -924,7 +989,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     [HttpPost("batch-calculate-by-batch-id/{batchId}")]
     public async Task<FormulaCalculationResult> BatchCalculateFormulasByBatchIdAsync(string batchId)
     {
-        return await BatchCalculateFormulasByBatchIdInternalAsync(batchId);
+        return await _formulaBatchCalculator.CalculateByBatchAsync(batchId);
     }
 
     /// <summary>

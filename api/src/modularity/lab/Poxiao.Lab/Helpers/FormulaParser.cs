@@ -1,128 +1,136 @@
 using System.Data;
+using System.Globalization;
+using System.Reflection;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Options;
 using Poxiao.DependencyInjection;
+using Poxiao.Lab.Entity;
+using Poxiao.Lab.Entity.Attributes;
+using Poxiao.Lab.Entity.Config;
+using Poxiao.Lab.Interfaces;
 
-namespace Poxiao.Lab.Helpers;
-
-/// <summary>
-/// 公式解析器接口.
-/// </summary>
-public interface IFormulaParser
-{
-    /// <summary>
-    /// 计算公式表达式.
-    /// </summary>
-    /// <summary>
-    /// 计算公式表达式.
-    /// </summary>
-    decimal? Calculate(string formula, Dictionary<string, object> variables);
-
-    /// <summary>
-    /// 计算公式表达式 (支持对象上下文和范围公式).
-    /// </summary>
-    decimal? Calculate(string formula, object context);
-
-    /// <summary>
-    /// 验证表达式语法.
-    /// </summary>
-    bool ValidateExpression(string expression);
-
-    /// <summary>
-    /// 提取公式中使用的变量名.
-    /// </summary>
-    List<string> ExtractVariables(string formula);
-}
+namespace Poxiao.Lab.Service;
 
 public class FormulaParser : IFormulaParser, ITransient
 {
-    private readonly RangeFormulaCalculator _rangeCalculator;
+    // 匹配 [ColumnName] 格式的变量
+    private static readonly Regex BracketVariableRegex = new(
+        @"\[([^\[\]]+)\]",
+        RegexOptions.Compiled
+    );
 
-    public FormulaParser(RangeFormulaCalculator rangeCalculator)
+    // 匹配 $VariableName 格式的动态变量（如 $DetectionColumns）
+    private static readonly Regex DollarVariableRegex = new(
+        @"\$(\w+)",
+        RegexOptions.Compiled
+    );
+
+    // 匹配 TO 范围语法: [Start] TO [End] 或 Start TO End
+    private static readonly Regex ToRangeRegex = new(
+        @"\[?(\w+)\]?\s+TO\s+\[?(\w+)\]?",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase
+    );
+
+    // 匹配三参数 RANGE 函数: RANGE(prefix, startIndex, endIndex)
+    // 支持: RANGE(Thickness, 1, $DetectionColumns) 或 RANGE(Thickness, 1, 22)
+    private static readonly Regex RangeThreeArgRegex = new(
+        @"RANGE\s*\(\s*(\w+)\s*,\s*(\d+|\$\w+)\s*,\s*(\d+|\$\w+)\s*\)",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase
+    );
+
+    // 匹配单参数 RANGE 函数: RANGE(prefix) - 自动检测范围
+    private static readonly Regex RangeSingleArgRegex = new(
+        @"RANGE\s*\(\s*(\w+)\s*\)",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase
+    );
+
+    // 匹配 DIFF_FIRST_LAST 函数
+    private static readonly Regex DiffFirstLastRegex = new(
+        @"DIFF_FIRST_LAST\s*\(\s*(\w+)\s*(?:,\s*(\d+|\$\w+)\s*(?:,\s*(\d+|\$\w+)\s*)?)?\)",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase
+    );
+
+    // 匹配统计函数起始: SUM( / AVG( / MAX( / MIN(
+    private static readonly Regex StatFunctionRegex = new(
+        @"\b(SUM|AVG|MAX|MIN)\s*\(",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase
+    );
+
+    // 检测列默认值（Detection1 ~ Detection22）
+    private const int DefaultDetectionColumns = 22;
+
+    private readonly LabOptions _options;
+
+    public FormulaParser(IOptions<LabOptions> options)
     {
-        _rangeCalculator = rangeCalculator;
+        _options = options?.Value ?? new LabOptions();
     }
 
-    public decimal? Calculate(string formula, object context)
+    /// <summary>
+    /// 提取公式中的变量名（返回不带方括号/美元符号的名称）
+    /// </summary>
+    public List<string> ExtractVariables(string formula)
     {
         if (string.IsNullOrWhiteSpace(formula))
-            return null;
-
-        // 检查是否为范围公式
-        if (formula.Contains("RANGE(") || formula.Contains("DIFF_FIRST_LAST"))
         {
-            return _rangeCalculator.Calculate(formula, context);
+            return new List<string>();
         }
 
-        // 普通公式，如果context是字典直接调用
-        if (context is Dictionary<string, object> dict)
+        var variables = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        // 提取 [ColumnName] 格式的变量
+        foreach (Match match in BracketVariableRegex.Matches(formula))
         {
-            return Calculate(formula, dict);
+            var varName = match.Groups[1].Value.Trim();
+            if (!string.IsNullOrWhiteSpace(varName) && !IsNumeric(varName))
+            {
+                variables.Add(varName);
+            }
         }
 
-        // 如果context是实体对象，需要转换为字典?
-        // 实际上现有逻辑中，IntermediateDataService 已经在外部转换了。
-        // 为了支持 Calculate(string, object) 通用性，这里可以暂时抛错或者尝试转换
-        // 但鉴于性能，最好让调用方传入字典，或者 RangeFormulaCalculator 专用 object。
+        // 提取 $VariableName 格式的变量
+        foreach (Match match in DollarVariableRegex.Matches(formula))
+        {
+            var varName = match.Groups[1].Value.Trim();
+            if (!string.IsNullOrWhiteSpace(varName))
+            {
+                variables.Add(varName);
+            }
+        }
 
-        // 此处为了兼容 IntermediateDataService 可能直接传入 Dictionary 的情况 (它是 object)
-        // 但我们已经处理了 dict。
-
-        throw new NotSupportedException(
-            "普通公式计算必须传入 Dictionary<string, object> 类型的上下文"
-        );
+        return variables.ToList();
     }
 
-    public decimal? Calculate(string formula, Dictionary<string, object> variables)
-    {
-        try
-        {
-            // 0. 预处理：将 IF 替换为 IIF (DataTable 使用 IIF)
-            // Replace word boundary IF with IIF, but ignore if it's already IIF
-            // Simple approach: regex replace \bIF\b with IIF
-            string expression = Regex.Replace(formula, @"\bIF\b", "IIF", RegexOptions.IgnoreCase);
-
-            // 1. 扩展 TO 运算符
-            // 处理 [Start] TO [End] 语法，包括动态列 [DetectionColumns]
-            expression = ExpandRangeOperators(expression, variables);
-
-            // 2. 替换变量 (同时处理 null 值)
-            // 注意：ExpandRangeOperators 可能会生成新的变量引用（如 [Detection3]），所以必须在之后替换变量
-            expression = ReplaceVariables(expression, variables);
-
-            // 3. 计算自定义统计函数 (SUM, AVG, MAX, MIN)
-            // 此时变量已替换为数值，函数参数为数字列表：SUM(1, 2, 3)
-            expression = EvaluateStatisticalFunctions(expression);
-
-            // 4. 验证并计算最终表达式
-            if (!ValidateExpression(expression))
-                throw new Exception("Expression syntax error after processing");
-
-            var dataTable = new DataTable();
-            var result = dataTable.Compute(expression, null);
-
-            if (result is DBNull || result == null)
-                return 0m;
-
-            return Convert.ToDecimal(result);
-        }
-        catch (Exception ex)
-        {
-            throw new Exception($"Calculation failed: {ex.Message} (Expr: {formula})", ex);
-        }
-    }
-
+    /// <summary>
+    /// 验证表达式语法
+    /// </summary>
     public bool ValidateExpression(string expression)
     {
         if (string.IsNullOrWhiteSpace(expression))
+        {
             return false;
+        }
+
         try
         {
-            // 尝试替换一下可能的 IF -> IIF 以便通过验证
-            var tempExpr = Regex.Replace(expression, @"\bIF\b", "IIF", RegexOptions.IgnoreCase);
+            // 提取所有变量
+            var variables = ExtractVariables(expression);
+            var dummyContext = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
 
-            // 使用DataTable.Compute验证表达式
-            var dataTable = new DataTable();
-            dataTable.Compute(tempExpr, null);
+            // 为每个变量设置默认值(使用非整数避免简单除零错误)
+            foreach (var varName in variables)
+            {
+                dummyContext[varName] = 1.1m;
+            }
+
+            // 添加常用的动态变量默认值
+            if (!dummyContext.ContainsKey("DetectionColumns"))
+            {
+                dummyContext["DetectionColumns"] = DefaultDetectionColumns;
+            }
+
+            // 尝试计算，复用 Calculate 的预处理逻辑
+            Calculate(expression, dummyContext);
             return true;
         }
         catch
@@ -131,227 +139,917 @@ public class FormulaParser : IFormulaParser, ITransient
         }
     }
 
-    private string ExpandRangeOperators(string formula, Dictionary<string, object> variables)
+    /// <summary>
+    /// 计算公式
+    /// </summary>
+    public decimal? Calculate(string formula, object context)
     {
-        // 匹配模式：[ColumnA] TO [ColumnB]
-        // 或者是：VariableA TO VariableB (如果变量不带方括号)
-        // 假设公式构建器产生的都是 [Name] 格式
+        if (string.IsNullOrWhiteSpace(formula))
+        {
+            return null;
+        }
 
-        // Regex: \[(.*?)\]\s+TO\s+\[(.*?)\]
-        // group 1: Start, group 2: End
+        try
+        {
+            // 构建上下文字典
+            var contextDict = BuildContextDictionary(context);
 
-        return Regex.Replace(
-            formula,
-            @"\[(.*?)\]\s+TO\s+\[(.*?)\]",
-            match =>
+            // 获取实体（用于范围函数）
+            var entity = context as IntermediateDataEntity;
+
+            // 预处理公式
+            var processedFormula = PreprocessFormula(formula, contextDict, entity);
+
+            // 计算表达式
+            return EvaluateExpression(processedFormula);
+        }
+        catch (Exception ex)
+        {
+            throw new FormulaCalculationException(
+                $"公式计算失败: {formula}", ex);
+        }
+    }
+
+    /// <summary>
+    /// 构建上下文字典（忽略大小写）
+    /// </summary>
+    private Dictionary<string, object> BuildContextDictionary(object context)
+    {
+        if (context is Dictionary<string, object> dict)
+        {
+            return new Dictionary<string, object>(dict, StringComparer.OrdinalIgnoreCase);
+        }
+
+        if (context is IDictionary<string, object> idict)
+        {
+            return new Dictionary<string, object>(idict, StringComparer.OrdinalIgnoreCase);
+        }
+
+        // 从对象属性构建
+        var result = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        if (context == null) return result;
+
+        var properties = context.GetType().GetProperties();
+        foreach (var prop in properties)
+        {
+            try
             {
-                string startCol = match.Groups[1].Value.Trim();
-                string endCol = match.Groups[2].Value.Trim();
+                var value = prop.GetValue(context);
+                result[prop.Name] = value;
+            }
+            catch
+            {
+                // 忽略无法读取的属性
+            }
+        }
 
-                // 解析开始列的前缀和索引 (e.g. Detection1 -> Detection, 1)
-                var startMatch = Regex.Match(startCol, @"^([a-zA-Z]+)(\d+)$");
-                if (!startMatch.Success)
+        return result;
+    }
+
+    /// <summary>
+    /// 预处理公式：处理特殊语法并替换变量
+    /// </summary>
+    private string PreprocessFormula(
+        string formula,
+        Dictionary<string, object> contextDict,
+        IntermediateDataEntity entity)
+    {
+        var result = formula;
+
+        // 1. 处理 IF -> IIF 替换（兼容 DataTable.Compute）
+        result = Regex.Replace(result, @"\bIF\s*\(", "IIF(", RegexOptions.IgnoreCase);
+        // 2. 展开 TO 范围表达式 [Detection1] TO [Detection5]
+        result = ExpandToRange(result, contextDict);
+
+        // 3. 处理统计函数 SUM/AVG/MAX/MIN（支持 RANGE/DIFF_FIRST_LAST）
+        //    支持 RANGE/DIFF_FIRST_LAST 的嵌套表达式
+        result = ProcessStatFunctions(result, contextDict, entity);
+
+        // 4. 处理三参数 RANGE：RANGE(Thickness, 1, )
+        result = ProcessRangeThreeArg(result, contextDict, entity);
+
+        // 5. 处理单参数 RANGE：RANGE(Detection)
+        result = ProcessRangeSingleArg(result, contextDict, entity);
+
+        // 6. 处理 DIFF_FIRST_LAST
+        result = ProcessDiffFirstLast(result, contextDict, entity);
+
+        // 7. 替换  动态变量
+        result = ReplaceDollarVariables(result, contextDict, entity);
+
+        // 8. 替换 [Variable] 为实际值
+        result = ReplaceVariables(result, contextDict);
+        // 9. 处理比较运算符
+        result = result.Replace("<>", "!=");
+
+        return result;
+    }
+
+    /// <summary>
+    /// 替换 $Variable 格式的动态变量
+    /// </summary>
+    private string ReplaceDollarVariables(
+        string formula,
+        Dictionary<string, object> contextDict,
+        IntermediateDataEntity entity)
+    {
+        return DollarVariableRegex.Replace(formula, match =>
+        {
+            var varName = match.Groups[1].Value;
+
+            if (TryGetValueFromContext(contextDict, varName, out var value))
+            {
+                if (value is int or long or decimal or double or float)
                 {
-                    // 如果无法解析数字后缀，暂时不支持，原样返回或抛错
-                    // 或者如果是普通变量 TO 普通变量且没有数字规律？暂不支持。
-                    return match.Value;
+                    return Convert.ToDecimal(value).ToString(CultureInfo.InvariantCulture);
                 }
+                return value?.ToString() ?? "0";
+            }
 
-                string prefix = startMatch.Groups[1].Value;
-                int startIndex = int.Parse(startMatch.Groups[2].Value);
-                int endIndex = -1;
+            // 特殊处理：DetectionColumns 默认为实体或默认值
+            if (varName.Equals("DetectionColumns", StringComparison.OrdinalIgnoreCase))
+            {
+                return GetDetectionColumns(contextDict, entity).ToString(CultureInfo.InvariantCulture);
+            }
 
-                // 判断结束列是否是动态列 "DetectionColumns" (忽略大小写)
-                // 或者检测列字段名 F_DETECTION_COLUMNS 对应的属性名 DetectionColumns
-                if (
-                    string.Equals(endCol, "DetectionColumns", StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(endCol, "检测列", StringComparison.OrdinalIgnoreCase)
-                )
+            return "0";
+        });
+    }
+
+    /// <summary>
+    /// 处理三参数 RANGE 函数
+    /// RANGE(Thickness, 1, 22) 或 RANGE(Thickness, 1, $DetectionColumns)
+    /// 返回指定范围内字段值的极差（最大值 - 最小值）
+    /// </summary>
+    private string ProcessRangeThreeArg(
+        string formula,
+        Dictionary<string, object> contextDict,
+        IntermediateDataEntity entity)
+    {
+        return RangeThreeArgRegex.Replace(formula, match =>
+        {
+            var prefix = ResolveRangePrefix(match.Groups[1].Value);
+            var startStr = match.Groups[2].Value;
+            var endStr = match.Groups[3].Value;
+            var maxColumns = GetDetectionColumns(contextDict, entity);
+
+            // 解析起始索引
+            int startIndex;
+            if (startStr.StartsWith("$"))
+            {
+                var varName = startStr.Substring(1);
+                startIndex = GetIntFromContext(contextDict, varName, 1);
+            }
+            else
+            {
+                startIndex = int.Parse(startStr);
+            }
+
+            // 解析结束索引
+            int endIndex;
+            if (endStr.StartsWith("$"))
+            {
+                var varName = endStr.Substring(1);
+                endIndex = GetIntFromContext(contextDict, varName, maxColumns);
+            }
+            else
+            {
+                endIndex = int.Parse(endStr);
+            }
+
+            // 获取范围内的值
+            var values = GetRangeValues(prefix, startIndex, endIndex, contextDict, entity, maxColumns);
+
+            if (values.Count < 2)
+            {
+                return "0";
+            }
+
+            // 计算极差并应用精度处理
+            var range = values.Max() - values.Min();
+            var precision = GetCalculationPrecision(null);
+            var roundedRange = Math.Round(range, precision, MidpointRounding.AwayFromZero);
+            return roundedRange.ToString(CultureInfo.InvariantCulture);
+        });
+    }
+
+    /// <summary>
+    /// 处理单参数 RANGE 函数
+    /// RANGE(Detection) - 自动检测 Detection1 ~ DetectionN 的范围
+    /// </summary>
+    private string ProcessRangeSingleArg(
+        string formula,
+        Dictionary<string, object> contextDict,
+        IntermediateDataEntity entity)
+    {
+        return RangeSingleArgRegex.Replace(formula, match =>
+        {
+            var prefix = ResolveRangePrefix(match.Groups[1].Value);
+
+            // 获取动态列数
+            var columnCount = GetDetectionColumns(contextDict, entity);
+
+            // 获取范围内的值
+            var values = GetRangeValues(prefix, 1, columnCount, contextDict, entity, columnCount);
+
+            if (values.Count < 2)
+            {
+                return "0";
+            }
+
+            // 计算极差并应用精度处理
+            var range = values.Max() - values.Min();
+            var precision = GetCalculationPrecision(null);
+            var roundedRange = Math.Round(range, precision, MidpointRounding.AwayFromZero);
+            return roundedRange.ToString(CultureInfo.InvariantCulture);
+        });
+    }
+
+    /// <summary>
+    /// 处理 DIFF_FIRST_LAST 函数
+    /// DIFF_FIRST_LAST(Detection) 或 DIFF_FIRST_LAST(Detection, 1, $DetectionColumns)
+    /// 返回首尾元素的差值绝对值
+    /// </summary>
+    private string ProcessDiffFirstLast(
+        string formula,
+        Dictionary<string, object> contextDict,
+        IntermediateDataEntity entity)
+    {
+        return DiffFirstLastRegex.Replace(formula, match =>
+        {
+            var prefix = ResolveRangePrefix(match.Groups[1].Value);
+            var startStr = match.Groups[2].Success ? match.Groups[2].Value : "1";
+            var endStr = match.Groups[3].Success ? match.Groups[3].Value : null;
+            var maxColumns = GetDetectionColumns(contextDict, entity);
+
+            // 解析起始索引
+            int startIndex;
+            if (startStr.StartsWith("$"))
+            {
+                startIndex = GetIntFromContext(contextDict, startStr.Substring(1), 1);
+            }
+            else
+            {
+                startIndex = int.Parse(startStr);
+            }
+
+            // 解析结束索引
+            int endIndex;
+            if (endStr != null)
+            {
+                if (endStr.StartsWith("$"))
                 {
-                    // 从变量中获取 DetectionColumns 的值
-                    // 变量key可能是 "DetectionColumns"
-                    if (variables.TryGetValue("DetectionColumns", out object val) && val != null)
-                    {
-                        endIndex = Convert.ToInt32(val);
-                    }
-                    else
-                    {
-                        // 默认值或报错？
-                        return "0"; // 无法展开，返回0安全吗？
-                    }
+                    endIndex = GetIntFromContext(contextDict, endStr.Substring(1), maxColumns);
                 }
                 else
                 {
-                    // 尝试解析结束列的索引
-                    // 必须具有相同的前缀
-                    var endMatch = Regex.Match(endCol, @"^([a-zA-Z]+)(\d+)$");
-                    if (
-                        endMatch.Success
-                        && string.Equals(
-                            endMatch.Groups[1].Value,
-                            prefix,
-                            StringComparison.OrdinalIgnoreCase
-                        )
-                    )
-                    {
-                        endIndex = int.Parse(endMatch.Groups[2].Value);
-                    }
+                    endIndex = int.Parse(endStr);
                 }
-
-                if (endIndex < startIndex)
-                {
-                    return "0"; // 范围无效
-                }
-
-                // 生成列列表
-                var columns = new List<string>();
-                for (int i = startIndex; i <= endIndex; i++)
-                {
-                    columns.Add($"[{prefix}{i}]");
-                }
-
-                return string.Join(", ", columns);
             }
-        );
-    }
-
-    private string EvaluateStatisticalFunctions(string expression)
-    {
-        // 处理 SUM, AVG, MAX, MIN
-        // 这些函数此刻参数已经是数字：SUM(1.1, 2.2, 3.3)
-        // 支持嵌套？目前正则只匹配最内层，简单循环处理直到没有匹配
-
-        string[] funcs = new[] { "SUM", "AVG", "MAX", "MIN" };
-        bool found = true;
-
-        while (found)
-        {
-            found = false;
-            // 匹配 FUNC(arg1, arg2...)
-            // \( ([^()]+) \)  匹配不包含括号的内容，即最内层
-            expression = Regex.Replace(
-                expression,
-                @"(SUM|AVG|MAX|MIN)\s*\(([^()]+)\)",
-                match =>
-                {
-                    found = true;
-                    string funcName = match.Groups[1].Value.ToUpper();
-                    string argsStr = match.Groups[2].Value;
-
-                    var args = argsStr
-                        .Split(',')
-                        .Select(s =>
-                        {
-                            if (decimal.TryParse(s.Trim(), out decimal d))
-                                return d;
-                            return 0m;
-                        })
-                        .ToList();
-
-                    if (!args.Any())
-                        return "0";
-
-                    decimal result = 0;
-                    switch (funcName)
-                    {
-                        case "SUM":
-                            result = args.Sum();
-                            break;
-                        case "AVG":
-                            result = args.Average();
-                            break;
-                        case "MAX":
-                            result = args.Max();
-                            break;
-                        case "MIN":
-                            result = args.Min();
-                            break;
-                    }
-                    return result.ToString();
-                }
-            );
-        }
-
-        return expression;
-    }
-
-    private string ReplaceVariables(string formula, Dictionary<string, object> variables)
-    {
-        // 先按长度倒序，避免部分匹配 (e.g. Detection1 vs Detection10)
-        var sortedKeys = variables.Keys.OrderByDescending(k => k.Length).ToList();
-
-        // 1. 先替换带方括号的变量 [VarName]
-        // 这样可以精确匹配
-        foreach (var key in sortedKeys)
-        {
-            // 使用字面字符串而非正则转义模式进行匹配和替换
-            string bracketLiteral = $"[{key}]";
-            if (formula.Contains(bracketLiteral))
+            else
             {
-                var val = variables[key];
-                string valStr = (val == null || val is DBNull) ? "0" : val.ToString();
-                formula = formula.Replace(bracketLiteral, valStr);
+                endIndex = maxColumns;
             }
-        }
 
-        // 2. 为了兼容，尝试替换不带方括号的单词匹配
-        // 但要注意，不要替换掉已经是数字的部分
-        // 也不要替换掉函数名
-        foreach (var key in sortedKeys)
-        {
-            // 只有当公式里还有这个key的单词时才替换 (且不是在 [] 里面，虽然上面已经替换了 [])
-            // Regex \bKEY\b
-            if (Regex.IsMatch(formula, $@"\b{key}\b"))
+            // 获取范围内的值
+            var values = GetRangeValues(prefix, startIndex, endIndex, contextDict, entity, maxColumns);
+
+            if (values.Count < 2)
             {
-                var val = variables[key];
-                string valStr = (val == null || val is DBNull) ? "0" : val.ToString();
-                formula = Regex.Replace(formula, $@"\b{key}\b", valStr);
+                return "0";
+            }
+
+            // 计算首尾差值并应用精度处理
+            var diff = Math.Abs(values.First() - values.Last());
+            var precision = GetCalculationPrecision(null);
+            var roundedDiff = Math.Round(diff, precision, MidpointRounding.AwayFromZero);
+            return roundedDiff.ToString(CultureInfo.InvariantCulture);
+        });
+    }
+
+    /// <summary>
+    /// 获取指定范围内的字段值列表
+    /// </summary>
+    private List<decimal> GetRangeValues(
+        string prefix,
+        int startIndex,
+        int endIndex,
+        Dictionary<string, object> contextDict,
+        IntermediateDataEntity entity,
+        int maxColumns)
+    {
+        var values = new List<decimal>();
+
+        // 确保索引范围有效
+        startIndex = Math.Max(1, startIndex);
+        endIndex = Math.Min(maxColumns, endIndex);
+
+        for (var i = startIndex; i <= endIndex; i++)
+        {
+            var fieldName = $"{prefix}{i}";
+            decimal? value = null;
+
+            // 优先从上下文字典获取
+            if (TryGetDecimalFromContext(contextDict, fieldName, out var ctxValue))
+            {
+                value = ctxValue;
+            }
+            // 其次从实体获取
+            else if (entity != null)
+            {
+                value = GetDecimalFromEntity(entity, fieldName);
+            }
+
+            if (value.HasValue)
+            {
+                values.Add(value.Value);
             }
         }
 
-        // 清理剩余的 [] ? 有些可能是未匹配到的变量，设为0
-        // formula = Regex.Replace(formula, @"\[.*?\]", "0");
-
-        return formula;
+        return values;
     }
 
-    /// <inheritdoc />
-    public List<string> ExtractVariables(string formula)
+    /// <summary>
+    /// 从实体获取 decimal 值
+    /// </summary>
+    private decimal? GetDecimalFromEntity(IntermediateDataEntity entity, string propertyName)
     {
-        var variables = new List<string>();
+        var prop = typeof(IntermediateDataEntity).GetProperty(propertyName);
+        if (prop == null) return null;
 
-        if (string.IsNullOrWhiteSpace(formula))
-            return variables;
+        var value = prop.GetValue(entity);
+        if (value == null) return null;
 
-        // 1. 提取 [Var] 格式
-        var bracketMatches = Regex.Matches(formula, @"\[(.*?)\]");
-        foreach (Match match in bracketMatches)
+        if (decimal.TryParse(value.ToString(), NumberStyles.Any,
+            CultureInfo.InvariantCulture, out var result))
         {
-            variables.Add(match.Groups[1].Value);
+            return result;
         }
 
-        // 2. 提取 TO 语句中的潜在变量
-        // [A] TO [DetectionColumns] -> implicit vars A..N, and DetectionColumns
-        // 这里只是静态提取，可能无法知道 DetectionColumns 的值，无法展开
-        // 但我们至少应该提取出 "DetectionColumns" 及其它显式变量
-        // 如果是 [Detection1] TO [DetectionColumns]，我们至少提取了 Detection1 和 DetectionColumns
-        // 至于中间的隐式变量（Detection2...），在没有运行时值的情况下无法提取。
-        // 这通常用于静态依赖分析。对于动态范围，可能需要一种特殊标记或容忍。
-
-        // 3. 兼容旧的无括号变量匹配 (可选)
-        // ...
-
-        return variables.Distinct().ToList();
+        return null;
     }
 
-    private bool IsOperatorOrFunction(string token)
+    /// <summary>
+    /// 展开 TO 范围语法
+    /// 例如: SUM([Detection1] TO [Detection5]) -> SUM([Detection1], [Detection2], ...)
+    /// </summary>
+    private string ExpandToRange(string formula, Dictionary<string, object> contextDict)
     {
-        // ... unused internal helper or keep for legacy ExtractVariables raw word logic
+        return ToRangeRegex.Replace(formula, match =>
+        {
+            var startField = match.Groups[1].Value;
+            var endField = match.Groups[2].Value;
+
+            // 解析起始字段
+            var startMatch = Regex.Match(startField, @"^(\D+)(\d+)$");
+            if (!startMatch.Success)
+            {
+                return match.Value;
+            }
+
+            var prefix = startMatch.Groups[1].Value;
+            var startIndex = int.Parse(startMatch.Groups[2].Value);
+
+            // 解析结束字段
+            int endIndex;
+            var endMatch = Regex.Match(endField, @"^(\D+)(\d+)$");
+            if (endMatch.Success)
+            {
+                endIndex = int.Parse(endMatch.Groups[2].Value);
+            }
+            // 如果结束字段是动态列数（如 DetectionColumns）
+            else if (TryGetValueFromContext(contextDict, endField, out var endValue) &&
+                     int.TryParse(endValue?.ToString(), out var dynamicEnd))
+            {
+                endIndex = dynamicEnd;
+            }
+            else
+            {
+                return match.Value;
+            }
+
+            // 展开为逗号分隔的字段列表
+            var fields = new List<string>();
+            for (var i = startIndex; i <= endIndex; i++)
+            {
+                fields.Add($"[{prefix}{i}]");
+            }
+
+            return string.Join(", ", fields);
+        });
+    }
+
+    /// <summary>
+    /// 处理统计函数（递归处理嵌套）
+    /// </summary>
+    private string ProcessStatFunctions(
+        string formula,
+        Dictionary<string, object> contextDict,
+        IntermediateDataEntity entity)
+    {
+        var result = formula;
+        var maxIterations = 20; // 防止无限循环
+
+        for (var i = 0; i < maxIterations; i++)
+        {
+            var match = StatFunctionRegex.Match(result);
+            if (!match.Success) break;
+
+            var funcName = match.Groups[1].Value.ToUpperInvariant();
+            var argsStart = match.Index + match.Length;
+            var depth = 1;
+            var pos = argsStart;
+            for (; pos < result.Length; pos++)
+            {
+                if (result[pos] == '(') depth++;
+                else if (result[pos] == ')') depth--;
+                if (depth == 0) break;
+            }
+
+            if (depth != 0 || pos <= argsStart)
+            {
+                break;
+            }
+
+            var argsStr = result.Substring(argsStart, pos - argsStart);
+
+            // 解析参数
+            var args = ParseFunctionArguments(argsStr, contextDict, entity);
+
+            if (args.Count == 0)
+            {
+                result = result.Substring(0, match.Index)
+                    + "0"
+                    + result.Substring(pos + 1);
+                continue;
+            }
+
+            decimal calcResult = funcName switch
+            {
+                "SUM" => args.Sum(),
+                "AVG" => args.Average(),
+                "MAX" => args.Max(),
+                "MIN" => args.Min(),
+                _ => 0
+            };
+
+            // 应用精度处理（使用默认精度）
+            var precision = GetCalculationPrecision(null);
+            var roundedResult = Math.Round(calcResult, precision, MidpointRounding.AwayFromZero);
+
+            result = result.Substring(0, match.Index)
+                + roundedResult.ToString(CultureInfo.InvariantCulture)
+                + result.Substring(pos + 1);
+        }
+
+        return result;
+    }
+    private List<decimal> ParseFunctionArguments(
+        string argsStr,
+        Dictionary<string, object> contextDict,
+        IntermediateDataEntity entity)
+    {
+        var results = new List<decimal>();
+        if (string.IsNullOrWhiteSpace(argsStr))
+        {
+            return results;
+        }
+
+        var trimmedArgs = argsStr.Trim();
+
+        // RANGE/DIFF_FIRST_LAST 作为唯一参数
+        if (TryAppendRangeValues(trimmedArgs, contextDict, entity, results))
+        {
+            return results;
+        }
+
+        var parts = SplitArguments(trimmedArgs);
+
+        foreach (var part in parts)
+        {
+            var trimmed = part.Trim();
+
+            if (TryAppendRangeValues(trimmed, contextDict, entity, results))
+            {
+                continue;
+            }
+
+            // 判断是否为 [ColumnName] 形式
+            var bracketMatch = BracketVariableRegex.Match(trimmed);
+            if (bracketMatch.Success)
+            {
+                var varName = bracketMatch.Groups[1].Value;
+                if (TryGetDecimalFromContext(contextDict, varName, out var val))
+                {
+                    results.Add(val);
+                }
+                continue;
+            }
+
+            // 判断是否为  形式
+            var dollarMatch = DollarVariableRegex.Match(trimmed);
+            if (dollarMatch.Success)
+            {
+                var varName = dollarMatch.Groups[1].Value;
+                if (TryGetDecimalFromContext(contextDict, varName, out var val))
+                {
+                    results.Add(val);
+                }
+                continue;
+            }
+
+            // 直接解析数字
+            if (decimal.TryParse(trimmed, NumberStyles.Any,
+                CultureInfo.InvariantCulture, out var num))
+            {
+                results.Add(num);
+            }
+        }
+
+        return results;
+    }
+
+    /// <summary>
+    /// 处理 RANGE/DIFF_FIRST_LAST 参数并写入列表
+    /// </summary>
+    private bool TryAppendRangeValues(
+        string expression,
+        Dictionary<string, object> contextDict,
+        IntermediateDataEntity entity,
+        List<decimal> results)
+    {
+        if (string.IsNullOrWhiteSpace(expression))
+        {
+            return false;
+        }
+
+        // RANGE(prefix, start, end)
+        var rangeMatch = RangeThreeArgRegex.Match(expression);
+        if (rangeMatch.Success && rangeMatch.Value.Equals(expression, StringComparison.OrdinalIgnoreCase))
+        {
+            var prefix = ResolveRangePrefix(rangeMatch.Groups[1].Value);
+            var startStr = rangeMatch.Groups[2].Value;
+            var endStr = rangeMatch.Groups[3].Value;
+            var maxColumns = GetDetectionColumns(contextDict, entity);
+
+            var startIndex = startStr.StartsWith("$")
+                ? GetIntFromContext(contextDict, startStr.Substring(1), 1)
+                : int.Parse(startStr);
+
+            var endIndex = endStr.StartsWith("$")
+                ? GetIntFromContext(contextDict, endStr.Substring(1), maxColumns)
+                : int.Parse(endStr);
+
+            var values = GetRangeValues(prefix, startIndex, endIndex, contextDict, entity, maxColumns);
+            if (values.Count > 0)
+            {
+                results.AddRange(values);
+            }
+            return true;
+        }
+
+        // RANGE(prefix)
+        var singleMatch = RangeSingleArgRegex.Match(expression);
+        if (singleMatch.Success && singleMatch.Value.Equals(expression, StringComparison.OrdinalIgnoreCase))
+        {
+            var prefix = ResolveRangePrefix(singleMatch.Groups[1].Value);
+            var columnCount = GetDetectionColumns(contextDict, entity);
+            var values = GetRangeValues(prefix, 1, columnCount, contextDict, entity, columnCount);
+            if (values.Count > 0)
+            {
+                results.AddRange(values);
+            }
+            return true;
+        }
+
+        // DIFF_FIRST_LAST(prefix, start?, end?)
+        var diffMatch = DiffFirstLastRegex.Match(expression);
+        if (diffMatch.Success && diffMatch.Value.Equals(expression, StringComparison.OrdinalIgnoreCase))
+        {
+            var prefix = ResolveRangePrefix(diffMatch.Groups[1].Value);
+            var startStr = diffMatch.Groups[2].Success ? diffMatch.Groups[2].Value : "1";
+            var endStr = diffMatch.Groups[3].Success ? diffMatch.Groups[3].Value : null;
+            var maxColumns = GetDetectionColumns(contextDict, entity);
+
+            var startIndex = startStr.StartsWith("$")
+                ? GetIntFromContext(contextDict, startStr.Substring(1), 1)
+                : int.Parse(startStr);
+
+            int endIndex;
+            if (endStr != null)
+            {
+                endIndex = endStr.StartsWith("$")
+                    ? GetIntFromContext(contextDict, endStr.Substring(1), maxColumns)
+                    : int.Parse(endStr);
+            }
+            else
+            {
+                endIndex = maxColumns;
+            }
+
+            var values = GetRangeValues(prefix, startIndex, endIndex, contextDict, entity, maxColumns);
+            if (values.Count >= 2)
+            {
+                var diff = Math.Abs(values.First() - values.Last());
+                results.Add(diff);
+            }
+            return true;
+        }
+
         return false;
     }
 
-    private bool IsNumber(string token)
+    /// <summary>
+    /// 通过列属性获取 RangePrefix
+    /// </summary>
+    private static string ResolveRangePrefix(string prefix)
     {
-        return decimal.TryParse(token, out _);
+        if (string.IsNullOrWhiteSpace(prefix))
+        {
+            return prefix;
+        }
+
+        var prop = typeof(IntermediateDataEntity).GetProperty(
+            prefix,
+            BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase
+        );
+        if (prop == null)
+        {
+            return prefix;
+        }
+
+        var attr = prop.GetCustomAttribute<IntermediateDataColumnAttribute>();
+        if (attr?.IsRange == true && !string.IsNullOrWhiteSpace(attr.RangePrefix))
+        {
+            return attr.RangePrefix;
+        }
+
+        return prefix;
+    }
+
+    /// <summary>
+    /// 分割参数（支持嵌套括号）
+    /// </summary>
+    private static List<string> SplitArguments(string argsStr)
+    {
+        var parts = new List<string>();
+        var current = new List<char>();
+        var depth = 0;
+
+        foreach (var ch in argsStr)
+        {
+            if (ch == '(')
+            {
+                depth++;
+            }
+            else if (ch == ')')
+            {
+                depth = Math.Max(0, depth - 1);
+            }
+
+            if (ch == ',' && depth == 0)
+            {
+                parts.Add(new string(current.ToArray()));
+                current.Clear();
+                continue;
+            }
+
+            current.Add(ch);
+        }
+
+        if (current.Count > 0)
+        {
+            parts.Add(new string(current.ToArray()));
+        }
+
+        return parts;
+    }
+
+    private string ReplaceVariables(string formula, Dictionary<string, object> contextDict)
+    {
+        return BracketVariableRegex.Replace(formula, match =>
+        {
+            var varName = match.Groups[1].Value.Trim();
+
+            if (TryGetDecimalFromContext(contextDict, varName, out var value))
+            {
+                return value.ToString(CultureInfo.InvariantCulture);
+            }
+
+            // 变量未找到，返回 0
+            return "0";
+        });
+    }
+
+    /// <summary>
+    /// 从上下文获取值（支持大小写不敏感）
+    /// </summary>
+    private bool TryGetValueFromContext(
+        Dictionary<string, object> context,
+        string key,
+        out object result)
+    {
+        result = null;
+
+        if (context.TryGetValue(key, out result))
+        {
+            return true;
+        }
+
+        // 大小写不敏感查找
+        var actualKey = context.Keys.FirstOrDefault(k =>
+            string.Equals(k, key, StringComparison.OrdinalIgnoreCase));
+
+        if (actualKey != null)
+        {
+            result = context[actualKey];
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// 从上下文获取 decimal 值
+    /// </summary>
+    private bool TryGetDecimalFromContext(
+        Dictionary<string, object> context,
+        string key,
+        out decimal result)
+    {
+        result = 0;
+
+        if (!TryGetValueFromContext(context, key, out var value) || value == null)
+        {
+            return false;
+        }
+
+        if (value is decimal dec)
+        {
+            result = dec;
+            return true;
+        }
+
+        if (value is int intVal)
+        {
+            result = intVal;
+            return true;
+        }
+
+        if (value is double dblVal)
+        {
+            result = Convert.ToDecimal(dblVal);
+            return true;
+        }
+
+        if (value is long longVal)
+        {
+            result = longVal;
+            return true;
+        }
+
+        if (value is float fltVal)
+        {
+            result = Convert.ToDecimal(fltVal);
+            return true;
+        }
+
+        return decimal.TryParse(value.ToString(), NumberStyles.Any,
+            CultureInfo.InvariantCulture, out result);
+    }
+
+    /// <summary>
+    /// 获取检测列数（优先上下文，其次实体，最后默认值）
+    /// </summary>
+    private int GetDetectionColumns(Dictionary<string, object> context, IntermediateDataEntity entity)
+    {
+        var fromContext = GetIntFromContext(context, "DetectionColumns", -1);
+        if (fromContext > 0)
+        {
+            return fromContext;
+        }
+
+        if (entity?.DetectionColumns != null && entity.DetectionColumns.Value > 0)
+        {
+            return entity.DetectionColumns.Value;
+        }
+
+        return DefaultDetectionColumns;
+    }
+
+    /// <summary>
+    /// 从上下文获取 int 值
+    /// </summary>
+    private int GetIntFromContext(Dictionary<string, object> context, string key, int defaultValue)
+    {
+        if (!TryGetValueFromContext(context, key, out var value) || value == null)
+        {
+            return defaultValue;
+        }
+
+        if (value is int intVal) return intVal;
+        if (value is long longVal) return (int)longVal;
+        if (value is decimal decVal) return (int)decVal;
+        if (value is double dblVal) return (int)dblVal;
+
+        if (int.TryParse(value.ToString(), out var parsed))
+        {
+            return parsed;
+        }
+
+        return defaultValue;
+    }
+
+    /// <summary>
+    /// 计算数学表达式
+    /// </summary>
+    private decimal? EvaluateExpression(string expression)
+    {
+        if (string.IsNullOrWhiteSpace(expression))
+        {
+            return null;
+        }
+
+        try
+        {
+            var table = new DataTable();
+            var result = table.Compute(expression, string.Empty);
+
+            if (result == null || result == DBNull.Value)
+            {
+                return null;
+            }
+
+            return Convert.ToDecimal(result, CultureInfo.InvariantCulture);
+        }
+        catch (Exception ex)
+        {
+            throw new FormulaCalculationException(
+                $"表达式计算失败: {expression}", ex);
+        }
+    }
+
+    /// <summary>
+    /// 获取计算精度（小数点位数）
+    /// 根据配置决定是否启用精度调整：
+    /// - EnablePrecisionAdjustment = true: 在原始精度基础上加1位，但不超过MaxPrecision
+    /// - EnablePrecisionAdjustment = false: 使用原始精度，但不超过MaxPrecision（默认行为）
+    /// </summary>
+    /// <param name="originalPrecision">原始精度（小数点位数）</param>
+    /// <returns>调整后的精度（小数点位数）</returns>
+    public int GetCalculationPrecision(int? originalPrecision)
+    {
+        var maxPrecision = _options.Formula?.MaxPrecision ?? 6;
+        var enableAdjustment = _options.Formula?.EnablePrecisionAdjustment ?? false;
+
+        // 如果没有原始精度，返回默认精度
+        if (!originalPrecision.HasValue)
+        {
+            return _options.Formula?.DefaultPrecision ?? 6;
+        }
+
+        // 如果启用精度调整，在原始精度基础上加1位
+        if (enableAdjustment)
+        {
+            var adjustedPrecision = originalPrecision.Value + 1;
+            return Math.Min(adjustedPrecision, maxPrecision);
+        }
+
+        // 默认行为：使用原始精度，但不超过最大值
+        return Math.Min(originalPrecision.Value, maxPrecision);
+    }
+
+    /// <summary>
+    /// 对计算结果进行精度调整（用于保证计算精度）
+    /// </summary>
+    /// <param name="value">计算结果值</param>
+    /// <param name="targetPrecision">目标精度（小数点位数）</param>
+    /// <returns>调整后的值</returns>
+    public decimal? RoundForPrecision(decimal? value, int? targetPrecision)
+    {
+        if (!value.HasValue)
+        {
+            return null;
+        }
+
+        var precision = GetCalculationPrecision(targetPrecision);
+        return Math.Round(value.Value, precision, MidpointRounding.AwayFromZero);
+    }
+
+    private static bool IsNumeric(string value)
+    {
+        return decimal.TryParse(value, NumberStyles.Any,
+            CultureInfo.InvariantCulture, out _);
     }
 }
+
+public class FormulaCalculationException : Exception
+{
+    public FormulaCalculationException(string message) : base(message) { }
+    public FormulaCalculationException(string message, Exception inner) : base(message, inner) { }
+}
+
+
+
+
+

@@ -36,21 +36,21 @@ public class MagneticRawDataEntity : CLDEntityBase
     /// Ps铁损（H列）.
     /// </summary>
     [ExcelImportColumn("Ps铁损", Sort = 2)]
-    [SugarColumn(ColumnName = "F_PS_LOSS", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_PS_LOSS", DecimalDigits = 6, IsNullable = true)]
     public decimal? PsLoss { get; set; }
 
     /// <summary>
     /// Ss激磁功率（I列）.
     /// </summary>
     [ExcelImportColumn("Ss激磁功率", Sort = 3)]
-    [SugarColumn(ColumnName = "F_SS_POWER", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_SS_POWER", DecimalDigits = 6, IsNullable = true)]
     public decimal? SsPower { get; set; }
 
     /// <summary>
     /// Hc（F列）.
     /// </summary>
     [ExcelImportColumn("Hc", Sort = 4)]
-    [SugarColumn(ColumnName = "F_HC", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_HC", DecimalDigits = 6, IsNullable = true)]
     public decimal? Hc { get; set; }
 
     /// <summary>

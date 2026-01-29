@@ -15,7 +15,7 @@
         ref="inputRef"
         v-model:value="editValue"
         size="small"
-        :precision="2"
+        :precision="precision ?? 2"
         @blur="handleSave"
         @pressEnter="handleSave"
         @keyup.esc="cancelEdit"
@@ -39,6 +39,7 @@
     field: string;
     value: any;
     type?: 'text' | 'number';
+    precision?: number;
   }>();
 
   const emit = defineEmits<{
@@ -52,7 +53,9 @@
   function formatDisplayValue(val: any) {
     if (val === null || val === undefined || val === '') return '-';
     if (typeof val === 'number') {
-      return val.toFixed(2);
+      // 使用传入的精度，默认为2
+      const precision = props.precision ?? 2;
+      return val.toFixed(precision);
     }
     return val;
   }

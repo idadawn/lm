@@ -114,7 +114,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "1.35T 50Hz Ss激磁功率"
     )]
-    [SugarColumn(ColumnName = "F_PERF_SS_POWER", DecimalDigits = 4, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_PERF_SS_POWER", DecimalDigits = 6, IsNullable = true)]
     public decimal? PerfSsPower { get; set; }
 
     /// <summary>
@@ -126,14 +126,14 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "1.35T 50Hz Ps铁损"
     )]
-    [SugarColumn(ColumnName = "F_PERF_PS_LOSS", DecimalDigits = 4, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_PERF_PS_LOSS", DecimalDigits = 6, IsNullable = true)]
     public decimal? PerfPsLoss { get; set; }
 
     /// <summary>
     /// 1.35T 50Hz Hc (A/m).
     /// </summary>
     [IntermediateDataColumn("Hc", sort: 4, dataType: "decimal", description: "1.35T 50Hz Hc")]
-    [SugarColumn(ColumnName = "F_PERF_HC", DecimalDigits = 4, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_PERF_HC", DecimalDigits = 6, IsNullable = true)]
     public decimal? PerfHc { get; set; }
 
     /// <summary>
@@ -145,7 +145,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "刻痕后性能 Ss激磁功率"
     )]
-    [SugarColumn(ColumnName = "F_AFTER_SS_POWER", DecimalDigits = 4, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_AFTER_SS_POWER", DecimalDigits = 6, IsNullable = true)]
     public decimal? PerfAfterSsPower { get; set; }
 
     /// <summary>
@@ -157,14 +157,14 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "刻痕后性能 Ps铁损"
     )]
-    [SugarColumn(ColumnName = "F_AFTER_PS_LOSS", DecimalDigits = 4, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_AFTER_PS_LOSS", DecimalDigits = 6, IsNullable = true)]
     public decimal? PerfAfterPsLoss { get; set; }
 
     /// <summary>
     /// 刻痕后性能 Hc (A/m).
     /// </summary>
     [IntermediateDataColumn("刻痕后Hc", sort: 7, dataType: "decimal", description: "刻痕后性能 Hc")]
-    [SugarColumn(ColumnName = "F_AFTER_HC", DecimalDigits = 4, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_AFTER_HC", DecimalDigits = 6, IsNullable = true)]
     public decimal? PerfAfterHc { get; set; }
 
     /// <summary>
@@ -214,14 +214,14 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "一米带材重量"
     )]
-    [SugarColumn(ColumnName = "F_ONE_METER_WT", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_ONE_METER_WT", DecimalDigits = 6, IsNullable = true)]
     public decimal? OneMeterWeight { get; set; }
 
     /// <summary>
     /// 宽度.
     /// </summary>
     [IntermediateDataColumn("带宽", sort: 40, dataType: "decimal", description: "带宽")]
-    [SugarColumn(ColumnName = "F_WIDTH", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_WIDTH", DecimalDigits = 6, IsNullable = true)]
     public decimal? Width { get; set; }
 
     #region 带厚分布
@@ -230,154 +230,154 @@ public class IntermediateDataEntity : CLDEntityBase
     /// 带厚1 (μm)，前端动态计算列：F_LAM_DIST_i / LAYERS.
     /// </summary>
     [IntermediateDataColumn("带厚1", sort: 101, dataType: "decimal", description: "带厚1")]
-    [SugarColumn(ColumnName = "F_THICK_1", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_1", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness1 { get; set; }
 
     /// <summary>
     /// 带厚2.
     /// </summary>
     [IntermediateDataColumn("带厚2", sort: 102, dataType: "decimal", description: "带厚2")]
-    [SugarColumn(ColumnName = "F_THICK_2", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_2", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness2 { get; set; }
 
     /// <summary>
     /// 带厚3.
     /// </summary>
     [IntermediateDataColumn("带厚3", sort: 103, dataType: "decimal", description: "带厚3")]
-    [SugarColumn(ColumnName = "F_THICK_3", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_3", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness3 { get; set; }
 
     /// <summary>
     /// 带厚4.
     /// </summary>
     [IntermediateDataColumn("带厚4", sort: 104, dataType: "decimal", description: "带厚4")]
-    [SugarColumn(ColumnName = "F_THICK_4", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_4", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness4 { get; set; }
 
     /// <summary>
     /// 带厚5.
     /// </summary>
     [IntermediateDataColumn("带厚5", sort: 105, dataType: "decimal", description: "带厚5")]
-    [SugarColumn(ColumnName = "F_THICK_5", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_5", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness5 { get; set; }
 
     /// <summary>
     /// 带厚6.
     /// </summary>
     [IntermediateDataColumn("带厚6", sort: 106, dataType: "decimal", description: "带厚6")]
-    [SugarColumn(ColumnName = "F_THICK_6", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_6", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness6 { get; set; }
 
     /// <summary>
     /// 带厚7.
     /// </summary>
     [IntermediateDataColumn("带厚7", sort: 107, dataType: "decimal", description: "带厚7")]
-    [SugarColumn(ColumnName = "F_THICK_7", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_7", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness7 { get; set; }
 
     /// <summary>
     /// 带厚8.
     /// </summary>
     [IntermediateDataColumn("带厚8", sort: 108, dataType: "decimal", description: "带厚8")]
-    [SugarColumn(ColumnName = "F_THICK_8", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_8", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness8 { get; set; }
 
     /// <summary>
     /// 带厚9.
     /// </summary>
     [IntermediateDataColumn("带厚9", sort: 109, dataType: "decimal", description: "带厚9")]
-    [SugarColumn(ColumnName = "F_THICK_9", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_9", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness9 { get; set; }
 
     /// <summary>
     /// 带厚10.
     /// </summary>
     [IntermediateDataColumn("带厚10", sort: 110, dataType: "decimal", description: "带厚10")]
-    [SugarColumn(ColumnName = "F_THICK_10", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_10", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness10 { get; set; }
 
     /// <summary>
     /// 带厚11.
     /// </summary>
     [IntermediateDataColumn("带厚11", sort: 111, dataType: "decimal", description: "带厚11")]
-    [SugarColumn(ColumnName = "F_THICK_11", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_11", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness11 { get; set; }
 
     /// <summary>
     /// 带厚12.
     /// </summary>
     [IntermediateDataColumn("带厚12", sort: 112, dataType: "decimal", description: "带厚12")]
-    [SugarColumn(ColumnName = "F_THICK_12", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_12", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness12 { get; set; }
 
     /// <summary>
     /// 带厚13.
     /// </summary>
     [IntermediateDataColumn("带厚13", sort: 113, dataType: "decimal", description: "带厚13")]
-    [SugarColumn(ColumnName = "F_THICK_13", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_13", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness13 { get; set; }
 
     /// <summary>
     /// 带厚14.
     /// </summary>
     [IntermediateDataColumn("带厚14", sort: 114, dataType: "decimal", description: "带厚14")]
-    [SugarColumn(ColumnName = "F_THICK_14", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_14", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness14 { get; set; }
 
     /// <summary>
     /// 带厚15.
     /// </summary>
     [IntermediateDataColumn("带厚15", sort: 115, dataType: "decimal", description: "带厚15")]
-    [SugarColumn(ColumnName = "F_THICK_15", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_15", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness15 { get; set; }
 
     /// <summary>
     /// 带厚16.
     /// </summary>
     [IntermediateDataColumn("带厚16", sort: 116, dataType: "decimal", description: "带厚16")]
-    [SugarColumn(ColumnName = "F_THICK_16", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_16", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness16 { get; set; }
 
     /// <summary>
     /// 带厚17.
     /// </summary>
     [IntermediateDataColumn("带厚17", sort: 117, dataType: "decimal", description: "带厚17")]
-    [SugarColumn(ColumnName = "F_THICK_17", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_17", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness17 { get; set; }
 
     /// <summary>
     /// 带厚18.
     /// </summary>
     [IntermediateDataColumn("带厚18", sort: 118, dataType: "decimal", description: "带厚18")]
-    [SugarColumn(ColumnName = "F_THICK_18", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_18", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness18 { get; set; }
 
     /// <summary>
     /// 带厚19.
     /// </summary>
     [IntermediateDataColumn("带厚19", sort: 119, dataType: "decimal", description: "带厚19")]
-    [SugarColumn(ColumnName = "F_THICK_19", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_19", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness19 { get; set; }
 
     /// <summary>
     /// 带厚20.
     /// </summary>
     [IntermediateDataColumn("带厚20", sort: 120, dataType: "decimal", description: "带厚20")]
-    [SugarColumn(ColumnName = "F_THICK_20", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_20", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness20 { get; set; }
 
     /// <summary>
     /// 带厚21.
     /// </summary>
     [IntermediateDataColumn("带厚21", sort: 121, dataType: "decimal", description: "带厚21")]
-    [SugarColumn(ColumnName = "F_THICK_21", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_21", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness21 { get; set; }
 
     /// <summary>
     /// 带厚22.
     /// </summary>
     [IntermediateDataColumn("带厚22", sort: 122, dataType: "decimal", description: "带厚22")]
-    [SugarColumn(ColumnName = "F_THICK_22", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_22", DecimalDigits = 6, IsNullable = true)]
     public decimal? Thickness22 { get; set; }
 
     /// <summary>
@@ -398,28 +398,28 @@ public class IntermediateDataEntity : CLDEntityBase
     /// 带厚最小值.
     /// </summary>
     [IntermediateDataColumn("带厚最小值", sort: 32, dataType: "decimal", description: "带厚最小值")]
-    [SugarColumn(ColumnName = "F_THICK_MIN", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_MIN", DecimalDigits = 6, IsNullable = true)]
     public decimal? ThicknessMin { get; set; }
 
     /// <summary>
     /// 带厚最大值.
     /// </summary>
     [IntermediateDataColumn("带厚最大值", sort: 33, dataType: "decimal", description: "带厚最大值")]
-    [SugarColumn(ColumnName = "F_THICK_MAX", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_MAX", DecimalDigits = 6, IsNullable = true)]
     public decimal? ThicknessMax { get; set; }
 
     /// <summary>
     /// 带厚极差：最大值-最小值，一位小数.
     /// </summary>
     [IntermediateDataColumn("带厚极差", sort: 34, dataType: "decimal", description: "带厚极差")]
-    [SugarColumn(ColumnName = "F_THICK_DIFF", DecimalDigits = 1, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_THICK_DIFF", DecimalDigits = 6, IsNullable = true)]
     public decimal? ThicknessDiff { get; set; }
 
     /// <summary>
     /// 产品长度（来自产品规格，导入时写入）.
     /// </summary>
     [IntermediateDataColumn("产品长度", sort: 34_1, dataType: "decimal", description: "产品长度")]
-    [SugarColumn(ColumnName = "F_PRODUCT_LENGTH", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_PRODUCT_LENGTH", DecimalDigits = 6, IsNullable = true)]
     public decimal? ProductLength { get; set; }
 
     /// <summary>
@@ -433,21 +433,21 @@ public class IntermediateDataEntity : CLDEntityBase
     /// 产品密度（来自产品规格，导入时写入）.
     /// </summary>
     [IntermediateDataColumn("产品密度", sort: 34_3, dataType: "decimal", description: "产品密度")]
-    [SugarColumn(ColumnName = "F_PRODUCT_DENSITY", DecimalDigits = 3, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_PRODUCT_DENSITY", DecimalDigits = 6, IsNullable = true)]
     public decimal? ProductDensity { get; set; }
 
     /// <summary>
     /// 密度 (g/cm³)：(F_ONE_M_WT * 1000) / (F_WIDTH * F_AVG_THICK).
     /// </summary>
     [IntermediateDataColumn("密度", sort: 35, dataType: "decimal", description: "密度")]
-    [SugarColumn(ColumnName = "F_DENSITY", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DENSITY", DecimalDigits = 6, IsNullable = true)]
     public decimal? Density { get; set; }
 
     /// <summary>
     /// 叠片系数 (%)：F_FOUR_M_WT / (F_WIDTH * 400 * F_AVG_THICK * THEO_DENSITY * 10^-7).
     /// </summary>
     [IntermediateDataColumn("叠片系数", sort: 36, dataType: "decimal", description: "叠片系数")]
-    [SugarColumn(ColumnName = "F_LAM_FACTOR", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_LAM_FACTOR", DecimalDigits = 6, IsNullable = true)]
     public decimal? LaminationFactor { get; set; }
 
     #region 外观特性（可编辑）
@@ -501,7 +501,7 @@ public class IntermediateDataEntity : CLDEntityBase
     /// <summary>
     /// 单卷重量(kg).
     /// </summary>
-    [SugarColumn(ColumnName = "F_SINGLE_COIL_WEIGHT", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_SINGLE_COIL_WEIGHT", DecimalDigits = 6, IsNullable = true)]
     public decimal? SingleCoilWeight { get; set; }
 
     /// <summary>
@@ -531,37 +531,37 @@ public class IntermediateDataEntity : CLDEntityBase
     /// <summary>
     /// 左花纹纹宽，实测宽度.
     /// </summary>
-    [SugarColumn(ColumnName = "F_L_PATTERN_W", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_L_PATTERN_W", DecimalDigits = 6, IsNullable = true)]
     public decimal? LeftPatternWidth { get; set; }
 
     /// <summary>
     /// 左花纹纹间距，实测间距.
     /// </summary>
-    [SugarColumn(ColumnName = "F_L_PATTERN_S", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_L_PATTERN_S", DecimalDigits = 6, IsNullable = true)]
     public decimal? LeftPatternSpacing { get; set; }
 
     /// <summary>
     /// 中花纹纹宽，实测宽度.
     /// </summary>
-    [SugarColumn(ColumnName = "F_M_PATTERN_W", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_M_PATTERN_W", DecimalDigits = 6, IsNullable = true)]
     public decimal? MidPatternWidth { get; set; }
 
     /// <summary>
     /// 中花纹纹间距，实测间距.
     /// </summary>
-    [SugarColumn(ColumnName = "F_M_PATTERN_S", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_M_PATTERN_S", DecimalDigits = 6, IsNullable = true)]
     public decimal? MidPatternSpacing { get; set; }
 
     /// <summary>
     /// 右花纹纹宽，实测宽度.
     /// </summary>
-    [SugarColumn(ColumnName = "F_R_PATTERN_W", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_R_PATTERN_W", DecimalDigits = 6, IsNullable = true)]
     public decimal? RightPatternWidth { get; set; }
 
     /// <summary>
     /// 右花纹纹间距，实测间距.
     /// </summary>
-    [SugarColumn(ColumnName = "F_R_PATTERN_S", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_R_PATTERN_S", DecimalDigits = 6, IsNullable = true)]
     public decimal? RightPatternSpacing { get; set; }
 
     /// <summary>
@@ -588,7 +588,7 @@ public class IntermediateDataEntity : CLDEntityBase
     /// 平均厚度 (μm)：AVG(F_LAM_DIST_1..22) / LAYERS.
     /// </summary>
     [IntermediateDataColumn("平均厚度", sort: 37, dataType: "decimal", description: "平均厚度")]
-    [SugarColumn(ColumnName = "F_AVG_THICKNESS", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_AVG_THICKNESS", DecimalDigits = 6, IsNullable = true)]
     public decimal? AvgThickness { get; set; }
 
     /// <summary>
@@ -626,7 +626,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "四米带材重量"
     )]
-    [SugarColumn(ColumnName = "F_COIL_WEIGHT", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_COIL_WEIGHT", DecimalDigits = 6, IsNullable = true)]
     public decimal? CoilWeight { get; set; }
 
     #region 叠片系数厚度分布（原始检测列）
@@ -640,7 +640,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列1"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_1", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_1", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection1 { get; set; }
 
     [IntermediateDataColumn(
@@ -649,7 +649,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列2"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_2", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_2", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection2 { get; set; }
 
     [IntermediateDataColumn(
@@ -658,7 +658,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列3"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_3", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_3", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection3 { get; set; }
 
     [IntermediateDataColumn(
@@ -667,7 +667,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列4"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_4", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_4", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection4 { get; set; }
 
     [IntermediateDataColumn(
@@ -676,7 +676,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列5"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_5", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_5", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection5 { get; set; }
 
     [IntermediateDataColumn(
@@ -685,7 +685,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列6"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_6", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_6", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection6 { get; set; }
 
     [IntermediateDataColumn(
@@ -694,7 +694,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列7"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_7", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_7", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection7 { get; set; }
 
     [IntermediateDataColumn(
@@ -703,7 +703,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列8"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_8", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_8", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection8 { get; set; }
 
     [IntermediateDataColumn(
@@ -712,7 +712,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列9"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_9", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_9", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection9 { get; set; }
 
     [IntermediateDataColumn(
@@ -721,7 +721,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列10"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_10", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_10", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection10 { get; set; }
 
     [IntermediateDataColumn(
@@ -730,7 +730,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列11"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_11", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_11", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection11 { get; set; }
 
     [IntermediateDataColumn(
@@ -739,7 +739,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列12"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_12", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_12", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection12 { get; set; }
 
     [IntermediateDataColumn(
@@ -748,7 +748,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列13"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_13", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_13", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection13 { get; set; }
 
     [IntermediateDataColumn(
@@ -757,7 +757,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列14"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_14", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_14", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection14 { get; set; }
 
     [IntermediateDataColumn(
@@ -766,7 +766,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列15"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_15", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_15", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection15 { get; set; }
 
     [IntermediateDataColumn(
@@ -775,7 +775,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列16"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_16", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_16", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection16 { get; set; }
 
     [IntermediateDataColumn(
@@ -784,7 +784,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列17"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_17", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_17", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection17 { get; set; }
 
     [IntermediateDataColumn(
@@ -793,7 +793,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列18"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_18", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_18", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection18 { get; set; }
 
     [IntermediateDataColumn(
@@ -802,7 +802,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列19"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_19", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_19", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection19 { get; set; }
 
     [IntermediateDataColumn(
@@ -811,7 +811,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列20"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_20", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_20", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection20 { get; set; }
 
     [IntermediateDataColumn(
@@ -820,7 +820,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列21"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_21", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_21", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection21 { get; set; }
 
     [IntermediateDataColumn(
@@ -829,7 +829,7 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "检测数据列22"
     )]
-    [SugarColumn(ColumnName = "F_DETECTION_22", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_22", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection22 { get; set; }
 
     #endregion
@@ -838,7 +838,7 @@ public class IntermediateDataEntity : CLDEntityBase
     /// 最大厚度（检测列最大值）.
     /// </summary>
     [IntermediateDataColumn("最大厚度", sort: 42, dataType: "decimal", description: "最大厚度")]
-    [SugarColumn(ColumnName = "F_MAX_THICKNESS_RAW", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_MAX_THICKNESS_RAW", DecimalDigits = 6, IsNullable = true)]
     public decimal? MaxThicknessRaw { get; set; }
 
     /// <summary>
@@ -850,14 +850,14 @@ public class IntermediateDataEntity : CLDEntityBase
         dataType: "decimal",
         description: "最大平均厚度"
     )]
-    [SugarColumn(ColumnName = "F_MAX_AVG_THICKNESS", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_MAX_AVG_THICKNESS", DecimalDigits = 6, IsNullable = true)]
     public decimal? MaxAvgThickness { get; set; }
 
     /// <summary>
     /// 带型，依据中段与两侧均值差计算.
     /// </summary>
     [IntermediateDataColumn("带型", sort: 44, dataType: "decimal", description: "带型")]
-    [SugarColumn(ColumnName = "F_STRIP_TYPE", DecimalDigits = 2, IsNullable = true)]
+    [SugarColumn(ColumnName = "F_STRIP_TYPE", DecimalDigits = 6, IsNullable = true)]
     public decimal? StripType { get; set; }
 
     /// <summary>

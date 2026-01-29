@@ -144,68 +144,6 @@ public class IntermediateDataInfoOutput : IntermediateDataEntity
 }
 
 /// <summary>
-/// 中间数据生成输入.
-/// </summary>
-public class IntermediateDataGenerateInput
-{
-    /// <summary>
-    /// 产品规格ID.
-    /// </summary>
-    public string ProductSpecId { get; set; }
-
-    /// <summary>
-    /// 产品规格版本（可选，如果不传则使用当前版本）.
-    /// </summary>
-    public int? ProductSpecVersion { get; set; }
-
-    /// <summary>
-    /// 开始日期.
-    /// </summary>
-    public DateTime? StartDate { get; set; }
-
-    /// <summary>
-    /// 结束日期.
-    /// </summary>
-    public DateTime? EndDate { get; set; }
-
-    /// <summary>
-    /// 是否强制重新生成（覆盖已有数据）.
-    /// </summary>
-    public bool ForceRegenerate { get; set; } = false;
-}
-
-/// <summary>
-/// 中间数据生成输出.
-/// </summary>
-public class IntermediateDataGenerateOutput
-{
-    /// <summary>
-    /// 批次ID（用于跟踪异步公式计算任务）.
-    /// </summary>
-    public string BatchId { get; set; }
-
-    /// <summary>
-    /// 成功数量.
-    /// </summary>
-    public int SuccessCount { get; set; }
-
-    /// <summary>
-    /// 跳过数量（已存在的数据）.
-    /// </summary>
-    public int SkippedCount { get; set; }
-
-    /// <summary>
-    /// 失败数量.
-    /// </summary>
-    public int FailedCount { get; set; }
-
-    /// <summary>
-    /// 错误信息列表.
-    /// </summary>
-    public List<string> Errors { get; set; } = new();
-}
-
-/// <summary>
 /// 性能数据更新输入.
 /// </summary>
 public class IntermediateDataPerfUpdateInput

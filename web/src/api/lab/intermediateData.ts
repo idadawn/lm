@@ -15,11 +15,6 @@ export function getIntermediateDataInfo(id: string) {
     return defHttp.get({ url: Api.Prefix + '/' + id });
 }
 
-// 从原始数据生成中间数据
-export function generateIntermediateData(data) {
-    return defHttp.post({ url: Api.Prefix + '/generate', data });
-}
-
 // 更新性能数据
 export function updatePerformance(data) {
     return defHttp.put({ url: Api.Prefix + '/performance', data });
@@ -58,4 +53,16 @@ export function getProductSpecOptions() {
 // 计算日志分页列表
 export function getIntermediateDataCalcLogs(params: IntermediateDataCalcLogQuery) {
     return defHttp.get<IntermediateDataCalcLogPage>({ url: Api.Prefix + '/calc-logs', params });
+}
+
+// 导出中间数据Excel
+export function exportIntermediateData(startDate: string, endDate: string) {
+    return defHttp.get(
+        { 
+            url: Api.Prefix + '/export', 
+            params: { startDate, endDate },
+            responseType: 'blob'
+        },
+        { isReturnNativeResponse: true }
+    );
 }

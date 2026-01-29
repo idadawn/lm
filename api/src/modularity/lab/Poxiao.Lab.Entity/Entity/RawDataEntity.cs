@@ -88,14 +88,14 @@ public class RawDataEntity : CLDEntityBase
     /// 宽度.
     /// </summary>
     [ExcelImportColumn("宽度", Sort = 3)]
-    [SugarColumn(ColumnName = "F_WIDTH", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_WIDTH", DecimalDigits = 6, IsNullable = true)]
     public decimal? Width { get; set; }
 
     /// <summary>
     /// 带材重量.
     /// </summary>
     [ExcelImportColumn("带材重量", Sort = 4)]
-    [SugarColumn(ColumnName = "F_COIL_WEIGHT", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_COIL_WEIGHT", DecimalDigits = 6, IsNullable = true)]
     public decimal? CoilWeight { get; set; }
 
     /// <summary>
@@ -109,7 +109,7 @@ public class RawDataEntity : CLDEntityBase
     /// 单卷重量(kg).
     /// </summary>
     [ExcelImportColumn("单卷重量", Sort = 6)]
-    [SugarColumn(ColumnName = "F_SINGLE_COIL_WEIGHT", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_SINGLE_COIL_WEIGHT", DecimalDigits = 6, IsNullable = true)]
     public decimal? SingleCoilWeight { get; set; }
 
     /// <summary>
@@ -146,91 +146,91 @@ public class RawDataEntity : CLDEntityBase
     /// 检测数据列1-22（固定22列）.
     /// </summary>
     [ExcelImportColumn("检测1", Sort = 7)]
-    [SugarColumn(ColumnName = "F_DETECTION_1", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_1", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection1 { get; set; }
 
     [ExcelImportColumn("检测2", Sort = 8)]
-    [SugarColumn(ColumnName = "F_DETECTION_2", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_2", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection2 { get; set; }
 
     [ExcelImportColumn("检测3", Sort = 9)]
-    [SugarColumn(ColumnName = "F_DETECTION_3", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_3", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection3 { get; set; }
 
     [ExcelImportColumn("检测4", Sort = 10)]
-    [SugarColumn(ColumnName = "F_DETECTION_4", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_4", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection4 { get; set; }
 
     [ExcelImportColumn("检测5", Sort = 11)]
-    [SugarColumn(ColumnName = "F_DETECTION_5", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_5", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection5 { get; set; }
 
     [ExcelImportColumn("检测6", Sort = 12)]
-    [SugarColumn(ColumnName = "F_DETECTION_6", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_6", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection6 { get; set; }
 
     [ExcelImportColumn("检测7", Sort = 13)]
-    [SugarColumn(ColumnName = "F_DETECTION_7", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_7", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection7 { get; set; }
 
     [ExcelImportColumn("检测8", Sort = 14)]
-    [SugarColumn(ColumnName = "F_DETECTION_8", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_8", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection8 { get; set; }
 
     [ExcelImportColumn("检测9", Sort = 15)]
-    [SugarColumn(ColumnName = "F_DETECTION_9", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_9", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection9 { get; set; }
 
     [ExcelImportColumn("检测10", Sort = 16)]
-    [SugarColumn(ColumnName = "F_DETECTION_10", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_10", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection10 { get; set; }
 
     [ExcelImportColumn("检测11", Sort = 17)]
-    [SugarColumn(ColumnName = "F_DETECTION_11", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_11", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection11 { get; set; }
 
     [ExcelImportColumn("检测12", Sort = 18)]
-    [SugarColumn(ColumnName = "F_DETECTION_12", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_12", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection12 { get; set; }
 
     [ExcelImportColumn("检测13", Sort = 19)]
-    [SugarColumn(ColumnName = "F_DETECTION_13", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_13", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection13 { get; set; }
 
     [ExcelImportColumn("检测14", Sort = 20)]
-    [SugarColumn(ColumnName = "F_DETECTION_14", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_14", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection14 { get; set; }
 
     [ExcelImportColumn("检测15", Sort = 21)]
-    [SugarColumn(ColumnName = "F_DETECTION_15", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_15", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection15 { get; set; }
 
     [ExcelImportColumn("检测16", Sort = 22)]
-    [SugarColumn(ColumnName = "F_DETECTION_16", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_16", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection16 { get; set; }
 
     [ExcelImportColumn("检测17", Sort = 23)]
-    [SugarColumn(ColumnName = "F_DETECTION_17", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_17", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection17 { get; set; }
 
     [ExcelImportColumn("检测18", Sort = 24)]
-    [SugarColumn(ColumnName = "F_DETECTION_18", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_18", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection18 { get; set; }
 
     [ExcelImportColumn("检测19", Sort = 25)]
-    [SugarColumn(ColumnName = "F_DETECTION_19", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_19", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection19 { get; set; }
 
     [ExcelImportColumn("检测20", Sort = 26)]
-    [SugarColumn(ColumnName = "F_DETECTION_20", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_20", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection20 { get; set; }
 
     [ExcelImportColumn("检测21", Sort = 27)]
-    [SugarColumn(ColumnName = "F_DETECTION_21", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_21", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection21 { get; set; }
 
     [ExcelImportColumn("检测22", Sort = 28)]
-    [SugarColumn(ColumnName = "F_DETECTION_22", IsNullable = true)]
+    [SugarColumn(ColumnName = "F_DETECTION_22", DecimalDigits = 6, IsNullable = true)]
     public decimal? Detection22 { get; set; }
 
     /// <summary>

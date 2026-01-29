@@ -40,6 +40,12 @@
                     <UploadOutlined /> 磁性数据导入
                   </a-button>
                 </a-upload>
+                <a-button type="primary" :loading="batchCalculating" @click="handleBatchRecalculate">
+                  <ReloadOutlined v-if="!batchCalculating" /> 批量计算
+                </a-button>
+                <a-button :loading="exporting" @click="openExportModal">
+                  <DownloadOutlined v-if="!exporting" /> 导出Excel
+                </a-button>
               </a-space>
             </template>
             <template #bodyCell="{ column, record, text }">
@@ -79,8 +85,11 @@
               <template v-else-if="column.key?.startsWith('perf')">
                 <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
                   @click="handleCellColor(record.id, column.key)">
-                  <EditableCell :record="record" :field="column.key" :value="record[column.key]" type="number"
-                    @save="val => handlePerfSave(record, column.key, val)" />
+                  <a-spin :spinning="record.pendingPerfCalc || false" size="small">
+                    <EditableCell :record="record" :field="column.key" :value="record[column.key]" type="number"
+                      :precision="getFieldPrecision(column.key)"
+                      @save="val => handlePerfSave(record, column.key, val)" />
+                  </a-spin>
                 </div>
               </template>
 
@@ -104,8 +113,11 @@
                       {{ record.recalculating ? '计算中' : getCalcStatusInfo(record.calcStatus).text }}
                     </a-tag>
                   </a-tooltip>
-                  <a-tag v-else :color="getCalcStatusInfo(record.calcStatus).color">
-                    {{ getCalcStatusInfo(record.calcStatus).text }}
+                  <a-tag v-else :color="getCalcStatusInfo(record.calcStatus).color" class="cursor-pointer" @click.stop="handleRecalculate(record)">
+                    <template #icon>
+                      <ReloadOutlined :spin="record.recalculating" />
+                    </template>
+                    {{ record.recalculating ? '计算中' : getCalcStatusInfo(record.calcStatus).text }}
                   </a-tag>
                 </div>
               </template>
@@ -121,7 +133,7 @@
               <template v-else-if="isNumericColumn(column.key)">
                 <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
                   @click="handleCellColor(record.id, column.key)">
-                  <span :class="{ 'text-danger': isNegative(text) }">{{ formatNumericValue(text) }}</span>
+                  <span :class="{ 'text-danger': isNegative(text) }">{{ formatNumericValue(text, column.key) }}</span>
                 </div>
               </template>
 
@@ -129,7 +141,7 @@
               <template v-else-if="column.key?.startsWith('detection')">
                 <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
                   @click="handleCellColor(record.id, column.key)">
-                  <span>{{ formatNumericValue(text) }}</span>
+                  <span>{{ formatNumericValue(text, column.key) }}</span>
                 </div>
               </template>
 
@@ -137,7 +149,7 @@
               <template v-else-if="column.key?.startsWith('thickness') && column.key !== 'thicknessRange'">
                 <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
                   @click="handleCellColor(record.id, column.key)">
-                  <span :class="{ 'text-danger': isNegative(text) }">{{ formatNumericValue(text) }}</span>
+                  <span :class="{ 'text-danger': isNegative(text) }">{{ formatNumericValue(text, column.key) }}</span>
                 </div>
               </template>
 
@@ -145,8 +157,8 @@
               <template v-else>
                 <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
                   @click="handleCellColor(record.id, column.key)">
-                  <NumericTableCell v-if="isNumericString(record[column.key])" :value="record[column.key]" />
-                  <span v-else>{{ formatValue(record[column.key]) }}</span>
+                <NumericTableCell v-if="isNumericString(record[column.key])" :value="record[column.key]" :field-name="column.key" />
+                  <span v-else>{{ formatValue(record[column.key], column.key) }}</span>
                 </div>
               </template>
             </template>
@@ -155,6 +167,36 @@
 
       </div>
       <MagneticDataImportQuickModal @register="registerQuickModal" @reload="handleImportSuccess" />
+      
+      <!-- 导出日期选择模态框 -->
+      <a-modal
+        v-model:visible="exportModalVisible"
+        title="导出中间数据"
+        @ok="handleExport"
+        :confirm-loading="exporting"
+        ok-text="导出"
+        cancel-text="取消"
+      >
+        <a-form layout="vertical">
+          <a-form-item label="生产日期范围" required>
+            <a-range-picker
+              v-model:value="exportDateRange"
+              :placeholder="['开始日期', '结束日期']"
+              style="width: 100%"
+              :disabled-date="disabledExportDate"
+            />
+          </a-form-item>
+          <a-form-item>
+            <a-space>
+              <a-tag color="blue" style="cursor: pointer" @click="setExportRange('thisMonth')">本月</a-tag>
+              <a-tag color="green" style="cursor: pointer" @click="setExportRange('thisYear')">本年</a-tag>
+              <a-tag style="cursor: pointer" @click="setExportRange('lastMonth')">上月</a-tag>
+              <a-tag style="cursor: pointer" @click="setExportRange('lastYear')">去年</a-tag>
+            </a-space>
+          </a-form-item>
+        </a-form>
+      </a-modal>
+
       <a-drawer v-model:visible="calcLogDrawerVisible" title="计算日志" width="720">
         <a-table
           :columns="calcLogColumns"
@@ -177,6 +219,7 @@ import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { BasicTable, useTable, BasicColumn } from '/@/components/Table';
 import { useMessage } from '/@/hooks/web/useMessage';
 import { dateUtil } from '/@/utils/dateUtil';
+import type { Dayjs } from 'dayjs';
 import {
   getIntermediateDataList,
   getProductSpecOptions,
@@ -185,6 +228,7 @@ import {
   updateAppearance,
   updateBaseInfo,
   recalculateIntermediateData,
+  exportIntermediateData,
 } from '/@/api/lab/intermediateData';
 import {
   saveIntermediateDataColors,
@@ -197,9 +241,11 @@ import { getAllAppearanceFeatureCategories, type AppearanceFeatureCategoryInfo }
 import EditableCell from './components/EditableCell.vue';
 import NumericTableCell from './components/NumericTableCell.vue';
 import CustomSortControl from '../rawData/components/CustomSortControl.vue';
+import { useFormulaPrecision } from '/@/composables/useFormulaPrecision';
 
 import { useModal } from '/@/components/Modal';
-import { UploadOutlined, ReloadOutlined } from '@ant-design/icons-vue';
+import { UploadOutlined, ReloadOutlined, DownloadOutlined } from '@ant-design/icons-vue';
+import { Spin as ASpin } from 'ant-design-vue';
 import MagneticDataImportQuickModal from '../magneticData/MagneticDataImportQuickModal.vue';
 import { createMagneticImportSession, uploadAndParseMagneticData } from '/@/api/lab/magneticData';
 import type { IntermediateDataCalcLogItem } from '/@/api/lab/model/intermediateDataCalcLogModel';
@@ -228,6 +274,9 @@ const calcLogTargetId = ref<string>('');
 // 特性大类列表
 const appearanceCategories = ref<AppearanceFeatureCategoryInfo[]>([]);
 
+// 公式精度配置
+const { getFieldPrecision, loading: precisionLoading } = useFormulaPrecision();
+
 // 编辑状态
 const editingCell = ref<{ id: string; field: string } | null>(null);
 const editingValue = ref<any>(null);
@@ -237,6 +286,10 @@ const selectedColor = ref<string>('');
 const coloredCells = ref<Record<string, string>>({}); // 存储单元格颜色 { 'rowId::field': 'color' }
 const colorLoaded = ref<boolean>(false); // 颜色数据是否已加载
 const savingColors = ref<boolean>(false); // 是否正在保存颜色
+const batchCalculating = ref<boolean>(false); // 是否正在批量计算
+const exporting = ref<boolean>(false); // 是否正在导出
+const exportModalVisible = ref<boolean>(false); // 导出模态框是否可见
+const exportDateRange = ref<[Dayjs, Dayjs] | null>(null); // 导出日期范围
 const isClearMode = ref<boolean>(false); // 是否处于清除颜色模式
 const fillMode = ref<'cell' | 'row' | 'column'>('cell'); // 填充模式：单元格/整行/整列
 
@@ -589,7 +642,7 @@ const allColumns = computed(() => {
   return columns;
 });
 
-const [registerTable, { reload }] = useTable({
+const [registerTable, { reload, getDataSource }] = useTable({
   api: getIntermediateDataList,
   columns: allColumns,
   useSearchForm: true,
@@ -894,12 +947,31 @@ async function handleCellSave2(record: any, field: string, value: any) {
 // 性能数据保存
 async function handlePerfSave(record: any, field: string, value: any) {
   try {
+    // 更新性能数据
     await updatePerformance({
       id: record.id,
       [field]: value,
     });
-    createMessage.success('保存成功');
-    reload();
+
+    // 设置判定中状态
+    record.pendingPerfCalc = true;
+    createMessage.success('保存成功', 1); // 短暂提示
+
+    try {
+      // 自动触发判定（重新计算）
+      await recalculateIntermediateData([record.id]);
+
+      // 500ms后刷新数据以显示最新判定结果
+      setTimeout(() => {
+        reload();
+        record.pendingPerfCalc = false;
+      }, 500);
+    } catch (calcError) {
+      console.error('判定失败:', calcError);
+      record.pendingPerfCalc = false;
+      // 判定失败时不显示错误，避免干扰用户操作，刷新即可显示失败状态
+      reload();
+    }
   } catch (error) {
     createMessage.error('保存失败');
   }
@@ -937,26 +1009,154 @@ async function handleRecalculate(record: any) {
   }
 }
 
+// 批量重新计算（针对计算失败的数据）
+async function handleBatchRecalculate() {
+  if (batchCalculating.value) return;
+  
+  // 获取当前表格数据
+  const data = getDataSource();
+  if (!data || data.length === 0) {
+    createMessage.warning('当前没有数据');
+    return;
+  }
+  
+  // 筛选出计算失败的数据
+  const failedRecords = data.filter(record => {
+    const status = normalizeCalcStatus(record?.calcStatus);
+    return status === 'FAILED';
+  });
+  
+  if (failedRecords.length === 0) {
+    createMessage.info('没有计算失败的数据需要重新计算');
+    return;
+  }
+  
+  try {
+    batchCalculating.value = true;
+    const ids = failedRecords.map(record => record.id);
+    await recalculateIntermediateData(ids);
+    createMessage.success(`已触发 ${ids.length} 条失败数据的重新计算`);
+    // 稍后刷新
+    setTimeout(() => {
+      reload();
+      batchCalculating.value = false;
+    }, 1000);
+  } catch (error) {
+    createMessage.error('批量触发计算失败');
+    batchCalculating.value = false;
+  }
+}
+
+// 打开导出模态框
+function openExportModal() {
+  exportModalVisible.value = true;
+  // 默认选中本月
+  setExportRange('thisMonth');
+}
+
+// 设置导出日期范围快捷选项
+function setExportRange(type: string) {
+  const now = dateUtil();
+  switch (type) {
+    case 'thisMonth':
+      exportDateRange.value = [now.startOf('month'), now.endOf('month')];
+      break;
+    case 'lastMonth':
+      const lastMonth = now.subtract(1, 'month');
+      exportDateRange.value = [lastMonth.startOf('month'), lastMonth.endOf('month')];
+      break;
+    case 'thisYear':
+      exportDateRange.value = [now.startOf('year'), now.endOf('year')];
+      break;
+    case 'lastYear':
+      const lastYear = now.subtract(1, 'year');
+      exportDateRange.value = [lastYear.startOf('year'), lastYear.endOf('year')];
+      break;
+  }
+}
+
+// 禁用超过一年的日期
+function disabledExportDate(current: any) {
+  if (!exportDateRange.value || !exportDateRange.value[0]) {
+    return false;
+  }
+  const startDate = exportDateRange.value[0];
+  // 限制最多选择一年
+  const tooLate = current && current.diff(startDate, 'days') > 366;
+  const tooEarly = current && startDate.diff(current, 'days') > 0;
+  return tooLate || tooEarly;
+}
+
+// 处理导出
+async function handleExport() {
+  if (exporting.value) return;
+  
+  if (!exportDateRange.value || !exportDateRange.value[0] || !exportDateRange.value[1]) {
+    createMessage.warning('请选择生产日期范围');
+    return;
+  }
+  
+  try {
+    exporting.value = true;
+    createMessage.loading({ content: '正在导出数据...', key: 'export', duration: 0 });
+    
+    const startDate = exportDateRange.value[0].format('YYYY-MM-DD');
+    const endDate = exportDateRange.value[1].format('YYYY-MM-DD');
+    
+    const response = await exportIntermediateData(startDate, endDate);
+    
+    // 获取文件名
+    const contentDisposition = response.headers?.get('content-disposition');
+    let fileName = `中间数据导出_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (match) {
+        fileName = decodeURIComponent(match[1].replace(/['"]/g, ''));
+      }
+    }
+    
+    // 下载文件
+    const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+    
+    createMessage.success({ content: '导出成功', key: 'export' });
+    exportModalVisible.value = false;
+  } catch (error: any) {
+    console.error('导出失败:', error);
+    createMessage.error({ content: error.message || '导出失败', key: 'export' });
+  } finally {
+    exporting.value = false;
+  }
+}
+
 
 
 // 格式化值
-function formatValue(value: any) {
+function formatValue(value: any, fieldName?: string) {
   if (value === null || value === undefined) return '-';
   if (typeof value === 'number') {
-    return value.toFixed(2);
+    const precision = fieldName ? getFieldPrecision(fieldName) : 2;
+    return value.toFixed(precision);
   }
   return value;
 }
 
 // 格式化数值
-function formatNumericValue(value: any) {
+function formatNumericValue(value: any, fieldName?: string) {
   if (value === null || value === undefined) return '-';
+  const precision = fieldName ? getFieldPrecision(fieldName) : 2;
   if (typeof value === 'number') {
-    return value.toFixed(2);
+    return value.toFixed(precision);
   }
   const num = parseFloat(value);
   if (!isNaN(num)) {
-    return num.toFixed(2);
+    return num.toFixed(precision);
   }
   return value || '-';
 }

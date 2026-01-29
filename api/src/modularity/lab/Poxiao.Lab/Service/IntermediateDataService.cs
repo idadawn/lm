@@ -295,177 +295,6 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     }
 
     /// <inheritdoc />
-    [HttpPost("generate")]
-    public async Task<IntermediateDataGenerateOutput> Generate(
-        [FromBody] IntermediateDataGenerateInput input
-    )
-    {
-        var output = new IntermediateDataGenerateOutput();
-
-        // 获取产品规格
-        if (string.IsNullOrEmpty(input.ProductSpecId))
-        {
-            throw Oops.Oh("请选择产品规格");
-        }
-
-        var productSpec = await _productSpecRepository
-            .AsQueryable()
-            .Where(t => t.Id == input.ProductSpecId && t.DeleteMark == null)
-            .FirstAsync();
-
-        if (productSpec == null)
-        {
-            throw Oops.Oh("产品规格不存在");
-        }
-
-        // 查询符合条件的原始数据
-        var rawDataQuery = _rawDataRepository
-            .AsQueryable()
-            .Where(t => t.DeleteMark == null && t.ProductSpecId == input.ProductSpecId);
-
-        if (input.StartDate.HasValue)
-        {
-            rawDataQuery = rawDataQuery.Where(t => t.ProdDate >= input.StartDate.Value);
-        }
-        if (input.EndDate.HasValue)
-        {
-            var endDate = input.EndDate.Value.AddDays(1);
-            rawDataQuery = rawDataQuery.Where(t => t.ProdDate < endDate);
-        }
-
-        var rawDataList = await rawDataQuery.ToListAsync();
-
-        if (rawDataList.Count == 0)
-        {
-            throw Oops.Oh("没有找到符合条件的原始数据");
-        }
-
-        // 获取已存在的中间数据ID
-        var existingIds = new HashSet<string>();
-        if (!input.ForceRegenerate)
-        {
-            var existingData = await _repository
-                .AsQueryable()
-                .Where(t => t.DeleteMark == null && t.ProductSpecId == input.ProductSpecId)
-                .Select(t => t.RawDataId)
-                .ToListAsync();
-            existingIds = existingData.ToHashSet();
-        }
-
-        var currentUserId = _userManager.UserId;
-        var currentUserName = _userManager.RealName;
-
-        // 解析检测列配置
-        var detectionColumns = ParseDetectionColumns(productSpec.DetectionColumns);
-
-        // 获取指定版本的扩展属性
-        var usedVersion = input.ProductSpecVersion; // 如果为null，GetAttributesByVersionAsync会获取当前版本
-        var attributes = await _versionService.GetAttributesByVersionAsync(
-            productSpec.Id,
-            usedVersion
-        );
-
-        // 如果没有指定版本，获取到的attributes使用的是当前版本，我们需要知道具体是哪个版本
-        if (!usedVersion.HasValue && attributes.Count > 0)
-        {
-            usedVersion = attributes.First().Version;
-        }
-        else if (!usedVersion.HasValue)
-        {
-            usedVersion = 1;
-        }
-
-        var lengthAttr = attributes.FirstOrDefault(a => a.AttributeKey == "length");
-        var layersAttr = attributes.FirstOrDefault(a => a.AttributeKey == "layers");
-        var densityAttr = attributes.FirstOrDefault(a => a.AttributeKey == "density");
-
-        var length =
-            lengthAttr != null
-            && !string.IsNullOrEmpty(lengthAttr.AttributeValue)
-            && decimal.TryParse(lengthAttr.AttributeValue, out var len)
-                ? len
-                : 4m;
-        var layers =
-            layersAttr != null
-            && !string.IsNullOrEmpty(layersAttr.AttributeValue)
-            && int.TryParse(layersAttr.AttributeValue, out var lay)
-                ? lay
-                : 20;
-        var density =
-            densityAttr != null
-            && !string.IsNullOrEmpty(densityAttr.AttributeValue)
-            && decimal.TryParse(densityAttr.AttributeValue, out var den)
-                ? den
-                : 7.25m;
-
-        // 生成批次ID，用于关联本次生成的所有中间数据
-        var batchId = Guid.NewGuid().ToString();
-        var generatedIds = new List<string>();
-
-        foreach (var rawData in rawDataList)
-        {
-            try
-            {
-                // 检查是否已存在
-                if (!input.ForceRegenerate && existingIds.Contains(rawData.Id))
-                {
-                    output.SkippedCount++;
-                    continue;
-                }
-
-                // 生成中间数据（传入批次ID）
-                var intermediateData = await GenerateIntermediateDataAsync(
-                    rawData,
-                    productSpec,
-                    detectionColumns,
-                    layers,
-                    length,
-                    density,
-                    usedVersion,
-                    batchId
-                );
-                intermediateData.CreatorUserId = currentUserId;
-
-                // 如果是强制重新生成，先删除已有数据
-                if (input.ForceRegenerate)
-                {
-                    await _repository
-                        .AsDeleteable()
-                        .Where(t => t.RawDataId == rawData.Id)
-                        .ExecuteCommandAsync();
-                }
-
-                await _repository.InsertAsync(intermediateData);
-                generatedIds.Add(intermediateData.Id);
-                output.SuccessCount++;
-            }
-            catch (Exception ex)
-            {
-                output.FailedCount++;
-                output.Errors.Add($"炉号 {rawData.FurnaceNo} 生成失败: {ex.Message}");
-            }
-        }
-
-        // 批量保存完成后，异步触发公式计算任务
-        if (generatedIds.Count > 0)
-        {
-            output.BatchId = batchId;
-            var tenantId = _userManager?.TenantId ?? "global";
-            await _eventPublisher.PublishAsync(
-                new IntermediateDataCalcEventSource(
-                    "IntermediateData:CalcByBatch",
-                    tenantId,
-                    string.Empty,
-                    batchId,
-                    generatedIds.Count
-                )
-            );
-        }
-
-        return output;
-    }
-
-    /// <inheritdoc />
     [HttpPut("performance")]
     public async Task UpdatePerformance([FromBody] IntermediateDataPerfUpdateInput input)
     {
@@ -479,12 +308,33 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             throw Oops.Oh("数据不存在");
         }
 
-        entity.PerfSsPower = input.PerfSsPower;
-        entity.PerfPsLoss = input.PerfPsLoss;
-        entity.PerfHc = input.PerfHc;
-        entity.PerfAfterSsPower = input.PerfAfterSsPower;
-        entity.PerfAfterPsLoss = input.PerfAfterPsLoss;
-        entity.PerfAfterHc = input.PerfAfterHc;
+        // 只更新传入的非null字段
+        if (input.PerfSsPower.HasValue)
+        {
+            entity.PerfSsPower = input.PerfSsPower;
+        }
+        if (input.PerfPsLoss.HasValue)
+        {
+            entity.PerfPsLoss = input.PerfPsLoss;
+        }
+        if (input.PerfHc.HasValue)
+        {
+            entity.PerfHc = input.PerfHc;
+        }
+        if (input.PerfAfterSsPower.HasValue)
+        {
+            entity.PerfAfterSsPower = input.PerfAfterSsPower;
+        }
+        if (input.PerfAfterPsLoss.HasValue)
+        {
+            entity.PerfAfterPsLoss = input.PerfAfterPsLoss;
+        }
+        if (input.PerfAfterHc.HasValue)
+        {
+            entity.PerfAfterHc = input.PerfAfterHc;
+        }
+
+        // 始终更新编辑人信息
         entity.PerfEditorId = _userManager.UserId;
         entity.PerfEditorName = _userManager.RealName;
         entity.PerfEditTime = DateTime.Now;
@@ -872,23 +722,35 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             }
         }
 
-        // 叠片系数计算: 四米带材重量(g) / (带宽(mm) * 400 * 平均厚度 * 7.25 * 0.0000001)
-        // 注：400对应产品规格长度(4m = 400cm)
-        if (
+        // ��Ƭϵ������: ���״�������(g) / (����(mm) * 400 * ƽ����� * 7.25 * 0.0000001)
+        // ע��400��Ӧ��Ʒ��񳤶�(4m = 400cm)
+        var hasLaminationInputs =
             entity.CoilWeight.HasValue
             && entity.Width.HasValue
             && entity.AvgThickness.HasValue
-            && entity.AvgThickness.Value > 0
-        )
+            && entity.AvgThickness.Value > 0;
+        decimal? laminationDivisor = null;
+        if (hasLaminationInputs)
         {
-            var lengthCm = length * 100; // 转换为厘米
-            var divisor =
+            var lengthCm = length * 100; // ת��Ϊ����
+            laminationDivisor =
                 entity.Width.Value * lengthCm * entity.AvgThickness.Value * density * 0.0000001m;
-            if (divisor > 0)
+            if (laminationDivisor > 0)
             {
-                entity.LaminationFactor = Math.Round(entity.CoilWeight.Value / divisor, 2);
+                entity.LaminationFactor = Math.Round(
+                    entity.CoilWeight.Value / laminationDivisor.Value,
+                    2
+                );
             }
         }
+
+        await TryInsertLaminationFactorLogAsync(
+            entity,
+            length,
+            density,
+            hasLaminationInputs,
+            laminationDivisor
+        );
 
         // 带型计算：判断中间段相对于两侧段的位置是否脱节
         // 公式：IF(AVERAGE(中间段)<AVERAGE(两侧段), MIN(中间段)-MAX(两侧段), MAX(中间段)-MIN(两侧段))
@@ -2322,6 +2184,59 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         if (prop != null)
         {
             prop.SetValue(entity, value);
+        }
+    }
+
+    private async Task TryInsertLaminationFactorLogAsync(
+        IntermediateDataEntity entity,
+        decimal length,
+        decimal density,
+        bool hasInputs,
+        decimal? divisor)
+    {
+        try
+        {
+            var errorType = hasInputs
+                ? divisor.HasValue
+                    ? divisor.Value > 0
+                        ? "INFO"
+                        : "INVALID_DIVISOR"
+                    : "INVALID_DIVISOR"
+                : "SKIP";
+
+            string FormatDecimal(decimal? value) =>
+                value.HasValue
+                    ? value.Value.ToString(CultureInfo.InvariantCulture)
+                    : "null";
+
+            var detail =
+                "Formula=[CoilWeight] / ([ProductLength] * [Width] * [AvgThickness] * [ProductDensity]); "
+                + $"CoilWeight={FormatDecimal(entity.CoilWeight)}; "
+                + $"ProductLength={length.ToString(CultureInfo.InvariantCulture)}; "
+                + $"Width={FormatDecimal(entity.Width)}; "
+                + $"AvgThickness={FormatDecimal(entity.AvgThickness)}; "
+                + $"ProductDensity={density.ToString(CultureInfo.InvariantCulture)}; "
+                + $"LengthCm={(length * 100).ToString(CultureInfo.InvariantCulture)}; "
+                + $"Divisor={FormatDecimal(divisor)}; "
+                + $"Result={FormatDecimal(entity.LaminationFactor)}";
+
+            var log = new IntermediateDataFormulaCalcLogEntity
+            {
+                BatchId = entity.BatchId,
+                IntermediateDataId = entity.Id,
+                ColumnName = "LaminationFactor",
+                FormulaName = "叠片系数",
+                FormulaType = "CALC",
+                ErrorType = errorType,
+                ErrorMessage = "叠片系数计算日志",
+                ErrorDetail = detail,
+            };
+
+            await _calcLogRepository.InsertAsync(log);
+        }
+        catch
+        {
+            // 忽略日志写入异常，避免影响主流程
         }
     }
 

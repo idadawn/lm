@@ -1,5 +1,12 @@
 {
     "AppSettings": {
         "InjectMiniProfiler": true
+    },
+    "Lab": {
+        "Formula": {
+            "EnablePrecisionAdjustment": false,
+            "DefaultPrecision": 6,
+            "MaxPrecision": 6
+        }
     }
 }

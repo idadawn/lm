@@ -24,13 +24,6 @@ public interface IIntermediateDataService
     Task<IntermediateDataInfoOutput> GetInfo(string id);
 
     /// <summary>
-    /// 从原始数据生成中间数据.
-    /// </summary>
-    /// <param name="input">生成条件</param>
-    /// <returns>生成结果</returns>
-    Task<IntermediateDataGenerateOutput> Generate(IntermediateDataGenerateInput input);
-
-    /// <summary>
     /// 更新性能数据.
     /// </summary>
     /// <param name="input">性能数据</param>

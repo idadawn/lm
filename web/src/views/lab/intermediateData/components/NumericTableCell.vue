@@ -12,28 +12,35 @@
 </template>
 
 <script lang="ts" setup>
-  import { computed } from 'vue';
+  import { computed, inject } from 'vue';
+  import { getFieldPrecision } from '/@/composables/useFormulaPrecision';
 
   const props = defineProps<{
     value: string | number | null | undefined;
+    fieldName?: string;
   }>();
 
   const numbers = computed(() => {
     if (!props.value) return [];
-    
+
     // 将值转换为字符串
     const str = String(props.value).trim();
     if (!str) return [];
-    
+
     // 按空格分割
     const parts = str.split(/\s+/).filter(p => p);
-    
+
+    // 获取字段精度
+    const precision = props.fieldName
+      ? getFieldPrecision(props.fieldName)
+      : 2; // 默认2位小数
+
     // 尝试转换为数字并格式化
     return parts.map(part => {
       const num = parseFloat(part);
       if (isNaN(num)) return part; // 如果不是数字，返回原值
-      // 保留2位小数
-      return num.toFixed(2);
+      // 使用公式配置的精度
+      return num.toFixed(precision);
     });
   });
 </script>

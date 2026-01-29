@@ -1,10 +1,12 @@
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Poxiao.DependencyInjection;
 using Poxiao.Lab.Entity;
+using Poxiao.Lab.Entity.Config;
 using Poxiao.Lab.Entity.Dto.IntermediateData;
 using Poxiao.Lab.Entity.Dto.IntermediateDataFormula;
 using Poxiao.Lab.Entity.Enums;
@@ -34,13 +36,15 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
     private readonly ISqlSugarRepository<IntermediateDataFormulaCalcLogEntity> _calcLogRepository;
     private readonly IIntermediateDataFormulaService _formulaService;
     private readonly IFormulaParser _formulaParser;
+    private readonly LabOptions _labOptions;
 
     public IntermediateDataFormulaBatchCalculator(
         ISqlSugarRepository<IntermediateDataEntity> intermediateRepository,
         ISqlSugarRepository<UnitDefinitionEntity> unitRepository,
         ISqlSugarRepository<IntermediateDataFormulaCalcLogEntity> calcLogRepository,
         IIntermediateDataFormulaService formulaService,
-        IFormulaParser formulaParser
+        IFormulaParser formulaParser,
+        IOptions<LabOptions> labOptions
     )
     {
         _intermediateRepository = intermediateRepository;
@@ -48,6 +52,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         _calcLogRepository = calcLogRepository;
         _formulaService = formulaService;
         _formulaParser = formulaParser;
+        _labOptions = labOptions?.Value ?? new LabOptions();
     }
 
     public async Task<FormulaCalculationResult> CalculateByBatchAsync(
@@ -192,8 +197,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
                     Interlocked.Increment(ref failedCount);
 
                     var detail = JsonConvert.SerializeObject(
-                        entityErrors.Select(err => new
-                        {
+                        entityErrors.Select(err => new {
                             err.ColumnName,
                             err.FormulaType,
                             err.ErrorType,
@@ -1031,37 +1035,51 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         return true;
     }
 
+    /// <summary>
+    /// Calculates the effective precision to use for a formula based on configuration settings, formula properties, and
+    /// unit definitions.
+    /// </summary>
+    /// <remarks>If precision adjustment is not enabled in the configuration, the method returns the maximum allowed
+    /// precision. The method checks for precision in the following order: the formula's own precision, the precision
+    /// associated with the formula's unit name, the precision defined in the global unit map, and finally the default
+    /// precision from configuration if specified.</remarks>
+    /// <param name="formula">The formula for which to determine the precision. May specify its own precision or reference a unit whose precision
+    /// should be used.</param>
+    /// <param name="unitPrecisions">A dictionary that maps unit names to their associated precision information. Used to look up precision when not
+    /// specified directly by the formula.</param>
+    /// <param name="unitMap">A dictionary that maps unit identifiers to their definitions, which may include precision information if not
+    /// available elsewhere.</param>
+    /// <returns>The effective precision as an integer, limited by the maximum allowed precision, or null if no precision can be
+    /// determined.</returns>
     private int? GetPrecision(
-        IntermediateDataFormulaDto formula,
-        Dictionary<string, UnitPrecisionInfo> unitPrecisions,
-        Dictionary<string, UnitDefinitionEntity> unitMap
-    )
+       IntermediateDataFormulaDto formula,
+       Dictionary<string, UnitPrecisionInfo> unitPrecisions,
+       Dictionary<string, UnitDefinitionEntity> unitMap)
     {
-        if (formula.Precision.HasValue)
-        {
-            return formula.Precision;
-        }
+        var config = _labOptions?.Formula;
+        var maxPrecision = config?.MaxPrecision ?? 6;
 
-        if (
-            unitPrecisions != null
-            && unitPrecisions.TryGetValue(formula.ColumnName, out var info)
-            && info?.DecimalPlaces != null
-        )
-        {
-            return info.DecimalPlaces;
-        }
+        // 如果未启用调整，直接返回最大值
+        if (config?.EnablePrecisionAdjustment != true) return maxPrecision;
 
-        if (
-            !string.IsNullOrWhiteSpace(formula.UnitId)
-            && unitMap.TryGetValue(formula.UnitId, out var unit)
-        )
-        {
-            return unit.Precision;
-        }
+        // 链式回退查找：1. 公式定义 -> 2. 这里的单位精度 -> 3. 全局单位定义 -> 4. 默认配置
+        int? rawPrecision = formula.Precision
+            ?? unitPrecisions?.GetValueOrDefault(formula.ColumnName)?.DecimalPlaces
+            ?? (string.IsNullOrWhiteSpace(formula.UnitId) ? null : unitMap?.GetValueOrDefault(formula.UnitId)?.Precision)
+            ?? (config?.DefaultPrecision > 0 ? config.DefaultPrecision : null);
 
-        return null;
+        // 应用最大精度限制 (Math.Min 不支持 int?, 所以需要处理下)
+        return rawPrecision.HasValue ? Math.Min(rawPrecision.Value, maxPrecision) : null;
     }
 
+    /// <summary>
+    /// Normalizes the unit precision dictionary to use case-insensitive string comparison for unit keys.
+    /// </summary>
+    /// <param name="unitPrecisions">A dictionary that maps unit names to their associated precision information. The dictionary's key comparison may
+    /// be case-sensitive or case-insensitive.</param>
+    /// <returns>A dictionary containing the same unit precision information as the input, but with case-insensitive string
+    /// comparison for the keys. If the input is null or empty, returns an empty dictionary with case-insensitive
+    /// comparison. If the input already uses case-insensitive comparison, returns the original dictionary.</returns>
     private static Dictionary<string, UnitPrecisionInfo> NormalizeUnitPrecisions(
         Dictionary<string, UnitPrecisionInfo> unitPrecisions
     )

@@ -98,6 +98,36 @@
           </a-alert>
         </div>
 
+        <!-- 本次待导入数据 -->
+        <div class="review-table">
+          <div class="review-table-header">
+            <div class="review-table-title">本次待导入数据</div>
+            <div class="review-table-count">
+              <span>待导入：{{ pagination.total }} 条</span>
+            </div>
+          </div>
+          <a-table
+            :columns="previewTableColumns"
+            :data-source="previewTableData"
+            :loading="loadingReview"
+            :pagination="{
+              current: pagination.pageIndex,
+              pageSize: pagination.pageSize,
+              total: pagination.total,
+              showSizeChanger: true,
+            }"
+            :row-key="previewTableRowKey"
+            size="small"
+            bordered
+            @change="handleTableChange"
+          />
+          <a-empty
+            v-if="previewTableData.length === 0"
+            description="暂无可导入数据"
+            class="review-table-empty"
+          />
+        </div>
+
         <!-- 操作按钮 -->
         <div class="review-actions" style="margin-top: 24px; text-align: center">
           <a-space>
@@ -118,7 +148,8 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { message } from 'ant-design-vue';
 import { CheckCircleOutlined, ReloadOutlined } from '@ant-design/icons-vue';
-import { getImportReview, completeImport } from '/@/api/lab/rawData';
+import { getImportReview, getImportReviewData, completeImport } from '/@/api/lab/rawData';
+import { formatToDate } from '/@/utils/dateUtil';
 
 const props = defineProps({
   importSessionId: {
@@ -149,6 +180,27 @@ const importSuccess = ref(false);
 const importError = ref('');
 const reviewData = ref<any>({});
 const hasLoadedReview = ref(false); // 标记是否已加载过核对数据
+const reviewTableRows = ref<any[]>([]);
+const pagination = ref({
+  pageIndex: 1,
+  pageSize: 10,
+  total: 0,
+});
+
+const previewTableColumns = [
+  { title: '序号', dataIndex: 'index', width: 70 },
+  { title: '生产日期', dataIndex: 'prodDate', width: 120 },
+  { title: '炉号', dataIndex: 'furnaceNo', width: 160 },
+  { title: '产线', dataIndex: 'lineNo', width: 80 },
+  { title: '班次', dataIndex: 'shift', width: 80 },
+  { title: '宽度', dataIndex: 'width', width: 100 },
+  { title: '带材重量', dataIndex: 'coilWeight', width: 110 },
+  { title: '产品规格', dataIndex: 'productSpecName', width: 160 },
+  { title: '特征后缀', dataIndex: 'featureSuffix', width: 120 },
+];
+
+const previewTableRowKey = (record: any) => record?.id || record?.key || record?.index;
+
 
 // 统计数据
 const stats = computed(() => {
@@ -168,6 +220,78 @@ const stats = computed(() => {
   };
 });
 
+const previewTableData = computed(() => {
+  const rows = reviewTableRows.value || [];
+  if (!Array.isArray(rows)) return [];
+
+  return rows.map((row: any, idx: number) => {
+    const id = row.id || row.Id || row.rawDataId || row.RawDataId;
+    let prodDate =
+      row.prodDateStr ||
+      row.ProdDateStr ||
+      row.prodDate ||
+      row.ProdDate ||
+      row.detectionDateStr ||
+      row.DetectionDateStr ||
+      '';
+
+    // 如果是非常大的数字（时间戳），进行格式化
+    if (typeof prodDate === 'number' && prodDate > 0) {
+      prodDate = formatToDate(prodDate);
+    } else if (typeof prodDate === 'string' && /^\d{13}$/.test(prodDate)) {
+       // 字符串类型的毫秒时间戳
+       prodDate = formatToDate(parseInt(prodDate));
+    }
+
+    return {
+      key: id || idx,
+      id,
+      index: idx + 1,
+      prodDate,
+      furnaceNo: row.furnaceNo || row.FurnaceNo || '',
+      lineNo: row.lineNo || row.LineNo || '',
+      shift: row.shift || row.Shift || '',
+      width: row.width ?? row.Width ?? '',
+      coilWeight: row.coilWeight ?? row.CoilWeight ?? '',
+      productSpecName: row.productSpecName || row.ProductSpecName || '',
+      featureSuffix: row.featureSuffix || row.FeatureSuffix || '',
+    };
+  });
+});
+
+async function loadReviewTable(pageIndex = 1, pageSize = pagination.value.pageSize) {
+  if (!props.importSessionId || props.importSessionId.trim() === '') {
+    reviewTableRows.value = [];
+    pagination.value = { pageIndex: 1, pageSize, total: 0 };
+    return;
+  }
+
+  loadingReview.value = true;
+  try {
+    const pageData = await getImportReviewData(props.importSessionId, pageIndex, pageSize);
+    reviewTableRows.value = pageData.items || [];
+    pagination.value = {
+      pageIndex: pageData.pageIndex || pageIndex,
+      pageSize: pageData.pageSize || pageSize,
+      total: pageData.total || 0,
+    };
+  } catch (error: any) {
+    reviewTableRows.value = [];
+    pagination.value = { pageIndex: 1, pageSize, total: 0 };
+    const errorMsg = error.message || error.msg || '加载分页数据失败，请重试';
+    message.error(errorMsg);
+  } finally {
+    loadingReview.value = false;
+  }
+}
+
+function handleTableChange(paginationInfo: any) {
+  const nextPage = paginationInfo?.current || 1;
+  const nextSize = paginationInfo?.pageSize || pagination.value.pageSize;
+  loadReviewTable(nextPage, nextSize);
+}
+
+
 // 暴露给父组件的方法
 const canGoNext = computed(() => importSuccess.value);
 
@@ -183,11 +307,15 @@ async function loadReviewData() {
     loading.value = false;
     importError.value = '';
     importSuccess.value = true;
+    reviewTableRows.value = [];
+    pagination.value = { pageIndex: 1, pageSize: pagination.value.pageSize, total: 0 };
     return;
   }
   // 验证导入会话ID
   if (!props.importSessionId || props.importSessionId.trim() === '') {
     loading.value = false;
+    reviewTableRows.value = [];
+    pagination.value = { pageIndex: 1, pageSize: pagination.value.pageSize, total: 0 };
     return;
   }
 
@@ -228,6 +356,7 @@ async function loadReviewData() {
 
     // 标记为已加载
     hasLoadedReview.value = true;
+    await loadReviewTable(1, pagination.value.pageSize);
   } catch (error: any) {
     // 处理后端返回的特定错误消息
     const errorMsg = error.message || error.msg || '';
@@ -240,6 +369,8 @@ async function loadReviewData() {
     }
     message.error(importError.value);
     hasLoadedReview.value = false;
+    reviewTableRows.value = [];
+    pagination.value = { pageIndex: 1, pageSize: pagination.value.pageSize, total: 0 };
   } finally {
     loading.value = false;
     loadingReview.value = false;
@@ -279,7 +410,7 @@ async function handleStartImport() {
     } else if (errorMsg.includes('导入会话不存在')) {
       importError.value = '导入会话已过期，请重新开始导入流程';
     } else {
-      importError.value = errorMsg || '导入失败，请重试';
+      importError.value = '导入失败，请重试';
     }
     message.error(importError.value);
   } finally {
@@ -318,12 +449,16 @@ watch(
         importSuccess.value = false;
         hasLoadedReview.value = false;
         reviewData.value = {};
+        reviewTableRows.value = [];
+        pagination.value = { pageIndex: 1, pageSize: pagination.value.pageSize, total: 0 };
       } else {
         // 如果变为新的ID，仅重置加载标记和数据
         hasLoadedReview.value = false;
         reviewData.value = {};
         importError.value = '';
         importSuccess.value = false;
+        reviewTableRows.value = [];
+        pagination.value = { pageIndex: 1, pageSize: pagination.value.pageSize, total: 0 };
       }
     }
   },
@@ -353,6 +488,8 @@ function triggerLoad() {
     loading.value = false;
     importError.value = '';
     importSuccess.value = true;
+    reviewTableRows.value = [];
+    pagination.value = { pageIndex: 1, pageSize: pagination.value.pageSize, total: 0 };
     return;
   }
   if (props.importSessionId && props.importSessionId.trim() !== '' && !hasLoadedReview.value) {
@@ -417,6 +554,33 @@ defineExpose({
 }
 
 .error-alert {
+  margin-top: 16px;
+}
+
+.review-table {
+  margin-top: 24px;
+}
+
+.review-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.review-table-title {
+  font-weight: 600;
+  color: #262626;
+}
+
+.review-table-count {
+  display: flex;
+  gap: 12px;
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+.review-table-empty {
   margin-top: 16px;
 }
 </style>

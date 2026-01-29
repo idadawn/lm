@@ -153,3 +153,14 @@ public class RawDataReviewOutput
     public List<string> Errors { get; set; }
     public List<RawDataEntity> PreviewIntermediateData { get; set; } // 预览即将生成的中间数据（部分字段）
 }
+/// <summary>
+/// 导入核对列表（分页）
+/// </summary>
+public class RawDataReviewDataOutput
+{
+    public int PageIndex { get; set; }
+    public int PageSize { get; set; }
+    public int Total { get; set; }
+    public int ValidDataRows { get; set; }
+    public List<RawDataEntity> Items { get; set; }
+}

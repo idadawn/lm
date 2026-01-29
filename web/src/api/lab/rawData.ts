@@ -8,8 +8,11 @@ import type {
   Step2ProductSpecInput,
   Step3AppearanceFeatureInput,
   Step4ReviewOutput,
+  Step4ReviewDataPage,
   DataPreviewResult,
   ImportLog,
+  SimpleImportInput,
+  SimpleImportOutput,
 } from './types/rawData';
 import { getProductSpecList as getProductSpecListFromApi } from './productSpec';
 
@@ -234,10 +237,10 @@ export async function uploadAndParse(data: Step1UploadAndParseInput): Promise<St
 // 更新重复数据的选择结果（将未选择的数据标记为无效）
 export function updateDuplicateSelections(importSessionId: string, data: { rawDataId: string; isValidData: boolean }[]): Promise<void> {
   const url = Api.ImportSessionPrefix + '/' + importSessionId + '/duplicate-selections';
-  
-  return defHttp.put({ 
-    url: url, 
-    data: { items: data } 
+
+  return defHttp.put({
+    url: url,
+    data: { items: data }
   }).then((response) => {
     return response;
   }).catch((error) => {
@@ -293,7 +296,7 @@ export function updateAppearanceFeatureMatches(
 // 获取数据核对结果
 export async function getImportReview(importSessionId: string): Promise<Step4ReviewOutput> {
   const response = await defHttp.get({ url: Api.ImportSessionPrefix + '/' + importSessionId + '/review' });
-  
+
   // 处理后端返回的 PascalCase 字段名
   const data = response.data || response;
   return {
@@ -305,6 +308,27 @@ export async function getImportReview(importSessionId: string): Promise<Step4Rev
     matchStatus: data.matchStatus || data.MatchStatus || 'error',
     errors: data.errors || data.Errors || [],
     previewIntermediateData: data.previewIntermediateData || data.PreviewIntermediateData || [],
+  };
+}
+
+// 获取核对数据列表（分页）
+export async function getImportReviewData(
+  importSessionId: string,
+  pageIndex = 1,
+  pageSize = 10,
+): Promise<Step4ReviewDataPage> {
+  const response = await defHttp.get({
+    url: Api.ImportSessionPrefix + `/${importSessionId}/review-data`,
+    params: { pageIndex, pageSize },
+  });
+
+  const data = response.data || response;
+  return {
+    pageIndex: data.pageIndex ?? data.PageIndex ?? pageIndex,
+    pageSize: data.pageSize ?? data.PageSize ?? pageSize,
+    total: data.total ?? data.Total ?? 0,
+    validDataRows: data.validDataRows ?? data.ValidDataRows ?? 0,
+    items: data.items || data.Items || [],
   };
 }
 

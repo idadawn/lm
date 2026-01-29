@@ -103,6 +103,12 @@ public interface IIntermediateDataService
     /// </summary>
     /// <param name="entities">中间数据实体列表</param>
     Task ApplyCalcFormulasForEntitiesAsync(List<IntermediateDataEntity> entities);
+
+    /// <summary>
+    /// 根据批次ID批量计算公式.
+    /// </summary>
+    /// <param name="batchId">批次ID</param>
+    Task<FormulaCalculationResult> BatchCalculateFormulasByBatchIdAsync(string batchId);
 }
 
 /// <summary>

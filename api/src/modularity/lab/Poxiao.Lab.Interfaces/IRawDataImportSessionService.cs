@@ -81,6 +81,14 @@ public interface IRawDataImportSessionService
     /// <param name="sessionId"></param>
     /// <returns></returns>
     Task<RawDataReviewOutput> GetReviewData(string sessionId);
+    /// <summary>
+    /// 获取核对数据列表（分页）
+    /// </summary>
+    /// <param name="sessionId"></param>
+    /// <param name="pageIndex"></param>
+    /// <param name="pageSize"></param>
+    /// <returns></returns>
+    Task<RawDataReviewDataOutput> GetReviewDataPage(string sessionId, int pageIndex = 1, int pageSize = 10);
 
     /// <summary>
     /// 完成导入（第四步）

@@ -16,7 +16,7 @@ export interface ImportSession {
   creatorUserId?: string;
 }
 
-// 导入策略（已废弃，固定为'incremental'以保持向后兼容性）
+// 导入策略（已废弃，固定为 'incremental' 以保持向后兼容性）
 export type ImportStrategy = 'incremental' | 'full' | 'overwrite' | 'deduplicate';
 
 // 原始数据行（支持动态检测列）
@@ -34,16 +34,16 @@ export interface RawDataRow {
   breakCount?: number; // 断头数
   singleCoilWeight?: number; // 单卷重量
   detectionData?: Record<string, number | null>; // JSON格式：{"1": 1.23, "2": 2.45, ...}
-  detectionColumns?: string; // 检测列范围，如 "13"
+  detectionColumns?: string; // 检测列范围，如 "1-3"
   productSpecId?: string;
   productSpecCode?: string;
   productSpecName?: string;
-  featureSuffix?: string; // 特性汉字
+  featureSuffix?: string; // 特性后缀
   appearanceFeatureIds?: string[]; // 匹配后的特性ID列表
   appearanceFeatureCategoryIds?: string[]; // 匹配后的特性大类ID列表
   appearanceFeatureLevelIds?: string[]; // 匹配后的特性等级ID列表
   isValidData?: boolean; // 是否为有效数据
-  importStatus?: number; // 导入状态：0-成功，1-失败
+  importStatus?: number; // 导入状态：0-成功；1-失败
   importSessionId?: string;
   sourceFileId?: string;
   importMessage?: string; // 导入失败信息
@@ -83,7 +83,7 @@ export interface ParsedFurnaceNo {
   furnaceNoNum: string; // 炉号数字
   coilNo: string; // 卷号
   subcoilNo: string; // 分卷号
-  featureSuffix?: string; // 特性汉字
+  featureSuffix?: string; // 特性后缀
   isValid: boolean; // 是否有效
 }
 
@@ -151,9 +151,11 @@ export interface ValidationError {
 
 // 第一步：文件上传与解析
 export interface Step1UploadAndParseInput {
-  fileData?: string;  // Base64字符串（可选，文件已在创建会话时保存到后端）
+  fileData?: string;
+  // Base64字符串（可选，文件已在创建会话时保存到后端）
   fileName: string;
-  importSessionId: string;  // 必填，使用已存在的会话
+  importSessionId: string;
+  // 必填，使用已存在的会话
 }
 
 export interface Step1UploadAndParseOutput {
@@ -209,6 +211,15 @@ export interface ImportLog {
   creatorUserName?: string;
   lastRowsHash?: string; // 最后N行数据标识
   lastRowsCount?: number;
+}
+
+// 第四步：数据核对列表（分页）
+export interface Step4ReviewDataPage {
+  pageIndex: number;
+  pageSize: number;
+  total: number;
+  validDataRows: number;
+  items: RawDataRow[];
 }
 
 // 错误报告

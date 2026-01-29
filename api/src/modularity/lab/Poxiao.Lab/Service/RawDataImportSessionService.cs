@@ -8,12 +8,14 @@ using MiniExcelLibs;
 using Newtonsoft.Json;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
+using Poxiao.EventBus;
 using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Core.Manager.Files;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Security;
+using Poxiao.Lab.EventBus;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Config;
 using Poxiao.Lab.Entity.Dto.AppearanceFeature;
@@ -54,6 +56,7 @@ public class RawDataImportSessionService
     private readonly IRawDataValidationService _validationService;
     private readonly ISqlSugarRepository<ExcelImportTemplateEntity> _excelTemplateRepository;
     private readonly ICacheManager _cacheManager;
+    private readonly IEventPublisher _eventPublisher;
     private readonly ITenant _db;
 
     public RawDataImportSessionService(
@@ -69,6 +72,7 @@ public class RawDataImportSessionService
         IRawDataValidationService validationService,
         ISqlSugarRepository<ExcelImportTemplateEntity> excelTemplateRepository,
         ICacheManager cacheManager,
+        IEventPublisher eventPublisher,
         ISqlSugarClient context,
         IProductSpecService productSpecService,
         IAppearanceFeatureCategoryService featureCategoryService,
@@ -90,6 +94,7 @@ public class RawDataImportSessionService
         _validationService = validationService;
         _excelTemplateRepository = excelTemplateRepository;
         _cacheManager = cacheManager;
+        _eventPublisher = eventPublisher;
         _db = context.AsTenant();
     }
 
@@ -322,7 +327,6 @@ public class RawDataImportSessionService
                 };
             }
         }
-
         // 3. 将解析后的数据保存为JSON文件（不写入数据库，等待CompleteImport时才写入）
         // 为每条数据分配ID
         foreach (var entity in entities)
@@ -1302,6 +1306,71 @@ public class RawDataImportSessionService
             PreviewIntermediateData = previewData,
         };
     }
+    /// <inheritdoc />
+    [HttpGet("{sessionId}/review-data")]
+    public async Task<RawDataReviewDataOutput> GetReviewDataPage(
+        string sessionId,
+        int pageIndex = 1,
+        int pageSize = 10
+    )
+    {
+        if (pageIndex < 1)
+            pageIndex = 1;
+        if (pageSize <= 0)
+            pageSize = 10;
+        if (pageSize > 200)
+            pageSize = 200;
+
+        var session = await _sessionRepository.GetByIdAsync(sessionId);
+        if (session == null)
+            throw Oops.Oh("导入会话不存在");
+
+        // 如果会话已完成或取消，返回空列表
+        if (session.Status == "completed" || session.Status == "cancelled")
+        {
+            return new RawDataReviewDataOutput
+            {
+                PageIndex = pageIndex,
+                PageSize = pageSize,
+                Total = 0,
+                ValidDataRows = session.ValidDataRows ?? 0,
+                Items = new List<RawDataEntity>()
+            };
+        }
+
+        if (string.IsNullOrEmpty(session.ParsedDataFile))
+        {
+            return new RawDataReviewDataOutput
+            {
+                PageIndex = pageIndex,
+                PageSize = pageSize,
+                Total = 0,
+                ValidDataRows = 0,
+                Items = new List<RawDataEntity>()
+            };
+        }
+
+        var allEntities = await LoadParsedDataFromFile(sessionId);
+        var validEntities = allEntities
+            .Where(t => t.IsValidData == 1)
+            .OrderBy(t => t.SortCode)
+            .ToList();
+
+        var total = validEntities.Count;
+        var items = validEntities
+            .Skip((pageIndex - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return new RawDataReviewDataOutput
+        {
+            PageIndex = pageIndex,
+            PageSize = pageSize,
+            Total = total,
+            ValidDataRows = total,
+            Items = items
+        };
+    }
 
     /// <inheritdoc />
     [HttpPost("{sessionId}/complete")]
@@ -1337,169 +1406,10 @@ public class RawDataImportSessionService
             }
         }
 
-        // 1.0 处理重复的炉号（保留第一条，移除其他）
-        var validDataToCheck = validData
-            .Where(t =>
-                t.LineNo.HasValue
-                && !string.IsNullOrWhiteSpace(t.Shift)
-                && t.ProdDate.HasValue
-                && t.FurnaceBatchNo.HasValue
-            )
-            .ToList();
-
-        if (validDataToCheck.Count > 0)
-        {
-            // 按标准炉号分组，每组只保留第一条
-            var groupedByFurnaceNo = validDataToCheck
-                .GroupBy(t => GetFurnaceNo(t))
-                .Where(g => !string.IsNullOrEmpty(g.Key))
-                .ToList();
-
-            var keepIds = new HashSet<string>();
-            foreach (var group in groupedByFurnaceNo)
-            {
-                // 每组按SortCode排序，保留第一条（行号最小的）
-                var first = group.OrderBy(t => t.SortCode).First();
-                keepIds.Add(first.Id);
-            }
-
-            // 从有效数据中移除重复的炉号（保留第一条）
-            validData = validData
-                .Where(t =>
-                {
-                    if (
-                        !t.LineNo.HasValue
-                        || string.IsNullOrWhiteSpace(t.Shift)
-                        || !t.ProdDate.HasValue
-                        || !t.FurnaceBatchNo.HasValue
-                    )
-                    {
-                        return true; // 不符合规则的数据保留（会被后续逻辑处理）
-                    }
-                    // 如果是重复的炉号，只保留第一条
-                    return keepIds.Contains(t.Id);
-                })
-                .ToList();
-        }
-
-        var existingRawDataMap = new Dictionary<string, RawDataEntity>();
-
-        // 1.1 检查数据库中已存在的炉号，命中则更新原始数据
-        validDataToCheck = validData
-            .Where(t =>
-                t.LineNo.HasValue
-                && !string.IsNullOrWhiteSpace(t.Shift)
-                && t.ProdDate.HasValue
-                && t.FurnaceBatchNo.HasValue
-            )
-            .ToList();
-
-        if (validDataToCheck.Count > 0)
-        {
-            var standardFurnaceNos = validDataToCheck
-                .Select(t => GetFurnaceNo(t))
-                .Where(f => !string.IsNullOrEmpty(f))
-                .Distinct()
-                .ToList();
-
-            if (standardFurnaceNos.Count > 0)
-            {
-                var dbEntities = await _rawDataRepository
-                    .AsQueryable()
-                    .Where(e =>
-                        e.IsValidData == 1
-                        && e.LineNo.HasValue
-                        && !string.IsNullOrWhiteSpace(e.Shift)
-                        && e.ProdDate.HasValue
-                        && e.FurnaceBatchNo.HasValue
-                    )
-                    .OrderByDescending(e => e.LastModifyTime)
-                    .Select(e => new RawDataEntity
-                    {
-                        Id = e.Id,
-                        LineNo = e.LineNo,
-                        Shift = e.Shift,
-                        ProdDate = e.ProdDate,
-                        FurnaceBatchNo = e.FurnaceBatchNo,
-                        CoilNo = e.CoilNo,
-                        SubcoilNo = e.SubcoilNo,
-                        CreatorUserId = e.CreatorUserId,
-                        CreatorTime = e.CreatorTime,
-                        LastModifyTime = e.LastModifyTime,
-                        LastModifyUserId = e.LastModifyUserId,
-                    })
-                    .ToListAsync();
-
-                foreach (var entity in dbEntities)
-                {
-                    var standardFurnaceNo = BuildFurnaceNo(
-                        entity.LineNo,
-                        entity.Shift,
-                        entity.ProdDate,
-                        entity.FurnaceBatchNo,
-                        entity.CoilNo,
-                        entity.SubcoilNo
-                    );
-                    if (
-                        !string.IsNullOrEmpty(standardFurnaceNo)
-                        && standardFurnaceNos.Contains(standardFurnaceNo)
-                        && !existingRawDataMap.ContainsKey(standardFurnaceNo)
-                    )
-                    {
-                        existingRawDataMap[standardFurnaceNo] = entity;
-                    }
-                }
-            }
-        }
-
-        // 1.1 检查是否有未匹配产品规格的数据，尝试重新匹配
-        var unmatchedSpecData = validData
-            .Where(t => string.IsNullOrEmpty(t.ProductSpecId))
-            .ToList();
-        if (unmatchedSpecData.Count > 0)
-        {
-            var productSpecList = await _productSpecService.GetList(new ProductSpecListQuery());
-            var productSpecs = productSpecList.Cast<ProductSpecEntity>().ToList();
-            foreach (var entity in unmatchedSpecData)
-            {
-                var spec = IdentifyProductSpec(entity, productSpecs);
-                if (spec != null)
-                {
-                    entity.ProductSpecId = spec.Id;
-                    entity.ProductSpecCode = spec.Code;
-                    entity.ProductSpecName = spec.Name;
-                    entity.DetectionColumns = spec.DetectionColumns;
-                }
-            }
-        }
-
-        // 1.2 如果是更新模式，设置已有数据ID并准备更新列表
-        var updateRawDataList = new List<RawDataEntity>();
-        var updateIdSet = new HashSet<string>();
-        if (existingRawDataMap.Count > 0)
-        {
-            foreach (var entity in validData)
-            {
-                var standardFurnaceNo = GetFurnaceNo(entity);
-                if (string.IsNullOrEmpty(standardFurnaceNo))
-                    continue;
-
-                if (existingRawDataMap.TryGetValue(standardFurnaceNo, out var existing))
-                {
-                    entity.Id = existing.Id;
-                    entity.CreatorUserId = existing.CreatorUserId;
-                    entity.CreatorTime = existing.CreatorTime;
-                    entity.LastModifyUserId = _userManager.UserId;
-                    entity.LastModifyTime = DateTime.Now;
-                    updateRawDataList.Add(entity);
-                    updateIdSet.Add(entity.Id);
-                }
-            }
-        }
-
         // 2. 生成中间数据（在事务之前准备好所有数据）
         var specsList = await _productSpecService.GetList(new ProductSpecListQuery());
         var specs = specsList.Cast<ProductSpecEntity>().ToList();
+        var batchId = Guid.NewGuid().ToString();
         var intermediateEntities = new List<IntermediateDataEntity>();
 
         var dataBySpec = validData.GroupBy(t => t.ProductSpecId);
@@ -1563,92 +1473,23 @@ public class RawDataImportSessionService
                     layers,
                     length,
                     density,
-                    null
+                    null,
+                    batchId
                 );
                 intermediate.CreatorUserId = _userManager.UserId;
                 intermediateEntities.Add(intermediate);
             }
         }
 
-        var updateIntermediateList = new List<IntermediateDataEntity>();
-        var insertIntermediateList = new List<IntermediateDataEntity>();
-        var updateRawIds = updateRawDataList.Select(t => t.Id).Distinct().ToList();
-        var existingIntermediateMap = new Dictionary<string, IntermediateDataEntity>();
-
-        if (updateRawIds.Count > 0)
-        {
-            var existingIntermediates = await _sessionRepository
-                .AsSugarClient()
-                .Queryable<IntermediateDataEntity>()
-                .Where(t => updateRawIds.Contains(t.RawDataId) && t.DeleteMark == null)
-                .ToListAsync();
-
-            foreach (var intermediate in existingIntermediates)
-            {
-                if (!existingIntermediateMap.ContainsKey(intermediate.RawDataId))
-                {
-                    existingIntermediateMap[intermediate.RawDataId] = intermediate;
-                }
-            }
-        }
-
-        foreach (var intermediate in intermediateEntities)
-        {
-            if (existingIntermediateMap.TryGetValue(intermediate.RawDataId, out var existing))
-            {
-                intermediate.Id = existing.Id;
-                intermediate.CreatorUserId = existing.CreatorUserId;
-                intermediate.CreatorTime = existing.CreatorTime;
-                intermediate.Labeling = existing.Labeling;
-                intermediate.PerfSsPower = existing.PerfSsPower;
-                intermediate.PerfPsLoss = existing.PerfPsLoss;
-                intermediate.PerfHc = existing.PerfHc;
-                intermediate.PerfAfterSsPower = existing.PerfAfterSsPower;
-                intermediate.PerfAfterPsLoss = existing.PerfAfterPsLoss;
-                intermediate.PerfAfterHc = existing.PerfAfterHc;
-                intermediate.IsScratched = existing.IsScratched;
-                intermediate.PerfEditorId = existing.PerfEditorId;
-                intermediate.PerfEditorName = existing.PerfEditorName;
-                intermediate.PerfEditTime = existing.PerfEditTime;
-                intermediate.PerfEditor = existing.PerfEditor;
-                intermediate.MidSiLeft = existing.MidSiLeft;
-                intermediate.MidSiRight = existing.MidSiRight;
-                intermediate.MidBLeft = existing.MidBLeft;
-                intermediate.MidBRight = existing.MidBRight;
-                intermediate.LeftPatternWidth = existing.LeftPatternWidth;
-                intermediate.LeftPatternSpacing = existing.LeftPatternSpacing;
-                intermediate.MidPatternWidth = existing.MidPatternWidth;
-                intermediate.MidPatternSpacing = existing.MidPatternSpacing;
-                intermediate.RightPatternWidth = existing.RightPatternWidth;
-                intermediate.RightPatternSpacing = existing.RightPatternSpacing;
-                intermediate.AppearEditorId = existing.AppearEditorId;
-                intermediate.AppearEditorName = existing.AppearEditorName;
-                intermediate.AppearEditTime = existing.AppearEditTime;
-                intermediate.LastModifyUserId = _userManager.UserId;
-                intermediate.LastModifyTime = DateTime.Now;
-                updateIntermediateList.Add(intermediate);
-            }
-            else
-            {
-                insertIntermediateList.Add(intermediate);
-            }
-        }
-
-        var calcTargets = updateIntermediateList.Concat(insertIntermediateList).ToList();
-        await _intermediateDataService.ApplyCalcFormulasForEntitiesAsync(calcTargets);
-
         // 3. 使用事务确保原始数据和中间数据的导入操作原子性（同时成功或同时失败）
         try
         {
             _db.BeginTran();
-
-            // 3.1 将所有数据写入原始数据表（包括有效和无效数据）
-            var insertRawDataList = allData.Where(t => !updateIdSet.Contains(t.Id)).ToList();
-
-            if (insertRawDataList.Count > 0)
+            // 3.1 将有效数据写入原始数据表
+            if (validData.Count > 0)
             {
                 // 分批插入防止SQL太长
-                var batches = insertRawDataList.Chunk(1000);
+                var batches = validData.Chunk(1000);
                 foreach (var batch in batches)
                 {
                     await _sessionRepository
@@ -1657,40 +1498,14 @@ public class RawDataImportSessionService
                         .ExecuteCommandAsync();
                 }
             }
-
-            if (updateRawDataList.Count > 0)
-            {
-                var updateBatches = updateRawDataList.Chunk(200);
-                foreach (var batch in updateBatches)
-                {
-                    await _sessionRepository
-                        .AsSugarClient()
-                        .Updateable(batch.ToList())
-                        .ExecuteCommandAsync();
-                }
-            }
-
             // 3.2 将中间数据写入中间数据表
-            if (updateIntermediateList.Count > 0)
-            {
-                var updateBatches = updateIntermediateList.Chunk(200);
-                foreach (var batch in updateBatches)
-                {
-                    await _sessionRepository
-                        .AsSugarClient()
-                        .Updateable(batch.ToList())
-                        .ExecuteCommandAsync();
-                }
-            }
-
-            if (insertIntermediateList.Count > 0)
+            if (intermediateEntities.Count > 0)
             {
                 await _sessionRepository
                     .AsSugarClient()
-                    .Insertable(insertIntermediateList)
+                    .Insertable(intermediateEntities)
                     .ExecuteCommandAsync();
             }
-
             _db.CommitTran();
         }
         catch (Exception ex)
@@ -1701,7 +1516,19 @@ public class RawDataImportSessionService
             throw Oops.Oh($"导入失败，数据已回滚: {ex.Message}");
         }
 
-        // TODO: 触发判定(JUDGE)公式计算
+        if (intermediateEntities.Count > 0)
+        {
+            var tenantId = _userManager?.TenantId ?? "global";
+            await _eventPublisher.PublishAsync(
+                new IntermediateDataCalcEventSource(
+                    "IntermediateData:CalcByBatch",
+                    tenantId,
+                    sessionId,
+                    batchId,
+                    intermediateEntities.Count
+                )
+            );
+        }
 
         // 3. Mark Session Complete
         session.Status = "completed";

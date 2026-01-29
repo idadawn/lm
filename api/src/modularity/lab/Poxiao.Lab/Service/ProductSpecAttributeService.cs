@@ -1,7 +1,10 @@
+using System; // For TimeSpan
 using Microsoft.AspNetCore.Mvc;
 using Poxiao.DatabaseAccessor;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
+using Poxiao.Infrastructure.Core.Manager; // For IUserManager
+using Poxiao.Infrastructure.Manager; // For ICacheManager
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Interfaces;
 using SqlSugar;
@@ -16,22 +19,48 @@ namespace Poxiao.Lab.Service;
 public class ProductSpecAttributeService : IProductSpecAttributeService, IDynamicApiController, ITransient
 {
     private readonly ISqlSugarRepository<ProductSpecAttributeEntity> _repository;
+    private readonly ICacheManager _cacheManager;
+    private readonly IUserManager _userManager;
 
-    public ProductSpecAttributeService(ISqlSugarRepository<ProductSpecAttributeEntity> repository)
+    private const string CachePrefix = "LAB:ProductSpecAttribute";
+
+    public ProductSpecAttributeService(
+        ISqlSugarRepository<ProductSpecAttributeEntity> repository,
+        ICacheManager cacheManager,
+        IUserManager userManager
+    )
     {
         _repository = repository;
+        _cacheManager = cacheManager;
+        _userManager = userManager;
+    }
+
+    private string GetCacheKey(string suffix)
+    {
+        var tenantId = _userManager?.TenantId ?? "global";
+        return $"{CachePrefix}:{tenantId}:{suffix}";
     }
 
     /// <inheritdoc />
     [HttpGet("by-product-spec/{productSpecId}")]
     public async Task<List<ProductSpecAttributeEntity>> GetAttributesByProductSpecId(string productSpecId)
     {
-        return await _repository
+        var cacheKey = GetCacheKey($"list:{productSpecId}");
+        var cached = await _cacheManager.GetAsync<List<ProductSpecAttributeEntity>>(cacheKey);
+        if (cached != null)
+        {
+            return cached;
+        }
+
+        var result = await _repository
             .AsQueryable()
             .Where(t => t.ProductSpecId == productSpecId && t.DeleteMark == null)
             .OrderBy(t => t.SortCode)
             .OrderBy(t => t.CreatorTime)
             .ToListAsync();
+
+        await _cacheManager.SetAsync(cacheKey, result, TimeSpan.FromHours(6));
+        return result;
     }
 
     /// <inheritdoc />
@@ -68,6 +97,9 @@ public class ProductSpecAttributeService : IProductSpecAttributeService, IDynami
         {
             await _repository.InsertRangeAsync(attributes);
         }
+
+        // 清除缓存
+        await _cacheManager.DelAsync(GetCacheKey($"list:{productSpecId}"));
     }
 
     /// <inheritdoc />
@@ -86,5 +118,8 @@ public class ProductSpecAttributeService : IProductSpecAttributeService, IDynami
                 .UpdateColumns(it => new { it.DeleteMark, it.DeleteTime, it.DeleteUserId })
                 .ExecuteCommandAsync();
         }
+
+        // 清除缓存
+        await _cacheManager.DelAsync(GetCacheKey($"list:{productSpecId}"));
     }
 }

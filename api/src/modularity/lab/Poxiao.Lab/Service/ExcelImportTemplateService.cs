@@ -655,40 +655,35 @@ public class ExcelImportTemplateService
         {
             // 1. 获取模板配置
             ExcelTemplateConfig templateConfig = null;
-            var existingTemplate = await _repository.GetFirstAsync(t =>
-                t.TemplateCode == input.TemplateCode && (t.DeleteMark == 0 || t.DeleteMark == null)
-            );
+            var cacheKey = BuildTemplateCacheKey(input.TemplateCode);
+            
+            // 尝试从缓存获取
+            templateConfig = await _cacheManager.GetAsync<ExcelTemplateConfig>(cacheKey);
 
-            if (existingTemplate != null && !string.IsNullOrWhiteSpace(existingTemplate.ConfigJson))
+            if (templateConfig == null)
             {
-                try
-                {
-                    var json = existingTemplate.ConfigJson;
-                    // 处理双重序列化
-                    if (json.StartsWith("\"") && json.EndsWith("\""))
-                    {
-                        try
-                        {
-                            json = System.Text.Json.JsonSerializer.Deserialize<string>(json);
-                        }
-                        catch
-                        {
-                            // 忽略，当作普通JSON处理
-                        }
-                    }
+                var existingTemplate = await _repository.GetFirstAsync(t =>
+                    t.TemplateCode == input.TemplateCode && (t.DeleteMark == 0 || t.DeleteMark == null)
+                );
 
-                    templateConfig =
-                        System.Text.Json.JsonSerializer.Deserialize<ExcelTemplateConfig>(json);
-                }
-                catch (Exception ex)
+                if (existingTemplate != null && !string.IsNullOrWhiteSpace(existingTemplate.ConfigJson))
                 {
-                    errors.Add($"解析模板配置失败: {ex.Message}");
+                    templateConfig = TryParseTemplateConfig(existingTemplate.ConfigJson);
+                    if (templateConfig == null)
+                    {
+                         errors.Add($"解析模板配置失败");
+                    }
+                    else
+                    {
+                        // 写入缓存（6小时过期）
+                        await _cacheManager.SetAsync(cacheKey, templateConfig, TimeSpan.FromHours(6));
+                    }
                 }
             }
 
             if (templateConfig == null)
             {
-                errors.Add("未找到有效的模板配置");
+                if (errors.Count == 0) errors.Add("未找到有效的模板配置");
                 result.IsValid = false;
                 result.Errors = errors;
                 return result;

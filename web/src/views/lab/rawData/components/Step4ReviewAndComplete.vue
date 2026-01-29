@@ -330,6 +330,18 @@ watch(
   { immediate: true }
 );
 
+// 监听 noChanges 变化
+watch(
+  () => props.noChanges,
+  (newVal) => {
+    if (newVal) {
+      loading.value = false;
+      importSuccess.value = true;
+    }
+  },
+  { immediate: true }
+);
+
 // 组件挂载时不自动加载数据，等待父组件调用 triggerLoad
 onMounted(() => {
   // 移除自动加载逻辑

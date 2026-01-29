@@ -20,6 +20,10 @@ using Poxiao.Lab.Interfaces;
 using Poxiao.Systems.Entitys.Permission;
 using SqlSugar;
 
+using Poxiao.Lab.Entity.Dto.ProductSpec;
+using Poxiao.Lab.Entity.Dto.AppearanceFeature;
+using Poxiao.Lab.Entity.Dto.AppearanceFeatureLevel;
+
 namespace Poxiao.Lab.Service;
 
 /// <summary>
@@ -30,34 +34,31 @@ namespace Poxiao.Lab.Service;
 public class RawDataService : IRawDataService, IDynamicApiController, ITransient
 {
     private readonly ISqlSugarRepository<RawDataEntity> _repository;
-    private readonly ISqlSugarRepository<ProductSpecEntity> _productSpecRepository;
+    private readonly IProductSpecService _productSpecService;
     private readonly ISqlSugarRepository<RawDataImportLogEntity> _logRepository;
     private readonly IUserManager _userManager;
-    private readonly ISqlSugarRepository<AppearanceFeatureEntity> _appearanceFeatureRepository;
-    private readonly ISqlSugarRepository<AppearanceFeatureCategoryEntity> _categoryRepository;
-    private readonly ISqlSugarRepository<AppearanceFeatureLevelEntity> _featureLevelRepository;
+    private readonly IAppearanceFeatureService _appearanceFeatureService;
+    private readonly IAppearanceFeatureCategoryService _categoryService;
     private readonly AppearanceFeatureRuleMatcher _featureRuleMatcher;
     private readonly IAppearanceFeatureLevelService _featureLevelService;
 
     public RawDataService(
         ISqlSugarRepository<RawDataEntity> repository,
-        ISqlSugarRepository<ProductSpecEntity> productSpecRepository,
+        IProductSpecService productSpecService,
         ISqlSugarRepository<RawDataImportLogEntity> logRepository,
         IUserManager userManager,
-        ISqlSugarRepository<AppearanceFeatureEntity> appearanceFeatureRepository,
-        ISqlSugarRepository<AppearanceFeatureCategoryEntity> categoryRepository,
-        ISqlSugarRepository<AppearanceFeatureLevelEntity> featureLevelRepository,
+        IAppearanceFeatureService appearanceFeatureService,
+        IAppearanceFeatureCategoryService categoryService,
         AppearanceFeatureRuleMatcher featureRuleMatcher,
         IAppearanceFeatureLevelService featureLevelService
     )
     {
         _repository = repository;
-        _productSpecRepository = productSpecRepository;
+        _productSpecService = productSpecService;
         _logRepository = logRepository;
         _userManager = userManager;
-        _appearanceFeatureRepository = appearanceFeatureRepository;
-        _categoryRepository = categoryRepository;
-        _featureLevelRepository = featureLevelRepository;
+        _appearanceFeatureService = appearanceFeatureService;
+        _categoryService = categoryService;
         _featureRuleMatcher = featureRuleMatcher;
         _featureLevelService = featureLevelService;
     }
@@ -119,10 +120,10 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
             result.SkippedRows = skipRows;
 
             // 获取所有产品规格（用于规格识别）
-            var productSpecs = await _productSpecRepository
-                .AsQueryable()
-                .Where(t => t.DeleteMark == null)
-                .ToListAsync();
+            // 获取所有产品规格（用于规格识别）
+            var productSpecs = (await _productSpecService.GetList(new ProductSpecListQuery()))
+                .Cast<ProductSpecEntity>()
+                .ToList();
 
             // 处理数据行
             // 跳过表头(1行) + 上次导入的行数(skipRows)
@@ -435,10 +436,10 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
             var headerIndexes = GetHeaderIndexes(headerRow);
 
             // 获取所有产品规格（用于规格识别）
-            var productSpecs = await _productSpecRepository
-                .AsQueryable()
-                .Where(t => t.DeleteMark == null)
-                .ToListAsync();
+            // 获取所有产品规格（用于规格识别）
+            var productSpecs = (await _productSpecService.GetList(new ProductSpecListQuery()))
+                .Cast<ProductSpecEntity>()
+                .ToList();
 
             // 获取上次导入日志，确定跳过行数
             var lastLogList = await _logRepository
@@ -1492,29 +1493,21 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
         try
         {
             // 1. 获取所有外观特性
-            var allFeatures = await _appearanceFeatureRepository
-                .AsQueryable()
-                .Where(f =>
-                    f.DeleteMark == null
-                    && !string.IsNullOrEmpty(f.Name)
-                    && !string.IsNullOrEmpty(f.CategoryId)
-                )
-                .ToListAsync();
+            var allFeatures = (await _appearanceFeatureService.GetList(new AppearanceFeatureListQuery()))
+                .Cast<AppearanceFeatureEntity>()
+                .Where(f => !string.IsNullOrEmpty(f.Name) && !string.IsNullOrEmpty(f.CategoryId))
+                .ToList();
 
             if (allFeatures.Count == 0)
                 return new List<string>();
 
             // 2. 获取所有大类和等级，建立ID到名称的映射
-            var allCategories = await _categoryRepository
-                .AsQueryable()
-                .Where(c => c.DeleteMark == null)
-                .ToListAsync();
+            var allCategories = await _categoryService.GetAllCategories();
             var categoryIdToName = allCategories.ToDictionary(c => c.Id, c => c.Name);
 
-            var allFeatureLevels = await _featureLevelRepository
-                .AsQueryable()
-                .Where(s => s.DeleteMark == null)
-                .ToListAsync();
+            var allFeatureLevels = (await _featureLevelService.GetList(new AppearanceFeatureLevelListQuery()))
+                .Cast<AppearanceFeatureLevelEntity>()
+                .ToList();
             var featureLevelIdToName = allFeatureLevels.ToDictionary(s => s.Id, s => s.Name);
 
             // 3. 获取启用的严重程度等级列表（用于程度词识别）

@@ -24,6 +24,8 @@ using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
 using Poxiao.Systems.Interfaces.Common;
 using SqlSugar;
+using Poxiao.Lab.Entity.Dto.ProductSpec;
+using Poxiao.Lab.Entity.Dto.AppearanceFeatureLevel;
 
 namespace Poxiao.Lab.Service;
 
@@ -39,16 +41,15 @@ public class RawDataImportSessionService
 {
     private readonly ISqlSugarRepository<RawDataImportSessionEntity> _sessionRepository;
     private readonly ISqlSugarRepository<RawDataEntity> _rawDataRepository;
-    private readonly ISqlSugarRepository<ProductSpecEntity> _productSpecRepository;
+    private readonly IProductSpecService _productSpecService;
     private readonly ISqlSugarRepository<RawDataImportLogEntity> _logRepository;
-    private readonly ISqlSugarRepository<AppearanceFeatureEntity> _featureRepository;
-    private readonly ISqlSugarRepository<AppearanceFeatureCategoryEntity> _featureCategoryRepository;
-    private readonly ISqlSugarRepository<AppearanceFeatureLevelEntity> _featureLevelRepository;
+    private readonly IAppearanceFeatureCategoryService _featureCategoryService;
+    private readonly IAppearanceFeatureLevelService _featureLevelService;
     private readonly IFileService _fileService;
     private readonly IUserManager _userManager;
     private readonly IIntermediateDataService _intermediateDataService;
     private readonly IAppearanceFeatureService _appearanceFeatureService;
-    private readonly ISqlSugarRepository<ProductSpecAttributeEntity> _productSpecAttributeRepository;
+    private readonly IProductSpecAttributeService _productSpecAttributeService;
     private readonly IFileManager _fileManager;
     private readonly IRawDataValidationService _validationService;
     private readonly ISqlSugarRepository<ExcelImportTemplateEntity> _excelTemplateRepository;
@@ -58,35 +59,33 @@ public class RawDataImportSessionService
     public RawDataImportSessionService(
         ISqlSugarRepository<RawDataImportSessionEntity> sessionRepository,
         ISqlSugarRepository<RawDataEntity> rawDataRepository,
-        ISqlSugarRepository<ProductSpecEntity> productSpecRepository,
         ISqlSugarRepository<RawDataImportLogEntity> logRepository,
-        ISqlSugarRepository<AppearanceFeatureEntity> featureRepository,
-        ISqlSugarRepository<AppearanceFeatureCategoryEntity> featureCategoryRepository,
-        ISqlSugarRepository<AppearanceFeatureLevelEntity> featureLevelRepository,
         IFileService fileService,
         IUserManager userManager,
         IIntermediateDataService intermediateDataService,
         IAppearanceFeatureService appearanceFeatureService,
-        ISqlSugarRepository<ProductSpecAttributeEntity> productSpecAttributeRepository,
+        IProductSpecAttributeService productSpecAttributeService,
         IFileManager fileManager,
         IRawDataValidationService validationService,
         ISqlSugarRepository<ExcelImportTemplateEntity> excelTemplateRepository,
         ICacheManager cacheManager,
-        ISqlSugarClient context
+        ISqlSugarClient context,
+        IProductSpecService productSpecService,
+        IAppearanceFeatureCategoryService featureCategoryService,
+        IAppearanceFeatureLevelService featureLevelService
     )
     {
         _sessionRepository = sessionRepository;
         _rawDataRepository = rawDataRepository;
-        _productSpecRepository = productSpecRepository;
+        _productSpecService = productSpecService;
         _logRepository = logRepository;
-        _featureRepository = featureRepository;
-        _featureCategoryRepository = featureCategoryRepository;
-        _featureLevelRepository = featureLevelRepository;
+        _featureCategoryService = featureCategoryService;
+        _featureLevelService = featureLevelService;
         _fileService = fileService;
         _userManager = userManager;
         _intermediateDataService = intermediateDataService;
         _appearanceFeatureService = appearanceFeatureService;
-        _productSpecAttributeRepository = productSpecAttributeRepository;
+        _productSpecAttributeService = productSpecAttributeService;
         _fileManager = fileManager;
         _validationService = validationService;
         _excelTemplateRepository = excelTemplateRepository;
@@ -278,7 +277,9 @@ public class RawDataImportSessionService
         }
 
         var templateConfig = await LoadRawDataTemplateConfigAsync();
-        var entities = ParseExcel(fileBytes, input.FileName, skipRows, templateConfig);
+        var productSpecList = await _productSpecService.GetList(new ProductSpecListQuery());
+        var productSpecs = productSpecList.Cast<ProductSpecEntity>().ToList();
+        var entities = ParseExcel(fileBytes, input.FileName, skipRows, templateConfig, productSpecs);
 
         var fileHash = ComputeFileHashSha256(fileBytes);
         var fileMd5 = ComputeFileHashMd5(fileBytes);
@@ -726,6 +727,9 @@ public class RawDataImportSessionService
         // 从JSON文件加载数据
         var entities = await LoadParsedDataFromFile(sessionId);
         var entityDict = entities.ToDictionary(e => e.Id, e => e);
+        
+        var productSpecList = await _productSpecService.GetList(new ProductSpecListQuery());
+        var productSpecDict = productSpecList.Cast<ProductSpecEntity>().ToDictionary(s => s.Id);
 
         foreach (var item in input.Items)
         {
@@ -736,8 +740,7 @@ public class RawDataImportSessionService
 
             if (!string.IsNullOrEmpty(item.ProductSpecId))
             {
-                var spec = await _productSpecRepository.GetByIdAsync(item.ProductSpecId);
-                if (spec != null)
+                if (productSpecDict.TryGetValue(item.ProductSpecId, out var spec))
                 {
                     specCode = spec.Code;
                     specName = spec.Name;
@@ -887,13 +890,16 @@ public class RawDataImportSessionService
             )
             .ToList();
 
-        var features = await _featureRepository.GetListAsync();
+        var featuresList = await _appearanceFeatureService.GetList(new AppearanceFeatureListQuery());
+        var features = featuresList.Cast<AppearanceFeatureEntity>().ToList();
         var featureDict = features
             .Where(f => !string.IsNullOrEmpty(f.Id))
             .GroupBy(f => f.Id)
             .ToDictionary(g => g.Key, g => g.First());
-        var categories = await _featureCategoryRepository.GetListAsync();
-        var levels = await _featureLevelRepository.GetListAsync(l => l.DeleteMark == null);
+        var categoryList = await _featureCategoryService.GetAllCategories();
+        var categories = categoryList;
+        var levelList = await _featureLevelService.GetList(new AppearanceFeatureLevelListQuery());
+        var levels = levelList.Cast<AppearanceFeatureLevelEntity>().ToList();
         var categoryNameDict = categories.ToDictionary(c => c.Id, c => c.Name);
         var levelNameDict = levels.ToDictionary(l => l.Id, l => l.Name);
         var categoryNameToId = categories
@@ -1068,7 +1074,8 @@ public class RawDataImportSessionService
     {
         // 从JSON文件加载数据
         var entities = await LoadParsedDataFromFile(sessionId);
-        var features = await _featureRepository.GetListAsync();
+        var featuresList = await _appearanceFeatureService.GetList(new AppearanceFeatureListQuery());
+        var features = featuresList.Cast<AppearanceFeatureEntity>().ToList();
         var featureDict = features
             .Where(f => !string.IsNullOrEmpty(f.Id))
             .GroupBy(f => f.Id)
@@ -1451,7 +1458,8 @@ public class RawDataImportSessionService
             .ToList();
         if (unmatchedSpecData.Count > 0)
         {
-            var productSpecs = await _productSpecRepository.GetListAsync();
+            var productSpecList = await _productSpecService.GetList(new ProductSpecListQuery());
+            var productSpecs = productSpecList.Cast<ProductSpecEntity>().ToList();
             foreach (var entity in unmatchedSpecData)
             {
                 var spec = IdentifyProductSpec(entity, productSpecs);
@@ -1490,7 +1498,8 @@ public class RawDataImportSessionService
         }
 
         // 2. 生成中间数据（在事务之前准备好所有数据）
-        var specs = await _productSpecRepository.GetListAsync();
+        var specsList = await _productSpecService.GetList(new ProductSpecListQuery());
+        var specs = specsList.Cast<ProductSpecEntity>().ToList();
         var intermediateEntities = new List<IntermediateDataEntity>();
 
         var dataBySpec = validData.GroupBy(t => t.ProductSpecId);
@@ -1505,10 +1514,7 @@ public class RawDataImportSessionService
                 continue;
 
             // 查询产品扩展属性（长度、层数、密度）
-            var attributes = await _productSpecAttributeRepository
-                .AsQueryable()
-                .Where(t => t.ProductSpecId == spec.Id && t.DeleteMark == null)
-                .ToListAsync();
+            var attributes = await _productSpecAttributeService.GetAttributesByProductSpecId(spec.Id);
 
             decimal length = 4m;
             int layers = 20;
@@ -1916,7 +1922,8 @@ public class RawDataImportSessionService
         byte[] fileBytes,
         string fileName,
         int skipRows,
-        ExcelTemplateConfig templateConfig
+        ExcelTemplateConfig templateConfig,
+        List<ProductSpecEntity> productSpecs
     )
     {
         var entities = new List<RawDataEntity>();
@@ -1941,8 +1948,6 @@ public class RawDataImportSessionService
         // 读取数据行
         using var stream = new MemoryStream(fileBytes);
         var rows = stream.Query(useHeaderRow: true).Cast<IDictionary<string, object>>().ToList();
-
-        var productSpecs = _productSpecRepository.GetList();
 
         for (int i = 0; i < rows.Count; i++)
         {
@@ -3317,7 +3322,9 @@ public class RawDataImportSessionService
 
             // 2. 解析Excel数据
             var templateConfig = await LoadRawDataTemplateConfigAsync();
-            var entities = ParseExcel(fileBytes, input.FileName, skipRows: 0, templateConfig);
+            var productSpecList = await _productSpecService.GetList(new ProductSpecListQuery());
+            var productSpecs = productSpecList.Cast<ProductSpecEntity>().ToList();
+            var entities = ParseExcel(fileBytes, input.FileName, skipRows: 0, templateConfig, productSpecs);
             var validDataHash = ComputeValidDataHashFromRawRows(fileBytes, templateConfig);
             output.TotalRows = entities.Count;
 
@@ -3401,7 +3408,7 @@ public class RawDataImportSessionService
             // 6. 生成中间数据（如果需要）
             if (output.SuccessRows > 0)
             {
-                await GenerateIntermediateDataForEntities(entitiesToSave);
+                await GenerateIntermediateDataForEntities(entitiesToSave, productSpecs);
             }
 
             // 7. 创建导入日志
@@ -3433,13 +3440,11 @@ public class RawDataImportSessionService
     /// <summary>
     /// 为原始数据生成中间数据
     /// </summary>
-    private async Task GenerateIntermediateDataForEntities(List<RawDataEntity> entities)
+    private async Task GenerateIntermediateDataForEntities(List<RawDataEntity> entities, List<ProductSpecEntity> specs)
     {
         var validEntities = entities.Where(t => t.IsValidData == 1).ToList();
         if (validEntities.Count == 0)
             return;
-
-        var specs = await _productSpecRepository.GetListAsync();
         var intermediateEntities = new List<IntermediateDataEntity>();
 
         var dataBySpec = validEntities.GroupBy(t => t.ProductSpecId);
@@ -3454,10 +3459,7 @@ public class RawDataImportSessionService
                 continue;
 
             // 查询产品扩展属性
-            var attributes = await _productSpecAttributeRepository
-                .AsQueryable()
-                .Where(t => t.ProductSpecId == spec.Id && t.DeleteMark == null)
-                .ToListAsync();
+            var attributes = await _productSpecAttributeService.GetAttributesByProductSpecId(spec.Id);
 
             decimal length = 4m;
             int layers = 20;

@@ -129,12 +129,15 @@ public class SysCacheService : IDynamicApiController, ITransient
         // 清除IM中的webSocket
         var list = await GetOnlineUserList(tenantId);
 
-        var user = list.Find(it => it.tenantId == tenantId && it.userId == _userManager.UserId);
-        if (user != null)
+        if (list != null)
         {
-            _imReplyService.ForcedOffline(user.connectionId);
-            await DelOnlineUser(tenantId, user.userId);
-            await DelUserInfo(tenantId, user.userId);
+            var user = list.Find(it => it.tenantId == tenantId && it.userId == _userManager.UserId);
+            if (user != null)
+            {
+                _imReplyService.ForcedOffline(user.connectionId);
+                await DelOnlineUser(tenantId, user.userId);
+                await DelUserInfo(tenantId, user.userId);
+            }
         }
 
         var keys = _cacheManager.GetAllCacheKeys().FindAll(q => q.Contains(tenantId));
@@ -166,7 +169,9 @@ public class SysCacheService : IDynamicApiController, ITransient
     {
         var cacheKey = string.Format("{0}:{1}", CommonConst.CACHEKEYONLINEUSER, tenantId);
         var list = await _cacheManager.GetAsync<List<UserOnlineModel>>(cacheKey);
+        if (list == null) return true;
         var online = list.Find(it => it.userId == userId);
+        if (online == null) return true;
         list.RemoveAll((x) => x.connectionId == online.connectionId);
         return await _cacheManager.SetAsync(cacheKey, list);
     }

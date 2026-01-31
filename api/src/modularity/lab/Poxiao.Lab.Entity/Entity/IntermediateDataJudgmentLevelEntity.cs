@@ -70,4 +70,10 @@ public class IntermediateDataJudgmentLevelEntity : CLDEntityBase
     /// </summary>
     [SugarColumn(ColumnName = "F_DESCRIPTION", Length = 500, IsNullable = true)]
     public string Description { get; set; }
+
+    /// <summary>
+    /// 判定条件 (JSON格式，存储条件公式).
+    /// </summary>
+    [SugarColumn(ColumnName = "F_CONDITION", Length = 4000, IsNullable = true)]
+    public string Condition { get; set; }
 }

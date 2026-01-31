@@ -100,35 +100,95 @@
                   <span>计数 (COUNT)</span>
                 </div>
               </a-select-option>
-              <a-select-option value="DIFF_FIRST_LAST">
+              <a-select-option value="DIFF_FIRST">
                 <div class="operation-option">
-                  <Icon icon="ant-design:swap-outlined" :size="16" />
-                  <span>前后差值 (DIFF_FIRST_LAST)</span>
+                  <Icon icon="ant-design:step-backward-outlined" :size="16" />
+                  <span>前N列差值 (DIFF_FIRST)</span>
+                </div>
+              </a-select-option>
+              <a-select-option value="DIFF_LAST">
+                <div class="operation-option">
+                  <Icon icon="ant-design:step-forward-outlined" :size="16" />
+                  <span>后N列差值 (DIFF_LAST)</span>
+                </div>
+              </a-select-option>
+              <a-select-option value="CONDITIONAL_DIFF">
+                <div class="operation-option">
+                  <Icon icon="ant-design:branch-outlined" :size="16" />
+                  <span>条件差值 (IF判断)</span>
                 </div>
               </a-select-option>
             </a-select>
           </a-form-item>
 
-          <!-- 前后差值特殊配置 -->
-          <template v-if="rangeConfig.operation === 'DIFF_FIRST_LAST'">
-            <a-divider>差值计算配置</a-divider>
+          <!-- DIFF_FIRST 配置 -->
+          <template v-if="rangeConfig.operation === 'DIFF_FIRST'">
+            <a-divider>前N列差值配置</a-divider>
+            <a-form-item label="前几列">
+              <a-input-number v-model:value="rangeConfig.firstN" :min="2" :max="10" size="large" style="width: 100%" />
+              <div class="form-hint">计算第1列值 - 第N列值</div>
+            </a-form-item>
+            <a-alert message="前N列差值说明" description="计算范围内第1列与第N列的差值。例如: DIFF_FIRST(Detection, 2) = Detection1 - Detection2" type="info" show-icon />
+          </template>
+
+          <!-- DIFF_LAST 配置 -->
+          <template v-if="rangeConfig.operation === 'DIFF_LAST'">
+            <a-divider>后N列差值配置</a-divider>
+            <a-form-item label="后几列">
+              <a-input-number v-model:value="rangeConfig.lastN" :min="2" :max="10" size="large" style="width: 100%" />
+              <div class="form-hint">计算最后一列值 - 倒数第N列值</div>
+            </a-form-item>
+            <a-alert message="后N列差值说明" description="计算范围内最后N列的差值。例如: 若DetectionColumns=22, DIFF_LAST(Detection, 2) = Detection22 - Detection21" type="info" show-icon />
+          </template>
+
+          <!-- CONDITIONAL_DIFF 配置 -->
+          <template v-if="rangeConfig.operation === 'CONDITIONAL_DIFF'">
+            <a-divider>条件差值配置</a-divider>
+            <a-alert message="计算逻辑" type="info" show-icon style="margin-bottom: 16px">
+              <template #description>
+                <div>如果中间列平均值 &lt; 两边列平均值，则返回：中间列最小值 - 两边列最大值</div>
+                <div>否则返回：中间列最大值 - 两边列最小值</div>
+              </template>
+            </a-alert>
             <a-row :gutter="16">
               <a-col :span="12">
-                <a-form-item label="前N列">
-                  <a-input-number v-model:value="rangeConfig.firstN" :min="1" :max="10" size="large"
-                    style="width: 100%" />
-                  <div class="form-hint">计算前N列的平均值</div>
+                <a-form-item label="中间列起始">
+                  <a-input-number v-model:value="rangeConfig.middleStart" :min="1" :max="22" size="large" style="width: 100%" />
                 </a-form-item>
               </a-col>
               <a-col :span="12">
-                <a-form-item label="后N列">
-                  <a-input-number v-model:value="rangeConfig.lastN" :min="1" :max="10" size="large"
-                    style="width: 100%" />
-                  <div class="form-hint">计算后N列的平均值</div>
+                <a-form-item label="中间列结束">
+                  <a-input-number v-model:value="rangeConfig.middleEnd" :min="1" :max="22" size="large" style="width: 100%" />
                 </a-form-item>
               </a-col>
             </a-row>
-            <a-alert message="差值计算说明" description="系统会计算范围内前N列的平均值与后N列的平均值,然后返回两者差值的绝对值" type="info" show-icon />
+            <a-row :gutter="16">
+              <a-col :span="12">
+                <a-form-item label="左边列起始">
+                  <a-input-number v-model:value="rangeConfig.leftStart" :min="1" :max="22" size="large" style="width: 100%" />
+                </a-form-item>
+              </a-col>
+              <a-col :span="12">
+                <a-form-item label="左边列结束">
+                  <a-input-number v-model:value="rangeConfig.leftEnd" :min="1" :max="22" size="large" style="width: 100%" />
+                </a-form-item>
+              </a-col>
+            </a-row>
+            <a-row :gutter="16">
+              <a-col :span="12">
+                <a-form-item label="右边列起始">
+                  <a-input-number v-model:value="rangeConfig.rightStart" :min="1" :max="22" size="large" style="width: 100%" />
+                </a-form-item>
+              </a-col>
+              <a-col :span="12">
+                <a-form-item label="右边列结束">
+                  <a-select v-model:value="rangeConfig.rightEnd" size="large" style="width: 100%">
+                    <a-select-option value="$DetectionColumns">动态 ($DetectionColumns)</a-select-option>
+                    <a-select-option v-for="i in 22" :key="i" :value="String(i)">{{ i }}</a-select-option>
+                  </a-select>
+                </a-form-item>
+              </a-col>
+            </a-row>
           </template>
 
           <!-- 公式预览 -->
@@ -138,7 +198,27 @@
               <Icon icon="ant-design:code-outlined" :size="16" />
               <span>生成的公式</span>
             </div>
-            <div class="formula-code">{{ generatedFormula }}</div>
+            <!-- 条件差值使用格式化显示 -->
+            <template v-if="rangeConfig.operation === 'CONDITIONAL_DIFF'">
+              <pre class="formula-code-formatted">IF(
+  AVG({{ getMiddleRange() }}) &lt; AVG({{ getSidesRange() }}),
+  MIN({{ getMiddleRange() }}) - MAX({{ getSidesRange() }}),
+  MAX({{ getMiddleRange() }}) - MIN({{ getSidesRange() }})
+)</pre>
+              <div class="formula-logic-box">
+                <div class="logic-item">
+                  <span class="logic-label">中间列</span>
+                  <span class="logic-value">{{ rangeConfig.prefix }}{{ rangeConfig.middleStart }} ~ {{ rangeConfig.prefix }}{{ rangeConfig.middleEnd }}</span>
+                </div>
+                <div class="logic-item">
+                  <span class="logic-label">两边列</span>
+                  <span class="logic-value">{{ rangeConfig.prefix }}{{ rangeConfig.leftStart }} ~ {{ rangeConfig.prefix }}{{ rangeConfig.leftEnd }} 和 {{ rangeConfig.prefix }}{{ rangeConfig.rightStart }} ~ {{ rangeConfig.rightEnd === '$DetectionColumns' ? '动态列数' : rangeConfig.prefix + rangeConfig.rightEnd }}</span>
+                </div>
+              </div>
+            </template>
+            <template v-else>
+              <div class="formula-code">{{ generatedFormula }}</div>
+            </template>
             <div class="formula-desc">
               <Icon icon="ant-design:bulb-outlined" :size="14" />
               <span>{{ getFormulaDescription() }}</span>
@@ -221,6 +301,22 @@
                   @dragover.prevent @dragenter="dragOverIndex = index" @dragleave="dragOverIndex = null"
                   @click.stop="removeToken(index)">
                   {{ token.value }}
+                </span>
+
+                <!-- 条件差值公式使用特殊样式 -->
+                <span v-else-if="token.type === 'function' && token.label?.startsWith('条件差值')" 
+                  class="formula-block conditional-diff-block"
+                  :class="{ 'drag-over': dragOverIndex === index }" 
+                  draggable="true"
+                  @dragstart="handleTokenDragStart($event, index)" 
+                  @drop.stop="handleTokenDrop($event, index)"
+                  @dragover.prevent 
+                  @dragenter="dragOverIndex = index" 
+                  @dragleave="dragOverIndex = null"
+                  @click.stop="removeToken(index)">
+                  <span class="conditional-icon">📊</span>
+                  {{ token.label }}
+                  <span class="remove-x">×</span>
                 </span>
 
                 <span v-else-if="token.type === 'function'" class="formula-block function-block"
@@ -353,9 +449,16 @@ interface RangeConfig {
   prefix: 'Detection' | 'Thickness';
   start: number;
   end: string;  // 数字字符串或 "$DetectionColumns"
-  operation: 'AVG' | 'MAX' | 'MIN' | 'SUM' | 'COUNT' | 'DIFF_FIRST_LAST' | '';
+  operation: 'AVG' | 'MAX' | 'MIN' | 'SUM' | 'COUNT' | 'DIFF_FIRST' | 'DIFF_LAST' | 'CONDITIONAL_DIFF' | '';
   firstN: number;
   lastN: number;
+  // CONDITIONAL_DIFF 的配置
+  middleStart: number;
+  middleEnd: number;
+  leftStart: number;
+  leftEnd: number;
+  rightStart: number;
+  rightEnd: string;
 }
 
 const emit = defineEmits(['register', 'save']);
@@ -378,6 +481,13 @@ const rangeConfig = ref<RangeConfig>({
   operation: 'AVG',
   firstN: 2,
   lastN: 2,
+  // CONDITIONAL_DIFF 默认值
+  middleStart: 9,
+  middleEnd: 13,
+  leftStart: 4,
+  leftEnd: 8,
+  rightStart: 14,
+  rightEnd: '$DetectionColumns',
 });
 
 // --- 计算属性 ---
@@ -396,15 +506,25 @@ const formulaText = computed(() => {
 
 // 生成范围公式
 const generatedFormula = computed(() => {
-  const { operation, prefix, start, end, firstN, lastN } = rangeConfig.value;
+  const { operation, prefix, end, firstN, lastN, middleStart, middleEnd, leftStart, leftEnd, rightStart, rightEnd } = rangeConfig.value;
 
   if (!operation) return '';
 
-  if (operation === 'DIFF_FIRST_LAST') {
-    return `DIFF_FIRST_LAST(${firstN}, ${lastN}, RANGE(${prefix}, ${start}, ${end}))`;
+  if (operation === 'DIFF_FIRST') {
+    return `DIFF_FIRST(${prefix}, ${firstN}, ${end})`;
   }
 
-  return `${operation}(RANGE(${prefix}, ${start}, ${end}))`;
+  if (operation === 'DIFF_LAST') {
+    return `DIFF_LAST(${prefix}, ${lastN}, ${end})`;
+  }
+
+  if (operation === 'CONDITIONAL_DIFF') {
+    const middleRange = `RANGE(${prefix}, ${middleStart}, ${middleEnd})`;
+    const sidesRange = `RANGE(${prefix}, ${leftStart}, ${leftEnd}), RANGE(${prefix}, ${rightStart}, ${rightEnd})`;
+    return `IF(AVG(${middleRange}) < AVG(${sidesRange}), MIN(${middleRange}) - MAX(${sidesRange}), MAX(${middleRange}) - MIN(${sidesRange}))`;
+  }
+
+  return `${operation}(RANGE(${prefix}, 1, ${end}))`;
 });
 
 // 公式描述
@@ -418,8 +538,17 @@ function getFormulaDescription(): string {
     ? 'DetectionColumns字段的值'
     : `第${end}列`;
 
-  if (operation === 'DIFF_FIRST_LAST') {
-    return `计算${prefixName}第${start}列到${endDesc}范围内,前${firstN}列与后${lastN}列的平均值差值的绝对值`;
+  if (operation === 'DIFF_FIRST') {
+    return `计算${prefixName}前${firstN}列的差值（第1列值 - 第${firstN}列值）`;
+  }
+
+  if (operation === 'DIFF_LAST') {
+    return `计算${prefixName}后${lastN}列的差值（最后一列值 - 倒数第${lastN}列值）`;
+  }
+
+  if (operation === 'CONDITIONAL_DIFF') {
+    const { middleStart, middleEnd, leftStart, leftEnd, rightStart, rightEnd } = rangeConfig.value;
+    return `条件差值：比较${prefixName}${middleStart}-${middleEnd}列与${leftStart}-${leftEnd}、${rightStart}-${rightEnd}列的平均值，根据大小关系计算极值差`;
   }
 
   const opName = {
@@ -431,6 +560,18 @@ function getFormulaDescription(): string {
   }[operation] || operation;
 
   return `计算${prefixName}第${start}列到${endDesc}的${opName}`;
+}
+
+// 辅助函数：获取中间列范围字符串
+function getMiddleRange(): string {
+  const { prefix, middleStart, middleEnd } = rangeConfig.value;
+  return `RANGE(${prefix}, ${middleStart}, ${middleEnd})`;
+}
+
+// 辅助函数：获取两边列范围字符串
+function getSidesRange(): string {
+  const { prefix, leftStart, leftEnd, rightStart, rightEnd } = rangeConfig.value;
+  return `RANGE(${prefix}, ${leftStart}, ${leftEnd}), RANGE(${prefix}, ${rightStart}, ${rightEnd})`;
 }
 
 // --- 常量定义 ---
@@ -446,7 +587,8 @@ const functions = [
   { name: 'MIN', value: 'MIN(', type: 'function', description: '统计' },
   { name: 'IF', value: 'IF(', type: 'function', description: '逻辑' },
   { name: 'RANGE', value: 'RANGE(', type: 'function', description: '范围' },
-  { name: 'DIFF_FIRST_LAST', value: 'DIFF_FIRST_LAST(', type: 'function', description: '首尾差' },
+  { name: 'DIFF_FIRST', value: 'DIFF_FIRST(', type: 'function', description: '前N列差' },
+  { name: 'DIFF_LAST', value: 'DIFF_LAST(', type: 'function', description: '后N列差' },
 ];
 
 const templates: any[] = [];
@@ -503,6 +645,12 @@ const [registerModal, { setModalProps, closeModal }] = useModalInner(async (data
       operation: defaultOp,
       firstN: 2,
       lastN: 2,
+      middleStart: 9,
+      middleEnd: 13,
+      leftStart: 4,
+      leftEnd: 8,
+      rightStart: 14,
+      rightEnd: '$DetectionColumns',
     };
   }
 });
@@ -516,6 +664,15 @@ const loadAvailableFields = async () => {
 
 // --- 解析范围公式 ---
 function parseRangeFormula(formula: string) {
+  const defaultConfig = {
+    middleStart: 9,
+    middleEnd: 13,
+    leftStart: 4,
+    leftEnd: 8,
+    rightStart: 14,
+    rightEnd: '$DetectionColumns',
+  };
+
   // 匹配 OPERATION(RANGE(Prefix, Start, End))
   const match = formula.match(/^(\w+)\(RANGE\((\w+),\s*(\d+),\s*([\w$]+)\)\)$/);
 
@@ -527,21 +684,60 @@ function parseRangeFormula(formula: string) {
       end: match[4],
       firstN: 2,
       lastN: 2,
+      ...defaultConfig,
     };
     return;
   }
 
-  // 匹配 DIFF_FIRST_LAST(N1, N2, RANGE(Prefix, Start, End))
-  const diffMatch = formula.match(/^DIFF_FIRST_LAST\((\d+),\s*(\d+),\s*RANGE\((\w+),\s*(\d+),\s*([\w$]+)\)\)$/);
+  // 匹配 DIFF_FIRST(Prefix, Count, MaxColumns)
+  const diffFirstMatch = formula.match(/^DIFF_FIRST\((\w+),\s*(\d+),\s*([\w$]+)\)$/);
 
-  if (diffMatch) {
+  if (diffFirstMatch) {
     rangeConfig.value = {
-      operation: 'DIFF_FIRST_LAST',
-      firstN: parseInt(diffMatch[1]),
-      lastN: parseInt(diffMatch[2]),
-      prefix: diffMatch[3] as any,
-      start: parseInt(diffMatch[4]),
-      end: diffMatch[5],
+      operation: 'DIFF_FIRST',
+      prefix: diffFirstMatch[1] as any,
+      start: 1,
+      end: diffFirstMatch[3],
+      firstN: parseInt(diffFirstMatch[2]),
+      lastN: 2,
+      ...defaultConfig,
+    };
+    return;
+  }
+
+  // 匹配 DIFF_LAST(Prefix, Count, MaxColumns)
+  const diffLastMatch = formula.match(/^DIFF_LAST\((\w+),\s*(\d+),\s*([\w$]+)\)$/);
+
+  if (diffLastMatch) {
+    rangeConfig.value = {
+      operation: 'DIFF_LAST',
+      prefix: diffLastMatch[1] as any,
+      start: 1,
+      end: diffLastMatch[3],
+      firstN: 2,
+      lastN: parseInt(diffLastMatch[2]),
+      ...defaultConfig,
+    };
+    return;
+  }
+
+  // 匹配 IF(AVG(RANGE(...)) < AVG(RANGE(...), RANGE(...)), ...)
+  const conditionalMatch = formula.match(/^IF\(AVG\(RANGE\((\w+),\s*(\d+),\s*(\d+)\)\)\s*<\s*AVG\(RANGE\(\w+,\s*(\d+),\s*(\d+)\),\s*RANGE\(\w+,\s*(\d+),\s*([\w$]+)\)\)/);
+
+  if (conditionalMatch) {
+    rangeConfig.value = {
+      operation: 'CONDITIONAL_DIFF',
+      prefix: conditionalMatch[1] as any,
+      start: 1,
+      end: '$DetectionColumns',
+      firstN: 2,
+      lastN: 2,
+      middleStart: parseInt(conditionalMatch[2]),
+      middleEnd: parseInt(conditionalMatch[3]),
+      leftStart: parseInt(conditionalMatch[4]),
+      leftEnd: parseInt(conditionalMatch[5]),
+      rightStart: parseInt(conditionalMatch[6]),
+      rightEnd: conditionalMatch[7],
     };
     return;
   }
@@ -556,6 +752,32 @@ const parseFormulaToTokens = (formula: string) => {
   let buffer = formula;
 
   while (buffer.length > 0) {
+    // 匹配完整的 IF(AVG(RANGE...) < AVG(RANGE..., RANGE...), ...) 条件差值公式
+    const conditionalDiffMatch = buffer.match(/^IF\s*\(\s*AVG\s*\(\s*RANGE\s*\(\s*(\w+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)\s*\)\s*<\s*AVG\s*\(\s*RANGE\s*\(\s*\w+\s*,\s*(\d+)\s*,\s*(\d+)\s*\)\s*,\s*RANGE\s*\(\s*\w+\s*,\s*(\d+)\s*,\s*([\w$]+)\s*\)\s*\)\s*,\s*MIN\s*\([^)]+\)\s*-\s*MAX\s*\([^)]+\)\s*,\s*MAX\s*\([^)]+\)\s*-\s*MIN\s*\([^)]+\)\s*\)/i);
+    if (conditionalDiffMatch) {
+      const prefix = conditionalDiffMatch[1];
+      const middleStart = conditionalDiffMatch[2];
+      const middleEnd = conditionalDiffMatch[3];
+      const leftStart = conditionalDiffMatch[4];
+      const leftEnd = conditionalDiffMatch[5];
+      const rightStart = conditionalDiffMatch[6];
+      const rightEnd = conditionalDiffMatch[7];
+      const displayLabel = `条件差值: ${prefix}${middleStart}-${middleEnd} vs ${prefix}${leftStart}-${leftEnd}, ${prefix}${rightStart}-${rightEnd === '$DetectionColumns' ? '动态' : rightEnd}`;
+      result.push({ type: 'function', value: conditionalDiffMatch[0], label: displayLabel });
+      buffer = buffer.slice(conditionalDiffMatch[0].length);
+      continue;
+    }
+
+    // 匹配范围前缀名称（Detection, Thickness）作为字段
+    const rangePrefixMatch = buffer.match(/^(Detection|Thickness)\b/i);
+    if (rangePrefixMatch) {
+      const prefix = rangePrefixMatch[1];
+      const displayName = prefix.toLowerCase() === 'detection' ? '检测数据' : '带厚';
+      result.push({ type: 'field', value: prefix, label: `${displayName} (${prefix})` });
+      buffer = buffer.slice(prefix.length);
+      continue;
+    }
+
     const fieldMatch = buffer.match(/^\[(.*?)\]/);
     if (fieldMatch) {
       const full = fieldMatch[0];
@@ -731,7 +953,7 @@ function handleTokenDrop(event: DragEvent, targetIndex: number) {
         });
       } else if (data.type === 'range') {
         // 分解为多个token插入
-        const rangeTokens = [
+        const rangeTokens: Token[] = [
           { type: 'function', value: 'RANGE' },
           { type: 'operator', value: ' ( ' },
           { type: 'field', value: data.prefix, label: `${data.displayName} (${data.prefix})` },
@@ -1207,6 +1429,35 @@ function handleCancel() { closeModal(); }
   border: 1px solid #ddd;
 }
 
+// 条件差值公式块 - 使用特殊的渐变样式
+.conditional-diff-block {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  
+  .conditional-icon {
+    margin-right: 6px;
+    font-size: 14px;
+  }
+
+  .remove-x {
+    color: rgba(255, 255, 255, 0.8);
+    &:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.2);
+    }
+  }
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+    transform: translateY(-1px);
+  }
+}
+
 // 拖拽悬停样式
 .drag-over {
   position: relative;
@@ -1389,6 +1640,55 @@ function handleCancel() { closeModal(); }
 
   &::-webkit-scrollbar-track {
     background: transparent;
+  }
+}
+
+.formula-code-formatted {
+  background: #1e1e3f;
+  color: #a9b7c6;
+  padding: 16px;
+  border-radius: 8px;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-x: auto;
+  margin: 12px 0;
+  white-space: pre;
+}
+
+.formula-logic-box {
+  background: #f0f5ff;
+  border: 1px solid #d6e4ff;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 12px;
+
+  .logic-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 0;
+
+    &:not(:last-child) {
+      border-bottom: 1px dashed #d6e4ff;
+    }
+
+    .logic-label {
+      background: @color-primary;
+      color: #fff;
+      padding: 2px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      min-width: 60px;
+      text-align: center;
+    }
+
+    .logic-value {
+      color: #333;
+      font-size: 13px;
+      font-weight: 500;
+    }
   }
 }
 </style>

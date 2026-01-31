@@ -1,0 +1,27 @@
+-- =================================================================
+-- 中间数据判定等级表添加条件字段
+-- 用于存储判定条件的JSON格式公式
+-- =================================================================
+
+-- MySQL
+ALTER TABLE `LAB_INTERMEDIATE_DATA_JUDGMENT_LEVEL`
+ADD COLUMN `F_CONDITION` VARCHAR(4000) NULL COMMENT '判定条件(JSON格式)' AFTER `F_DESCRIPTION`;
+
+-- SQL Server
+-- ALTER TABLE [LAB_INTERMEDIATE_DATA_JUDGMENT_LEVEL]
+-- ADD [F_CONDITION] NVARCHAR(4000) NULL;
+
+-- Oracle
+-- ALTER TABLE LAB_INTERMEDIATE_DATA_JUDGMENT_LEVEL
+-- ADD (F_CONDITION VARCHAR2(4000));
+
+-- 添加注释
+-- MySQL
+-- ALTER TABLE `LAB_INTERMEDIATE_DATA_JUDGMENT_LEVEL`
+-- MODIFY COLUMN `F_CONDITION` VARCHAR(4000) NULL COMMENT '判定条件(JSON格式)';
+
+-- SQL Server
+-- EXEC sp_addextendedproperty 'MS_Description', '判定条件(JSON格式)', 'SCHEMA', 'dbo', 'TABLE', 'LAB_INTERMEDIATE_DATA_JUDGMENT_LEVEL', 'COLUMN', 'F_CONDITION';
+
+-- Oracle
+-- COMMENT ON COLUMN LAB_INTERMEDIATE_DATA_JUDGMENT_LEVEL.F_CONDITION IS '判定条件(JSON格式)';

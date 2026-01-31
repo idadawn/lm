@@ -251,8 +251,9 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         var enabled = all
             .Where(t => t.IsEnabled)
             .Where(t =>
-                string.IsNullOrWhiteSpace(t.TableName)
-                || t.TableName.Equals("INTERMEDIATE_DATA", StringComparison.OrdinalIgnoreCase)
+                (string.IsNullOrWhiteSpace(t.TableName)
+                || t.TableName.Equals("INTERMEDIATE_DATA", StringComparison.OrdinalIgnoreCase))
+                && t.SourceType == "SYSTEM" // 仅加载系统默认公式，自定义公式不参与计算
             )
             .OrderBy(t => t.SortOrder)
             .ThenBy(t => t.CreatorTime)

@@ -48,6 +48,14 @@ const lab: AppRouteModule = {
                 title: '公式维护',
             },
         },
+        {
+            path: 'intermediate-data-judgment-level',
+            name: 'IntermediateDataJudgmentLevel',
+            component: () => import('/@/views/lab/intermediateDataJudgmentLevel/index.vue'),
+            meta: {
+                title: '判定等级',
+            },
+        },
     ],
 };
 

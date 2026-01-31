@@ -77,13 +77,23 @@ const transform: AxiosTransform = {
       case ResultEnum.TOKEN_TIMEOUT:
       case ResultEnum.TOKEN_LOGGED:
       case ResultEnum.TOKEN_ERROR:
-        errorMsg = msg || t('sys.api.timeoutMessage');
+        errorMsg = msg;
+        if (isObject(msg)) {
+          errorMsg = JSON.stringify(msg);
+        }
+        if (!errorMsg) {
+          errorMsg = t('sys.api.timeoutMessage');
+        }
         const userStore = useUserStoreWithOut();
         userStore.setToken(undefined);
         userStore.logout(true);
         break;
       default:
-        errorMsg = msg || t('sys.api.apiRequestFailed');
+        if (msg) {
+          errorMsg = isObject(msg) ? JSON.stringify(msg) : msg;
+        } else {
+          errorMsg = t('sys.api.apiRequestFailed');
+        }
     }
 
     // errorMessageMode='modal'的时候会显示modal错误弹窗，而不是消息提示，用于一些比较重要的错误

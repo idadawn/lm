@@ -132,7 +132,14 @@ Use `docker-compose up -d` to start MySQL/Redis/Qdrant, and `docker-compose --pr
    - 四舍五入使用 `MidpointRounding.AwayFromZero`。
 
 ### C. 判定公式（JUDGE）解析与执行
-1. 规则结构  
+1. 判定等级与规则生成 (Workflow)
+   - **配置等级**：在“判定等级”页面维护等级（如：合格、不合格、特采），指定优先级与默认项（Default）。
+   - **生成规则**：点击“编辑判定”自动调用 `generate-judgment` 接口。
+     - 系统将 **默认等级** 的名称赋值给公式的 `DefaultValue`。
+     - 根据 **非默认等级** 按优先级生成 JSON 规则框架（ResultValue=等级名）；若重生成，系统会尝试按 ResultValue 匹配并保留已配置的条件逻辑。
+   - **完善条件**：生成框架后，用户需点击“编辑公式”为每个等级填充具体的逻辑条件（如 `Thickness >= 5`）。
+
+2. 规则结构 (Runtime)
    - `JUDGE` 公式是 JSON 数组：每条 rule 包含 `resultValue` 与 `rootGroup` 或 `groups`。  
    - 每个 group 支持 `logic`（AND/OR）、`conditions`、`subGroups`。
 2. 条件解析  

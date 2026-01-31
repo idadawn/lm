@@ -49,7 +49,7 @@ export const updateIntermediateDataFormula = (id: string, params: IntermediateDa
 export const updateFormula = (id: string, formula: string) => {
     return defHttp.put<IntermediateDataFormula>({
         url: `${Api.Base}/${id}/formula`,
-        params: { formula } // 会作为 JSON Body 发送: { "formula": "..." }
+        data: { formula } // 会作为 JSON Body 发送: { "formula": "..." }
     });
 };
 
@@ -89,4 +89,11 @@ export const getVariableSources = () => {
  */
 export const validateFormula = (params: FormulaValidationRequest) => {
     return defHttp.post<FormulaValidationResult>({ url: Api.Validate, params });
+};
+
+/**
+ * 生成判定规则
+ */
+export const generateJudgmentRule = (id: string) => {
+    return defHttp.post<void>({ url: `${Api.Base}/${id}/generate-judgment` });
 };

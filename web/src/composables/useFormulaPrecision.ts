@@ -11,12 +11,41 @@ let loadingPrecision = false;
 
 /**
  * 获取字段的精度配置
+ * 支持：1. 精确匹配 2. 不区分大小写匹配 3. 前缀匹配（如 detection1 匹配 Detection）
  */
 export function getFieldPrecision(fieldName: string): number {
   if (!precisionCache) {
     return 2; // 默认2位小数
   }
-  return precisionCache[fieldName] ?? precisionCache[fieldName.toLowerCase()] ?? 2;
+
+  // 1. 精确匹配
+  if (precisionCache[fieldName] !== undefined) {
+    return precisionCache[fieldName];
+  }
+
+  // 2. 不区分大小写匹配
+  const lowerField = fieldName.toLowerCase();
+  if (precisionCache[lowerField] !== undefined) {
+    return precisionCache[lowerField];
+  }
+
+  // 3. 前缀匹配 - 对于动态字段如 detection1, thickness1 等
+  // 提取前缀（去掉末尾的数字）
+  const prefixMatch = fieldName.match(/^([a-zA-Z]+)\d*$/);
+  if (prefixMatch) {
+    const prefix = prefixMatch[1];
+    // 尝试查找前缀的精度配置
+    if (precisionCache[prefix] !== undefined) {
+      return precisionCache[prefix];
+    }
+    // 尝试首字母大写的前缀（如 Detection, Thickness）
+    const capitalizedPrefix = prefix.charAt(0).toUpperCase() + prefix.slice(1).toLowerCase();
+    if (precisionCache[capitalizedPrefix] !== undefined) {
+      return precisionCache[capitalizedPrefix];
+    }
+  }
+
+  return 2; // 默认2位小数
 }
 
 /**
@@ -45,8 +74,17 @@ export async function loadFormulaPrecision(): Promise<FormulaPrecision> {
     if (result?.records) {
       // 根据公式配置中的precision字段建立映射
       result.records.forEach((item: any) => {
-        if (item.columnName && item.precision !== null && item.precision !== undefined) {
-          precisionCache![item.columnName] = item.precision;
+        if (item.precision !== null && item.precision !== undefined) {
+          // 存储 columnName 映射
+          if (item.columnName) {
+            precisionCache![item.columnName] = item.precision;
+            // 同时存储小写版本
+            precisionCache![item.columnName.toLowerCase()] = item.precision;
+          }
+          // 同时存储 displayName 映射（用于可能的字段名称匹配）
+          if (item.displayName) {
+            precisionCache![item.displayName] = item.precision;
+          }
         }
       });
     }

@@ -211,6 +211,7 @@ public class IntermediateDataJudgmentLevelService
         entity.IsStatistic = input.IsStatistic;
         entity.IsDefault = input.IsDefault;
         entity.Description = input.Description;
+        entity.Condition = input.Condition;
 
         if (input.IsDefault)
         {

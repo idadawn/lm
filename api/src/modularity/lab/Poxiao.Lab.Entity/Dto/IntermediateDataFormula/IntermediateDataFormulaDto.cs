@@ -14,6 +14,12 @@ public class IntermediateDataFormulaDto
     public string Id { get; set; }
 
     /// <summary>
+    /// 来源类型：SYSTEM-系统默认，CUSTOM-自定义.
+    /// </summary>
+    [JsonPropertyName("sourceType")]
+    public string SourceType { get; set; }
+
+    /// <summary>
     /// 表名（枚举：INTERMEDIATE_DATA）.
     /// </summary>
     [JsonPropertyName("tableName")]

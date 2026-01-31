@@ -18,7 +18,7 @@ namespace Poxiao.Lab.Service;
 /// </summary>
 [ApiDescriptionSettings(Tag = "Lab", Name = "intermediate-data-export", Order = 200)]
 [Route("api/lab/intermediate-data")]
-public class IntermediateDataExportService : IDynamicApiController, ITransient
+public partial class IntermediateDataExportService : IDynamicApiController, ITransient
 {
     private readonly ISqlSugarRepository<IntermediateDataEntity> _repository;
     private readonly ISqlSugarRepository<ProductSpecEntity> _productSpecRepository;

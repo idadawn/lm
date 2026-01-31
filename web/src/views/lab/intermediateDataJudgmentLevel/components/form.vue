@@ -32,6 +32,14 @@
       <a-form-item label="业务说明">
         <a-textarea v-model:value="formState.description" :rows="3" />
       </a-form-item>
+      <a-form-item label="判定条件">
+        <a-textarea 
+          v-model:value="formState.condition" 
+          :rows="5" 
+          placeholder='请输入判定条件(JSON格式)，例如：{"groups": [...]}'
+        />
+        <span class="text-xs text-gray-400">JSON格式存储判定条件公式</span>
+      </a-form-item>
     </a-form>
   </BasicModal>
 </template>
@@ -60,6 +68,7 @@
     isStatistic: false,
     isDefault: false,
     description: '',
+    condition: '',
   });
 
   const [registerModal, { setModalProps, closeModal }] = useModalInner(async (data) => {
@@ -77,6 +86,7 @@
         isStatistic: data.record.isStatistic,
         isDefault: data.record.isDefault,
         description: data.record.description,
+        condition: data.record.condition || '',
       };
     } else {
       rowId.value = '';
@@ -88,6 +98,7 @@
         isStatistic: false,
         isDefault: false,
         description: '',
+        condition: '',
       };
     }
   });

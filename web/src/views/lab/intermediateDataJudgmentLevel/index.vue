@@ -74,6 +74,8 @@
                   系统默认
                 </div>
                 <a-space v-else>
+                  <a-button type="link" size="small" @click="handleEditCondition(record)">条件</a-button>
+                  <a-divider type="vertical" />
                   <a-button type="link" size="small" @click="handleEdit(record)">编辑</a-button>
                   <a-popconfirm title="确认删除？" @confirm="handleDelete(record.id)">
                     <a-button type="link" size="small" danger>删除</a-button>
@@ -88,6 +90,7 @@
 
     <!-- 表单模态框 -->
     <LevelForm @register="registerModal" @success="handleSuccess" />
+    <LevelConditionModal @register="registerConditionModal" @success="handleSuccess" />
   </div>
 </template>
 
@@ -102,11 +105,13 @@
     updateIntermediateDataJudgmentLevelSort,
   } from '/@/api/lab/intermediateDataJudgmentLevel';
   import LevelForm from './components/form.vue';
+  import LevelConditionModal from './components/LevelConditionModal.vue';
   import { useSortable } from '/@/hooks/web/useSortable';
   import { nextTick } from 'vue';
 
   const { createMessage } = useMessage();
   const [registerModal, { openModal }] = useModal();
+  const [registerConditionModal, { openModal: openConditionModal }] = useModal();
 
   const loadingFormula = ref(false);
   const formulaList = ref<any[]>([]);
@@ -115,6 +120,25 @@
 
   const loadingLevel = ref(false);
   const levelList = ref<any[]>([]);
+  // ... (keep existing refs)
+
+  // ... (keep existing methods)
+
+  const handleEditCondition = (record: any) => {
+    openConditionModal(true, {
+      levelId: record.id,
+      formulaId: selectedFormulaId.value,
+      levelName: record.name,
+    });
+  };
+
+  const handleEdit = (record: any) => {
+    openModal(true, {
+      isUpdate: true,
+      record,
+      formulaId: selectedFormulaId.value,
+    });
+  };
 
   const columns = [
     { title: '优先级', dataIndex: 'priority', width: 80 },
@@ -160,6 +184,10 @@
     });
   };
 
+  import { useRoute } from 'vue-router';
+  
+  const route = useRoute();
+
   // 加载判定项目列表
   const loadFormulas = async () => {
     loadingFormula.value = true;
@@ -169,6 +197,16 @@
       // 过滤出 JUDGE 类型
       formulaList.value = list.filter((item: any) => item.formulaType === 'JUDGE');
       
+      // 优先使用路由参数选中
+      const queryId = route.query.formulaId as string;
+      if (queryId) {
+        const target = formulaList.value.find(item => item.id === queryId);
+        if (target) {
+          handleSelectFormula(target);
+          return;
+        }
+      }
+
       // 默认选中第一条
       if (formulaList.value.length > 0) {
         handleSelectFormula(formulaList.value[0]);
@@ -212,14 +250,6 @@
     });
   };
 
-  const handleEdit = (record: any) => {
-    openModal(true, {
-      isUpdate: true,
-      record,
-      formulaId: selectedFormulaId.value,
-    });
-  };
-
   const handleDelete = async (id: string) => {
     try {
       await deleteIntermediateDataJudgmentLevel(id);
@@ -239,3 +269,4 @@
     loadFormulas();
   });
 </script>
+

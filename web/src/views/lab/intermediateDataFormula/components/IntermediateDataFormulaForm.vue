@@ -5,9 +5,9 @@
     :title="getTitle"
     @ok="handleSubmit"
     @cancel="handleCancel"
-    :width="1200"
-    :minHeight="600"
-    :bodyStyle="{ height: 'calc(100vh - 200px)', padding: '16px' }">
+    :width="800"
+    :minHeight="300"
+    :bodyStyle="{ height: '550px', padding: '16px' }">
     <BasicForm @register="registerForm"></BasicForm>
     <FormulaBuilder @register="registerFormulaBuilderModal" @save="handleFormulaBuilderSave" />
   </BasicModal>
@@ -18,7 +18,7 @@ import { ref, computed, h, nextTick, watch } from 'vue';
 import { BasicForm, useForm } from '/@/components/Form';
 import { useMessage } from '/@/hooks/web/useMessage';
 import type { IntermediateDataFormula } from '/@/api/lab/types/intermediateDataFormula';
-import { validateFormula, updateIntermediateDataFormula, getAvailableColumns } from '/@/api/lab/intermediateDataFormula';
+import { validateFormula, updateIntermediateDataFormula, createIntermediateDataFormula, getAvailableColumns } from '/@/api/lab/intermediateDataFormula';
 import { getUnitById } from '/@/utils/lab/unit';
 import UnitSelect from '/@/components/Lab/UnitSelect.vue';
 import AdvancedJudgmentEditor from './AdvancedJudgmentEditor.vue';
@@ -33,6 +33,7 @@ const originalRecord = ref<IntermediateDataFormula | null>(null);
 const availableFields = ref<any[]>([]);
 const fieldsRefreshKey = ref(0); // 用于强制刷新表单
 const isFormReady = ref(false); // 跟踪表单是否已准备好
+const isUpdate = ref(true); // 是否为更新模式
 
 // 监听 availableFields 变化，确保表单能响应式更新
 watch(() => availableFields.value, async (newFields) => {
@@ -138,25 +139,24 @@ const [registerForm, { setFieldsValue, resetFields, validate, getFieldsValue, up
         ],
       },
       defaultValue: 'INTERMEDIATE_DATA',
-      ifShow: () => formMode.value === 'Attributes',
+      ifShow: false, // 始终隐藏，后端默认为 INTERMEDIATE_DATA
     },
     {
       field: 'columnName',
-      label: '中间数据表列',
+      label: '中间数据表列/变量名',
       component: 'Input',
+      dynamicDisabled: () => true, // 始终禁用，只用于展示
       componentProps: {
-        disabled: true,
+        placeholder: '系统自动生成',
       },
-      ifShow: () => formMode.value === 'Attributes',
+      ifShow: () => isUpdate.value && formMode.value === 'Attributes', // 只有在编辑模式下显示
     },
     {
       field: 'formulaName',
       label: '公式名称',
       component: 'Input',
-      componentProps: {
-        disabled: true,
-      },
       ifShow: () => formMode.value === 'Attributes',
+      rules: [{ required: true, message: '请输入公式名称' }],
     },
     // --- 属性 / 公式 通用字段 ---
     {
@@ -380,7 +380,7 @@ const [registerForm, { setFieldsValue, resetFields, validate, getFieldsValue, up
       rules: [{ required: true, trigger: 'change', message: '必填' }],
     },
   ],
-  labelWidth: 120,
+  labelWidth: 180,
   wrapperCol: { span: 18 },
   showActionButtonGroup: false,
 });
@@ -388,6 +388,7 @@ const [registerForm, { setFieldsValue, resetFields, validate, getFieldsValue, up
 const [registerModal, { setModalProps, closeModal }] = useModalInner(async (data) => {
   resetFields();
   setModalProps({ confirmLoading: false });
+  isUpdate.value = !!data?.isUpdate;
   recordId.value = data?.record?.id || '';
   formMode.value = data?.mode || 'Attributes';
   originalRecord.value = data?.record as IntermediateDataFormula | null;
@@ -399,7 +400,7 @@ const [registerModal, { setModalProps, closeModal }] = useModalInner(async (data
   // Refresh fields when modal opens
   refreshAvailableFields();
 
-  if (data?.record) {
+  if (isUpdate.value && data?.record) {
     const record = data.record as IntermediateDataFormula;
     // 计算默认值的回退值：CALC类型默认为'0'，JUDGE类型默认为空
     const formulaType = record.formulaType || 'CALC';
@@ -424,12 +425,25 @@ const [registerModal, { setModalProps, closeModal }] = useModalInner(async (data
       formula: record.formula,
       formulaLanguage: record.formulaLanguage || 'EXCEL',
     });
+  } else {
+    // 新增模式
+    setFieldsValue({
+        tableName: 'INTERMEDIATE_DATA',
+        formulaType: 'CALC',
+        formulaLanguage: 'EXCEL',
+        isEnabled: true,
+        sortOrder: 0,
+        defaultValue: '0'
+    });
   }
 });
 
 const { createMessage } = useMessage();
 
 const getTitle = computed(() => {
+  if (!isUpdate.value) {
+      return '新增公式';
+  }
   if (formMode.value === 'Attributes') {
     return '编辑属性';
   } else {
@@ -444,10 +458,16 @@ const handleSubmit = async () => {
     const values = await validate();
     setModalProps({ confirmLoading: true });
     
-    // sortOrder is now in values, no need to manually preserve
-    
-    await updateIntermediateDataFormula(recordId.value, values);
-    createMessage.success('更新成功');
+    if (isUpdate.value) {
+        await updateIntermediateDataFormula(recordId.value, values);
+        createMessage.success('更新成功');
+    } else {
+        // 自动生成 ColumnName
+        const timestamp = new Date().getTime();
+        values.columnName = `VAR_${timestamp}`; // 使用 VAR_ 前缀避免冲突
+        await createIntermediateDataFormula(values);
+        createMessage.success('创建成功');
+    }
 
     closeModal();
     emit('reload');

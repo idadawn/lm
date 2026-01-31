@@ -1,0 +1,1294 @@
+﻿<template>
+  <div class="advanced-judgment-editor">
+    <!-- 椤堕儴璇存槑 -->
+    <div class="intro-banner">
+      <div class="icon-wrapper">
+        <Icon icon="ant-design:apartment-outlined" :size="20" />
+      </div>
+      <div class="content">
+        <h3>楂樼骇鍒ゅ畾瑙勫垯閰嶇疆</h3>
+        <p>
+          绯荤粺鎸?span class="bold">浠庝笂鍒颁笅</span>鐨勯『搴忓尮閰嶈鍒欍€?          姣忔潯瑙勫垯鍐呯殑<span class="bold">鏉′欢缁勪箣闂存槸銆屼笖銆嶅叧绯?/span>,
+          鏉′欢缁勫唴閮ㄦ敮鎸佸祵濂楃殑銆屼笖/鎴栥€嶉€昏緫銆?        </p>
+      </div>
+      <div class="banner-actions">
+        <a-button size="small" @click="expandAllGroups">
+          <template #icon><Icon icon="ant-design:expand-alt-outlined" :size="14" /></template>
+          鍏ㄩ儴灞曞紑
+        </a-button>
+        <a-button size="small" @click="collapseAllGroups">
+          <template #icon><Icon icon="ant-design:compress-outlined" :size="14" /></template>
+          鍏ㄩ儴鎶樺彔
+        </a-button>
+      </div>
+    </div>
+
+    <!-- 瑙勫垯鍒楄〃 -->
+    <div class="rules-container">
+      <div v-for="(rule, ruleIdx) in rules" :key="rule.id" class="rule-wrapper">
+        <div class="flow-line"></div>
+        <div class="rule-number">{{ ruleIdx + 1 }}</div>
+
+        <div class="rule-card">
+          <!-- 瑙勫垯澶撮儴 -->
+          <div class="rule-header">
+            <div class="left">
+              <span class="when-label">褰撴弧瓒充互涓嬫潯浠舵椂,杩斿洖:</span>
+              <div class="result-input">
+                <Icon icon="ant-design:arrow-right-outlined" :size="16" class="arrow-icon" />
+                <input 
+                  v-model="rule.resultValue" 
+                  placeholder="渚嬪: A" 
+                  @input="emitChange"
+                  class="result-value-input"
+                />
+              </div>
+            </div>
+            <div class="right">
+              <a-button type="text" danger size="small" @click="removeRule(ruleIdx)">
+                <template #icon><Icon icon="ant-design:delete-outlined" /></template>
+                鍒犻櫎瑙勫垯
+              </a-button>
+            </div>
+          </div>
+
+          <!-- 鏉′欢缁勫尯鍩?-->
+          <div class="groups-area">
+            <div v-if="rule.groups.length > 0" class="groups-list">
+              <template v-for="(group, groupIdx) in rule.groups" :key="group.id">
+                <!-- 缁勯棿杩炴帴绗?-->
+                <div v-if="groupIdx > 0" class="group-connector">
+                  <div class="connector-line"></div>
+                  <span class="connector-label">涓?(AND)</span>
+                  <div class="connector-line"></div>
+                </div>
+
+                <!-- 鏉′欢缁勫崱鐗?-->
+                <div class="condition-group-card">
+                  <!-- 缁勫ご閮?-->
+                  <div class="group-header">
+                    <div class="group-title">
+                      <!-- 鎶樺彔鍥炬爣 - 鐐瑰嚮杩欓噷鎵嶆姌鍙?-->
+                      <span 
+                        class="collapse-icon"
+                        @click="toggleGroupCollapse(ruleIdx, groupIdx)"
+                      >
+                        <Icon 
+                          :icon="isGroupCollapsed(ruleIdx, groupIdx) ? 'ant-design:right-outlined' : 'ant-design:down-outlined'" 
+                          :size="12" 
+                        />
+                      </span>
+                      <!-- 鏉′欢缁勭储寮?- 鐐瑰嚮杩欓噷涔熷彲浠ユ姌鍙?-->
+                      <span 
+                        class="group-index"
+                        @click="toggleGroupCollapse(ruleIdx, groupIdx)"
+                      >
+                        鏉′欢缁?{{ groupIdx + 1 }}
+                      </span>
+                      <input 
+                        v-model="group.name" 
+                        class="group-name-input"
+                        placeholder="杈撳叆缁勫悕(鍙€?"
+                        @input="emitChange"
+                      />
+                      <!-- 鎶樺彔鏃舵樉绀烘憳瑕?- 鐐瑰嚮鎽樿涔熷彲浠ユ姌鍙?-->
+                      <span 
+                        v-if="isGroupCollapsed(ruleIdx, groupIdx)" 
+                        class="group-summary"
+                        @click="toggleGroupCollapse(ruleIdx, groupIdx)"
+                      >
+                        <a-tag :color="group.mode === 'simple' ? 'blue' : 'purple'" size="small">
+                          {{ group.mode === 'simple' ? '绠€鍗? : '宓屽' }}
+                        </a-tag>
+                        <span class="summary-text">
+                          {{ getGroupSummary(group) }}
+                        </span>
+                      </span>
+                    </div>
+                    <div class="group-actions">
+                      <a-tooltip title="灞曞紑/鎶樺彔">
+                        <a-button type="text" size="small" @click="toggleGroupCollapse(ruleIdx, groupIdx)">
+                          <template #icon>
+                            <Icon :icon="isGroupCollapsed(ruleIdx, groupIdx) ? 'ant-design:expand-alt-outlined' : 'ant-design:compress-outlined'" :size="14" />
+                          </template>
+                        </a-button>
+                      </a-tooltip>
+                      <a-button type="text" size="small" danger @click="removeGroup(ruleIdx, groupIdx)">
+                        <template #icon><Icon icon="ant-design:close-outlined" :size="14" /></template>
+                      </a-button>
+                    </div>
+                  </div>
+
+                  <!-- 鎶樺彔鍐呭鍖哄煙 -->
+                  <div v-show="!isGroupCollapsed(ruleIdx, groupIdx)" class="group-content">
+                  <!-- 妯″紡鍒囨崲 -->
+                  <div class="mode-selector">
+                    <span class="mode-label">鏉′欢妯″紡:</span>
+                    <a-radio-group 
+                      v-model:value="group.mode" 
+                      size="small"
+                      @change="onModeChange(ruleIdx, groupIdx)"
+                    >
+                      <a-radio value="simple">
+                        <span class="mode-option">
+                          <Icon icon="ant-design:unordered-list-outlined" :size="14" />
+                          绠€鍗曟潯浠?                        </span>
+                      </a-radio>
+                      <a-radio value="nested">
+                        <span class="mode-option">
+                          <Icon icon="ant-design:cluster-outlined" :size="14" />
+                          宓屽鏉′欢缁?                        </span>
+                      </a-radio>
+                    </a-radio-group>
+                    <a-tooltip>
+                      <template #title>
+                        <div>
+                          <p><b>绠€鍗曟潯浠?/b>:澶氫釜鏉′欢鐢ㄣ€屼笖銆嶆垨銆屾垨銆嶈繛鎺?/p>
+                          <p><b>宓屽鏉′欢缁?/b>:鏀寔 OR(AND(...), AND(...)) 杩欐牱鐨勫鏉傞€昏緫</p>
+                        </div>
+                      </template>
+                      <Icon icon="ant-design:question-circle-outlined" class="help-icon" />
+                    </a-tooltip>
+                  </div>
+
+                  <!-- 绠€鍗曟ā寮?-->
+                  <template v-if="group.mode === 'simple'">
+                    <div class="simple-mode">
+                      <!-- 閫昏緫閫夋嫨 -->
+                      <div class="logic-selector">
+                        <span class="logic-hint">鏉′欢涔嬮棿鐨勫叧绯?</span>
+                        <a-radio-group 
+                          v-model:value="group.logic" 
+                          size="small"
+                          button-style="solid"
+                          @change="emitChange"
+                        >
+                          <a-radio-button value="AND">鍏ㄩ儴婊¤冻 (涓?</a-radio-button>
+                          <a-radio-button value="OR">浠讳竴婊¤冻 (鎴?</a-radio-button>
+                        </a-radio-group>
+                      </div>
+
+                      <!-- 鏉′欢鍒楄〃 -->
+                      <div class="conditions-list">
+                        <div 
+                          v-if="group.conditions.length > 1" 
+                          :class="['logic-bar', group.logic.toLowerCase()]"
+                        >
+                          <span>{{ group.logic === 'AND' ? '涓? : '鎴? }}</span>
+                        </div>
+                        <div class="conditions-content">
+                          <ConditionRow
+                            v-for="(cond, condIdx) in group.conditions"
+                            :key="cond.id"
+                            :condition="cond"
+                            :field-options="fieldOptions"
+                            @update="updateCondition(ruleIdx, groupIdx, condIdx, $event)"
+                            @remove="removeCondition(ruleIdx, groupIdx, condIdx)"
+                            @open-formula-editor="handleOpenFormulaEditor"
+                          />
+                          <div v-if="group.conditions.length === 0" class="empty-hint">
+                            鏆傛棤鏉′欢
+                          </div>
+                        </div>
+                      </div>
+                      <a-button type="dashed" block size="small" @click="addCondition(ruleIdx, groupIdx)">
+                        <template #icon><Icon icon="ant-design:plus-outlined" /></template>
+                        娣诲姞鏉′欢
+                      </a-button>
+                    </div>
+                  </template>
+
+                  <!-- 宓屽妯″紡 -->
+                  <template v-else>
+                    <div class="nested-mode">
+                      <!-- 瀛愮粍涔嬮棿鐨勯€昏緫 -->
+                      <div class="logic-selector">
+                        <span class="logic-hint">瀛愭潯浠剁粍涔嬮棿鐨勫叧绯?</span>
+                        <a-radio-group 
+                          v-model:value="group.logic" 
+                          size="small"
+                          button-style="solid"
+                          @change="emitChange"
+                        >
+                          <a-radio-button value="AND">鍏ㄩ儴婊¤冻 (涓?</a-radio-button>
+                          <a-radio-button value="OR">浠讳竴婊¤冻 (鎴?</a-radio-button>
+                        </a-radio-group>
+                      </div>
+
+                      <!-- 瀛愭潯浠剁粍鍒楄〃 -->
+                      <div class="sub-groups-list">
+                        <div 
+                          v-if="group.subGroups.length > 1" 
+                          :class="['logic-bar', 'vertical', group.logic.toLowerCase()]"
+                        >
+                          <span>{{ group.logic === 'AND' ? '涓? : '鎴? }}</span>
+                        </div>
+                        <div class="sub-groups-content">
+                          <template v-for="(subGroup, subIdx) in group.subGroups" :key="subGroup.id">
+                            <!-- 瀛愮粍杩炴帴绗?-->
+                            <div v-if="subIdx > 0" class="sub-group-connector">
+                              <span :class="['connector-badge', group.logic.toLowerCase()]">
+                                {{ group.logic === 'AND' ? '涓? : '鎴? }}
+                              </span>
+                            </div>
+
+                            <!-- 瀛愭潯浠剁粍 -->
+                            <div class="sub-group-card">
+                              <div class="sub-group-header">
+                                <span class="sub-group-title">
+                                  <Icon icon="ant-design:block-outlined" :size="14" />
+                                  瀛愮粍 {{ String.fromCharCode(65 + subIdx) }}
+                                </span>
+                                <div class="sub-group-logic">
+                                  <span>缁勫唴:</span>
+                                  <a-select 
+                                    v-model:value="subGroup.logic" 
+                                    size="small"
+                                    style="width: 100px"
+                                    @change="emitChange"
+                                  >
+                                    <a-select-option value="AND">涓?(AND)</a-select-option>
+                                    <a-select-option value="OR">鎴?(OR)</a-select-option>
+                                  </a-select>
+                                </div>
+                                <a-button 
+                                  type="text" 
+                                  size="small" 
+                                  danger 
+                                  @click="removeSubGroup(ruleIdx, groupIdx, subIdx)"
+                                >
+                                  <template #icon><Icon icon="ant-design:close-outlined" :size="12" /></template>
+                                </a-button>
+                              </div>
+                              
+                              <div class="sub-group-conditions">
+                                <div 
+                                  v-if="subGroup.conditions.length > 1" 
+                                  :class="['logic-bar', 'small', subGroup.logic.toLowerCase()]"
+                                >
+                                  <span>{{ subGroup.logic === 'AND' ? '涓? : '鎴? }}</span>
+                                </div>
+                                <div class="conditions-content">
+                                  <ConditionRow
+                                    v-for="(cond, condIdx) in subGroup.conditions"
+                                    :key="cond.id"
+                                    :condition="cond"
+                                    :field-options="fieldOptions"
+                                    size="small"
+                                    @update="updateSubCondition(ruleIdx, groupIdx, subIdx, condIdx, $event)"
+                                    @remove="removeSubCondition(ruleIdx, groupIdx, subIdx, condIdx)"
+                                    @open-formula-editor="handleOpenFormulaEditor"
+                                  />
+                                  <div v-if="subGroup.conditions.length === 0" class="empty-hint small">
+                                    鏆傛棤鏉′欢
+                                  </div>
+                                </div>
+                              </div>
+                              <a-button 
+                                type="dashed" 
+                                block 
+                                size="small"
+                                @click="addSubCondition(ruleIdx, groupIdx, subIdx)"
+                              >
+                                <template #icon><Icon icon="ant-design:plus-outlined" /></template>
+                                娣诲姞鏉′欢
+                              </a-button>
+                            </div>
+                          </template>
+
+                          <div v-if="group.subGroups.length === 0" class="empty-hint">
+                            鏆傛棤瀛愭潯浠剁粍
+                          </div>
+                        </div>
+                      </div>
+                      <a-button type="dashed" block @click="addSubGroup(ruleIdx, groupIdx)">
+                        <template #icon><Icon icon="ant-design:plus-square-outlined" /></template>
+                        娣诲姞瀛愭潯浠剁粍
+                      </a-button>
+                    </div>
+                  </template>
+                  </div><!-- group-content 缁撴潫 -->
+                </div>
+              </template>
+            </div>
+
+            <!-- 绌鸿鍒欑姸鎬?-->
+            <div v-else class="empty-groups">
+              <Icon icon="ant-design:folder-open-outlined" :size="32" />
+              <p>杩樻病鏈夋坊鍔犳潯浠剁粍</p>
+            </div>
+
+            <a-button type="dashed" block class="add-group-btn" @click="addGroup(ruleIdx)">
+              <template #icon><Icon icon="ant-design:plus-square-outlined" /></template>
+              娣诲姞鏉′欢缁?            </a-button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 娣诲姞瑙勫垯鎸夐挳 -->
+      <div class="add-rule-wrapper">
+        <div class="flow-line"></div>
+        <a-button type="dashed" block size="large" class="add-rule-btn" @click="addRule">
+          <template #icon><Icon icon="ant-design:plus-outlined" /></template>
+          娣诲姞鍒ゅ畾瑙勫垯
+        </a-button>
+      </div>
+    </div>
+
+    <!-- 榛樿鍊?-->
+    <div class="default-section">
+      <div class="flow-line-short"></div>
+      <div class="end-marker">
+        <Icon icon="ant-design:check-outlined" :size="14" />
+      </div>
+      
+      <div class="default-card">
+        <div class="default-left">
+          <div class="default-title">
+            <Icon icon="ant-design:safety-outlined" :size="20" />
+            <span>榛樿杩斿洖鍊?/span>
+          </div>
+          <p class="default-desc">褰撲互涓婃墍鏈夎鍒欓兘涓嶆弧瓒虫椂,杩斿洖姝ゅ€?/p>
+        </div>
+        <div class="default-right">
+          <span class="return-label">杩斿洖:</span>
+          <input 
+            :value="defaultValue"
+            @input="updateDefaultValue"
+            class="default-value-input"
+            placeholder="渚嬪: B"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script lang="ts" setup>
+import { ref, watch, computed, PropType } from 'vue';
+import { Icon } from '/@/components/Icon';
+import { 
+  AdvancedJudgmentRule, 
+  ConditionGroup, 
+  Condition,
+  SubConditionGroup,
+} from './advancedJudgmentTypes';
+import ConditionRow from './ConditionRow.vue';
+
+// ============ Props & Emits ============
+
+const props = defineProps({
+  value: { type: String, default: '' },
+  defaultValue: { type: String, default: '' },
+  fields: { type: Array as PropType<any[]>, default: () => [] },
+});
+
+const emit = defineEmits(['update:value', 'update:defaultValue', 'change', 'openFormulaEditor']);
+
+// ============ 鍝嶅簲寮忔暟鎹?============
+
+const rules = ref<AdvancedJudgmentRule[]>([]);
+const localFields = ref<any[]>([]);
+const collapsedGroups = ref<Set<string>>(new Set()); // 瀛樺偍鎶樺彔鐘舵€佺殑 key: "ruleIdx-groupIdx"
+const isInternalUpdate = ref(false); // 鏍囪鏄惁涓哄唴閮ㄦ洿鏂?闃叉 watch 閲嶆柊鎶樺彔
+
+// ============ 璁＄畻灞炴€?============
+
+const fieldOptions = computed(() => {
+  if (!localFields.value || localFields.value.length === 0) {
+    return [];
+  }
+  return localFields.value.map(f => ({
+    label: f.name || f.displayName || f.columnName || String(f),
+    value: f.id || f.columnName || f.code,
+    featureCategories: f.featureCategories || [],
+    featureLevels: f.featureLevels || [],
+  }));
+});
+
+// ============ 鎶樺彔鍔熻兘 ============
+
+function getCollapseKey(ruleIdx: number, groupIdx: number): string {
+  return `${ruleIdx}-${groupIdx}`;
+}
+
+function isGroupCollapsed(ruleIdx: number, groupIdx: number): boolean {
+  return collapsedGroups.value.has(getCollapseKey(ruleIdx, groupIdx));
+}
+
+function toggleGroupCollapse(ruleIdx: number, groupIdx: number) {
+  const key = getCollapseKey(ruleIdx, groupIdx);
+  if (collapsedGroups.value.has(key)) {
+    collapsedGroups.value.delete(key);
+  } else {
+    collapsedGroups.value.add(key);
+  }
+  // 瑙﹀彂鍝嶅簲寮忔洿鏂?  collapsedGroups.value = new Set(collapsedGroups.value);
+}
+
+function collapseAllGroups() {
+  rules.value.forEach((rule, ruleIdx) => {
+    rule.groups.forEach((_, groupIdx) => {
+      collapsedGroups.value.add(getCollapseKey(ruleIdx, groupIdx));
+    });
+  });
+  collapsedGroups.value = new Set(collapsedGroups.value);
+}
+
+function expandAllGroups() {
+  collapsedGroups.value.clear();
+  collapsedGroups.value = new Set();
+}
+
+// 鑾峰彇鏉′欢缁勬憳瑕?鎶樺彔鏃舵樉绀?
+function getGroupSummary(group: ConditionGroup): string {
+  if (group.mode === 'simple') {
+    const count = group.conditions.length;
+    if (count === 0) return '鏆傛棤鏉′欢';
+    return `${count} 涓潯浠?${group.logic === 'AND' ? '鍏ㄩ儴婊¤冻' : '浠讳竴婊¤冻'}`;
+  } else {
+    const count = group.subGroups.length;
+    if (count === 0) return '鏆傛棤瀛愮粍';
+    const condCount = group.subGroups.reduce((sum, sub) => sum + sub.conditions.length, 0);
+    return `${count} 涓瓙缁?鍏?${condCount} 涓潯浠禶;
+  }
+}
+
+// ============ 澶勭悊鍏紡缂栬緫鍣?============
+
+function handleOpenFormulaEditor(data: any) {
+  // 鍚戠埗缁勪欢杞彂浜嬩欢
+  emit('openFormulaEditor', data);
+}
+
+// ============ 鐩戝惉鍣?============
+
+watch(
+  () => props.fields,
+  (newFields) => {
+    if (newFields && Array.isArray(newFields) && newFields.length > 0) {
+      localFields.value = JSON.parse(JSON.stringify(newFields));
+    }
+  },
+  { immediate: true, deep: true }
+);
+
+watch(
+  () => props.value,
+  (val) => {
+    // 濡傛灉鏄唴閮ㄦ洿鏂拌Е鍙戠殑,涓嶉噸鏂板鐞嗘姌鍙犵姸鎬?    if (isInternalUpdate.value) {
+      return;
+    }
+    
+    try {
+      if (val) {
+        const parsed = JSON.parse(val);
+        if (Array.isArray(parsed)) {
+          rules.value = parsed;
+        } else {
+          rules.value = [];
+        }
+      } else {
+        rules.value = [];
+      }
+      
+      // 鍙湁棣栨鍔犺浇鎴栧閮ㄦ暟鎹彉鍖栨椂,鎵嶉粯璁ゆ姌鍙犳墍鏈夋潯浠剁粍
+      collapsedGroups.value.clear();
+      rules.value.forEach((rule, ruleIdx) => {
+        rule.groups.forEach((_, groupIdx) => {
+          collapsedGroups.value.add(getCollapseKey(ruleIdx, groupIdx));
+        });
+      });
+      collapsedGroups.value = new Set(collapsedGroups.value);
+      
+    } catch (e) {
+      console.error('[AdvancedJudgmentEditor] 瑙ｆ瀽澶辫触:', e);
+      rules.value = [];
+    }
+  },
+  { immediate: true }
+);
+
+// ============ 宸ュ叿鏂规硶 ============
+
+function generateId(): string {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+function emitChange() {
+  isInternalUpdate.value = true; // 鏍囪涓哄唴閮ㄦ洿鏂?  const json = JSON.stringify(rules.value);
+  emit('update:value', json);
+  emit('change', json);
+  // 鍦ㄤ笅涓€涓?tick 鍚庨噸缃爣蹇?  setTimeout(() => {
+    isInternalUpdate.value = false;
+  }, 0);
+}
+
+function updateDefaultValue(e: Event) {
+  const val = (e.target as HTMLInputElement).value;
+  emit('update:defaultValue', val);
+}
+
+function getDefaultField(): string {
+  return localFields.value.length > 0 
+    ? (localFields.value[0].id || localFields.value[0].columnName || '')
+    : '';
+}
+
+function createCondition(): Condition {
+  return {
+    id: generateId(),
+    leftExpr: getDefaultField(),
+    operator: '=',
+    rightValue: '',
+  };
+}
+
+// ============ 瑙勫垯鎿嶄綔 ============
+
+function addRule() {
+  rules.value.push({
+    id: generateId(),
+    resultValue: '',
+    groups: [],
+  });
+  emitChange();
+}
+
+function removeRule(ruleIdx: number) {
+  rules.value.splice(ruleIdx, 1);
+  emitChange();
+}
+
+// ============ 鏉′欢缁勬搷浣?============
+
+function addGroup(ruleIdx: number) {
+  const rule = rules.value[ruleIdx];
+  if (!rule) return;
+
+  const newGroupIdx = rule.groups.length;
+  
+  rule.groups.push({
+    id: generateId(),
+    name: '',
+    mode: 'simple',
+    logic: 'AND',
+    conditions: [],
+    subGroups: [],
+  });
+  
+  // 鏂版坊鍔犵殑鏉′欢缁勯粯璁ゅ睍寮€(纭繚涓嶅湪鎶樺彔闆嗗悎涓?
+  const key = getCollapseKey(ruleIdx, newGroupIdx);
+  collapsedGroups.value.delete(key);
+  collapsedGroups.value = new Set(collapsedGroups.value);
+  
+  emitChange();
+}
+
+function removeGroup(ruleIdx: number, groupIdx: number) {
+  const rule = rules.value[ruleIdx];
+  if (!rule) return;
+  rule.groups.splice(groupIdx, 1);
+  emitChange();
+}
+
+function onModeChange(ruleIdx: number, groupIdx: number) {
+  const group = rules.value[ruleIdx]?.groups[groupIdx];
+  if (!group) return;
+  
+  // 鍒囨崲妯″紡鏃舵竻绌烘暟鎹?  if (group.mode === 'simple') {
+    group.subGroups = [];
+  } else {
+    group.conditions = [];
+  }
+  emitChange();
+}
+
+// ============ 绠€鍗曟潯浠舵搷浣?============
+
+function addCondition(ruleIdx: number, groupIdx: number) {
+  const group = rules.value[ruleIdx]?.groups[groupIdx];
+  if (!group) return;
+  group.conditions.push(createCondition());
+  emitChange();
+}
+
+function updateCondition(ruleIdx: number, groupIdx: number, condIdx: number, data: Partial<Condition>) {
+  const cond = rules.value[ruleIdx]?.groups[groupIdx]?.conditions[condIdx];
+  if (!cond) return;
+  Object.assign(cond, data);
+  emitChange();
+}
+
+function removeCondition(ruleIdx: number, groupIdx: number, condIdx: number) {
+  const group = rules.value[ruleIdx]?.groups[groupIdx];
+  if (!group) return;
+  group.conditions.splice(condIdx, 1);
+  emitChange();
+}
+
+// ============ 瀛愭潯浠剁粍鎿嶄綔 ============
+
+function addSubGroup(ruleIdx: number, groupIdx: number) {
+  const group = rules.value[ruleIdx]?.groups[groupIdx];
+  if (!group) return;
+  
+  group.subGroups.push({
+    id: generateId(),
+    logic: 'AND',
+    conditions: [],
+  });
+  emitChange();
+}
+
+function removeSubGroup(ruleIdx: number, groupIdx: number, subIdx: number) {
+  const group = rules.value[ruleIdx]?.groups[groupIdx];
+  if (!group) return;
+  group.subGroups.splice(subIdx, 1);
+  emitChange();
+}
+
+function addSubCondition(ruleIdx: number, groupIdx: number, subIdx: number) {
+  const subGroup = rules.value[ruleIdx]?.groups[groupIdx]?.subGroups[subIdx];
+  if (!subGroup) return;
+  subGroup.conditions.push(createCondition());
+  emitChange();
+}
+
+function updateSubCondition(ruleIdx: number, groupIdx: number, subIdx: number, condIdx: number, data: Partial<Condition>) {
+  const cond = rules.value[ruleIdx]?.groups[groupIdx]?.subGroups[subIdx]?.conditions[condIdx];
+  if (!cond) return;
+  Object.assign(cond, data);
+  emitChange();
+}
+
+function removeSubCondition(ruleIdx: number, groupIdx: number, subIdx: number, condIdx: number) {
+  const subGroup = rules.value[ruleIdx]?.groups[groupIdx]?.subGroups[subIdx];
+  if (!subGroup) return;
+  subGroup.conditions.splice(condIdx, 1);
+  emitChange();
+}
+</script>
+
+<style lang="less" scoped>
+.advanced-judgment-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+
+// ========== 椤堕儴璇存槑 ==========
+.intro-banner {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  align-items: flex-start;
+
+  .icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: #2563eb;
+    border-radius: 10px;
+    color: white;
+    flex-shrink: 0;
+  }
+
+  .content {
+    flex: 1;
+    
+    h3 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #1e40af;
+    }
+
+    p {
+      margin: 6px 0 0;
+      font-size: 13px;
+      color: #3b82f6;
+      line-height: 1.5;
+
+      .bold {
+        font-weight: 600;
+        color: #1e40af;
+      }
+    }
+  }
+
+  .banner-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+}
+
+// ========== 瑙勫垯瀹瑰櫒 ==========
+.rules-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rule-wrapper {
+  position: relative;
+  padding-left: 36px;
+}
+
+.flow-line {
+  position: absolute;
+  left: 14px;
+  top: 0;
+  bottom: -16px;
+  width: 2px;
+  background: #cbd5e1;
+}
+
+.rule-number {
+  position: absolute;
+  left: 0;
+  top: 20px;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+  z-index: 10;
+}
+
+// ========== 瑙勫垯鍗＄墖 ==========
+.rule-card {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.rule-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+
+  .left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+
+    .when-label {
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .result-input {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .arrow-icon {
+        color: #94a3b8;
+      }
+
+      .result-value-input {
+        width: 200px;
+        padding: 6px 12px;
+        border: 2px solid #3b82f6;
+        border-radius: 6px;
+        font-size: 15px;
+        font-weight: 700;
+        color: #1e40af;
+        background: white;
+        outline: none;
+
+        &:focus {
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+      }
+    }
+  }
+}
+
+// ========== 鏉′欢缁勫尯鍩?==========
+.groups-area {
+  padding: 20px;
+}
+
+.groups-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.group-connector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+
+  .connector-line {
+    flex: 1;
+    height: 1px;
+    background: #cbd5e1;
+  }
+
+  .connector-label {
+    padding: 4px 16px;
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #92400e;
+  }
+}
+
+// ========== 鏉′欢缁勫崱鐗?==========
+.condition-group-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: white;
+  border-bottom: 1px solid #e2e8f0;
+  user-select: none;
+
+  .group-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+
+    .collapse-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      color: #64748b;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #f1f5f9;
+        color: #3b82f6;
+      }
+    }
+
+    .group-index {
+      font-size: 13px;
+      font-weight: 600;
+      color: #475569;
+      background: #e2e8f0;
+      padding: 4px 10px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #cbd5e1;
+      }
+    }
+
+    .group-name-input {
+      width: 120px;
+      padding: 4px 8px;
+      border: 1px dashed #cbd5e1;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #64748b;
+      background: transparent;
+      outline: none;
+      flex-shrink: 0;
+      cursor: text;
+
+      &:focus {
+        border-color: #3b82f6;
+        border-style: solid;
+        background: white;
+      }
+    }
+
+    .group-summary {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: 8px;
+      flex: 1;
+      min-width: 0;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #f1f5f9;
+      }
+
+      .summary-text {
+        font-size: 12px;
+        color: #94a3b8;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+  }
+
+  .group-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+}
+
+// 鎶樺彔鍐呭杩囨浮
+.group-content {
+  transition: all 0.3s ease;
+}
+
+// 妯″紡閫夋嫨
+.mode-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fffbeb;
+  border-bottom: 1px solid #fef3c7;
+
+  .mode-label {
+    font-size: 13px;
+    color: #92400e;
+    font-weight: 500;
+  }
+
+  .mode-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .help-icon {
+    color: #d97706;
+    cursor: help;
+  }
+}
+
+// 閫昏緫閫夋嫨
+.logic-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: white;
+  border-bottom: 1px solid #f1f5f9;
+
+  .logic-hint {
+    font-size: 13px;
+    color: #64748b;
+  }
+
+  :deep(.ant-radio-button-wrapper-checked) {
+    &:first-child {
+      background: #dbeafe;
+      border-color: #3b82f6;
+      color: #1e40af;
+    }
+    &:last-child {
+      background: #fef3c7;
+      border-color: #f59e0b;
+      color: #92400e;
+    }
+  }
+}
+
+// ========== 绠€鍗曟ā寮?==========
+.simple-mode {
+  .conditions-list {
+    display: flex;
+    padding: 16px;
+    gap: 8px;
+  }
+}
+
+// ========== 宓屽妯″紡 ==========
+.nested-mode {
+  .sub-groups-list {
+    display: flex;
+    padding: 16px;
+    gap: 8px;
+  }
+
+  .sub-groups-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sub-group-connector {
+    display: flex;
+    justify-content: center;
+    padding: 4px 0;
+
+    .connector-badge {
+      padding: 2px 12px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+
+      &.and {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+
+      &.or {
+        background: #fef3c7;
+        color: #92400e;
+      }
+    }
+  }
+
+  .sub-group-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+
+    .sub-group-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: #f1f5f9;
+      border-bottom: 1px solid #e2e8f0;
+
+      .sub-group-title {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #475569;
+      }
+
+      .sub-group-logic {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: #64748b;
+      }
+    }
+
+    .sub-group-conditions {
+      display: flex;
+      padding: 12px;
+      gap: 6px;
+
+      .conditions-content {
+        flex: 1;
+      }
+    }
+  }
+}
+
+// ========== 閫昏緫鎸囩ず鏉?==========
+.logic-bar {
+  width: 6px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  flex-shrink: 0;
+
+  &.and {
+    background: linear-gradient(180deg, #bfdbfe 0%, #93c5fd 100%);
+  }
+
+  &.or {
+    background: linear-gradient(180deg, #fde68a 0%, #fcd34d 100%);
+  }
+
+  &.small {
+    width: 4px;
+  }
+
+  span {
+    font-size: 10px;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+}
+
+.conditions-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+// 绌虹姸鎬?.empty-hint {
+  padding: 16px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 13px;
+  background: #f8fafc;
+  border: 1px dashed #e2e8f0;
+  border-radius: 6px;
+
+  &.small {
+    padding: 8px;
+    font-size: 12px;
+  }
+}
+
+.empty-groups {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px;
+  color: #94a3b8;
+  background: white;
+  border: 2px dashed #e2e8f0;
+  border-radius: 10px;
+  margin-bottom: 16px;
+
+  p {
+    margin: 12px 0 0;
+    font-size: 14px;
+    color: #64748b;
+  }
+}
+
+.add-group-btn {
+  margin-top: 16px;
+}
+
+// ========== 娣诲姞瑙勫垯 ==========
+.add-rule-wrapper {
+  position: relative;
+  padding-left: 36px;
+
+  .add-rule-btn {
+    height: 50px;
+    font-size: 15px;
+  }
+}
+
+// ========== 榛樿鍊煎尯鍩?==========
+.default-section {
+  position: relative;
+  padding-left: 36px;
+  margin-top: 8px;
+}
+
+.flow-line-short {
+  position: absolute;
+  left: 14px;
+  top: 0;
+  height: 24px;
+  width: 2px;
+  background: #cbd5e1;
+}
+
+.end-marker {
+  position: absolute;
+  left: 0;
+  top: 16px;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  z-index: 10;
+}
+
+.default-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+
+  .default-left {
+    .default-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: white;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .default-desc {
+      margin: 6px 0 0;
+      color: #94a3b8;
+      font-size: 13px;
+    }
+  }
+
+  .default-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .return-label {
+      color: #94a3b8;
+      font-size: 14px;
+    }
+
+    .default-value-input {
+      width: 120px;
+      padding: 8px 14px;
+      background: #334155;
+      border: 2px solid #475569;
+      border-radius: 8px;
+      color: white;
+      font-size: 15px;
+      font-weight: 700;
+      outline: none;
+
+      &:focus {
+        border-color: #4ade80;
+      }
+    }
+  }
+}
+</style>

@@ -38,6 +38,19 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     private readonly ISqlSugarRepository<ProductSpecEntity> _productSpecRepository;
     private readonly ISqlSugarRepository<ProductSpecAttributeEntity> _productSpecAttributeRepository;
     private readonly ISqlSugarRepository<UserEntity> _userRepository;
+
+    // 静态缓存属性名称映射 (LowerCase -> CamelCase)
+    private static readonly Dictionary<string, string> _propertyCamelCaseMapping;
+
+    static IntermediateDataService()
+    {
+        _propertyCamelCaseMapping = typeof(IntermediateDataListOutput)
+            .GetProperties()
+            .ToDictionary(
+                p => p.Name.ToLowerInvariant(),
+                p => char.ToLowerInvariant(p.Name[0]) + p.Name.Substring(1)
+            );
+    }
     private readonly ISqlSugarRepository<IntermediateDataFormulaCalcLogEntity> _calcLogRepository;
     private readonly IUserManager _userManager;
     private readonly ProductSpecVersionService _versionService;
@@ -180,6 +193,16 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             .ToListAsync();
         var userDict = users.ToDictionary(u => u.Id, u => u.RealName);
 
+        // 获取公式精度配置 - 只应用 SYSTEM 类型的公式精度
+        var formulas = await _formulaService.GetListAsync();
+        var precisionMap = formulas
+            .Where(f => f.SourceType == "SYSTEM" && f.Precision.HasValue && !string.IsNullOrEmpty(f.ColumnName))
+            .ToDictionary(
+                f => f.ColumnName,
+                f => f.Precision.Value,
+                StringComparer.OrdinalIgnoreCase
+            );
+
         // 转换输出
         var outputList = pagedData
             .Select(item =>
@@ -194,7 +217,34 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
                 // 构建叠片系数分布列表
                 output.LaminationDistList = BuildLaminationDistList(item);
 
-                return output;
+                // 转换为字典以支持字符串格式化
+                // Mapster 默认支持对象到字典的转换
+                var dict = output.Adapt<Dictionary<string, object>>();
+
+                // 应用精度格式化
+                ApplyPrecisionFormatting(dict, precisionMap);
+
+                // 转换为 CamelCase (强制修正属性名为前端期望的格式)
+                var camelDict = new Dictionary<string, object>(dict.Count);
+                foreach (var kvp in dict)
+                {
+                    var key = kvp.Key;
+                    var lowerKey = key.ToLowerInvariant();
+                    
+                    // 尝试从映射表中获取标准的 CamelCase 名称
+                    if (_propertyCamelCaseMapping.TryGetValue(lowerKey, out var correctKey))
+                    {
+                        key = correctKey;
+                    }
+                    else if (!string.IsNullOrEmpty(key) && char.IsUpper(key[0]))
+                    {
+                        // Fallback: 如果不在映射表里，尝试简单的首字母小写
+                        key = char.ToLowerInvariant(key[0]) + key.Substring(1);
+                    }
+                    camelDict[key] = kvp.Value;
+                }
+
+                return camelDict;
             })
             .ToList();
 
@@ -481,6 +531,72 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     }
 
     #region 私有方法
+
+    /// <summary>
+    /// 应用精度格式化到输出数据.
+    /// </summary>
+    /// <param name="output">输出对象</param>
+    /// <param name="precisionMap">精度映射（columnName -> precision）</param>
+    /// <summary>
+    /// 应用精度格式化到输出数据 (转为字符串).
+    /// </summary>
+    /// <param name="output">输出字典</param>
+    /// <param name="precisionMap">精度映射（columnName -> precision）</param>
+    private void ApplyPrecisionFormatting(Dictionary<string, object> output, Dictionary<string, int> precisionMap)
+    {
+        if (precisionMap == null || precisionMap.Count == 0)
+        {
+            return;
+        }
+
+        // 获取精度的辅助函数，支持精确匹配和前缀匹配
+        int? GetPrecision(string fieldName)
+        {
+            if (string.IsNullOrEmpty(fieldName)) return null;
+
+            // 1. 精确匹配
+            if (precisionMap.TryGetValue(fieldName, out var precision))
+            {
+                return precision;
+            }
+
+            // 2. 前缀匹配（如 Thickness1 匹配 Thickness）
+            // 优化：只对符合特定模式的字段才使用正则
+            if (char.IsLetter(fieldName[0]) && char.IsDigit(fieldName[fieldName.Length - 1]))
+            {
+                var match = System.Text.RegularExpressions.Regex.Match(fieldName, @"^([a-zA-Z]+)\d+$");
+                if (match.Success)
+                {
+                    var prefix = match.Groups[1].Value;
+                    if (precisionMap.TryGetValue(prefix, out var prefixPrecision))
+                    {
+                        return prefixPrecision;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        var keys = output.Keys.ToList();
+        foreach (var key in keys)
+        {
+            var value = output[key];
+            if (value == null) continue;
+
+            // 检查 value 是否为数字类型
+            if (value is decimal || value is double || value is float)
+            {
+                var precision = GetPrecision(key);
+                if (precision.HasValue)
+                {
+                    if (value is decimal d) output[key] = d.ToString("F" + precision.Value);
+                    else if (value is double db) output[key] = db.ToString("F" + precision.Value);
+                    else if (value is float f) output[key] = f.ToString("F" + precision.Value);
+                }
+            }
+        }
+    }
 
     /// <summary>
     /// 解析检测列配置 (生成 1 到 N 的列表).

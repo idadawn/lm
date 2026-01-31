@@ -62,6 +62,11 @@ public class IntermediateDataJudgmentLevelDto
     /// 业务说明.
     /// </summary>
     public string Description { get; set; }
+
+    /// <summary>
+    /// 判定条件 (JSON格式).
+    /// </summary>
+    public string Condition { get; set; }
 }
 
 /// <summary>
@@ -122,6 +127,11 @@ public class IntermediateDataJudgmentLevelAddInput
     /// 业务说明.
     /// </summary>
     public string Description { get; set; }
+
+    /// <summary>
+    /// 判定条件 (JSON格式).
+    /// </summary>
+    public string Condition { get; set; }
 }
 
 /// <summary>

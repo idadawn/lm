@@ -10,6 +10,7 @@
           placeholder="搜索或选择字段"
           show-search
           allow-clear
+          :disabled="readOnly"
           :filter-option="filterOption"
           :not-found-content="searchNotFound"
           option-filter-prop="label"
@@ -47,13 +48,13 @@
 
       <!-- 自定义表达式模式 -->
       <div v-else class="custom-expr-wrapper">
-        <div class="custom-expr-display" @click="openExprEditor">
+        <div class="custom-expr-display" @click="!readOnly && openExprEditor()" :style="{ cursor: readOnly ? 'default' : 'pointer' }">
           <span class="expr-text" :title="condition.leftExpr">
             {{ formatExprDisplay(condition.leftExpr) || '点击编辑表达式' }}
           </span>
-          <Icon icon="ant-design:edit-outlined" :size="14" class="edit-icon" />
+          <Icon v-if="!readOnly" icon="ant-design:edit-outlined" :size="14" class="edit-icon" />
         </div>
-        <a-tooltip title="切换回字段选择">
+        <a-tooltip v-if="!readOnly" title="切换回字段选择">
           <a-button type="text" size="small" class="switch-btn" @click="switchToFieldSelect">
             <template #icon><Icon icon="ant-design:unordered-list-outlined" :size="12" /></template>
           </a-button>
@@ -67,6 +68,7 @@
         :value="condition.operator"
         class="w-full"
         show-search
+        :disabled="readOnly"
         :filter-option="filterOperator"
         @change="(val) => emit('update', { operator: val })"
       >
@@ -90,6 +92,7 @@
           class="w-full"
           show-search
           allow-clear
+          :disabled="readOnly"
           :options="featureValueOptions"
           option-filter-prop="label"
           @change="(val) => emit('update', { rightValue: val })"
@@ -98,6 +101,7 @@
           v-else
           :value="condition.rightValue"
           placeholder="比较值"
+          :disabled="readOnly"
           @change="(e) => emit('update', { rightValue: e.target.value })"
         />
       </template>
@@ -106,6 +110,7 @@
 
     <!-- 删除按钮 -->
     <a-button 
+      v-if="!readOnly"
       type="text" 
       size="small" 
       danger 

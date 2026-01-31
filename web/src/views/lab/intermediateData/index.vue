@@ -43,9 +43,19 @@
                 <a-button type="primary" :loading="batchCalculating" @click="handleBatchRecalculate">
                   <ReloadOutlined v-if="!batchCalculating" /> 批量计算
                 </a-button>
-                <a-button :loading="exporting" @click="openExportModal">
-                  <DownloadOutlined v-if="!exporting" /> 导出Excel
-                </a-button>
+                <a-dropdown>
+                  <a-button :loading="exporting">
+                    <DownloadOutlined v-if="!exporting" /> 导出Excel
+                  </a-button>
+                  <template #overlay>
+                    <a-menu @click="handleQuickExport">
+                      <a-menu-item key="thisMonth">导出本月</a-menu-item>
+                      <a-menu-item key="thisYear">导出本年</a-menu-item>
+                      <a-menu-divider />
+                      <a-menu-item key="custom">自定义导出...</a-menu-item>
+                    </a-menu>
+                  </template>
+                </a-dropdown>
               </a-space>
             </template>
             <template #bodyCell="{ column, record, text }">
@@ -176,23 +186,40 @@
         :confirm-loading="exporting"
         ok-text="导出"
         cancel-text="取消"
+        width="560px"
+        :body-style="{ padding: '16px 24px' }"
       >
-        <a-form layout="vertical">
-          <a-form-item label="生产日期范围" required>
-            <a-range-picker
+        <a-form layout="vertical" :style="{ marginBottom: 0 }">
+          <a-form-item label="快捷选择" style="margin-bottom: 16px">
+            <div class="export-date-shortcuts">
+              <a-tag
+                v-for="item in exportDateShortcuts"
+                :key="item.key"
+                :color="selectedExportShortcut === item.key ? item.activeColor : 'default'"
+                :class="['export-shortcut-tag', { 'export-shortcut-tag--active': selectedExportShortcut === item.key }]"
+                @click="setExportRange(item.key)"
+              >
+                {{ item.label }}
+              </a-tag>
+            </div>
+          </a-form-item>
+
+          <a-form-item label="生产日期范围" required style="margin-bottom: 12px">
+            <JnpfDateRange
               v-model:value="exportDateRange"
               :placeholder="['开始日期', '结束日期']"
               style="width: 100%"
-              :disabled-date="disabledExportDate"
+              format="YYYY-MM-DD"
+              @change="handleExportDateChange"
             />
           </a-form-item>
-          <a-form-item>
-            <a-space>
-              <a-tag color="blue" style="cursor: pointer" @click="setExportRange('thisMonth')">本月</a-tag>
-              <a-tag color="green" style="cursor: pointer" @click="setExportRange('thisYear')">本年</a-tag>
-              <a-tag style="cursor: pointer" @click="setExportRange('lastMonth')">上月</a-tag>
-              <a-tag style="cursor: pointer" @click="setExportRange('lastYear')">去年</a-tag>
-            </a-space>
+
+          <a-form-item v-if="exportDateRange && exportDateRange.length === 2" style="margin-bottom: 0">
+            <a-alert
+              type="info"
+              :message="`将导出 ${formatExportDate(exportDateRange[0])} 至 ${formatExportDate(exportDateRange[1])} 的数据`"
+              show-icon
+            />
           </a-form-item>
         </a-form>
       </a-modal>
@@ -245,7 +272,7 @@ import { useFormulaPrecision } from '/@/composables/useFormulaPrecision';
 
 import { useModal } from '/@/components/Modal';
 import { UploadOutlined, ReloadOutlined, DownloadOutlined } from '@ant-design/icons-vue';
-import { Spin as ASpin } from 'ant-design-vue';
+import { Spin as ASpin, DatePicker as ADatePicker } from 'ant-design-vue';
 import MagneticDataImportQuickModal from '../magneticData/MagneticDataImportQuickModal.vue';
 import { createMagneticImportSession, uploadAndParseMagneticData } from '/@/api/lab/magneticData';
 import type { IntermediateDataCalcLogItem } from '/@/api/lab/model/intermediateDataCalcLogModel';
@@ -289,9 +316,22 @@ const savingColors = ref<boolean>(false); // 是否正在保存颜色
 const batchCalculating = ref<boolean>(false); // 是否正在批量计算
 const exporting = ref<boolean>(false); // 是否正在导出
 const exportModalVisible = ref<boolean>(false); // 导出模态框是否可见
-const exportDateRange = ref<[Dayjs, Dayjs] | null>(null); // 导出日期范围
+const exportDateRange = ref<number[]>([]); // 导出日期范围（时间戳数组）
+const selectedExportShortcut = ref<string>(''); // 当前选中的导出快捷方式
 const isClearMode = ref<boolean>(false); // 是否处于清除颜色模式
 const fillMode = ref<'cell' | 'row' | 'column'>('cell'); // 填充模式：单元格/整行/整列
+
+// 导出日期快捷选项配置
+const exportDateShortcuts = [
+  { key: 'thisWeek', label: '本周', activeColor: 'blue' },
+  { key: 'thisMonth', label: '本月', activeColor: 'blue' },
+  { key: 'thisQuarter', label: '本季度', activeColor: 'blue' },
+  { key: 'thisYear', label: '本年', activeColor: 'green' },
+  { key: 'lastWeek', label: '上周', activeColor: 'orange' },
+  { key: 'lastMonth', label: '上月', activeColor: 'orange' },
+  { key: 'lastQuarter', label: '上季度', activeColor: 'orange' },
+  { key: 'lastYear', label: '去年', activeColor: 'orange' },
+];
 
 // 存储表格数据用于行/列填充
 const tableData = ref<any[]>([]);
@@ -1047,6 +1087,21 @@ async function handleBatchRecalculate() {
   }
 }
 
+// 快速导出处理
+function handleQuickExport({ key }: { key: string }) {
+  if (key === 'custom') {
+    openExportModal();
+    return;
+  }
+
+  // 设置日期范围并直接导出
+  setExportRange(key);
+  // 延迟一下确保日期范围已设置
+  nextTick(() => {
+    handleExport();
+  });
+}
+
 // 打开导出模态框
 function openExportModal() {
   exportModalVisible.value = true;
@@ -1054,55 +1109,90 @@ function openExportModal() {
   setExportRange('thisMonth');
 }
 
+// 手动修改日期时清除快捷选择状态
+function handleExportDateChange() {
+  selectedExportShortcut.value = '';
+}
+
+// 格式化导出日期显示
+function formatExportDate(timestamp: number): string {
+  return dateUtil(timestamp).format('YYYY-MM-DD');
+}
+
 // 设置导出日期范围快捷选项
 function setExportRange(type: string) {
   const now = dateUtil();
+  selectedExportShortcut.value = type; // 设置选中状态
+
+  let startDate: Dayjs;
+  let endDate: Dayjs;
+
   switch (type) {
+    case 'thisWeek':
+      startDate = now.startOf('week');
+      endDate = now.endOf('week');
+      break;
     case 'thisMonth':
-      exportDateRange.value = [now.startOf('month'), now.endOf('month')];
+      startDate = now.startOf('month');
+      endDate = now.endOf('month');
+      break;
+    case 'thisQuarter':
+      const month = now.month();
+      const quarter = Math.floor(month / 3);
+      startDate = now.month(quarter * 3).startOf('month');
+      endDate = now.month(quarter * 3 + 2).endOf('month');
+      break;
+    case 'thisYear':
+      startDate = now.startOf('year');
+      endDate = now.endOf('year');
+      break;
+    case 'lastWeek':
+      startDate = now.subtract(1, 'week').startOf('week');
+      endDate = now.subtract(1, 'week').endOf('week');
       break;
     case 'lastMonth':
       const lastMonth = now.subtract(1, 'month');
-      exportDateRange.value = [lastMonth.startOf('month'), lastMonth.endOf('month')];
+      startDate = lastMonth.startOf('month');
+      endDate = lastMonth.endOf('month');
       break;
-    case 'thisYear':
-      exportDateRange.value = [now.startOf('year'), now.endOf('year')];
+    case 'lastQuarter':
+      const currentMonth = now.month();
+      const currentQuarter = Math.floor(currentMonth / 3);
+      const lastQuarterNum = currentQuarter === 0 ? 3 : currentQuarter - 1;
+      const lastQuarterYear = currentQuarter === 0 ? now.subtract(1, 'year') : now;
+      startDate = lastQuarterYear.month(lastQuarterNum * 3).startOf('month');
+      endDate = lastQuarterYear.month(lastQuarterNum * 3 + 2).endOf('month');
       break;
     case 'lastYear':
       const lastYear = now.subtract(1, 'year');
-      exportDateRange.value = [lastYear.startOf('year'), lastYear.endOf('year')];
+      startDate = lastYear.startOf('year');
+      endDate = lastYear.endOf('year');
       break;
+    default:
+      startDate = now.startOf('month');
+      endDate = now.endOf('month');
   }
-}
 
-// 禁用超过一年的日期
-function disabledExportDate(current: any) {
-  if (!exportDateRange.value || !exportDateRange.value[0]) {
-    return false;
-  }
-  const startDate = exportDateRange.value[0];
-  // 限制最多选择一年
-  const tooLate = current && current.diff(startDate, 'days') > 366;
-  const tooEarly = current && startDate.diff(current, 'days') > 0;
-  return tooLate || tooEarly;
+  // JnpfDateRange 使用时间戳数组
+  exportDateRange.value = [startDate.valueOf(), endDate.valueOf()];
 }
 
 // 处理导出
 async function handleExport() {
   if (exporting.value) return;
-  
-  if (!exportDateRange.value || !exportDateRange.value[0] || !exportDateRange.value[1]) {
+
+  if (!exportDateRange.value || exportDateRange.value.length !== 2) {
     createMessage.warning('请选择生产日期范围');
     return;
   }
-  
+
   try {
     exporting.value = true;
     createMessage.loading({ content: '正在导出数据...', key: 'export', duration: 0 });
-    
-    const startDate = exportDateRange.value[0].format('YYYY-MM-DD');
-    const endDate = exportDateRange.value[1].format('YYYY-MM-DD');
-    
+
+    const startDate = dateUtil(exportDateRange.value[0]).format('YYYY-MM-DD');
+    const endDate = dateUtil(exportDateRange.value[1]).format('YYYY-MM-DD');
+
     const response = await exportIntermediateData(startDate, endDate);
     
     // 获取文件名
@@ -1138,27 +1228,18 @@ async function handleExport() {
 
 
 // 格式化值
-function formatValue(value: any, fieldName?: string) {
+// 格式化值
+function formatValue(value: any, _fieldName?: string) {
   if (value === null || value === undefined) return '-';
-  if (typeof value === 'number') {
-    const precision = fieldName ? getFieldPrecision(fieldName) : 2;
-    return value.toFixed(precision);
-  }
+  // 直接返回，后端已处理精度
   return value;
 }
 
 // 格式化数值
-function formatNumericValue(value: any, fieldName?: string) {
+function formatNumericValue(value: any, _fieldName?: string) {
   if (value === null || value === undefined) return '-';
-  const precision = fieldName ? getFieldPrecision(fieldName) : 2;
-  if (typeof value === 'number') {
-    return value.toFixed(precision);
-  }
-  const num = parseFloat(value);
-  if (!isNaN(num)) {
-    return num.toFixed(precision);
-  }
-  return value || '-';
+  // 直接返回，后端已处理精度
+  return value;
 }
 
 // 判断是否为负数
@@ -1688,6 +1769,33 @@ async function handleQuickImport(file: File) {
 .table-container :deep(.ant-table-tbody > tr > td) {
   padding: 4px 8px;
   font-size: 12px;
+}
+
+/* 导出日期快捷选择样式 */
+.export-date-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.export-shortcut-tag {
+  cursor: pointer;
+  padding: 4px 12px;
+  font-size: 13px;
+  border-radius: 4px;
+  transition: all 0.3s;
+  user-select: none;
+}
+
+.export-shortcut-tag:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.export-shortcut-tag--active {
+  font-weight: 600;
+  border-width: 2px;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
 }
 </style>
 

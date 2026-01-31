@@ -18,24 +18,54 @@
           </h1>
           <p class="text-gray-500 text-sm mt-1">维护中间数据表中的计算公式，支持从多个数据源引用变量。</p>
         </div>
-        <!-- 移除手动新增，改为初始化 -->
-        <a-button type="primary" @click="handleInitialize" :loading="initializing" class="bg-blue-600 border-blue-600 hover:bg-blue-500">
-          更新列
-        </a-button>
+        <div class="flex gap-2">
+            <a-button type="primary" @click="handleCreate" class="bg-blue-600 border-blue-600 hover:bg-blue-500">
+                <plus-outlined /> 新增公式
+            </a-button>
+            <a-button @click="handleInitialize" :loading="initializing">
+                更新列
+            </a-button>
+        </div>
       </div>
       <!-- 类型筛选 -->
-      <div class="flex items-center gap-2">
-        <span class="text-gray-600 text-sm">类型筛选：</span>
-        <a-select
-          v-model:value="typeFilter"
-          style="width: 150px"
-          placeholder="请选择类型"
-          allow-clear
-        >
-          <a-select-option value="CALC">计算</a-select-option>
-          <a-select-option value="JUDGE">判定</a-select-option>
-          <a-select-option value="NO">只展示</a-select-option>
-        </a-select>
+      <!-- 筛选栏 -->
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+          <span class="text-gray-600 text-sm">来源筛选：</span>
+          <a-select
+            v-model:value="sourceTypeFilter"
+            style="width: 150px"
+            placeholder="请选择来源"
+            allow-clear
+          >
+            <a-select-option value="SYSTEM">系统默认</a-select-option>
+            <a-select-option value="CUSTOM">自定义</a-select-option>
+          </a-select>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-gray-600 text-sm">类型筛选：</span>
+          <a-select
+            v-model:value="typeFilter"
+            style="width: 150px"
+            placeholder="请选择类型"
+            allow-clear
+          >
+            <a-select-option value="CALC">计算</a-select-option>
+            <a-select-option value="JUDGE">判定</a-select-option>
+            <a-select-option value="NO">只展示</a-select-option>
+          </a-select>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <span class="text-gray-600 text-sm">关键字：</span>
+            <a-input-search
+                v-model:value="searchKeyword"
+                placeholder="名称/列名"
+                style="width: 200px"
+                allow-clear
+            />
+        </div>
       </div>
     </div>
 
@@ -50,11 +80,19 @@
         >
           <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'displayName'">
-              {{ record.displayName || record.formulaName || record.columnName }}
+              <div class="flex flex-col">
+                  <span>{{ record.displayName || record.formulaName }}</span>
+                  <span class="text-xs text-gray-400" v-if="record.columnName !== (record.displayName || record.formulaName)">{{ record.columnName }}</span>
+              </div>
             </template>
             <template v-else-if="column.key === 'formulaType'">
                <a-tag :color="record.formulaType === 'CALC' ? 'blue' : record.formulaType === 'JUDGE' ? 'orange' : 'green'">
                 {{ record.formulaType === 'CALC' ? '计算' : record.formulaType === 'JUDGE' ? '判定' : '只展示' }}
+              </a-tag>
+            </template>
+            <template v-else-if="column.key === 'sourceType'">
+               <a-tag :color="record.sourceType === 'CUSTOM' ? 'purple' : 'default'">
+                {{ record.sourceType === 'CUSTOM' ? '自定义' : '系统' }}
               </a-tag>
             </template>
             <template v-else-if="column.key === 'formula'">
@@ -77,7 +115,16 @@
             <template v-else-if="column.key === 'action'">
               <a-space>
                 <a-button type="link" size="small" @click="handleEdit(record, 'Attributes')">编辑</a-button>
-                <a-button v-if="record.formulaType !== 'NO'" type="link" size="small" @click="handleOpenFormulaBuilder(record)">编辑公式</a-button>
+                <a-button v-if="record.formulaType !== 'NO'" type="link" size="small" @click="handleOpenFormulaBuilder(record)">
+                  {{ record.formulaType === 'JUDGE' ? '查看判定' : '编辑公式' }}
+                </a-button>
+                <a-popconfirm
+                    v-if="record.sourceType === 'CUSTOM'"
+                    title="确定要删除此自定义公式吗？"
+                    @confirm="handleDelete(record)"
+                >
+                    <a-button type="link" danger size="small">删除</a-button>
+                </a-popconfirm>
               </a-space>
             </template>
           </template>
@@ -99,6 +146,9 @@
     
     <!-- 公式构建器模态框 -->
     <FormulaBuilder @register="registerFormulaBuilderModal" @save="handleSaveFormula" />
+
+    <!-- 判定等级查看弹窗 -->
+    <JudgmentLevelViewModal @register="registerJudgmentViewModal" />
   </div>
 </template>
 
@@ -109,20 +159,25 @@ import { useMessage } from '/@/hooks/web/useMessage';
 import {
   getIntermediateDataFormulaList,
   initializeIntermediateDataFormula,
+  deleteIntermediateDataFormula,
 } from '/@/api/lab/intermediateDataFormula';
+import { PlusOutlined } from '@ant-design/icons-vue';
 import IntermediateDataFormulaForm from './components/IntermediateDataFormulaForm.vue';
 import FormulaBuilder from './components/FormulaBuilder.vue';
+import JudgmentLevelViewModal from './components/JudgmentLevelViewModal.vue';
 import type { IntermediateDataFormula } from '/@/api/lab/types/intermediateDataFormula';
 import { updateFormula } from '/@/api/lab/intermediateDataFormula';
 
 const [registerFormModal, { openModal: openFormModal }] = useModal();
 const [registerFormulaBuilderModal, { openModal: openFormulaBuilderModal }] = useModal();
+const [registerJudgmentViewModal, { openModal: openJudgmentViewModal }] = useModal();
 const { createMessage } = useMessage();
-
 const dataList = ref<IntermediateDataFormula[]>([]);
 const loading = ref(false);
 const initializing = ref(false);
 const typeFilter = ref<string | undefined>(undefined);
+const sourceTypeFilter = ref<string | undefined>(undefined);
+const searchKeyword = ref<string>('');
 
 // 默认不显示类型为"只展示"的记录
 const filteredDataList = computed(() => {
@@ -134,6 +189,21 @@ const filteredDataList = computed(() => {
   } else {
     // 如果选择了特定类型，只显示该类型
     filtered = filtered.filter(item => item.formulaType === typeFilter.value);
+  }
+
+  // 来源筛选
+  if (sourceTypeFilter.value) {
+    filtered = filtered.filter(item => item.sourceType === sourceTypeFilter.value);
+  }
+
+  // 关键字筛选
+  if (searchKeyword.value) {
+    const keyword = searchKeyword.value.toLowerCase();
+    filtered = filtered.filter(item => 
+        (item.formulaName && item.formulaName.toLowerCase().includes(keyword)) ||
+        (item.displayName && item.displayName.toLowerCase().includes(keyword)) ||
+        (item.columnName && item.columnName.toLowerCase().includes(keyword))
+    );
   }
   
   return filtered;
@@ -162,6 +232,12 @@ const columns = [
     title: '类型',
     dataIndex: 'formulaType',
     key: 'formulaType',
+    width: 80,
+  },
+  {
+    title: '来源',
+    dataIndex: 'sourceType',
+    key: 'sourceType',
     width: 80,
   },
   {
@@ -226,9 +302,23 @@ const handleEdit = (record: IntermediateDataFormula, mode: 'Attributes' | 'Formu
   openFormModal(true, { isUpdate: true, record, mode });
 };
 
-const handleOpenFormulaBuilder = (record: IntermediateDataFormula) => {
+const handleCreate = () => {
+    openFormModal(true, { isUpdate: false, mode: 'Attributes' });
+};
+
+const handleDelete = async (record: IntermediateDataFormula) => {
+    try {
+        await deleteIntermediateDataFormula(record.id);
+        createMessage.success('删除成功');
+        loadData();
+    } catch (error: any) {
+        createMessage.error(error.message || '删除失败');
+    }
+};
+
+const handleOpenFormulaBuilder = async (record: IntermediateDataFormula) => {
   if (record.formulaType === 'JUDGE') {
-    openFormModal(true, { isUpdate: true, record, mode: 'Formula' });
+    openJudgmentViewModal(true, { formulaId: record.id });
   } else {
     openFormulaBuilderModal(true, { record });
   }
@@ -243,8 +333,6 @@ const handleSaveFormula = async (data: { id: string; formula: string }) => {
     createMessage.error(error.message || '保存失败');
   }
 };
-
-
 
 onMounted(() => {
   loadData();

@@ -30,6 +30,7 @@ public class IntermediateDataFormulaService
         ITransient
 {
     private readonly ISqlSugarRepository<IntermediateDataFormulaEntity> _repository;
+    private readonly ISqlSugarRepository<IntermediateDataJudgmentLevelEntity> _judgmentLevelRepository;
     private readonly ISqlSugarRepository<PublicDimensionEntity> _publicDimensionRepository;
     private readonly ISqlSugarRepository<AppearanceFeatureEntity> _appearanceFeatureRepository;
     private readonly ISqlSugarRepository<AppearanceFeatureCategoryEntity> _appearanceFeatureCategoryRepository;
@@ -44,6 +45,7 @@ public class IntermediateDataFormulaService
 
     public IntermediateDataFormulaService(
         ISqlSugarRepository<IntermediateDataFormulaEntity> repository,
+        ISqlSugarRepository<IntermediateDataJudgmentLevelEntity> judgmentLevelRepository,
         ISqlSugarRepository<PublicDimensionEntity> publicDimensionRepository,
         ISqlSugarRepository<AppearanceFeatureEntity> appearanceFeatureRepository,
         ISqlSugarRepository<AppearanceFeatureCategoryEntity> appearanceFeatureCategoryRepository,
@@ -56,6 +58,7 @@ public class IntermediateDataFormulaService
     )
     {
         _repository = repository;
+        _judgmentLevelRepository = judgmentLevelRepository;
         _publicDimensionRepository = publicDimensionRepository;
         _appearanceFeatureRepository = appearanceFeatureRepository;
         _appearanceFeatureCategoryRepository = appearanceFeatureCategoryRepository;
@@ -74,6 +77,7 @@ public class IntermediateDataFormulaService
     {
         var dto = entity.Adapt<IntermediateDataFormulaDto>();
         dto.FormulaType = entity.FormulaType.ToString();
+        dto.SourceType = entity.SourceType;
 
         // 根据 columnName 查找对应的 displayName
         dto.DisplayName = GetColumnDisplayName(entity.ColumnName);
@@ -193,6 +197,7 @@ public class IntermediateDataFormulaService
         }
 
         var entity = dto.Adapt<IntermediateDataFormulaEntity>();
+        entity.SourceType = "CUSTOM"; // 手动创建的默认为自定义
         // 处理 FormulaType 字符串到枚举的转换
         if (!string.IsNullOrEmpty(dto.FormulaType))
         {
@@ -208,6 +213,12 @@ public class IntermediateDataFormulaService
         else
         {
             entity.FormulaType = IntermediateDataFormulaType.CALC; // 默认值
+        }
+
+        // 确保 Formula 不为 null，因为数据库字段 F_FORMULA 不允许为 NULL
+        if (entity.Formula == null)
+        {
+            entity.Formula = string.Empty;
         }
 
         entity.Creator();
@@ -333,9 +344,97 @@ public class IntermediateDataFormulaService
     [HttpDelete("{id}")]
     public async Task DeleteAsync(string id)
     {
+        var entity = await _repository.GetFirstAsync(u => u.Id == id);
+        if (entity == null)
+            throw Oops.Oh(ErrorCode.COM1005);
+
+        if (entity.SourceType == "SYSTEM")
+            throw Oops.Oh(ErrorCode.COM1000, "系统默认公式不允许删除");
+
         var isOk = await _repository.DeleteAsync(u => u.Id == id);
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1002);
+
+        await ClearFormulaCacheAsync(id);
+    }
+
+    /// <summary>
+    /// 生成判定规则.
+    /// </summary>
+    /// <param name="id">公式ID</param>
+    /// <returns></returns>
+    [HttpPost("{id}/generate-judgment")]
+    public async Task GenerateJudgmentRuleAsync(string id)
+    {
+        var entity = await _repository.GetFirstAsync(u => u.Id == id);
+        if (entity == null)
+            throw Oops.Oh(ErrorCode.COM1005);
+
+        if (entity.FormulaType != IntermediateDataFormulaType.JUDGE)
+            throw Oops.Oh(ErrorCode.COM1000, "仅判定类型的公式可以生成规则");
+
+        // 获取判定等级
+        var levels = await _judgmentLevelRepository
+            .AsQueryable()
+            .Where(t => t.FormulaId == id && t.DeleteMark == null)
+            .OrderBy(t => t.Priority)
+            .ToListAsync();
+
+        if (levels.Count == 0)
+            throw Oops.Oh(ErrorCode.COM1000, "未配置判定等级，无法生成规则");
+
+        // 提取默认项
+        var defaultLevel = levels.FirstOrDefault(t => t.IsDefault);
+        if (defaultLevel != null)
+        {
+            entity.DefaultValue = defaultLevel.Name;
+        }
+
+        // 构建规则 JSON (排除默认项，因为默认项作为DefaultValue兜底)
+        var rules = new Newtonsoft.Json.Linq.JArray();
+        foreach (var level in levels.Where(t => !t.IsDefault))
+        {
+            var rule = new Newtonsoft.Json.Linq.JObject
+            {
+                ["resultValue"] = level.Name,
+                ["rootGroup"] = new Newtonsoft.Json.Linq.JObject
+                {
+                    ["logic"] = "AND",
+                    ["conditions"] = new Newtonsoft.Json.Linq.JArray()
+                }
+            };
+            rules.Add(rule);
+        }
+
+        // 如果原公式已经有内容且格式正确，尝试保留原有的条件？
+        // 根据需求 "自动生成匹配规则"，通常意味着重置结构。
+        // 为了避免覆盖用户辛辛苦苦写的条件，我们可以尝试匹配 ResultValue 相同的规则并保留 conditions。
+        // 但简单起见，且通常"生成"意味着"初始化"，先覆盖。
+        // 优化：如果有旧 JSON，尝试迁移条件。
+        if (!string.IsNullOrWhiteSpace(entity.Formula))
+        {
+            try 
+            {
+                var oldRules = Newtonsoft.Json.Linq.JArray.Parse(entity.Formula);
+                foreach (var newRule in rules)
+                {
+                    var resVal = newRule["resultValue"]?.ToString();
+                    var oldRule = oldRules.FirstOrDefault(r => r["resultValue"]?.ToString() == resVal);
+                    if (oldRule != null && oldRule["rootGroup"] != null)
+                    {
+                        newRule["rootGroup"] = oldRule["rootGroup"];
+                    }
+                }
+            } 
+            catch { /* 忽略解析错误，直接使用新结构 */ }
+        }
+
+        entity.Formula = rules.ToString(Newtonsoft.Json.Formatting.None);
+        entity.LastModify();
+
+        var isOk = await _repository.UpdateAsync(entity);
+        if (!isOk)
+            throw Oops.Oh(ErrorCode.COM1001);
 
         await ClearFormulaCacheAsync(id);
     }
@@ -407,6 +506,7 @@ public class IntermediateDataFormulaService
                     IsEnabled = true,
                     SortOrder = col.Sort,
                     Remark = col.Description,
+                    SourceType = "SYSTEM", // 初始化生成的为系统默认
                 };
                 entity.Creator();
                 entity.Id = col.ColumnName; // 覆盖默认生成的ID，确保ID一致性
@@ -495,6 +595,23 @@ public class IntermediateDataFormulaService
             };
 
             columns.Add(columnInfo);
+        }
+
+        // 获取自定义公式并添加到可用字段列表中
+        var customFormulas = await _repository.GetListAsync(t => t.DeleteMark == null && t.SourceType == "CUSTOM" && t.IsEnabled);
+        foreach (var formula in customFormulas)
+        {
+            columns.Add(new IntermediateDataColumnInfo
+            {
+                ColumnName = formula.ColumnName,
+                DisplayName = formula.FormulaName, // 自定义公式显示公式名称
+                DataType = "Decimal", // 自定义公式通常计算结果为数值
+                IsCalculable = true,
+                DecimalDigits = formula.Precision, // 使用公式配置的精度
+                Description = formula.Remark,
+                Sort = formula.SortOrder,
+                IsRange = false // 自定义公式目前不支持作为范围列
+            });
         }
 
         // 按 Sort 排序，如果没有则按显示名称排序

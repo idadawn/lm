@@ -52,11 +52,7 @@
 
   function formatDisplayValue(val: any) {
     if (val === null || val === undefined || val === '') return '-';
-    if (typeof val === 'number') {
-      // 使用传入的精度，默认为2
-      const precision = props.precision ?? 2;
-      return val.toFixed(precision);
-    }
+    // 后端已处理精度，直接显示
     return val;
   }
 

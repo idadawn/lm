@@ -44,9 +44,19 @@ public class FormulaParser : IFormulaParser, ITransient
         RegexOptions.Compiled | RegexOptions.IgnoreCase
     );
 
-    // 匹配 DIFF_FIRST_LAST 函数
-    private static readonly Regex DiffFirstLastRegex = new(
-        @"DIFF_FIRST_LAST\s*\(\s*(\w+)\s*(?:,\s*(\d+|\$\w+)\s*(?:,\s*(\d+|\$\w+)\s*)?)?\)",
+
+
+    // 匹配 DIFF_FIRST 函数: DIFF_FIRST(prefix, count) 或 DIFF_FIRST(prefix, count, maxColumns)
+    // 计算前N列差值（第1列值 - 第N列值）
+    private static readonly Regex DiffFirstRegex = new(
+        @"DIFF_FIRST\s*\(\s*(\w+)\s*,\s*(\d+|\$\w+)\s*(?:,\s*(\d+|\$\w+)\s*)?\)",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase
+    );
+
+    // 匹配 DIFF_LAST 函数: DIFF_LAST(prefix, count) 或 DIFF_LAST(prefix, count, maxColumns)
+    // 计算后N列差值（倒数第N列值 - 倒数第1列值）
+    private static readonly Regex DiffLastRegex = new(
+        @"DIFF_LAST\s*\(\s*(\w+)\s*,\s*(\d+|\$\w+)\s*(?:,\s*(\d+|\$\w+)\s*)?\)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase
     );
 
@@ -221,18 +231,20 @@ public class FormulaParser : IFormulaParser, ITransient
         // 2. 展开 TO 范围表达式 [Detection1] TO [Detection5]
         result = ExpandToRange(result, contextDict);
 
-        // 3. 处理统计函数 SUM/AVG/MAX/MIN（支持 RANGE/DIFF_FIRST_LAST）
-        //    支持 RANGE/DIFF_FIRST_LAST 的嵌套表达式
+        // 3. 处理统计函数 SUM/AVG/MAX/MIN（支持 RANGE/DIFF_FIRST/DIFF_LAST）
         result = ProcessStatFunctions(result, contextDict, entity);
 
-        // 4. 处理三参数 RANGE：RANGE(Thickness, 1, )
+        // 4. 处理三参数 RANGE：RANGE(Thickness, 1, 22)
         result = ProcessRangeThreeArg(result, contextDict, entity);
 
         // 5. 处理单参数 RANGE：RANGE(Detection)
         result = ProcessRangeSingleArg(result, contextDict, entity);
 
-        // 6. 处理 DIFF_FIRST_LAST
-        result = ProcessDiffFirstLast(result, contextDict, entity);
+        // 6. 处理 DIFF_FIRST
+        result = ProcessDiffFirst(result, contextDict, entity);
+
+        // 7. 处理 DIFF_LAST
+        result = ProcessDiffLast(result, contextDict, entity);
 
         // 7. 替换  动态变量
         result = ReplaceDollarVariables(result, contextDict, entity);
@@ -365,62 +377,118 @@ public class FormulaParser : IFormulaParser, ITransient
         });
     }
 
+
+
     /// <summary>
-    /// 处理 DIFF_FIRST_LAST 函数
-    /// DIFF_FIRST_LAST(Detection) 或 DIFF_FIRST_LAST(Detection, 1, $DetectionColumns)
-    /// 返回首尾元素的差值绝对值
+    /// 处理 DIFF_FIRST 函数
+    /// DIFF_FIRST(Detection, 2) 或 DIFF_FIRST(Detection, 2, $DetectionColumns)
+    /// 返回前N列的差值（第1列值 - 第N列值）
     /// </summary>
-    private string ProcessDiffFirstLast(
+    private string ProcessDiffFirst(
         string formula,
         Dictionary<string, object> contextDict,
         IntermediateDataEntity entity)
     {
-        return DiffFirstLastRegex.Replace(formula, match =>
+        return DiffFirstRegex.Replace(formula, match =>
         {
             var prefix = ResolveRangePrefix(match.Groups[1].Value);
-            var startStr = match.Groups[2].Success ? match.Groups[2].Value : "1";
-            var endStr = match.Groups[3].Success ? match.Groups[3].Value : null;
+            var countStr = match.Groups[2].Value;
+            var maxColStr = match.Groups[3].Success ? match.Groups[3].Value : null;
             var maxColumns = GetDetectionColumns(contextDict, entity);
 
-            // 解析起始索引
-            int startIndex;
-            if (startStr.StartsWith("$"))
+            // 解析列数
+            int count;
+            if (countStr.StartsWith("$"))
             {
-                startIndex = GetIntFromContext(contextDict, startStr.Substring(1), 1);
+                count = GetIntFromContext(contextDict, countStr.Substring(1), 2);
             }
             else
             {
-                startIndex = int.Parse(startStr);
+                count = int.Parse(countStr);
             }
 
-            // 解析结束索引
-            int endIndex;
-            if (endStr != null)
+            // 解析最大列数（可选参数）
+            if (maxColStr != null)
             {
-                if (endStr.StartsWith("$"))
+                if (maxColStr.StartsWith("$"))
                 {
-                    endIndex = GetIntFromContext(contextDict, endStr.Substring(1), maxColumns);
+                    maxColumns = GetIntFromContext(contextDict, maxColStr.Substring(1), maxColumns);
                 }
                 else
                 {
-                    endIndex = int.Parse(endStr);
+                    maxColumns = int.Parse(maxColStr);
                 }
             }
-            else
-            {
-                endIndex = maxColumns;
-            }
 
-            // 获取范围内的值
-            var values = GetRangeValues(prefix, startIndex, endIndex, contextDict, entity, maxColumns);
+            // 获取前N列的值（从第1列开始取count列）
+            var values = GetRangeValues(prefix, 1, count, contextDict, entity, maxColumns);
 
             if (values.Count < 2)
             {
                 return "0";
             }
 
-            // 计算首尾差值并应用精度处理
-            var diff = Math.Abs(values.First() - values.Last());
+            // 计算前N列差值: 第1列值 - 第N列值
+            var diff = values.First() - values.Last();
+            var precision = GetCalculationPrecision(null);
+            var roundedDiff = Math.Round(diff, precision, MidpointRounding.AwayFromZero);
+            return roundedDiff.ToString(CultureInfo.InvariantCulture);
+        });
+    }
+
+    /// <summary>
+    /// 处理 DIFF_LAST 函数
+    /// DIFF_LAST(Detection, 2) 或 DIFF_LAST(Detection, 2, $DetectionColumns)
+    /// 返回后N列的差值（倒数第N列值 - 倒数第1列值）
+    /// </summary>
+    private string ProcessDiffLast(
+        string formula,
+        Dictionary<string, object> contextDict,
+        IntermediateDataEntity entity)
+    {
+        return DiffLastRegex.Replace(formula, match =>
+        {
+            var prefix = ResolveRangePrefix(match.Groups[1].Value);
+            var countStr = match.Groups[2].Value;
+            var maxColStr = match.Groups[3].Success ? match.Groups[3].Value : null;
+            var maxColumns = GetDetectionColumns(contextDict, entity);
+
+            // 解析列数
+            int count;
+            if (countStr.StartsWith("$"))
+            {
+                count = GetIntFromContext(contextDict, countStr.Substring(1), 2);
+            }
+            else
+            {
+                count = int.Parse(countStr);
+            }
+
+            // 解析最大列数（可选参数）
+            if (maxColStr != null)
+            {
+                if (maxColStr.StartsWith("$"))
+                {
+                    maxColumns = GetIntFromContext(contextDict, maxColStr.Substring(1), maxColumns);
+                }
+                else
+                {
+                    maxColumns = int.Parse(maxColStr);
+                }
+            }
+
+            // 获取后N列的值（从maxColumns-count+1到maxColumns）
+            var startIndex = maxColumns - count + 1;
+            var values = GetRangeValues(prefix, startIndex, maxColumns, contextDict, entity, maxColumns);
+
+            if (values.Count < 2)
+            {
+                return "0";
+            }
+
+            // 计算后N列差值: 最后一列 - 前一列
+            // values.Last() = 最后一列 (maxColumns), values.First() = 倒数第N列
+            var diff = values.Last() - values.First();
             var precision = GetCalculationPrecision(null);
             var roundedDiff = Math.Round(diff, precision, MidpointRounding.AwayFromZero);
             return roundedDiff.ToString(CultureInfo.InvariantCulture);
@@ -670,7 +738,7 @@ public class FormulaParser : IFormulaParser, ITransient
     }
 
     /// <summary>
-    /// 处理 RANGE/DIFF_FIRST_LAST 参数并写入列表
+    /// 处理 RANGE/DIFF_FIRST/DIFF_LAST 参数并写入列表
     /// </summary>
     private bool TryAppendRangeValues(
         string expression,
@@ -722,35 +790,60 @@ public class FormulaParser : IFormulaParser, ITransient
             return true;
         }
 
-        // DIFF_FIRST_LAST(prefix, start?, end?)
-        var diffMatch = DiffFirstLastRegex.Match(expression);
-        if (diffMatch.Success && diffMatch.Value.Equals(expression, StringComparison.OrdinalIgnoreCase))
+        // DIFF_FIRST(prefix, count, maxColumns?)
+        var diffFirstMatch = DiffFirstRegex.Match(expression);
+        if (diffFirstMatch.Success && diffFirstMatch.Value.Equals(expression, StringComparison.OrdinalIgnoreCase))
         {
-            var prefix = ResolveRangePrefix(diffMatch.Groups[1].Value);
-            var startStr = diffMatch.Groups[2].Success ? diffMatch.Groups[2].Value : "1";
-            var endStr = diffMatch.Groups[3].Success ? diffMatch.Groups[3].Value : null;
+            var prefix = ResolveRangePrefix(diffFirstMatch.Groups[1].Value);
+            var countStr = diffFirstMatch.Groups[2].Value;
+            var maxColStr = diffFirstMatch.Groups[3].Success ? diffFirstMatch.Groups[3].Value : null;
             var maxColumns = GetDetectionColumns(contextDict, entity);
 
-            var startIndex = startStr.StartsWith("$")
-                ? GetIntFromContext(contextDict, startStr.Substring(1), 1)
-                : int.Parse(startStr);
+            var count = countStr.StartsWith("$")
+                ? GetIntFromContext(contextDict, countStr.Substring(1), 2)
+                : int.Parse(countStr);
 
-            int endIndex;
-            if (endStr != null)
+            if (maxColStr != null)
             {
-                endIndex = endStr.StartsWith("$")
-                    ? GetIntFromContext(contextDict, endStr.Substring(1), maxColumns)
-                    : int.Parse(endStr);
-            }
-            else
-            {
-                endIndex = maxColumns;
+                maxColumns = maxColStr.StartsWith("$")
+                    ? GetIntFromContext(contextDict, maxColStr.Substring(1), maxColumns)
+                    : int.Parse(maxColStr);
             }
 
-            var values = GetRangeValues(prefix, startIndex, endIndex, contextDict, entity, maxColumns);
+            var values = GetRangeValues(prefix, 1, count, contextDict, entity, maxColumns);
             if (values.Count >= 2)
             {
-                var diff = Math.Abs(values.First() - values.Last());
+                var diff = values.First() - values.Last();
+                results.Add(diff);
+            }
+            return true;
+        }
+
+        // DIFF_LAST(prefix, count, maxColumns?)
+        var diffLastMatch = DiffLastRegex.Match(expression);
+        if (diffLastMatch.Success && diffLastMatch.Value.Equals(expression, StringComparison.OrdinalIgnoreCase))
+        {
+            var prefix = ResolveRangePrefix(diffLastMatch.Groups[1].Value);
+            var countStr = diffLastMatch.Groups[2].Value;
+            var maxColStr = diffLastMatch.Groups[3].Success ? diffLastMatch.Groups[3].Value : null;
+            var maxColumns = GetDetectionColumns(contextDict, entity);
+
+            var count = countStr.StartsWith("$")
+                ? GetIntFromContext(contextDict, countStr.Substring(1), 2)
+                : int.Parse(countStr);
+
+            if (maxColStr != null)
+            {
+                maxColumns = maxColStr.StartsWith("$")
+                    ? GetIntFromContext(contextDict, maxColStr.Substring(1), maxColumns)
+                    : int.Parse(maxColStr);
+            }
+
+            var startIndex = maxColumns - count + 1;
+            var values = GetRangeValues(prefix, startIndex, maxColumns, contextDict, entity, maxColumns);
+            if (values.Count >= 2)
+            {
+                var diff = values.Last() - values.First();
                 results.Add(diff);
             }
             return true;

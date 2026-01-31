@@ -28,27 +28,12 @@
 
       <ErrorAction v-if="getUseErrorHandle" :class="`${prefixCls}-action__item error-action`" />
 
-      <a-tooltip :title="t('layout.header.tooltipChat')" placement="bottom" :mouseEnterDelay="0.5">
-        <div :class="`${prefixCls}-action__item`" @click="openChatDrawer(true, {})">
-          <MessageOutlined :class="{ twinkle: isTwinkle }" />
-        </div>
-      </a-tooltip>
-
-      <Notify
-        v-if="getShowNotice"
-        :count="messageCount"
-        :class="`${prefixCls}-action__item notify-item`"
-        @click="openMessageDrawer(true, {})" />
-
       <FullScreen v-if="getShowFullScreen" :class="`${prefixCls}-action__item fullscreen-item`" />
 
       <AppLocalePicker v-if="getShowLocalePicker" :showText="false" :class="`${prefixCls}-action__item`" />
 
       <UserDropDown :theme="getHeaderTheme" />
 
-      <SettingDrawer v-if="getShowSetting" :class="`${prefixCls}-action__item`" />
-      <ChatDrawer @register="registerChatDrawer" @toggleTwinkle="toggleTwinkle" />
-      <MessageDrawer @register="registerMessageDrawer" @readMsg="readMsg" />
       <ResetPwdForm @register="registerForm" />
     </div>
   </Header>
@@ -59,7 +44,7 @@
   import { propTypes } from '/@/utils/propTypes';
 
   import { Layout } from 'ant-design-vue';
-  import { MessageOutlined } from '@ant-design/icons-vue';
+
   import { AppLogo, AppSearch, AppLocalePicker } from '/@/components/Application';
   import LayoutMenu from '../menu/index.vue';
   import LayoutTrigger from '../trigger/index.vue';
@@ -71,7 +56,7 @@
   import { MenuModeEnum, MenuSplitTyeEnum } from '/@/enums/menuEnum';
   import { SettingButtonPositionEnum } from '/@/enums/appEnum';
 
-  import { UserDropDown, LayoutBreadcrumb, FullScreen, Notify, ErrorAction } from './components';
+  import { UserDropDown, LayoutBreadcrumb, FullScreen, ErrorAction } from './components';
   import { useAppInject } from '/@/hooks/web/useAppInject';
   import { useDesign } from '/@/hooks/web/useDesign';
 
@@ -79,21 +64,13 @@
   import { useLocale } from '/@/locales/useLocale';
   import { useI18n } from '/@/hooks/web/useI18n';
 
-  import { useDrawer } from '/@/components/Drawer';
-  import ChatDrawer from './components/chat/ChatDrawer.vue';
-  import MessageDrawer from './components/MessageDrawer.vue';
-  import { useWebSocket } from '/@/hooks/web/useWebSocket';
-
   import { useModal } from '/@/components/Modal';
   import ResetPwdForm from './components/ResetPwdForm.vue';
   import { getSysConfig } from '/@/api/system/sysConfig';
   import { updatePasswordMessage } from '/@/api/basic/user';
   import { useUserStore } from '/@/store/modules/user';
 
-  interface State {
-    isTwinkle: boolean;
-    messageCount: number;
-  }
+
 
   export default defineComponent({
     name: 'LayoutHeader',
@@ -106,15 +83,8 @@
       UserDropDown,
       AppLocalePicker,
       FullScreen,
-      Notify,
       AppSearch,
       ErrorAction,
-      SettingDrawer: createAsyncComponent(() => import('/@/layouts/default/setting/index.vue'), {
-        loading: true,
-      }),
-      ChatDrawer,
-      MessageDrawer,
-      MessageOutlined,
       ResetPwdForm,
     },
     props: {
@@ -123,8 +93,6 @@
     setup(props) {
       const { t } = useI18n();
       const { prefixCls } = useDesign('layout-header');
-      const [registerChatDrawer, { openDrawer: openChatDrawer }] = useDrawer();
-      const [registerMessageDrawer, { openDrawer: openMessageDrawer }] = useDrawer();
       const { getShowTopMenu, getShowHeaderTrigger, getSplit, getIsMixMode, getMenuWidth, getIsMixSidebar } =
         useMenuSetting();
       const { getUseErrorHandle, getShowSettingButton, getSettingButtonPosition } = useRootSetting();
@@ -144,27 +112,8 @@
 
       const { getIsMobile } = useAppInject();
 
-      const state = reactive<State>({
-        isTwinkle: false,
-        messageCount: 0,
-      });
-
-      const { onWebSocket } = useWebSocket();
-
       const userStore = useUserStore();
       const [registerForm, { openModal: openFormModal }] = useModal();
-
-      onWebSocket((data: any) => {
-        // 初始化
-        if (data.method == 'initMessage') {
-          state.messageCount = data.unreadTotalCount || 0;
-          state.isTwinkle = !!data.unreadNums.length;
-        }
-        // 消息推送（消息公告用的）
-        if (data.method == 'messagePush') {
-          state.messageCount += data.unreadNoticeCount;
-        }
-      });
 
       const getHeaderClass = computed(() => {
         const theme = unref(getHeaderTheme);
@@ -176,18 +125,6 @@
             [`${prefixCls}--${theme}`]: theme,
           },
         ];
-      });
-
-      const getShowSetting = computed(() => {
-        if (!unref(getShowSettingButton)) {
-          return false;
-        }
-        const settingButtonPosition = unref(getSettingButtonPosition);
-
-        if (settingButtonPosition === SettingButtonPositionEnum.AUTO) {
-          return unref(getShowHeader);
-        }
-        return settingButtonPosition === SettingButtonPositionEnum.HEADER;
       });
 
       const getLogoWidth = computed(() => {
@@ -207,17 +144,6 @@
       });
       const getUserInfo = computed(() => userStore.getUserInfo || {});
 
-      function toggleTwinkle(boo = false) {
-        state.isTwinkle = boo;
-      }
-      function readMsg(isAll = false) {
-        if (isAll) {
-          state.messageCount = 0;
-        } else {
-          state.messageCount -= 1;
-          state.messageCount = state.messageCount >= 0 ? state.messageCount : 0;
-        }
-      }
       function initData() {
         updatePasswordMessage();
         getSysConfig()
@@ -240,7 +166,6 @@
 
       return {
         t,
-        ...toRefs(state),
         prefixCls,
         getHeaderClass,
         getShowHeaderLogo,
@@ -255,20 +180,11 @@
         getShowTopMenu,
         getShowLocalePicker,
         getShowFullScreen,
-        getShowNotice,
         getUseErrorHandle,
         getLogoWidth,
         getIsMixSidebar,
-        getShowSettingButton,
-        getShowSetting,
         getShowSearch,
-        registerChatDrawer,
-        openChatDrawer,
-        registerMessageDrawer,
-        openMessageDrawer,
-        toggleTwinkle,
         registerForm,
-        readMsg,
         initData,
       };
     },

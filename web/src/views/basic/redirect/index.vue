@@ -10,8 +10,10 @@
   const { params, query } = unref(currentRoute);
   const { path, _redirect_type = 'path' } = params;
 
-  Reflect.deleteProperty(params, '_redirect_type');
-  Reflect.deleteProperty(params, 'path');
+  // Clone params to avoid mutating the original route object (which is read-only)
+  const _params = { ...params };
+  Reflect.deleteProperty(_params, '_redirect_type');
+  Reflect.deleteProperty(_params, 'path');
 
   const _path = Array.isArray(path) ? path.join('/') : path;
 
@@ -19,7 +21,7 @@
     replace({
       name: _path,
       query,
-      params: JSON.parse((params._origin_params as string) ?? '{}'),
+      params: JSON.parse((_params._origin_params as string) ?? '{}'),
     });
   } else {
     replace({

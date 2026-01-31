@@ -346,6 +346,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
 
     /// <inheritdoc />
     [HttpPut("performance")]
+    [Microsoft.AspNetCore.Authorization.Authorize("lab:intermediateData:performance_edit")]
     public async Task UpdatePerformance([FromBody] IntermediateDataPerfUpdateInput input)
     {
         var entity = await _repository
@@ -396,6 +397,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
 
     /// <inheritdoc />
     [HttpPut("appearance")]
+    [Microsoft.AspNetCore.Authorization.Authorize("lab:intermediateData:appearance_edit")]
     public async Task UpdateAppearance([FromBody] IntermediateDataAppearUpdateInput input)
     {
         var entity = await _repository
@@ -1064,7 +1066,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             .ToList();
 
         var judgeFormulas = enabledFormulas
-            .Where(f => f.FormulaType == "JUDGE")
+            .Where(f => f.FormulaType == "JUDGE" && !string.IsNullOrWhiteSpace(f.Formula))
             .OrderBy(f => f.SortOrder)
             .ThenBy(f => f.CreatorTime)
             .ToList();

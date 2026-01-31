@@ -39,15 +39,17 @@ export const useRedo = (_router?: Router) => {
         resolve(false);
         return;
       }
-      if (name && Object.keys(params).length > 0) {
-        params['_origin_params'] = JSON.stringify(params ?? {});
-        params['_redirect_type'] = 'name';
-        params['path'] = String(name);
+      // Clone params to avoid mutating the original route object
+      const currentParams = { ...params };
+      if (name && Object.keys(currentParams).length > 0) {
+        currentParams['_origin_params'] = JSON.stringify(currentParams ?? {});
+        currentParams['_redirect_type'] = 'name';
+        currentParams['path'] = String(name);
       } else {
-        params['_redirect_type'] = 'path';
-        params['path'] = fullPath;
+        currentParams['_redirect_type'] = 'path';
+        currentParams['path'] = fullPath;
       }
-      replace({ name: REDIRECT_NAME, params, query }).then(() => resolve(true));
+      replace({ name: REDIRECT_NAME, params: currentParams, query }).then(() => resolve(true));
     });
   }
   return redo;

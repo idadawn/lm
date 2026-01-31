@@ -65,8 +65,7 @@
                 <div :class="['status-cell', (record.labeling || text) === '性能不合' ? 'bg-red' : '']"
                   :style="{ backgroundColor: getCellColor(record.id, column.key) }"
                   @click="handleCellColor(record.id, column.key)">
-                  <EditableCell :record="record" :field="column.key" :value="record.labeling || text"
-                    @save="val => handleCellSave2(record, column.key, val)" />
+                  <span>{{ record.labeling || text }}</span>
                 </div>
               </template>
 
@@ -96,34 +95,59 @@
                 <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
                   @click="handleCellColor(record.id, column.key)">
                   <a-spin :spinning="record.pendingPerfCalc || false" size="small">
-                    <EditableCell :record="record" :field="column.key" :value="record[column.key]" type="number"
-                      :precision="getFieldPrecision(column.key)"
+                    <EditableCell v-if="hasBtnP(PERM_MAGNETIC)" :record="record" :field="column.key"
+                      :value="record[column.key]" type="number" :precision="getFieldPrecision(column.key)"
                       @save="val => handlePerfSave(record, column.key, val)" />
+                    <span v-else>{{ record[column.key] }}</span>
                   </a-spin>
                 </div>
               </template>
 
-              <!-- 外观特性列 -->
-              <template v-else-if="isAppearanceColumn(column.key)">
+              <!-- 外观特性（汉字） -->
+              <template v-else-if="column.key === 'featureSuffix'">
                 <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
                   @click="handleCellColor(record.id, column.key)">
-                  <EditableCell :record="record" :field="column.key" :value="record[column.key]"
-                    :type="getAppearanceFieldType(column.key)"
-                    @save="val => handleAppearanceSave(record, column.key, val)" />
+                  <a-tag v-if="record.featureSuffix" color="orange">{{ record.featureSuffix }}</a-tag>
+                  <span v-else>-</span>
+                </div>
+              </template>
+
+              <!-- 外观特性列表 -->
+              <template v-else-if="column.key === 'appearanceFeatureList'">
+                <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
+                  @click="handleCellColor(record.id, column.key)">
+                  <a-space wrap size="small" v-if="getMatchedFeatureLabels(record).length > 0">
+                    <a-tag v-for="feature in getMatchedFeatureLabels(record)" :key="feature.id" color="blue">
+                      {{ feature.label }}
+                    </a-tag>
+                  </a-space>
+                  <span v-else>-</span>
+                </div>
+              </template>
+
+              <!-- 可编辑的测量值（中Si、中B、花纹等） -->
+              <template v-else-if="isEditableMeasurement(column.key)">
+                <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
+                  @click="handleCellColor(record.id, column.key)">
+                  <EditableCell v-if="hasBtnP(PERM_APPEARANCE)" :record="record" :field="column.key"
+                    :value="record[column.key]" type="number" @save="val => handleCellSave2(record, column.key, val)" />
+                  <span v-else>{{ record[column.key] }}</span>
                 </div>
               </template>
 
               <template v-else-if="column.key === 'calcStatus'">
                 <div class="cell-content">
                   <a-tooltip v-if="isCalcFailed(record)" :title="record.calcErrorMessage">
-                    <a-tag :color="getCalcStatusInfo(record.calcStatus).color" class="cursor-pointer" @click.stop="handleRecalculate(record)">
+                    <a-tag :color="getCalcStatusInfo(record.calcStatus).color" class="cursor-pointer"
+                      @click.stop="handleRecalculate(record)">
                       <template #icon>
                         <ReloadOutlined :spin="record.recalculating" />
                       </template>
                       {{ record.recalculating ? '计算中' : getCalcStatusInfo(record.calcStatus).text }}
                     </a-tag>
                   </a-tooltip>
-                  <a-tag v-else :color="getCalcStatusInfo(record.calcStatus).color" class="cursor-pointer" @click.stop="handleRecalculate(record)">
+                  <a-tag v-else :color="getCalcStatusInfo(record.calcStatus).color" class="cursor-pointer"
+                    @click.stop="handleRecalculate(record)">
                     <template #icon>
                       <ReloadOutlined :spin="record.recalculating" />
                     </template>
@@ -167,7 +191,8 @@
               <template v-else>
                 <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
                   @click="handleCellColor(record.id, column.key)">
-                <NumericTableCell v-if="isNumericString(record[column.key])" :value="record[column.key]" :field-name="column.key" />
+                  <NumericTableCell v-if="isNumericString(record[column.key])" :value="record[column.key]"
+                    :field-name="column.key" />
                   <span v-else>{{ formatValue(record[column.key], column.key) }}</span>
                 </div>
               </template>
@@ -177,63 +202,38 @@
 
       </div>
       <MagneticDataImportQuickModal @register="registerQuickModal" @reload="handleImportSuccess" />
-      
+
       <!-- 导出日期选择模态框 -->
-      <a-modal
-        v-model:visible="exportModalVisible"
-        title="导出中间数据"
-        @ok="handleExport"
-        :confirm-loading="exporting"
-        ok-text="导出"
-        cancel-text="取消"
-        width="560px"
-        :body-style="{ padding: '16px 24px' }"
-      >
+      <a-modal v-model:visible="exportModalVisible" title="导出中间数据" @ok="handleExport" :confirm-loading="exporting"
+        ok-text="导出" cancel-text="取消" width="560px" :body-style="{ padding: '16px 24px' }">
         <a-form layout="vertical" :style="{ marginBottom: 0 }">
           <a-form-item label="快捷选择" style="margin-bottom: 16px">
             <div class="export-date-shortcuts">
-              <a-tag
-                v-for="item in exportDateShortcuts"
-                :key="item.key"
+              <a-tag v-for="item in exportDateShortcuts" :key="item.key"
                 :color="selectedExportShortcut === item.key ? item.activeColor : 'default'"
                 :class="['export-shortcut-tag', { 'export-shortcut-tag--active': selectedExportShortcut === item.key }]"
-                @click="setExportRange(item.key)"
-              >
+                @click="setExportRange(item.key)">
                 {{ item.label }}
               </a-tag>
             </div>
           </a-form-item>
 
           <a-form-item label="生产日期范围" required style="margin-bottom: 12px">
-            <JnpfDateRange
-              v-model:value="exportDateRange"
-              :placeholder="['开始日期', '结束日期']"
-              style="width: 100%"
-              format="YYYY-MM-DD"
-              @change="handleExportDateChange"
-            />
+            <JnpfDateRange v-model:value="exportDateRange" :placeholder="['开始日期', '结束日期']" style="width: 100%"
+              format="YYYY-MM-DD" @change="handleExportDateChange" />
           </a-form-item>
 
           <a-form-item v-if="exportDateRange && exportDateRange.length === 2" style="margin-bottom: 0">
-            <a-alert
-              type="info"
+            <a-alert type="info"
               :message="`将导出 ${formatExportDate(exportDateRange[0])} 至 ${formatExportDate(exportDateRange[1])} 的数据`"
-              show-icon
-            />
+              show-icon />
           </a-form-item>
         </a-form>
       </a-modal>
 
       <a-drawer v-model:visible="calcLogDrawerVisible" title="计算日志" width="720">
-        <a-table
-          :columns="calcLogColumns"
-          :data-source="calcLogData"
-          :pagination="calcLogPagination"
-          :loading="calcLogLoading"
-          row-key="id"
-          size="small"
-          @change="handleCalcLogTableChange"
-        />
+        <a-table :columns="calcLogColumns" :data-source="calcLogData" :pagination="calcLogPagination"
+          :loading="calcLogLoading" row-key="id" size="small" @change="handleCalcLogTableChange" />
       </a-drawer>
     </div>
   </div>
@@ -245,6 +245,7 @@
 import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { BasicTable, useTable, BasicColumn } from '/@/components/Table';
 import { useMessage } from '/@/hooks/web/useMessage';
+import { usePermission } from '/@/hooks/web/usePermission';
 import { dateUtil } from '/@/utils/dateUtil';
 import type { Dayjs } from 'dayjs';
 import {
@@ -264,6 +265,7 @@ import {
 } from '../../../api/lab/intermediateDataColor';
 import type { CellColorInfo } from '/@/api/lab/model/intermediateDataColorModel';
 import { getAllAppearanceFeatureCategories, type AppearanceFeatureCategoryInfo } from '/@/api/lab/appearanceCategory';
+import { getAppearanceFeatureList } from '/@/api/lab/appearanceFeature';
 
 import EditableCell from './components/EditableCell.vue';
 import NumericTableCell from './components/NumericTableCell.vue';
@@ -282,6 +284,12 @@ import type { IntermediateDataCalcLogItem } from '/@/api/lab/model/intermediateD
 defineOptions({ name: 'IntermediateData' });
 
 const { createMessage } = useMessage();
+const { hasBtnP } = usePermission();
+
+// 权限标识 (对应按钮编码)
+const PERM_MAGNETIC = 'btn_edit_magnetic';
+const PERM_APPEARANCE = 'btn_edit_appearance';
+
 
 // 产品规格选项
 const productSpecOptions = ref<any[]>([]);
@@ -300,6 +308,8 @@ const calcLogTargetId = ref<string>('');
 
 // 特性大类列表
 const appearanceCategories = ref<AppearanceFeatureCategoryInfo[]>([]);
+// 所有外观特性列表
+const allFeatures = ref<any[]>([]);
 
 // 公式精度配置
 const { getFieldPrecision, loading: precisionLoading } = useFormulaPrecision();
@@ -408,6 +418,56 @@ const calcLogColumns = [
   { title: '详情', dataIndex: 'errorDetail', key: 'errorDetail' },
 ];
 
+// 加载特性列表
+async function loadFeatures() {
+  try {
+    const featuresResponse = await getAppearanceFeatureList({ keyword: '' });
+    allFeatures.value = featuresResponse.list || [];
+  } catch (error) {
+    console.error('加载特性数据失败', error);
+  }
+}
+
+function getFeatureName(featureId: string): string {
+  const feature = allFeatures.value.find(f => f.id === featureId);
+  return feature ? feature.name : featureId;
+}
+
+function getMatchedFeatureLabels(record: any): Array<{ id: string; label: string }> {
+  // 优先使用详细信息（如果后端返回了）
+  if (record.appearanceFeatureDetails && record.appearanceFeatureDetails.length > 0) {
+    return record.appearanceFeatureDetails.map((detail: any) => ({
+      id: detail.featureId || detail.id,
+      label: [detail.categoryName, detail.severityLevelName, detail.featureName]
+        .filter(Boolean)
+        .join(' / '),
+    }));
+  }
+
+  // 否则使用ID列表匹配本地加载的特性
+  if (record.appearanceFeatureIds && record.appearanceFeatureIds.length > 0) {
+    // 尝试解析JSON字符串
+    let ids = record.appearanceFeatureIds;
+    if (typeof ids === 'string') {
+      try {
+        ids = JSON.parse(ids);
+      } catch (e) {
+        ids = [];
+      }
+    }
+
+    if (Array.isArray(ids)) {
+      return ids.map((id: string) => ({
+        id,
+        label: getFeatureName(id),
+      }));
+    }
+  }
+
+  return [];
+}
+
+
 // 合并所有列
 const allColumns = computed(() => {
   // 获取当前产品规格的检测列数量
@@ -511,25 +571,15 @@ const allColumns = computed(() => {
         })),
       ],
     },
-    { title: '带厚范围', dataIndex: 'thicknessMin', key: 'thicknessMin', width: 90, align: 'center' as const },
-    { title: '~', dataIndex: 'thicknessRangeSep', key: 'thicknessRangeSep', width: 40, align: 'center' as const },
-    { title: '带厚范围', dataIndex: 'thicknessMax', key: 'thicknessMax', width: 90, align: 'center' as const },
+    { title: '带厚范围', dataIndex: 'thicknessRange', key: 'thicknessRange', width: 90, align: 'center' },
     // --- 规格与物理特性 ---
     { title: '带厚极差', dataIndex: 'thicknessDiff', key: 'thicknessDiff', width: 70, align: 'right' },
     { title: '密度 (g/cm³)', dataIndex: 'density', key: 'density', width: 70, align: 'right' },
     { title: '叠片系数', dataIndex: 'laminationFactor', key: 'laminationFactor', width: 70, align: 'right' },
 
-    // --- 外观缺陷区（动态从特性大类获取） ---
-    ...appearanceCategories.value
-      .filter(category => !category.parentId || category.parentId === '-1') // 只显示顶级分类（大类）
-      .sort((a, b) => (a.sortCode || 0) - (b.sortCode || 0)) // 按排序码排序
-      .map(category => ({
-        title: category.name,
-        dataIndex: category.id,
-        key: category.id,
-        width: 50,
-        align: 'center' as const,
-      })),
+    // --- 外观缺陷区 ---
+    { title: '外观特性', dataIndex: 'featureSuffix', key: 'featureSuffix', width: 90, align: 'center' },
+    { title: '外观特性列表', dataIndex: 'appearanceFeatureList', key: 'appearanceFeatureList', width: 220, align: 'left' },
 
     { title: '断头数(个)', dataIndex: 'breakCount', key: 'breakCount', width: 70, align: 'right' },
     { title: '单卷重量(kg)', dataIndex: 'singleCoilWeight', key: 'singleCoilWeight', width: 80, align: 'right' },
@@ -722,10 +772,7 @@ const [registerTable, { reload, getDataSource }] = useTable({
         label: '生产日期',
         component: 'DateRange',
         colProps: { span: 6 },
-        defaultValue: (() => {
-          const now = dateUtil();
-          return [now.startOf('month'), now.endOf('month')];
-        })(),
+
         componentProps: {
           placeholder: ['开始日期', '结束日期'],
           ranges: getDateRanges(),
@@ -822,11 +869,6 @@ const appearanceFields = computed(() => {
   return [
     ...dynamicFields,
     'fishScale',
-    'midSi',
-    'midB',
-    'leftPattern',
-    'midPattern',
-    'rightPattern',
     'breakCount',
     'singleCoilWeight',
     'appearEditorName',
@@ -835,6 +877,17 @@ const appearanceFields = computed(() => {
 
 function isAppearanceColumn(key: string) {
   return appearanceFields.value.includes(key);
+}
+
+function isEditableMeasurement(key: string) {
+  const editableKeys = [
+    'midSiLeft', 'midSiRight',
+    'midBLeft', 'midBRight',
+    'leftPatternWidth', 'leftPatternSpacing',
+    'midPatternWidth', 'midPatternSpacing',
+    'rightPatternWidth', 'rightPatternSpacing'
+  ];
+  return editableKeys.includes(key);
 }
 
 function getAppearanceFieldType(key: string) {
@@ -1034,7 +1087,7 @@ async function handleAppearanceSave(record: any, field: string, value: any) {
 // 重新计算
 async function handleRecalculate(record: any) {
   if (record.recalculating) return;
-  
+
   try {
     record.recalculating = true;
     await recalculateIntermediateData([record.id]);
@@ -1052,25 +1105,25 @@ async function handleRecalculate(record: any) {
 // 批量重新计算（针对计算失败的数据）
 async function handleBatchRecalculate() {
   if (batchCalculating.value) return;
-  
+
   // 获取当前表格数据
   const data = getDataSource();
   if (!data || data.length === 0) {
     createMessage.warning('当前没有数据');
     return;
   }
-  
+
   // 筛选出计算失败的数据
   const failedRecords = data.filter(record => {
     const status = normalizeCalcStatus(record?.calcStatus);
     return status === 'FAILED';
   });
-  
+
   if (failedRecords.length === 0) {
     createMessage.info('没有计算失败的数据需要重新计算');
     return;
   }
-  
+
   try {
     batchCalculating.value = true;
     const ids = failedRecords.map(record => record.id);
@@ -1194,7 +1247,7 @@ async function handleExport() {
     const endDate = dateUtil(exportDateRange.value[1]).format('YYYY-MM-DD');
 
     const response = await exportIntermediateData(startDate, endDate);
-    
+
     // 获取文件名
     const contentDisposition = response.headers?.get('content-disposition');
     let fileName = `中间数据导出_${new Date().toISOString().slice(0, 10)}.xlsx`;
@@ -1204,7 +1257,7 @@ async function handleExport() {
         fileName = decodeURIComponent(match[1].replace(/['"]/g, ''));
       }
     }
-    
+
     // 下载文件
     const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     const link = document.createElement('a');
@@ -1214,7 +1267,7 @@ async function handleExport() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
-    
+
     createMessage.success({ content: '导出成功', key: 'export' });
     exportModalVisible.value = false;
   } catch (error: any) {
@@ -1540,6 +1593,7 @@ async function saveColorsBatch() {
 onMounted(() => {
   loadProductSpecOptions();
   loadAppearanceCategories();
+  loadFeatures();
 });
 
 // --- 磁性数据导入相关逻辑 ---
@@ -1701,8 +1755,24 @@ async function handleQuickImport(file: File) {
 }
 
 .spec-tabs-wrap :deep(.ant-tabs-card .ant-tabs-tab) {
-  padding: 2px 12px;
-  font-size: 12px;
+  padding: 6px 16px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 4px 4px 0 0;
+  border: 1px solid #d9d9d9;
+  margin-right: 4px !important;
+  background-color: #f5f5f5;
+  transition: all 0.3s;
+}
+
+.spec-tabs-wrap :deep(.ant-tabs-card .ant-tabs-tab-active) {
+  background-color: #1890ff !important;
+  color: white !important;
+  border-color: #1890ff !important;
+}
+
+.spec-tabs-wrap :deep(.ant-tabs-card .ant-tabs-tab-active .ant-tabs-tab-btn) {
+  color: white !important;
 }
 
 .spec-tabs-wrap :deep(.ant-tabs-nav) {
@@ -1798,4 +1868,3 @@ async function handleQuickImport(file: File) {
   box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
 }
 </style>
-

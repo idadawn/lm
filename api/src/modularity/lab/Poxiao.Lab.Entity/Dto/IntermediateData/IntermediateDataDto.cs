@@ -14,6 +14,11 @@ public class IntermediateDataListQuery : PageInputBase
     public string Keyword { get; set; }
 
     /// <summary>
+    /// 特性后缀（用于筛选）.
+    /// </summary>
+    public string FeatureSuffix { get; set; }
+
+    /// <summary>
     /// 产品规格ID.
     /// </summary>
     public string ProductSpecId { get; set; }

@@ -18,6 +18,24 @@ public class IntermediateDataExportInput
     /// </summary>
     [FromQuery(Name = "endDate")]
     public DateTime? EndDate { get; set; }
+
+    /// <summary>
+    /// 产品规格ID.
+    /// </summary>
+    [FromQuery(Name = "productSpecId")]
+    public string ProductSpecId { get; set; }
+
+    /// <summary>
+    /// 特性后缀.
+    /// </summary>
+    [FromQuery(Name = "featureSuffix")]
+    public string FeatureSuffix { get; set; }
+
+    /// <summary>
+    /// 关键词.
+    /// </summary>
+    [FromQuery(Name = "keyword")]
+    public string Keyword { get; set; }
 }
 
 /// <summary>

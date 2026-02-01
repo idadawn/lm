@@ -289,6 +289,7 @@ web/mock/node_modules/
 
 # Deployment directory
 deploy/
+deploy-package/
 
 # Build cache
 .build-cache/

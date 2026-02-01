@@ -1,7 +1,7 @@
-﻿using Poxiao.FriendlyException;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Poxiao.FriendlyException;
 using System.Diagnostics;
 using System.Reflection;
 

@@ -1,15 +1,16 @@
+using Newtonsoft.Json;
 using Poxiao.Extras.CollectiveOAuth.Cache;
 using Poxiao.Extras.CollectiveOAuth.Config;
+using Poxiao.Extras.CollectiveOAuth.Enums;
 using Poxiao.Extras.CollectiveOAuth.Models;
 using Poxiao.Extras.CollectiveOAuth.Utils;
-using Poxiao.Extras.CollectiveOAuth.Enums;
-using Newtonsoft.Json;
 
 namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class MicrosoftAuthRequest : DefaultAuthRequest
 {
-    public MicrosoftAuthRequest(ClientConfig config) : base(config, new MicrosoftAuthSource())
+    public MicrosoftAuthRequest(ClientConfig config)
+        : base(config, new MicrosoftAuthSource())
     {
     }
 
@@ -51,7 +52,6 @@ public class MicrosoftAuthRequest : DefaultAuthRequest
 
         return authToken;
     }
-
 
     protected override AuthUser getUserInfo(AuthToken authToken)
     {
@@ -136,7 +136,7 @@ public class MicrosoftAuthRequest : DefaultAuthRequest
      *
      * @param authToken 用户授权后的token
      * @return 返回获取userInfo的url
-     */ 
+     */
     protected override string userInfoUrl(AuthToken authToken)
     {
         return UrlBuilder.fromBaseUrl(source.userInfo()).build();
@@ -159,7 +159,6 @@ public class MicrosoftAuthRequest : DefaultAuthRequest
             .queryParam("redirect_uri", config.redirectUri)
             .build();
     }
-
 
     /**
      * 检查响应内容是否正确

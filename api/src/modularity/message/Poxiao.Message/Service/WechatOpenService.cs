@@ -1,21 +1,21 @@
-using System.Text;
-using System.Xml;
-using Poxiao.Infrastructure.Enums;
-using Poxiao.Infrastructure.Extension;
-using Poxiao.Infrastructure.Security;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.Extras.Thirdparty.WeChat;
 using Poxiao.Extras.Thirdparty.WeChat.Internal;
 using Poxiao.FriendlyException;
+using Poxiao.Infrastructure.Enums;
+using Poxiao.Infrastructure.Extension;
+using Poxiao.Infrastructure.Security;
 using Poxiao.Logging.Attributes;
 using Poxiao.Message.Entitys.Entity;
 using Poxiao.Systems.Entitys.Permission;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Senparc.Weixin.MP;
 using SqlSugar;
+using System.Text;
+using System.Xml;
 
 namespace Poxiao.Message.Service;
 
@@ -116,14 +116,14 @@ public class WechatOpenService : IDynamicApiController, ITransient
     {
         var request = App.HttpContext.Request;
         var buffer = new byte[Convert.ToInt32(request.ContentLength)];
-        await request.Body.ReadAsync(buffer, 0, buffer.Length);
+        await request.Body.ReadExactlyAsync(buffer);
         var body = Encoding.UTF8.GetString(buffer);
         XmlDocument doc = new XmlDocument();
         doc.LoadXml(body);
         var input = new WechatMPEvent();
         input.ToUserName = doc.DocumentElement.SelectSingleNode("ToUserName").InnerText.Trim();
         input.FromUserName = doc.DocumentElement.SelectSingleNode("FromUserName").InnerText.Trim();
-        input.Event= doc.DocumentElement.SelectSingleNode("Event").InnerText.Trim();
+        input.Event = doc.DocumentElement.SelectSingleNode("Event").InnerText.Trim();
         return input;
     }
 }

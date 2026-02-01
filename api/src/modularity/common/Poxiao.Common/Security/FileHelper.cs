@@ -435,7 +435,7 @@ public class FileHelper
     /// </summary>
     /// <param name="path">path.</param>
     /// <returns></returns>
-    public static byte[]? ReadAllBytes(string path)
+    public static byte[] ? ReadAllBytes(string path)
     {
         try
         {
@@ -493,7 +493,7 @@ public class FileHelper
         }
         catch (Exception ex)
         {
-            throw ex;
+            throw;
         }
         finally
         {
@@ -509,17 +509,17 @@ public class FileHelper
     /// <summary>
     /// 根据源图片生成高清晰缩略图.
     /// </summary>
-    /// <param name="imgPath_old">源图(大图)物理路径.</param>
-    /// <param name="imgPath_new">缩略图物理路径(生成的缩略图将保存到该物理位置).</param>
+    /// <param name="imgPathOld">源图(大图)物理路径.</param>
+    /// <param name="imgPathNew">缩略图物理路径(生成的缩略图将保存到该物理位置).</param>
     /// <param name="width">缩略图宽度.</param>
     /// <param name="height">缩略图高度.</param>
     /// <param name="mode">缩略图缩放模式(取值"HW":指定高宽缩放,可能变形；取值"W":按指定宽度,高度按比例缩放；取值"H":按指定高度,宽度按比例缩放；取值"Cut":按指定高度和宽度裁剪,不变形)；取值"DB":等比缩放,以值较大的作为标准进行等比缩放.</param>
     /// <param name="imageType">即将生成缩略图的文件的扩展名(仅限：JPG、GIF、PNG、BMP).</param>
-    public static void MakeThumbnail(string imgPath_old, string imgPath_new, int width, int height, string mode, string imageType, int xx, int yy)
+    public static void MakeThumbnail(string imgPathOld, string imgPathNew, int width, int height, string mode, string imageType, int xx, int yy)
     {
-        if (IsExistFile(imgPath_old))
+        if (IsExistFile(imgPathOld))
         {
-            Image img = Image.FromFile(imgPath_old);
+            Image img = Image.FromFile(imgPathOld);
             int towidth = width;
             int toheight = height;
             int x = 0;
@@ -616,23 +616,23 @@ public class FileHelper
                 {
                     case "gif":
                         // 生成缩略图
-                        bitmap.Save(imgPath_new, ImageFormat.Gif);
+                        bitmap.Save(imgPathNew, ImageFormat.Gif);
                         break;
                     case "jpg":
-                        bitmap.Save(imgPath_new, ImageFormat.Jpeg);
+                        bitmap.Save(imgPathNew, ImageFormat.Jpeg);
                         break;
                     case "bmp":
-                        bitmap.Save(imgPath_new, ImageFormat.Bmp);
+                        bitmap.Save(imgPathNew, ImageFormat.Bmp);
                         break;
                     case "png":
-                        bitmap.Save(imgPath_new, ImageFormat.Png);
+                        bitmap.Save(imgPathNew, ImageFormat.Png);
                         break;
                     default:
-                        bitmap.Save(imgPath_new, ImageFormat.Jpeg);
+                        bitmap.Save(imgPathNew, ImageFormat.Jpeg);
                         break;
                 }
 
-                bitmap.Save(imgPath_new);
+                bitmap.Save(imgPathNew);
             }
             catch (Exception)
             {
@@ -684,7 +684,7 @@ public class FileHelper
         // 读取文件的 byte[]
         byte[] bytes = new byte[fileStream.Length];
 
-        fileStream.Read(bytes, 0, bytes.Length);
+        fileStream.ReadExactly(bytes);
 
         fileStream.Close();
 
@@ -732,7 +732,7 @@ public class FileHelper
         {
             if (File.Exists(filePath))
             {
-                byte[]? buff = ReadAllBytes(filePath);
+                byte[] ? buff = ReadAllBytes(filePath);
                 Microsoft.AspNetCore.Http.HttpContext? httpContext = App.HttpContext;
                 httpContext.Response.ContentType = "application/octet-stream";
                 httpContext.Response.Headers.Add("Content-Disposition", "attachment;filename=" + HttpUtility.UrlEncode(fileName, Encoding.UTF8));

@@ -1,14 +1,15 @@
 using Poxiao.Extras.CollectiveOAuth.Cache;
 using Poxiao.Extras.CollectiveOAuth.Config;
+using Poxiao.Extras.CollectiveOAuth.Enums;
 using Poxiao.Extras.CollectiveOAuth.Models;
 using Poxiao.Extras.CollectiveOAuth.Utils;
-using Poxiao.Extras.CollectiveOAuth.Enums;
 
 namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class WeiboAuthRequest : DefaultAuthRequest
 {
-    public WeiboAuthRequest(ClientConfig config) : base(config, new WeiboAuthSource())
+    public WeiboAuthRequest(ClientConfig config)
+        : base(config, new WeiboAuthSource())
     {
     }
 
@@ -46,7 +47,7 @@ public class WeiboAuthRequest : DefaultAuthRequest
         reqParams.Add("API-RemoteIP", "application/x-www-form-urlencoded");
 
         string response = HttpUtils.RequestGet(userInfoUrl(authToken), reqParams);
-      
+
         var userObj = response.parseObject();
         if (userObj.ContainsKey("error"))
         {

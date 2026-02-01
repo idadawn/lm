@@ -1,11 +1,11 @@
-using System.Drawing;
-using System.Text;
-using Poxiao.Infrastructure.Models.NPOI;
 using NPOI.HPSF;
 using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
+using Poxiao.Infrastructure.Models.NPOI;
+using System.Drawing;
+using System.Text;
 
 namespace Poxiao.Infrastructure.Security;
 
@@ -272,7 +272,7 @@ public class ExcelExportHelper<T>
             font.FontHeightInPoints = excelConfig.TitlePoint;
             if (excelConfig.ForeColor != new Color())
                 font.Color = GetXLColour(workbook, excelConfig.ForeColor);
-            font.Boldweight = 700;
+            font.IsBold = true;
             headStyle.SetFont(font);
 
             #endregion
@@ -533,7 +533,7 @@ public class ExcelExportHelper<T>
             if (excelConfig.ForeColor != new Color())
                 font.Color = GetXLColour(workbook, excelConfig.ForeColor);
 
-            font.Boldweight = 700;
+            font.IsBold = true;
             headStyle.SetFont(font);
             #endregion
 
@@ -809,7 +809,7 @@ public class ExcelExportHelper<T>
             if (excelConfig.ForeColor != new Color())
                 font.Color = GetXLColour(workbook, excelConfig.ForeColor);
 
-            font.Boldweight = 700;
+            font.IsBold = true;
             headStyle.SetFont(font);
             #endregion
 
@@ -1120,19 +1120,22 @@ public class ExcelExportHelper<T>
     private static short GetXLColour(HSSFWorkbook workbook, Color SystemColour)
     {
         short s = 0;
-        HSSFPalette XlPalette = workbook.GetCustomPalette();
-        NPOI.HSSF.Util.HSSFColor XlColour = XlPalette.FindColor(SystemColour.R, SystemColour.G, SystemColour.B);
-        if (XlColour == null)
+        HSSFPalette xlPalette = workbook.GetCustomPalette();
+        NPOI.HSSF.Util.HSSFColor xlColour = xlPalette.FindColor(SystemColour.R, SystemColour.G, SystemColour.B);
+        if (xlColour == null)
         {
             if (NPOI.HSSF.Record.PaletteRecord.STANDARD_PALETTE_SIZE < 255)
             {
-                XlColour = XlPalette.FindSimilarColor(SystemColour.R, SystemColour.G, SystemColour.B);
-                s = XlColour.Indexed;
+                xlColour = xlPalette.FindSimilarColor(SystemColour.R, SystemColour.G, SystemColour.B);
+                s = xlColour.Indexed;
             }
 
         }
         else
-            s = XlColour.Indexed;
+        {
+            s = xlColour.Indexed;
+        }
+
         return s;
     }
 
@@ -1140,7 +1143,7 @@ public class ExcelExportHelper<T>
 
     #region 类型转换
 
-    object valueType(Type t, string value)
+    private object valueType(Type t, string value)
     {
         object o = null;
         string strt = "String";

@@ -1,5 +1,5 @@
-using Poxiao.Infrastructure.Enums;
 using Poxiao.ConfigurableOptions;
+using Poxiao.Infrastructure.Enums;
 
 namespace Poxiao.Infrastructure.Options;
 

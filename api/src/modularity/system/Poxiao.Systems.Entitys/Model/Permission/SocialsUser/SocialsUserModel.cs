@@ -1,7 +1,7 @@
-using System.Text.Json.Nodes;
-using Poxiao.Infrastructure.Models.User;
 using Poxiao.DependencyInjection;
 using Poxiao.Extras.CollectiveOAuth.Models;
+using Poxiao.Infrastructure.Models.User;
+using System.Text.Json.Nodes;
 
 namespace Poxiao.Systems.Entitys.Model.Permission.SocialsUser;
 
@@ -35,7 +35,7 @@ public class SocialsUserInputModel
 
     public bool tenantLogin { get; set; }
 
-    public string poxiao_ticket { get; set; }
+    public string poxiaoTicket { get; set; }
 }
 
 public class SocialsUserInfo
@@ -46,11 +46,10 @@ public class SocialsUserInfo
     public string socialName { get; set; }
 }
 
-public class AuthCallbackNew: AuthCallback
+public class AuthCallbackNew : AuthCallback
 {
-    public string authCode;
+    public string AuthCode;
 }
-
 
 /// <summary>
 /// .

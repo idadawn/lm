@@ -29,7 +29,7 @@ public abstract class CUDEntityBase : EntityBase<string>, ICreatorTime, IDeleteT
     /// </summary>
     [SugarColumn(ColumnName = "last_modified_userid", ColumnDescription = "最后修改人")]
     public string? LastModifiedUserId { get; set; }
-    
+
     /// <summary>
     /// 删除时间.
     /// </summary>

@@ -4,19 +4,9 @@
     <div class="expr-input">
       <!-- 普通字段选择模式 -->
       <div v-if="!isCustomExprMode" class="field-select-wrapper">
-        <a-select
-          :value="condition.leftExpr"
-          class="field-select"
-          placeholder="搜索或选择字段"
-          show-search
-          allow-clear
-          :disabled="readOnly"
-          :filter-option="filterOption"
-          :not-found-content="searchNotFound"
-          option-filter-prop="label"
-          @change="(val) => handleFieldChange(val)"
-          @search="onSearch"
-        >
+        <a-select :value="condition.leftExpr" class="field-select" placeholder="搜索或选择字段" show-search allow-clear
+          :disabled="readOnly" :filter-option="filterOption" :not-found-content="searchNotFound"
+          option-filter-prop="label" @change="(val) => handleFieldChange(val)" @search="onSearch">
           <template #dropdownRender="{ menuNode: menu }">
             <div>
               <div class="dropdown-search-hint">
@@ -32,12 +22,7 @@
             </div>
           </template>
 
-          <a-select-option 
-            v-for="field in fieldOptions" 
-            :key="field.value" 
-            :value="field.value"
-            :label="field.label"
-          >
+          <a-select-option v-for="field in fieldOptions" :key="field.value" :value="field.value" :label="field.label">
             <div class="field-option">
               <span class="field-label">{{ field.label }}</span>
               <span v-if="field.value !== field.label" class="field-code">{{ field.value }}</span>
@@ -48,7 +33,8 @@
 
       <!-- 自定义表达式模式 -->
       <div v-else class="custom-expr-wrapper">
-        <div class="custom-expr-display" @click="!readOnly && openExprEditor()" :style="{ cursor: readOnly ? 'default' : 'pointer' }">
+        <div class="custom-expr-display" @click="!readOnly && openExprEditor()"
+          :style="{ cursor: readOnly ? 'default' : 'pointer' }">
           <span class="expr-text" :title="condition.leftExpr">
             {{ formatExprDisplay(condition.leftExpr) || '点击编辑表达式' }}
           </span>
@@ -56,7 +42,9 @@
         </div>
         <a-tooltip v-if="!readOnly" title="切换回字段选择">
           <a-button type="text" size="small" class="switch-btn" @click="switchToFieldSelect">
-            <template #icon><Icon icon="ant-design:unordered-list-outlined" :size="12" /></template>
+            <template #icon>
+              <Icon icon="ant-design:unordered-list-outlined" :size="12" />
+            </template>
           </a-button>
         </a-tooltip>
       </div>
@@ -64,20 +52,9 @@
 
     <!-- 操作符 -->
     <div class="operator-select">
-      <a-select
-        :value="condition.operator"
-        class="w-full"
-        show-search
-        :disabled="readOnly"
-        :filter-option="filterOperator"
-        @change="(val) => emit('update', { operator: val })"
-      >
-        <a-select-option 
-          v-for="op in OPERATORS" 
-          :key="op.value" 
-          :value="op.value"
-          :label="op.label"
-        >
+      <a-select :value="condition.operator" class="w-full" show-search :disabled="readOnly"
+        :filter-option="filterOperator" @change="(val) => emit('update', { operator: val })">
+        <a-select-option v-for="op in OPERATORS" :key="op.value" :value="op.value" :label="op.label">
           {{ op.label }}
         </a-select-option>
       </a-select>
@@ -86,38 +63,20 @@
     <!-- 右侧值 -->
     <div class="value-input">
       <template v-if="!['IS_NULL', 'NOT_NULL'].includes(condition.operator)">
-        <a-select
-          v-if="useFeatureValueSelect"
-          :value="condition.rightValue"
-          class="w-full"
-          show-search
-          allow-clear
-          :disabled="readOnly"
-          :options="featureValueOptions"
-          option-filter-prop="label"
-          @change="(val) => emit('update', { rightValue: val })"
-        />
-        <a-input
-          v-else
-          :value="condition.rightValue"
-          placeholder="比较值"
-          :disabled="readOnly"
-          @change="(e) => emit('update', { rightValue: e.target.value })"
-        />
+        <a-select v-if="useFeatureValueSelect" :value="parseListValue(condition.rightValue)" class="w-full" show-search
+          allow-clear mode="multiple" :disabled="readOnly" :options="featureValueOptions" option-filter-prop="label"
+          @change="(val) => handleFeatureValueChange(val)" />
+        <a-input v-else :value="condition.rightValue" placeholder="比较值" :disabled="readOnly"
+          @change="(e) => emit('update', { rightValue: e.target.value })" />
       </template>
       <span v-else class="no-value-hint">(无需输入)</span>
     </div>
 
     <!-- 删除按钮 -->
-    <a-button 
-      v-if="!readOnly"
-      type="text" 
-      size="small" 
-      danger 
-      class="delete-btn"
-      @click="emit('remove')"
-    >
-      <template #icon><Icon icon="ant-design:minus-circle-outlined" :size="14" /></template>
+    <a-button v-if="!readOnly" type="text" size="small" danger class="delete-btn" @click="emit('remove')">
+      <template #icon>
+        <Icon icon="ant-design:minus-circle-outlined" :size="14" />
+      </template>
     </a-button>
   </div>
 </template>
@@ -147,6 +106,10 @@ const props = defineProps({
     type: String as PropType<'default' | 'small'>,
     default: 'default',
   },
+  readOnly: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const emit = defineEmits(['update', 'remove', 'openFormulaEditor']);
@@ -166,6 +129,9 @@ const useFeatureValueSelect = computed(() => {
   if (props.condition.leftExpr === 'AppearanceFeatureLevelIds') {
     return (selectedField.value.featureLevels?.length || 0) > 0;
   }
+  if (props.condition.leftExpr === 'AppearanceFeatureIds') {
+    return (selectedField.value.featureCategories?.length || 0) > 0;
+  }
   return false;
 });
 
@@ -183,6 +149,14 @@ const featureValueOptions = computed(() => {
       value: item.id,
     }));
   }
+
+  if (props.condition.leftExpr === 'AppearanceFeatureIds') {
+    // In backend, we mapped features to featureCategories for this specific column
+    return (selectedField.value.featureCategories || []).map(item => ({
+      label: item.name,
+      value: item.id,
+    }));
+  }
   return [];
 });
 
@@ -190,20 +164,20 @@ const featureValueOptions = computed(() => {
 const isCustomExprMode = computed(() => {
   const expr = props.condition.leftExpr;
   if (!expr) return false;
-  
+
   // 如果表达式包含运算符或括号,认为是自定义表达式
   if (/[\+\-\*\/\(\)]/.test(expr)) return true;
-  
+
   // 如果包含方括号包裹的字段名,认为是自定义表达式
   if (/\[.+\]/.test(expr)) return true;
-  
+
   return false;
 });
 
 // 格式化表达式显示(将 [ColumnName] 转换为更友好的显示)
 function formatExprDisplay(expr: string): string {
   if (!expr) return '';
-  
+
   // 尝试替换 [ColumnName] 为对应的 label
   let result = expr;
   const fieldMatches = expr.match(/\[([^\]]+)\]/g);
@@ -241,7 +215,7 @@ function filterOperator(input: string, option: any): boolean {
 function onSearch(value: string) {
   searchValue.value = value;
   if (value && props.fieldOptions.length > 0) {
-    const hasMatch = props.fieldOptions.some(f => 
+    const hasMatch = props.fieldOptions.some(f =>
       f.label.toLowerCase().includes(value.toLowerCase()) ||
       f.value.toLowerCase().includes(value.toLowerCase())
     );
@@ -251,17 +225,54 @@ function onSearch(value: string) {
 
 // 处理字段选择变化
 function handleFieldChange(val: string) {
-  emit('update', { leftExpr: val });
+  const updateData: any = { leftExpr: val };
+
+  // Check if selected field is a feature field
+  const field = props.fieldOptions.find(f => f.value === val);
+  if (field && (
+    (field.featureCategories && field.featureCategories.length > 0) ||
+    (field.featureLevels && field.featureLevels.length > 0) ||
+    val === 'AppearanceFeatureIds'
+  )) {
+    // Removed forced defaults: updateData.operator = 'CONTAINS_ANY'; updateData.rightValue = '[]';
+    // Default reset logic:
+    updateData.rightValue = '';
+  } else {
+    // If switching away from feature field, maybe reset operator if it was CONTAINS_ANY?
+    // Optional, but good UX.
+    if (props.condition.operator === 'CONTAINS_ANY' || props.condition.operator === 'CONTAINS_ALL') {
+      updateData.operator = '=';
+    }
+  }
+
+  emit('update', updateData);
+}
+
+function parseListValue(val: string): string[] {
+  if (!val) return [];
+  try {
+    if (val.startsWith('[')) {
+      return JSON.parse(val);
+    }
+    return val.split(',').filter(s => s);
+  } catch {
+    return [];
+  }
+}
+
+function handleFeatureValueChange(val: string[]) {
+  // Serialize to JSON string for backend
+  emit('update', { rightValue: JSON.stringify(val) });
 }
 
 // 切换到自定义表达式模式
 function switchToCustomExpr() {
   // 如果当前有选中的字段,转换为表达式格式
   const currentExpr = props.condition.leftExpr;
-  const initialExpr = currentExpr && !currentExpr.includes('[') 
-    ? `[${currentExpr}]` 
+  const initialExpr = currentExpr && !currentExpr.includes('[')
+    ? `[${currentExpr}]`
     : currentExpr || '';
-  
+
   // 发射事件,请求打开公式编辑器
   emit('openFormulaEditor', {
     currentValue: initialExpr,
@@ -314,7 +325,7 @@ function openExprEditor() {
     }
 
     .operator-select {
-      width: 100px;
+      width: 180px;
     }
 
     .value-input {
@@ -392,7 +403,7 @@ function openExprEditor() {
   }
 
   .operator-select {
-    width: 120px;
+    width: 240px;
     flex-shrink: 0;
   }
 

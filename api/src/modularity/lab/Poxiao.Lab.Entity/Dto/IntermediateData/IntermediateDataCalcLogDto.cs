@@ -45,7 +45,7 @@ public class IntermediateDataCalcLogOutput
     public string IntermediateDataId { get; set; }
 
     public string ColumnName { get; set; }
-    
+
     public string FormulaName { get; set; }
 
     public string FormulaType { get; set; }

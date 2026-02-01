@@ -10,7 +10,7 @@ public partial class DefaultAuthRequest : IAuthRequest
 {
     protected ClientConfig config;
     protected IAuthSource source;
-    protected IAuthStateCache authStateCache { set; get; }
+    protected IAuthStateCache authStateCache { get; set; }
 
     public DefaultAuthRequest(ClientConfig config, IAuthSource source)
     {
@@ -213,7 +213,7 @@ public partial class DefaultAuthRequest : IAuthRequest
      * @param code code码
      * @return HttpResponse
      */
-    protected virtual string doGetAuthorizationCode(String code)
+    protected virtual string doGetAuthorizationCode(string code)
     {
         return HttpUtils.RequestGet(accessTokenUrl(code));
     }

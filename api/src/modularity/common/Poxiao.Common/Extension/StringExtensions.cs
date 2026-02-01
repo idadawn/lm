@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
-using System.Text.Json;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Web;
 using JsonSerializer = System.Text.Json.JsonSerializer;
@@ -473,7 +473,8 @@ public static class StringExtensions
     /// <returns>分割后的数据.</returns>
     public static string[] Split(this string value, string strSplit, bool removeEmptyEntries = false)
     {
-        return value.Split(new[] { strSplit },
+        return value.Split(
+            new[] { strSplit },
             removeEmptyEntries ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None);
     }
 
@@ -486,10 +487,10 @@ public static class StringExtensions
     /// <returns>分割后的数据.</returns>
     public static List<string> Split2List(this string value, string strSplit, bool removeEmptyEntries = false)
     {
-        return value.Split(new[] { strSplit },
+        return value.Split(
+            new[] { strSplit },
             removeEmptyEntries ? StringSplitOptions.RemoveEmptyEntries : StringSplitOptions.None).ToList();
     }
-
 
     /// <summary>
     /// 获取字符串的MD5 Hash值.

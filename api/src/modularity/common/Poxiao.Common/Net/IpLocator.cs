@@ -24,7 +24,7 @@ namespace Poxiao.Infrastructure.Net
             using (FileStream fs = new FileStream(dataPath, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 _data = new byte[fs.Length];
-                fs.Read(_data, 0, _data.Length);
+                fs.ReadExactly(_data);
             }
 
             byte[] buffer = new byte[8];

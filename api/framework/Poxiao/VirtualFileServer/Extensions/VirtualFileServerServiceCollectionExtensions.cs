@@ -1,5 +1,5 @@
-﻿using Poxiao.VirtualFileServer;
-using Microsoft.Extensions.FileProviders;
+﻿using Microsoft.Extensions.FileProviders;
+using Poxiao.VirtualFileServer;
 using System.Reflection;
 
 namespace Microsoft.Extensions.DependencyInjection;

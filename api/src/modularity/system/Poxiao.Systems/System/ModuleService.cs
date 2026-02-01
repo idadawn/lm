@@ -1,21 +1,21 @@
+using Mapster;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Poxiao.Apps.Entitys;
 using Poxiao.Apps.Entitys.Dto;
+using Poxiao.DatabaseAccessor;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Core.Manager.Files;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DatabaseAccessor;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Dto.Module;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.Systems.Interfaces.System;
-using Mapster;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.Systems;
@@ -194,7 +194,7 @@ public class ModuleService : IModuleService, IDynamicApiController, ITransient
     /// <param name="id">主键id.</param>
     /// <returns></returns>
     [HttpGet("{id}")]
-    public async Task<dynamic> GetInfo_Api(string id)
+    public async Task<dynamic> GetInfoApi(string id)
     {
         var data = await GetInfo(id);
         return data.Adapt<ModuleInfoOutput>();

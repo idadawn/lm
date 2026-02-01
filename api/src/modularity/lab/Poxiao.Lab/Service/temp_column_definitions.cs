@@ -1,6 +1,6 @@
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
 
 namespace Poxiao.Lab.Service
 {
@@ -21,7 +21,7 @@ namespace Poxiao.Lab.Service
         public string MergeRightProperty { get; set; } // Right property for merged column
     }
 
-    public partial class IntermediateDataExportService 
+    public partial class IntermediateDataExportService
     {
         private static readonly List<ColumnDefinition> _columnDefinitions = JsonConvert.DeserializeObject<List<ColumnDefinition>>(
 @"

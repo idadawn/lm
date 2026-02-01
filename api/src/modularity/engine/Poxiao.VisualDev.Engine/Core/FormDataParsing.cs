@@ -1,3 +1,6 @@
+using Mapster;
+using Newtonsoft.Json.Linq;
+using Poxiao.DependencyInjection;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Dtos;
@@ -6,7 +9,6 @@ using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Models;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
 using Poxiao.RemoteRequest;
 using Poxiao.RemoteRequest.Extensions;
 using Poxiao.Systems.Entitys.Dto.ModuleForm;
@@ -21,8 +23,6 @@ using Poxiao.VisualDev.Entitys;
 using Poxiao.VisualDev.Entitys.Dto.VisualDevModelData;
 using Poxiao.VisualDev.Interfaces;
 using Poxiao.WorkFlow.Entitys.Entity;
-using Mapster;
-using Newtonsoft.Json.Linq;
 using SqlSugar;
 
 namespace Poxiao.VisualDev.Engine.Core;
@@ -97,7 +97,7 @@ public class FormDataParsing : ITransient
         try
         {
             object conversionData = new object();
-            switch (fieldsModel.__config__.poxiaoKey)
+            switch (fieldsModel.Config.poxiaoKey)
             {
                 case PoxiaoKeyConst.SWITCH: // 开关
                     conversionData = data.ParseToInt();
@@ -112,7 +112,7 @@ public class FormDataParsing : ITransient
                         {
                             conversionData = dataList.First();
                         }
-                        else if(fieldsModel.precision.IsNullOrEmpty())
+                        else if (fieldsModel.precision.IsNullOrEmpty())
                         {
                             if (dataList.Last().TrimEnd('0').IsNullOrEmpty())
                             {
@@ -135,8 +135,15 @@ public class FormDataParsing : ITransient
                             }
                         }
                     }
-                    else if (fieldsModel.precision > 0) conversionData = data.ToString() + ".".PadRight((int)fieldsModel.precision + 1, '0');
-                    else conversionData = data;
+                    else if (fieldsModel.precision > 0)
+                    {
+                        conversionData = data.ToString() + ".".PadRight((int)fieldsModel.precision + 1, '0');
+                    }
+                    else
+                    {
+                        conversionData = data;
+                    }
+
                     break;
                 case PoxiaoKeyConst.PoxiaoAMOUNT:
                     conversionData = data.ParseToDecimal(); // 金额输入
@@ -515,13 +522,13 @@ public class FormDataParsing : ITransient
                 var dataValue = dataMap[strKey[i]];
                 if (dataValue != null && !string.IsNullOrEmpty(dataValue.ToString()))
                 {
-                    var model = fieldsModels.Find(f => f.__vModel__.Equals(strKey[i]));
+                    var model = fieldsModels.Find(f => f.VModel.Equals(strKey[i]));
                     if (model != null)
                     {
                         dataMap[strKey[i]] = TemplateControlsDataConversion(dataMap[strKey[i]], model, actionType);
                     }
                 }
-                else if ("uploadFz".Equals(fieldsModels.Find(f => f.__vModel__.Equals(strKey[i])).__config__.poxiaoKey) && dataValue.IsNullOrEmpty())
+                else if ("uploadFz".Equals(fieldsModels.Find(f => f.VModel.Equals(strKey[i])).Config.poxiaoKey) && dataValue.IsNullOrEmpty())
                 {
                     dataMap[strKey[i]] = new List<object>();
                 }
@@ -534,20 +541,20 @@ public class FormDataParsing : ITransient
     /// 解析处理 Sql 插入数据的 value.
     /// </summary>
     /// <param name="dbType">数据库 类型.</param>
-    /// <param name="_tableList">表数据.</param>
+    /// <param name="TableList">表数据.</param>
     /// <param name="field">前端字段名.</param>
     /// <param name="data">插入的数据.</param>
-    /// <param name="_fieldsModelList">控件集合.</param>
+    /// <param name="FieldsModelList">控件集合.</param>
     /// <param name="actionType">操作类型.</param>
     /// <param name="isShortLink">是否外链.</param>
     /// <returns>string.</returns>
-    public object InsertValueHandle(string dbType, List<DbTableFieldModel> _tableList, string field, object data, List<FieldsModel> _fieldsModelList, string actionType = "create", bool isShortLink = false)
+    public object InsertValueHandle(string dbType, List<DbTableFieldModel> TableList, string field, object data, List<FieldsModel> FieldsModelList, string actionType = "create", bool isShortLink = false)
     {
         // 根据KEY查找模板
-        FieldsModel? model = _fieldsModelList.Find(f => f.__vModel__ == field);
+        FieldsModel? model = FieldsModelList.Find(f => f.VModel == field);
 
         // 单独处理 Oracle,Kdbndp 日期格式转换
-        if (!actionType.Equals("create") && dbType == "Oracle" && _tableList.Find(x => x.dataType == "DateTime" && x.field == field.ReplaceRegex(@"(\w+)_poxiao_", string.Empty)) != null)
+        if (!actionType.Equals("create") && dbType == "Oracle" && TableList.Find(x => x.dataType == "DateTime" && x.field == field.ReplaceRegex(@"(\w+)_poxiao_", string.Empty)) != null)
         {
             return string.Format("to_date('{0}','yyyy-mm-dd HH24/MI/SS')", TemplateControlsDataConversion(data, model, actionType));
         }
@@ -556,11 +563,11 @@ public class FormDataParsing : ITransient
             var res = TemplateControlsDataConversion(data, model, actionType);
             if (actionType.Equals("create"))
             {
-                if (isShortLink && model.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CREATETIME))
+                if (isShortLink && model.Config.poxiaoKey.Equals(PoxiaoKeyConst.CREATETIME))
                     return null;
-                else if (model.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CREATETIME) || model.__config__.poxiaoKey.Equals(PoxiaoKeyConst.DATE))
+                else if (model.Config.poxiaoKey.Equals(PoxiaoKeyConst.CREATETIME) || model.Config.poxiaoKey.Equals(PoxiaoKeyConst.DATE))
                     return res.ToString().ParseToDateTime();
-                else if (model.__config__.poxiaoKey.Equals(PoxiaoKeyConst.NUMINPUT))
+                else if (model.Config.poxiaoKey.Equals(PoxiaoKeyConst.NUMINPUT))
                     return res;
                 else return res.ToString();
             }
@@ -589,10 +596,10 @@ public class FormDataParsing : ITransient
         // 获取或设置控件缓存数据
         foreach (FieldsModel? model in formData)
         {
-            if (model != null && model.__vModel__ != null)
+            if (model != null && model.VModel != null)
             {
-                ConfigModel configModel = model.__config__;
-                string fieldCacheKey = cacheKey + configModel.renderKey + "_" + model.__vModel__;
+                ConfigModel configModel = model.Config;
+                string fieldCacheKey = cacheKey + configModel.renderKey + "_" + model.VModel;
                 switch (configModel.poxiaoKey)
                 {
                     case PoxiaoKeyConst.RADIO: // 单选框
@@ -605,7 +612,7 @@ public class FormDataParsing : ITransient
                             if (vModelType.DYNAMIC.GetDescription() == configModel.dataType) list = await GetDynamicList(model);
                             if (vModelType.STATIC.GetDescription() == configModel.dataType)
                             {
-                                if (model.__slot__ != null && model.options != null && model.options.Any())
+                                if (model.Slot != null && model.options != null && model.options.Any())
                                 {
                                     foreach (Dictionary<string, object>? item in model.options)
                                     {
@@ -731,9 +738,9 @@ public class FormDataParsing : ITransient
 
         #region 省市区 单独处理
 
-        if (formData.Where(x => x.__config__.poxiaoKey == PoxiaoKeyConst.ADDRESS).Any())
+        if (formData.Where(x => x.Config.poxiaoKey == PoxiaoKeyConst.ADDRESS).Any())
         {
-            bool level3 = formData.Where(x => x.__config__.poxiaoKey == PoxiaoKeyConst.ADDRESS && x.level == 3).Any();
+            bool level3 = formData.Where(x => x.Config.poxiaoKey == PoxiaoKeyConst.ADDRESS && x.level == 3).Any();
 
             string? addCacheKey = CommonConst.VISUALDEV + "_address1";
             string? addCacheKey2 = CommonConst.VISUALDEV + "_address2";
@@ -834,7 +841,7 @@ public class FormDataParsing : ITransient
         #endregion
 
         #region 用户单独处理
-        if (formData.Where(x => x.__config__.poxiaoKey == PoxiaoKeyConst.USERSELECT).Any())
+        if (formData.Where(x => x.Config.poxiaoKey == PoxiaoKeyConst.USERSELECT).Any())
         {
             string? userCacheKey = CommonConst.VISUALDEV + "_userSelect";
             if (_cacheManager.Exists(userCacheKey))
@@ -859,7 +866,7 @@ public class FormDataParsing : ITransient
             }
         }
 
-        if (formData.Where(x => x.__config__.poxiaoKey == PoxiaoKeyConst.USERSSELECT).Any())
+        if (formData.Where(x => x.Config.poxiaoKey == PoxiaoKeyConst.USERSSELECT).Any())
         {
             string? userCacheKey = CommonConst.VISUALDEV + "_usersSelect";
             if (_cacheManager.Exists(userCacheKey))
@@ -968,7 +975,7 @@ public class FormDataParsing : ITransient
         List<Dictionary<string, string>> list = new List<Dictionary<string, string>>();
 
         // 获取远端数据
-        DataInterfaceEntity? dynamic = await _dataInterfaceService.GetInfo(model.interfaceId.IsNotEmptyOrNull() ? model.interfaceId : model.__config__.propsUrl);
+        DataInterfaceEntity? dynamic = await _dataInterfaceService.GetInfo(model.interfaceId.IsNotEmptyOrNull() ? model.interfaceId : model.Config.propsUrl);
         if (dynamic == null) return list;
 
         var propsValue = string.Empty;
@@ -991,7 +998,7 @@ public class FormDataParsing : ITransient
         var result = new object();
         try
         {
-            result = await _dataInterfaceService.GetResponseByType(model.interfaceId.IsNotEmptyOrNull() ? model.interfaceId : model.__config__.propsUrl, 0, _userManager.TenantId, input);
+            result = await _dataInterfaceService.GetResponseByType(model.interfaceId.IsNotEmptyOrNull() ? model.interfaceId : model.Config.propsUrl, 0, _userManager.TenantId, input);
         }
         catch
         {
@@ -1010,7 +1017,7 @@ public class FormDataParsing : ITransient
                 var data = result.ToObject<Dictionary<string, object>>();
                 resList = data.ContainsKey("list") ? data["list"].ToObject<List<Dictionary<string, object>>>() : new List<Dictionary<string, object>>();
             }
-            if (model.__config__.poxiaoKey.Equals(PoxiaoKeyConst.POPUPSELECT) || model.__config__.poxiaoKey.Equals(PoxiaoKeyConst.POPUPTABLESELECT))
+            if (model.Config.poxiaoKey.Equals(PoxiaoKeyConst.POPUPSELECT) || model.Config.poxiaoKey.Equals(PoxiaoKeyConst.POPUPTABLESELECT))
             {
                 foreach (Dictionary<string, object>? item in resList)
                 {
@@ -1138,21 +1145,21 @@ public class FormDataParsing : ITransient
         Dictionary<string, object> dataMap = modelData.ToObject<Dictionary<string, object>>(); // 数据库保存的F_Data
 
         // 序列化后时间戳转换处理
-        List<FieldsModel>? timeList = formData.Where(x => x.__config__.poxiaoKey == PoxiaoKeyConst.CREATETIME || x.__config__.poxiaoKey == PoxiaoKeyConst.MODIFYTIME).ToList();
+        List<FieldsModel>? timeList = formData.Where(x => x.Config.poxiaoKey == PoxiaoKeyConst.CREATETIME || x.Config.poxiaoKey == PoxiaoKeyConst.MODIFYTIME).ToList();
         if (timeList.Any())
         {
             timeList.ForEach(item =>
             {
-                if (dataMap.ContainsKey(item.__vModel__) && dataMap[item.__vModel__] != null)
+                if (dataMap.ContainsKey(item.VModel) && dataMap[item.VModel] != null)
                 {
-                    string value = dataMap[item.__vModel__].ToString();
+                    string value = dataMap[item.VModel].ToString();
                     if (value.IsNotEmptyOrNull())
                     {
-                        dataMap.Remove(item.__vModel__);
+                        dataMap.Remove(item.VModel);
                         DateTime dtDate;
                         if (!DateTime.TryParse(value, out dtDate)) value = string.Format("{0:yyyy-MM-dd HH:mm:ss}", value.TimeStampToDateTime());
                         else value = string.Format("{0:yyyy-MM-dd HH:mm:ss}", value.ParseToDateTime());
-                        dataMap.Add(item.__vModel__, value);
+                        dataMap.Add(item.VModel, value);
                     }
                 }
             });
@@ -1165,14 +1172,14 @@ public class FormDataParsing : ITransient
         // 自动生成的数据不在模板数据内
         foreach (string? key in dataMap.Keys.ToList())
         {
-            FieldsModel? model = formData.Where(f => f.__vModel__ == key).FirstOrDefault();
+            FieldsModel? model = formData.Where(f => f.VModel == key).FirstOrDefault();
             if (model == null) continue;
             if (dataMap[key] != null)
             {
                 string? dataValue = dataMap[key].ToString();
                 if (!string.IsNullOrEmpty(dataValue) && model != null)
                 {
-                    ConfigModel configModel = model.__config__;
+                    ConfigModel configModel = model.Config;
                     if (string.IsNullOrWhiteSpace(model.separator)) model.separator = ",";
                     switch (configModel.poxiaoKey)
                     {
@@ -1197,7 +1204,7 @@ public class FormDataParsing : ITransient
                                 {
                                     if (model.showLevel == "all")
                                     {
-                                        string[]? cascaderData = valueId[dataMap[key].ToString()];
+                                        string[] ? cascaderData = valueId[dataMap[key].ToString()];
                                         if (cascaderData != null && !string.IsNullOrWhiteSpace(cascaderData.FirstOrDefault()))
                                         {
                                             List<string>? treeFullName = new List<string>();
@@ -1214,7 +1221,7 @@ public class FormDataParsing : ITransient
                                     }
                                     else
                                     {
-                                        string[]? cascaderData = valueId[dataMap[key].ToString()];
+                                        string[] ? cascaderData = valueId[dataMap[key].ToString()];
                                         if (cascaderData != null && cascaderData[1] == "department") dataMap[key] = valueId[dataMap[key].ToString()]?.LastOrDefault();
                                         else dataMap[key] = string.Empty;
                                     }
@@ -1234,7 +1241,7 @@ public class FormDataParsing : ITransient
             else
             {
                 // 前端空数组提交 转换 .
-                switch (model.__config__.poxiaoKey)
+                switch (model.Config.poxiaoKey)
                 {
                     case PoxiaoKeyConst.CASCADER:
                     case PoxiaoKeyConst.CHECKBOX:
@@ -1277,7 +1284,8 @@ public class FormDataParsing : ITransient
     /// <param name="primaryKey">数据主键.</param>
     /// <param name="isShortLink">是否外链.</param>
     /// <returns></returns>
-    public async Task<List<Dictionary<string, object>>> GetKeyData(List<FieldsModel> formData,
+    public async Task<List<Dictionary<string, object>>> GetKeyData(
+        List<FieldsModel> formData,
         List<Dictionary<string, object>> list,
         ColumnDesignModel? columnDesign = null,
         string actionType = "List",
@@ -1287,17 +1295,17 @@ public class FormDataParsing : ITransient
     {
         if (isShortLink)
         {
-            formData = formData.Where(x => x.__config__.poxiaoKey == PoxiaoKeyConst.COMINPUT || x.__config__.poxiaoKey == PoxiaoKeyConst.TEXTAREA
-                || (x.__config__.poxiaoKey == PoxiaoKeyConst.NUMINPUT && x.__config__.poxiaoKey == PoxiaoKeyConst.SWITCH)
-                || (x.__config__.poxiaoKey == PoxiaoKeyConst.RADIO && x.__config__.dataType.Equals("static"))
-                || (x.__config__.poxiaoKey == PoxiaoKeyConst.CHECKBOX && x.__config__.dataType.Equals("static"))
-                || (x.__config__.poxiaoKey == PoxiaoKeyConst.SELECT && x.__config__.dataType.Equals("static"))
-                || (x.__config__.poxiaoKey == PoxiaoKeyConst.CASCADER && x.__config__.dataType.Equals("static"))
-                || (x.__config__.poxiaoKey == PoxiaoKeyConst.TREESELECT && x.__config__.dataType.Equals("static"))
-                || x.__config__.poxiaoKey == PoxiaoKeyConst.DATE || x.__config__.poxiaoKey == PoxiaoKeyConst.TIME || x.__config__.poxiaoKey == PoxiaoKeyConst.COLORPICKER
-                || x.__config__.poxiaoKey == PoxiaoKeyConst.RATE || x.__config__.poxiaoKey == PoxiaoKeyConst.SLIDER || x.__config__.poxiaoKey == PoxiaoKeyConst.EDITOR
-                || x.__config__.poxiaoKey == PoxiaoKeyConst.LINK || x.__config__.poxiaoKey == PoxiaoKeyConst.PoxiaoTEXT || x.__config__.poxiaoKey == PoxiaoKeyConst.ALERT)
-                .Where(x => !x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.POPUPTABLESELECT)).ToList();
+            formData = formData.Where(x => x.Config.poxiaoKey == PoxiaoKeyConst.COMINPUT || x.Config.poxiaoKey == PoxiaoKeyConst.TEXTAREA
+                || (x.Config.poxiaoKey == PoxiaoKeyConst.NUMINPUT && x.Config.poxiaoKey == PoxiaoKeyConst.SWITCH)
+                || (x.Config.poxiaoKey == PoxiaoKeyConst.RADIO && x.Config.dataType.Equals("static"))
+                || (x.Config.poxiaoKey == PoxiaoKeyConst.CHECKBOX && x.Config.dataType.Equals("static"))
+                || (x.Config.poxiaoKey == PoxiaoKeyConst.SELECT && x.Config.dataType.Equals("static"))
+                || (x.Config.poxiaoKey == PoxiaoKeyConst.CASCADER && x.Config.dataType.Equals("static"))
+                || (x.Config.poxiaoKey == PoxiaoKeyConst.TREESELECT && x.Config.dataType.Equals("static"))
+                || x.Config.poxiaoKey == PoxiaoKeyConst.DATE || x.Config.poxiaoKey == PoxiaoKeyConst.TIME || x.Config.poxiaoKey == PoxiaoKeyConst.COLORPICKER
+                || x.Config.poxiaoKey == PoxiaoKeyConst.RATE || x.Config.poxiaoKey == PoxiaoKeyConst.SLIDER || x.Config.poxiaoKey == PoxiaoKeyConst.EDITOR
+                || x.Config.poxiaoKey == PoxiaoKeyConst.LINK || x.Config.poxiaoKey == PoxiaoKeyConst.PoxiaoTEXT || x.Config.poxiaoKey == PoxiaoKeyConst.ALERT)
+                .Where(x => !x.Config.poxiaoKey.Equals(PoxiaoKeyConst.POPUPTABLESELECT)).ToList();
         }
 
         // 获取控件缓存数据
@@ -1361,32 +1369,32 @@ public class FormDataParsing : ITransient
             {
                 if (!(dataMap[strKey[i]] is null))
                 {
-                    FieldsModel? form = formData.Where(f => f.__vModel__ == strKey[i]).FirstOrDefault();
+                    FieldsModel? form = formData.Where(f => f.VModel == strKey[i]).FirstOrDefault();
                     if (form != null)
                     {
-                        if (form.__vModel__.Contains(form.__config__.poxiaoKey + "Field")) dataMap[strKey[i]] = TemplateControlsDataConversion(dataMap[strKey[i]], form);
+                        if (form.VModel.Contains(form.Config.poxiaoKey + "Field")) dataMap[strKey[i]] = TemplateControlsDataConversion(dataMap[strKey[i]], form);
                         else dataMap[strKey[i]] = TemplateControlsDataConversion(dataMap[strKey[i]], form, actionType);
 
-                        string? poxiaoKey = form.__config__.poxiaoKey;
-                        KeyValuePair<string, object> templateValue = templateData.Where(t => t.Key.Equals(CommonConst.VISUALDEV + _userManager.TenantId + "_" + form.__config__.renderKey + "_" + strKey[i])).FirstOrDefault();
+                        string? poxiaoKey = form.Config.poxiaoKey;
+                        KeyValuePair<string, object> templateValue = templateData.Where(t => t.Key.Equals(CommonConst.VISUALDEV + _userManager.TenantId + "_" + form.Config.renderKey + "_" + strKey[i])).FirstOrDefault();
 
                         #region 处理 单独存储缓存
                         if (poxiaoKey == PoxiaoKeyConst.USERSELECT)
                         {
                             templateValue = templateData.Where(t => t.Key.Equals(CommonConst.VISUALDEV + "_userSelect")).FirstOrDefault();
-                            if (!templateData.ContainsKey(form.__config__.renderKey + "_" + strKey[i])) templateData.Add(form.__config__.renderKey + "_" + strKey[i], string.Empty);
+                            if (!templateData.ContainsKey(form.Config.renderKey + "_" + strKey[i])) templateData.Add(form.Config.renderKey + "_" + strKey[i], string.Empty);
                         }
 
                         if (poxiaoKey == PoxiaoKeyConst.USERSSELECT)
                         {
                             templateValue = templateData.Where(t => t.Key.Equals(CommonConst.VISUALDEV + "_usersSelect")).FirstOrDefault();
-                            if (!templateData.ContainsKey(form.__config__.renderKey + "_" + strKey[i])) templateData.Add(form.__config__.renderKey + "_" + strKey[i], string.Empty);
+                            if (!templateData.ContainsKey(form.Config.renderKey + "_" + strKey[i])) templateData.Add(form.Config.renderKey + "_" + strKey[i], string.Empty);
                         }
 
                         if (poxiaoKey == PoxiaoKeyConst.ADDRESS)
                         {
                             templateValue = templateData.Where(t => t.Key.Equals(CommonConst.VISUALDEV + "_address1")).FirstOrDefault();
-                            if (!templateData.ContainsKey(form.__config__.renderKey + "_" + strKey[i])) templateData.Add(form.__config__.renderKey + "_" + strKey[i], string.Empty);
+                            if (!templateData.ContainsKey(form.Config.renderKey + "_" + strKey[i])) templateData.Add(form.Config.renderKey + "_" + strKey[i], string.Empty);
                         }
                         #endregion
 
@@ -1558,10 +1566,10 @@ public class FormDataParsing : ITransient
                 if (!(dataMap[key] is null) && dataMap[key].ToString() != string.Empty)
                 {
                     var dataValue = dataMap[key];
-                    var model = formData.Where(f => f.__vModel__ == key).FirstOrDefault();
+                    var model = formData.Where(f => f.VModel == key).FirstOrDefault();
                     if (model != null)
                     {
-                        ConfigModel configModel = model.__config__;
+                        ConfigModel configModel = model.Config;
                         string type = configModel.poxiaoKey;
                         if (string.IsNullOrWhiteSpace(model.separator)) model.separator = ",";
                         switch (type)
@@ -1643,7 +1651,7 @@ public class FormDataParsing : ITransient
                                     var dynamic = await _dataInterfaceService.GetInfo(model.interfaceId);
                                     if (dynamic == null) break;
                                     List<Dictionary<string, string>> popupselectDataList = new List<Dictionary<string, string>>();
-                                    var redisName = CommonConst.VISUALDEV + _userManager.TenantId + "_" + model.__vModel__ + "_" + model.interfaceId;
+                                    var redisName = CommonConst.VISUALDEV + _userManager.TenantId + "_" + model.VModel + "_" + model.interfaceId;
                                     if (_cacheManager.Exists(redisName))
                                     {
                                         popupselectDataList = _cacheManager.Get(redisName).ToObject<List<Dictionary<string, string>>>();
@@ -1750,7 +1758,7 @@ public class FormDataParsing : ITransient
                                 {
                                     List<Dictionary<string, object>> relationFormDataList = new List<Dictionary<string, object>>();
 
-                                    var redisName = CommonConst.VISUALDEV + _userManager.TenantId + "_" + model.__config__.poxiaoKey + "_" + model.__config__.renderKey;
+                                    var redisName = CommonConst.VISUALDEV + _userManager.TenantId + "_" + model.Config.poxiaoKey + "_" + model.Config.renderKey;
                                     if (_cacheManager.Exists(redisName))
                                     {
                                         relationFormDataList = _cacheManager.Get(redisName).ToObject<List<Dictionary<string, object>>>();
@@ -1759,7 +1767,7 @@ public class FormDataParsing : ITransient
                                     {
                                         // 根据可视化功能ID获取该模板全部数据
                                         var relationFormModel = await _db.AsSugarClient().Queryable<VisualDevEntity>().FirstAsync(v => v.Id == model.modelId);
-                                        var newFieLdsModelList = relationFormModel.FormData.ToObject<FormDataModel>().fields.FindAll(x => model.relationField.Equals(x.__vModel__));
+                                        var newFieLdsModelList = relationFormModel.FormData.ToObject<FormDataModel>().fields.FindAll(x => model.relationField.Equals(x.VModel));
                                         VisualDevModelListQueryInput listQueryInput = new VisualDevModelListQueryInput
                                         {
                                             dataType = "1",
@@ -1851,12 +1859,12 @@ public class FormDataParsing : ITransient
         }
 
         // 控件联动
-        if (data.ToJsonString().Equals(mValue.ToJsonString()) && (form.__config__.templateJson != null && form.__config__.templateJson.Any()))
+        if (data.ToJsonString().Equals(mValue.ToJsonString()) && (form.Config.templateJson != null && form.Config.templateJson.Any()))
         {
             data.Clear();
-            form.__config__.templateJson.ForEach(x => x.defaultValue = (dataMap.ContainsKey(x.relationField) && dataMap[x.relationField] != null) ? dataMap[x.relationField]?.ToString() : x.defaultValue);
+            form.Config.templateJson.ForEach(x => x.defaultValue = (dataMap.ContainsKey(x.relationField) && dataMap[x.relationField] != null) ? dataMap[x.relationField]?.ToString() : x.defaultValue);
             _databaseService.ChangeDataBase(_databaseService.GetTenantDbLink(_userManager.TenantId, _userManager.TenantDbName));
-            var res = _dataInterfaceService.GetResponseByType(form.__config__.propsUrl, 0, string.Empty, new Infrastructure.Dtos.VisualDev.VisualDevDataFieldDataListInput() { paramList = form.__config__.templateJson.Adapt<List<DataInterfaceReqParameterInfo>>(), PageSize = 500, CurrentPage = 1 }).Result;
+            var res = _dataInterfaceService.GetResponseByType(form.Config.propsUrl, 0, string.Empty, new Infrastructure.Dtos.VisualDev.VisualDevDataFieldDataListInput() { paramList = form.Config.templateJson.Adapt<List<DataInterfaceReqParameterInfo>>(), PageSize = 500, CurrentPage = 1 }).Result;
             var resList = res.ToObject<PageResult<Dictionary<string, object>>>();
             if (resList != null && resList.list.Any())
             {
@@ -1895,14 +1903,14 @@ public class FormDataParsing : ITransient
     /// 解析 处理 条形码和二维码.
     /// </summary>
     /// <param name="fieldsModels"></param>
-    /// <param name="_newDataMap"></param>
-    /// <param name="_dataMap"></param>
-    public void GetBARAndQR(List<FieldsModel> fieldsModels, Dictionary<string, object> _newDataMap, Dictionary<string, object> _dataMap)
+    /// <param name="NewDataMap"></param>
+    /// <param name="DataMap"></param>
+    public void GetBARAndQR(List<FieldsModel> fieldsModels, Dictionary<string, object> NewDataMap, Dictionary<string, object> DataMap)
     {
-        fieldsModels.Where(x => x.__config__.poxiaoKey == PoxiaoKeyConst.BARCODE || x.__config__.poxiaoKey == PoxiaoKeyConst.QRCODE).Where(x => !string.IsNullOrWhiteSpace(x.relationField)).ToList().ForEach(item =>
+        fieldsModels.Where(x => x.Config.poxiaoKey == PoxiaoKeyConst.BARCODE || x.Config.poxiaoKey == PoxiaoKeyConst.QRCODE).Where(x => !string.IsNullOrWhiteSpace(x.relationField)).ToList().ForEach(item =>
         {
-            if (!_newDataMap.ContainsKey(item.relationField + "_id") && _dataMap.ContainsKey(item.relationField))
-                _newDataMap.Add(item.relationField + "_id", _dataMap[item.relationField]);
+            if (!NewDataMap.ContainsKey(item.relationField + "_id") && DataMap.ContainsKey(item.relationField))
+                NewDataMap.Add(item.relationField + "_id", DataMap[item.relationField]);
         });
     }
 
@@ -1915,7 +1923,7 @@ public class FormDataParsing : ITransient
     public async Task<List<Dictionary<string, string>>?> GetPopupSelectDataList(string interfaceId, FieldsModel model)
     {
         List<Dictionary<string, string>>? result = new List<Dictionary<string, string>>();
-        var redisName = CommonConst.VISUALDEV + _userManager.TenantId + "_" + model.__config__.poxiaoKey + "_" + model.interfaceId;
+        var redisName = CommonConst.VISUALDEV + _userManager.TenantId + "_" + model.Config.poxiaoKey + "_" + model.interfaceId;
         if (_cacheManager.Exists(redisName))
         {
             result = _cacheManager.Get(redisName).ToObject<List<Dictionary<string, string>>>();
@@ -1965,8 +1973,8 @@ public class FormDataParsing : ITransient
     /// <param name="model">控件模型.</param>
     private string ControlParsingLinkage(Dictionary<string, object> dataMap, FieldsModel model)
     {
-        var result = dataMap[model.__vModel__];
-        var templateJson = (model.templateJson != null && model.templateJson.Any()) ? model.templateJson : model.__config__.templateJson;
+        var result = dataMap[model.VModel];
+        var templateJson = (model.templateJson != null && model.templateJson.Any()) ? model.templateJson : model.Config.templateJson;
         if (templateJson != null && templateJson.Any())
         {
             templateJson.ForEach(x =>
@@ -1992,7 +2000,7 @@ public class FormDataParsing : ITransient
                     }
                 }
             });
-            var interfaceId = model.interfaceId.IsNotEmptyOrNull() ? model.interfaceId : model.__config__.propsUrl;
+            var interfaceId = model.interfaceId.IsNotEmptyOrNull() ? model.interfaceId : model.Config.propsUrl;
             var res = _dataInterfaceService.GetResponseByType(interfaceId, 0, string.Empty, new Infrastructure.Dtos.VisualDev.VisualDevDataFieldDataListInput() { paramList = templateJson.Adapt<List<DataInterfaceReqParameterInfo>>(), PageSize = 500, CurrentPage = 1 }).Result;
             var resList = res.ToObject<PageResult<Dictionary<string, object>>>();
 
@@ -2001,7 +2009,7 @@ public class FormDataParsing : ITransient
                 List<object> cascaderList = new List<object>();
                 if (model.multiple && resList != null && resList.list != null)
                 {
-                    var dataValue = dataMap[model.__vModel__].ToObject<List<string>>();
+                    var dataValue = dataMap[model.VModel].ToObject<List<string>>();
                     dataValue.ForEach(str =>
                     {
                         var obj = resList.list.Find(x => x.ContainsKey(model.propsValue) && x[model.propsValue].ToString().Equals(str));
@@ -2012,13 +2020,13 @@ public class FormDataParsing : ITransient
                 {
                     resList.list.ForEach(obj =>
                     {
-                        if (obj[model.propsValue].Equals(dataMap[model.__vModel__])) cascaderList.Add(obj[model.relationField]);
+                        if (obj[model.propsValue].Equals(dataMap[model.VModel])) cascaderList.Add(obj[model.relationField]);
                     });
                 }
 
-                dataMap[model.__vModel__ + "_id"] = dataMap[model.__vModel__];
-                dataMap[model.__vModel__] = string.Join(model.separator, cascaderList);
-                result = dataMap[model.__vModel__];
+                dataMap[model.VModel + "_id"] = dataMap[model.VModel];
+                dataMap[model.VModel] = string.Join(model.separator, cascaderList);
+                result = dataMap[model.VModel];
             }
         }
 

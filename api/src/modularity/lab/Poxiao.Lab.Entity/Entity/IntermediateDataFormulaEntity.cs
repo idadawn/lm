@@ -94,6 +94,7 @@ public class IntermediateDataFormulaEntity : CLDEntityBase
     /// </summary>
     [SugarColumn(ColumnName = "F_REMARK", Length = 1000, IsNullable = true)]
     public string Remark { get; set; }
+
     /// <summary>
     /// 来源类型：SYSTEM-系统默认（从列生成），CUSTOM-自定义.
     /// </summary>

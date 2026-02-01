@@ -1,19 +1,19 @@
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DatabaseAccessor;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DatabaseAccessor;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.WorkFlow.Entitys.Dto.FlowBefore;
 using Poxiao.WorkFlow.Entitys.Enum;
 using Poxiao.WorkFlow.Entitys.Model;
 using Poxiao.WorkFlow.Entitys.Model.Properties;
 using Poxiao.WorkFlow.Interfaces.Manager;
 using Poxiao.WorkFlow.Interfaces.Repository;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.WorkFlow.Service;
@@ -194,7 +194,7 @@ public class FlowBeforeService : IDynamicApiController, ITransient
             var flowJson = _flowTaskRepository.GetFlowTemplateJsonInfo(x => x.Id == item.flowId && x.DeleteMark == null);
             if (flowJson.IsNotEmptyOrNull())
             {
-                output.Add(new { id = flowJson.Id, fullName =string.Format("{0}(v{1})", flowJson.FullName, flowJson.Version), flowTemplateJson= flowJson.FlowTemplateJson });
+                output.Add(new { id = flowJson.Id, fullName = string.Format("{0}(v{1})", flowJson.FullName, flowJson.Version), flowTemplateJson = flowJson.FlowTemplateJson });
             }
         }
         return output.Distinct();
@@ -304,7 +304,7 @@ public class FlowBeforeService : IDynamicApiController, ITransient
     [HttpGet("Suspend/{taskId}")]
     public async Task<dynamic> Suspend(string taskId)
     {
-       return await _flowTaskRepository.AnyFlowTask(x => x.ParentId == taskId && x.IsAsync == 1 && x.DeleteMark == null);
+        return await _flowTaskRepository.AnyFlowTask(x => x.ParentId == taskId && x.IsAsync == 1 && x.DeleteMark == null);
     }
     #endregion
 
@@ -491,7 +491,7 @@ public class FlowBeforeService : IDynamicApiController, ITransient
     /// <param name="flowHandleModel">审批参数.</param>
     /// <returns></returns>
     [HttpPost("Suspend/{taskId}")]
-    public async Task Suspend(string taskId,[FromBody] FlowHandleModel flowHandleModel)
+    public async Task Suspend(string taskId, [FromBody] FlowHandleModel flowHandleModel)
     {
         var flowTaskParamter = await _flowTaskRepository.GetTaskParamterByTaskId(taskId, flowHandleModel);
         await _flowTaskManager.Suspend(flowTaskParamter);

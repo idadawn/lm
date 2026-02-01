@@ -47,21 +47,21 @@ public class AuthChecker
         string redirectUri = config.redirectUri;
         if (!GlobalAuthUtil.isHttpProtocol(redirectUri) && !GlobalAuthUtil.isHttpsProtocol(redirectUri))
         {
-            throw new Exception(AuthResponseStatus.ILLEGAL_REDIRECT_URI.GetDesc());
+            throw new Exception(AuthResponseStatus.ILLEGALREDIRECTURI.GetDesc());
         }
 
         // facebook的回调地址必须为https的链接
         if ("FACEBOOK".Equals(source.getName().ToUpper()) && !GlobalAuthUtil.isHttpsProtocol(redirectUri))
         {
             // Facebook's redirect uri must use the HTTPS protocol
-            throw new Exception(AuthResponseStatus.ILLEGAL_REDIRECT_URI.GetDesc());
+            throw new Exception(AuthResponseStatus.ILLEGALREDIRECTURI.GetDesc());
         }
 
         // 支付宝在创建回调地址时，不允许使用localhost或者127.0.0.1
         if ("ALIPAY".Equals(source.getName().ToUpper()) && GlobalAuthUtil.isLocalHost(redirectUri))
         {
             // The redirect uri of alipay is forbidden to use localhost or 127.0.0.1
-            throw new Exception(AuthResponseStatus.ILLEGAL_REDIRECT_URI.GetDesc());
+            throw new Exception(AuthResponseStatus.ILLEGALREDIRECTURI.GetDesc());
         }
     }
 
@@ -77,17 +77,17 @@ public class AuthChecker
     public static void checkCode(IAuthSource source, AuthCallback callback)
     {
         string code = callback.code;
-        if (source.getName().ToUpper().Equals(DefaultAuthSourceEnum.ALIPAY_MP.ToString()))
+        if (source.getName().ToUpper().Equals(DefaultAuthSourceEnum.ALIPAYMP.ToString()))
         {
-            code = callback.auth_code;
+            code = callback.authCode;
         }
         else if ("HUAWEI".Equals(source.getName().ToUpper()))
         {
-            code = callback.authorization_code;
+            code = callback.authorizationCode;
         }
         if (string.IsNullOrWhiteSpace(code))
         {
-            throw new Exception(AuthResponseStatus.ILLEGAL_CODE.GetDesc());
+            throw new Exception(AuthResponseStatus.ILLEGALCODE.GetDesc());
         }
     }
 

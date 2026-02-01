@@ -1,12 +1,15 @@
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Dto.ModuleColumn;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
@@ -14,9 +17,6 @@ using Poxiao.Systems.Interfaces.System;
 using Poxiao.VisualDev.Engine;
 using Poxiao.VisualDev.Engine.Core;
 using Poxiao.VisualDev.Entitys;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
 using SqlSugar;
 
 namespace Poxiao.Systems;
@@ -75,7 +75,7 @@ public class ModuleColumnService : IModuleColumnService, IDynamicApiController, 
                     fullName = a.FullName,
                     enCode = SqlFunc.IF(a.FieldRule == 1 && !SqlFunc.IsNullOrEmpty(a.BindTable)).Return(a.EnCode.Replace("poxiao_" + a.BindTable + "_poxiao_", ""))
                     .ElseIF(b.Type == 3 && a.FieldRule == 1).Return(a.EnCode.Replace(a.BindTable + ".", ""))
-                    .ElseIF(a.FieldRule == 2).Return(a.EnCode.Replace(a.ChildTableKey+"-", "")).End(a.EnCode),
+                    .ElseIF(a.FieldRule == 2).Return(a.EnCode.Replace(a.ChildTableKey + "-", "")).End(a.EnCode),
                     id = a.Id,
                     sortCode = a.SortCode
                 }).ToListAsync();
@@ -92,7 +92,7 @@ public class ModuleColumnService : IModuleColumnService, IDynamicApiController, 
     {
         var data = await _repository.GetFirstAsync(x => x.Id == id && x.DeleteMark == null);
         if (data.FieldRule == 2 && data.ChildTableKey.IsNotEmptyOrNull())
-            data.EnCode = data.EnCode.Replace(data.ChildTableKey+"-", string.Empty);
+            data.EnCode = data.EnCode.Replace(data.ChildTableKey + "-", string.Empty);
         var menu = await _repository.AsSugarClient().Queryable<ModuleEntity>().FirstAsync(x => x.Id == data.ModuleId && x.DeleteMark == null);
         if (menu.IsNotEmptyOrNull() && data.BindTable.IsNotEmptyOrNull() && data.FieldRule == 1)
         {
@@ -139,7 +139,7 @@ public class ModuleColumnService : IModuleColumnService, IDynamicApiController, 
     {
         var entity = input.Adapt<ModuleColumnEntity>();
         if (entity.FieldRule == 2 && input.childTableKey.IsNotEmptyOrNull())
-            entity.EnCode = input.childTableKey +"-"+ entity.EnCode;
+            entity.EnCode = input.childTableKey + "-" + entity.EnCode;
         var menu = await _repository.AsSugarClient().Queryable<ModuleEntity>().FirstAsync(x => x.Id == input.moduleId && x.DeleteMark == null);
         if (menu.IsNotEmptyOrNull() && entity.BindTable.IsNotEmptyOrNull() && entity.FieldRule == 1)
         {
@@ -237,7 +237,7 @@ public class ModuleColumnService : IModuleColumnService, IDynamicApiController, 
             entity.FullName = item.fullName;
             entity.BindTable = item.bindTable;
             entity.FieldRule = item.fieldRule;
-            entity.ChildTableKey=item.childTableKey;
+            entity.ChildTableKey = item.childTableKey;
             entity.SortCode = 0;
             if (entity.FieldRule == 2 && item.childTableKey.IsNotEmptyOrNull())
                 entity.EnCode = item.childTableKey + "-" + entity.EnCode;

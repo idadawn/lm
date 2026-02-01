@@ -520,7 +520,7 @@ public class FeatureLearningService : IDynamicApiController, ITransient
         for (int i = 0; i < columnLetter.Length; i++)
         {
             result *= 26;
-            result += (columnLetter[i] - 'A' + 1);
+            result += columnLetter[i] - 'A' + 1;
         }
         return result - 1; // 转为0-based索引
     }

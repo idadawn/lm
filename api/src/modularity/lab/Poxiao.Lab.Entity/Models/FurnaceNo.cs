@@ -88,7 +88,9 @@ public class FurnaceNo
     /// <summary>
     /// 私有构造函数，用于内部创建实例
     /// </summary>
-    private FurnaceNo() { }
+    private FurnaceNo()
+    {
+    }
 
     /// <summary>
     /// 从字符串解析炉号

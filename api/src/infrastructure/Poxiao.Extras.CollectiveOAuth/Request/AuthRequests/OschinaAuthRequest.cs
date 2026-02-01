@@ -7,7 +7,8 @@ namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class OschinaAuthRequest : DefaultAuthRequest
 {
-    public OschinaAuthRequest(ClientConfig config) : base(config, new OschinaAuthSource())
+    public OschinaAuthRequest(ClientConfig config)
+        : base(config, new OschinaAuthSource())
     {
     }
 
@@ -86,7 +87,6 @@ public class OschinaAuthRequest : DefaultAuthRequest
             .queryParam("dataType", "json")
             .build();
     }
-
 
     /**
    * 校验请求结果

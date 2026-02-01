@@ -3,7 +3,7 @@ using Poxiao.Infrastructure.Filter;
 
 namespace Poxiao.Lab.Entity.Dto.ProductSpec;
 
-public class ProductSpecCrInput : ProductSpecEntity 
+public class ProductSpecCrInput : ProductSpecEntity
 {
     /// <summary>
     /// 扩展属性列表.
@@ -11,7 +11,7 @@ public class ProductSpecCrInput : ProductSpecEntity
     public List<ProductSpecAttributeEntity> Attributes { get; set; } = new();
 }
 
-public class ProductSpecUpInput : ProductSpecEntity 
+public class ProductSpecUpInput : ProductSpecEntity
 {
     /// <summary>
     /// 扩展属性列表.
@@ -34,7 +34,7 @@ public class ProductSpecListQuery : PageInputBase
     public string Keyword { get; set; }
 }
 
-public class ProductSpecListOutput : ProductSpecEntity 
+public class ProductSpecListOutput : ProductSpecEntity
 {
     /// <summary>
     /// 扩展属性列表.
@@ -42,7 +42,7 @@ public class ProductSpecListOutput : ProductSpecEntity
     public List<ProductSpecAttributeEntity> Attributes { get; set; } = new();
 }
 
-public class ProductSpecInfoOutput : ProductSpecEntity 
+public class ProductSpecInfoOutput : ProductSpecEntity
 {
     /// <summary>
     /// 扩展属性列表.

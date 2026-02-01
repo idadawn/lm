@@ -43,6 +43,9 @@
                 <a-button type="primary" :loading="batchCalculating" @click="handleBatchRecalculate">
                   <ReloadOutlined v-if="!batchCalculating" /> 批量计算
                 </a-button>
+                <a-button type="primary" color="success" :loading="batchCalculating" @click="handleBatchRecalculate">
+                  <CheckCircleOutlined v-if="!batchCalculating" /> 批量判定
+                </a-button>
                 <a-dropdown>
                   <a-button :loading="exporting">
                     <DownloadOutlined v-if="!exporting" /> 导出Excel
@@ -115,7 +118,7 @@
               <!-- 外观特性列表 -->
               <template v-else-if="column.key === 'appearanceFeatureList'">
                 <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
-                  @click="handleCellColor(record.id, column.key)">
+                  @click="handleCellColor(record.id, column.key)" @dblclick="handleOpenFeatureDialog(record)">
                   <a-space wrap size="small" v-if="getMatchedFeatureLabels(record).length > 0">
                     <a-tag v-for="feature in getMatchedFeatureLabels(record)" :key="feature.id" color="blue">
                       {{ feature.label }}
@@ -202,6 +205,7 @@
 
       </div>
       <MagneticDataImportQuickModal @register="registerQuickModal" @reload="handleImportSuccess" />
+      <FeatureSelectDialog ref="featureSelectDialogRef" @confirm="handleFeatureSelectConfirm" />
 
       <!-- 导出日期选择模态框 -->
       <a-modal v-model:visible="exportModalVisible" title="导出中间数据" @ok="handleExport" :confirm-loading="exporting"
@@ -273,11 +277,12 @@ import CustomSortControl from '../rawData/components/CustomSortControl.vue';
 import { useFormulaPrecision } from '/@/composables/useFormulaPrecision';
 
 import { useModal } from '/@/components/Modal';
-import { UploadOutlined, ReloadOutlined, DownloadOutlined } from '@ant-design/icons-vue';
+import { UploadOutlined, ReloadOutlined, DownloadOutlined, CheckCircleOutlined } from '@ant-design/icons-vue';
 import { Spin as ASpin, DatePicker as ADatePicker } from 'ant-design-vue';
 import MagneticDataImportQuickModal from '../magneticData/MagneticDataImportQuickModal.vue';
 import { createMagneticImportSession, uploadAndParseMagneticData } from '/@/api/lab/magneticData';
 import type { IntermediateDataCalcLogItem } from '/@/api/lab/model/intermediateDataCalcLogModel';
+import FeatureSelectDialog from '../appearance/components/FeatureSelectDialog.vue';
 
 
 
@@ -305,6 +310,9 @@ const calcLogPagination = ref({
   showSizeChanger: true,
 });
 const calcLogTargetId = ref<string>('');
+
+const featureSelectDialogRef = ref<any>(null);
+const currentEditRecordId = ref<string>('');
 
 // 特性大类列表
 const appearanceCategories = ref<AppearanceFeatureCategoryInfo[]>([]);
@@ -457,10 +465,26 @@ function getMatchedFeatureLabels(record: any): Array<{ id: string; label: string
     }
 
     if (Array.isArray(ids)) {
-      return ids.map((id: string) => ({
-        id,
-        label: getFeatureName(id),
-      }));
+      return ids.map((id: string) => {
+        const feature = allFeatures.value.find(f => f.id === id);
+        if (feature) {
+          // 格式: 特性大类 / 特性等级 / 特性名称
+          const labelParts = [
+            feature.category,     // 特性大类
+            feature.severityLevel,// 特性等级
+            feature.name          // 特性名称
+          ].filter(Boolean); // 过滤掉空值
+
+          return {
+            id,
+            label: labelParts.length > 0 ? labelParts.join(' / ') : feature.name || id
+          };
+        }
+        return {
+          id,
+          label: id,
+        };
+      });
     }
   }
 
@@ -725,7 +749,7 @@ const allColumns = computed(() => {
     { title: '班次', dataIndex: 'shiftNo', key: 'shiftNo', width: 100, align: 'center' },
 
     // --- 计算状态与日志（固定右侧） ---
-    { title: '计算状态', dataIndex: 'calcStatus', key: 'calcStatus', width: 90, fixed: 'right', align: 'center' },
+    { title: '计算/判定状态', dataIndex: 'calcStatus', key: 'calcStatus', width: 100, fixed: 'right', align: 'center' },
     { title: '日志', dataIndex: 'calcLog', key: 'calcLog', width: 70, fixed: 'right', align: 'center' },
   ];
 
@@ -776,6 +800,22 @@ const [registerTable, { reload, getDataSource }] = useTable({
         componentProps: {
           placeholder: ['开始日期', '结束日期'],
           ranges: getDateRanges(),
+        },
+      },
+      {
+        field: 'calcStatus',
+        label: '计算状态',
+        component: 'Select',
+        colProps: { span: 4 },
+        componentProps: {
+          options: [
+            { label: '未计算', value: 0 },
+            { label: '计算中', value: 1 },
+            { label: '成功', value: 2 },
+            { label: '失败', value: 3 },
+          ],
+          placeholder: '所有状态',
+          allowClear: true,
         },
       },
     ],
@@ -1081,6 +1121,45 @@ async function handleAppearanceSave(record: any, field: string, value: any) {
     reload();
   } catch (error) {
     createMessage.error('保存失败');
+  }
+}
+
+// 打开特性选择对话框
+function handleOpenFeatureDialog(record: any) {
+  if (!hasBtnP(PERM_APPEARANCE)) return;
+
+  currentEditRecordId.value = record.id;
+
+  // 获取当前已选的特性ID列表
+  const matched = getMatchedFeatureLabels(record);
+  const ids = matched.map(m => m.id);
+
+  featureSelectDialogRef.value.open(ids);
+}
+
+// 确认选择特性
+async function handleFeatureSelectConfirm(features: any[]) {
+  if (!currentEditRecordId.value) return;
+
+  try {
+    const ids = features.map(f => f.id);
+
+    // 保存到后端
+    await updateAppearance({
+      id: currentEditRecordId.value,
+      appearanceFeatureIds: JSON.stringify(ids),
+      // 同时也需要传一个空或者其他值给 featureSuffix 吗？
+      // 根据 updateAppearance 的通常逻辑，传什么更什么。
+      // 这里只更新列表。
+    });
+
+    createMessage.success('保存成功');
+    reload();
+  } catch (error) {
+    console.error('保存特性失败:', error);
+    createMessage.error('保存失败');
+  } finally {
+    currentEditRecordId.value = '';
   }
 }
 

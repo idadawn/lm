@@ -8,7 +8,7 @@
 /// 日 期：2024-01-05.
 /// </summary>
 [SugarTable("metric_table_collection", TableDescription = "保存通过外部创建的数据表的表名")]
-public class MetricDataIETableCollectionEntity 
+public class MetricDataIETableCollectionEntity
 {
     /// <summary>
     /// 数据表名.

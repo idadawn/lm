@@ -1,9 +1,9 @@
+using Microsoft.Extensions.DependencyInjection;
+using Poxiao.DependencyInjection;
+using Poxiao.EventBus;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Manager;
-using Poxiao.DependencyInjection;
-using Poxiao.EventBus;
-using Microsoft.Extensions.DependencyInjection;
 using SqlSugar;
 
 namespace Poxiao.EventHandler;
@@ -54,12 +54,12 @@ public class LogEventSubscriber : IEventSubscriber, ISingleton
 
             if (KeyVariable.MultiTenancyType.Equals("COLUMN"))
             {
-                string ServiceName = tenant.connectionConfig.IsolationField;
+                string serviceName = tenant.connectionConfig.IsolationField;
                 _sqlSugarClient.Aop.DataExecuting = (oldValue, entityInfo) =>
                 {
                     if (entityInfo.PropertyName == "TenantId" && entityInfo.OperationType == DataFilterType.InsertByObject)
                     {
-                        entityInfo.SetValue(ServiceName);
+                        entityInfo.SetValue(serviceName);
                     }
                 };
             }

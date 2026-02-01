@@ -1,6 +1,11 @@
-using System.Collections;
-using System.Data;
-using System.Text;
+using Mapster;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DatabaseAccessor;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Core.Manager.Files;
 using Poxiao.Infrastructure.Dtos.DataBase;
@@ -8,19 +13,14 @@ using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DatabaseAccessor;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Dto.Database;
 using Poxiao.Systems.Entitys.Model.DataBase;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.Systems.Interfaces.System;
-using Mapster;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
+using System.Collections;
+using System.Data;
+using System.Text;
 
 namespace Poxiao.Systems;
 
@@ -92,7 +92,7 @@ public class DataBaseService : IDynamicApiController, ITransient
         var tenantLink = link ?? _dataBaseManager.GetTenantDbLink(_userManager.TenantId, _userManager.TenantDbName);
         if (!_dataBaseManager.IsConnection(tenantLink)) throw Oops.Oh(ErrorCode.D1507);
         var tables = _dataBaseManager.GetTableInfos(tenantLink);
-        tables = tables.Where((x, i) => tables.FindIndex(z => z.Name == x.Name) == i).ToList();//去重
+        tables = tables.Where((x, i) => tables.FindIndex(z => z.Name == x.Name) == i).ToList(); //去重
         var output = tables.Adapt<List<DatabaseTableListOutput>>();
         if (!string.IsNullOrEmpty(input.Keyword))
             output = output.FindAll(d => d.table.ToLower().Contains(input.Keyword.ToLower()) || (d.tableName.IsNotEmptyOrNull() && d.tableName.ToLower().Contains(input.Keyword.ToLower())));
@@ -217,12 +217,12 @@ public class DataBaseService : IDynamicApiController, ITransient
             var link = await _dbLinkService.GetInfo(id);
             var tenantLink = link ?? _dataBaseManager.GetTenantDbLink(_userManager.TenantId, _userManager.TenantDbName);
             var tables = _dataBaseManager.GetTableInfos(tenantLink);
-            tables = tables.Where((x, i) => tables.FindIndex(z => z.Name == x.Name) == i).ToList();//去重
+            tables = tables.Where((x, i) => tables.FindIndex(z => z.Name == x.Name) == i).ToList(); //去重
             var list1 = tables.Adapt<List<DatabaseTableListOutput>>();
             if (!string.IsNullOrEmpty(input.Keyword))
                 list1 = list1.FindAll(d => d.table.ToLower().Contains(input.Keyword.ToLower()) || (d.tableName.IsNotEmptyOrNull() && d.tableName.ToLower().Contains(input.Keyword.ToLower())));
             var views = _dataBaseManager.GetTableInfos(tenantLink, true);
-            views = views.Where((x, i) => views.FindIndex(z => z.Name == x.Name) == i).ToList();//去重
+            views = views.Where((x, i) => views.FindIndex(z => z.Name == x.Name) == i).ToList(); //去重
             var list2 = views.Adapt<List<DatabaseTableListOutput>>();
             foreach (var item in list2) item.type = 1;
             if (!string.IsNullOrEmpty(input.Keyword))

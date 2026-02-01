@@ -33,22 +33,13 @@
           </div>
 
           <!-- 条件组编辑器组件 -->
-          <ConditionGroupEditor
-            :group="group"
-            :group-index="groupIdx"
-            :rule-index="ruleIndex"
-            :field-options="fieldOptions"
-            :is-collapsed="isGroupCollapsed(group.id)"
-            @update="handleUpdateGroup(groupIdx, $event)"
-            @remove="handleRemoveGroup(groupIdx)"
-            @toggle-collapse="toggleGroupCollapse(group.id)"
-            @add-condition="handleAddCondition(groupIdx, $event)"
+          <ConditionGroupEditor :group="group" :group-index="groupIdx" :rule-index="ruleIndex"
+            :field-options="fieldOptions" :is-collapsed="isGroupCollapsed(group.id)"
+            @update="handleUpdateGroup(groupIdx, $event)" @remove="handleRemoveGroup(groupIdx)"
+            @toggle-collapse="toggleGroupCollapse(group.id)" @add-condition="handleAddCondition(groupIdx, $event)"
             @update-condition="handleUpdateCondition(groupIdx, $event)"
-            @remove-condition="handleRemoveCondition(groupIdx, $event)"
-
-            @open-formula-editor="handleOpenFormulaEditor"
-            :read-only="readOnly"
-          />
+            @remove-condition="handleRemoveCondition(groupIdx, $event)" @open-formula-editor="handleOpenFormulaEditor"
+            :read-only="readOnly" />
 
         </template>
       </div>
@@ -60,7 +51,9 @@
       </div>
 
       <a-button v-if="!readOnly" type="dashed" block class="add-group-btn" @click="handleAddGroup">
-        <template #icon><Icon icon="ant-design:plus-square-outlined" /></template>
+        <template #icon>
+          <Icon icon="ant-design:plus-square-outlined" />
+        </template>
         添加条件组
       </a-button>
     </div>
@@ -101,7 +94,7 @@ watch(() => props.rule, (newRule) => {
   // AdvancedJudgmentEditor cleared it on value change.
   // Let's matching AdvancedJudgmentEditor: "only first load or external change defaults to collapsed"
   // Here we can just default collapse all if it's a new rule.
-  
+
   // Actually, simplest is: calculate all group IDs from newRule
   // and set them as collapsed if this is a "reset".
   // relying on parent to reset is hard.
@@ -140,8 +133,8 @@ function collapseAll() {
 
 // Initialize collapsed state
 watch(() => localRule.value.groups, (groups) => {
-   // If we have no state (first load), collapse all?
-   // Or we can just call collapseAll() on mounted.
+  // If we have no state (first load), collapse all?
+  // Or we can just call collapseAll() on mounted.
 }, { immediate: true });
 
 import { onMounted } from 'vue';
@@ -185,7 +178,7 @@ function generateId() {
 }
 
 function getDefaultField(): string {
-  return props.fieldOptions.length > 0 
+  return props.fieldOptions.length > 0
     ? (props.fieldOptions[0].value || '')
     : '';
 }
@@ -202,10 +195,10 @@ function createCondition(): Condition {
 function handleAddCondition(groupIdx: number, data: { isSubGroup?: boolean; subGroupIndex?: number }) {
   const group = localRule.value.groups[groupIdx];
   if (data.isSubGroup) {
-     const subGroup = group.subGroups[data.subGroupIndex!];
-     subGroup.conditions.push(createCondition());
+    const subGroup = group.subGroups[data.subGroupIndex!];
+    subGroup.conditions.push(createCondition());
   } else {
-     group.conditions.push(createCondition());
+    group.conditions.push(createCondition());
   }
   emitChange();
 }
@@ -213,11 +206,11 @@ function handleAddCondition(groupIdx: number, data: { isSubGroup?: boolean; subG
 function handleUpdateCondition(groupIdx: number, data: { isSubGroup?: boolean; subGroupIndex?: number; conditionIndex: number; condition: Partial<Condition> }) {
   const group = localRule.value.groups[groupIdx];
   if (data.isSubGroup) {
-     const cond = group.subGroups[data.subGroupIndex!].conditions[data.conditionIndex];
-     Object.assign(cond, data.condition);
+    const cond = group.subGroups[data.subGroupIndex!].conditions[data.conditionIndex];
+    Object.assign(cond, data.condition);
   } else {
-     const cond = group.conditions[data.conditionIndex];
-     Object.assign(cond, data.condition);
+    const cond = group.conditions[data.conditionIndex];
+    Object.assign(cond, data.condition);
   }
   emitChange();
 }
@@ -225,9 +218,9 @@ function handleUpdateCondition(groupIdx: number, data: { isSubGroup?: boolean; s
 function handleRemoveCondition(groupIdx: number, data: { isSubGroup?: boolean; subGroupIndex?: number; conditionIndex: number }) {
   const group = localRule.value.groups[groupIdx];
   if (data.isSubGroup) {
-     group.subGroups[data.subGroupIndex!].conditions.splice(data.conditionIndex, 1);
+    group.subGroups[data.subGroupIndex!].conditions.splice(data.conditionIndex, 1);
   } else {
-     group.conditions.splice(data.conditionIndex, 1);
+    group.conditions.splice(data.conditionIndex, 1);
   }
   emitChange();
 }
@@ -414,7 +407,7 @@ function handleOpenFormulaEditor(condition: Condition) {
     background: #f1f5f9;
     color: #64748b;
   }
-  
+
   p {
     margin-top: 12px;
     font-size: 14px;
@@ -443,6 +436,7 @@ function handleOpenFormulaEditor(condition: Condition) {
     opacity: 0;
     transform: translateY(-4px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);

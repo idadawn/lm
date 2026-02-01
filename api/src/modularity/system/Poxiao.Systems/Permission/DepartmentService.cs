@@ -1,19 +1,19 @@
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Dto.Department;
 using Poxiao.Systems.Entitys.Dto.Organize;
 using Poxiao.Systems.Entitys.Dto.SysConfig;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Interfaces.Permission;
 using Poxiao.Systems.Interfaces.System;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.Systems;
@@ -174,7 +174,7 @@ public class DepartmentService : IDepartmentService, IDynamicApiController, ITra
                     addItem.fullName = orgTree.FirstOrDefault(x => x.Id.Equals(addItem.Id))?.Description;
                     addItem.organize = addItem.fullName;
                     addItem.organizeIds = addItem.organizeIdTree.Split(",").ToList();
-                    addItem.disabled = true;
+                    addItem.Disabled = true;
                     addItem.sortCode = 0;
                     if (!treeList.Any(x => x.Id.Equals(addItem.Id))) treeList.Add(addItem);
                 }
@@ -585,7 +585,7 @@ public class DepartmentService : IDepartmentService, IDynamicApiController, ITra
     /// <returns></returns>
     public async Task<List<OrganizeEntity>> GetCompanyAllDep(string id)
     {
-      return await _repository.GetListAsync(x => x.OrganizeIdTree.Contains(id) && x.Category == "department" && x.EnabledMark == 1 && x.DeleteMark == null);
+        return await _repository.GetListAsync(x => x.OrganizeIdTree.Contains(id) && x.Category == "department" && x.EnabledMark == 1 && x.DeleteMark == null);
     }
     #endregion
 }

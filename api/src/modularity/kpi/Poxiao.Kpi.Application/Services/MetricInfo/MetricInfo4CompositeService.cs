@@ -44,7 +44,6 @@ public class MetricInfo4CompositeService : IMetricInfo4CompositeService, ITransi
             throw Oops.Oh(ErrorCode.K10018);
         var obj = formula.Evaluate();
 
-
         return await Task.FromResult(true);
     }
 

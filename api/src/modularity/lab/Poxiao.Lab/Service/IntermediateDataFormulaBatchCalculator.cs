@@ -1,6 +1,3 @@
-using System.Collections.Concurrent;
-using System.Globalization;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -14,6 +11,9 @@ using Poxiao.Lab.EventBus;
 using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
 using SqlSugar;
+using System.Collections.Concurrent;
+using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace Poxiao.Lab.Service;
 
@@ -34,6 +34,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
     private readonly ISqlSugarRepository<IntermediateDataEntity> _intermediateRepository;
     private readonly ISqlSugarRepository<UnitDefinitionEntity> _unitRepository;
     private readonly ISqlSugarRepository<IntermediateDataFormulaCalcLogEntity> _calcLogRepository;
+    private readonly ISqlSugarRepository<IntermediateDataJudgmentLevelEntity> _levelRepository;
     private readonly IIntermediateDataFormulaService _formulaService;
     private readonly IFormulaParser _formulaParser;
     private readonly LabOptions _labOptions;
@@ -42,6 +43,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         ISqlSugarRepository<IntermediateDataEntity> intermediateRepository,
         ISqlSugarRepository<UnitDefinitionEntity> unitRepository,
         ISqlSugarRepository<IntermediateDataFormulaCalcLogEntity> calcLogRepository,
+        ISqlSugarRepository<IntermediateDataJudgmentLevelEntity> levelRepository,
         IIntermediateDataFormulaService formulaService,
         IFormulaParser formulaParser,
         IOptions<LabOptions> labOptions
@@ -50,6 +52,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         _intermediateRepository = intermediateRepository;
         _unitRepository = unitRepository;
         _calcLogRepository = calcLogRepository;
+        _levelRepository = levelRepository;
         _formulaService = formulaService;
         _formulaParser = formulaParser;
         _labOptions = labOptions?.Value ?? new LabOptions();
@@ -180,10 +183,12 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
 
                 foreach (var judgeFormula in formulaSet.JudgeFormulas)
                 {
+                    var levels = formulaSet.Levels.GetValueOrDefault(judgeFormula.Id);
                     ApplyJudgeFormula(
                         judgeFormula,
                         entity,
                         contextData,
+                        levels, // Pass loaded levels
                         entityErrors,
                         batchId
                     );
@@ -197,7 +202,8 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
                     Interlocked.Increment(ref failedCount);
 
                     var detail = JsonConvert.SerializeObject(
-                        entityErrors.Select(err => new {
+                        entityErrors.Select(err => new
+                        {
                             err.ColumnName,
                             err.FormulaType,
                             err.ErrorType,
@@ -271,10 +277,23 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
             .Select(t => t.First())
             .ToList();
 
+        // 加载所有的判定等级
+        var judgeFormulaIds = judgeFormulas.Select(t => t.Id).Distinct().ToList();
+        var levels = await _levelRepository
+            .AsQueryable()
+            .Where(t => judgeFormulaIds.Contains(t.FormulaId) && t.DeleteMark == null)
+            .OrderBy(t => t.Priority)
+            .ToListAsync();
+
+        var levelMap = levels
+            .GroupBy(t => t.FormulaId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
         return new FormulaSet
         {
             CalcFormulas = calcFormulas,
-            JudgeFormulas = judgeFormulas
+            JudgeFormulas = judgeFormulas,
+            Levels = levelMap
         };
     }
 
@@ -519,6 +538,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         IntermediateDataFormulaDto formula,
         IntermediateDataEntity entity,
         Dictionary<string, object> contextData,
+        List<IntermediateDataJudgmentLevelEntity> levels,
         List<CalcErrorItem> errors,
         string batchId
     )
@@ -528,7 +548,68 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
             return;
         }
 
-        var judgeResult = EvaluateJudgeFormula(formula, entity, contextData);
+        // Waterfall Logic: Priority-based matching
+        JudgeResult judgeResult = null;
+        IntermediateDataJudgmentLevelEntity defaultLevel = null;
+
+        if (levels != null && levels.Count > 0)
+        {
+            foreach (var level in levels)
+            {
+                if (level.IsDefault)
+                {
+                    defaultLevel = level;
+                    continue;
+                }
+
+                // Check condition for non-default levels
+                if (!string.IsNullOrWhiteSpace(level.Condition))
+                {
+                    try
+                    {
+                        var ruleGroup = JObject.Parse(level.Condition);
+                        if (EvaluateRuleGroup(ruleGroup, entity, contextData))
+                        {
+                            judgeResult = new JudgeResult { ResultValue = level.QualityStatus, HasError = false };
+                            break;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log error but continue to next level or fallback?
+                        // Current decision: Record error and stop for this formula to avoid incorrect judgment
+                        judgeResult = new JudgeResult
+                        {
+                            HasError = true,
+                            ErrorMessage = $"等级[{level.Name}]条件解析失败",
+                            ErrorDetail = ex.Message
+                        };
+                        break;
+                    }
+                }
+            }
+
+            // Fallback to default if no match found
+            if (judgeResult == null && defaultLevel != null)
+            {
+                judgeResult = new JudgeResult { ResultValue = defaultLevel.QualityStatus, HasError = false };
+            }
+        }
+        else
+        {
+            // Backward compatibility: If no levels defined, try to use the Formula field (Old Logic)
+            judgeResult = EvaluateJudgeFormula(formula, entity, contextData);
+        }
+
+        // If result is still null here, it means no match and no default level (or old logic returned null)
+        if (judgeResult == null)
+        {
+            // Do nothing? Or set to null?
+            // If we don't have a result, we might want to clear the previous value or leave it.
+            // Usually it's better to explicitly set to null/empty if no rule matched.
+            judgeResult = new JudgeResult { ResultValue = null, HasError = false };
+        }
+
         if (judgeResult.HasError)
         {
             AddError(
@@ -783,8 +864,31 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
 
         if (leftValue is IEnumerable<string> listValue)
         {
+            var rightList = ParseRightValueAsList(rightValue);
+
+            if (op == "CONTAINS_ANY")
+            {
+                return listValue.Intersect(rightList, StringComparer.OrdinalIgnoreCase).Any();
+            }
+
+            if (op == "CONTAINS_ALL")
+            {
+                // Empty right list is always contained? Or assumes true.
+                if (!rightList.Any()) return true;
+                return !rightList.Except(listValue, StringComparer.OrdinalIgnoreCase).Any();
+            }
+
+            // Fallback for simple Contains (if rightValue is single item)
+            // Existing logic was: rightValue is treated as single string
+            var singleRightValue = rightValue;
+            if (rightList.Count == 1 && (rightValue.StartsWith("[") || rightValue.Contains(",")))
+            {
+                // If rightValue was parsed from JSON/CSV, use the single item
+                singleRightValue = rightList.First();
+            }
+
             var contains = listValue.Any(v =>
-                string.Equals(v, rightValue, StringComparison.OrdinalIgnoreCase)
+                string.Equals(v, singleRightValue, StringComparison.OrdinalIgnoreCase)
             );
             return op == "=" ? contains : op == "<>" && !contains;
         }
@@ -1412,6 +1516,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
     {
         public List<IntermediateDataFormulaDto> CalcFormulas { get; init; } = new();
         public List<IntermediateDataFormulaDto> JudgeFormulas { get; init; } = new();
+        public Dictionary<string, List<IntermediateDataJudgmentLevelEntity>> Levels { get; init; } = new();
     }
 
     private sealed class FormulaPlan
@@ -1438,5 +1543,35 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         public string ErrorType { get; init; }
         public string ErrorMessage { get; init; }
         public string ErrorDetail { get; init; }
+    }
+
+    private static List<string> ParseRightValueAsList(string rightValue)
+    {
+        if (string.IsNullOrWhiteSpace(rightValue))
+        {
+            return new List<string>();
+        }
+
+        rightValue = rightValue.Trim();
+        if (rightValue.StartsWith("[") && rightValue.EndsWith("]"))
+        {
+            try
+            {
+                return JsonConvert.DeserializeObject<List<string>>(rightValue) ?? new List<string>();
+            }
+            catch
+            {
+                // Ignore parsing error
+            }
+        }
+
+        if (rightValue.Contains(","))
+        {
+            return rightValue.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                             .Select(s => s.Trim())
+                             .ToList();
+        }
+
+        return new List<string> { rightValue };
     }
 }

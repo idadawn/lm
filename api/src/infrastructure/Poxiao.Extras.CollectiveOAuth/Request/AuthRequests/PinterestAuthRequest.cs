@@ -1,14 +1,15 @@
 using Poxiao.Extras.CollectiveOAuth.Cache;
 using Poxiao.Extras.CollectiveOAuth.Config;
+using Poxiao.Extras.CollectiveOAuth.Enums;
 using Poxiao.Extras.CollectiveOAuth.Models;
 using Poxiao.Extras.CollectiveOAuth.Utils;
-using Poxiao.Extras.CollectiveOAuth.Enums;
 
 namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class PinterestAuthRequest : DefaultAuthRequest
 {
-    public PinterestAuthRequest(ClientConfig config) : base(config, new PinterestAuthSource())
+    public PinterestAuthRequest(ClientConfig config)
+        : base(config, new PinterestAuthSource())
     {
     }
 
@@ -56,7 +57,6 @@ public class PinterestAuthRequest : DefaultAuthRequest
         return authUser;
     }
 
-
     private string getAvatarUrl(Dictionary<string, object> userObj)
     {
         // image is a map data structure
@@ -99,7 +99,6 @@ public class PinterestAuthRequest : DefaultAuthRequest
             .queryParam("fields", "id,username,first_name,last_name,bio,image")
             .build();
     }
-
 
     /**
      * 检查响应内容是否正确

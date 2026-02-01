@@ -1,11 +1,14 @@
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Dto.ModuleDataAuthorize;
 using Poxiao.Systems.Entitys.Dto.ModuleDataAuthorizeScheme;
 using Poxiao.Systems.Entitys.System;
@@ -13,9 +16,6 @@ using Poxiao.Systems.Interfaces.System;
 using Poxiao.VisualDev.Engine;
 using Poxiao.VisualDev.Engine.Core;
 using Poxiao.VisualDev.Entitys;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
 using SqlSugar;
 
 namespace Poxiao.Systems;
@@ -90,7 +90,7 @@ public class ModuleDataAuthorizeService : IModuleDataAuthorizeService, IDynamicA
     /// <param name="id">主键值.</param>
     /// <returns></returns>
     [HttpGet("{id}")]
-    public async Task<dynamic> GetInfo_Api(string id)
+    public async Task<dynamic> GetInfoApi(string id)
     {
         var data = await _repository.GetFirstAsync(x => x.Id == id && x.DeleteMark == null);
         if (data.FieldRule == 2 && data.ChildTableKey.IsNotEmptyOrNull())
@@ -124,7 +124,7 @@ public class ModuleDataAuthorizeService : IModuleDataAuthorizeService, IDynamicA
         var visualDevId = moduleEntity.PropertyJson.ToObject<JObject>()["moduleId"].ToString();
         var visualDevEntity = await _repository.AsSugarClient().Queryable<VisualDevEntity>().FirstAsync(x => x.Id == visualDevId && x.DeleteMark == null);
         var tInfo = new TemplateParsingBase(visualDevEntity);
-        return tInfo.SingleFormData.Where(x => x.__vModel__.IsNotEmptyOrNull()).Select(x => new { field = x.__vModel__, fieldName = x.__config__.label });
+        return tInfo.SingleFormData.Where(x => x.VModel.IsNotEmptyOrNull()).Select(x => new { field = x.VModel, fieldName = x.Config.label });
     }
     #endregion
 

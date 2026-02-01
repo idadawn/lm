@@ -1,14 +1,15 @@
 using Poxiao.Extras.CollectiveOAuth.Cache;
 using Poxiao.Extras.CollectiveOAuth.Config;
+using Poxiao.Extras.CollectiveOAuth.Enums;
 using Poxiao.Extras.CollectiveOAuth.Models;
 using Poxiao.Extras.CollectiveOAuth.Utils;
-using Poxiao.Extras.CollectiveOAuth.Enums;
 
 namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class LinkedInAuthRequest : DefaultAuthRequest
 {
-    public LinkedInAuthRequest(ClientConfig config) : base(config, new LinkedInAuthSource())
+    public LinkedInAuthRequest(ClientConfig config)
+        : base(config, new LinkedInAuthSource())
     {
     }
 
@@ -105,7 +106,7 @@ public class LinkedInAuthRequest : DefaultAuthRequest
         {
             var displayImageElements = profilePictureObject.getJSONObject("displayImage~")
                 .getJSONArray("elements");
-            if (null != displayImageElements && displayImageElements.Count > 0)
+            if (displayImageElements != null && displayImageElements.Count > 0)
             {
                 var largestImageObj = displayImageElements[displayImageElements.Count - 1];
                 avatar = largestImageObj.getJSONArray("identifiers")[0].getString("identifier");
@@ -155,7 +156,7 @@ public class LinkedInAuthRequest : DefaultAuthRequest
         string refreshToken = oldToken.refreshToken;
         if (refreshToken.IsNullOrWhiteSpace())
         {
-            throw new Exception(AuthResponseStatus.REQUIRED_REFRESH_TOKEN.GetDesc());
+            throw new Exception(AuthResponseStatus.REQUIREDREFRESHTOKEN.GetDesc());
         }
         string refreshTokenUrl = this.refreshTokenUrl(refreshToken);
 

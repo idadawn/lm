@@ -1,4 +1,9 @@
-using System.Data;
+using Mapster;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Poxiao.DependencyInjection;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Dtos;
@@ -8,8 +13,6 @@ using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Models.VisualDev;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.FriendlyException;
 using Poxiao.JsonSerialization;
 using Poxiao.RemoteRequest.Extensions;
 using Poxiao.Systems.Entitys.Model.DataBase;
@@ -24,11 +27,8 @@ using Poxiao.VisualDev.Entitys.Dto.VisualDevModelData;
 using Poxiao.VisualDev.Interfaces;
 using Poxiao.WorkFlow.Entitys.Entity;
 using Poxiao.WorkFlow.Interfaces.Repository;
-using Mapster;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using SqlSugar;
+using System.Data;
 
 namespace Poxiao.VisualDev;
 
@@ -149,14 +149,14 @@ public class RunService : IRunService, ITransient
         {
             foreach (KeyValuePair<string, object> item in queryJson)
             {
-                if (!templateInfo.ColumnData.searchList.Any(it => it.__vModel__.Equals(item.Key)))
+                if (!templateInfo.ColumnData.searchList.Any(it => it.VModel.Equals(item.Key)))
                 {
-                    var vmodel = templateInfo.AllFieldsModel.Find(it => it.__vModel__.Equals(item.Key));
+                    var vmodel = templateInfo.AllFieldsModel.Find(it => it.VModel.Equals(item.Key));
                     templateInfo.ColumnData.searchList.Add(vmodel.ToObject<IndexSearchFieldModel>());
                 }
-                if (!templateInfo.AppColumnData.searchList.Any(it => it.__vModel__.Equals(item.Key)))
+                if (!templateInfo.AppColumnData.searchList.Any(it => it.VModel.Equals(item.Key)))
                 {
-                    var vmodel = templateInfo.AllFieldsModel.Find(it => it.__vModel__.Equals(item.Key));
+                    var vmodel = templateInfo.AllFieldsModel.Find(it => it.VModel.Equals(item.Key));
                     templateInfo.AppColumnData.searchList.Add(vmodel.ToObject<IndexSearchFieldModel>());
                 }
             }
@@ -211,7 +211,7 @@ public class RunService : IRunService, ITransient
         realList = _databaseService.GetInterFaceData(link, sql, input, templateInfo.ColumnData.Adapt<MainBeltViceQueryModel>(), new List<IConditionalModel>(), tableFieldKeyValue);
 
         // 显示列有子表字段
-        if ((templateInfo.ColumnData.type != 4 || entity.isShortLink) && templateInfo.ColumnData.columnList.Any(x => templateInfo.ChildTableFields.ContainsKey(x.__vModel__) || templateInfo.ChildTableFields.ContainsKey(x.prop)) && realList.list.Any())
+        if ((templateInfo.ColumnData.type != 4 || entity.isShortLink) && templateInfo.ColumnData.columnList.Any(x => templateInfo.ChildTableFields.ContainsKey(x.VModel) || templateInfo.ChildTableFields.ContainsKey(x.prop)) && realList.list.Any())
             realList = await GetListChildTable(templateInfo, primaryKey, queryWhere, dataRuleWhere, superQueryWhere, realList, pvalue);
 
         // 处理 自增长ID 流程表单 自增长Id转成 流程Id
@@ -243,9 +243,9 @@ public class RunService : IRunService, ITransient
                 realList.list.ForEach(item => item[templateInfo.ColumnData.parentField + "_pid"] = item[templateInfo.ColumnData.parentField]);
 
             // 数据解析
-            if (templateInfo.SingleFormData.Any(x => x.__config__.templateJson != null && x.__config__.templateJson.Any()))
-                realList.list = await _formDataParsing.GetKeyData(templateInfo.SingleFormData.Where(x => x.__config__.templateJson != null && x.__config__.templateJson.Any()).ToList(), realList.list, templateInfo.ColumnData, actionType, templateInfo.WebType, primaryKey, entity.isShortLink);
-            realList.list = await _formDataParsing.GetKeyData(templateInfo.SingleFormData.Where(x => x.__config__.templateJson == null || !x.__config__.templateJson.Any()).ToList(), realList.list, templateInfo.ColumnData, actionType, templateInfo.WebType, primaryKey, entity.isShortLink);
+            if (templateInfo.SingleFormData.Any(x => x.Config.templateJson != null && x.Config.templateJson.Any()))
+                realList.list = await _formDataParsing.GetKeyData(templateInfo.SingleFormData.Where(x => x.Config.templateJson != null && x.Config.templateJson.Any()).ToList(), realList.list, templateInfo.ColumnData, actionType, templateInfo.WebType, primaryKey, entity.isShortLink);
+            realList.list = await _formDataParsing.GetKeyData(templateInfo.SingleFormData.Where(x => x.Config.templateJson == null || !x.Config.templateJson.Any()).ToList(), realList.list, templateInfo.ColumnData, actionType, templateInfo.WebType, primaryKey, entity.isShortLink);
 
             // 如果是无表数据并且排序字段不为空，再进行数据排序
             if (!templateInfo.IsHasTable && input.Sidx.IsNotEmptyOrNull())
@@ -287,11 +287,11 @@ public class RunService : IRunService, ITransient
 
             // 分组表格
             if (templateInfo.ColumnData.type == 3 && _userManager.UserOrigin == "pc")
-                realList.list = CodeGenHelper.GetGroupList(realList.list, templateInfo.ColumnData.groupField, templateInfo.ColumnData.columnList.Find(x => x.__vModel__.ToLower() != templateInfo.ColumnData.groupField.ToLower()).__vModel__);
+                realList.list = CodeGenHelper.GetGroupList(realList.list, templateInfo.ColumnData.groupField, templateInfo.ColumnData.columnList.Find(x => x.VModel.ToLower() != templateInfo.ColumnData.groupField.ToLower()).VModel);
 
             // 树形表格
             if (templateInfo.ColumnData.type.Equals(5))
-                realList.list = CodeGenHelper.GetTreeList(realList.list, templateInfo.ColumnData.parentField + "_pid", templateInfo.ColumnData.columnList.Find(x => x.__vModel__.ToLower() != templateInfo.ColumnData.parentField.ToLower()).__vModel__);
+                realList.list = CodeGenHelper.GetTreeList(realList.list, templateInfo.ColumnData.parentField + "_pid", templateInfo.ColumnData.columnList.Find(x => x.VModel.ToLower() != templateInfo.ColumnData.parentField.ToLower()).VModel);
         }
         else
         {
@@ -338,10 +338,10 @@ public class RunService : IRunService, ITransient
                     }
                     if (item.Key.Equals("flowState") || item.Key.Equals("flowState_name") || item.Key.Equals("flowId") || item.Key.Equals("flowId_name")) newItem.Add(item.Key, item.Value);
                     if (item.Key.Equals("id") && !newItem.ContainsKey(item.Key)) newItem.Add(item.Key, item.Value);
-                    if (templateInfo.AllFieldsModel.Any(x => x.__vModel__.Equals(item.Key) && (x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TIME)
-                    || x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CREATETIME) || x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CREATEUSER) || x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.MODIFYTIME)
-                    || x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.MODIFYUSER) || x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CURRDEPT) || x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CURRORGANIZE)
-                    || x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CURRPOSITION))))
+                    if (templateInfo.AllFieldsModel.Any(x => x.VModel.Equals(item.Key) && (x.Config.poxiaoKey.Equals(PoxiaoKeyConst.TIME)
+                    || x.Config.poxiaoKey.Equals(PoxiaoKeyConst.CREATETIME) || x.Config.poxiaoKey.Equals(PoxiaoKeyConst.CREATEUSER) || x.Config.poxiaoKey.Equals(PoxiaoKeyConst.MODIFYTIME)
+                    || x.Config.poxiaoKey.Equals(PoxiaoKeyConst.MODIFYUSER) || x.Config.poxiaoKey.Equals(PoxiaoKeyConst.CURRDEPT) || x.Config.poxiaoKey.Equals(PoxiaoKeyConst.CURRORGANIZE)
+                    || x.Config.poxiaoKey.Equals(PoxiaoKeyConst.CURRPOSITION))))
                         newItem[item.Key] = items[item.Key];
                 }
 
@@ -395,9 +395,9 @@ public class RunService : IRunService, ITransient
 
         if (realList.list.Any())
         {
-            if (templateInfo.SingleFormData.Any(x => x.__config__.templateJson != null && x.__config__.templateJson.Any()))
-                realList.list = await _formDataParsing.GetKeyData(templateInfo.SingleFormData.Where(x => x.__config__.templateJson != null && x.__config__.templateJson.Any()).ToList(), realList.list, templateInfo.ColumnData, actionType, templateInfo.WebType, primaryKey);
-            realList.list = await _formDataParsing.GetKeyData(templateInfo.SingleFormData.Where(x => !x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.RELATIONFORM) && (x.__config__.templateJson == null || !x.__config__.templateJson.Any())).ToList(), realList.list, templateInfo.ColumnData, actionType, templateInfo.WebType.ParseToInt(), primaryKey);
+            if (templateInfo.SingleFormData.Any(x => x.Config.templateJson != null && x.Config.templateJson.Any()))
+                realList.list = await _formDataParsing.GetKeyData(templateInfo.SingleFormData.Where(x => x.Config.templateJson != null && x.Config.templateJson.Any()).ToList(), realList.list, templateInfo.ColumnData, actionType, templateInfo.WebType, primaryKey);
+            realList.list = await _formDataParsing.GetKeyData(templateInfo.SingleFormData.Where(x => !x.Config.poxiaoKey.Equals(PoxiaoKeyConst.RELATIONFORM) && (x.Config.templateJson == null || !x.Config.templateJson.Any())).ToList(), realList.list, templateInfo.ColumnData, actionType, templateInfo.WebType.ParseToInt(), primaryKey);
 
             if (input.QueryJson.IsNotEmptyOrNull())
             {
@@ -491,7 +491,7 @@ public class RunService : IRunService, ITransient
         newDataMap.Keys.CopyTo(strKey, 0);
         for (int i = 0; i < strKey.Length; i++)
         {
-            FieldsModel? model = templateInfo.FieldsModelList.Where(m => m.__vModel__ == strKey[i]).FirstOrDefault();
+            FieldsModel? model = templateInfo.FieldsModelList.Where(m => m.VModel == strKey[i]).FirstOrDefault();
             if (model != null)
             {
                 List<Dictionary<string, object>> tables = newDataMap[strKey[i]].ToObject<List<Dictionary<string, object>>>();
@@ -501,7 +501,7 @@ public class RunService : IRunService, ITransient
                     Dictionary<string, object> dic = new Dictionary<string, object>();
                     foreach (KeyValuePair<string, object> value in item)
                     {
-                        FieldsModel? child = model.__config__.children.Find(c => c.__vModel__ == value.Key);
+                        FieldsModel? child = model.Config.children.Find(c => c.VModel == value.Key);
                         if (child != null || value.Key.Equals("id")) dic.Add(value.Key, value.Value);
                     }
 
@@ -514,8 +514,8 @@ public class RunService : IRunService, ITransient
 
         foreach (KeyValuePair<string, object> entryMap in dataMap)
         {
-            FieldsModel? model = templateInfo.FieldsModelList.Where(m => m.__vModel__.ToLower() == entryMap.Key.ToLower()).FirstOrDefault();
-            if (model != null && entryMap.Key.ToLower().Equals(model.__vModel__.ToLower())) newDataMap[entryMap.Key] = entryMap.Value;
+            FieldsModel? model = templateInfo.FieldsModelList.Where(m => m.VModel.ToLower() == entryMap.Key.ToLower()).FirstOrDefault();
+            if (model != null && entryMap.Key.ToLower().Equals(model.VModel.ToLower())) newDataMap[entryMap.Key] = entryMap.Value;
         }
 
         if (!newDataMap.ContainsKey("id")) newDataMap.Add("id", data[mainPrimary]);
@@ -562,7 +562,7 @@ public class RunService : IRunService, ITransient
         newDataMap.Keys.CopyTo(strKey, 0);
         for (int i = 0; i < strKey.Length; i++)
         {
-            FieldsModel? model = templateInfo.FieldsModelList.Find(m => m.__vModel__ == strKey[i]);
+            FieldsModel? model = templateInfo.FieldsModelList.Find(m => m.VModel == strKey[i]);
             if (model != null)
             {
                 List<Dictionary<string, object>> childModelData = new List<Dictionary<string, object>>();
@@ -571,19 +571,25 @@ public class RunService : IRunService, ITransient
                     Dictionary<string, object> dic = new Dictionary<string, object>();
                     foreach (KeyValuePair<string, object> value in item)
                     {
-                        FieldsModel? child = model.__config__.children.Find(c => c.__vModel__ == value.Key);
+                        FieldsModel? child = model.Config.children.Find(c => c.VModel == value.Key);
                         if (child != null && value.Value != null)
                         {
-                            if (child.__config__.poxiaoKey.Equals(PoxiaoKeyConst.DATE))
+                            if (child.Config.poxiaoKey.Equals(PoxiaoKeyConst.DATE))
                             {
                                 var keyValue = value.Value.ToString();
                                 DateTime dtDate;
                                 if (DateTime.TryParse(keyValue, out dtDate)) dic.Add(value.Key, keyValue.ParseToDateTime().ParseToUnixTime());
                                 else dic.Add(value.Key, value.Value.ToString().TimeStampToDateTime().ParseToUnixTime());
                             }
-                            else dic.Add(value.Key, value.Value);
+                            else
+                            {
+                                dic.Add(value.Key, value.Value);
+                            }
                         }
-                        else dic.Add(value.Key, value.Value);
+                        else
+                        {
+                            dic.Add(value.Key, value.Value);
+                        }
                     }
 
                     childModelData.Add(dic);
@@ -592,9 +598,9 @@ public class RunService : IRunService, ITransient
                 if (childModelData.Count > 0)
                 {
                     // 将关键字查询传输的id转换成名称
-                    if (model.__config__.children.Any(x => x.__config__.templateJson != null && x.__config__.templateJson.Any()))
-                        newDataMap[strKey[i]] = await _formDataParsing.GetKeyData(model.__config__.children.Where(x => x.__config__.templateJson != null && x.__config__.templateJson.Any()).ToList(), childModelData, templateInfo.ColumnData, "List", templateInfo.WebType, mainPrimary, templateEntity.isShortLink);
-                    newDataMap[strKey[i]] = await _formDataParsing.GetKeyData(model.__config__.children.Where(x => x.__config__.templateJson == null || !x.__config__.templateJson.Any()).ToList(), childModelData, templateInfo.ColumnData.ToObject<ColumnDesignModel>(), "List", templateInfo.WebType, mainPrimary, templateEntity.isShortLink);
+                    if (model.Config.children.Any(x => x.Config.templateJson != null && x.Config.templateJson.Any()))
+                        newDataMap[strKey[i]] = await _formDataParsing.GetKeyData(model.Config.children.Where(x => x.Config.templateJson != null && x.Config.templateJson.Any()).ToList(), childModelData, templateInfo.ColumnData, "List", templateInfo.WebType, mainPrimary, templateEntity.isShortLink);
+                    newDataMap[strKey[i]] = await _formDataParsing.GetKeyData(model.Config.children.Where(x => x.Config.templateJson == null || !x.Config.templateJson.Any()).ToList(), childModelData, templateInfo.ColumnData.ToObject<ColumnDesignModel>(), "List", templateInfo.WebType, mainPrimary, templateEntity.isShortLink);
                 }
             }
         }
@@ -603,18 +609,18 @@ public class RunService : IRunService, ITransient
 
         // 控件联动
         var tempDataMap = new Dictionary<string, object>();
-        if (templateInfo.SingleFormData.Any(x => x.__config__.templateJson != null && x.__config__.templateJson.Any()))
-            tempDataMap = (await _formDataParsing.GetKeyData(templateInfo.SingleFormData.Where(x => x.__config__.templateJson != null && x.__config__.templateJson.Any()).ToList(), listEntity, templateInfo.ColumnData, "List", templateInfo.WebType, mainPrimary, templateEntity.isShortLink)).FirstOrDefault();
-        tempDataMap = (await _formDataParsing.GetKeyData(templateInfo.SingleFormData.Where(x => x.__config__.templateJson == null || !x.__config__.templateJson.Any()).ToList(), listEntity, templateInfo.ColumnData, "List", templateInfo.WebType, mainPrimary, templateEntity.isShortLink)).FirstOrDefault();
+        if (templateInfo.SingleFormData.Any(x => x.Config.templateJson != null && x.Config.templateJson.Any()))
+            tempDataMap = (await _formDataParsing.GetKeyData(templateInfo.SingleFormData.Where(x => x.Config.templateJson != null && x.Config.templateJson.Any()).ToList(), listEntity, templateInfo.ColumnData, "List", templateInfo.WebType, mainPrimary, templateEntity.isShortLink)).FirstOrDefault();
+        tempDataMap = (await _formDataParsing.GetKeyData(templateInfo.SingleFormData.Where(x => x.Config.templateJson == null || !x.Config.templateJson.Any()).ToList(), listEntity, templateInfo.ColumnData, "List", templateInfo.WebType, mainPrimary, templateEntity.isShortLink)).FirstOrDefault();
 
         // 将关键字查询传输的id转换成名称
         foreach (var entryMap in tempDataMap)
         {
             if (entryMap.Value != null)
             {
-                var model = templateInfo.FieldsModelList.Where(m => m.__vModel__.Contains(entryMap.Key)).FirstOrDefault();
-                if (model != null && entryMap.Key.Equals(model.__vModel__)) newDataMap[entryMap.Key] = entryMap.Value;
-                else if (templateInfo.FieldsModelList.Where(m => m.__vModel__ == entryMap.Key.Replace("_id", string.Empty)).Any()) newDataMap[entryMap.Key] = entryMap.Value;
+                var model = templateInfo.FieldsModelList.Where(m => m.VModel.Contains(entryMap.Key)).FirstOrDefault();
+                if (model != null && entryMap.Key.Equals(model.VModel)) newDataMap[entryMap.Key] = entryMap.Value;
+                else if (templateInfo.FieldsModelList.Where(m => m.VModel == entryMap.Key.Replace("_id", string.Empty)).Any()) newDataMap[entryMap.Key] = entryMap.Value;
             }
         }
 
@@ -680,12 +686,12 @@ public class RunService : IRunService, ITransient
         {
             templateInfo.GenerateFields.ForEach(item =>
             {
-                if (!allDataMap.ContainsKey(item.__vModel__)) allDataMap.Add(item.__vModel__, string.Empty);
-                if (item.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CREATETIME) && allDataMap.ContainsKey(item.__vModel__))
+                if (!allDataMap.ContainsKey(item.VModel)) allDataMap.Add(item.VModel, string.Empty);
+                if (item.Config.poxiaoKey.Equals(PoxiaoKeyConst.CREATETIME) && allDataMap.ContainsKey(item.VModel))
                 {
-                    var value = allDataMap[item.__vModel__].ToString();
-                    allDataMap.Remove(item.__vModel__);
-                    allDataMap.Add(item.__vModel__, DateTime.Now.ToString());
+                    var value = allDataMap[item.VModel].ToString();
+                    allDataMap.Remove(item.VModel);
+                    allDataMap.Add(item.VModel, DateTime.Now.ToString());
                 }
             });
         }
@@ -706,13 +712,13 @@ public class RunService : IRunService, ITransient
         var tableField = new Dictionary<string, object>(); // 字段和值
         templateInfo?.MainTableFieldsModelList.ForEach(item =>
         {
-            if (allDataMap.ContainsKey(item.__vModel__))
+            if (allDataMap.ContainsKey(item.VModel))
             {
-                object? itemData = allDataMap[item.__vModel__];
-                if (item.__vModel__.IsNotEmptyOrNull() && itemData != null && !string.IsNullOrEmpty(itemData.ToString()) && itemData.ToString() != "[]")
+                object? itemData = allDataMap[item.VModel];
+                if (item.VModel.IsNotEmptyOrNull() && itemData != null && !string.IsNullOrEmpty(itemData.ToString()) && itemData.ToString() != "[]")
                 {
-                    var value = _formDataParsing.InsertValueHandle(dbType, tableList, item.__vModel__, itemData, templateInfo.MainTableFieldsModelList, "create", templateInfo.visualDevEntity != null ? templateInfo.visualDevEntity.isShortLink : false);
-                    tableField.Add(item.__vModel__, value);
+                    var value = _formDataParsing.InsertValueHandle(dbType, tableList, item.VModel, itemData, templateInfo.MainTableFieldsModelList, "create", templateInfo.visualDevEntity != null ? templateInfo.visualDevEntity.isShortLink : false);
+                    tableField.Add(item.VModel, value);
                 }
             }
         });
@@ -754,7 +760,7 @@ public class RunService : IRunService, ITransient
         // 拼接副表 sql
         if (templateInfo.AuxiliaryTableFieldsModelList.Any())
         {
-            templateInfo.AuxiliaryTableFieldsModelList.Select(x => x.__config__.tableName).Distinct().ToList().ForEach(tbname =>
+            templateInfo.AuxiliaryTableFieldsModelList.Select(x => x.Config.tableName).Distinct().ToList().ForEach(tbname =>
             {
                 tableField = new Dictionary<string, object>();
 
@@ -766,7 +772,7 @@ public class RunService : IRunService, ITransient
                 tableField.Add(templateInfo?.AllTable?.Find(t => t.table == tbname).tableField, mainId);
 
                 // 字段
-                templateInfo.AuxiliaryTableFieldsModelList.Select(x => x.__vModel__).Where(x => x.Contains("poxiao_" + tbname + "_poxiao_")).ToList().ForEach(item =>
+                templateInfo.AuxiliaryTableFieldsModelList.Select(x => x.VModel).Where(x => x.Contains("poxiao_" + tbname + "_poxiao_")).ToList().ForEach(item =>
                 {
                     object? itemData = allDataMap.Where(x => x.Key == item).Count() > 0 ? allDataMap[item] : null;
                     if (item.IsNotEmptyOrNull() && itemData != null && !string.IsNullOrEmpty(itemData.ToString()) && itemData.ToString() != "[]")
@@ -783,7 +789,7 @@ public class RunService : IRunService, ITransient
         // 拼接子表 sql
         foreach (string? item in allDataMap.Where(d => d.Key.ToLower().Contains("tablefield")).Select(d => d.Key).ToList())
         {
-            if (!templateInfo.AllFieldsModel.Any(x => x.__vModel__.Equals(item)) || !templateInfo.AllFieldsModel.Find(x => x.__vModel__.Equals(item)).__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)) continue;
+            if (!templateInfo.AllFieldsModel.Any(x => x.VModel.Equals(item)) || !templateInfo.AllFieldsModel.Find(x => x.VModel.Equals(item)).Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)) continue;
 
             // 查找到该控件数据
             object? objectData = allDataMap[item];
@@ -791,8 +797,8 @@ public class RunService : IRunService, ITransient
             if (model != null && model.Count > 0)
             {
                 // 利用key去找模板
-                FieldsModel? fieldsModel = templateInfo.FieldsModelList.Find(f => f.__vModel__ == item);
-                Engine.Model.TableModel? childTable = templateInfo.AllTable.Find(t => t.table == fieldsModel.__config__.tableName);
+                FieldsModel? fieldsModel = templateInfo.FieldsModelList.Find(f => f.VModel == item);
+                Engine.Model.TableModel? childTable = templateInfo.AllTable.Find(t => t.table == fieldsModel.Config.tableName);
                 tableList = new List<DbTableFieldModel>();
                 tableList = _databaseService.GetFieldList(link, childTable?.table);
                 DbTableFieldModel? childPrimary = tableList.Find(t => t.primaryKey);
@@ -815,15 +821,15 @@ public class RunService : IRunService, ITransient
                         }
                         else if (child.Key.IsNotEmptyOrNull() && child.Value.IsNotEmptyOrNull() && child.Value.ToString() != "[]")
                         {
-                            var value = _formDataParsing.InsertValueHandle(dbType, tableList, child.Key, child.Value, fieldsModel?.__config__.children, "create", templateInfo.visualDevEntity != null ? templateInfo.visualDevEntity.isShortLink : false);
+                            var value = _formDataParsing.InsertValueHandle(dbType, tableList, child.Key, child.Value, fieldsModel?.Config.children, "create", templateInfo.visualDevEntity != null ? templateInfo.visualDevEntity.isShortLink : false);
                             tableField.Add(child.Key, value);
                         }
                     }
 
-                    if (dictionarySql.ContainsKey(fieldsModel.__config__.tableName))
-                        dictionarySql[fieldsModel.__config__.tableName].Add(tableField);
+                    if (dictionarySql.ContainsKey(fieldsModel.Config.tableName))
+                        dictionarySql[fieldsModel.Config.tableName].Add(tableField);
                     else
-                        dictionarySql.Add(fieldsModel.__config__.tableName, new List<Dictionary<string, object>>() { tableField });
+                        dictionarySql.Add(fieldsModel.Config.tableName, new List<Dictionary<string, object>>() { tableField });
                 }
             }
         }
@@ -896,20 +902,20 @@ public class RunService : IRunService, ITransient
         if (templateInfo.ColumnData.type.Equals(4) && _userManager.UserOrigin.Equals("pc"))
         {
             // 处理显示列和提交的表单数据匹配(行编辑空数据 前端会过滤该控件)
-            templateInfo.ColumnData.columnList.Where(x => !allDataMap.ContainsKey(x.prop) && x.__config__.visibility.Equals("pc")).ToList()
+            templateInfo.ColumnData.columnList.Where(x => !allDataMap.ContainsKey(x.prop) && x.Config.visibility.Equals("pc")).ToList()
                 .ForEach(item => allDataMap.Add(item.prop, string.Empty));
 
             templateInfo.GenerateFields.ForEach(item =>
             {
-                if (!allDataMap.ContainsKey(item.__vModel__)) allDataMap.Add(item.__vModel__, string.Empty);
-                if (item.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CREATETIME) && allDataMap.ContainsKey(item.__vModel__))
+                if (!allDataMap.ContainsKey(item.VModel)) allDataMap.Add(item.VModel, string.Empty);
+                if (item.Config.poxiaoKey.Equals(PoxiaoKeyConst.CREATETIME) && allDataMap.ContainsKey(item.VModel))
                 {
-                    var value = allDataMap[item.__vModel__].ToString();
-                    allDataMap.Remove(item.__vModel__);
+                    var value = allDataMap[item.VModel].ToString();
+                    allDataMap.Remove(item.VModel);
                     DateTime dtDate;
                     if (DateTime.TryParse(value, out dtDate)) value = string.Format("{0:yyyy-MM-dd HH:mm:ss} ", value);
                     else value = string.Format("{0:yyyy-MM-dd HH:mm:ss} ", value.TimeStampToDateTime());
-                    allDataMap.Add(item.__vModel__, value);
+                    allDataMap.Add(item.VModel, value);
                 }
             });
         }
@@ -931,8 +937,8 @@ public class RunService : IRunService, ITransient
         // 拼接主表 sql
         templateInfo?.MainTableFieldsModelList.ForEach(item =>
         {
-            if (item.__vModel__.IsNotEmptyOrNull() && allDataMap.ContainsKey(item.__vModel__))
-                fieldSql.Add(string.Format("{0}={1}", item.__vModel__, _formDataParsing.InsertValueHandle(dbType, tableList, item.__vModel__, allDataMap[item.__vModel__], templateInfo.MainTableFieldsModelList, "update")));
+            if (item.VModel.IsNotEmptyOrNull() && allDataMap.ContainsKey(item.VModel))
+                fieldSql.Add(string.Format("{0}={1}", item.VModel, _formDataParsing.InsertValueHandle(dbType, tableList, item.VModel, allDataMap[item.VModel], templateInfo.MainTableFieldsModelList, "update")));
         });
 
         if (fieldSql.Any()) mainSql.Add(string.Format("update {0} set {1} where {2}='{3}';", templateInfo?.MainTableName, string.Join(",", fieldSql), mainPrimary?.field, id));
@@ -940,14 +946,14 @@ public class RunService : IRunService, ITransient
         // 拼接副表 sql
         if (templateInfo.AuxiliaryTableFieldsModelList.Any())
         {
-            templateInfo.AuxiliaryTableFieldsModelList.Select(x => x.__config__.tableName).Distinct().ToList().ForEach(tbname =>
+            templateInfo.AuxiliaryTableFieldsModelList.Select(x => x.Config.tableName).Distinct().ToList().ForEach(tbname =>
             {
                 List<DbTableFieldModel>? tableAllField = _databaseService.GetFieldList(link, tbname); // 数据库里获取表的所有字段
 
-                List<string>? tableFieldList = templateInfo.AuxiliaryTableFieldsModelList.Where(x => x.__config__.tableName.Equals(tbname)).Select(x => x.__vModel__).ToList();
+                List<string>? tableFieldList = templateInfo.AuxiliaryTableFieldsModelList.Where(x => x.Config.tableName.Equals(tbname)).Select(x => x.VModel).ToList();
 
                 fieldSql.Clear(); // key 字段名, value 修改值
-                templateInfo.AuxiliaryTableFieldsModelList.Where(x => x.__config__.tableName.Equals(tbname)).Select(x => x.__vModel__).ToList().ForEach(item =>
+                templateInfo.AuxiliaryTableFieldsModelList.Where(x => x.Config.tableName.Equals(tbname)).Select(x => x.VModel).ToList().ForEach(item =>
                 {
                     // 前端未填写数据的字段，默认会找不到字段名，需要验证
                     object? itemData = allDataMap.Where(x => x.Key == item).Count() > 0 ? allDataMap[item] : null;
@@ -969,18 +975,18 @@ public class RunService : IRunService, ITransient
                 // 拼接子表 sql
                 foreach (string? item in allDataMap.Where(d => d.Key.ToLower().Contains("tablefield")).Select(d => d.Key).ToList())
                 {
-                    if (!templateInfo.AllFieldsModel.Any(x => x.__vModel__.Equals(item)) || !templateInfo.AllFieldsModel.Find(x => x.__vModel__.Equals(item)).__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)) continue;
+                    if (!templateInfo.AllFieldsModel.Any(x => x.VModel.Equals(item)) || !templateInfo.AllFieldsModel.Find(x => x.VModel.Equals(item)).Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)) continue;
 
                     // 查找到该控件数据
                     List<Dictionary<string, object>>? modelData = allDataMap[item].ToObject<List<Dictionary<string, object>>>();
 
                     // 利用key去找模板
-                    FieldsModel? fieldsModel = templateInfo.FieldsModelList.Find(f => f.__vModel__ == item);
-                    ConfigModel? fieldsConfig = fieldsModel?.__config__;
+                    FieldsModel? fieldsModel = templateInfo.FieldsModelList.Find(f => f.VModel == item);
+                    ConfigModel? fieldsConfig = fieldsModel?.Config;
                     List<string>? childColumn = new List<string>();
                     List<object>? childValues = new List<object>();
                     List<string>? updateFieldSql = new List<string>();
-                    Engine.Model.TableModel? childTable = templateInfo.AllTable.Find(t => t.table == fieldsModel.__config__.tableName && t.table != templateInfo.MainTableName);
+                    Engine.Model.TableModel? childTable = templateInfo.AllTable.Find(t => t.table == fieldsModel.Config.tableName && t.table != templateInfo.MainTableName);
                     if (childTable != null)
                     {
                         if (modelData != null && modelData.Count > 0)
@@ -1020,7 +1026,7 @@ public class RunService : IRunService, ITransient
                                         if (data.ContainsKey("id"))
                                         {
                                             if (updateFieldSql.Any())
-                                                mainSql.Add(string.Format("update {0} set {1} where {2}='{3}';", fieldsModel.__config__.tableName, string.Join(',', updateFieldSql), childPrimary.field, data["id"]));
+                                                mainSql.Add(string.Format("update {0} set {1} where {2}='{3}';", fieldsModel.Config.tableName, string.Join(',', updateFieldSql), childPrimary.field, data["id"]));
                                         }
                                         else
                                         {
@@ -1029,7 +1035,7 @@ public class RunService : IRunService, ITransient
                                             {
                                                 mainSql.Add(string.Format(
                                                 "insert into {0}({6},{4}{1}) values('{3}','{5}'{2});",
-                                                fieldsModel.__config__.tableName,
+                                                fieldsModel.Config.tableName,
                                                 childColumn.Any() ? "," + string.Join(",", childColumn) : string.Empty,
                                                 childColumn.Any() ? "," + string.Join(",", childValues) : string.Empty,
                                                 SnowflakeIdHelper.NextId(),
@@ -1041,7 +1047,7 @@ public class RunService : IRunService, ITransient
                                             {
                                                 mainSql.Add(string.Format(
                                                 "insert into {0}({1}{2}) values('{3}'{4});",
-                                                fieldsModel.__config__.tableName,
+                                                fieldsModel.Config.tableName,
                                                 childTable.tableField,
                                                 childColumn.Any() ? "," + string.Join(",", childColumn) : string.Empty,
                                                 id,
@@ -1184,7 +1190,7 @@ public class RunService : IRunService, ITransient
         }
         else
         {
-            return (await GetHaveTableInfo(dataId, vEntity));
+            return await GetHaveTableInfo(dataId, vEntity);
         }
     }
 
@@ -1209,23 +1215,23 @@ public class RunService : IRunService, ITransient
         {
             oldTInfo.AllFieldsModel.ForEach(it =>
             {
-                if (!it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.MODIFYTIME) && !it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.MODIFYUSER) && !it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE))
-                    it.__config__.poxiaoKey = PoxiaoKeyConst.COMINPUT;
+                if (!it.Config.poxiaoKey.Equals(PoxiaoKeyConst.MODIFYTIME) && !it.Config.poxiaoKey.Equals(PoxiaoKeyConst.MODIFYUSER) && !it.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE))
+                    it.Config.poxiaoKey = PoxiaoKeyConst.COMINPUT;
             });
             newTInfo.AllFieldsModel.ForEach(it =>
             {
-                if (!it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.MODIFYTIME) && !it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.MODIFYUSER) && !it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE))
-                    it.__config__.poxiaoKey = PoxiaoKeyConst.COMINPUT;
+                if (!it.Config.poxiaoKey.Equals(PoxiaoKeyConst.MODIFYTIME) && !it.Config.poxiaoKey.Equals(PoxiaoKeyConst.MODIFYUSER) && !it.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE))
+                    it.Config.poxiaoKey = PoxiaoKeyConst.COMINPUT;
             });
         }
 
         var newMapRule = new Dictionary<string, string>();
         oldTInfo.AllFieldsModel.ForEach(item =>
         {
-            if (newTInfo.AllFieldsModel.Any(x => x.__vModel__.Equals(item.__vModel__) && x.multiple.Equals(item.multiple))
-            && item.__vModel__.IsNotEmptyOrNull()
-            && !newMapRule.ContainsKey(item.__vModel__))
-                newMapRule.Add(item.__vModel__, item.__vModel__);
+            if (newTInfo.AllFieldsModel.Any(x => x.VModel.Equals(item.VModel) && x.multiple.Equals(item.multiple))
+            && item.VModel.IsNotEmptyOrNull()
+            && !newMapRule.ContainsKey(item.VModel))
+                newMapRule.Add(item.VModel, item.VModel);
         });
         if (mapRule.IsNullOrEmpty()) mapRule = new List<Dictionary<string, string>>();
         foreach (var item in newMapRule)
@@ -1245,25 +1251,25 @@ public class RunService : IRunService, ITransient
         foreach (var items in mapRule)
         {
             var item = items.First();
-            var oldModel = oldTInfo.AllFieldsModel.Find(x => x.__vModel__.Equals(item.Key));
-            var newModel = newTInfo.AllFieldsModel.Find(x => x.__vModel__.Equals(item.Value));
-            if (oldModel == null || newModel == null || oldModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.MODIFYTIME) || oldModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.MODIFYUSER))
+            var oldModel = oldTInfo.AllFieldsModel.Find(x => x.VModel.Equals(item.Key));
+            var newModel = newTInfo.AllFieldsModel.Find(x => x.VModel.Equals(item.Value));
+            if (oldModel == null || newModel == null || oldModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.MODIFYTIME) || oldModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.MODIFYUSER))
             {
                 formData[item.Key] = string.Empty; // 找不到 默认赋予 空字符串
                 continue;
             }
-            if (oldModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE) || newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE))
+            if (oldModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE) || newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE))
                 continue;
 
             // 子表字段 - 子表字段
-            if ((oldModel.__vModel__.ToLower().Contains(childTableSplitKey) && newModel.__vModel__.ToLower().Contains(childTableSplitKey)))
+            if ( oldModel.VModel.ToLower().Contains(childTableSplitKey) && newModel.VModel.ToLower().Contains(childTableSplitKey))
             {
                 if (DataTransferVerify(oldModel, newModel))
                 {
-                    var oldCTable = oldModel.__vModel__.Split("-").First();
-                    var oldCField = oldModel.__vModel__.Split("-").Last();
-                    var newCTable = newModel.__vModel__.Split("-").First();
-                    var newCField = newModel.__vModel__.Split("-").Last();
+                    var oldCTable = oldModel.VModel.Split("-").First();
+                    var oldCField = oldModel.VModel.Split("-").Last();
+                    var newCTable = newModel.VModel.Split("-").First();
+                    var newCField = newModel.VModel.Split("-").Last();
                     if (oldCField.IsNullOrWhiteSpace() || newCField.IsNullOrWhiteSpace()) continue;
 
                     if (!formData.ContainsKey(newCTable)) formData.Add(newCTable, new List<Dictionary<string, object>>());
@@ -1284,35 +1290,35 @@ public class RunService : IRunService, ITransient
                     }
                 }
             }
-            else if (oldModel.__vModel__.ToLower().Contains(childTableSplitKey) || newModel.__vModel__.ToLower().Contains(childTableSplitKey))
+            else if (oldModel.VModel.ToLower().Contains(childTableSplitKey) || newModel.VModel.ToLower().Contains(childTableSplitKey))
             {
                 if (DataTransferVerify(oldModel, newModel))
                 {
                     // 子表字段 - 非子表字段
                     // 传递规则：默认选用上节点的第一条子表数据赋值到下节点的非子表字段内
-                    if (oldModel.__vModel__.ToLower().Contains(childTableSplitKey) && !newModel.__vModel__.ToLower().Contains(childTableSplitKey))
+                    if (oldModel.VModel.ToLower().Contains(childTableSplitKey) && !newModel.VModel.ToLower().Contains(childTableSplitKey))
                     {
-                        var childTable = oldModel.__vModel__.Split("-").First();
-                        var childField = oldModel.__vModel__.Split("-").Last();
+                        var childTable = oldModel.VModel.Split("-").First();
+                        var childField = oldModel.VModel.Split("-").Last();
                         var childTableData = formData[childTable].ToObject<List<Dictionary<string, object>>>();
                         if (childTableData.Any() && childTableData.Any(x => x.ContainsKey(childField)))
                         {
-                            if (formData.ContainsKey(oldModel.__vModel__)) formData[oldModel.__vModel__] = childTableData.First()[childField];
-                            else formData.Add(oldModel.__vModel__, childTableData.First()[childField]);
+                            if (formData.ContainsKey(oldModel.VModel)) formData[oldModel.VModel] = childTableData.First()[childField];
+                            else formData.Add(oldModel.VModel, childTableData.First()[childField]);
                         }
                     }
 
                     // 非子表字段 - 子表字段
                     // 传递规则：下节点子表新增一行将上节点字段赋值进去
-                    if (!oldModel.__vModel__.ToLower().Contains(childTableSplitKey) && newModel.__vModel__.ToLower().Contains(childTableSplitKey))
+                    if (!oldModel.VModel.ToLower().Contains(childTableSplitKey) && newModel.VModel.ToLower().Contains(childTableSplitKey))
                     {
-                        var childKey = newModel.__vModel__.Split("-");
+                        var childKey = newModel.VModel.Split("-");
                         var childTableKey = childKey.First();
 
                         var childFieldKey = childKey.Last();
-                        if (formData.ContainsKey(oldModel.__vModel__))
+                        if (formData.ContainsKey(oldModel.VModel))
                         {
-                            var childFieldValue = formData[oldModel.__vModel__];
+                            var childFieldValue = formData[oldModel.VModel];
 
                             if (!formData.ContainsKey(childTableKey)) formData.Add(childTableKey, new List<Dictionary<string, object>>());
 
@@ -1335,7 +1341,7 @@ public class RunService : IRunService, ITransient
             else
             {
                 // 三个特殊的系统表单，不做验证规则
-                if (!childTableSplitKey.Equals("-") && !DataTransferVerify(oldModel, newModel)) formData[oldModel.__vModel__] = null;
+                if (!childTableSplitKey.Equals("-") && !DataTransferVerify(oldModel, newModel)) formData[oldModel.VModel] = null;
             }
         }
 
@@ -1438,7 +1444,7 @@ public class RunService : IRunService, ITransient
             }
             res[mapRule.Find(x => x.ContainsKey("@prevNodeFormId")).First().Value] = formData["id"];
         }
-		
+
         // 保存到数据库
         res["id"] = formData["id"];
 
@@ -1448,7 +1454,7 @@ public class RunService : IRunService, ITransient
             newTInfo.ChildTableFieldsModelList.ForEach(x =>
             {
                 var newValueMapRule = mapRule.Select(xx => xx.FirstOrDefault().Value).ToList();
-                if (!res.ContainsKey(x.__vModel__) && (!newValueMapRule.Contains(x.__vModel__))) tInfoList.Add(x.__vModel__);
+                if (!res.ContainsKey(x.VModel) && (!newValueMapRule.Contains(x.VModel))) tInfoList.Add(x.VModel);
             });
             if (tInfoList.Any())
             {
@@ -1655,26 +1661,26 @@ public class RunService : IRunService, ITransient
         {
             fieldsModelList.ForEach(item =>
             {
-                switch (item.__config__.poxiaoKey)
+                switch (item.Config.poxiaoKey)
                 {
                     case PoxiaoKeyConst.CREATETIME:
                     case PoxiaoKeyConst.CREATEUSER:
                     case PoxiaoKeyConst.CURRPOSITION:
                     case PoxiaoKeyConst.CURRORGANIZE:
-                        allDataMap.Remove(item.__vModel__);
+                        allDataMap.Remove(item.VModel);
                         break;
                     case PoxiaoKeyConst.TABLE:
-                        var fList = item.__config__.children.Where(x => x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CREATETIME)
-                        || x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CREATEUSER)
-                        || x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CURRPOSITION)
-                        || x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CURRORGANIZE)).ToList();
+                        var fList = item.Config.children.Where(x => x.Config.poxiaoKey.Equals(PoxiaoKeyConst.CREATETIME)
+                        || x.Config.poxiaoKey.Equals(PoxiaoKeyConst.CREATEUSER)
+                        || x.Config.poxiaoKey.Equals(PoxiaoKeyConst.CURRPOSITION)
+                        || x.Config.poxiaoKey.Equals(PoxiaoKeyConst.CURRORGANIZE)).ToList();
                         fList.ForEach(child =>
                         {
-                            if (allDataMap.ContainsKey(item.__vModel__))
+                            if (allDataMap.ContainsKey(item.VModel))
                             {
-                                var cDataMap = allDataMap[item.__vModel__].ToObject<List<Dictionary<string, object>>>();
-                                cDataMap.ForEach(x => x.Remove(child.__vModel__));
-                                allDataMap[item.__vModel__] = cDataMap;
+                                var cDataMap = allDataMap[item.VModel].ToObject<List<Dictionary<string, object>>>();
+                                cDataMap.ForEach(x => x.Remove(child.VModel));
+                                allDataMap[item.VModel] = cDataMap;
                             }
                         });
                         break;
@@ -1684,13 +1690,13 @@ public class RunService : IRunService, ITransient
 
         foreach (var model in fieldsModelList)
         {
-            if (model != null && model.__vModel__.IsNotEmptyOrNull())
+            if (model != null && model.VModel.IsNotEmptyOrNull())
             {
                 // 如果模板poxiaoKey为table为子表数据
-                if (model.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE) && allDataMap.ContainsKey(model.__vModel__) && allDataMap[model.__vModel__] != null)
+                if (model.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE) && allDataMap.ContainsKey(model.VModel) && allDataMap[model.VModel] != null)
                 {
-                    List<FieldsModel> childFieldsModelList = model.__config__.children;
-                    object? objectData = allDataMap[model.__vModel__];
+                    List<FieldsModel> childFieldsModelList = model.Config.children;
+                    object? objectData = allDataMap[model.VModel];
                     List<Dictionary<string, object>> childAllDataMapList = objectData.ToJsonString().ToObject<List<Dictionary<string, object>>>();
                     if (childAllDataMapList != null && childAllDataMapList.Count > 0)
                     {
@@ -1701,15 +1707,15 @@ public class RunService : IRunService, ITransient
                             foreach (KeyValuePair<string, object> item in childmap)
                             {
                                 if (item.Key.Equals("id")) newChildData[item.Key] = childmap[item.Key];
-                                FieldsModel? childFieldsModel = childFieldsModelList.Where(c => c.__vModel__ == item.Key).FirstOrDefault();
-                                if (childFieldsModel != null && childFieldsModel.__vModel__.Equals(item.Key))
+                                FieldsModel? childFieldsModel = childFieldsModelList.Where(c => c.VModel == item.Key).FirstOrDefault();
+                                if (childFieldsModel != null && childFieldsModel.VModel.Equals(item.Key))
                                 {
-                                    switch (childFieldsModel.__config__.poxiaoKey)
+                                    switch (childFieldsModel.Config.poxiaoKey)
                                     {
                                         case PoxiaoKeyConst.BILLRULE:
                                             if (IsCreate || childmap[item.Key].IsNullOrEmpty())
                                             {
-                                                string billNumber = await _billRuleService.GetBillNumber(childFieldsModel.__config__.rule);
+                                                string billNumber = await _billRuleService.GetBillNumber(childFieldsModel.Config.rule);
                                                 if (!"单据规则不存在".Equals(billNumber)) newChildData[item.Key] = billNumber;
                                                 else newChildData[item.Key] = string.Empty;
                                             }
@@ -1736,7 +1742,7 @@ public class RunService : IRunService, ITransient
                                             {
                                                 if (allDataMap.ContainsKey("Poxiao_FlowDelegate_CurrPosition")) // 流程委托 需要指定所属岗位
                                                 {
-                                                    allDataMap[model.__vModel__] = allDataMap["Poxiao_FlowDelegate_CurrPosition"];
+                                                    allDataMap[model.VModel] = allDataMap["Poxiao_FlowDelegate_CurrPosition"];
                                                 }
                                                 else
                                                 {
@@ -1753,7 +1759,7 @@ public class RunService : IRunService, ITransient
                                             {
                                                 if (allDataMap.ContainsKey("Poxiao_FlowDelegate_CurrOrganize")) // 流程委托 需要指定所属组织
                                                 {
-                                                    allDataMap[model.__vModel__] = allDataMap["Poxiao_FlowDelegate_CurrOrganize"];
+                                                    allDataMap[model.VModel] = allDataMap["Poxiao_FlowDelegate_CurrOrganize"];
                                                 }
                                                 else
                                                 {
@@ -1775,50 +1781,50 @@ public class RunService : IRunService, ITransient
                             }
 
                             newChildAllDataMapList.Add(newChildData);
-                            allDataMap[model.__vModel__] = newChildAllDataMapList;
+                            allDataMap[model.VModel] = newChildAllDataMapList;
                         }
                     }
                 }
                 else
                 {
-                    switch (model.__config__.poxiaoKey)
+                    switch (model.Config.poxiaoKey)
                     {
                         case PoxiaoKeyConst.BILLRULE:
                             if (IsCreate)
                             {
-                                string billNumber = await _billRuleService.GetBillNumber(model.__config__.rule);
-                                if (!"单据规则不存在".Equals(billNumber)) allDataMap[model.__vModel__] = billNumber;
-                                else allDataMap[model.__vModel__] = string.Empty;
+                                string billNumber = await _billRuleService.GetBillNumber(model.Config.rule);
+                                if (!"单据规则不存在".Equals(billNumber)) allDataMap[model.VModel] = billNumber;
+                                else allDataMap[model.VModel] = string.Empty;
                             }
                             break;
                         case PoxiaoKeyConst.CREATEUSER:
                             if (IsCreate)
                             {
-                                allDataMap[model.__vModel__] = userInfo.Id;
+                                allDataMap[model.VModel] = userInfo.Id;
                             }
                             break;
                         case PoxiaoKeyConst.CREATETIME:
-                            if (IsCreate) allDataMap[model.__vModel__] = string.Format("{0:yyyy-MM-dd HH:mm:ss}", DateTime.Now);
+                            if (IsCreate) allDataMap[model.VModel] = string.Format("{0:yyyy-MM-dd HH:mm:ss}", DateTime.Now);
                             break;
                         case PoxiaoKeyConst.MODIFYUSER:
-                            if (!IsCreate) allDataMap[model.__vModel__] = userInfo.Id;
+                            if (!IsCreate) allDataMap[model.VModel] = userInfo.Id;
                             break;
                         case PoxiaoKeyConst.MODIFYTIME:
-                            if (!IsCreate) allDataMap[model.__vModel__] = string.Format("{0:yyyy-MM-dd HH:mm:ss}", DateTime.Now);
+                            if (!IsCreate) allDataMap[model.VModel] = string.Format("{0:yyyy-MM-dd HH:mm:ss}", DateTime.Now);
                             break;
                         case PoxiaoKeyConst.CURRPOSITION:
                             if (IsCreate)
                             {
                                 if (allDataMap.ContainsKey("Poxiao_FlowDelegate_CurrPosition")) // 流程委托 需要指定所属岗位
                                 {
-                                    allDataMap[model.__vModel__] = allDataMap["Poxiao_FlowDelegate_CurrPosition"];
+                                    allDataMap[model.VModel] = allDataMap["Poxiao_FlowDelegate_CurrPosition"];
                                 }
                                 else
                                 {
                                     string? pid = await _visualDevRepository.AsSugarClient().Queryable<UserEntity, PositionEntity>((a, b) => new JoinQueryInfos(JoinType.Left, b.Id == a.PositionId))
                                         .Where((a, b) => a.Id == userInfo.Id && a.DeleteMark == null).Select((a, b) => a.PositionId).FirstAsync();
-                                    if (pid.IsNotEmptyOrNull()) allDataMap[model.__vModel__] = pid;
-                                    else allDataMap[model.__vModel__] = string.Empty;
+                                    if (pid.IsNotEmptyOrNull()) allDataMap[model.VModel] = pid;
+                                    else allDataMap[model.VModel] = string.Empty;
                                 }
                             }
 
@@ -1828,27 +1834,27 @@ public class RunService : IRunService, ITransient
                             {
                                 if (allDataMap.ContainsKey("Poxiao_FlowDelegate_CurrOrganize")) // 流程委托 需要指定所属组织
                                 {
-                                    allDataMap[model.__vModel__] = allDataMap["Poxiao_FlowDelegate_CurrOrganize"];
+                                    allDataMap[model.VModel] = allDataMap["Poxiao_FlowDelegate_CurrOrganize"];
                                 }
                                 else
                                 {
                                     if (model.showLevel.Equals("last"))
                                     {
                                         if (userInfo.OrganizeId != null && await _visualDevRepository.AsSugarClient().Queryable<OrganizeEntity>().AnyAsync(x => x.Id.Equals(userInfo.OrganizeId) && x.Category.Equals("department")))
-                                            allDataMap[model.__vModel__] = userInfo.OrganizeId;
-                                        else allDataMap[model.__vModel__] = string.Empty;
+                                            allDataMap[model.VModel] = userInfo.OrganizeId;
+                                        else allDataMap[model.VModel] = string.Empty;
                                     }
                                     else
                                     {
-                                        if (userInfo.OrganizeId != null) allDataMap[model.__vModel__] = userInfo.OrganizeId;
-                                        else allDataMap[model.__vModel__] = string.Empty;
+                                        if (userInfo.OrganizeId != null) allDataMap[model.VModel] = userInfo.OrganizeId;
+                                        else allDataMap[model.VModel] = string.Empty;
                                     }
                                 }
                             }
 
                             break;
                         case PoxiaoKeyConst.UPLOADFZ: // 文件上传
-                            if (!allDataMap.ContainsKey(model.__vModel__) || allDataMap[model.__vModel__].IsNullOrEmpty()) allDataMap[model.__vModel__] = new string[] { };
+                            if (!allDataMap.ContainsKey(model.VModel) || allDataMap[model.VModel].IsNullOrEmpty()) allDataMap[model.VModel] = new string[] { };
                             break;
                     }
                 }
@@ -1989,7 +1995,7 @@ public class RunService : IRunService, ITransient
     public string GetVisualDevModelDataConfig(string propertyJson, string tableJson, int formType)
     {
         var tInfo = new TemplateParsingBase(propertyJson, tableJson, formType);
-        if (tInfo.AllFieldsModel.Any(x => (x.__config__.defaultCurrent) && (x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) || x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.DEPSELECT))))
+        if (tInfo.AllFieldsModel.Any(x => x.Config.defaultCurrent && (x.Config.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) || x.Config.poxiaoKey.Equals(PoxiaoKeyConst.DEPSELECT))))
         {
             var userId = _userManager.UserId;
             var depId = _visualDevRepository.AsSugarClient().Queryable<UserEntity, OrganizeEntity>((a, b) => new JoinQueryInfos(JoinType.Left, b.Id == a.OrganizeId))
@@ -2054,7 +2060,7 @@ public class RunService : IRunService, ITransient
                 if (ffEntity != null)
                 {
                     var flowId = ffEntity.FlowId;
-                    var flowJsonId = (await _visualDevRepository.AsSugarClient().Queryable<FlowTemplateJsonEntity>().Where(x => x.TemplateId == flowId && x.EnabledMark == 1 && x.DeleteMark == null).Select(x => x.Id).FirstAsync());
+                    var flowJsonId = await _visualDevRepository.AsSugarClient().Queryable<FlowTemplateJsonEntity>().Where(x => x.TemplateId == flowId && x.EnabledMark == 1 && x.DeleteMark == null).Select(x => x.Id).FirstAsync();
                     var sql = string.Format("update {0} set f_flowtaskid={1},f_flowid='{2}' where f_flowid is null or f_flowid = '';", tInfo.MainTableName, tableList.First(x => x.primaryKey).field, flowJsonId);
                     await _databaseService.ExecuteSql(tInfo.DbLink, sql);
                 }
@@ -2355,7 +2361,10 @@ public class RunService : IRunService, ITransient
 
             return queryList.ToJsonString();
         }
-        else return string.Empty;
+        else
+        {
+            return string.Empty;
+        }
     }
 
     /// <summary>
@@ -2370,10 +2379,10 @@ public class RunService : IRunService, ITransient
     private void UniqueVerify(DbLinkEntity link, TemplateParsingBase templateInfo, Dictionary<string, object> allDataMap, string mainPrimary, string mainId, bool isUpdate = false)
     {
         // 单行输入 唯一验证
-        if (templateInfo.AllFieldsModel.Any(x => x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.COMINPUT) && x.__config__.unique))
+        if (templateInfo.AllFieldsModel.Any(x => x.Config.poxiaoKey.Equals(PoxiaoKeyConst.COMINPUT) && x.Config.unique))
         {
             List<string>? relationKey = new List<string>();
-            List<string>? auxiliaryFieldList = templateInfo.AuxiliaryTableFieldsModelList.Select(x => x.__config__.tableName).Distinct().ToList();
+            List<string>? auxiliaryFieldList = templateInfo.AuxiliaryTableFieldsModelList.Select(x => x.Config.tableName).Distinct().ToList();
             auxiliaryFieldList.ForEach(tName =>
             {
                 string? tableField = templateInfo.AllTable.Find(tf => tf.table == tName)?.tableField;
@@ -2383,21 +2392,21 @@ public class RunService : IRunService, ITransient
             List<string>? fieldList = new List<string>();
             var whereList = new List<IConditionalModel>();
 
-            templateInfo.SingleFormData.Where(x => x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.COMINPUT) && x.__config__.unique).ToList().ForEach(item =>
+            templateInfo.SingleFormData.Where(x => x.Config.poxiaoKey.Equals(PoxiaoKeyConst.COMINPUT) && x.Config.unique).ToList().ForEach(item =>
             {
-                if (allDataMap.ContainsKey(item.__vModel__) && allDataMap[item.__vModel__].IsNotEmptyOrNull())
+                if (allDataMap.ContainsKey(item.VModel) && allDataMap[item.VModel].IsNotEmptyOrNull())
                 {
-                    allDataMap[item.__vModel__] = allDataMap[item.__vModel__].ToString().Trim();
-                    fieldList.Add(string.Format("{0}.{1}", item.__config__.tableName, item.__vModel__.Split("_poxiao_").Last()));
+                    allDataMap[item.VModel] = allDataMap[item.VModel].ToString().Trim();
+                    fieldList.Add(string.Format("{0}.{1}", item.Config.tableName, item.VModel.Split("_poxiao_").Last()));
                     whereList.Add(new ConditionalCollections()
                     {
                         ConditionalList = new List<KeyValuePair<WhereType, SqlSugar.ConditionalModel>>()
                     {
                         new KeyValuePair<WhereType, ConditionalModel>(WhereType.Or, new ConditionalModel
                         {
-                            FieldName = string.Format("{0}.{1}", item.__config__.tableName, item.__vModel__.Split("_poxiao_").Last()),
-                            ConditionalType =allDataMap.ContainsKey(item.__vModel__) ? ConditionalType.Equal: ConditionalType.IsNullOrEmpty,
-                            FieldValue = allDataMap.ContainsKey(item.__vModel__) ? allDataMap[item.__vModel__].ToString() : string.Empty,
+                            FieldName = string.Format("{0}.{1}", item.Config.tableName, item.VModel.Split("_poxiao_").Last()),
+                            ConditionalType = allDataMap.ContainsKey(item.VModel) ? ConditionalType.Equal : ConditionalType.IsNullOrEmpty,
+                            FieldValue = allDataMap.ContainsKey(item.VModel) ? allDataMap[item.VModel].ToString() : string.Empty,
                         })
                     }
                     });
@@ -2424,7 +2433,7 @@ public class RunService : IRunService, ITransient
                     res.ForEach(items =>
                     {
                         foreach (var item in items)
-                            errorList.Add(templateInfo.SingleFormData.FirstOrDefault(x => x.__vModel__.Equals(item.Key) || x.__vModel__.Contains("_poxiao_" + item.Key))?.__config__.label);
+                            errorList.Add(templateInfo.SingleFormData.FirstOrDefault(x => x.VModel.Equals(item.Key) || x.VModel.Contains("_poxiao_" + item.Key))?.Config.label);
                     });
 
                     throw Oops.Oh(ErrorCode.D1407, string.Join(",", errorList.Distinct()));
@@ -2433,23 +2442,23 @@ public class RunService : IRunService, ITransient
 
             foreach (var citem in templateInfo.ChildTableFieldsModelList)
             {
-                if (allDataMap.ContainsKey(citem.__vModel__))
+                if (allDataMap.ContainsKey(citem.VModel))
                 {
-                    var childrenValues = allDataMap[citem.__vModel__].ToObject<List<Dictionary<string, object>>>();
+                    var childrenValues = allDataMap[citem.VModel].ToObject<List<Dictionary<string, object>>>();
                     if (childrenValues.Any())
                     {
-                        citem.__config__.children.Where(x => x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.COMINPUT) && x.__config__.unique).ToList().ForEach(item =>
+                        citem.Config.children.Where(x => x.Config.poxiaoKey.Equals(PoxiaoKeyConst.COMINPUT) && x.Config.unique).ToList().ForEach(item =>
                         {
-                            var vList = childrenValues.Where(xx => xx.ContainsKey(item.__vModel__)).ToList();
+                            var vList = childrenValues.Where(xx => xx.ContainsKey(item.VModel)).ToList();
                             vList.ForEach(vitem =>
                             {
-                                vitem[item.__vModel__] = vitem[item.__vModel__].ToString().Trim();
-                                if (vitem[item.__vModel__] != null && childrenValues.Where(x => x.ContainsKey(item.__vModel__) && x.ContainsValue(vitem[item.__vModel__])).Count() > 1)
-                                    throw Oops.Oh(ErrorCode.D1407, item.__config__.label);
+                                vitem[item.VModel] = vitem[item.VModel].ToString().Trim();
+                                if (vitem[item.VModel] != null && childrenValues.Where(x => x.ContainsKey(item.VModel) && x.ContainsValue(vitem[item.VModel])).Count() > 1)
+                                    throw Oops.Oh(ErrorCode.D1407, item.Config.label);
                             });
                         });
                     }
-                    allDataMap[citem.__vModel__] = childrenValues;
+                    allDataMap[citem.VModel] = childrenValues;
                 }
             }
         }
@@ -2472,7 +2481,7 @@ public class RunService : IRunService, ITransient
         string? sql = string.Empty; // 查询sql
 
         // 显示列和搜索列有子表字段
-        if (templateInfo.ColumnData.columnList.Any(x => templateInfo.ChildTableFields.ContainsKey(x.__vModel__)) || templateInfo.ColumnData.searchList.Any(x => templateInfo.ChildTableFields.ContainsKey(x.__vModel__)))
+        if (templateInfo.ColumnData.columnList.Any(x => templateInfo.ChildTableFields.ContainsKey(x.VModel)) || templateInfo.ColumnData.searchList.Any(x => templateInfo.ChildTableFields.ContainsKey(x.VModel)))
         {
             var queryJson = input.QueryJson;
             var superQueryJson = input.superQueryJson;
@@ -2484,17 +2493,17 @@ public class RunService : IRunService, ITransient
                 if (queryJson.Contains(string.Format("\"{0}\"", item.Key)))
                 {
                     queryJson = queryJson.Replace(string.Format("\"{0}\"", item.Key), string.Format("\"{0}\"", item.Value));
-                    var vmodel = templateInfo.ColumnData.searchList.FirstOrDefault(x => x != null && x.__vModel__.Equals(item.Key));
+                    var vmodel = templateInfo.ColumnData.searchList.FirstOrDefault(x => x != null && x.VModel.Equals(item.Key));
                     if (vmodel != null)
                     {
-                        vmodel.__vModel__ = item.Value;
+                        vmodel.VModel = item.Value;
                         fields.Add(item.Value);
                     }
 
-                    var appVModel = templateInfo.AppColumnData.searchList.FirstOrDefault(x => x != null && x.__vModel__.Equals(item.Key));
+                    var appVModel = templateInfo.AppColumnData.searchList.FirstOrDefault(x => x != null && x.VModel.Equals(item.Key));
                     if (appVModel != null)
                     {
-                        appVModel.__vModel__ = item.Value;
+                        appVModel.VModel = item.Value;
                         fields.Add(item.Value);
                     }
                 }
@@ -2557,7 +2566,7 @@ public class RunService : IRunService, ITransient
                     if (templateInfo.ChildTableFields.Any(x => x.Value.Contains(tName + ".")) && (dicList.ToJsonString().Contains("\"ConditionalType\":11") || dicList.ToJsonString().Contains("\"ConditionalType\":14")))
                         queryOrSqlList.Add(string.Format(" OR ( {0} NOT IN ( SELECT {1} FROM {2} ) ) ", primaryKey, templateInfo.AllTable.Where(x => x.table.Equals(tName)).First().tableField, tName));
 
-                    if(dicList.Any())
+                    if (dicList.Any())
                     {
                         if (!tableWhere.ContainsKey(tName)) tableWhere.Add(tName, dicList);
                         else tableWhere[tName].AddRange(dicList);
@@ -2629,9 +2638,9 @@ public class RunService : IRunService, ITransient
 
             // 只查询 要显示的列
             if (showColumnList && (templateInfo.SingleFormData.Count > 0 || templateInfo.ColumnData.columnList.Count > 0))
-                templateInfo.ColumnData.columnList.ForEach(item => { if (templateInfo.SingleFormData.Any(x => x.__vModel__.Equals(item.prop))) fields.Add(item.prop); });
+                templateInfo.ColumnData.columnList.ForEach(item => { if (templateInfo.SingleFormData.Any(x => x.VModel.Equals(item.prop))) fields.Add(item.prop); });
             else
-                templateInfo.MainTableFieldsModelList.Where(x => x.__vModel__.IsNotEmptyOrNull()).ToList().ForEach(item => fields.Add(item.__vModel__)); // 字段
+                templateInfo.MainTableFieldsModelList.Where(x => x.VModel.IsNotEmptyOrNull()).ToList().ForEach(item => fields.Add(item.VModel)); // 字段
 
             sql = string.Format("select {0} from {1}", string.Join(",", fields), templateInfo.MainTableName);
             if (templateInfo.FormModel.logicalDelete && _databaseService.IsAnyColumn(templateInfo.DbLink, templateInfo.MainTableName, "f_deletemark"))
@@ -2673,35 +2682,35 @@ public class RunService : IRunService, ITransient
             Dictionary<string, object>? inputJson = input.QueryJson?.ToObject<Dictionary<string, object>>();
             for (int i = 0; i < templateInfo.SingleFormData.Count; i++)
             {
-                string? vmodel = templateInfo.SingleFormData[i].__vModel__.ReplaceRegex(@"(\w+)_poxiao_", string.Empty); // Field
+                string? vmodel = templateInfo.SingleFormData[i].VModel.ReplaceRegex(@"(\w+)_poxiao_", string.Empty); // Field
 
                 // 只显示要显示的列
-                if (showColumnList && !templateInfo.ColumnData.columnList.Any(x => x.prop == templateInfo.SingleFormData[i].__vModel__))
+                if (showColumnList && !templateInfo.ColumnData.columnList.Any(x => x.prop == templateInfo.SingleFormData[i].VModel))
                     vmodel = string.Empty;
 
                 if (vmodel.IsNotEmptyOrNull())
                 {
-                    fields.Add(templateInfo.SingleFormData[i].__config__.tableName + "." + vmodel + " FIELD_" + i); // TableName.Field_0
-                    tableFieldKeyValue.Add("FIELD_" + i, templateInfo.SingleFormData[i].__vModel__);
+                    fields.Add(templateInfo.SingleFormData[i].Config.tableName + "." + vmodel + " FIELD_" + i); // TableName.Field_0
+                    tableFieldKeyValue.Add("FIELD_" + i, templateInfo.SingleFormData[i].VModel);
 
                     // 查询字段替换
-                    if (inputJson != null && inputJson.Count > 0 && inputJson.ContainsKey(templateInfo.SingleFormData[i].__vModel__))
-                        input.QueryJson = input.QueryJson.Replace("\"" + templateInfo.SingleFormData[i].__vModel__ + "\":", "\"FIELD_" + i + "\":");
+                    if (inputJson != null && inputJson.Count > 0 && inputJson.ContainsKey(templateInfo.SingleFormData[i].VModel))
+                        input.QueryJson = input.QueryJson.Replace("\"" + templateInfo.SingleFormData[i].VModel + "\":", "\"FIELD_" + i + "\":");
                     if (input.superQueryJson.IsNotEmptyOrNull())
-                        input.superQueryJson = input.superQueryJson.Replace(string.Format("\"field\":\"{0}\"", templateInfo.SingleFormData[i].__vModel__), string.Format("\"field\":\"{0}\"", "FIELD_" + i));
+                        input.superQueryJson = input.superQueryJson.Replace(string.Format("\"field\":\"{0}\"", templateInfo.SingleFormData[i].VModel), string.Format("\"field\":\"{0}\"", "FIELD_" + i));
                     if (input.dataRuleJson.IsNotEmptyOrNull())
-                        input.dataRuleJson = input.dataRuleJson.Replace(string.Format("\"FieldName\":\"{0}\"", templateInfo.SingleFormData[i].__vModel__), string.Format("\"FieldName\":\"{0}\"", "FIELD_" + i));
+                        input.dataRuleJson = input.dataRuleJson.Replace(string.Format("\"FieldName\":\"{0}\"", templateInfo.SingleFormData[i].VModel), string.Format("\"FieldName\":\"{0}\"", "FIELD_" + i));
 
-                    templateInfo.ColumnData.searchList.Where(x => x.__vModel__ == templateInfo.SingleFormData[i].__vModel__).ToList().ForEach(item =>
+                    templateInfo.ColumnData.searchList.Where(x => x.VModel == templateInfo.SingleFormData[i].VModel).ToList().ForEach(item =>
                     {
-                        item.__vModel__ = item.__vModel__.Replace(templateInfo.SingleFormData[i].__vModel__, "FIELD_" + i);
+                        item.VModel = item.VModel.Replace(templateInfo.SingleFormData[i].VModel, "FIELD_" + i);
                     });
 
                     // 排序字段替换
-                    if (templateInfo.ColumnData.defaultSidx.IsNotEmptyOrNull() && templateInfo.ColumnData.defaultSidx == templateInfo.SingleFormData[i].__vModel__)
+                    if (templateInfo.ColumnData.defaultSidx.IsNotEmptyOrNull() && templateInfo.ColumnData.defaultSidx == templateInfo.SingleFormData[i].VModel)
                         templateInfo.ColumnData.defaultSidx = "FIELD_" + i;
 
-                    if (input.Sidx.IsNotEmptyOrNull() && input.Sidx == templateInfo.SingleFormData[i].__vModel__) input.Sidx = "FIELD_" + i;
+                    if (input.Sidx.IsNotEmptyOrNull() && input.Sidx == templateInfo.SingleFormData[i].VModel) input.Sidx = "FIELD_" + i;
                 }
 
             }
@@ -2711,7 +2720,7 @@ public class RunService : IRunService, ITransient
             #region 关联字段
 
             List<string>? relationKey = new List<string>();
-            List<string>? auxiliaryFieldList = templateInfo.AuxiliaryTableFieldsModelList.Select(x => x.__config__.tableName).Distinct().ToList();
+            List<string>? auxiliaryFieldList = templateInfo.AuxiliaryTableFieldsModelList.Select(x => x.Config.tableName).Distinct().ToList();
             auxiliaryFieldList.ForEach(tName =>
             {
                 var tableField = templateInfo.AllTable.Find(tf => tf.table == tName);
@@ -2820,7 +2829,7 @@ public class RunService : IRunService, ITransient
         {
             fields.Add(mainPrimary); // 主表主键
             if (templateInfo.WebType.Equals(3)) fields.Add("F_FlowId");
-            templateInfo.MainTableFieldsModelList.Where(x => x.__vModel__.IsNotEmptyOrNull()).ToList().ForEach(item => fields.Add(item.__vModel__)); // 主表列名
+            templateInfo.MainTableFieldsModelList.Where(x => x.VModel.IsNotEmptyOrNull()).ToList().ForEach(item => fields.Add(item.VModel)); // 主表列名
             sql = string.Format("select {0} from {1} where {2}='{3}'", string.Join(",", fields), templateInfo.MainTableName, mainPrimary, id);
         }
         else
@@ -2830,17 +2839,17 @@ public class RunService : IRunService, ITransient
             if (templateInfo.WebType.Equals(3)) fields.Add(templateInfo.MainTableName + ".F_FlowId");
             for (int i = 0; i < templateInfo.SingleFormData.Count; i++)
             {
-                string? vmodel = templateInfo.SingleFormData[i].__vModel__.ReplaceRegex(@"(\w+)_poxiao_", ""); // Field
+                string? vmodel = templateInfo.SingleFormData[i].VModel.ReplaceRegex(@"(\w+)_poxiao_", ""); // Field
                 if (vmodel.IsNotEmptyOrNull())
                 {
-                    fields.Add(templateInfo.SingleFormData[i].__config__.tableName + "." + vmodel + " FIELD" + i); // TableName.Field_0
-                    tableFieldKeyValue.Add("FIELD" + i, templateInfo.SingleFormData[i].__vModel__);
+                    fields.Add(templateInfo.SingleFormData[i].Config.tableName + "." + vmodel + " FIELD" + i); // TableName.Field_0
+                    tableFieldKeyValue.Add("FIELD" + i, templateInfo.SingleFormData[i].VModel);
                 }
             }
             #endregion
 
             #region 所有副表 关联字段
-            List<string>? ctNameList = templateInfo.AuxiliaryTableFieldsModelList.Select(x => x.__config__.tableName).Distinct().ToList();
+            List<string>? ctNameList = templateInfo.AuxiliaryTableFieldsModelList.Select(x => x.Config.tableName).Distinct().ToList();
             List<string>? relationKey = new List<string>();
             relationKey.Add(string.Format(" {0}.{1}='{2}' ", templateInfo.MainTableName, mainPrimary, id)); // 主表ID
             ctNameList.ForEach(tName =>
@@ -2872,7 +2881,7 @@ public class RunService : IRunService, ITransient
         {
             foreach (KeyValuePair<string, object> item in keywordJsonDic)
             {
-                var model = columnDesign.searchList.Find(it => it.__vModel__.Equals(item.Key));
+                var model = columnDesign.searchList.Find(it => it.VModel.Equals(item.Key));
                 switch (model.poxiaoKey)
                 {
                     case PoxiaoKeyConst.DATE:
@@ -2977,14 +2986,14 @@ public class RunService : IRunService, ITransient
                                 {
                                     new KeyValuePair<WhereType, ConditionalModel>(WhereType.And, new ConditionalModel
                                     {
-                                        CSharpTypeName="decimal",
+                                        CSharpTypeName = "decimal",
                                         FieldName = item.Key,
                                         ConditionalType = ConditionalType.GreaterThanOrEqual,
                                         FieldValue = startNum.ToString()
                                     }),
                                     new KeyValuePair<WhereType, ConditionalModel>(WhereType.And, new ConditionalModel
                                     {
-                                        CSharpTypeName="decimal",
+                                        CSharpTypeName = "decimal",
                                         FieldName = item.Key,
                                         ConditionalType = ConditionalType.LessThanOrEqual,
                                         FieldValue = endNum.ToString()
@@ -3450,15 +3459,15 @@ public class RunService : IRunService, ITransient
 
         var childTableList = new Dictionary<string, List<string>>();
 
-        templateInfo.AllFieldsModel.Where(x => x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).ToList().ForEach(ctitem =>
+        templateInfo.AllFieldsModel.Where(x => x.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).ToList().ForEach(ctitem =>
         {
-            templateInfo.AllFieldsModel.Where(x => x.__vModel__.Contains(ctitem.__vModel__ + "-")).ToList().ForEach(item =>
+            templateInfo.AllFieldsModel.Where(x => x.VModel.Contains(ctitem.VModel + "-")).ToList().ForEach(item =>
             {
-                var value = item.__vModel__.Split("-").Last();
+                var value = item.VModel.Split("-").Last();
                 if (value.IsNotEmptyOrNull())
                 {
-                    if (childTableList.ContainsKey(ctitem.__config__.tableName)) childTableList[ctitem.__config__.tableName].Add(value);
-                    else childTableList.Add(ctitem.__config__.tableName, new List<string>() { value });
+                    if (childTableList.ContainsKey(ctitem.Config.tableName)) childTableList[ctitem.Config.tableName].Add(value);
+                    else childTableList.Add(ctitem.Config.tableName, new List<string>() { value });
                 }
             });
         });
@@ -3466,8 +3475,8 @@ public class RunService : IRunService, ITransient
         var relationField = new Dictionary<string, string>();
         templateInfo.ChildTableFieldsModelList.ForEach(item =>
         {
-            var tableField = templateInfo.AllTable.Find(tf => tf.table == item.__config__.tableName)?.tableField;
-            if (!relationField.ContainsKey(item.__config__.tableName)) relationField.Add(item.__config__.tableName, tableField.ToLower());
+            var tableField = templateInfo.AllTable.Find(tf => tf.table == item.Config.tableName)?.tableField;
+            if (!relationField.ContainsKey(item.Config.tableName)) relationField.Add(item.Config.tableName, tableField.ToLower());
         });
 
         var dataRuleJson = dataRuleList.ToJsonString();
@@ -3559,19 +3568,19 @@ public class RunService : IRunService, ITransient
             sql = _visualDevRepository.AsSugarClient().SqlQueryable<dynamic>(sql).Where(dataPermissionsList).Where(dataRuleConditionalList).ToSqlString();
 
             var dt = _databaseService.GetInterFaceData(templateInfo.DbLink, sql).ToObject<List<Dictionary<string, object>>>();
-            var vModel = templateInfo.AllFieldsModel.Find(x => x.__config__.tableName == item.Key)?.__vModel__;
+            var vModel = templateInfo.AllFieldsModel.Find(x => x.Config.tableName == item.Key)?.VModel;
 
             if (vModel.IsNotEmptyOrNull())
             {
                 foreach (var it in result.list)
                 {
                     var rows = dt.Where(x => x[relationField[item.Key]].ToString().Equals(it[primaryKey].ToString())).ToList();
-                    var childTableModel = templateInfo.ChildTableFieldsModelList.First(x => x.__vModel__.Equals(vModel));
+                    var childTableModel = templateInfo.ChildTableFieldsModelList.First(x => x.VModel.Equals(vModel));
 
                     var datas = new List<Dictionary<string, object>>();
-                    if (childTableModel.__config__.children.Any(x => x.__config__.templateJson != null && x.__config__.templateJson.Any()))
-                        datas = (await _formDataParsing.GetKeyData(childTableModel.__config__.children.Where(x => x.__config__.templateJson != null && x.__config__.templateJson.Any()).ToList(), rows, templateInfo.ColumnData, "List", templateInfo.WebType, primaryKey, templateInfo.visualDevEntity.isShortLink));
-                    datas = await _formDataParsing.GetKeyData(childTableModel.__config__.children.Where(x => x.__config__.templateJson == null || !x.__config__.templateJson.Any()).ToList(), rows, templateInfo.ColumnData, "List", templateInfo.WebType, primaryKey, templateInfo.visualDevEntity.isShortLink);
+                    if (childTableModel.Config.children.Any(x => x.Config.templateJson != null && x.Config.templateJson.Any()))
+                        datas = await _formDataParsing.GetKeyData(childTableModel.Config.children.Where(x => x.Config.templateJson != null && x.Config.templateJson.Any()).ToList(), rows, templateInfo.ColumnData, "List", templateInfo.WebType, primaryKey, templateInfo.visualDevEntity.isShortLink);
+                    datas = await _formDataParsing.GetKeyData(childTableModel.Config.children.Where(x => x.Config.templateJson == null || !x.Config.templateJson.Any()).ToList(), rows, templateInfo.ColumnData, "List", templateInfo.WebType, primaryKey, templateInfo.visualDevEntity.isShortLink);
                     var newDatas = datas.Copy();
                     newDatas.ForEach(x => x.Remove(relationField[item.Key]));
                     it.Add(vModel, newDatas);
@@ -3595,19 +3604,19 @@ public class RunService : IRunService, ITransient
     {
         foreach (var model in templateInfo.ChildTableFieldsModelList)
         {
-            if (!string.IsNullOrEmpty(model.__vModel__))
+            if (!string.IsNullOrEmpty(model.VModel))
             {
-                if (model.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE))
+                if (model.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE))
                 {
                     List<string> feilds = new List<string>();
-                    var ctPrimaryKey = templateInfo.AllTable.Find(x => x.table.Equals(model.__config__.tableName)).fields.Find(x => x.PrimaryKey.Equals(1)).Field;
+                    var ctPrimaryKey = templateInfo.AllTable.Find(x => x.table.Equals(model.Config.tableName)).fields.Find(x => x.PrimaryKey.Equals(1)).Field;
                     feilds.Add(ctPrimaryKey + " id "); // 子表主键
-                    foreach (FieldsModel? childModel in model.__config__.children) if (!string.IsNullOrEmpty(childModel.__vModel__)) feilds.Add(childModel.__vModel__); // 拼接查询字段
+                    foreach (FieldsModel? childModel in model.Config.children) if (!string.IsNullOrEmpty(childModel.VModel)) feilds.Add(childModel.VModel); // 拼接查询字段
                     string relationMainFeildValue = string.Empty;
-                    string childSql = string.Format("select {0} from {1} where 1=1 ", string.Join(",", feilds), model.__config__.tableName); // 查询子表数据
+                    string childSql = string.Format("select {0} from {1} where 1=1 ", string.Join(",", feilds), model.Config.tableName); // 查询子表数据
                     foreach (Engine.Model.TableModel? tableMap in templateInfo.AllTable.Where(x => !x.table.Equals(templateInfo.MainTableName)).ToList())
                     {
-                        if (tableMap.table.Equals(model.__config__.tableName))
+                        if (tableMap.table.Equals(model.Config.tableName))
                         {
                             if (dataMap.ContainsKey(tableMap.relationField)) childSql += string.Format(" And {0}='{1}'", tableMap.tableField, dataMap[tableMap.relationField]); // 外键
                             if (dataMap.ContainsKey(tableMap.relationField.ToUpper())) childSql += string.Format(" And {0}='{1}'", tableMap.tableField, dataMap[tableMap.relationField.ToUpper()]); // 外键
@@ -3616,17 +3625,17 @@ public class RunService : IRunService, ITransient
                             if (!isDetail)
                             {
                                 List<Dictionary<string, object>>? childData = _databaseService.GetInterFaceData(link, childSql).ToJsonString().ToObject<List<Dictionary<string, object>>>();
-                                childTableData = _formDataParsing.GetTableDataInfo(childData, model.__config__.children, "detail");
+                                childTableData = _formDataParsing.GetTableDataInfo(childData, model.Config.children, "detail");
                             }
 
                             #region 获取关联表单属性 和 弹窗选择属性
-                            foreach (var item in model.__config__.children.Where(x => x.__config__.poxiaoKey == PoxiaoKeyConst.RELATIONFORM).ToList())
+                            foreach (var item in model.Config.children.Where(x => x.Config.poxiaoKey == PoxiaoKeyConst.RELATIONFORM).ToList())
                             {
                                 foreach (var dataItem in childTableData)
                                 {
-                                    if (item.__vModel__.IsNotEmptyOrNull() && dataItem.ContainsKey(item.__vModel__) && dataItem[item.__vModel__] != null)
+                                    if (item.VModel.IsNotEmptyOrNull() && dataItem.ContainsKey(item.VModel) && dataItem[item.VModel] != null)
                                     {
-                                        var relationValueId = dataItem[item.__vModel__].ToString(); // 获取关联表单id
+                                        var relationValueId = dataItem[item.VModel].ToString(); // 获取关联表单id
                                         var relationInfo = await _visualDevRepository.AsQueryable().FirstAsync(x => x.Id == item.modelId); // 获取 关联表单 转换后的数据
                                         var relationValueStr = string.Empty;
                                         relationValueStr = await GetHaveTableInfoDetails(relationValueId, relationInfo);
@@ -3636,34 +3645,34 @@ public class RunService : IRunService, ITransient
                                             var relationValue = relationValueStr.ToObject<Dictionary<string, object>>();
 
                                             // 添加到 子表 列
-                                            model.__config__.children.Where(x => x.relationField.ReplaceRegex(@"_poxiaoTable_(\w+)", string.Empty) == item.__vModel__).ToList().ForEach(citem =>
+                                            model.Config.children.Where(x => x.relationField.ReplaceRegex(@"_poxiaoTable_(\w+)", string.Empty) == item.VModel).ToList().ForEach(citem =>
                                             {
-                                                citem.__vModel__ = item.__vModel__ + "_" + citem.showField;
-                                                if (relationValue.ContainsKey(citem.showField)) dataItem[item.__vModel__ + "_" + citem.showField] = relationValue[citem.showField];
-                                                else dataItem[item.__vModel__ + "_" + citem.showField] = string.Empty;
+                                                citem.VModel = item.VModel + "_" + citem.showField;
+                                                if (relationValue.ContainsKey(citem.showField)) dataItem[item.VModel + "_" + citem.showField] = relationValue[citem.showField];
+                                                else dataItem[item.VModel + "_" + citem.showField] = string.Empty;
                                             });
                                         }
                                     }
                                 }
                             }
 
-                            if (model.__config__.children.Where(x => x.__config__.poxiaoKey == PoxiaoKeyConst.POPUPATTR).Any())
+                            if (model.Config.children.Where(x => x.Config.poxiaoKey == PoxiaoKeyConst.POPUPATTR).Any())
                             {
-                                foreach (var item in model.__config__.children.Where(x => x.__config__.poxiaoKey == PoxiaoKeyConst.POPUPSELECT).ToList())
+                                foreach (var item in model.Config.children.Where(x => x.Config.poxiaoKey == PoxiaoKeyConst.POPUPSELECT).ToList())
                                 {
                                     var pDataList = await _formDataParsing.GetPopupSelectDataList(item.interfaceId, item); // 获取接口数据列表
                                     foreach (var dataItem in childTableData)
                                     {
-                                        if (!string.IsNullOrWhiteSpace(item.__vModel__) && dataItem.ContainsKey(item.__vModel__) && dataItem[item.__vModel__] != null)
+                                        if (!string.IsNullOrWhiteSpace(item.VModel) && dataItem.ContainsKey(item.VModel) && dataItem[item.VModel] != null)
                                         {
-                                            var relationValueId = dataItem[item.__vModel__].ToString(); // 获取关联表单id
+                                            var relationValueId = dataItem[item.VModel].ToString(); // 获取关联表单id
 
                                             // 添加到 子表 列
-                                            model.__config__.children.Where(x => x.relationField.ReplaceRegex(@"_poxiaoTable_(\w+)", string.Empty) == item.__vModel__).ToList().ForEach(citem =>
+                                            model.Config.children.Where(x => x.relationField.ReplaceRegex(@"_poxiaoTable_(\w+)", string.Empty) == item.VModel).ToList().ForEach(citem =>
                                             {
-                                                citem.__vModel__ = item.__vModel__ + "_" + citem.showField;
-                                                var value = pDataList.Where(x => x.Values.Contains(dataItem[item.__vModel__].ToString())).FirstOrDefault();
-                                                if (value != null && value.ContainsKey(citem.showField)) dataItem[item.__vModel__ + "_" + citem.showField] = value[citem.showField];
+                                                citem.VModel = item.VModel + "_" + citem.showField;
+                                                var value = pDataList.Where(x => x.Values.Contains(dataItem[item.VModel].ToString())).FirstOrDefault();
+                                                if (value != null && value.ContainsKey(citem.showField)) dataItem[item.VModel + "_" + citem.showField] = value[citem.showField];
                                             });
                                         }
                                     }
@@ -3671,8 +3680,8 @@ public class RunService : IRunService, ITransient
                             }
                             #endregion
 
-                            if (childTableData.Count > 0) newDataMap[model.__vModel__] = childTableData;
-                            else newDataMap[model.__vModel__] = new List<Dictionary<string, object>>();
+                            if (childTableData.Count > 0) newDataMap[model.VModel] = childTableData;
+                            else newDataMap[model.VModel] = new List<Dictionary<string, object>>();
                         }
                     }
                 }
@@ -3725,7 +3734,7 @@ public class RunService : IRunService, ITransient
                     string? sql = string.Format("update {0} set {1}={2} where F_Version IS NULL ;", templateInfo.MainTableName, "F_Version", "0");
                     await _databaseService.ExecuteSql(link, sql);
 
-                    var newVModel = new FieldsModel() { __vModel__ = "f_version", __config__ = new ConfigModel() { poxiaoKey = PoxiaoKeyConst.COMINPUT, relationTable = templateInfo.MainTableName, tableName = templateInfo.MainTableName } };
+                    var newVModel = new FieldsModel() { VModel = "f_version", Config = new ConfigModel() { poxiaoKey = PoxiaoKeyConst.COMINPUT, relationTable = templateInfo.MainTableName, tableName = templateInfo.MainTableName } };
                     templateInfo.SingleFormData.Add(newVModel);
                     templateInfo.MainTableFieldsModelList.Add(newVModel);
                     templateInfo.FieldsModelList.Add(newVModel);
@@ -3747,25 +3756,25 @@ public class RunService : IRunService, ITransient
     /// <returns>true 可以传递, false 不可以</returns>
     private bool DataTransferVerify(FieldsModel oldModel, FieldsModel newModel)
     {
-        switch (oldModel.__config__.poxiaoKey)
+        switch (oldModel.Config.poxiaoKey)
         {
             case PoxiaoKeyConst.COMINPUT:
             case PoxiaoKeyConst.TEXTAREA:
             case PoxiaoKeyConst.RADIO:
             case PoxiaoKeyConst.EDITOR:
-                if (!(newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.COMINPUT) ||
-                    newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TEXTAREA) ||
-                    newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.RADIO) ||
-                    (newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.SELECT) && !newModel.multiple) ||
-                    newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.EDITOR)))
+                if (!(newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.COMINPUT) ||
+                    newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.TEXTAREA) ||
+                    newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.RADIO) ||
+                    (newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.SELECT) && !newModel.multiple) ||
+                    newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.EDITOR)))
                     return false;
                 break;
             case PoxiaoKeyConst.CHECKBOX:
-                if (!((newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.POPUPTABLESELECT) && newModel.multiple) ||
-                    (newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.SELECT) && newModel.multiple) ||
-                    (newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TREESELECT) && newModel.multiple) ||
-                    newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CHECKBOX) ||
-                    newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER)))
+                if (!((newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.POPUPTABLESELECT) && newModel.multiple) ||
+                    (newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.SELECT) && newModel.multiple) ||
+                    (newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.TREESELECT) && newModel.multiple) ||
+                    newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.CHECKBOX) ||
+                    newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER)))
                     return false;
                 break;
             case PoxiaoKeyConst.NUMINPUT:
@@ -3776,7 +3785,7 @@ public class RunService : IRunService, ITransient
             case PoxiaoKeyConst.COLORPICKER:
             case PoxiaoKeyConst.RATE:
             case PoxiaoKeyConst.SLIDER:
-                if (!(oldModel.__config__.poxiaoKey.Equals(newModel.__config__.poxiaoKey)))
+                if (!oldModel.Config.poxiaoKey.Equals(newModel.Config.poxiaoKey))
                     return false;
                 break;
             case PoxiaoKeyConst.COMSELECT:
@@ -3786,26 +3795,26 @@ public class RunService : IRunService, ITransient
             case PoxiaoKeyConst.ROLESELECT:
             case PoxiaoKeyConst.GROUPSELECT:
             case PoxiaoKeyConst.ADDRESS:
-                if (!(oldModel.__config__.poxiaoKey.Equals(newModel.__config__.poxiaoKey) && oldModel.multiple.Equals(newModel.multiple)))
+                if (!(oldModel.Config.poxiaoKey.Equals(newModel.Config.poxiaoKey) && oldModel.multiple.Equals(newModel.multiple)))
                     return false;
                 break;
             case PoxiaoKeyConst.TREESELECT:
                 if (oldModel.multiple)
                 {
-                    if (!((newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.POPUPTABLESELECT) && newModel.multiple) ||
-                        (newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.SELECT) && newModel.multiple) ||
-                        (newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TREESELECT) && newModel.multiple) ||
-                        newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER)))
+                    if (!((newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.POPUPTABLESELECT) && newModel.multiple) ||
+                        (newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.SELECT) && newModel.multiple) ||
+                        (newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.TREESELECT) && newModel.multiple) ||
+                        newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER)))
                         return false;
                 }
                 else
                 {
-                    if (!(newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.COMINPUT) ||
-                        newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TEXTAREA) ||
-                        newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.RADIO) ||
-                        (newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.SELECT) && !newModel.multiple) ||
-                        (newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TREESELECT) && !newModel.multiple) ||
-                        newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.EDITOR)))
+                    if (!(newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.COMINPUT) ||
+                        newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.TEXTAREA) ||
+                        newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.RADIO) ||
+                        (newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.SELECT) && !newModel.multiple) ||
+                        (newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.TREESELECT) && !newModel.multiple) ||
+                        newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.EDITOR)))
                         return false;
                 }
 
@@ -3813,26 +3822,26 @@ public class RunService : IRunService, ITransient
             case PoxiaoKeyConst.POPUPTABLESELECT:
                 if (oldModel.multiple)
                 {
-                    if (!((newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.POPUPTABLESELECT) && newModel.multiple) ||
-                        (newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.SELECT) && newModel.multiple) ||
-                        (newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TREESELECT) && newModel.multiple) ||
-                        newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER)))
+                    if (!((newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.POPUPTABLESELECT) && newModel.multiple) ||
+                        (newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.SELECT) && newModel.multiple) ||
+                        (newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.TREESELECT) && newModel.multiple) ||
+                        newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER)))
                         return false;
                 }
                 else
                 {
-                    if (!((newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.POPUPTABLESELECT) && !newModel.multiple) ||
-                        (newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.RELATIONFORM)) ||
-                        (newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.POPUPSELECT))))
+                    if (!((newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.POPUPTABLESELECT) && !newModel.multiple) ||
+                        newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.RELATIONFORM) ||
+                        newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.POPUPSELECT)))
                         return false;
                 }
 
                 break;
             case PoxiaoKeyConst.POPUPSELECT:
             case PoxiaoKeyConst.RELATIONFORM:
-                if (!((newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.RELATIONFORM)) ||
-                    (newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.POPUPSELECT)) ||
-                    (newModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.POPUPTABLESELECT) && !newModel.multiple)))
+                if (!( newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.RELATIONFORM) ||
+                    newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.POPUPSELECT) ||
+                    (newModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.POPUPTABLESELECT) && !newModel.multiple)))
                     return false;
                 break;
         }
@@ -3859,7 +3868,7 @@ public class RunService : IRunService, ITransient
             foreach (var item in querList)
             {
                 var key = item.Key;
-                var vModel = searchList.Find(x => x.__vModel__.Equals(item.Key));
+                var vModel = searchList.Find(x => x.VModel.Equals(item.Key));
                 if (vModel != null && vModel.searchType.Equals(1)) { key = "poxiao_searchType_equals_" + item.Key; }
                 newList.Add(key, item.Value.Replace("'", "''"));
             }
@@ -3911,13 +3920,13 @@ public class RunService : IRunService, ITransient
             var queryInfo = input.QueryJson.ToObject<Dictionary<string, string>>();
             foreach (var item in queryInfo)
             {
-                var searchInfo = searchList.Find(x => x.__vModel__.Equals(item.Key));
+                var searchInfo = searchList.Find(x => x.VModel.Equals(item.Key));
                 if (searchInfo == null || !searchInfo.searchType.Equals(1))
                     realList.list = realList.list.Where(x => x.Any(xx => xx.Key.Equals(item.Key) && xx.Value.IsNotEmptyOrNull() && xx.Value.ToString().Contains(item.Value))).ToList();
                 else
                     realList.list = realList.list.Where(x => x.Any(xx => xx.Key.Equals(item.Key) && xx.Value.IsNotEmptyOrNull() && xx.Value.ToString().Equals(item.Value))).ToList();
             }
-			
+
             if (dataInterface.CheckType.Equals(1))
                 realList.pagination = new PageInfo() { currentPage = 1, pageSize = input.PageSize, total = realList.list.Count };
             else
@@ -3932,7 +3941,7 @@ public class RunService : IRunService, ITransient
 
         // 分组表格
         if (templateInfo.ColumnData.type == 3 && _userManager.UserOrigin == "pc")
-            realList.list = CodeGenHelper.GetGroupList(realList.list, templateInfo.ColumnData.groupField, templateInfo.ColumnData.columnList.Find(x => x.__vModel__.ToLower() != templateInfo.ColumnData.groupField.ToLower()).__vModel__);
+            realList.list = CodeGenHelper.GetGroupList(realList.list, templateInfo.ColumnData.groupField, templateInfo.ColumnData.columnList.Find(x => x.VModel.ToLower() != templateInfo.ColumnData.groupField.ToLower()).VModel);
 
         return realList;
     }

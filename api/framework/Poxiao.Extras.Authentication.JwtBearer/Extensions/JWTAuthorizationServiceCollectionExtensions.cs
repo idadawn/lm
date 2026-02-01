@@ -1,11 +1,11 @@
-﻿using Poxiao.Authorization;
-using Poxiao.DataEncryption;
-using Microsoft.AspNetCore.Authentication;
+﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.IdentityModel.Tokens;
+using Poxiao.Authorization;
+using Poxiao.DataEncryption;
 using System.Reflection;
 
 namespace Microsoft.Extensions.DependencyInjection;

@@ -1,17 +1,17 @@
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
-using Poxiao.Systems.Interfaces.Permission;
 using Poxiao.Systems.Entitys.Dto.Group;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
+using Poxiao.Systems.Interfaces.Permission;
 using SqlSugar;
 
 namespace Poxiao.Systems;
@@ -173,8 +173,8 @@ public class GroupService : IUserGroupService, IDynamicApiController, ITransient
         if (await _repository.AsSugarClient().Queryable<UserRelationEntity>().AnyAsync(u => u.ObjectType == "Group" && u.ObjectId == id))
             throw Oops.Oh(ErrorCode.D2406);
 
-        GroupEntity? entity = await _repository.GetSingleAsync
-            (p => p.Id == id && p.DeleteMark == null);
+        GroupEntity? entity = await _repository.GetSingleAsync(
+            p => p.Id == id && p.DeleteMark == null);
         int isOk = await _repository.AsUpdateable(entity).CallEntityMethod(m => m.Delete()).UpdateColumns(it => new { it.DeleteMark, it.DeleteTime, it.DeleteUserId }).ExecuteCommandAsync();
         if (!(isOk > 0)) throw Oops.Oh(ErrorCode.D2403);
     }

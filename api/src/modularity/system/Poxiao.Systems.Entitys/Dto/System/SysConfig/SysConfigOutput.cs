@@ -1,6 +1,6 @@
+using Newtonsoft.Json;
 using Poxiao.DependencyInjection;
 using Poxiao.JsonSerialization;
-using Newtonsoft.Json;
 
 namespace Poxiao.Systems.Entitys.Dto.SysConfig;
 
@@ -353,6 +353,7 @@ public class SysConfigOutput
     public int unClickNum { get; set; }
 
     #region 密码策略
+
     /// <summary>
     /// 密码定期更新开关.
     /// </summary>

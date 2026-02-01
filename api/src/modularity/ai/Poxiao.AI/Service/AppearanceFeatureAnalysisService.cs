@@ -1,10 +1,10 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using OpenAI;
 using Poxiao.AI.Interfaces;
 using Poxiao.DependencyInjection;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Poxiao.AI.Service;
 

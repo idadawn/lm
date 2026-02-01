@@ -1,5 +1,5 @@
-using Poxiao.Infrastructure.Models.WorkFlow;
 using Poxiao.DependencyInjection;
+using Poxiao.Infrastructure.Models.WorkFlow;
 using Poxiao.WorkFlow.Entitys.Model;
 using Poxiao.WorkFlow.Entitys.Model.Properties;
 
@@ -31,7 +31,7 @@ public class FlowBeforeInfoOutput
     /// <summary>
     /// 流程任务节点.
     /// </summary>
-    public List<FlowTaskNodeModel>? flowTaskNodeList { get; set; }=new List<FlowTaskNodeModel>(){ };
+    public List<FlowTaskNodeModel>? flowTaskNodeList { get; set; } = new List<FlowTaskNodeModel>() { };
 
     /// <summary>
     /// 流程任务经办.

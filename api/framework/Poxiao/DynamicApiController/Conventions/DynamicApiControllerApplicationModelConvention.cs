@@ -1,12 +1,12 @@
-﻿using Poxiao.Extensions;
-using Poxiao.UnifyResult;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ActionConstraints;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Poxiao.Extensions;
+using Poxiao.UnifyResult;
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -127,7 +127,8 @@ internal sealed class DynamicApiControllerApplicationModelConvention : IApplicat
             {
                 action.ApiExplorer.IsVisible = false;
                 continue;
-            };
+            }
+            ;
 
             var actionMethod = action.ActionMethod;
             var actionApiDescriptionSettings = actionMethod.IsDefined(typeof(ApiDescriptionSettingsAttribute), true) ? actionMethod.GetCustomAttribute<ApiDescriptionSettingsAttribute>(true) : default;

@@ -52,10 +52,10 @@ public class LoginInput
     /// <summary>
     /// 未绑定 成功登录后 自动绑定 缓存 Key.
     /// </summary>
-    public string poxiao_ticket { get; set; }
+    public string poxiaoTicket { get; set; }
 
     /// <summary>
     /// 单点登录票据.
     /// </summary>
-    public string online_ticket { get; set; }
+    public string onlineTicket { get; set; }
 }

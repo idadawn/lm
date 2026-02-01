@@ -8,7 +8,8 @@ namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class CodingAuthRequest : DefaultAuthRequest
 {
-    public CodingAuthRequest(ClientConfig config) : base(config, new CodingAuthSource())
+    public CodingAuthRequest(ClientConfig config)
+        : base(config, new CodingAuthSource())
     {
     }
 
@@ -63,7 +64,7 @@ public class CodingAuthRequest : DefaultAuthRequest
         return HttpUtils.RequestJsonGet(userInfoUrl(authToken));
     }
 
-    protected override string doGetAuthorizationCode(String code)
+    protected override string doGetAuthorizationCode(string code)
     {
         ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
         return HttpUtils.RequestJsonGet(accessTokenUrl(code));

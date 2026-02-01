@@ -1,6 +1,6 @@
-﻿using Poxiao.ConfigurableOptions;
+﻿using Microsoft.Extensions.Configuration;
+using Poxiao.ConfigurableOptions;
 using Poxiao.Reflection;
-using Microsoft.Extensions.Configuration;
 
 namespace Poxiao.Localization;
 

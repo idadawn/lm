@@ -13,7 +13,7 @@ public interface IMetricDataIEService
     /// 创建数据表.
     /// </summary>
     /// <returns>IsOK是否发生错误,Msg错误消息.</returns>
-    Task<(bool IsOK, string Msg )> CreateDBTable(MetricDataIECreateTableInput input);
+    Task<(bool IsOK, string Msg)> CreateDBTable(MetricDataIECreateTableInput input);
 
     /// <summary>
     /// 向数据表添加数据.

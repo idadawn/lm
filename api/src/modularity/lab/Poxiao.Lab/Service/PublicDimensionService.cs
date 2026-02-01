@@ -88,7 +88,7 @@ public class PublicDimensionService : IPublicDimensionService, IDynamicApiContro
             .AsQueryable()
             .Where(t => t.DimensionKey == entity.DimensionKey && t.DeleteMark == null)
             .AnyAsync();
-        
+
         if (exists)
             throw Oops.Oh(ErrorCode.COM1003, $"维度键名 {entity.DimensionKey} 已存在");
 
@@ -116,7 +116,7 @@ public class PublicDimensionService : IPublicDimensionService, IDynamicApiContro
             .AsInsertable(entity)
             .IgnoreColumns(ignoreNullColumn: true)
             .ExecuteCommandAsync();
-        
+
         if (isOk < 1)
             throw Oops.Oh(ErrorCode.COM1000);
 
@@ -139,7 +139,7 @@ public class PublicDimensionService : IPublicDimensionService, IDynamicApiContro
                 .AsQueryable()
                 .Where(t => t.DimensionKey == entity.DimensionKey && t.Id != id && t.DeleteMark == null)
                 .AnyAsync();
-            
+
             if (keyExists)
                 throw Oops.Oh(ErrorCode.COM1003, $"维度键名 {entity.DimensionKey} 已存在");
         }
@@ -161,8 +161,8 @@ public class PublicDimensionService : IPublicDimensionService, IDynamicApiContro
         }
 
         // 检查是否需要创建新版本（如果关键信息发生变化）
-        bool needNewVersion = existing.UnitId != entity.UnitId 
-            || existing.Precision != entity.Precision 
+        bool needNewVersion = existing.UnitId != entity.UnitId
+            || existing.Precision != entity.Precision
             || existing.ValueType != entity.ValueType;
 
         entity.Id = id;
@@ -172,7 +172,7 @@ public class PublicDimensionService : IPublicDimensionService, IDynamicApiContro
             .AsUpdateable(entity)
             .IgnoreColumns(ignoreAllNullColumns: true)
             .ExecuteCommandHasChangeAsync();
-        
+
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1001);
 
@@ -201,7 +201,7 @@ public class PublicDimensionService : IPublicDimensionService, IDynamicApiContro
                 it.DeleteUserId,
             })
             .ExecuteCommandHasChangeAsync();
-        
+
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1002);
     }
@@ -228,19 +228,19 @@ public class PublicDimensionService : IPublicDimensionService, IDynamicApiContro
     {
         // 1. 获取当前版本号
         var currentVersion = await GetCurrentVersionAsync(dimensionId);
-        
+
         // 如果没有版本记录（返回1表示默认值），创建初始版本
         var existingVersion = await _versionRepository
             .AsQueryable()
             .Where(v => v.DimensionId == dimensionId && v.IsCurrent == 1 && v.DeleteMark == null)
             .FirstAsync();
-        
+
         if (existingVersion == null)
         {
             // 没有版本记录，创建初始版本1
             return await CreateInitialVersionAsync(dimensionId, versionDescription ?? "初始版本");
         }
-        
+
         var newVersion = currentVersion + 1;
 
         // 2. 将当前版本标记为非当前版本
@@ -324,7 +324,7 @@ public class PublicDimensionService : IPublicDimensionService, IDynamicApiContro
             .AsQueryable()
             .Where(t => t.DeleteMark == null)
             .MaxAsync(t => t.SortCode);
-        
+
         return (maxSortCode ?? 0) + 1;
     }
 }

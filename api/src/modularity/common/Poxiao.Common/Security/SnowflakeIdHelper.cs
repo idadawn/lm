@@ -1,5 +1,5 @@
-using System.Runtime.InteropServices;
 using Poxiao.Infrastructure.Cache;
+using System.Runtime.InteropServices;
 using Yitter.IdGenerator;
 
 namespace Poxiao.Infrastructure.Security;
@@ -10,7 +10,7 @@ namespace Poxiao.Infrastructure.Security;
 public class SnowflakeIdHelper
 {
     // 定义dll路径
-    public const string RegWorkerId_DLL_NAME = "lib\\regworkerid_lib_v1.3.1\\yitidgengo";
+    public const string RegWorkerIdDLLNAME = "lib\\regworkerid_lib_v1.3.1\\yitidgengo";
 
     // 根据文档定义三个接口
 
@@ -20,7 +20,7 @@ public class SnowflakeIdHelper
     // password: redis 访问密码，可为空字符串“”
     // maxWorkerId: 最大 WorkerId
     [DllImport(
-        RegWorkerId_DLL_NAME,
+        RegWorkerIdDLLNAME,
         EntryPoint = "RegisterOne",
         CallingConvention = CallingConvention.Cdecl,
         ExactSpelling = false
@@ -29,7 +29,7 @@ public class SnowflakeIdHelper
 
     // 注销本机已注册的 WorkerId
     [DllImport(
-        RegWorkerId_DLL_NAME,
+        RegWorkerIdDLLNAME,
         EntryPoint = "UnRegister",
         CallingConvention = CallingConvention.Cdecl,
         ExactSpelling = false
@@ -38,7 +38,7 @@ public class SnowflakeIdHelper
 
     // 检查本地WorkerId是否有效（0-有效，其它-无效）
     [DllImport(
-        RegWorkerId_DLL_NAME,
+        RegWorkerIdDLLNAME,
         EntryPoint = "Validate",
         CallingConvention = CallingConvention.Cdecl,
         ExactSpelling = false

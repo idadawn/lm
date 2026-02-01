@@ -79,7 +79,7 @@ public sealed class ScheduleUIMiddleware
             using (var readStream = currentAssembly.GetManifestResourceStream($"{currentAssembly.GetName().Name}.Schedule.Dashboard.frontend.{(isIndex ? "index.html" : targetPath)}"))
             {
                 buffer = new byte[readStream.Length];
-                await readStream.ReadAsync(buffer);
+                await readStream.ReadExactlyAsync(buffer);
             }
 
             // 替换配置占位符

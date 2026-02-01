@@ -733,7 +733,7 @@ public enum ErrorCode
     [ErrorCodeItemMetadata("该岗位下有用户,不允许变更组织")]
     D6008,
 
-    #endregion 
+    #endregion
 
     #region 消息 7
 
@@ -2079,6 +2079,7 @@ public enum ErrorCode
     #endregion
 
     #region 接口认证 IO
+
     /// <summary>
     /// 请求头部参数Authorization不能为空.
     /// </summary>
@@ -2277,7 +2278,6 @@ public enum ErrorCode
     COM1026,
 
     #endregion
-
 
     /// <summary>
     /// 新建指标目录失败.

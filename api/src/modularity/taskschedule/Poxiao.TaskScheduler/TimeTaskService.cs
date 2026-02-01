@@ -1,4 +1,13 @@
 using Aop.Api.Domain;
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Polly;
+using Poxiao.DatabaseAccessor;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Core.Job;
 using Poxiao.Infrastructure.Core.Manager;
@@ -8,10 +17,6 @@ using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Models;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DatabaseAccessor;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.LinqBuilder;
 using Poxiao.Schedule;
 using Poxiao.Systems.Interfaces.System;
@@ -21,11 +26,6 @@ using Poxiao.TaskScheduler.Entitys.Enum;
 using Poxiao.TaskScheduler.Entitys.Model;
 using Poxiao.TaskScheduler.Interfaces.TaskScheduler;
 using Poxiao.TaskScheduler.Listener;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Polly;
 using SqlSugar;
 
 namespace Poxiao.TaskScheduler;
@@ -136,7 +136,7 @@ public class TimeTaskService : ITimeTaskService, IDynamicApiController, ITransie
     /// <param name="id">主键值.</param>
     /// <returns></returns>
     [HttpGet("Info/{id}")]
-    public async Task<dynamic> GetInfo_Api(string id)
+    public async Task<dynamic> GetInfoApi(string id)
     {
         return (await GetInfo(id)).Adapt<TimeTaskInfoOutput>();
     }
@@ -405,7 +405,8 @@ public class TimeTaskService : ITimeTaskService, IDynamicApiController, ITransie
         entity.ExecuteCycleJson = contentModel.cron;
         entity.LastModifyTime = DateTime.Now;
         entity.LastModifyUserId = _userManager.UserId;
-        var isOk = await _repository.AsUpdateable(entity).UpdateColumns(it => new {
+        var isOk = await _repository.AsUpdateable(entity).UpdateColumns(it => new
+        {
             it.EnCode,
             it.FullName,
             it.ExecuteType,
@@ -418,7 +419,6 @@ public class TimeTaskService : ITimeTaskService, IDynamicApiController, ITransie
         }).ExecuteCommandHasChangeAsync();
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1001);
-
         {
             var scheduler = _schedulerFactory.GetJob(jobId);
 

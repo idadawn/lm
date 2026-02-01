@@ -1,5 +1,5 @@
-﻿using Poxiao.ConfigurableOptions;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
+using Poxiao.ConfigurableOptions;
 using System.ComponentModel.DataAnnotations;
 
 namespace Poxiao.DynamicApiController;

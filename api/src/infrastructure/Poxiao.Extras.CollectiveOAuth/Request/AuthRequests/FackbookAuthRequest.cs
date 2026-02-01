@@ -7,7 +7,8 @@ namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class FackbookAuthRequest : DefaultAuthRequest
 {
-    public FackbookAuthRequest(ClientConfig config) : base(config, new FackbookAuthSource())
+    public FackbookAuthRequest(ClientConfig config)
+        : base(config, new FackbookAuthSource())
     {
     }
 
@@ -62,7 +63,7 @@ public class FackbookAuthRequest : DefaultAuthRequest
         {
             var pictureObj = userObj.getString("picture").parseObject();
             pictureObj = pictureObj.getString("data").parseObject();
-            if (null != pictureObj)
+            if (pictureObj != null)
             {
                 picture = pictureObj.getString("url");
             }
@@ -83,7 +84,6 @@ public class FackbookAuthRequest : DefaultAuthRequest
             .queryParam("fields", "id,name,birthday,gender,hometown,email,devices,picture.width(400)")
             .build();
     }
-
 
     /**
       * 检查响应内容是否正确

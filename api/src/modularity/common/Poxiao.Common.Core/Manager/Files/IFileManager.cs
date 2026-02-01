@@ -1,7 +1,7 @@
-using Poxiao.Infrastructure.Enums;
-using Poxiao.Infrastructure.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Poxiao.Infrastructure.Enums;
+using Poxiao.Infrastructure.Models;
 
 namespace Poxiao.Infrastructure.Core.Manager.Files
 {

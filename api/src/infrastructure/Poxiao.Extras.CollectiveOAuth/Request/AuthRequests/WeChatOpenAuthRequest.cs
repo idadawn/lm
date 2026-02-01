@@ -1,18 +1,19 @@
+using Poxiao.Extras.CollectiveOAuth.Cache;
 using Poxiao.Extras.CollectiveOAuth.Config;
+using Poxiao.Extras.CollectiveOAuth.Enums;
 using Poxiao.Extras.CollectiveOAuth.Models;
 using Poxiao.Extras.CollectiveOAuth.Utils;
-using Poxiao.Extras.CollectiveOAuth.Enums;
-using Poxiao.Extras.CollectiveOAuth.Cache;
 
 namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public partial class WeChatOpenAuthRequest : DefaultAuthRequest
 {
-    public WeChatOpenAuthRequest(ClientConfig config) : base(config, new WechatOpenAuthSource())
+    public WeChatOpenAuthRequest(ClientConfig config)
+        : base(config, new WechatOpenAuthSource())
     {
     }
 
-    public WeChatOpenAuthRequest(ClientConfig config, IAuthStateCache authStateCache) 
+    public WeChatOpenAuthRequest(ClientConfig config, IAuthStateCache authStateCache)
         : base(config, new WechatOpenAuthSource(), authStateCache)
     {
     }

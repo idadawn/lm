@@ -31,8 +31,6 @@ public class RealDataQryInput
     public DBSortByType SortBy { get; set; } = DBSortByType.ASC;
 }
 
-
-
 /// <summary>
 /// 实时数据查询.
 /// </summary>

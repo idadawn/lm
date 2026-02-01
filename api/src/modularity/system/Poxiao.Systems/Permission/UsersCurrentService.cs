@@ -1,3 +1,9 @@
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DataEncryption;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Core.Handlers;
@@ -8,10 +14,6 @@ using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Models.User;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DataEncryption;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Dto.Permission.UsersCurrent;
 using Poxiao.Systems.Entitys.Dto.UsersCurrent;
 using Poxiao.Systems.Entitys.Entity.Permission;
@@ -20,8 +22,6 @@ using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.Systems.Interfaces.Permission;
 using Poxiao.Systems.Interfaces.System;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.Systems;
@@ -361,7 +361,8 @@ public class UsersCurrentService : IUsersCurrentService, IDynamicApiController, 
         user.ChangePasswordDate = DateTime.Now;
         user.LastModifyTime = DateTime.Now;
         user.LastModifyUserId = _userManager.UserId;
-        int isOk = await _repository.AsUpdateable(user).UpdateColumns(it => new {
+        int isOk = await _repository.AsUpdateable(user).UpdateColumns(it => new
+        {
             it.Password,
             it.ChangePasswordDate,
             it.LastModifyUserId,
@@ -382,7 +383,8 @@ public class UsersCurrentService : IUsersCurrentService, IDynamicApiController, 
         userInfo.IsAdministrator = Convert.ToInt32(_userManager.IsAdministrator);
         userInfo.LastModifyTime = DateTime.Now;
         userInfo.LastModifyUserId = _userManager.UserId;
-        int isOk = await _repository.AsUpdateable(userInfo).UpdateColumns(it => new {
+        int isOk = await _repository.AsUpdateable(userInfo).UpdateColumns(it => new
+        {
             it.RealName,
             it.Signature,
             it.Gender,
@@ -416,7 +418,8 @@ public class UsersCurrentService : IUsersCurrentService, IDynamicApiController, 
         user.Theme = input.theme;
         user.LastModifyTime = DateTime.Now;
         user.LastModifyUserId = _userManager.UserId;
-        int isOk = await _repository.AsUpdateable(user).UpdateColumns(it => new {
+        int isOk = await _repository.AsUpdateable(user).UpdateColumns(it => new
+        {
             it.Theme,
             it.LastModifyUserId,
             it.LastModifyTime
@@ -435,7 +438,8 @@ public class UsersCurrentService : IUsersCurrentService, IDynamicApiController, 
         user.Language = input.language;
         user.LastModifyTime = DateTime.Now;
         user.LastModifyUserId = _userManager.UserId;
-        int isOk = await _repository.AsUpdateable(user).UpdateColumns(it => new {
+        int isOk = await _repository.AsUpdateable(user).UpdateColumns(it => new
+        {
             it.Language,
             it.LastModifyUserId,
             it.LastModifyTime
@@ -454,7 +458,8 @@ public class UsersCurrentService : IUsersCurrentService, IDynamicApiController, 
         user.HeadIcon = name;
         user.LastModifyTime = DateTime.Now;
         user.LastModifyUserId = _userManager.UserId;
-        int isOk = await _repository.AsUpdateable(user).UpdateColumns(it => new {
+        int isOk = await _repository.AsUpdateable(user).UpdateColumns(it => new
+        {
             it.HeadIcon,
             it.LastModifyUserId,
             it.LastModifyTime
@@ -547,7 +552,8 @@ public class UsersCurrentService : IUsersCurrentService, IDynamicApiController, 
 
         userInfo.LastModifyTime = DateTime.Now;
         userInfo.LastModifyUserId = _userManager.UserId;
-        int isOk = await _repository.AsUpdateable(userInfo).UpdateColumns(it => new {
+        int isOk = await _repository.AsUpdateable(userInfo).UpdateColumns(it => new
+        {
             it.OrganizeId,
             it.PositionId,
             it.LastModifyUserId,

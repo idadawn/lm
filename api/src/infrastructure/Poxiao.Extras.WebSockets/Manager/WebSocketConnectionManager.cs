@@ -1,6 +1,6 @@
+using Poxiao.Extras.WebSockets.Models;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
-using Poxiao.Extras.WebSockets.Models;
 
 namespace Poxiao.WebSockets;
 
@@ -177,7 +177,8 @@ public class WebSocketConnectionManager
         {
             if (client.WebSocket.State != WebSocketState.Open) return;
 
-            await client.WebSocket.CloseAsync(closeStatus: WebSocketCloseStatus.NormalClosure,
+            await client.WebSocket.CloseAsync(
+                closeStatus: WebSocketCloseStatus.NormalClosure,
                                     statusDescription: "Closed by the WebSocketManager",
                                     cancellationToken: CancellationToken.None).ConfigureAwait(false);
         }

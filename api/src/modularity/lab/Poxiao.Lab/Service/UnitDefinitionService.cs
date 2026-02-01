@@ -239,9 +239,11 @@ public class UnitDefinitionService : IUnitDefinitionService, IDynamicApiControll
                 .AnyAsync();
 
             if (!otherUnitsInCategory)
+            {
                 throw Oops.Oh(
                     "该维度只有这一个单位，不能取消基准单位设置。每个维度必须有一个基准单位"
                 );
+            }
         }
 
         // 更新当前单位

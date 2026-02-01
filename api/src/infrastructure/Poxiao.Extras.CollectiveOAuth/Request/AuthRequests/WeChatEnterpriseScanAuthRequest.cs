@@ -8,7 +8,8 @@ namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class WeChatEnterpriseScanAuthRequest : DefaultAuthRequest
 {
-    public WeChatEnterpriseScanAuthRequest(ClientConfig config) : base(config, new WechatEnterpriseScanAuthSource())
+    public WeChatEnterpriseScanAuthRequest(ClientConfig config)
+        : base(config, new WechatEnterpriseScanAuthSource())
     {
     }
 
@@ -47,7 +48,7 @@ public class WeChatEnterpriseScanAuthRequest : DefaultAuthRequest
         // 返回 OpenId 或其他，均代表非当前企业用户，不支持
         if (!jsonObj.ContainsKey("UserId"))
         {
-            throw new Exception(AuthResponseStatus.UNIDENTIFIED_PLATFORM.GetDesc());
+            throw new Exception(AuthResponseStatus.UNIDENTIFIEDPLATFORM.GetDesc());
         }
         string userId = jsonObj.getString("UserId");
         string userDetailResponse = getUserDetail(authToken.accessToken, userId);
@@ -61,7 +62,7 @@ public class WeChatEnterpriseScanAuthRequest : DefaultAuthRequest
         authUser.location = userDetailObj.getString("address");
         authUser.email = userDetailObj.getString("email");
         authUser.uuid = userDetailObj.getString("userId");
-        if(authUser.uuid.IsNullOrWhiteSpace()) authUser.uuid = userDetailObj.getString("userid");
+        if (authUser.uuid.IsNullOrWhiteSpace()) authUser.uuid = userDetailObj.getString("userid");
         authUser.token = authToken;
         authUser.source = source.getName();
         authUser.gender = GlobalAuthUtil.getWechatRealGender(userDetailObj.getString("gender"));
@@ -108,7 +109,7 @@ public class WeChatEnterpriseScanAuthRequest : DefaultAuthRequest
      * @param code 授权码
      * @return 返回获取accessToken的url
      */
-    protected override string accessTokenUrl(String code)
+    protected override string accessTokenUrl(string code)
     {
         return UrlBuilder.fromBaseUrl(source.accessToken())
             .queryParam("corpid", config.clientId)

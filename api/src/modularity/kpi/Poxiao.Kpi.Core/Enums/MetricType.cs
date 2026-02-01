@@ -75,7 +75,6 @@ public enum MetricFilterModel
     ByDateRang = 3
 }
 
-
 /// <summary>
 /// 派生指标类别.
 /// </summary>
@@ -185,6 +184,7 @@ public enum TrendType
     /// </summary>
     [Description("下降/减少")]
     Up,
+
     /// <summary>
     /// 下降/减少.
     /// </summary>
@@ -203,6 +203,7 @@ public enum MetricGradeType
     /// </summary>
     [Description("值")]
     Value,
+
     /// <summary>
     /// 区间.
     /// </summary>

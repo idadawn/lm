@@ -1,6 +1,6 @@
+using OnceMi.AspNetCore.OSS;
 using Poxiao;
 using Poxiao.Infrastructure.Options;
-using OnceMi.AspNetCore.OSS;
 
 namespace Microsoft.Extensions.DependencyInjection;
 

@@ -1,3 +1,4 @@
+using Mapster;
 using Poxiao.Infrastructure.Dtos.DataBase;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Security;
@@ -10,7 +11,6 @@ using Poxiao.Systems.Entitys.Dto.System.InterfaceOauth;
 using Poxiao.Systems.Entitys.Model.DataBase;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
-using Mapster;
 using Senparc.Weixin.Work.AdvancedAPIs.MailList;
 using SqlSugar;
 using Yitter.IdGenerator;
@@ -47,15 +47,15 @@ public class SystemMapper : IRegister
             .Map(dest => dest.DecimalDigits, src => src.decimalDigits)
             .Map(dest => dest.DefaultValue, src => src.defaults);
         config.ForType<DynamicDbTableModel, DbTableModel>()
-            .Map(dest => dest.table, src => src.F_TABLE)
-            .Map(dest => dest.tableName, src => src.F_TABLENAME)
-            .Map(dest => dest.size, src => src.F_SIZE)
-            .Map(dest => dest.sum, src => int.Parse(src.F_SUM))
-            .Map(dest => dest.primaryKey, src => src.F_PRIMARYKEY);
+            .Map(dest => dest.table, src => src.FTABLE)
+            .Map(dest => dest.tableName, src => src.FTABLENAME)
+            .Map(dest => dest.size, src => src.FSIZE)
+            .Map(dest => dest.sum, src => int.Parse(src.FSUM))
+            .Map(dest => dest.primaryKey, src => src.FPRIMARYKEY);
         config.ForType<DynamicDbTableModel, DatabaseTableListOutput>()
-          .Map(dest => dest.table, src => src.F_TABLE.IsNullOrEmpty() ? string.Empty : src.F_TABLE)
-          .Map(dest => dest.tableName, src => src.F_TABLENAME.IsNullOrEmpty() ? string.Empty : src.F_TABLENAME)
-          .Map(dest => dest.sum, src => int.Parse(src.F_SUM));
+          .Map(dest => dest.table, src => src.FTABLE.IsNullOrEmpty() ? string.Empty : src.FTABLE)
+          .Map(dest => dest.tableName, src => src.FTABLENAME.IsNullOrEmpty() ? string.Empty : src.FTABLENAME)
+          .Map(dest => dest.sum, src => int.Parse(src.FSUM));
         config.ForType<DbTableInfo, DatabaseTableListOutput>()
             .Map(dest => dest.table, src => src.Name)
             .Map(dest => dest.tableName, src => src.Description);

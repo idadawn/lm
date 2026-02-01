@@ -1,14 +1,14 @@
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
 using Poxiao.Infrastructure.Core.Handlers;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
 using Poxiao.Message.Entitys;
 using Poxiao.Message.Entitys.Dto.ImReply;
 using Poxiao.Message.Interfaces;
 using Poxiao.Systems.Entitys.Permission;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.Message;
@@ -59,41 +59,41 @@ public class ImReplyService : IImReplyService, IDynamicApiController, ITransient
 
         // 获取全部聊天对象列表
         var objectList = _repository.AsSugarClient().UnionAll(
-            _repository.AsQueryable().Where(i => i.ReceiveUserId == _userManager.UserId && (SqlFunc.IsNullOrEmpty(i.ImreplySendDeleteMark)||i.ImreplySendDeleteMark != _userManager.UserId)).Select(it => new ImReplyObjectIdOutput { userId = it.UserId, latestDate = it.ReceiveTime }),
+            _repository.AsQueryable().Where(i => i.ReceiveUserId == _userManager.UserId && (SqlFunc.IsNullOrEmpty(i.ImreplySendDeleteMark) || i.ImreplySendDeleteMark != _userManager.UserId)).Select(it => new ImReplyObjectIdOutput { userId = it.UserId, latestDate = it.ReceiveTime }),
             _repository.AsQueryable().Where(i => i.UserId == _userManager.UserId && (SqlFunc.IsNullOrEmpty(i.ImreplySendDeleteMark) || i.ImreplySendDeleteMark != _userManager.UserId)).Select(it => new ImReplyObjectIdOutput { userId = it.ReceiveUserId, latestDate = it.ReceiveTime })).MergeTable().GroupBy(it => new { it.userId }).Select(it => new { it.userId, latestDate = SqlFunc.AggregateMax(it.latestDate) }).ToList();
         var objectUserList = objectList.Adapt<List<ImReplyListOutput>>();
         if (objectUserList.Count > 0)
         {
-            var userList = await _repository.AsSugarClient().Queryable<UserEntity>().In(it => it.Id, objectUserList.Select(it => it.userId).ToArray()).ToListAsync();
+            var userList = await _repository.AsSugarClient().Queryable<UserEntity>().In(it => it.Id, objectUserList.Select(it => it.UserId).ToArray()).ToListAsync();
 
             // 将用户信息补齐
             userList.ForEach(item =>
             {
                 objectUserList.ForEach(it =>
                 {
-                    if (it.userId == item.Id)
+                    if (it.UserId == item.Id)
                     {
-                        it.account = item.Account;
-                        it.id = it.userId;
-                        it.realName = item.RealName;
-                        it.headIcon = "/api/File/Image/userAvatar/" + item.HeadIcon;
+                        it.Account = item.Account;
+                        it.Id = it.UserId;
+                        it.RealName = item.RealName;
+                        it.HeadIcon = "/api/File/Image/userAvatar/" + item.HeadIcon;
 
-                        var imContent = _repository.AsSugarClient().Queryable<IMContentEntity>().Where(i => (i.SendUserId == _userManager.UserId && i.ReceiveUserId == it.userId) || (i.SendUserId == it.userId && i.ReceiveUserId == _userManager.UserId)).Where(i => i.SendTime.Equals(it.latestDate) && (SqlFunc.IsNullOrEmpty(i.SendDeleteMark)|| i.SendDeleteMark != _userManager.UserId)).ToList().FirstOrDefault();
+                        var imContent = _repository.AsSugarClient().Queryable<IMContentEntity>().Where(i => (i.SendUserId == _userManager.UserId && i.ReceiveUserId == it.UserId) || (i.SendUserId == it.UserId && i.ReceiveUserId == _userManager.UserId)).Where(i => i.SendTime.Equals(it.LatestDate) && (SqlFunc.IsNullOrEmpty(i.SendDeleteMark) || i.SendDeleteMark != _userManager.UserId)).ToList().FirstOrDefault();
 
                         // 获取最信息
                         if (imContent != null)
                         {
-                            it.latestMessage = imContent.Content;
-                            it.messageType = imContent.ContentType;
+                            it.LatestMessage = imContent.Content;
+                            it.MessageType = imContent.ContentType;
                         }
 
-                        it.unreadMessage = _repository.AsSugarClient().Queryable<IMContentEntity>().Where(i => i.SendUserId == it.userId && i.ReceiveUserId == _userManager.UserId).Where(i => i.State == 0 && (SqlFunc.IsNullOrEmpty(i.SendDeleteMark) || i.SendDeleteMark != _userManager.UserId)).Count();
+                        it.UnreadMessage = _repository.AsSugarClient().Queryable<IMContentEntity>().Where(i => i.SendUserId == it.UserId && i.ReceiveUserId == _userManager.UserId).Where(i => i.State == 0 && (SqlFunc.IsNullOrEmpty(i.SendDeleteMark) || i.SendDeleteMark != _userManager.UserId)).Count();
                     }
                 });
             });
         }
 
-        return new { list = objectUserList.OrderByDescending(x => x.latestDate).ToList() };
+        return new { list = objectUserList.OrderByDescending(x => x.LatestDate).ToList() };
     }
 
     /// <summary>

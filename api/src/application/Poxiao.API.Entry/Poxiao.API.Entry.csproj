@@ -293,4 +293,8 @@
   <ItemGroup>
     <Folder Include="logs\" />
   </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="StyleCop.Analyzers" Version="1.1.118" />
+  </ItemGroup>
 </Project>

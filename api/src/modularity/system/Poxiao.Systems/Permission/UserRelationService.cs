@@ -1,18 +1,18 @@
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DatabaseAccessor;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DatabaseAccessor;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Dto.User;
 using Poxiao.Systems.Entitys.Dto.UserRelation;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.Systems.Interfaces.Permission;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.Systems;
@@ -384,7 +384,7 @@ public class UserRelationService : IUserRelationService, IDynamicApiController, 
             else
             {
                 return _repository.AsSugarClient().Queryable<UserRelationEntity, UserEntity>((a, b) => new JoinQueryInfos(JoinType.Left, a.UserId == b.Id))
-               .Where((a, b) => b.DeleteMark == null && (objId.Contains(a.ObjectId)|| objId.Contains(a.UserId)) && b.EnabledMark > 0).Select(a => a.UserId).Distinct().ToList();
+               .Where((a, b) => b.DeleteMark == null && (objId.Contains(a.ObjectId) || objId.Contains(a.UserId)) && b.EnabledMark > 0).Select(a => a.UserId).Distinct().ToList();
             }
         }
         else

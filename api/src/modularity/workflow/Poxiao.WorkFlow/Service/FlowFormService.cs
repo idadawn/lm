@@ -1,12 +1,15 @@
+using Mapster;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Core.Manager.Files;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Dto.ModuleForm;
 using Poxiao.Systems.Entitys.Model.DataBase;
 using Poxiao.Systems.Entitys.Permission;
@@ -19,9 +22,6 @@ using Poxiao.WorkFlow.Entitys.Dto.FlowEngine;
 using Poxiao.WorkFlow.Entitys.Dto.FlowForm;
 using Poxiao.WorkFlow.Entitys.Entity;
 using Poxiao.WorkFlow.Interfaces.Repository;
-using Mapster;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.WorkFlow.Service;
@@ -96,7 +96,7 @@ public class FlowFormService : IDynamicApiController, ITransient
     /// <param name="id">主键值.</param>
     /// <returns></returns>
     [HttpGet("{id}")]
-    public async Task<dynamic> GetInfo_Api(string id)
+    public async Task<dynamic> GetInfoApi(string id)
     {
         var entity = GetInfo(id);
         var res = entity.Adapt<FlowFormListOutput>();
@@ -394,18 +394,18 @@ public class FlowFormService : IDynamicApiController, ITransient
             }
 
             var dbLink = await _runService.GetDbLink(newEntity.DbLinkId);
-            var MainTable = newEntity.TableJson.ToList<TableModel>().Find(m => m.typeId.Equals("1")); // 主表
-            if (MainTable != null)
+            var mainTable = newEntity.TableJson.ToList<TableModel>().Find(m => m.typeId.Equals("1")); // 主表
+            if (mainTable != null)
             {
-                if (!_dataBaseManager.IsAnyColumn(dbLink, MainTable?.table, "f_flowtaskid"))
+                if (!_dataBaseManager.IsAnyColumn(dbLink, mainTable?.table, "f_flowtaskid"))
                 {
                     var pFieldList = new List<DbTableFieldModel>() { new DbTableFieldModel() { field = "F_FlowTaskId", fieldName = "流程任务Id", dataType = "varchar", dataLength = "50", allowNull = 1 } };
-                    _dataBaseManager.AddTableColumn(dbLink, MainTable?.table, pFieldList);
+                    _dataBaseManager.AddTableColumn(dbLink, mainTable?.table, pFieldList);
                 }
-                if (!_dataBaseManager.IsAnyColumn(dbLink, MainTable?.table, "f_flowid"))
+                if (!_dataBaseManager.IsAnyColumn(dbLink, mainTable?.table, "f_flowid"))
                 {
                     var pFieldList = new List<DbTableFieldModel>() { new DbTableFieldModel() { field = "F_FlowId", fieldName = "流程引擎Id", dataType = "varchar", dataLength = "50", allowNull = 1 } };
-                    _dataBaseManager.AddTableColumn(dbLink, MainTable?.table, pFieldList);
+                    _dataBaseManager.AddTableColumn(dbLink, mainTable?.table, pFieldList);
                 }
             }
 

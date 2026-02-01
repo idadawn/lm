@@ -1,4 +1,12 @@
-using System.Web;
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.Extend.Entitys;
+using Poxiao.Extend.Entitys.Dto.Email;
+using Poxiao.Extras.Thirdparty.Email;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Core.Manager.Files;
@@ -8,17 +16,9 @@ using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Models;
 using Poxiao.Infrastructure.Options;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.Extend.Entitys;
-using Poxiao.Extend.Entitys.Dto.Email;
-using Poxiao.Extras.Thirdparty.Email;
-using Poxiao.FriendlyException;
 using Poxiao.LinqBuilder;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
 using SqlSugar;
+using System.Web;
 
 namespace Poxiao.Extend;
 
@@ -58,13 +58,13 @@ public class EmailService : IDynamicApiController, ITransient
     {
         switch (input.type)
         {
-            case "inBox"://收件箱
+            case "inBox": //收件箱
                 return await GetReceiveList(input);
-            case "star"://标星件
+            case "star": //标星件
                 return await GetStarredList(input);
-            case "draft"://草稿箱
+            case "draft": //草稿箱
                 return await GetDraftList(input);
-            case "sent"://已发送
+            case "sent": //已发送
                 return await GetSentList(input);
             default:
                 return PageResult<EmailListOutput>.SqlSugarPageResult(new SqlSugarPagedList<EmailListOutput>());
@@ -77,7 +77,7 @@ public class EmailService : IDynamicApiController, ITransient
     /// <param name="id">主键值.</param>
     /// <returns></returns>
     [HttpGet("{id}")]
-    public async Task<dynamic> GetInfo_Api(string id)
+    public async Task<dynamic> GetInfoApi(string id)
     {
         var output = new EmailInfoOutput();
         var data = await GetInfo(id);
@@ -102,7 +102,7 @@ public class EmailService : IDynamicApiController, ITransient
     /// </summary>
     /// <returns></returns>
     [HttpGet("Config")]
-    public async Task<dynamic> GetConfigInfo_Api()
+    public async Task<dynamic> GetConfigInfoApi()
     {
         return (await GetConfigInfo()).Adapt<EmailConfigInfoOutput>();
     }

@@ -19,7 +19,7 @@ public class DocumentPreviewListOutput
     public string? fileSize { get; set; }
 
     /// <summary>
-    /// 主键id	.
+    /// 主键id    .
     /// </summary>
     public string? fileId { get; set; }
 

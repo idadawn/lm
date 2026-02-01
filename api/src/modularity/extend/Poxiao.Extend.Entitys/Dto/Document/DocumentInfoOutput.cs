@@ -32,5 +32,5 @@ public class DocumentInfoOutput
     /// 后缀名.
     /// </summary>
     public string? fileExtension { get; set; }
-    
+
 }

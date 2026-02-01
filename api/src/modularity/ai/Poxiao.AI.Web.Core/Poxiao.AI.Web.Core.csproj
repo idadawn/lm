@@ -9,4 +9,7 @@
     <ProjectReference Include="..\Poxiao.AI.Interfaces\Poxiao.AI.Interfaces.csproj" />
     <ProjectReference Include="..\..\..\..\framework\Poxiao\Poxiao.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Update="StyleCop.Analyzers" Version="1.1.118" />
+  </ItemGroup>
 </Project>

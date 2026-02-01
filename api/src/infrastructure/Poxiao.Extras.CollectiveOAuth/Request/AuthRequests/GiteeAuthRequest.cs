@@ -8,7 +8,8 @@ namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class GiteeAuthRequest : DefaultAuthRequest
 {
-    public GiteeAuthRequest(ClientConfig config) : base(config, new GiteeAuthSource())
+    public GiteeAuthRequest(ClientConfig config)
+        : base(config, new GiteeAuthSource())
     {
     }
 

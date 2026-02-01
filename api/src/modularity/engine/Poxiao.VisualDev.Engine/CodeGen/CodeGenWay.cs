@@ -1,9 +1,9 @@
 using Aspose.Words.Fields;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Security;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Model.DataBase;
 using Poxiao.VisualDev.Engine.Model.CodeGen;
 using Poxiao.VisualDev.Engine.Security;
@@ -73,12 +73,12 @@ public class CodeGenWay
                     break;
                 default:
                     var childControl = string.Format("poxiao_{0}_poxiao_{1}", tableName, field);
-                    switch (controls.Any(c => c.__vModel__.Equals(childControl)))
+                    switch (controls.Any(c => c.VModel.Equals(childControl)))
                     {
                         case true:
-                            FieldsModel control = controls.Find(c => c.__vModel__.Equals(childControl));
+                            FieldsModel control = controls.Find(c => c.VModel.Equals(childControl));
                             var isImportField = templateEntity.WebType == 1 ? false : columnDesignModel?.uploaderTemplateJson?.selectKey?.Any(it => it.Equals(childControl));
-                            switch (control.__config__.poxiaoKey)
+                            switch (control.Config.poxiaoKey)
                             {
                                 case PoxiaoKeyConst.MODIFYUSER:
                                 case PoxiaoKeyConst.CREATEUSER:
@@ -96,22 +96,22 @@ public class CodeGenWay
                                         QueryType = CodeGenFieldJudgeHelper.ColumnQueryType(searchList: columnDesignModel.searchList, childControl),
                                         QueryMultiple = CodeGenFieldJudgeHelper.ColumnQueryMultiple(searchList: columnDesignModel.searchList, childControl),
                                         IsShow = control.isIndexShow,
-                                        IsUnique = control.__config__.unique,
+                                        IsUnique = control.Config.unique,
                                         IsMultiple = CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field),
-                                        poxiaoKey = control.__config__.poxiaoKey,
-                                        Rule = control.__config__.rule,
+                                        poxiaoKey = control.Config.poxiaoKey,
+                                        Rule = control.Config.rule,
                                         IsDateTime = CodeGenFieldJudgeHelper.IsSecondaryTableDateTime(control),
                                         ActiveTxt = control.activeTxt,
                                         InactiveTxt = control.inactiveTxt,
-                                        IsDetailConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.__config__.poxiaoKey, "", CodeGenFieldJudgeHelper.IsMultipleColumn(controls, childControl)),
-                                        IsConversion = modelType == 1 ? CodeGenControlsAttributeHelper.JudgeContainsChildTableControlIsDataConversion(control.__config__.poxiaoKey) : CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.__config__.poxiaoKey, "", CodeGenFieldJudgeHelper.IsMultipleColumn(controls, childControl)),
+                                        IsDetailConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.Config.poxiaoKey, "", CodeGenFieldJudgeHelper.IsMultipleColumn(controls, childControl)),
+                                        IsConversion = modelType == 1 ? CodeGenControlsAttributeHelper.JudgeContainsChildTableControlIsDataConversion(control.Config.poxiaoKey) : CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.Config.poxiaoKey, "", CodeGenFieldJudgeHelper.IsMultipleColumn(controls, childControl)),
                                         IsSystemControl = true,
-                                        IsUpdate = CodeGenControlsAttributeHelper.JudgeControlIsSystemControls(control.__config__.poxiaoKey),
+                                        IsUpdate = CodeGenControlsAttributeHelper.JudgeControlIsSystemControls(control.Config.poxiaoKey),
                                         IsAuxiliary = true,
                                         TableNo = tableNo,
                                         TableName = tableName,
                                         FormatTableName = tableName.ParseToPascalCase(),
-                                        ControlLabel = control.__config__.label,
+                                        ControlLabel = control.Config.label,
                                         IsImportField = isImportField.ParseToBool(),
                                         IsControlParsing = false,
                                         ImportConfig = CodeGenControlsAttributeHelper.GetImportConfig(control, column.field, tableName),
@@ -119,7 +119,7 @@ public class CodeGenWay
                                     });
                                     break;
                                 default:
-                                    var dataType = control.__config__.dataType != null ? control.__config__.dataType : null;
+                                    var dataType = control.Config.dataType != null ? control.Config.dataType : null;
                                     tableColumnList.Add(new TableColumnConfigModel()
                                     {
                                         ColumnName = field.ToUpperCase(),
@@ -133,36 +133,36 @@ public class CodeGenWay
                                         QueryMultiple = CodeGenFieldJudgeHelper.ColumnQueryMultiple(searchList: columnDesignModel.searchList, childControl),
                                         IsShow = CodeGenFieldJudgeHelper.IsShowColumn(columnDesignModel.columnList, childControl),
                                         IsMultiple = CodeGenFieldJudgeHelper.IsMultipleColumn(controls, childControl),
-                                        IsUnique = control.__config__.unique,
-                                        poxiaoKey = control.__config__.poxiaoKey,
-                                        Rule = control.__config__.rule,
+                                        IsUnique = control.Config.unique,
+                                        poxiaoKey = control.Config.poxiaoKey,
+                                        Rule = control.Config.rule,
                                         IsDateTime = CodeGenFieldJudgeHelper.IsSecondaryTableDateTime(control),
                                         Format = control.format,
                                         ActiveTxt = control.activeTxt,
                                         InactiveTxt = control.inactiveTxt,
                                         ControlsDataType = dataType,
-                                        StaticData = control.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER) || control.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TREESELECT) ? CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()) : CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()),
-                                        propsUrl = CodeGenControlsAttributeHelper.GetControlsPropsUrl(control.__config__.poxiaoKey, dataType, control),
-                                        Label = CodeGenControlsAttributeHelper.GetControlsLabel(control.__config__.poxiaoKey, dataType, control),
-                                        Value = CodeGenControlsAttributeHelper.GetControlsValue(control.__config__.poxiaoKey, dataType, control),
-                                        Children = CodeGenControlsAttributeHelper.GetControlsChildren(control.__config__.poxiaoKey, dataType, control),
+                                        StaticData = control.Config.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER) || control.Config.poxiaoKey.Equals(PoxiaoKeyConst.TREESELECT) ? CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()) : CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()),
+                                        propsUrl = CodeGenControlsAttributeHelper.GetControlsPropsUrl(control.Config.poxiaoKey, dataType, control),
+                                        Label = CodeGenControlsAttributeHelper.GetControlsLabel(control.Config.poxiaoKey, dataType, control),
+                                        Value = CodeGenControlsAttributeHelper.GetControlsValue(control.Config.poxiaoKey, dataType, control),
+                                        Children = CodeGenControlsAttributeHelper.GetControlsChildren(control.Config.poxiaoKey, dataType, control),
                                         Separator = control.separator,
-                                        IsDetailConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.__config__.poxiaoKey, dataType, CodeGenFieldJudgeHelper.IsMultipleColumn(controls, childControl)),
-                                        IsConversion = modelType == 1 ? CodeGenControlsAttributeHelper.JudgeContainsChildTableControlIsDataConversion(control.__config__.poxiaoKey) : CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.__config__.poxiaoKey, "", CodeGenFieldJudgeHelper.IsMultipleColumn(controls, childControl)),
+                                        IsDetailConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.Config.poxiaoKey, dataType, CodeGenFieldJudgeHelper.IsMultipleColumn(controls, childControl)),
+                                        IsConversion = modelType == 1 ? CodeGenControlsAttributeHelper.JudgeContainsChildTableControlIsDataConversion(control.Config.poxiaoKey) : CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.Config.poxiaoKey, "", CodeGenFieldJudgeHelper.IsMultipleColumn(controls, childControl)),
                                         IsSystemControl = false,
-                                        IsUpdate = CodeGenControlsAttributeHelper.JudgeControlIsSystemControls(control.__config__.poxiaoKey),
+                                        IsUpdate = CodeGenControlsAttributeHelper.JudgeControlIsSystemControls(control.Config.poxiaoKey),
                                         IsAuxiliary = true,
                                         TableNo = tableNo,
                                         TableName = tableName,
                                         FormatTableName = tableName.ParseToPascalCase(),
-                                        ControlLabel = control.__config__.label,
+                                        ControlLabel = control.Config.label,
                                         IsImportField = isImportField.ParseToBool(),
                                         ImportConfig = CodeGenControlsAttributeHelper.GetImportConfig(control, column.field, tableName),
                                         IsControlParsing = CodeGenFieldJudgeHelper.IsControlParsing(control),
                                         ShowField = control.relational,
                                         IsTreeParentField = childControl.Equals(columnDesignModel.parentField),
-                                        IsLinkage = control.__config__.templateJson != null && control.__config__.templateJson.Count > 0 && control.__config__.templateJson.Any(it => !string.IsNullOrEmpty(it.relationField)) ? true : false,
-                                        LinkageConfig = CodeGenControlsAttributeHelper.ObtainTheCurrentControlLinkageConfiguration(control.__config__.templateJson?.FindAll(it => !string.IsNullOrEmpty(it.relationField)), 1),
+                                        IsLinkage = control.Config.templateJson != null && control.Config.templateJson.Count > 0 && control.Config.templateJson.Any(it => !string.IsNullOrEmpty(it.relationField)) ? true : false,
+                                        LinkageConfig = CodeGenControlsAttributeHelper.ObtainTheCurrentControlLinkageConfiguration(control.Config.templateJson?.FindAll(it => !string.IsNullOrEmpty(it.relationField)), 1),
                                     });
                                     break;
                             }
@@ -281,13 +281,13 @@ public class CodeGenWay
                     });
                     break;
                 default:
-                    switch (controls.Any(c => c.__vModel__ == field))
+                    switch (controls.Any(c => c.VModel == field))
                     {
                         case true:
-                            FieldsModel control = controls.Find(c => c.__vModel__ == field);
-                            var dataType = control.__config__.dataType != null ? control.__config__.dataType : null;
+                            FieldsModel control = controls.Find(c => c.VModel == field);
+                            var dataType = control.Config.dataType != null ? control.Config.dataType : null;
                             var isImportField = templateEntity.WebType == 1 ? false : columnDesignModel?.uploaderTemplateJson?.selectKey?.Any(it => it.Equals(string.Format("{0}-{1}", controlId, field)));
-                            var staticData = control.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER) ? CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()) : CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString());
+                            var staticData = control.Config.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER) ? CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()) : CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString());
                             tableColumnList.Add(new TableColumnConfigModel()
                             {
                                 ColumnName = field.ToUpperCase(),
@@ -300,9 +300,9 @@ public class CodeGenWay
                                 QueryType = CodeGenFieldJudgeHelper.ColumnQueryType(searchList: columnDesignModel.searchList, string.Format("{0}-{1}", controlId, field)),
                                 QueryMultiple = CodeGenFieldJudgeHelper.ColumnQueryMultiple(searchList: columnDesignModel.searchList, string.Format("{0}-{1}", controlId, field)),
                                 IsMultiple = CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field),
-                                IsUnique = control.__config__.unique,
-                                poxiaoKey = control.__config__.poxiaoKey,
-                                Rule = control.__config__.rule,
+                                IsUnique = control.Config.unique,
+                                poxiaoKey = control.Config.poxiaoKey,
+                                Rule = control.Config.rule,
                                 IsDateTime = CodeGenFieldJudgeHelper.IsDateTime(control),
                                 ActiveTxt = control.activeTxt,
                                 InactiveTxt = control.inactiveTxt,
@@ -310,21 +310,21 @@ public class CodeGenWay
                                 ControlsDataType = dataType,
                                 StaticData = staticData,
                                 Format = control.format,
-                                propsUrl = CodeGenControlsAttributeHelper.GetControlsPropsUrl(control.__config__.poxiaoKey, dataType, control),
-                                Label = CodeGenControlsAttributeHelper.GetControlsLabel(control.__config__.poxiaoKey, dataType, control),
-                                Value = CodeGenControlsAttributeHelper.GetControlsValue(control.__config__.poxiaoKey, dataType, control),
-                                Children = CodeGenControlsAttributeHelper.GetControlsChildren(control.__config__.poxiaoKey, dataType, control),
+                                propsUrl = CodeGenControlsAttributeHelper.GetControlsPropsUrl(control.Config.poxiaoKey, dataType, control),
+                                Label = CodeGenControlsAttributeHelper.GetControlsLabel(control.Config.poxiaoKey, dataType, control),
+                                Value = CodeGenControlsAttributeHelper.GetControlsValue(control.Config.poxiaoKey, dataType, control),
+                                Children = CodeGenControlsAttributeHelper.GetControlsChildren(control.Config.poxiaoKey, dataType, control),
                                 Separator = control.separator,
-                                IsConversion = CodeGenControlsAttributeHelper.JudgeContainsChildTableControlIsDataConversion(control.__config__.poxiaoKey),
-                                IsDetailConversion = CodeGenControlsAttributeHelper.JudgeContainsChildTableControlIsDataConversion(control.__config__.poxiaoKey),
-                                ControlLabel = control.__config__.label,
+                                IsConversion = CodeGenControlsAttributeHelper.JudgeContainsChildTableControlIsDataConversion(control.Config.poxiaoKey),
+                                IsDetailConversion = CodeGenControlsAttributeHelper.JudgeContainsChildTableControlIsDataConversion(control.Config.poxiaoKey),
+                                ControlLabel = control.Config.label,
                                 ImportConfig = CodeGenControlsAttributeHelper.GetImportConfig(control, column.field, tableName),
                                 IsImportField = isImportField.ParseToBool(),
                                 ChildControlKey = controlId,
                                 ShowField = control.relational,
                                 IsControlParsing = CodeGenFieldJudgeHelper.IsControlParsing(control),
-                                IsLinkage = control.__config__.templateJson != null && control.__config__.templateJson.Count > 0 && control.__config__.templateJson.Any(it => !string.IsNullOrEmpty(it.relationField)) ? true : false,
-                                LinkageConfig = CodeGenControlsAttributeHelper.ObtainTheCurrentControlLinkageConfiguration(control.__config__.templateJson?.FindAll(it => !string.IsNullOrEmpty(it.relationField)), 2, controlId),
+                                IsLinkage = control.Config.templateJson != null && control.Config.templateJson.Count > 0 && control.Config.templateJson.Any(it => !string.IsNullOrEmpty(it.relationField)) ? true : false,
+                                LinkageConfig = CodeGenControlsAttributeHelper.ObtainTheCurrentControlLinkageConfiguration(control.Config.templateJson?.FindAll(it => !string.IsNullOrEmpty(it.relationField)), 2, controlId),
                             });
                             break;
                         case false:
@@ -436,14 +436,14 @@ public class CodeGenWay
                     });
                     break;
                 default:
-                    switch (controls.Any(c => c.__vModel__ == field))
+                    switch (controls.Any(c => c.VModel == field))
                     {
                         case true:
-                            FieldsModel control = controls.Find(c => c.__vModel__ == field);
+                            FieldsModel control = controls.Find(c => c.VModel == field);
                             var childControl = string.Empty;
                             var isImportField = templateEntity.WebType == 1 ? false : columnDesignModel?.uploaderTemplateJson?.selectKey?.Any(it => it.Equals(field));
 
-                            switch (control.__config__.poxiaoKey)
+                            switch (control.Config.poxiaoKey)
                             {
                                 case PoxiaoKeyConst.MODIFYUSER:
                                 case PoxiaoKeyConst.CREATEUSER:
@@ -461,25 +461,25 @@ public class CodeGenWay
                                         QueryType = CodeGenFieldJudgeHelper.ColumnQueryType(searchList: columnDesignModel.searchList, field),
                                         QueryMultiple = CodeGenFieldJudgeHelper.ColumnQueryMultiple(searchList: columnDesignModel.searchList, field),
                                         IsShow = control.isIndexShow,
-                                        IsUnique = control.__config__.unique,
+                                        IsUnique = control.Config.unique,
                                         IsMultiple = CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field),
-                                        poxiaoKey = control.__config__.poxiaoKey,
-                                        Rule = control.__config__.rule,
+                                        poxiaoKey = control.Config.poxiaoKey,
+                                        Rule = control.Config.rule,
                                         IsDateTime = CodeGenFieldJudgeHelper.IsDateTime(control),
                                         ActiveTxt = control.activeTxt,
                                         InactiveTxt = control.inactiveTxt,
-                                        IsConversion = CodeGenControlsAttributeHelper.JudgeContainsChildTableControlIsDataConversion(control.__config__.poxiaoKey),
-                                        IsDetailConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.__config__.poxiaoKey, "", CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field)),
+                                        IsConversion = CodeGenControlsAttributeHelper.JudgeContainsChildTableControlIsDataConversion(control.Config.poxiaoKey),
+                                        IsDetailConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.Config.poxiaoKey, "", CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field)),
                                         IsSystemControl = true,
-                                        IsUpdate = CodeGenControlsAttributeHelper.JudgeControlIsSystemControls(control.__config__.poxiaoKey),
-                                        ControlLabel = control.__config__.label,
+                                        IsUpdate = CodeGenControlsAttributeHelper.JudgeControlIsSystemControls(control.Config.poxiaoKey),
+                                        ControlLabel = control.Config.label,
                                         IsImportField = isImportField == null ? false : (bool)isImportField,
                                         ImportConfig = CodeGenControlsAttributeHelper.GetImportConfig(control, column.field, tableName),
                                         IsTreeParentField = childControl.Equals(columnDesignModel.parentField),
                                     });
                                     break;
                                 default:
-                                    var dataType = control.__config__.dataType != null ? control.__config__.dataType : null;
+                                    var dataType = control.Config.dataType != null ? control.Config.dataType : null;
                                     tableColumnList.Add(new TableColumnConfigModel()
                                     {
                                         ColumnName = field.ToUpperCase(),
@@ -493,31 +493,31 @@ public class CodeGenWay
                                         QueryMultiple = CodeGenFieldJudgeHelper.ColumnQueryMultiple(searchList: columnDesignModel.searchList, field),
                                         IsShow = control.isIndexShow,
                                         IsMultiple = CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field),
-                                        IsUnique = control.__config__.unique,
-                                        poxiaoKey = control.__config__.poxiaoKey,
-                                        Rule = control.__config__.rule,
+                                        IsUnique = control.Config.unique,
+                                        poxiaoKey = control.Config.poxiaoKey,
+                                        Rule = control.Config.rule,
                                         IsDateTime = CodeGenFieldJudgeHelper.IsDateTime(control),
                                         Format = control.format,
                                         ActiveTxt = control.activeTxt,
                                         InactiveTxt = control.inactiveTxt,
                                         ControlsDataType = dataType,
-                                        StaticData = control.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER) || control.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TREESELECT) ? CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()) : CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()),
-                                        propsUrl = CodeGenControlsAttributeHelper.GetControlsPropsUrl(control.__config__.poxiaoKey, dataType, control),
-                                        Label = CodeGenControlsAttributeHelper.GetControlsLabel(control.__config__.poxiaoKey, dataType, control),
-                                        Value = CodeGenControlsAttributeHelper.GetControlsValue(control.__config__.poxiaoKey, dataType, control),
-                                        Children = CodeGenControlsAttributeHelper.GetControlsChildren(control.__config__.poxiaoKey, dataType, control),
+                                        StaticData = control.Config.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER) || control.Config.poxiaoKey.Equals(PoxiaoKeyConst.TREESELECT) ? CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()) : CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()),
+                                        propsUrl = CodeGenControlsAttributeHelper.GetControlsPropsUrl(control.Config.poxiaoKey, dataType, control),
+                                        Label = CodeGenControlsAttributeHelper.GetControlsLabel(control.Config.poxiaoKey, dataType, control),
+                                        Value = CodeGenControlsAttributeHelper.GetControlsValue(control.Config.poxiaoKey, dataType, control),
+                                        Children = CodeGenControlsAttributeHelper.GetControlsChildren(control.Config.poxiaoKey, dataType, control),
                                         Separator = control.separator,
-                                        IsConversion = CodeGenControlsAttributeHelper.JudgeContainsChildTableControlIsDataConversion(control.__config__.poxiaoKey),
-                                        IsDetailConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.__config__.poxiaoKey, dataType, CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field)),
+                                        IsConversion = CodeGenControlsAttributeHelper.JudgeContainsChildTableControlIsDataConversion(control.Config.poxiaoKey),
+                                        IsDetailConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.Config.poxiaoKey, dataType, CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field)),
                                         IsSystemControl = false,
-                                        IsUpdate = CodeGenControlsAttributeHelper.JudgeControlIsSystemControls(control.__config__.poxiaoKey),
-                                        ControlLabel = control.__config__.label,
+                                        IsUpdate = CodeGenControlsAttributeHelper.JudgeControlIsSystemControls(control.Config.poxiaoKey),
+                                        ControlLabel = control.Config.label,
                                         IsImportField = isImportField == null ? false : (bool)isImportField,
                                         ImportConfig = CodeGenControlsAttributeHelper.GetImportConfig(control, column.field, tableName),
                                         ShowField = control.relational,
                                         IsTreeParentField = childControl.Equals(columnDesignModel.parentField),
-                                        IsLinkage = control.__config__.templateJson != null && control.__config__.templateJson.Count > 0 && control.__config__.templateJson.Any(it => !string.IsNullOrEmpty(it.relationField)) ? true : false,
-                                        LinkageConfig = CodeGenControlsAttributeHelper.ObtainTheCurrentControlLinkageConfiguration(control.__config__.templateJson?.FindAll(it => !string.IsNullOrEmpty(it.relationField)), 0),
+                                        IsLinkage = control.Config.templateJson != null && control.Config.templateJson.Count > 0 && control.Config.templateJson.Any(it => !string.IsNullOrEmpty(it.relationField)) ? true : false,
+                                        LinkageConfig = CodeGenControlsAttributeHelper.ObtainTheCurrentControlLinkageConfiguration(control.Config.templateJson?.FindAll(it => !string.IsNullOrEmpty(it.relationField)), 0),
                                     });
                                     break;
                             }
@@ -600,12 +600,12 @@ public class CodeGenWay
                     });
                     break;
                 default:
-                    switch (controls.Any(c => c.__vModel__ == field))
+                    switch (controls.Any(c => c.VModel == field))
                     {
                         case true:
-                            FieldsModel control = controls.Find(c => c.__vModel__ == field);
+                            FieldsModel control = controls.Find(c => c.VModel == field);
                             var isImportField = templateEntity.WebType == 1 ? false : columnDesignModel?.uploaderTemplateJson?.selectKey?.Any(it => it.Equals(field));
-                            switch (control.__config__.poxiaoKey)
+                            switch (control.Config.poxiaoKey)
                             {
                                 case PoxiaoKeyConst.MODIFYUSER:
                                 case PoxiaoKeyConst.CREATEUSER:
@@ -623,27 +623,27 @@ public class CodeGenWay
                                         QueryType = CodeGenFieldJudgeHelper.ColumnQueryType(searchList: columnDesignModel.searchList, field),
                                         QueryMultiple = CodeGenFieldJudgeHelper.ColumnQueryMultiple(searchList: columnDesignModel.searchList, field),
                                         IsShow = control.isIndexShow,
-                                        IsUnique = control.__config__.unique,
+                                        IsUnique = control.Config.unique,
                                         IsMultiple = CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field),
-                                        poxiaoKey = control.__config__.poxiaoKey,
-                                        Rule = control.__config__.rule,
+                                        poxiaoKey = control.Config.poxiaoKey,
+                                        Rule = control.Config.rule,
                                         IsDateTime = CodeGenFieldJudgeHelper.IsDateTime(control),
                                         ActiveTxt = control.activeTxt,
                                         InactiveTxt = control.inactiveTxt,
-                                        IsConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.__config__.poxiaoKey, "", CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field)),
-                                        IsDetailConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.__config__.poxiaoKey, "", CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field)),
+                                        IsConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.Config.poxiaoKey, "", CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field)),
+                                        IsDetailConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.Config.poxiaoKey, "", CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field)),
                                         IsSystemControl = true,
-                                        IsUpdate = CodeGenControlsAttributeHelper.JudgeControlIsSystemControls(control.__config__.poxiaoKey),
+                                        IsUpdate = CodeGenControlsAttributeHelper.JudgeControlIsSystemControls(control.Config.poxiaoKey),
                                         IsAuxiliary = false,
                                         TableName = tableName,
-                                        ControlLabel = control.__config__.label,
+                                        ControlLabel = control.Config.label,
                                         IsImportField = isImportField.ParseToBool(),
                                         ImportConfig = CodeGenControlsAttributeHelper.GetImportConfig(control, column.field, tableName),
                                         IsTreeParentField = field.Equals(columnDesignModel.parentField),
                                     });
                                     break;
                                 default:
-                                    var dataType = control.__config__.dataType != null ? control.__config__.dataType : null;
+                                    var dataType = control.Config.dataType != null ? control.Config.dataType : null;
                                     tableColumnList.Add(new TableColumnConfigModel()
                                     {
                                         ColumnName = field.ToUpperCase(),
@@ -657,32 +657,32 @@ public class CodeGenWay
                                         QueryMultiple = CodeGenFieldJudgeHelper.ColumnQueryMultiple(searchList: columnDesignModel.searchList, field),
                                         IsShow = control.isIndexShow,
                                         IsMultiple = CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field),
-                                        IsUnique = control.__config__.unique,
-                                        poxiaoKey = control.__config__.poxiaoKey,
-                                        Rule = control.__config__.rule,
+                                        IsUnique = control.Config.unique,
+                                        poxiaoKey = control.Config.poxiaoKey,
+                                        Rule = control.Config.rule,
                                         IsDateTime = CodeGenFieldJudgeHelper.IsDateTime(control),
                                         Format = control.format,
                                         ActiveTxt = control.activeTxt,
                                         InactiveTxt = control.inactiveTxt,
                                         ControlsDataType = dataType,
-                                        StaticData = control.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER) || control.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TREESELECT) ? CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()) : CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()),
-                                        propsUrl = CodeGenControlsAttributeHelper.GetControlsPropsUrl(control.__config__.poxiaoKey, dataType, control),
-                                        Label = CodeGenControlsAttributeHelper.GetControlsLabel(control.__config__.poxiaoKey, dataType, control),
-                                        Value = CodeGenControlsAttributeHelper.GetControlsValue(control.__config__.poxiaoKey, dataType, control),
-                                        Children = CodeGenControlsAttributeHelper.GetControlsChildren(control.__config__.poxiaoKey, dataType, control),
+                                        StaticData = control.Config.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER) || control.Config.poxiaoKey.Equals(PoxiaoKeyConst.TREESELECT) ? CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()) : CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()),
+                                        propsUrl = CodeGenControlsAttributeHelper.GetControlsPropsUrl(control.Config.poxiaoKey, dataType, control),
+                                        Label = CodeGenControlsAttributeHelper.GetControlsLabel(control.Config.poxiaoKey, dataType, control),
+                                        Value = CodeGenControlsAttributeHelper.GetControlsValue(control.Config.poxiaoKey, dataType, control),
+                                        Children = CodeGenControlsAttributeHelper.GetControlsChildren(control.Config.poxiaoKey, dataType, control),
                                         Separator = control.separator,
-                                        IsConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.__config__.poxiaoKey, dataType, CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field)),
-                                        IsDetailConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.__config__.poxiaoKey, dataType, CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field)),
+                                        IsConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.Config.poxiaoKey, dataType, CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field)),
+                                        IsDetailConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.Config.poxiaoKey, dataType, CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field)),
                                         IsSystemControl = false,
-                                        IsUpdate = CodeGenControlsAttributeHelper.JudgeControlIsSystemControls(control.__config__.poxiaoKey),
+                                        IsUpdate = CodeGenControlsAttributeHelper.JudgeControlIsSystemControls(control.Config.poxiaoKey),
                                         IsAuxiliary = false,
                                         TableName = tableName,
-                                        ControlLabel = control.__config__.label,
+                                        ControlLabel = control.Config.label,
                                         IsImportField = isImportField.ParseToBool(),
                                         ImportConfig = CodeGenControlsAttributeHelper.GetImportConfig(control, column.field, tableName),
                                         IsTreeParentField = field.Equals(columnDesignModel.parentField),
-                                        IsLinkage = control.__config__.templateJson != null && control.__config__.templateJson.Count > 0 && control.__config__.templateJson.Any(it => !string.IsNullOrEmpty(it.relationField)) ? true : false,
-                                        LinkageConfig = CodeGenControlsAttributeHelper.ObtainTheCurrentControlLinkageConfiguration(control.__config__.templateJson?.FindAll(it => !string.IsNullOrEmpty(it.relationField)), 0),
+                                        IsLinkage = control.Config.templateJson != null && control.Config.templateJson.Count > 0 && control.Config.templateJson.Any(it => !string.IsNullOrEmpty(it.relationField)) ? true : false,
+                                        LinkageConfig = CodeGenControlsAttributeHelper.ObtainTheCurrentControlLinkageConfiguration(control.Config.templateJson?.FindAll(it => !string.IsNullOrEmpty(it.relationField)), 0),
                                     });
                                     break;
                             }
@@ -770,11 +770,11 @@ public class CodeGenWay
                     });
                     break;
                 default:
-                    switch (controls.Any(c => c.__vModel__.Equals(field)))
+                    switch (controls.Any(c => c.VModel.Equals(field)))
                     {
                         case true:
-                            FieldsModel control = controls.Find(c => c.__vModel__ == field);
-                            switch (control.__config__.poxiaoKey)
+                            FieldsModel control = controls.Find(c => c.VModel == field);
+                            switch (control.Config.poxiaoKey)
                             {
                                 case PoxiaoKeyConst.MODIFYUSER:
                                 case PoxiaoKeyConst.CREATEUSER:
@@ -792,27 +792,27 @@ public class CodeGenWay
                                         QueryType = CodeGenFieldJudgeHelper.ColumnQueryType(searchList: columnDesignModel.searchList, field),
                                         QueryMultiple = CodeGenFieldJudgeHelper.ColumnQueryMultiple(searchList: columnDesignModel.searchList, field),
                                         IsShow = control.isIndexShow,
-                                        IsUnique = control.__config__.unique,
+                                        IsUnique = control.Config.unique,
                                         IsMultiple = CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field),
-                                        poxiaoKey = control.__config__.poxiaoKey,
-                                        Rule = control.__config__.rule,
+                                        poxiaoKey = control.Config.poxiaoKey,
+                                        Rule = control.Config.rule,
                                         IsDateTime = CodeGenFieldJudgeHelper.IsDateTime(control),
                                         ActiveTxt = control.activeTxt,
                                         InactiveTxt = control.inactiveTxt,
-                                        IsConversion = CodeGenControlsAttributeHelper.JudgeContainsChildTableControlIsDataConversion(control.__config__.poxiaoKey),
-                                        IsDetailConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.__config__.poxiaoKey, "", CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field)),
+                                        IsConversion = CodeGenControlsAttributeHelper.JudgeContainsChildTableControlIsDataConversion(control.Config.poxiaoKey),
+                                        IsDetailConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.Config.poxiaoKey, "", CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field)),
                                         IsSystemControl = true,
-                                        IsUpdate = CodeGenControlsAttributeHelper.JudgeControlIsSystemControls(control.__config__.poxiaoKey),
+                                        IsUpdate = CodeGenControlsAttributeHelper.JudgeControlIsSystemControls(control.Config.poxiaoKey),
                                         IsAuxiliary = false,
                                         TableName = tableName,
-                                        ControlLabel = control.__config__.label,
+                                        ControlLabel = control.Config.label,
                                         IsImportField = columnDesignModel?.uploaderTemplateJson?.selectKey?.Any(it => it.Equals(field)) == null ? false : (bool)columnDesignModel?.uploaderTemplateJson?.selectKey?.Any(it => it.Equals(field)),
                                         ImportConfig = CodeGenControlsAttributeHelper.GetImportConfig(control, column.field, tableName),
                                         IsTreeParentField = field.Equals(columnDesignModel.parentField),
                                     });
                                     break;
                                 default:
-                                    var dataType = control.__config__.dataType != null ? control.__config__.dataType : null;
+                                    var dataType = control.Config.dataType != null ? control.Config.dataType : null;
                                     tableColumnList.Add(new TableColumnConfigModel()
                                     {
                                         ColumnName = field.ToUpperCase(),
@@ -826,33 +826,33 @@ public class CodeGenWay
                                         QueryMultiple = CodeGenFieldJudgeHelper.ColumnQueryMultiple(searchList: columnDesignModel.searchList, field),
                                         IsShow = control.isIndexShow,
                                         IsMultiple = CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field),
-                                        IsUnique = control.__config__.unique,
-                                        poxiaoKey = control.__config__.poxiaoKey,
-                                        Rule = control.__config__.rule,
+                                        IsUnique = control.Config.unique,
+                                        poxiaoKey = control.Config.poxiaoKey,
+                                        Rule = control.Config.rule,
                                         IsDateTime = CodeGenFieldJudgeHelper.IsDateTime(control),
                                         Format = control.format,
                                         ActiveTxt = control.activeTxt,
                                         InactiveTxt = control.inactiveTxt,
                                         ControlsDataType = dataType,
-                                        StaticData = control.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER) || control.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TREESELECT) ? CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()) : CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()),
-                                        propsUrl = CodeGenControlsAttributeHelper.GetControlsPropsUrl(control.__config__.poxiaoKey, dataType, control),
-                                        Label = CodeGenControlsAttributeHelper.GetControlsLabel(control.__config__.poxiaoKey, dataType, control),
-                                        Value = CodeGenControlsAttributeHelper.GetControlsValue(control.__config__.poxiaoKey, dataType, control),
-                                        Children = CodeGenControlsAttributeHelper.GetControlsChildren(control.__config__.poxiaoKey, dataType, control),
+                                        StaticData = control.Config.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER) || control.Config.poxiaoKey.Equals(PoxiaoKeyConst.TREESELECT) ? CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()) : CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()),
+                                        propsUrl = CodeGenControlsAttributeHelper.GetControlsPropsUrl(control.Config.poxiaoKey, dataType, control),
+                                        Label = CodeGenControlsAttributeHelper.GetControlsLabel(control.Config.poxiaoKey, dataType, control),
+                                        Value = CodeGenControlsAttributeHelper.GetControlsValue(control.Config.poxiaoKey, dataType, control),
+                                        Children = CodeGenControlsAttributeHelper.GetControlsChildren(control.Config.poxiaoKey, dataType, control),
                                         Separator = control.separator,
-                                        IsConversion = CodeGenControlsAttributeHelper.JudgeContainsChildTableControlIsDataConversion(control.__config__.poxiaoKey),
-                                        IsDetailConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.__config__.poxiaoKey, dataType, CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field)),
+                                        IsConversion = CodeGenControlsAttributeHelper.JudgeContainsChildTableControlIsDataConversion(control.Config.poxiaoKey),
+                                        IsDetailConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.Config.poxiaoKey, dataType, CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field)),
                                         IsSystemControl = false,
-                                        IsUpdate = CodeGenControlsAttributeHelper.JudgeControlIsSystemControls(control.__config__.poxiaoKey),
+                                        IsUpdate = CodeGenControlsAttributeHelper.JudgeControlIsSystemControls(control.Config.poxiaoKey),
                                         IsAuxiliary = false,
                                         TableName = tableName,
-                                        ControlLabel = control.__config__.label,
+                                        ControlLabel = control.Config.label,
                                         IsImportField = columnDesignModel?.uploaderTemplateJson?.selectKey?.Any(it => it.Equals(field)) == null ? false : (bool)columnDesignModel?.uploaderTemplateJson?.selectKey?.Any(it => it.Equals(field)),
                                         ImportConfig = CodeGenControlsAttributeHelper.GetImportConfig(control, column.field, tableName),
                                         ShowField = control.relational,
                                         IsTreeParentField = field.Equals(columnDesignModel.parentField),
-                                        IsLinkage = control.__config__.templateJson != null && control.__config__.templateJson.Count > 0 && control.__config__.templateJson.Any(it => !string.IsNullOrEmpty(it.relationField)) ? true : false,
-                                        LinkageConfig = CodeGenControlsAttributeHelper.ObtainTheCurrentControlLinkageConfiguration(control.__config__.templateJson?.FindAll(it => !string.IsNullOrEmpty(it.relationField)), 0),
+                                        IsLinkage = control.Config.templateJson != null && control.Config.templateJson.Count > 0 && control.Config.templateJson.Any(it => !string.IsNullOrEmpty(it.relationField)) ? true : false,
+                                        LinkageConfig = CodeGenControlsAttributeHelper.ObtainTheCurrentControlLinkageConfiguration(control.Config.templateJson?.FindAll(it => !string.IsNullOrEmpty(it.relationField)), 0),
                                     });
                                     break;
                             }
@@ -933,12 +933,12 @@ public class CodeGenWay
                     break;
                 default:
                     // 存在表单内控件
-                    switch (controls.Any(c => c.__vModel__ == field))
+                    switch (controls.Any(c => c.VModel == field))
                     {
                         case true:
-                            FieldsModel control = controls.Find(c => c.__vModel__ == field);
+                            FieldsModel control = controls.Find(c => c.VModel == field);
                             bool? isImportField = templateEntity.WebType == 1 ? false : columnDesignModel?.uploaderTemplateJson?.selectKey?.Any(it => it.Equals(field));
-                            switch (control.__config__.poxiaoKey)
+                            switch (control.Config.poxiaoKey)
                             {
                                 case PoxiaoKeyConst.MODIFYUSER:
                                 case PoxiaoKeyConst.CREATEUSER:
@@ -956,25 +956,25 @@ public class CodeGenWay
                                         QueryType = CodeGenFieldJudgeHelper.ColumnQueryType(searchList: columnDesignModel.searchList, field),
                                         QueryMultiple = CodeGenFieldJudgeHelper.ColumnQueryMultiple(searchList: columnDesignModel.searchList, field),
                                         IsShow = control.isIndexShow,
-                                        IsUnique = control.__config__.unique,
+                                        IsUnique = control.Config.unique,
                                         IsMultiple = CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field),
-                                        poxiaoKey = control.__config__.poxiaoKey,
-                                        Rule = control.__config__.rule,
+                                        poxiaoKey = control.Config.poxiaoKey,
+                                        Rule = control.Config.rule,
                                         IsDateTime = CodeGenFieldJudgeHelper.IsDateTime(control),
                                         ActiveTxt = control.activeTxt,
                                         InactiveTxt = control.inactiveTxt,
                                         IsConversion = false,
                                         IsDetailConversion = false,
                                         IsSystemControl = true,
-                                        IsUpdate = CodeGenControlsAttributeHelper.JudgeControlIsSystemControls(control.__config__.poxiaoKey),
-                                        ControlLabel = control.__config__.label,
+                                        IsUpdate = CodeGenControlsAttributeHelper.JudgeControlIsSystemControls(control.Config.poxiaoKey),
+                                        ControlLabel = control.Config.label,
                                         IsImportField = isImportField.ParseToBool(),
                                         ImportConfig = CodeGenControlsAttributeHelper.GetImportConfig(control, column.field, tableName),
                                         IsTreeParentField = field.Equals(columnDesignModel.parentField),
                                     });
                                     break;
                                 default:
-                                    var dataType = control.__config__.dataType != null ? control.__config__.dataType : null;
+                                    var dataType = control.Config.dataType != null ? control.Config.dataType : null;
                                     tableColumnList.Add(new TableColumnConfigModel()
                                     {
                                         ColumnName = field.ToUpperCase(),
@@ -988,31 +988,31 @@ public class CodeGenWay
                                         QueryMultiple = CodeGenFieldJudgeHelper.ColumnQueryMultiple(searchList: columnDesignModel.searchList, field),
                                         IsShow = control.isIndexShow,
                                         IsMultiple = CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field),
-                                        IsUnique = control.__config__.unique,
-                                        poxiaoKey = control.__config__.poxiaoKey,
-                                        Rule = control.__config__.rule,
+                                        IsUnique = control.Config.unique,
+                                        poxiaoKey = control.Config.poxiaoKey,
+                                        Rule = control.Config.rule,
                                         IsDateTime = CodeGenFieldJudgeHelper.IsDateTime(control),
                                         Format = control.format,
                                         ActiveTxt = control.activeTxt,
                                         InactiveTxt = control.inactiveTxt,
                                         ControlsDataType = dataType,
-                                        StaticData = control.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER) || control.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TREESELECT) ? CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()) : CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()),
-                                        propsUrl = CodeGenControlsAttributeHelper.GetControlsPropsUrl(control.__config__.poxiaoKey, dataType, control),
-                                        Label = CodeGenControlsAttributeHelper.GetControlsLabel(control.__config__.poxiaoKey, dataType, control),
-                                        Value = CodeGenControlsAttributeHelper.GetControlsValue(control.__config__.poxiaoKey, dataType, control),
-                                        Children = CodeGenControlsAttributeHelper.GetControlsChildren(control.__config__.poxiaoKey, dataType, control),
+                                        StaticData = control.Config.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER) || control.Config.poxiaoKey.Equals(PoxiaoKeyConst.TREESELECT) ? CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()) : CodeGenControlsAttributeHelper.ConversionStaticData(control.options.ToJsonString()),
+                                        propsUrl = CodeGenControlsAttributeHelper.GetControlsPropsUrl(control.Config.poxiaoKey, dataType, control),
+                                        Label = CodeGenControlsAttributeHelper.GetControlsLabel(control.Config.poxiaoKey, dataType, control),
+                                        Value = CodeGenControlsAttributeHelper.GetControlsValue(control.Config.poxiaoKey, dataType, control),
+                                        Children = CodeGenControlsAttributeHelper.GetControlsChildren(control.Config.poxiaoKey, dataType, control),
                                         Separator = control.separator,
-                                        IsConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.__config__.poxiaoKey, dataType, CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field)),
-                                        IsDetailConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.__config__.poxiaoKey, dataType, CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field)),
+                                        IsConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.Config.poxiaoKey, dataType, CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field)),
+                                        IsDetailConversion = CodeGenControlsAttributeHelper.JudgeControlIsDataConversion(control.Config.poxiaoKey, dataType, CodeGenFieldJudgeHelper.IsMultipleColumn(controls, field)),
                                         IsSystemControl = false,
-                                        IsUpdate = CodeGenControlsAttributeHelper.JudgeControlIsSystemControls(control.__config__.poxiaoKey),
-                                        ControlLabel = control.__config__.label,
+                                        IsUpdate = CodeGenControlsAttributeHelper.JudgeControlIsSystemControls(control.Config.poxiaoKey),
+                                        ControlLabel = control.Config.label,
                                         IsImportField = isImportField.ParseToBool(),
                                         ImportConfig = CodeGenControlsAttributeHelper.GetImportConfig(control, column.field, tableName),
                                         ShowField = control.relational,
                                         IsTreeParentField = field.Equals(columnDesignModel.parentField),
-                                        IsLinkage = control.__config__.templateJson != null && control.__config__.templateJson.Count > 0 && control.__config__.templateJson.Any(it => !string.IsNullOrEmpty(it.relationField)) ? true : false,
-                                        LinkageConfig = CodeGenControlsAttributeHelper.ObtainTheCurrentControlLinkageConfiguration(control.__config__.templateJson?.FindAll(it => !string.IsNullOrEmpty(it.relationField)), 0),
+                                        IsLinkage = control.Config.templateJson != null && control.Config.templateJson.Count > 0 && control.Config.templateJson.Any(it => !string.IsNullOrEmpty(it.relationField)) ? true : false,
+                                        LinkageConfig = CodeGenControlsAttributeHelper.ObtainTheCurrentControlLinkageConfiguration(control.Config.templateJson?.FindAll(it => !string.IsNullOrEmpty(it.relationField)), 0),
                                     });
                                     break;
                             }
@@ -1104,7 +1104,7 @@ public class CodeGenWay
                     case 4:
                         foreach (var item in controls)
                         {
-                            var config = item.__config__;
+                            var config = item.Config;
                             switch (config.poxiaoKey)
                             {
                                 case PoxiaoKeyConst.TABLE:
@@ -1118,7 +1118,7 @@ public class CodeGenWay
                 }
                 break;
             case 5:
-                appThousandField = controls.FindAll(it => it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.NUMINPUT) && it.thousands).Select(it => it.__vModel__).ToList().ToJsonString();
+                appThousandField = controls.FindAll(it => it.Config.poxiaoKey.Equals(PoxiaoKeyConst.NUMINPUT) && it.thousands).Select(it => it.VModel).ToList().ToJsonString();
                 appThousandField = appThousandField == "[]" ? null : appThousandField;
                 break;
         }
@@ -1161,38 +1161,38 @@ public class CodeGenWay
                         foreach (var item in columnDesignModel?.searchList)
                         {
                             // 查询控件分类
-                            var queryControls = listQueryControls.Where(q => q.Value.Contains(item.__config__.poxiaoKey)).FirstOrDefault();
+                            var queryControls = listQueryControls.Where(q => q.Value.Contains(item.Config.poxiaoKey)).FirstOrDefault();
 
                             var childTableLabel = string.Empty;
-                            var childControl = item.__vModel__.Split('-');
+                            var childControl = item.VModel.Split('-');
 
                             // 是否子表查询
                             bool isChildQuery = false;
 
                             // 表单真实控件
                             FieldsModel? column = new FieldsModel();
-                            if (item.__config__.relationTable != null && !item.__vModel__.IsMatch("_poxiao_"))
+                            if (item.Config.relationTable != null && !item.VModel.IsMatch("_poxiao_"))
                             {
                                 isChildQuery = true;
-                                column = controls.Find(it => it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE) && it.__vModel__.Equals(childControl[0]) && it.__config__.children.Any(child => child.__vModel__.Equals(childControl[1])));
-                                childTableLabel = column.__config__.label + "-";
-                                column = column.__config__.children.Find(it => it.__vModel__ == childControl[1]);
+                                column = controls.Find(it => it.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE) && it.VModel.Equals(childControl[0]) && it.Config.children.Any(child => child.VModel.Equals(childControl[1])));
+                                childTableLabel = column.Config.label + "-";
+                                column = column.Config.children.Find(it => it.VModel == childControl[1]);
                             }
                             else
                             {
-                                column = controls.Find(c => c.__vModel__ == item.__vModel__);
+                                column = controls.Find(c => c.VModel == item.VModel);
                             }
 
                             indexSearchFieldDesign.Add(new IndexSearchFieldDesignModel()
                             {
-                                OriginalName = string.IsNullOrEmpty(column.superiorVModel) ? column.__vModel__ : string.Format("{0}_{1}", column.superiorVModel, column.__vModel__),
-                                Name = string.IsNullOrEmpty(column.superiorVModel) ? column.__vModel__ : string.Format("{0}_{1}", column.superiorVModel, column.__vModel__),
-                                LowerName = column.__vModel__,
-                                Tag = column.__config__.tag,
+                                OriginalName = string.IsNullOrEmpty(column.superiorVModel) ? column.VModel : string.Format("{0}_{1}", column.superiorVModel, column.VModel),
+                                Name = string.IsNullOrEmpty(column.superiorVModel) ? column.VModel : string.Format("{0}_{1}", column.superiorVModel, column.VModel),
+                                LowerName = column.VModel,
+                                Tag = column.Config.tag,
                                 Clearable = item.clearable ? "clearable " : string.Empty,
                                 Format = column.format,
                                 ValueFormat = column.valueformat,
-                                Label = childTableLabel + column.__config__.label,
+                                Label = childTableLabel + column.Config.label,
                                 IsChildQuery = isChildQuery,
                                 QueryControlsKey = queryControls.Key != null ? queryControls.Key : null,
                                 Props = column.props?.props,
@@ -1201,14 +1201,14 @@ public class CodeGenWay
                                 ShowAllLevels = column.showalllevels ? "true" : "false",
                                 Level = column.level,
                                 IsMultiple = item.searchMultiple,
-                                poxiaoKey = column.__config__.poxiaoKey,
+                                poxiaoKey = column.Config.poxiaoKey,
                                 SelectType = column.selectType != null ? column.selectType.Equals("custom") ? string.Format("selectType='{0}' ", column.selectType) : string.Format("selectType='all' ") : string.Empty,
-                                AbleDepIds = column.selectType != null && column.selectType == "custom" ? string.Format(":ableDepIds='{0}_AbleDepIds' ", childControl.Length >= 2 ? string.Format("{0}_{1}", childControl[0], column.__vModel__) : item.__vModel__) : string.Empty,
-                                AblePosIds = column.selectType != null && column.selectType == "custom" && (column.__config__.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) || column.__config__.poxiaoKey.Equals(PoxiaoKeyConst.POSSELECT)) ? string.Format(":ablePosIds='{0}_AblePosIds' ", childControl.Length >= 2 ? string.Format("{0}_{1}", childControl[0], column.__vModel__) : item.__vModel__) : string.Empty,
-                                AbleUserIds = column.selectType != null && column.selectType == "custom" && column.__config__.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) ? string.Format(":ableUserIds='{0}_AbleUserIds' ", childControl.Length >= 2 ? string.Format("{0}_{1}", childControl[0], column.__vModel__) : item.__vModel__) : string.Empty,
-                                AbleRoleIds = column.selectType != null && column.selectType == "custom" && column.__config__.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) ? string.Format(":ableRoleIds='{0}_AbleRoleIds' ", childControl.Length >= 2 ? string.Format("{0}_{1}", childControl[0], column.__vModel__) : item.__vModel__) : string.Empty,
-                                AbleGroupIds = column.selectType != null && column.selectType == "custom" && column.__config__.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) ? string.Format(":ableGroupIds='{0}_AbleGroupIds' ", childControl.Length >= 2 ? string.Format("{0}_{1}", childControl[0], column.__vModel__) : item.__vModel__) : string.Empty,
-                                AbleIds = column.selectType != null && column.selectType == "custom" && column.__config__.poxiaoKey.Equals(PoxiaoKeyConst.USERSSELECT) ? string.Format(":ableIds='{0}_AbleIds' ", childControl.Length >= 2 ? string.Format("{0}_{1}", childControl[0], column.__vModel__) : item.__vModel__) : string.Empty,
+                                AbleDepIds = column.selectType != null && column.selectType == "custom" ? string.Format(":ableDepIds='{0}_AbleDepIds' ", childControl.Length >= 2 ? string.Format("{0}_{1}", childControl[0], column.VModel) : item.VModel) : string.Empty,
+                                AblePosIds = column.selectType != null && column.selectType == "custom" && (column.Config.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) || column.Config.poxiaoKey.Equals(PoxiaoKeyConst.POSSELECT)) ? string.Format(":ablePosIds='{0}_AblePosIds' ", childControl.Length >= 2 ? string.Format("{0}_{1}", childControl[0], column.VModel) : item.VModel) : string.Empty,
+                                AbleUserIds = column.selectType != null && column.selectType == "custom" && column.Config.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) ? string.Format(":ableUserIds='{0}_AbleUserIds' ", childControl.Length >= 2 ? string.Format("{0}_{1}", childControl[0], column.VModel) : item.VModel) : string.Empty,
+                                AbleRoleIds = column.selectType != null && column.selectType == "custom" && column.Config.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) ? string.Format(":ableRoleIds='{0}_AbleRoleIds' ", childControl.Length >= 2 ? string.Format("{0}_{1}", childControl[0], column.VModel) : item.VModel) : string.Empty,
+                                AbleGroupIds = column.selectType != null && column.selectType == "custom" && column.Config.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) ? string.Format(":ableGroupIds='{0}_AbleGroupIds' ", childControl.Length >= 2 ? string.Format("{0}_{1}", childControl[0], column.VModel) : item.VModel) : string.Empty,
+                                AbleIds = column.selectType != null && column.selectType == "custom" && column.Config.poxiaoKey.Equals(PoxiaoKeyConst.USERSSELECT) ? string.Format(":ableIds='{0}_AbleIds' ", childControl.Length >= 2 ? string.Format("{0}_{1}", childControl[0], column.VModel) : item.VModel) : string.Empty,
                                 RelationField = column.relationField,
                                 InterfaceId = column.interfaceId,
                                 Total = column.total,
@@ -1231,7 +1231,7 @@ public class CodeGenWay
                         };
 
                         // 查询条件查询差异列表
-                        queryCriteriaQueryVarianceList = columnDesignModel.searchList.FindAll(it => controlQueryMultipleSelectionArray.Contains(it.__config__.poxiaoKey)).ToList().FindAll(it => !it.searchMultiple.Equals(multipleQueryFields.Find(x => x.__config__.poxiaoKey.Equals(it.__config__.poxiaoKey) && x.prop.Equals(it.prop)).searchMultiple));
+                        queryCriteriaQueryVarianceList = columnDesignModel.searchList.FindAll(it => controlQueryMultipleSelectionArray.Contains(it.Config.poxiaoKey)).ToList().FindAll(it => !it.searchMultiple.Equals(multipleQueryFields.Find(x => x.Config.poxiaoKey.Equals(it.Config.poxiaoKey) && x.prop.Equals(it.prop)).searchMultiple));
 
                         // 生成头部按钮信息
                         foreach (var item in columnDesignModel?.btnsList)
@@ -1261,32 +1261,32 @@ public class CodeGenWay
                             });
                         }
 
-                        List<string> ChildControlField = new List<string>();
+                        List<string> childControlField = new List<string>();
 
                         // 生成列信息
                         foreach (var item in columnDesignModel.columnList)
                         {
-                            if (!ChildControlField.Any(it => it == item.__vModel__))
+                            if (!childControlField.Any(it => it == item.VModel))
                             {
-                                var relationTable = item?.__config__?.relationTable;
+                                var relationTable = item?.Config?.relationTable;
                                 if (relationTable != null && !indexColumnDesign.Any(it => it.TableName == relationTable))
                                 {
-                                    var childTableAll = columnDesignModel.columnList.FindAll(it => it.__config__.relationTable == relationTable);
-                                    var childTable = controls.Find(it => it.__config__.tableName == relationTable);
-                                    if (childTable.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE))
+                                    var childTableAll = columnDesignModel.columnList.FindAll(it => it.Config.relationTable == relationTable);
+                                    var childTable = controls.Find(it => it.Config.tableName == relationTable);
+                                    if (childTable.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE))
                                     {
                                         var childTableColumnDesign = new List<IndexColumnDesign>();
                                         foreach (var child in childTableAll)
                                         {
-                                            var columnControl = childTable.__config__.children.Find(it => it.__vModel__.Equals(child.__vModel__.Split('-')[1]));
+                                            var columnControl = childTable.Config.children.Find(it => it.VModel.Equals(child.VModel.Split('-')[1]));
                                             childTableColumnDesign.Add(new IndexColumnDesign()
                                             {
-                                                TableName = child.__config__.tableName,
-                                                Name = columnControl.__vModel__,
-                                                OptionsName = columnControl.__vModel__,
-                                                LowerName = columnControl.__vModel__,
+                                                TableName = child.Config.tableName,
+                                                Name = columnControl.VModel,
+                                                OptionsName = columnControl.VModel,
+                                                LowerName = columnControl.VModel,
                                                 poxiaoKey = child.poxiaoKey,
-                                                Label = columnControl.__config__.label,
+                                                Label = columnControl.Config.label,
                                                 Width = child.width.ToString() == "0" ? "0" : string.Format("{0}", child.width),
                                                 Align = child.align,
                                                 IsSort = child.sortable ? string.Format("sortable='custom' ") : string.Empty,
@@ -1296,14 +1296,14 @@ public class CodeGenWay
                                                 Thousands = child.thousands,
                                                 Precision = child.precision == null ? 0 : child.precision,
                                             });
-                                            ChildControlField.Add(string.Format("{0}", child.__vModel__));
+                                            childControlField.Add(string.Format("{0}", child.VModel));
                                         }
 
                                         indexColumnDesign.Add(new IndexColumnDesign()
                                         {
                                             TableName = relationTable,
-                                            Name = childTable.__vModel__,
-                                            Label = childTable.__config__.label,
+                                            Name = childTable.VModel,
+                                            Label = childTable.Config.label,
                                             poxiaoKey = PoxiaoKeyConst.TABLE,
                                             IsChildTable = true,
                                             ChildTableDesigns = childTableColumnDesign,
@@ -1315,7 +1315,7 @@ public class CodeGenWay
                                 {
                                     indexColumnDesign.Add(new IndexColumnDesign()
                                     {
-                                        TableName = item?.__config__?.tableName,
+                                        TableName = item?.Config?.tableName,
                                         Name = item.prop,
                                         OptionsName = item.prop,
                                         LowerName = item.prop,
@@ -1444,7 +1444,7 @@ public class CodeGenWay
                     ColumnList = columnDesignModel.columnList.ToJsonString(),
                     IsInlineEditor = isInlineEditor,
                     GroupField = columnDesignModel.groupField,
-                    GroupShowField = columnDesignModel?.columnList?.Where(x => x.__vModel__.ToLower() != columnDesignModel?.groupField?.ToLower()).FirstOrDefault()?.__vModel__,
+                    GroupShowField = columnDesignModel?.columnList?.Where(x => x.VModel.ToLower() != columnDesignModel?.groupField?.ToLower()).FirstOrDefault()?.VModel,
                     PrimaryKeyPolicy = formDataModel.primaryKeyPolicy,
                     IsRelationForm = isRelationForm,
                     ChildTableStyle = columnDesignModel.childTableStyle,
@@ -1529,7 +1529,7 @@ public class CodeGenWay
                     ColumnOptions = columnDesignModel.columnOptions.ToJsonString(),
                     IsInlineEditor = isInlineEditor,
                     GroupField = columnDesignModel.groupField,
-                    GroupShowField = columnDesignModel?.columnList?.Where(x => x.__vModel__.ToLower() != columnDesignModel?.groupField?.ToLower()).FirstOrDefault()?.__vModel__,
+                    GroupShowField = columnDesignModel?.columnList?.Where(x => x.VModel.ToLower() != columnDesignModel?.groupField?.ToLower()).FirstOrDefault()?.VModel,
                     PrimaryKeyPolicy = formDataModel.primaryKeyPolicy,
                     IsRelationForm = isRelationForm,
                     ChildTableStyle = columnDesignModel.childTableStyle,
@@ -1574,32 +1574,32 @@ public class CodeGenWay
             switch (pcColumnDesignModel.treeRelation.StartsWith("tableField"))
             {
                 case true:
-                    foreach (var item in controls.FindAll(it => it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)))
+                    foreach (var item in controls.FindAll(it => it.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)))
                     {
-                        search = item.__config__.children.Find(x => x.__vModel__.Equals(pcColumnDesignModel.treeRelation.Replace(string.Format("{0}-", item.__vModel__), "")));
+                        search = item.Config.children.Find(x => x.VModel.Equals(pcColumnDesignModel.treeRelation.Replace(string.Format("{0}-", item.VModel), "")));
                         if (search != null)
                         {
                             pcColumnDesignModel.searchList.Add(new IndexSearchFieldModel
                             {
-                                label = search.__config__.label,
-                                prop = string.Format("{0}-{1}", item.__vModel__, search.__vModel__),
-                                poxiaoKey = search.__config__.poxiaoKey,
+                                label = search.Config.label,
+                                prop = string.Format("{0}-{1}", item.VModel, search.VModel),
+                                poxiaoKey = search.Config.poxiaoKey,
                                 searchType = 1,
-                                __vModel__ = string.Format("{0}-{1}", item.__vModel__, search.__vModel__),
+                                VModel = string.Format("{0}-{1}", item.VModel, search.VModel),
                             });
                             continue;
                         }
                     }
                     break;
                 default:
-                    search = controls.Find(x => x.__vModel__.Equals(pcColumnDesignModel.treeRelation));
+                    search = controls.Find(x => x.VModel.Equals(pcColumnDesignModel.treeRelation));
                     pcColumnDesignModel.searchList.Add(new IndexSearchFieldModel
                     {
-                        label = search.__config__.label,
-                        prop = search.__vModel__,
-                        poxiaoKey = search.__config__.poxiaoKey,
+                        label = search.Config.label,
+                        prop = search.VModel,
+                        poxiaoKey = search.Config.poxiaoKey,
                         searchType = 1,
-                        __vModel__ = search.__vModel__
+                        VModel = search.VModel
                     });
                     break;
             }
@@ -1608,7 +1608,7 @@ public class CodeGenWay
         var newSearchList = pcColumnDesignModel?.searchList.Union(appColumnDesignModel?.searchList, EqualityHelper<IndexSearchFieldModel>.CreateComparer(it => it.prop)).ToList();
         newSearchList?.ForEach(item =>
         {
-            var config = item.__config__;
+            var config = item.Config;
             switch (config.poxiaoKey)
             {
                 case PoxiaoKeyConst.SELECT:
@@ -1696,7 +1696,7 @@ public class CodeGenWay
             case 5:
                 isTreeTable = true;
                 parentField = string.Format("{0}_pid", columnDesignModel.parentField);
-                treeShowField = columnDesignModel.columnList.Find(it => it.__vModel__.ToLower() != columnDesignModel.parentField.ToLower()).__vModel__;
+                treeShowField = columnDesignModel.columnList.Find(it => it.VModel.ToLower() != columnDesignModel.parentField.ToLower()).VModel;
                 break;
             default:
                 break;
@@ -1709,7 +1709,7 @@ public class CodeGenWay
         bool isMapper = tableColumnList.Any(it => it.poxiaoKey != null && (it.poxiaoKey.Equals(PoxiaoKeyConst.CHECKBOX) || it.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER) || it.poxiaoKey.Equals(PoxiaoKeyConst.ADDRESS) || it.poxiaoKey.Equals(PoxiaoKeyConst.COMSELECT) || it.poxiaoKey.Equals(PoxiaoKeyConst.UPLOADIMG) || it.poxiaoKey.Equals(PoxiaoKeyConst.UPLOADFZ) || (it.poxiaoKey.Equals(PoxiaoKeyConst.SELECT) && it.IsMultiple) || (it.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) && it.IsMultiple) || (it.poxiaoKey.Equals(PoxiaoKeyConst.TREESELECT) && it.IsMultiple) || (it.poxiaoKey.Equals(PoxiaoKeyConst.DEPSELECT) && it.IsMultiple) || (it.poxiaoKey.Equals(PoxiaoKeyConst.POSSELECT) && it.IsMultiple)));
 
         // 是否存在单据规则控件
-        bool isBillRule = controls.Any(it => it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.BILLRULE));
+        bool isBillRule = controls.Any(it => it.Config.poxiaoKey.Equals(PoxiaoKeyConst.BILLRULE));
 
         bool isSystemControl = tableColumnList.Any(it => it.IsSystemControl);
 
@@ -1835,7 +1835,7 @@ public class CodeGenWay
             HasSuperQuery = columnDesignModel.hasSuperQuery,
             IsUnique = tableColumnList.Any(it => it.IsUnique),
             GroupField = columnDesignModel?.groupField,
-            GroupShowField = columnDesignModel?.columnList?.Where(x => x.__vModel__.ToLower() != columnDesignModel?.groupField?.ToLower()).FirstOrDefault()?.__vModel__,
+            GroupShowField = columnDesignModel?.columnList?.Where(x => x.VModel.ToLower() != columnDesignModel?.groupField?.ToLower()).FirstOrDefault()?.VModel,
             IsImportData = tableColumnList.Any(it => it.IsImportField.Equals(true)),
             ParsPoxiaoKeyConstList = CodeGenControlsAttributeHelper.GetParsPoxiaoKeyConstList(controls, (bool)columnDesignModel?.type.Equals(4)),
             ParsPoxiaoKeyConstListDetails = CodeGenControlsAttributeHelper.GetParsPoxiaoKeyConstListDetails(controls),

@@ -1,25 +1,27 @@
-using Poxiao.Extras.CollectiveOAuth.Config;
-using Poxiao.Extras.CollectiveOAuth.Models;
-using Poxiao.Extras.CollectiveOAuth.Utils;
-using Poxiao.Extras.CollectiveOAuth.Cache;
 using Aop.Api;
 using Aop.Api.Request;
 using Aop.Api.Response;
 using Newtonsoft.Json;
+using Poxiao.Extras.CollectiveOAuth.Cache;
+using Poxiao.Extras.CollectiveOAuth.Config;
+using Poxiao.Extras.CollectiveOAuth.Models;
+using Poxiao.Extras.CollectiveOAuth.Utils;
 
 namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public partial class AlipayMpAuthRequest : DefaultAuthRequest
 {
-    private IAopClient aopClient;
-    public AlipayMpAuthRequest(ClientConfig config) : base(config, new AlipayMPAuthSource())
+    private IAopClient _aopClient;
+    public AlipayMpAuthRequest(ClientConfig config)
+        : base(config, new AlipayMPAuthSource())
     {
-        aopClient = new DefaultAopClient(source.accessToken(), config.clientId, config.clientSecret, "json", "1.0", "RSA2", config.alipayPublicKey, "GBK", false);
+        _aopClient = new DefaultAopClient(source.accessToken(), config.clientId, config.clientSecret, "json", "1.0", "RSA2", config.alipayPublicKey, "GBK", false);
     }
 
-    public AlipayMpAuthRequest(ClientConfig config, IAuthStateCache authStateCache) : base(config, new AlipayMPAuthSource(), authStateCache)
+    public AlipayMpAuthRequest(ClientConfig config, IAuthStateCache authStateCache)
+        : base(config, new AlipayMPAuthSource(), authStateCache)
     {
-        aopClient = new DefaultAopClient(source.accessToken(), config.clientId, config.clientSecret, "json", "1.0", "RSA2", config.alipayPublicKey, "GBK", false);
+        _aopClient = new DefaultAopClient(source.accessToken(), config.clientId, config.clientSecret, "json", "1.0", "RSA2", config.alipayPublicKey, "GBK", false);
     }
 
     /**
@@ -32,11 +34,11 @@ public partial class AlipayMpAuthRequest : DefaultAuthRequest
     {
         AlipaySystemOauthTokenRequest request = new AlipaySystemOauthTokenRequest();
         request.GrantType = "authorization_code";
-        request.Code = authCallback.auth_code;
+        request.Code = authCallback.authCode;
         AlipaySystemOauthTokenResponse response = null;
         try
         {
-            response = this.aopClient.Execute(request);
+            response = this._aopClient.Execute(request);
         }
         catch (Exception e)
         {
@@ -64,7 +66,7 @@ public partial class AlipayMpAuthRequest : DefaultAuthRequest
         AlipayUserInfoShareResponse response = null;
         try
         {
-            response = this.aopClient.Execute(request, accessToken);
+            response = this._aopClient.Execute(request, accessToken);
         }
         catch (Exception e)
         {

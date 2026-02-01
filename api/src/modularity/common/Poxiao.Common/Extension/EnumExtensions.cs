@@ -206,15 +206,15 @@ public class EnumEntity
     /// <summary>
     /// 枚举的描述.
     /// </summary>
-    public string Describe { set; get; }
+    public string Describe { get; set; }
 
     /// <summary>
     /// 枚举名称.
     /// </summary>
-    public string Name { set; get; }
+    public string Name { get; set; }
 
     /// <summary>
     /// 枚举对象的值.
     /// </summary>
-    public int Value { set; get; }
+    public int Value { get; set; }
 }

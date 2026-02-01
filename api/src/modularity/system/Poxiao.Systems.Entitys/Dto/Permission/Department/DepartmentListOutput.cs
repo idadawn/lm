@@ -1,5 +1,5 @@
-using Poxiao.Infrastructure.Security;
 using Poxiao.DependencyInjection;
+using Poxiao.Infrastructure.Security;
 
 namespace Poxiao.Systems.Entitys.Dto.Department;
 

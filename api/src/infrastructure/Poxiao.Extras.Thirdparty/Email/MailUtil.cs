@@ -1,11 +1,11 @@
-using System.Text;
-using Poxiao.Infrastructure.Configuration;
-using Poxiao.Infrastructure.Extension;
-using Poxiao.Infrastructure.Security;
 using MailKit.Net.Pop3;
 using MailKit.Net.Smtp;
 using MimeKit;
 using MimeKit.Text;
+using Poxiao.Infrastructure.Configuration;
+using Poxiao.Infrastructure.Extension;
+using Poxiao.Infrastructure.Security;
+using System.Text;
 using Yitter.IdGenerator;
 
 namespace Poxiao.Extras.Thirdparty.Email;
@@ -75,7 +75,7 @@ public class MailUtil
             var mult = new Multipart("mixed") { body };
             foreach (var attachment in mailModel.Attachment)
             {
-                var file = new FileInfo(Path.Combine(mailFilePath , attachment.fileId));
+                var file = new FileInfo(Path.Combine(mailFilePath, attachment.fileId));
                 if (file.Exists)
                 {
                     var mimePart = new MimePart();

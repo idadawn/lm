@@ -361,7 +361,7 @@
               </a-col>
             </a-row>
           </a-tab-pane>
-          <a-tab-pane :key="5" tab="流程设置" class="p-30px">
+          <!-- <a-tab-pane :key="5" tab="流程设置" class="p-30px">
             <a-row>
               <a-col :span="8">
                 <a-form-item :labelCol="{ style: { width: '120px' } }">
@@ -393,7 +393,7 @@
                 </a-form-item>
               </a-col>
             </a-row>
-          </a-tab-pane>
+          </a-tab-pane> -->
         </a-tabs>
       </a-form>
     </div>

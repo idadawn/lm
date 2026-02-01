@@ -17,7 +17,7 @@ public class ConfigurationManager
     /// <summary>
     /// 配置监听响应链堆栈.
     /// </summary>
-    private static Stack<KeyValuePair<string, FileSystemWatcher>> FileListeners = new Stack<KeyValuePair<string, FileSystemWatcher>>();
+    private static Stack<KeyValuePair<string, FileSystemWatcher>> fileListeners = new Stack<KeyValuePair<string, FileSystemWatcher>>();
 
     /// <summary>
     /// 默认路径.
@@ -47,7 +47,10 @@ public class ConfigurationManager
     /// <summary>
     /// 配置外链关键词，例如：AppSettings.Url.
     /// </summary>
-    private static string _configUrlSection { get { return _configSection + "." + _configUrlPostfix; } }
+    private static string _configUrlSection
+    {
+        get { return _configSection + "." + _configUrlPostfix; }
+    }
 
     static ConfigurationManager()
     {
@@ -67,7 +70,7 @@ public class ConfigurationManager
             FileInfo config_info = new FileInfo(_configPath);
             if (!config_info.Exists) break;
 
-            FileListeners.Push(CreateListener(config_info));
+            fileListeners.Push(CreateListener(config_info));
             config_json = LoadJsonFile(_configPath);
             if (config_json[_configUrlSection] != null)
                 _configPath = config_json[_configUrlSection].ToString();
@@ -148,16 +151,16 @@ public class ConfigurationManager
     private static void ConfigChangeListener(object sender, FileSystemEventArgs e)
     {
         long time = TimeStamp();
-        lock (FileListeners)
+        lock (fileListeners)
         {
             if (time > _timeStamp)
             {
                 _timeStamp = time;
                 if (e.FullPath != _configPath || e.FullPath == _defaultPath)
                 {
-                    while (FileListeners.Count > 0)
+                    while (fileListeners.Count > 0)
                     {
-                        var listener = FileListeners.Pop();
+                        var listener = fileListeners.Pop();
                         listener.Value.Dispose();
                         if (listener.Key == e.FullPath) break;
                     }
@@ -176,27 +179,27 @@ public class ConfigurationManager
         return (long)((DateTime.UtcNow - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalMilliseconds * 100);
     }
 
-    private static string c_configSection = null;
+    private static string cConfigSection = null;
 
     public static string ConfigSection
     {
         get { return _configSection; }
-        set { c_configSection = value; }
+        set { cConfigSection = value; }
     }
 
-    private static string c_configUrlPostfix = null;
+    private static string cConfigUrlPostfix = null;
 
     public static string ConfigUrlPostfix
     {
         get { return _configUrlPostfix; }
-        set { c_configUrlPostfix = value; }
+        set { cConfigUrlPostfix = value; }
     }
 
-    private static string c_defaultPath = null;
+    private static string cDefaultPath = null;
     public static string DefaultPath
     {
         get { return _defaultPath; }
-        set { c_defaultPath = value; }
+        set { cDefaultPath = value; }
     }
 
     public static NameValueCollection AppSettings
@@ -209,16 +212,19 @@ public class ConfigurationManager
     /// </summary>
     public static void RefreshConfiguration()
     {
-        lock (FileListeners)
+        lock (fileListeners)
         {
             // 修改配置
-            if (c_configSection != null) { _configSection = c_configSection; c_configSection = null; }
-            if (c_configUrlPostfix != null) { _configUrlPostfix = c_configUrlPostfix; c_configUrlPostfix = null; }
-            if (c_defaultPath != null) { _defaultPath = c_defaultPath; c_defaultPath = null; }
+            if (cConfigSection != null) { _configSection = cConfigSection;
+                cConfigSection = null; }
+            if (cConfigUrlPostfix != null) { _configUrlPostfix = cConfigUrlPostfix;
+                cConfigUrlPostfix = null; }
+            if (cDefaultPath != null) { _defaultPath = cDefaultPath;
+                cDefaultPath = null; }
 
             // 释放掉全部监听响应链
-            while (FileListeners.Count > 0)
-                FileListeners.Pop().Value.Dispose();
+            while (fileListeners.Count > 0)
+                fileListeners.Pop().Value.Dispose();
             ConfigFinder(_defaultPath);
         }
     }

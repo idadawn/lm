@@ -1,5 +1,5 @@
-using System;
 using Microsoft.Extensions.Configuration;
+using System;
 
 namespace Poxiao.API.Entry
 {

@@ -1,8 +1,8 @@
-using Poxiao.Infrastructure.Const;
-using SqlSugar;
 using Poxiao.Extras.DatabaseAccessor.SqlSugar.Models;
-using Yitter.IdGenerator;
+using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Security;
+using SqlSugar;
+using Yitter.IdGenerator;
 
 namespace Poxiao.VisualData.Entity;
 
@@ -99,7 +99,7 @@ public class VisualEntity : ITenantFilter
         var userId = App.User.FindFirst(ClaimConst.CLAINMUSERID)?.Value;
         this.CreateTime = DateTime.Now;
         this.Id = SnowflakeIdHelper.NextId();
-        this.BackgroundUrl = (this.BackgroundUrl == null || this.BackgroundUrl == string.Empty)? "/api/file/VisusalImg/bg/bg1.png" : this.BackgroundUrl;
+        this.BackgroundUrl = (this.BackgroundUrl == null || this.BackgroundUrl == string.Empty) ? "/api/file/VisusalImg/bg/bg1.png" : this.BackgroundUrl;
         this.IsDeleted = 0;
         this.Status = 1;
         if (!string.IsNullOrEmpty(userId))

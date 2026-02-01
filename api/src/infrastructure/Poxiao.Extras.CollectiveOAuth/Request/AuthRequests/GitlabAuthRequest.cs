@@ -1,14 +1,15 @@
 using Poxiao.Extras.CollectiveOAuth.Cache;
 using Poxiao.Extras.CollectiveOAuth.Config;
+using Poxiao.Extras.CollectiveOAuth.Enums;
 using Poxiao.Extras.CollectiveOAuth.Models;
 using Poxiao.Extras.CollectiveOAuth.Utils;
-using Poxiao.Extras.CollectiveOAuth.Enums;
 
 namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class GitlabAuthRequest : DefaultAuthRequest
 {
-    public GitlabAuthRequest(ClientConfig config) : base(config, new GitlabAuthSource())
+    public GitlabAuthRequest(ClientConfig config)
+        : base(config, new GitlabAuthSource())
     {
     }
 
@@ -35,7 +36,6 @@ public class GitlabAuthRequest : DefaultAuthRequest
         return authToken;
     }
 
-
     protected override AuthUser getUserInfo(AuthToken authToken)
     {
         var response = doGetUserInfo(authToken);
@@ -61,7 +61,6 @@ public class GitlabAuthRequest : DefaultAuthRequest
         authUser.originalUserStr = response;
         return authUser;
     }
-
 
     /**
      * 返回带{@code state}参数的授权url，授权回调时会带上这个{@code state}

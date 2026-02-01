@@ -69,7 +69,7 @@ public class TableExampleRowUpInput
     public string? description { get; set; }
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     public string? oper { get; set; }
 }

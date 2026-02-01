@@ -53,9 +53,10 @@ public class MetricAnalysisTaskService : IMetricAnalysisTaskService, ITransient
                 MetricId = input.MetricId,
                 Filters = new List<MetricFilterDto>()
                 {
-                    new MetricFilterDto() {
+                    new MetricFilterDto()
+                    {
                         WhereType = MetricWhereType.And,
-                        DataType= input.TimeDimensions.DataType,
+                        DataType = input.TimeDimensions.DataType,
                         Field = input.TimeDimensions.Field,
                         FieldName = input.TimeDimensions.FieldName,
                         Type = MetricFilterModel.ByDateRang,

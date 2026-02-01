@@ -1,21 +1,21 @@
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
 using Poxiao.Apps.Entitys;
 using Poxiao.Apps.Entitys.Dto;
 using Poxiao.Apps.Interfaces;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.WorkFlow.Entitys.Dto.FlowEngine;
 using Poxiao.WorkFlow.Entitys.Entity;
 using Poxiao.WorkFlow.Interfaces.Service;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.Apps;
@@ -193,7 +193,7 @@ public class AppDataService : IAppDataService, IDynamicApiController, ITransient
         }
         else
         {
-            string[]? objectIds = _userManager.Roles.ToArray();
+            string[] ? objectIds = _userManager.Roles.ToArray();
             if (objectIds.Length == 0)
                 return menuList;
             List<string>? ids = await _repository.AsSugarClient().Queryable<AuthorizeEntity>()

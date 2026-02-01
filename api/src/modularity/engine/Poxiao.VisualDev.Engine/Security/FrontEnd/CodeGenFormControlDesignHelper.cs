@@ -1,9 +1,9 @@
-using System.Text;
-using System.Text.RegularExpressions;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Security;
 using Poxiao.VisualDev.Engine.Model.CodeGen;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Poxiao.VisualDev.Engine.Security;
 
@@ -33,7 +33,7 @@ public class CodeGenFormControlDesignHelper
         List<FormControlDesignModel> list = new List<FormControlDesignModel>();
         foreach (var item in fieldList)
         {
-            var config = item.__config__;
+            var config = item.Config;
             var needTemplateJson = new List<string>() { PoxiaoKeyConst.POPUPTABLESELECT, PoxiaoKeyConst.POPUPSELECT, PoxiaoKeyConst.AUTOCOMPLETE };
             var specialDateAttribute = new List<string>() { PoxiaoKeyConst.DATE, PoxiaoKeyConst.TIME };
             switch (config.poxiaoKey)
@@ -78,10 +78,10 @@ public class CodeGenFormControlDesignHelper
                 case PoxiaoKeyConst.TABLE:
                     {
                         List<FormControlDesignModel> childrenTableList = new List<FormControlDesignModel>();
-                        var childrenRealisticControls = realisticControls.Find(it => it.__vModel__.Equals(item.__vModel__) && it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).__config__.children;
+                        var childrenRealisticControls = realisticControls.Find(it => it.VModel.Equals(item.VModel) && it.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).Config.children;
                         foreach (var children in config.children)
                         {
-                            var childrenConfig = children.__config__;
+                            var childrenConfig = children.Config;
                             switch (childrenConfig.poxiaoKey)
                             {
                                 case PoxiaoKeyConst.RELATIONFORMATTR:
@@ -89,17 +89,17 @@ public class CodeGenFormControlDesignHelper
                                     {
                                         var relationField = Regex.Match(children.relationField, @"^(.+)_poxiaoTable_").Groups[1].Value;
                                         relationField = relationField.Replace(string.Format("poxiao_{0}_poxiao_", childrenConfig.relationTable), "");
-                                        var relationControl = config.children.Find(it => it.__vModel__ == relationField);
+                                        var relationControl = config.children.Find(it => it.VModel == relationField);
                                         childrenTableList.Add(new FormControlDesignModel()
                                         {
-                                            vModel = children.__vModel__.IsNotEmptyOrNull() ? string.Format("v-model=\"scope.row.{0}\"", children.__vModel__) : string.Empty,
+                                            vModel = children.VModel.IsNotEmptyOrNull() ? string.Format("v-model=\"scope.row.{0}\"", children.VModel) : string.Empty,
                                             Style = children.style != null && !children.style.ToString().Equals("{}") ? $":style='{children.style.ToJsonString()}' " : string.Empty,
                                             poxiaoKey = childrenConfig.poxiaoKey,
-                                            OriginalName = childrenConfig.isStorage == 2 ? children.__vModel__ : relationField,
-                                            Name = childrenConfig.isStorage == 2 ? children.__vModel__ : relationField,
+                                            OriginalName = childrenConfig.isStorage == 2 ? children.VModel : relationField,
+                                            Name = childrenConfig.isStorage == 2 ? children.VModel : relationField,
                                             RelationField = relationField,
                                             ShowField = children.showField,
-                                            NoShow = relationControl.__config__.noShow ? "v-if='false' " : string.Empty,
+                                            NoShow = relationControl.Config.noShow ? "v-if='false' " : string.Empty,
                                             Tag = childrenConfig.tag,
                                             Label = string.IsNullOrEmpty(childrenConfig.label) ? null : childrenConfig.label,
                                             TipLabel = string.IsNullOrEmpty(childrenConfig.tipLabel) ? null : childrenConfig.tipLabel,
@@ -114,12 +114,12 @@ public class CodeGenFormControlDesignHelper
                                     break;
                                 default:
                                     {
-                                        var realisticControl = childrenRealisticControls.Find(it => it.__vModel__.Equals(children.__vModel__) && it.__config__.poxiaoKey.Equals(childrenConfig.poxiaoKey));
+                                        var realisticControl = childrenRealisticControls.Find(it => it.VModel.Equals(children.VModel) && it.Config.poxiaoKey.Equals(childrenConfig.poxiaoKey));
                                         childrenTableList.Add(new FormControlDesignModel()
                                         {
                                             poxiaoKey = childrenConfig.poxiaoKey,
-                                            Name = children.__vModel__,
-                                            OriginalName = children.__vModel__,
+                                            Name = children.VModel,
+                                            OriginalName = children.VModel,
                                             Style = children.style != null && !children.style.ToString().Equals("{}") ? $":style='{children.style.ToJsonString()}' " : string.Empty,
                                             Span = childrenConfig.span,
                                             Border = children.border ? "border " : string.Empty,
@@ -127,7 +127,7 @@ public class CodeGenFormControlDesignHelper
                                             Clearable = children.clearable ? "clearable " : string.Empty,
                                             Readonly = children.@readonly ? "readonly " : string.Empty,
                                             Disabled = children.disabled ? "disabled " : string.Empty,
-                                            IsDisabled = item.disabled ? "disabled " : string.Format(":disabled=\"judgeWrite('{0}') || judgeWrite('{0}-{1}')\" ", item.__vModel__, children.__vModel__),
+                                            IsDisabled = item.disabled ? "disabled " : string.Format(":disabled=\"judgeWrite('{0}') || judgeWrite('{0}-{1}')\" ", item.VModel, children.VModel),
                                             ShowWordLimit = children.showWordlimit ? "show-word-limit " : string.Empty,
                                             Type = children.type != null ? $"type='{children.type}' " : string.Empty,
                                             Format = children.format != null ? $"format='{children.format}' " : string.Empty,
@@ -143,9 +143,9 @@ public class CodeGenFormControlDesignHelper
                                             Label = string.IsNullOrEmpty(childrenConfig.label) ? null : childrenConfig.label,
                                             TipLabel = string.IsNullOrEmpty(childrenConfig.tipLabel) ? null : childrenConfig.tipLabel,
                                             Props = children.props?.props,
-                                            MainProps = children.props != null ? $":props='{string.Format("{0}_{1}", item.__vModel__, children.__vModel__)}Props' " : string.Empty,
+                                            MainProps = children.props != null ? $":props='{string.Format("{0}_{1}", item.VModel, children.VModel)}Props' " : string.Empty,
                                             Tag = childrenConfig.tag,
-                                            Options = children.options != null ? (realisticControl.IsLinkage ? $":options='{string.Format("scope.row.{0}", children.__vModel__)}Options' " : $":options='{string.Format("{0}_{1}", item.__vModel__, children.__vModel__)}Options' ") : string.Empty,
+                                            Options = children.options != null ? (realisticControl.IsLinkage ? $":options='{string.Format("scope.row.{0}", children.VModel)}Options' " : $":options='{string.Format("{0}_{1}", item.VModel, children.VModel)}Options' ") : string.Empty,
                                             ShowAllLevels = children.showalllevels ? "show-all-levels " : string.Empty,
                                             Separator = !string.IsNullOrEmpty(children.separator) ? $"separator='{children.separator}' " : string.Empty,
                                             RangeSeparator = !string.IsNullOrEmpty(children.rangeseparator) ? $"range-separator='{children.rangeseparator}' " : string.Empty,
@@ -160,8 +160,8 @@ public class CodeGenFormControlDesignHelper
                                             ColumnWidth = childrenConfig.columnWidth != null ? $"width='{childrenConfig.columnWidth}' " : null,
                                             ModelId = children.modelId != null ? children.modelId : string.Empty,
                                             RelationField = children.relationField != null ? $"relationField='{children.relationField}' " : string.Empty,
-                                            ColumnOptions = children.columnOptions != null ? $":columnOptions='{string.Format("{0}_{1}", item.__vModel__, children.__vModel__)}Options' " : string.Empty,
-                                            TemplateJson = needTemplateJson.Contains(childrenConfig.poxiaoKey) ? string.Format(":templateJson='{0}_{1}TemplateJson' ", item.__vModel__, children.__vModel__) : string.Empty,
+                                            ColumnOptions = children.columnOptions != null ? $":columnOptions='{string.Format("{0}_{1}", item.VModel, children.VModel)}Options' " : string.Empty,
+                                            TemplateJson = needTemplateJson.Contains(childrenConfig.poxiaoKey) ? string.Format(":templateJson='{0}_{1}TemplateJson' ", item.VModel, children.VModel) : string.Empty,
                                             HasPage = children.hasPage ? "hasPage " : string.Empty,
                                             PageSize = children.pageSize != null ? $":pageSize='{children.pageSize}' " : string.Empty,
                                             PropsValue = children.propsValue != null ? $"propsValue='{children.propsValue}' " : string.Empty,
@@ -181,23 +181,23 @@ public class CodeGenFormControlDesignHelper
                                             ButtonText = !string.IsNullOrEmpty(children.buttonText) ? $"buttonText='{children.buttonText}' " : string.Empty,
                                             Level = childrenConfig.poxiaoKey == PoxiaoKeyConst.ADDRESS ? $":level='{children.level}' " : string.Empty,
                                             NoShow = childrenConfig.noShow ? "v-if='false' " : string.Empty,
-                                            Prepend = children.__slot__ != null && !string.IsNullOrEmpty(children.__slot__.prepend) ? children.__slot__.prepend : null,
-                                            Append = children.__slot__ != null && !string.IsNullOrEmpty(children.__slot__.append) ? children.__slot__.append : null,
+                                            Prepend = children.Slot != null && !string.IsNullOrEmpty(children.Slot.prepend) ? children.Slot.prepend : null,
+                                            Append = children.Slot != null && !string.IsNullOrEmpty(children.Slot.append) ? children.Slot.append : null,
                                             ShowLevel = !string.IsNullOrEmpty(children.showLevel) ? string.Empty : string.Empty,
                                             LabelWidth = childrenConfig?.labelWidth ?? labelWidth,
                                             IsStorage = config.isStorage,
                                             PopupType = !string.IsNullOrEmpty(children.popupType) ? $"popupType='{children.popupType}' " : string.Empty,
                                             PopupTitle = !string.IsNullOrEmpty(children.popupTitle) ? $"popupTitle='{children.popupTitle}' " : string.Empty,
                                             PopupWidth = !string.IsNullOrEmpty(children.popupWidth) ? $"popupWidth='{children.popupWidth}' " : string.Empty,
-                                            Field = childrenConfig.poxiaoKey.Equals(PoxiaoKeyConst.RELATIONFORM) || childrenConfig.poxiaoKey.Equals(PoxiaoKeyConst.POPUPSELECT) ? $":field=\"'{children.__vModel__}'+scope.$index\" " : string.Empty,
+                                            Field = childrenConfig.poxiaoKey.Equals(PoxiaoKeyConst.RELATIONFORM) || childrenConfig.poxiaoKey.Equals(PoxiaoKeyConst.POPUPSELECT) ? $":field=\"'{children.VModel}'+scope.$index\" " : string.Empty,
                                             required = childrenConfig.required,
                                             SelectType = children.selectType != null ? children.selectType : string.Empty,
-                                            AbleDepIds = children.selectType != null && children.selectType == "custom" && (childrenConfig.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) || childrenConfig.poxiaoKey.Equals(PoxiaoKeyConst.DEPSELECT)) ? string.Format(":ableDepIds='{0}_{1}_AbleDepIds' ", item.__vModel__, children.__vModel__) : string.Empty,
-                                            AblePosIds = children.selectType != null && children.selectType == "custom" && (childrenConfig.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) || childrenConfig.poxiaoKey.Equals(PoxiaoKeyConst.POSSELECT)) ? string.Format(":ablePosIds='{0}_{1}_AblePosIds' ", item.__vModel__, children.__vModel__) : string.Empty,
-                                            AbleUserIds = children.selectType != null && children.selectType == "custom" && childrenConfig.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) ? string.Format(":ableUserIds='{0}_{1}_AbleUserIds' ", item.__vModel__, children.__vModel__) : string.Empty,
-                                            AbleRoleIds = children.selectType != null && children.selectType == "custom" && childrenConfig.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) ? string.Format(":ableRoleIds='{0}_{1}_AbleRoleIds' ", item.__vModel__, children.__vModel__) : string.Empty,
-                                            AbleGroupIds = children.selectType != null && children.selectType == "custom" && childrenConfig.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) ? string.Format(":ableGroupIds='{0}_{1}_AbleGroupIds' ", item.__vModel__, children.__vModel__) : string.Empty,
-                                            AbleIds = children.selectType != null && children.selectType == "custom" && childrenConfig.poxiaoKey.Equals(PoxiaoKeyConst.USERSSELECT) ? string.Format(":ableIds='{0}_{1}_AbleIds' ", item.__vModel__, children.__vModel__) : string.Empty,
+                                            AbleDepIds = children.selectType != null && children.selectType == "custom" && (childrenConfig.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) || childrenConfig.poxiaoKey.Equals(PoxiaoKeyConst.DEPSELECT)) ? string.Format(":ableDepIds='{0}_{1}_AbleDepIds' ", item.VModel, children.VModel) : string.Empty,
+                                            AblePosIds = children.selectType != null && children.selectType == "custom" && (childrenConfig.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) || childrenConfig.poxiaoKey.Equals(PoxiaoKeyConst.POSSELECT)) ? string.Format(":ablePosIds='{0}_{1}_AblePosIds' ", item.VModel, children.VModel) : string.Empty,
+                                            AbleUserIds = children.selectType != null && children.selectType == "custom" && childrenConfig.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) ? string.Format(":ableUserIds='{0}_{1}_AbleUserIds' ", item.VModel, children.VModel) : string.Empty,
+                                            AbleRoleIds = children.selectType != null && children.selectType == "custom" && childrenConfig.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) ? string.Format(":ableRoleIds='{0}_{1}_AbleRoleIds' ", item.VModel, children.VModel) : string.Empty,
+                                            AbleGroupIds = children.selectType != null && children.selectType == "custom" && childrenConfig.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) ? string.Format(":ableGroupIds='{0}_{1}_AbleGroupIds' ", item.VModel, children.VModel) : string.Empty,
+                                            AbleIds = children.selectType != null && children.selectType == "custom" && childrenConfig.poxiaoKey.Equals(PoxiaoKeyConst.USERSSELECT) ? string.Format(":ableIds='{0}_{1}_AbleIds' ", item.VModel, children.VModel) : string.Empty,
                                             UserRelationAttr = GetUserRelationAttr(children, realisticControls, logic),
                                             IsLinked = realisticControl.IsLinked,
                                             IsLinkage = realisticControl.IsLinkage,
@@ -226,7 +226,7 @@ public class CodeGenFormControlDesignHelper
                         list.Add(new FormControlDesignModel()
                         {
                             poxiaoKey = config.poxiaoKey,
-                            Name = item.__vModel__,
+                            Name = item.VModel,
                             OriginalName = config.tableName,
                             TipLabel = string.IsNullOrEmpty(config.tipLabel) ? null : config.tipLabel,
                             Span = config.span,
@@ -249,7 +249,7 @@ public class CodeGenFormControlDesignHelper
                         list.Add(new FormControlDesignModel()
                         {
                             poxiaoKey = config.poxiaoKey,
-                            OriginalName = item.__vModel__,
+                            OriginalName = item.VModel,
                             Shadow = item.shadow,
                             Children = FormControlDesign(config.children, realisticControls, gutter, labelWidth, columnDesignModel, dataType, logic),
                             Span = config.span,
@@ -265,10 +265,10 @@ public class CodeGenFormControlDesignHelper
                         list.Add(new FormControlDesignModel()
                         {
                             poxiaoKey = config.poxiaoKey,
-                            OriginalName = item.__vModel__,
+                            OriginalName = item.VModel,
                             Span = config.span,
                             Contentposition = item.contentposition,
-                            Default = item.__slot__.@default,
+                            Default = item.Slot.@default,
                             LabelWidth = config?.labelWidth ?? labelWidth,
                         });
                     }
@@ -280,7 +280,7 @@ public class CodeGenFormControlDesignHelper
                         List<FormControlDesignModel> childrenCollapseList = new List<FormControlDesignModel>();
                         foreach (var children in config.children)
                         {
-                            var child = FormControlDesign(children.__config__.children, realisticControls, gutter, labelWidth, columnDesignModel, dataType, logic);
+                            var child = FormControlDesign(children.Config.children, realisticControls, gutter, labelWidth, columnDesignModel, dataType, logic);
                             childrenCollapseList.Add(new FormControlDesignModel()
                             {
                                 Title = children.title,
@@ -311,7 +311,7 @@ public class CodeGenFormControlDesignHelper
                         List<FormControlDesignModel> childrenCollapseList = new List<FormControlDesignModel>();
                         foreach (var children in config.children)
                         {
-                            var child = FormControlDesign(children.__config__.children, realisticControls, gutter, labelWidth, columnDesignModel, dataType, logic);
+                            var child = FormControlDesign(children.Config.children, realisticControls, gutter, labelWidth, columnDesignModel, dataType, logic);
                             childrenCollapseList.Add(new FormControlDesignModel()
                             {
                                 Title = children.title,
@@ -427,19 +427,19 @@ public class CodeGenFormControlDesignHelper
                 case PoxiaoKeyConst.POPUPATTR:
                     {
                         var relationField = Regex.Match(item.relationField, @"^(.+)_poxiaoTable_").Groups[1].Value;
-                        var relationControl = realisticControls.Find(it => it.__vModel__ == relationField);
-                        var columnDesign = columnDesignModel?.Find(it => it.__vModel__ == item.__vModel__);
+                        var relationControl = realisticControls.Find(it => it.VModel == relationField);
+                        var columnDesign = columnDesignModel?.Find(it => it.VModel == item.VModel);
                         list.Add(new FormControlDesignModel()
                         {
-                            vModel = item.__vModel__.IsNotEmptyOrNull() ? string.Format("v-model=\"dataForm.{0}\"", item.__vModel__) : string.Empty,
-                            IsInlineEditor = columnDesignModel != null ? columnDesignModel.Any(it => it.__vModel__ == item.__vModel__) : false,
+                            vModel = item.VModel.IsNotEmptyOrNull() ? string.Format("v-model=\"dataForm.{0}\"", item.VModel) : string.Empty,
+                            IsInlineEditor = columnDesignModel != null ? columnDesignModel.Any(it => it.VModel == item.VModel) : false,
                             Style = item.style != null && !item.style.ToString().Equals("{}") ? $":style='{item.style.ToJsonString()}' " : string.Empty,
                             poxiaoKey = config.poxiaoKey,
-                            OriginalName = config.isStorage == 2 ? item.__vModel__ : relationField,
-                            Name = config.isStorage == 2 ? item.__vModel__ : relationField,
+                            OriginalName = config.isStorage == 2 ? item.VModel : relationField,
+                            Name = config.isStorage == 2 ? item.VModel : relationField,
                             RelationField = relationField,
                             ShowField = item.showField,
-                            NoShow = config.isStorage == 2 ? config.noShow ? "v-if='false' " : string.Empty : relationControl.__config__.noShow ? "v-if='false' " : string.Empty,
+                            NoShow = config.isStorage == 2 ? config.noShow ? "v-if='false' " : string.Empty : relationControl.Config.noShow ? "v-if='false' " : string.Empty,
                             Tag = config.tag,
                             Label = string.IsNullOrEmpty(config.label) ? null : config.label,
                             Span = config.span,
@@ -454,19 +454,19 @@ public class CodeGenFormControlDesignHelper
                     break;
                 default:
                     {
-                        var realisticControl = realisticControls.Find(it => it.__vModel__.Equals(item.__vModel__) && it.__config__.poxiaoKey.Equals(config.poxiaoKey));
-                        var columnDesign = columnDesignModel?.Find(it => it.__vModel__ == item.__vModel__);
+                        var realisticControl = realisticControls.Find(it => it.VModel.Equals(item.VModel) && it.Config.poxiaoKey.Equals(config.poxiaoKey));
+                        var columnDesign = columnDesignModel?.Find(it => it.VModel == item.VModel);
                         string vModel = string.Empty;
-                        var Model = item.__vModel__;
-                        vModel = dataType != 4 ? $"v-model='dataForm.{Model}' " : $"v-model='scope.row.{Model}' ";
+                        var model = item.VModel;
+                        vModel = dataType != 4 ? $"v-model='dataForm.{model}' " : $"v-model='scope.row.{model}' ";
                         list.Add(new FormControlDesignModel()
                         {
                             IsSort = columnDesign != null ? columnDesign.sortable : false,
-                            IsInlineEditor = columnDesignModel != null ? columnDesignModel.Any(it => it.__vModel__ == item.__vModel__) : false,
+                            IsInlineEditor = columnDesignModel != null ? columnDesignModel.Any(it => it.VModel == item.VModel) : false,
                             IndexAlign = columnDesign?.align,
                             IndexWidth = columnDesign?.width,
-                            Name = item.__vModel__,
-                            OriginalName = item.__vModel__,
+                            Name = item.VModel,
+                            OriginalName = item.VModel,
                             poxiaoKey = config.poxiaoKey,
                             Border = item.border ? "border " : string.Empty,
                             Style = item.style != null && !item.style.ToString().Equals("{}") ? $":style='{item.style.ToJsonString()}' " : string.Empty,
@@ -477,7 +477,7 @@ public class CodeGenFormControlDesignHelper
                             Required = config.required ? "required " : string.Empty,
                             Placeholder = !string.IsNullOrEmpty(item.placeholder) ? $"placeholder='{item.placeholder}' " : string.Empty,
                             Disabled = item.disabled ? "disabled " : string.Empty,
-                            IsDisabled = item.disabled ? "disabled " : $":disabled='judgeWrite(\"{item.__vModel__}\")' ",
+                            IsDisabled = item.disabled ? "disabled " : $":disabled='judgeWrite(\"{item.VModel}\")' ",
                             ShowWordLimit = item.showWordlimit ? "show-word-limit " : string.Empty,
                             Format = !string.IsNullOrEmpty(item.format) ? $"format='{item.format}' " : string.Empty,
                             ValueFormat = !string.IsNullOrEmpty(item.valueformat) ? $"value-format='{item.valueformat}' " : string.Empty,
@@ -485,7 +485,7 @@ public class CodeGenFormControlDesignHelper
                             Multiple = (config.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER) ? item.props.props.multiple : item.multiple) ? $"multiple " : string.Empty,
                             IsRange = item.isrange ? "is-range " : string.Empty,
                             Props = item.props?.props,
-                            MainProps = item.props?.props != null ? $":props='{Model}Props' " : string.Empty,
+                            MainProps = item.props?.props != null ? $":props='{model}Props' " : string.Empty,
                             OptionType = item.optionType != null ? string.Format("optionType=\"{0}\" ", item.optionType) : string.Empty,
                             Size = !string.IsNullOrEmpty(item.optionType) ? (item.optionType == "default" ? string.Empty : $"size='{item.size}' ") : string.Empty,
                             PrefixIcon = !string.IsNullOrEmpty(item.prefixicon) ? $"prefix-icon='{item.prefixicon}' " : string.Empty,
@@ -503,7 +503,7 @@ public class CodeGenFormControlDesignHelper
                             StartPlaceholder = !string.IsNullOrEmpty(item.startplaceholder) ? $"start-placeholder='{item.startplaceholder}' " : string.Empty,
                             EndPlaceholder = !string.IsNullOrEmpty(item.endplaceholder) ? $"end-placeholder='{item.endplaceholder}' " : string.Empty,
                             PickerOptions = item.pickeroptions != null && item.pickeroptions.ToJsonString() != "null" ? $":picker-options='{item.pickeroptions.ToJsonString()}' " : string.Empty,
-                            Options = item.options != null ? $":options='{item.__vModel__}Options' " : string.Empty,
+                            Options = item.options != null ? $":options='{item.VModel}Options' " : string.Empty,
                             Max = item.max != null && item.max != 0 ? $":max='{item.max}' " : string.Empty,
                             AllowHalf = item.allowhalf ? "allow-half " : string.Empty,
                             ShowTexts = item.showtext ? $"show-text " : string.Empty,
@@ -533,14 +533,14 @@ public class CodeGenFormControlDesignHelper
                             Label = string.IsNullOrEmpty(config.label) ? null : config.label,
                             TipLabel = string.IsNullOrEmpty(config.tipLabel) ? null : config.tipLabel,
                             vModel = vModel,
-                            Prepend = item.__slot__ != null && !string.IsNullOrEmpty(item.__slot__.prepend) ? item.__slot__.prepend : null,
-                            Append = item.__slot__ != null && !string.IsNullOrEmpty(item.__slot__.append) ? item.__slot__.append : null,
+                            Prepend = item.Slot != null && !string.IsNullOrEmpty(item.Slot.prepend) ? item.Slot.prepend : null,
+                            Append = item.Slot != null && !string.IsNullOrEmpty(item.Slot.append) ? item.Slot.append : null,
                             Tag = config.tag,
                             Count = item.max.ParseToInt(),
                             ModelId = item.modelId != null ? item.modelId : string.Empty,
                             RelationField = item.relationField != null ? $"relationField='{item.relationField}' " : string.Empty,
-                            ColumnOptions = item.columnOptions != null ? $":columnOptions='{item.__vModel__}Options' " : string.Empty,
-                            TemplateJson = needTemplateJson.Contains(config.poxiaoKey) ? string.Format(":templateJson='{0}TemplateJson' ", item.__vModel__) : string.Empty,
+                            ColumnOptions = item.columnOptions != null ? $":columnOptions='{item.VModel}Options' " : string.Empty,
+                            TemplateJson = needTemplateJson.Contains(config.poxiaoKey) ? string.Format(":templateJson='{0}TemplateJson' ", item.VModel) : string.Empty,
                             HasPage = item.hasPage ? "hasPage " : string.Empty,
                             PageSize = item.pageSize != null ? $":pageSize='{item.pageSize}' " : string.Empty,
                             PropsValue = item.propsValue != null ? $"propsValue='{item.propsValue}' " : string.Empty,
@@ -552,14 +552,14 @@ public class CodeGenFormControlDesignHelper
                             PopupType = !string.IsNullOrEmpty(item.popupType) ? $"popupType='{item.popupType}' " : string.Empty,
                             PopupTitle = !string.IsNullOrEmpty(item.popupTitle) ? $"popupTitle='{item.popupTitle}' " : string.Empty,
                             PopupWidth = !string.IsNullOrEmpty(item.popupWidth) ? $"popupWidth='{item.popupWidth}' " : string.Empty,
-                            Field = config.poxiaoKey.Equals(PoxiaoKeyConst.RELATIONFORM) || config.poxiaoKey.Equals(PoxiaoKeyConst.POPUPSELECT) ? $"field='{item.__vModel__}' " : string.Empty,
+                            Field = config.poxiaoKey.Equals(PoxiaoKeyConst.RELATIONFORM) || config.poxiaoKey.Equals(PoxiaoKeyConst.POPUPSELECT) ? $"field='{item.VModel}' " : string.Empty,
                             SelectType = item.selectType != null ? item.selectType : string.Empty,
-                            AbleDepIds = item.selectType != null && item.selectType == "custom" && (config.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) || config.poxiaoKey.Equals(PoxiaoKeyConst.DEPSELECT)) ? string.Format(":ableDepIds='{0}_AbleDepIds' ", item.__vModel__) : string.Empty,
-                            AblePosIds = item.selectType != null && item.selectType == "custom" && (config.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) || config.poxiaoKey.Equals(PoxiaoKeyConst.POSSELECT)) ? string.Format(":ablePosIds='{0}_AblePosIds' ", item.__vModel__) : string.Empty,
-                            AbleUserIds = item.selectType != null && item.selectType == "custom" && config.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) ? string.Format(":ableUserIds='{0}_AbleUserIds' ", item.__vModel__) : string.Empty,
-                            AbleRoleIds = item.selectType != null && item.selectType == "custom" && config.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) ? string.Format(":ableRoleIds='{0}_AbleRoleIds' ", item.__vModel__) : string.Empty,
-                            AbleGroupIds = item.selectType != null && item.selectType == "custom" && config.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) ? string.Format(":ableGroupIds='{0}_AbleGroupIds' ", item.__vModel__) : string.Empty,
-                            AbleIds = item.selectType != null && item.selectType == "custom" && config.poxiaoKey.Equals(PoxiaoKeyConst.USERSSELECT) ? string.Format(":ableIds='{0}_AbleIds' ", item.__vModel__) : string.Empty,
+                            AbleDepIds = item.selectType != null && item.selectType == "custom" && (config.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) || config.poxiaoKey.Equals(PoxiaoKeyConst.DEPSELECT)) ? string.Format(":ableDepIds='{0}_AbleDepIds' ", item.VModel) : string.Empty,
+                            AblePosIds = item.selectType != null && item.selectType == "custom" && (config.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) || config.poxiaoKey.Equals(PoxiaoKeyConst.POSSELECT)) ? string.Format(":ablePosIds='{0}_AblePosIds' ", item.VModel) : string.Empty,
+                            AbleUserIds = item.selectType != null && item.selectType == "custom" && config.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) ? string.Format(":ableUserIds='{0}_AbleUserIds' ", item.VModel) : string.Empty,
+                            AbleRoleIds = item.selectType != null && item.selectType == "custom" && config.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) ? string.Format(":ableRoleIds='{0}_AbleRoleIds' ", item.VModel) : string.Empty,
+                            AbleGroupIds = item.selectType != null && item.selectType == "custom" && config.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) ? string.Format(":ableGroupIds='{0}_AbleGroupIds' ", item.VModel) : string.Empty,
+                            AbleIds = item.selectType != null && item.selectType == "custom" && config.poxiaoKey.Equals(PoxiaoKeyConst.USERSSELECT) ? string.Format(":ableIds='{0}_AbleIds' ", item.VModel) : string.Empty,
                             UserRelationAttr = GetUserRelationAttr(item, realisticControls, logic),
                             IsLinked = realisticControl.IsLinked,
                             IsLinkage = realisticControl.IsLinkage,
@@ -598,7 +598,7 @@ public class CodeGenFormControlDesignHelper
     private static string SpecialTimeAttributeAssembly(FieldsModel field, List<FieldsModel> fieldList, int type, bool isMainTable)
     {
         var time = string.Empty;
-        var config = field.__config__;
+        var config = field.Config;
         switch (config.poxiaoKey)
         {
             case PoxiaoKeyConst.DATE:
@@ -660,7 +660,7 @@ public class CodeGenFormControlDesignHelper
     private static string SpecialAttributeAssociatedFields(string relationField, List<FieldsModel> fieldList)
     {
         var completeResults = string.Empty;
-        switch (fieldList.Any(it => it.__vModel__.Equals(relationField)))
+        switch (fieldList.Any(it => it.VModel.Equals(relationField)))
         {
             case true:
                 completeResults = string.Format("dataForm.{0}", relationField);
@@ -670,7 +670,7 @@ public class CodeGenFormControlDesignHelper
                 {
                     var subTable = relationField.Matches(@"tableField\d{3}-").FirstOrDefault().Replace("-", "");
                     relationField = relationField.ReplaceRegex("tableField\\d{3}-", "");
-                    switch (fieldList.Any(it => it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE) && it.__config__.children.Any(x => x.__vModel__.Equals(relationField))))
+                    switch (fieldList.Any(it => it.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE) && it.Config.children.Any(x => x.VModel.Equals(relationField))))
                     {
                         case true:
                             completeResults = string.Format("dataForm.{0}[scope.$index].{1}", subTable, relationField);
@@ -703,15 +703,15 @@ public class CodeGenFormControlDesignHelper
         // 获取表单内存在默认值控件
         foreach (var item in fieldList)
         {
-            var config = item.__config__;
+            var config = item.Config;
             var search = new IndexSearchFieldModel();
             switch (isMain && !config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE))
             {
                 case false:
-                    search = searchField?.Find(it => it.__vModel__.Equals(string.Format("{0}-{1}", subTableName, item.__vModel__)));
+                    search = searchField?.Find(it => it.VModel.Equals(string.Format("{0}-{1}", subTableName, item.VModel)));
                     break;
                 default:
-                    search = searchField?.Find(it => it.__vModel__.Equals(string.Format("{0}", item.__vModel__)));
+                    search = searchField?.Find(it => it.VModel.Equals(string.Format("{0}", item.VModel)));
                     break;
             }
 
@@ -727,19 +727,19 @@ public class CodeGenFormControlDesignHelper
                     switch (config.poxiaoKey)
                     {
                         case PoxiaoKeyConst.TABLE:
-                            model.SubTabelDefault.Add(DefaultFormControlList(item.__config__.children, searchField, item.__vModel__, false));
+                            model.SubTabelDefault.Add(DefaultFormControlList(item.Config.children, searchField, item.VModel, false));
                             break;
                         case PoxiaoKeyConst.TIME:
                             model.TimeField.Add(new DefaultTimeControl
                             {
-                                Field = item.__vModel__,
+                                Field = item.VModel,
                                 Format = item.format
                             });
                             break;
                         case PoxiaoKeyConst.DATE:
                             model.DateField.Add(new DefaultTimeControl
                             {
-                                Field = item.__vModel__,
+                                Field = item.VModel,
                                 Format = item.format
                             });
                             break;
@@ -748,7 +748,7 @@ public class CodeGenFormControlDesignHelper
                             {
                                 IsMultiple = item.multiple,
                                 IsSearchMultiple = (bool)search?.searchMultiple,
-                                Field = item.__vModel__
+                                Field = item.VModel
                             });
                             break;
                         case PoxiaoKeyConst.DEPSELECT:
@@ -757,7 +757,7 @@ public class CodeGenFormControlDesignHelper
                                 IsMultiple = item.multiple,
                                 selectType = item.selectType,
                                 IsSearchMultiple = (bool)search?.searchMultiple,
-                                Field = item.__vModel__,
+                                Field = item.VModel,
                                 ableDepIds = item.ableDepIds.ToJsonString(),
                             });
                             break;
@@ -767,7 +767,7 @@ public class CodeGenFormControlDesignHelper
                                 IsMultiple = item.multiple,
                                 selectType = item.selectType,
                                 IsSearchMultiple = (bool)search?.searchMultiple,
-                                Field = item.__vModel__,
+                                Field = item.VModel,
                                 ableDepIds = item.ableDepIds.ToJsonString(),
                                 ableGroupIds = item.ableGroupIds.ToJsonString(),
                                 ablePosIds = item.ablePosIds.ToJsonString(),
@@ -814,7 +814,7 @@ public class CodeGenFormControlDesignHelper
         var numberOfControls = 0;
         foreach (var item in fieldList)
         {
-            var config = item.__config__;
+            var config = item.Config;
             switch (config.poxiaoKey)
             {
                 case PoxiaoKeyConst.TABLE:
@@ -839,15 +839,15 @@ public class CodeGenFormControlDesignHelper
     /// <returns></returns>
     public static CodeGenSpecifyDateFormatSetModel CodeGenSpecifyDateFormatSetModel(FieldsModel fieldList)
     {
-        var config = fieldList.__config__;
+        var config = fieldList.Config;
         var result = new CodeGenSpecifyDateFormatSetModel
         {
-            Field = fieldList.__vModel__,
+            Field = fieldList.VModel,
             Children = new List<CodeGenSpecifyDateFormatSetModel>(),
         };
         foreach (var item in config.children)
         {
-            var childrenConfig = item.__config__;
+            var childrenConfig = item.Config;
             switch (childrenConfig.poxiaoKey)
             {
                 case PoxiaoKeyConst.DATE:
@@ -859,7 +859,7 @@ public class CodeGenFormControlDesignHelper
                         case "yyyy-MM-dd HH:mm":
                             result.Children.Add(new CodeGenSpecifyDateFormatSetModel
                             {
-                                Field = item.__vModel__,
+                                Field = item.VModel,
                                 Format = item.format,
                             });
                             break;
@@ -876,7 +876,7 @@ public class CodeGenFormControlDesignHelper
         var numberOfControls = 0;
         foreach (var item in fieldList)
         {
-            var config = item.__config__;
+            var config = item.Config;
             switch (config.poxiaoKey)
             {
                 case PoxiaoKeyConst.DATE:
@@ -906,7 +906,7 @@ public class CodeGenFormControlDesignHelper
         List<CodeGenConvIndexListControlOptionDesign> list = new List<CodeGenConvIndexListControlOptionDesign>();
         foreach (var item in fieldList)
         {
-            var config = item.__config__;
+            var config = item.Config;
             switch (config.poxiaoKey)
             {
                 case PoxiaoKeyConst.CARD:
@@ -921,11 +921,11 @@ public class CodeGenFormControlDesignHelper
                     break;
                 case PoxiaoKeyConst.TABLE:
                     {
-                        var childrenRealisticControls = realisticControls.Find(it => it.__vModel__.Equals(item.__vModel__) && it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).__config__.children;
+                        var childrenRealisticControls = realisticControls.Find(it => it.VModel.Equals(item.VModel) && it.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).Config.children;
                         foreach (var children in config.children)
                         {
-                            var columnDesign = columnDesignModel.searchList?.Find(it => it.__vModel__.Equals(string.Format("{0}-{1}", item.__vModel__, children.__vModel__)));
-                            var childrenConfig = children.__config__;
+                            var columnDesign = columnDesignModel.searchList?.Find(it => it.VModel.Equals(string.Format("{0}-{1}", item.VModel, children.VModel)));
+                            var childrenConfig = children.Config;
                             switch (childrenConfig.poxiaoKey)
                             {
                                 case PoxiaoKeyConst.DEPSELECT:
@@ -937,7 +937,7 @@ public class CodeGenFormControlDesignHelper
                                             IsStatic = true,
                                             IsIndex = false,
                                             IsProps = false,
-                                            Content = string.Format("{0}_{1}_AbleDepIds:{2},", item.__vModel__, children.__vModel__, children.ableDepIds.ToJsonString()),
+                                            Content = string.Format("{0}_{1}_AbleDepIds:{2},", item.VModel, children.VModel, children.ableDepIds.ToJsonString()),
                                         });
                                     }
                                     break;
@@ -950,7 +950,7 @@ public class CodeGenFormControlDesignHelper
                                             IsStatic = true,
                                             IsIndex = false,
                                             IsProps = false,
-                                            Content = string.Format("{0}_{1}_AblePosIds:{2},", item.__vModel__, children.__vModel__, children.ablePosIds.ToJsonString()),
+                                            Content = string.Format("{0}_{1}_AblePosIds:{2},", item.VModel, children.VModel, children.ablePosIds.ToJsonString()),
                                         });
                                     }
                                     break;
@@ -963,7 +963,7 @@ public class CodeGenFormControlDesignHelper
                                             IsStatic = true,
                                             IsIndex = false,
                                             IsProps = false,
-                                            Content = string.Format("{0}_{1}_AbleDepIds:{2},", item.__vModel__, children.__vModel__, children.ableDepIds.ToJsonString()),
+                                            Content = string.Format("{0}_{1}_AbleDepIds:{2},", item.VModel, children.VModel, children.ableDepIds.ToJsonString()),
                                         });
                                     }
 
@@ -975,7 +975,7 @@ public class CodeGenFormControlDesignHelper
                                             IsStatic = true,
                                             IsIndex = false,
                                             IsProps = false,
-                                            Content = string.Format("{0}_{1}_AblePosIds:{2},", item.__vModel__, children.__vModel__, children.ablePosIds.ToJsonString()),
+                                            Content = string.Format("{0}_{1}_AblePosIds:{2},", item.VModel, children.VModel, children.ablePosIds.ToJsonString()),
                                         });
                                     }
 
@@ -987,7 +987,7 @@ public class CodeGenFormControlDesignHelper
                                             IsStatic = true,
                                             IsIndex = false,
                                             IsProps = false,
-                                            Content = string.Format("{0}_{1}_AbleUserIds:{2},", item.__vModel__, children.__vModel__, children.ableUserIds.ToJsonString()),
+                                            Content = string.Format("{0}_{1}_AbleUserIds:{2},", item.VModel, children.VModel, children.ableUserIds.ToJsonString()),
                                         });
                                     }
 
@@ -999,7 +999,7 @@ public class CodeGenFormControlDesignHelper
                                             IsStatic = true,
                                             IsIndex = false,
                                             IsProps = false,
-                                            Content = string.Format("{0}_{1}_AbleRoleIds:{2},", item.__vModel__, children.__vModel__, children.ableRoleIds.ToJsonString()),
+                                            Content = string.Format("{0}_{1}_AbleRoleIds:{2},", item.VModel, children.VModel, children.ableRoleIds.ToJsonString()),
                                         });
                                     }
 
@@ -1011,7 +1011,7 @@ public class CodeGenFormControlDesignHelper
                                             IsStatic = true,
                                             IsIndex = false,
                                             IsProps = false,
-                                            Content = string.Format("{0}_{1}_AbleGroupIds:{2},", item.__vModel__, children.__vModel__, children.ableGroupIds.ToJsonString()),
+                                            Content = string.Format("{0}_{1}_AbleGroupIds:{2},", item.VModel, children.VModel, children.ableGroupIds.ToJsonString()),
                                         });
                                     }
                                     break;
@@ -1024,13 +1024,13 @@ public class CodeGenFormControlDesignHelper
                                             IsStatic = true,
                                             IsIndex = false,
                                             IsProps = false,
-                                            Content = string.Format("{0}_{1}_AbleIds:{2},", item.__vModel__, children.__vModel__, children.ableIds.ToJsonString()),
+                                            Content = string.Format("{0}_{1}_AbleIds:{2},", item.VModel, children.VModel, children.ableIds.ToJsonString()),
                                         });
                                     }
                                     break;
                                 case PoxiaoKeyConst.SELECT:
                                     {
-                                        var realisticControl = childrenRealisticControls.Find(it => it.__vModel__.Equals(children.__vModel__) && it.__config__.poxiaoKey.Equals(childrenConfig.poxiaoKey));
+                                        var realisticControl = childrenRealisticControls.Find(it => it.VModel.Equals(children.VModel) && it.Config.poxiaoKey.Equals(childrenConfig.poxiaoKey));
                                         switch (childrenConfig.dataType)
                                         {
                                             // 静态数据
@@ -1038,7 +1038,7 @@ public class CodeGenFormControlDesignHelper
                                                 list.Add(new CodeGenConvIndexListControlOptionDesign()
                                                 {
                                                     poxiaoKey = childrenConfig.poxiaoKey,
-                                                    Name = string.Format("{0}_{1}", item.__vModel__, children.__vModel__),
+                                                    Name = string.Format("{0}_{1}", item.VModel, children.VModel),
                                                     DictionaryType = childrenConfig.dataType == "dictionary" ? childrenConfig.dictionaryType : (childrenConfig.dataType == "dynamic" ? childrenConfig.propsUrl : null),
                                                     DataType = childrenConfig.dataType,
                                                     IsStatic = true,
@@ -1046,7 +1046,7 @@ public class CodeGenFormControlDesignHelper
                                                     IsProps = true,
                                                     Props = string.Format("{{'label':'{0}','value':'{1}'}}", children.props?.props?.label, children.props?.props?.value),
                                                     IsChildren = true,
-                                                    Content = GetCodeGenConvIndexListControlOption(string.Format("{0}_{1}", item.__vModel__, children.__vModel__), children.options),
+                                                    Content = GetCodeGenConvIndexListControlOption(string.Format("{0}_{1}", item.VModel, children.VModel), children.options),
                                                     QueryProps = GetQueryPropsModel(children.props?.props).ToJsonString(CommonConst.options),
                                                 });
                                                 break;
@@ -1054,8 +1054,8 @@ public class CodeGenFormControlDesignHelper
                                                 list.Add(new CodeGenConvIndexListControlOptionDesign()
                                                 {
                                                     poxiaoKey = childrenConfig.poxiaoKey,
-                                                    Name = string.Format("{0}_{1}", item.__vModel__, children.__vModel__),
-                                                    OptionsName = string.Format("dataForm.{0}[i].{1}", item.__vModel__, children.__vModel__),
+                                                    Name = string.Format("{0}_{1}", item.VModel, children.VModel),
+                                                    OptionsName = string.Format("dataForm.{0}[i].{1}", item.VModel, children.VModel),
                                                     DictionaryType = childrenConfig.dataType == "dictionary" ? childrenConfig.dictionaryType : (childrenConfig.dataType == "dynamic" ? childrenConfig.propsUrl : null),
                                                     DataType = childrenConfig.dataType,
                                                     IsStatic = false,
@@ -1063,7 +1063,7 @@ public class CodeGenFormControlDesignHelper
                                                     IsProps = true,
                                                     Props = string.Format("{{'label':'{0}','value':'{1}'}}", children.props?.props?.label, children.props?.props?.value),
                                                     IsChildren = true,
-                                                    Content = string.Format("{0}Options : [],", string.Format("{0}_{1}", item.__vModel__, children.__vModel__)),
+                                                    Content = string.Format("{0}Options : [],", string.Format("{0}_{1}", item.VModel, children.VModel)),
                                                     QueryProps = GetQueryPropsModel(children.props?.props).ToJsonString(CommonConst.options),
                                                     IsLinkage = realisticControl.IsLinkage,
                                                     TemplateJson = childrenConfig.dataType == "dynamic" ? childrenConfig.templateJson.ToJsonString() : "[]"
@@ -1076,14 +1076,14 @@ public class CodeGenFormControlDesignHelper
                                 case PoxiaoKeyConst.TREESELECT:
                                 case PoxiaoKeyConst.CASCADER:
                                     {
-                                        var realisticControl = childrenRealisticControls.Find(it => it.__vModel__.Equals(children.__vModel__) && it.__config__.poxiaoKey.Equals(childrenConfig.poxiaoKey));
+                                        var realisticControl = childrenRealisticControls.Find(it => it.VModel.Equals(children.VModel) && it.Config.poxiaoKey.Equals(childrenConfig.poxiaoKey));
                                         switch (childrenConfig.dataType)
                                         {
                                             case "static":
                                                 list.Add(new CodeGenConvIndexListControlOptionDesign()
                                                 {
                                                     poxiaoKey = childrenConfig.poxiaoKey,
-                                                    Name = string.Format("{0}_{1}", item.__vModel__, children.__vModel__),
+                                                    Name = string.Format("{0}_{1}", item.VModel, children.VModel),
                                                     DictionaryType = childrenConfig.dataType == "dictionary" ? childrenConfig.dictionaryType : (childrenConfig.dataType == "dynamic" ? childrenConfig.propsUrl : null),
                                                     DataType = childrenConfig.dataType,
                                                     IsStatic = true,
@@ -1092,15 +1092,15 @@ public class CodeGenFormControlDesignHelper
                                                     IsChildren = true,
                                                     Props = children.props?.props?.ToJsonString(CommonConst.options),
                                                     QueryProps = GetQueryPropsModel(children.props?.props).ToJsonString(CommonConst.options),
-                                                    Content = GetCodeGenConvIndexListControlOption(string.Format("{0}_{1}", item.__vModel__, children.__vModel__), children.options.ToObject<List<Dictionary<string, object>>>())
+                                                    Content = GetCodeGenConvIndexListControlOption(string.Format("{0}_{1}", item.VModel, children.VModel), children.options.ToObject<List<Dictionary<string, object>>>())
                                                 });
                                                 break;
                                             default:
                                                 list.Add(new CodeGenConvIndexListControlOptionDesign()
                                                 {
                                                     poxiaoKey = childrenConfig.poxiaoKey,
-                                                    Name = string.Format("{0}_{1}", item.__vModel__, children.__vModel__),
-                                                    OptionsName = string.Format("dataForm.{0}[i].{1}", item.__vModel__, children.__vModel__),
+                                                    Name = string.Format("{0}_{1}", item.VModel, children.VModel),
+                                                    OptionsName = string.Format("dataForm.{0}[i].{1}", item.VModel, children.VModel),
                                                     DictionaryType = childrenConfig.dataType == "dictionary" ? childrenConfig.dictionaryType : (childrenConfig.dataType == "dynamic" ? childrenConfig.propsUrl : null),
                                                     DataType = childrenConfig.dataType,
                                                     IsStatic = false,
@@ -1109,7 +1109,7 @@ public class CodeGenFormControlDesignHelper
                                                     IsChildren = true,
                                                     Props = children.props?.props?.ToJsonString(CommonConst.options),
                                                     QueryProps = GetQueryPropsModel(children.props?.props).ToJsonString(CommonConst.options),
-                                                    Content = string.Format("{0}Options: [],", string.Format("{0}_{1}", item.__vModel__, children.__vModel__)),
+                                                    Content = string.Format("{0}Options: [],", string.Format("{0}_{1}", item.VModel, children.VModel)),
                                                     IsLinkage = realisticControl.IsLinkage,
                                                     TemplateJson = childrenConfig.dataType == "dynamic" ? childrenConfig.templateJson.ToJsonString() : "[]"
                                                 });
@@ -1122,12 +1122,12 @@ public class CodeGenFormControlDesignHelper
                                 case PoxiaoKeyConst.POPUPSELECT:
                                 case PoxiaoKeyConst.AUTOCOMPLETE:
                                     {
-                                        var realisticControl = childrenRealisticControls.Find(it => it.__vModel__.Equals(children.__vModel__) && it.__config__.poxiaoKey.Equals(childrenConfig.poxiaoKey));
+                                        var realisticControl = childrenRealisticControls.Find(it => it.VModel.Equals(children.VModel) && it.Config.poxiaoKey.Equals(childrenConfig.poxiaoKey));
                                         list.Add(new CodeGenConvIndexListControlOptionDesign()
                                         {
                                             poxiaoKey = childrenConfig.poxiaoKey,
-                                            Name = string.Format("{0}_{1}", item.__vModel__, children.__vModel__),
-                                            OptionsName = string.Format("dataForm.{0}[i].{1}", item.__vModel__, children.__vModel__),
+                                            Name = string.Format("{0}_{1}", item.VModel, children.VModel),
+                                            OptionsName = string.Format("dataForm.{0}[i].{1}", item.VModel, children.VModel),
                                             DictionaryType = null,
                                             DataType = null,
                                             IsStatic = true,
@@ -1135,7 +1135,7 @@ public class CodeGenFormControlDesignHelper
                                             IsProps = false,
                                             Props = null,
                                             IsChildren = true,
-                                            Content = $"{string.Format("{0}_{1}", item.__vModel__, children.__vModel__)}Options: {children.columnOptions.ToJsonString(CommonConst.options)},",
+                                            Content = $"{string.Format("{0}_{1}", item.VModel, children.VModel)}Options: {children.columnOptions.ToJsonString(CommonConst.options)},",
                                             IsLinkage = realisticControl.IsLinkage,
                                             TemplateJson = children.templateJson.ToJsonString()
                                         });
@@ -1147,7 +1147,7 @@ public class CodeGenFormControlDesignHelper
                                         list.Add(new CodeGenConvIndexListControlOptionDesign()
                                         {
                                             poxiaoKey = childrenConfig.poxiaoKey,
-                                            Name = string.Format("{0}_{1}", item.__vModel__, children.__vModel__),
+                                            Name = string.Format("{0}_{1}", item.VModel, children.VModel),
                                             DictionaryType = null,
                                             DataType = null,
                                             IsStatic = true,
@@ -1155,7 +1155,7 @@ public class CodeGenFormControlDesignHelper
                                             IsProps = false,
                                             Props = null,
                                             IsChildren = true,
-                                            Content = $"{string.Format("{0}_{1}", item.__vModel__, children.__vModel__)}Options: {children.columnOptions.ToJsonString(CommonConst.options)},"
+                                            Content = $"{string.Format("{0}_{1}", item.VModel, children.VModel)}Options: {children.columnOptions.ToJsonString(CommonConst.options)},"
                                         });
                                     }
 
@@ -1173,7 +1173,7 @@ public class CodeGenFormControlDesignHelper
                         {
                             title.AppendFormat("{{title:'{0}'}},", children.title);
                             activeList.AppendFormat("'{0}',", children.name);
-                            list.AddRange(FormControlProps(children.__config__.children, realisticControls, columnDesignModel, type));
+                            list.AddRange(FormControlProps(children.Config.children, realisticControls, columnDesignModel, type));
                         }
 
                         title.Remove(title.Length - 1, 1);
@@ -1200,7 +1200,7 @@ public class CodeGenFormControlDesignHelper
                         foreach (var children in config.children)
                         {
                             title.AppendFormat("{{title:'{0}'}},", children.title);
-                            list.AddRange(FormControlProps(children.__config__.children, realisticControls, columnDesignModel, type));
+                            list.AddRange(FormControlProps(children.Config.children, realisticControls, columnDesignModel, type));
                         }
 
                         title.Remove(title.Length - 1, 1);
@@ -1232,7 +1232,7 @@ public class CodeGenFormControlDesignHelper
                             IsStatic = true,
                             IsIndex = false,
                             IsProps = false,
-                            Content = string.Format("{0}_AbleDepIds:{1},", item.__vModel__, item.ableDepIds.ToJsonString()),
+                            Content = string.Format("{0}_AbleDepIds:{1},", item.VModel, item.ableDepIds.ToJsonString()),
                         });
                     }
                     break;
@@ -1245,7 +1245,7 @@ public class CodeGenFormControlDesignHelper
                             IsStatic = true,
                             IsIndex = false,
                             IsProps = false,
-                            Content = string.Format("{0}_AblePosIds:{1},", item.__vModel__, item.ablePosIds.ToJsonString()),
+                            Content = string.Format("{0}_AblePosIds:{1},", item.VModel, item.ablePosIds.ToJsonString()),
                         });
                     }
                     break;
@@ -1258,7 +1258,7 @@ public class CodeGenFormControlDesignHelper
                             IsStatic = true,
                             IsIndex = false,
                             IsProps = false,
-                            Content = string.Format("{0}_AbleDepIds:{1},", item.__vModel__, item.ableDepIds.ToJsonString()),
+                            Content = string.Format("{0}_AbleDepIds:{1},", item.VModel, item.ableDepIds.ToJsonString()),
                         });
                     }
 
@@ -1270,7 +1270,7 @@ public class CodeGenFormControlDesignHelper
                             IsStatic = true,
                             IsIndex = false,
                             IsProps = false,
-                            Content = string.Format("{0}_AblePosIds:{1},", item.__vModel__, item.ablePosIds.ToJsonString()),
+                            Content = string.Format("{0}_AblePosIds:{1},", item.VModel, item.ablePosIds.ToJsonString()),
                         });
                     }
 
@@ -1282,7 +1282,7 @@ public class CodeGenFormControlDesignHelper
                             IsStatic = true,
                             IsIndex = false,
                             IsProps = false,
-                            Content = string.Format("{0}_AbleUserIds:{1},", item.__vModel__, item.ableUserIds.ToJsonString()),
+                            Content = string.Format("{0}_AbleUserIds:{1},", item.VModel, item.ableUserIds.ToJsonString()),
                         });
                     }
 
@@ -1294,7 +1294,7 @@ public class CodeGenFormControlDesignHelper
                             IsStatic = true,
                             IsIndex = false,
                             IsProps = false,
-                            Content = string.Format("{0}_AbleRoleIds:{1},", item.__vModel__, item.ableRoleIds.ToJsonString()),
+                            Content = string.Format("{0}_AbleRoleIds:{1},", item.VModel, item.ableRoleIds.ToJsonString()),
                         });
                     }
 
@@ -1306,7 +1306,7 @@ public class CodeGenFormControlDesignHelper
                             IsStatic = true,
                             IsIndex = false,
                             IsProps = false,
-                            Content = string.Format("{0}_AbleGroupIds:{1},", item.__vModel__, item.ableGroupIds.ToJsonString()),
+                            Content = string.Format("{0}_AbleGroupIds:{1},", item.VModel, item.ableGroupIds.ToJsonString()),
                         });
                     }
                     break;
@@ -1319,7 +1319,7 @@ public class CodeGenFormControlDesignHelper
                             IsStatic = true,
                             IsIndex = false,
                             IsProps = false,
-                            Content = string.Format("{0}_AbleIds:{1},", item.__vModel__, item.ableIds.ToJsonString()),
+                            Content = string.Format("{0}_AbleIds:{1},", item.VModel, item.ableIds.ToJsonString()),
                         });
                     }
 
@@ -1335,7 +1335,7 @@ public class CodeGenFormControlDesignHelper
                                     list.Add(new CodeGenConvIndexListControlOptionDesign()
                                     {
                                         poxiaoKey = config.poxiaoKey,
-                                        Name = item.__vModel__,
+                                        Name = item.VModel,
                                         DictionaryType = null,
                                         DataType = null,
                                         IsStatic = true,
@@ -1343,7 +1343,7 @@ public class CodeGenFormControlDesignHelper
                                         IsProps = false,
                                         Props = null,
                                         IsChildren = false,
-                                        Content = string.Format("{0}Options: {1},", item.__vModel__, item.columnOptions.ToJsonString(CommonConst.options)),
+                                        Content = string.Format("{0}Options: {1},", item.VModel, item.columnOptions.ToJsonString(CommonConst.options)),
                                         TemplateJson = item.templateJson.ToJsonString()
                                     });
                                 }
@@ -1354,7 +1354,7 @@ public class CodeGenFormControlDesignHelper
                                     list.Add(new CodeGenConvIndexListControlOptionDesign()
                                     {
                                         poxiaoKey = config.poxiaoKey,
-                                        Name = item.__vModel__,
+                                        Name = item.VModel,
                                         DictionaryType = null,
                                         DataType = null,
                                         IsStatic = true,
@@ -1362,7 +1362,7 @@ public class CodeGenFormControlDesignHelper
                                         IsProps = false,
                                         Props = null,
                                         IsChildren = false,
-                                        Content = string.Format("{0}Options: {1},", item.__vModel__, item.columnOptions.ToJsonString(CommonConst.options))
+                                        Content = string.Format("{0}Options: {1},", item.VModel, item.columnOptions.ToJsonString(CommonConst.options))
                                     });
                                 }
 
@@ -1377,7 +1377,7 @@ public class CodeGenFormControlDesignHelper
                                             list.Add(new CodeGenConvIndexListControlOptionDesign()
                                             {
                                                 poxiaoKey = config.poxiaoKey,
-                                                Name = item.__vModel__,
+                                                Name = item.VModel,
                                                 DictionaryType = config.dataType == "dictionary" ? config.dictionaryType : (config.dataType == "dynamic" ? config.propsUrl : null),
                                                 DataType = config.dataType,
                                                 IsStatic = true,
@@ -1386,14 +1386,14 @@ public class CodeGenFormControlDesignHelper
                                                 Props = string.Format("{{'label':'{0}','value':'{1}'}}", item.props?.props?.label, item.props?.props?.value),
                                                 QueryProps = GetQueryPropsModel(item.props?.props).ToJsonString(CommonConst.options),
                                                 IsChildren = false,
-                                                Content = GetCodeGenConvIndexListControlOption(item.__vModel__, item.options)
+                                                Content = GetCodeGenConvIndexListControlOption(item.VModel, item.options)
                                             });
                                             break;
                                         default:
                                             list.Add(new CodeGenConvIndexListControlOptionDesign()
                                             {
                                                 poxiaoKey = config.poxiaoKey,
-                                                Name = item.__vModel__,
+                                                Name = item.VModel,
                                                 DictionaryType = config.dataType == "dictionary" ? config.dictionaryType : (config.dataType == "dynamic" ? config.propsUrl : null),
                                                 DataType = config.dataType,
                                                 IsStatic = false,
@@ -1402,7 +1402,7 @@ public class CodeGenFormControlDesignHelper
                                                 QueryProps = GetQueryPropsModel(item.props?.props).ToJsonString(CommonConst.options),
                                                 Props = $"{{'label':'{item.props?.props?.label}','value':'{item.props?.props?.value}'}}",
                                                 IsChildren = false,
-                                                Content = string.Format("{0}Options: [],", item.__vModel__),
+                                                Content = string.Format("{0}Options: [],", item.VModel),
                                                 TemplateJson = config.dataType == "dynamic" ? config.templateJson.ToJsonString() : "[]"
                                             });
                                             break;
@@ -1419,7 +1419,7 @@ public class CodeGenFormControlDesignHelper
                                             list.Add(new CodeGenConvIndexListControlOptionDesign()
                                             {
                                                 poxiaoKey = config.poxiaoKey,
-                                                Name = item.__vModel__,
+                                                Name = item.VModel,
                                                 DictionaryType = config.dataType == "dictionary" ? config.dictionaryType : (config.dataType == "dynamic" ? config.propsUrl : null),
                                                 DataType = config.dataType,
                                                 IsStatic = true,
@@ -1428,14 +1428,14 @@ public class CodeGenFormControlDesignHelper
                                                 IsChildren = false,
                                                 Props = item.props?.props?.ToJsonString(CommonConst.options),
                                                 QueryProps = GetQueryPropsModel(item.props?.props).ToJsonString(CommonConst.options),
-                                                Content = GetCodeGenConvIndexListControlOption(item.__vModel__, item.options.ToObject<List<Dictionary<string, object>>>())
+                                                Content = GetCodeGenConvIndexListControlOption(item.VModel, item.options.ToObject<List<Dictionary<string, object>>>())
                                             });
                                             break;
                                         default:
                                             list.Add(new CodeGenConvIndexListControlOptionDesign()
                                             {
                                                 poxiaoKey = config.poxiaoKey,
-                                                Name = item.__vModel__,
+                                                Name = item.VModel,
                                                 DictionaryType = config.dataType == "dictionary" ? config.dictionaryType : (config.dataType == "dynamic" ? config.propsUrl : null),
                                                 DataType = config.dataType,
                                                 IsStatic = false,
@@ -1444,7 +1444,7 @@ public class CodeGenFormControlDesignHelper
                                                 IsChildren = false,
                                                 Props = item.props?.props?.ToJsonString(CommonConst.options),
                                                 QueryProps = GetQueryPropsModel(item.props.props).ToJsonString(CommonConst.options),
-                                                Content = string.Format("{0}Options: [],", item.__vModel__),
+                                                Content = string.Format("{0}Options: [],", item.VModel),
                                                 TemplateJson = config.dataType == "dynamic" ? config.templateJson.ToJsonString() : "[]"
                                             });
                                             break;
@@ -1472,14 +1472,14 @@ public class CodeGenFormControlDesignHelper
         var list = new List<CodeGenFormRealControlModel>();
         foreach (var item in fieldList)
         {
-            var config = item.__config__;
+            var config = item.Config;
             switch (config.poxiaoKey)
             {
                 case PoxiaoKeyConst.TABLE:
                     list.Add(new CodeGenFormRealControlModel
                     {
                         poxiaoKey = config.poxiaoKey,
-                        vModel = item.__vModel__,
+                        vModel = item.VModel,
                         children = FormRealControl(config.children)
                     });
                     break;
@@ -1487,7 +1487,7 @@ public class CodeGenFormControlDesignHelper
                     list.Add(new CodeGenFormRealControlModel
                     {
                         poxiaoKey = config.poxiaoKey,
-                        vModel = item.__vModel__,
+                        vModel = item.VModel,
                         multiple = config.poxiaoKey == PoxiaoKeyConst.CASCADER ? item.props.props.multiple : item.multiple
                     });
                     break;
@@ -1508,7 +1508,7 @@ public class CodeGenFormControlDesignHelper
         var formScript = new List<FormScriptDesignModel>();
         foreach (FieldsModel item in fieldList)
         {
-            var config = item.__config__;
+            var config = item.Config;
             switch (config.poxiaoKey)
             {
                 case PoxiaoKeyConst.TABLE:
@@ -1516,7 +1516,7 @@ public class CodeGenFormControlDesignHelper
                         var childrenFormScript = new List<FormScriptDesignModel>();
                         foreach (var children in config.children)
                         {
-                            var childrenConfig = children.__config__;
+                            var childrenConfig = children.Config;
                             switch (childrenConfig.poxiaoKey)
                             {
                                 case PoxiaoKeyConst.RELATIONFORMATTR:
@@ -1526,8 +1526,8 @@ public class CodeGenFormControlDesignHelper
                                         {
                                             childrenFormScript.Add(new FormScriptDesignModel()
                                             {
-                                                Name = children.__vModel__,
-                                                OriginalName = children.__vModel__,
+                                                Name = children.VModel,
+                                                OriginalName = children.VModel,
                                                 poxiaoKey = childrenConfig.poxiaoKey,
                                                 DataType = childrenConfig.dataType,
                                                 DictionaryType = childrenConfig.dataType == "dictionary" ? childrenConfig.dictionaryType : (childrenConfig.dataType == "dynamic" ? childrenConfig.propsUrl : null),
@@ -1541,7 +1541,7 @@ public class CodeGenFormControlDesignHelper
                                                 DefaultValue = childrenConfig.defaultValue?.ToString(),
                                                 Trigger = string.IsNullOrEmpty(childrenConfig.trigger?.ToString()) ? "blur" : (childrenConfig.trigger is Array ? childrenConfig.trigger.ToJsonString() : childrenConfig.trigger.ToString()),
                                                 ChildrenList = null,
-                                                IsSummary = item.showSummary && item.summaryField.Any(it => it.Equals(children.__vModel__)) ? true : false,
+                                                IsSummary = item.showSummary && item.summaryField.Any(it => it.Equals(children.VModel)) ? true : false,
                                                 IsLinked = children.IsLinked,
                                                 LinkageRelationship = children.linkageReverseRelationship,
                                                 IsLinkage = children.IsLinkage
@@ -1553,8 +1553,8 @@ public class CodeGenFormControlDesignHelper
                                     {
                                         childrenFormScript.Add(new FormScriptDesignModel()
                                         {
-                                            Name = children.__vModel__,
-                                            OriginalName = children.__vModel__,
+                                            Name = children.VModel,
+                                            OriginalName = children.VModel,
                                             poxiaoKey = childrenConfig.poxiaoKey,
                                             DataType = childrenConfig.dataType,
                                             DictionaryType = childrenConfig.dataType == "dictionary" ? childrenConfig.dictionaryType : (childrenConfig.dataType == "dynamic" ? childrenConfig.propsUrl : null),
@@ -1568,7 +1568,7 @@ public class CodeGenFormControlDesignHelper
                                             DefaultValue = childrenConfig.defaultValue.ParseToBool(),
                                             Trigger = string.IsNullOrEmpty(childrenConfig.trigger?.ToString()) ? "blur" : (childrenConfig.trigger is Array ? childrenConfig.trigger.ToJsonString() : childrenConfig.trigger.ToString()),
                                             ChildrenList = null,
-                                            IsSummary = item.showSummary && item.summaryField.Find(it => it.Equals(children.__vModel__)) != null ? true : false,
+                                            IsSummary = item.showSummary && item.summaryField.Find(it => it.Equals(children.VModel)) != null ? true : false,
                                             IsLinked = item.IsLinked,
                                             LinkageRelationship = item.linkageReverseRelationship
                                         });
@@ -1579,8 +1579,8 @@ public class CodeGenFormControlDesignHelper
                                     {
                                         childrenFormScript.Add(new FormScriptDesignModel()
                                         {
-                                            Name = children.__vModel__,
-                                            OriginalName = children.__vModel__,
+                                            Name = children.VModel,
+                                            OriginalName = children.VModel,
                                             poxiaoKey = childrenConfig.poxiaoKey,
                                             DataType = childrenConfig.dataType,
                                             DictionaryType = childrenConfig.dataType == "dictionary" ? childrenConfig.dictionaryType : (childrenConfig.dataType == "dynamic" ? childrenConfig.propsUrl : null),
@@ -1594,7 +1594,7 @@ public class CodeGenFormControlDesignHelper
                                             DefaultValue = childrenConfig.defaultValue?.ToString(),
                                             Trigger = string.IsNullOrEmpty(childrenConfig.trigger?.ToString()) ? "blur" : (childrenConfig.trigger is Array ? childrenConfig.trigger.ToJsonString() : childrenConfig.trigger.ToString()),
                                             ChildrenList = null,
-                                            IsSummary = item.showSummary && item.summaryField.Any(it => it.Equals(children.__vModel__)) ? true : false,
+                                            IsSummary = item.showSummary && item.summaryField.Any(it => it.Equals(children.VModel)) ? true : false,
                                             IsLinked = children.IsLinked,
                                             LinkageRelationship = children.linkageReverseRelationship,
                                             IsLinkage = children.IsLinkage,
@@ -1616,7 +1616,7 @@ public class CodeGenFormControlDesignHelper
                         {
                             Name = config.tableName.ParseToPascalCase(),
                             Placeholder = config.label,
-                            OriginalName = item.__vModel__,
+                            OriginalName = item.VModel,
                             poxiaoKey = config.poxiaoKey,
                             ChildrenList = childrenFormScript,
                             Required = childrenFormScript.Any(it => it.Required.Equals(true)),
@@ -1639,25 +1639,25 @@ public class CodeGenFormControlDesignHelper
                         if (config.isStorage == 2)
                         {
                             var originalName = string.Empty;
-                            if (item.__vModel__.Contains("_poxiao_"))
+                            if (item.VModel.Contains("_poxiao_"))
                             {
-                                var auxiliaryTableName = item.__vModel__.Matches(@"poxiao_(?<table>[\s\S]*?)_poxiao_", "table").Last();
-                                var column = item.__vModel__.Replace(item.__vModel__.Matches(@"poxiao_(?<table>[\s\S]*?)_poxiao_").Last(), string.Empty);
+                                var auxiliaryTableName = item.VModel.Matches(@"poxiao_(?<table>[\s\S]*?)_poxiao_", "table").Last();
+                                var column = item.VModel.Replace(item.VModel.Matches(@"poxiao_(?<table>[\s\S]*?)_poxiao_").Last(), string.Empty);
                                 var columns = tableColumns.Find(it => it.LowerColumnName.Equals(column) && it.IsAuxiliary.Equals(true) && (bool)it.TableName?.Equals(auxiliaryTableName));
                                 if (columns != null)
                                     originalName = columns.OriginalColumnName;
                             }
                             else
                             {
-                                var columns = tableColumns.Find(it => it.LowerColumnName.Equals(item.__vModel__));
+                                var columns = tableColumns.Find(it => it.LowerColumnName.Equals(item.VModel));
                                 if (columns != null)
                                     originalName = columns.OriginalColumnName;
                             }
 
                             formScript.Add(new FormScriptDesignModel()
                             {
-                                IsInlineEditor = columnDesignModel != null ? columnDesignModel.Any(it => it.__vModel__ == item.__vModel__) : false,
-                                Name = item.__vModel__,
+                                IsInlineEditor = columnDesignModel != null ? columnDesignModel.Any(it => it.VModel == item.VModel) : false,
+                                Name = item.VModel,
                                 OriginalName = originalName,
                                 poxiaoKey = config.poxiaoKey,
                                 DataType = config.dataType,
@@ -1682,25 +1682,25 @@ public class CodeGenFormControlDesignHelper
                 case PoxiaoKeyConst.SWITCH:
                     {
                         var originalName = string.Empty;
-                        if (item.__vModel__.Contains("_poxiao_"))
+                        if (item.VModel.Contains("_poxiao_"))
                         {
-                            var auxiliaryTableName = item.__vModel__.Matches(@"poxiao_(?<table>[\s\S]*?)_poxiao_", "table").Last();
-                            var column = item.__vModel__.Replace(item.__vModel__.Matches(@"poxiao_(?<table>[\s\S]*?)_poxiao_").Last(), string.Empty);
+                            var auxiliaryTableName = item.VModel.Matches(@"poxiao_(?<table>[\s\S]*?)_poxiao_", "table").Last();
+                            var column = item.VModel.Replace(item.VModel.Matches(@"poxiao_(?<table>[\s\S]*?)_poxiao_").Last(), string.Empty);
                             var columns = tableColumns.Find(it => it.LowerColumnName.Equals(column) && (bool)it.TableName?.Equals(auxiliaryTableName) && it.IsAuxiliary.Equals(true));
                             if (columns != null)
                                 originalName = columns.OriginalColumnName;
                         }
                         else
                         {
-                            var columns = tableColumns.Find(it => it.LowerColumnName.Equals(item.__vModel__));
+                            var columns = tableColumns.Find(it => it.LowerColumnName.Equals(item.VModel));
                             if (columns != null)
                                 originalName = columns.OriginalColumnName;
                         }
 
                         formScript.Add(new FormScriptDesignModel()
                         {
-                            IsInlineEditor = columnDesignModel != null ? columnDesignModel.Any(it => it.__vModel__ == item.__vModel__) : false,
-                            Name = item.__vModel__,
+                            IsInlineEditor = columnDesignModel != null ? columnDesignModel.Any(it => it.VModel == item.VModel) : false,
+                            Name = item.VModel,
                             OriginalName = originalName,
                             poxiaoKey = config.poxiaoKey,
                             DataType = config.dataType,
@@ -1724,25 +1724,25 @@ public class CodeGenFormControlDesignHelper
                 default:
                     {
                         string originalName = string.Empty;
-                        if (item.__vModel__.Contains("_poxiao_"))
+                        if (item.VModel.Contains("_poxiao_"))
                         {
-                            var auxiliaryTableName = item.__vModel__.Matches(@"poxiao_(?<table>[\s\S]*?)_poxiao_", "table").Last();
-                            var column = item.__vModel__.Replace(item.__vModel__.Matches(@"poxiao_(?<table>[\s\S]*?)_poxiao_").Last(), string.Empty);
+                            var auxiliaryTableName = item.VModel.Matches(@"poxiao_(?<table>[\s\S]*?)_poxiao_", "table").Last();
+                            var column = item.VModel.Replace(item.VModel.Matches(@"poxiao_(?<table>[\s\S]*?)_poxiao_").Last(), string.Empty);
                             var columns = tableColumns.Find(it => it.LowerColumnName.Equals(column) && it.IsAuxiliary.Equals(true) && (bool)it.TableName?.Equals(auxiliaryTableName));
                             if (columns != null)
                                 originalName = columns.OriginalColumnName;
                         }
                         else
                         {
-                            var columns = tableColumns.Find(it => it.LowerColumnName.Equals(item.__vModel__));
+                            var columns = tableColumns.Find(it => it.LowerColumnName.Equals(item.VModel));
                             if (columns != null)
                                 originalName = columns.OriginalColumnName;
                         }
 
                         formScript.Add(new FormScriptDesignModel()
                         {
-                            IsInlineEditor = columnDesignModel != null ? columnDesignModel.Any(it => it.__vModel__ == item.__vModel__) : false,
-                            Name = item.__vModel__,
+                            IsInlineEditor = columnDesignModel != null ? columnDesignModel.Any(it => it.VModel == item.VModel) : false,
+                            Name = item.VModel,
                             OriginalName = originalName,
                             poxiaoKey = config.poxiaoKey,
                             DataType = config.dataType,
@@ -1836,15 +1836,15 @@ public class CodeGenFormControlDesignHelper
         var res = string.Empty;
 
         // 用户控件联动
-        if (field.__config__.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) && field.relationField.IsNotEmptyOrNull())
+        if (field.Config.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) && field.relationField.IsNotEmptyOrNull())
         {
-            var relationField = fieldList.Find(x => x.__vModel__.Equals(field.relationField));
-            if (relationField == null && field.relationField.ToLower().Contains("tablefield") && fieldList.Any(x => x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)))
+            var relationField = fieldList.Find(x => x.VModel.Equals(field.relationField));
+            if (relationField == null && field.relationField.ToLower().Contains("tablefield") && fieldList.Any(x => x.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)))
             {
-                var ctFieldList = fieldList.Find(x => x.__vModel__.Equals(field.relationField.Split("-").FirstOrDefault()));
-                if (ctFieldList != null && ctFieldList.__config__.children != null)
+                var ctFieldList = fieldList.Find(x => x.VModel.Equals(field.relationField.Split("-").FirstOrDefault()));
+                if (ctFieldList != null && ctFieldList.Config.children != null)
                 {
-                    relationField = ctFieldList.__config__.children.Find(x => x.__vModel__.Equals(field.relationField.Split("-").LastOrDefault()));
+                    relationField = ctFieldList.Config.children.Find(x => x.VModel.Equals(field.relationField.Split("-").LastOrDefault()));
                     field.relationField = logic == 4 ? field.relationField.Replace("-", "[scope.$index].") : field.relationField.Replace("-", "[i].");
                 }
             }

@@ -19,7 +19,7 @@ public class WechatEnterpriseScanAuthSource : IAuthSource
 
     public string getName()
     {
-        return DefaultAuthSourceEnum.WECHAT_ENTERPRISE_SCAN.ToString();
+        return DefaultAuthSourceEnum.WECHATENTERPRISESCAN.ToString();
     }
 
     public string refresh()

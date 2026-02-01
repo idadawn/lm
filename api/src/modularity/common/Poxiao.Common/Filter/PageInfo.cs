@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace Poxiao.Infrastructure.Filter;
 
-
 /// <summary>
 /// 分页结果.
 /// </summary>
@@ -59,7 +58,8 @@ public class PageResult<T>
     /// <returns></returns>
     public static dynamic SqlSugarPageResult(SqlSugarPagedList<T> page)
     {
-        return new {
+        return new
+        {
             pagination = page.pagination.Adapt<PageInfo>(),
             list = page.list
         };

@@ -49,6 +49,7 @@ public class MetricInfoGradeExtInput
     /// </summary>
     [JsonIgnore]
     public decimal DValue { get; set; }
+
     /// <summary>
     /// 区间类型.
     /// </summary>

@@ -10,27 +10,27 @@ public class SocialsLoginConfigModel
     /// <summary>
     /// 是否跳转.
     /// </summary>
-    public bool redirect = false;
+    public bool Redirect = false;
 
     /// <summary>
     /// 跳转URL地址.
     /// </summary>
-    public string url;
+    public string Url;
 
     /// <summary>
     /// 跳转URL地址.
     /// </summary>
-    public string redirectRrl;
+    public string RedirectRrl;
 
     /// <summary>
     /// 跳转登录轮询票据参数名称.
     /// </summary>
-    public string ticketParams;
+    public string TicketParams;
 
     /// <summary>
     /// 第三方登录列表.
     /// </summary>
-    public List<object> socialsList;
+    public List<object> SocialsList;
 
 }
 
@@ -42,22 +42,22 @@ public class SocialsLoginTicketModel
     /// <summary>
     /// 状态.
     /// </summary>
-    public int status = 2;
+    public int Status = 2;
 
     /// <summary>
     /// 额外的值, 登录Token、第三方登录的ID.
     /// </summary>
-    public string value;
+    public string Value;
 
     /// <summary>
     /// 前端主题.
     /// </summary>
-    public string theme;
+    public string Theme;
 
     /// <summary>
     /// 票据有效期, 时间戳.
     /// </summary>
-    public long ticketTimeout;
+    public long TicketTimeout;
 }
 
 public enum SocialsLoginTicketStatus

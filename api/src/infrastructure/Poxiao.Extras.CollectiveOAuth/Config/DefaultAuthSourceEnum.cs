@@ -5,22 +5,22 @@ namespace Poxiao.Extras.CollectiveOAuth.Enums;
 public enum DefaultAuthSourceEnum
 {
     [Description("微信公众平台")]
-    WECHAT_MP,
+    WECHATMP,
 
     [Description("微信开放平台")]
-    WECHAT_OPEN,
+    WECHATOPEN,
 
     [Description("小程序")]
-    WECHAT_APPLETS,
+    WECHATAPPLETS,
 
     [Description("企业微信自动授权")]
-    WECHAT_ENTERPRISE,
+    WECHATENTERPRISE,
 
     [Description("企业微信扫码")]
-    WECHAT_ENTERPRISE_SCAN,
+    WECHATENTERPRISESCAN,
 
     [Description("支付宝服务窗")]
-    ALIPAY_MP,
+    ALIPAYMP,
 
     [Description("码云授权")]
     GITEE,
@@ -77,7 +77,7 @@ public enum DefaultAuthSourceEnum
     PINTEREST,
 
     [Description("Stack Overflow")]
-    STACK_OVERFLOW,
+    STACKOVERFLOW,
 
     [Description("华为")]
     HUAWEI,

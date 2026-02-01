@@ -1,5 +1,5 @@
-﻿using Poxiao.Templates.Extensions;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
+using Poxiao.Templates.Extensions;
 
 namespace Poxiao.Logging;
 

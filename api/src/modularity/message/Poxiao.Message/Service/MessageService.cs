@@ -1,3 +1,9 @@
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DatabaseAccessor;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Handlers;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Dtos.Message;
@@ -6,10 +12,6 @@ using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Options;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DatabaseAccessor;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.LinqBuilder;
 using Poxiao.Message.Entitys;
 using Poxiao.Message.Entitys.Dto.Message;
@@ -19,8 +21,6 @@ using Poxiao.Message.Interfaces.Message;
 using Poxiao.RemoteRequest.Extensions;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Interfaces.Permission;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.Message;
@@ -110,7 +110,7 @@ public class MessageService : IMessageService, IDynamicApiController, ITransient
     /// <param name="id">主键值.</param>
     /// <returns></returns>
     [HttpGet("{id}")]
-    public async Task<dynamic> GetInfo_Api(string id)
+    public async Task<dynamic> GetInfoApi(string id)
     {
         var data = await _repository.AsSugarClient().Queryable<MessageEntity>()
             .Where(a => a.Id == id && a.DeleteMark == null)
@@ -376,7 +376,7 @@ public class MessageService : IMessageService, IDynamicApiController, ITransient
     /// <param name="postParam">请求参数.</param>
     /// <returns></returns>
     [HttpDelete("Record")]
-    public async Task DeleteRecord_Api([FromBody] dynamic postParam)
+    public async Task DeleteRecordApi([FromBody] dynamic postParam)
     {
         string[] ids = postParam.ids.ToString().Split(',');
         var isOk = await _repository.AsSugarClient().Deleteable<MessageReceiveEntity>().Where(m => m.UserId == _userManager.UserId && ids.Contains(m.MessageId)).ExecuteCommandHasChangeAsync();

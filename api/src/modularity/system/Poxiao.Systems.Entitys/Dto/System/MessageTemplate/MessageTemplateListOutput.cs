@@ -41,12 +41,15 @@ public class MessageTemplateListOutput
     /// <summary>
     /// 通知方式.
     /// </summary>
-    public string _noticeMethod { get; set; }
+    public string NoticeMethod { get; set; }
 
     /// <summary>
     /// 通知方式.
     /// </summary>
-    public string noticeMethod { get { return _noticeMethod.TrimEnd(','); } }
+    public string noticeMethod
+    {
+        get { return NoticeMethod.TrimEnd(','); }
+    }
 
     /// <summary>
     /// 有效标志.

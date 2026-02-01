@@ -1,5 +1,5 @@
-﻿using Poxiao.DynamicApiController;
-using Microsoft.OpenApi.Models;
+﻿using Microsoft.OpenApi.Models;
+using Poxiao.DynamicApiController;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Poxiao.SpecificationDocument;

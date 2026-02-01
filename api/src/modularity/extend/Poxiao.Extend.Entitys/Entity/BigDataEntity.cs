@@ -1,5 +1,5 @@
-using Poxiao.Infrastructure.Contracts;
 using Poxiao.Extras.DatabaseAccessor.SqlSugar.Models;
+using Poxiao.Infrastructure.Contracts;
 using SqlSugar;
 
 namespace Poxiao.Extend.Entitys;

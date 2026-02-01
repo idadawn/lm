@@ -1,17 +1,17 @@
-using Poxiao.Infrastructure.Core.Manager;
-using Poxiao.Infrastructure.Core.Manager.Files;
-using Poxiao.Infrastructure.Enums;
-using Poxiao.Infrastructure.Security;
+using Mapster;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Poxiao.DatabaseAccessor;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
+using Poxiao.Infrastructure.Core.Manager;
+using Poxiao.Infrastructure.Core.Manager.Files;
+using Poxiao.Infrastructure.Enums;
+using Poxiao.Infrastructure.Security;
 using Poxiao.Systems.Entitys.Dto.DictionaryData;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.Systems.Interfaces.System;
-using Mapster;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.Systems;
@@ -71,7 +71,7 @@ public class DictionaryDataService : IDictionaryDataService, IDynamicApiControll
     /// <param name="input">参数.</param>
     /// <returns></returns>
     [HttpGet("{dictionaryTypeId}")]
-    public async Task<dynamic> GetList_Api(string dictionaryTypeId, [FromQuery] DictionaryDataListQuery input)
+    public async Task<dynamic> GetListApi(string dictionaryTypeId, [FromQuery] DictionaryDataListQuery input)
     {
         var data = await GetList(dictionaryTypeId, false);
         if ("1".Equals(input.isTree))
@@ -177,7 +177,7 @@ public class DictionaryDataService : IDictionaryDataService, IDynamicApiControll
     /// <param name="id">主键id.</param>
     /// <returns></returns>
     [HttpGet("{id}/Info")]
-    public async Task<dynamic> GetInfo_Api(string id)
+    public async Task<dynamic> GetInfoApi(string id)
     {
         var data = await GetInfo(id);
         return data.Adapt<DictionaryDataInfoOutput>();

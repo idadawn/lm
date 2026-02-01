@@ -354,10 +354,10 @@ public class CodeGenControlsAttributeHelper
                 switch (dataType)
                 {
                     case "dictionary":
-                        propsUrl = control.__config__.dictionaryType;
+                        propsUrl = control.Config.dictionaryType;
                         break;
                     default:
-                        propsUrl = control.__config__.propsUrl;
+                        propsUrl = control.Config.propsUrl;
                         break;
                 }
 
@@ -456,7 +456,7 @@ public class CodeGenControlsAttributeHelper
     {
         var fieldModel = new CodeGenFieldsModel();
         var configModel = new CodeGenConfigModel();
-        fieldModel.__vModel__ = model;
+        fieldModel.VModel = model;
         fieldModel.level = control.level;
         fieldModel.min = control.min;
         fieldModel.max = control.max;
@@ -478,9 +478,9 @@ public class CodeGenControlsAttributeHelper
         fieldModel.ableRoleIds = control.ableRoleIds?.ToJsonString().ToJsonString();
         fieldModel.ableGroupIds = control.ableGroupIds?.ToJsonString().ToJsonString();
         fieldModel.ableIds = control.ableIds?.ToJsonString().ToJsonString();
-        configModel = control.__config__.ToObject<CodeGenConfigModel>();
+        configModel = control.Config.ToObject<CodeGenConfigModel>();
         configModel.tableName = tableName;
-        fieldModel.__config__ = configModel.ToJsonString().ToJsonString();
+        fieldModel.Config = configModel.ToJsonString().ToJsonString();
         return fieldModel;
     }
 
@@ -496,28 +496,28 @@ public class CodeGenControlsAttributeHelper
 
         control.ForEach(item =>
         {
-            switch (item.__config__.poxiaoKey)
+            switch (item.Config.poxiaoKey)
             {
                 case PoxiaoKeyConst.USERSSELECT: // 用户选择组件(包含组织、角色、岗位、分组、用户 Id)
                     if (!res.ContainsKey(PoxiaoKeyConst.USERSSELECT)) res.Add(PoxiaoKeyConst.USERSSELECT, new List<string>());
-                    res[PoxiaoKeyConst.USERSSELECT].Add(item.__vModel__);
+                    res[PoxiaoKeyConst.USERSSELECT].Add(item.VModel);
                     break;
                 case PoxiaoKeyConst.POPUPSELECT: // 弹窗选择
                     if (!res.ContainsKey(PoxiaoKeyConst.POPUPSELECT)) res.Add(PoxiaoKeyConst.POPUPSELECT, new List<string>());
-                    res[PoxiaoKeyConst.POPUPSELECT].Add(item.__vModel__);
+                    res[PoxiaoKeyConst.POPUPSELECT].Add(item.VModel);
                     break;
                 case PoxiaoKeyConst.RELATIONFORM: // 关联表单
                     if (!res.ContainsKey(PoxiaoKeyConst.RELATIONFORM)) res.Add(PoxiaoKeyConst.RELATIONFORM, new List<string>());
-                    res[PoxiaoKeyConst.RELATIONFORM].Add(item.__vModel__);
+                    res[PoxiaoKeyConst.RELATIONFORM].Add(item.VModel);
                     break;
                 case PoxiaoKeyConst.TABLE: // 遍历 子表 控件
-                    var ctRes = GetParsPoxiaoKeyConstList(item.__config__.children, false);
+                    var ctRes = GetParsPoxiaoKeyConstList(item.Config.children, false);
                     if (ctRes != null && ctRes.Any())
                     {
                         foreach (var ct in ctRes)
                         {
                             if (!res.ContainsKey(ct.FirstOrDefault())) res.Add(ct.FirstOrDefault(), new List<string>());
-                            res[ct.FirstOrDefault()].Add(item.__vModel__ + "-" + ct.LastOrDefault());
+                            res[ct.FirstOrDefault()].Add(item.VModel + "-" + ct.LastOrDefault());
                         }
                     }
                     break;
@@ -554,28 +554,28 @@ public class CodeGenControlsAttributeHelper
 
         control.ForEach(item =>
         {
-            switch (item.__config__.poxiaoKey)
+            switch (item.Config.poxiaoKey)
             {
                 case PoxiaoKeyConst.USERSSELECT: // 用户选择组件(包含组织、角色、岗位、分组、用户 Id)
                     if (!res.ContainsKey(PoxiaoKeyConst.USERSSELECT)) res.Add(PoxiaoKeyConst.USERSSELECT, new List<string>());
-                    res[PoxiaoKeyConst.USERSSELECT].Add(item.__vModel__);
+                    res[PoxiaoKeyConst.USERSSELECT].Add(item.VModel);
                     break;
                 case PoxiaoKeyConst.POPUPSELECT: // 弹窗选择.
                     if (!res.ContainsKey(PoxiaoKeyConst.POPUPSELECT)) res.Add(PoxiaoKeyConst.POPUPSELECT, new List<string>());
-                    res[PoxiaoKeyConst.POPUPSELECT].Add(item.__vModel__);
+                    res[PoxiaoKeyConst.POPUPSELECT].Add(item.VModel);
                     break;
                 case PoxiaoKeyConst.RELATIONFORM: // 关联表单.
                     if (!res.ContainsKey(PoxiaoKeyConst.RELATIONFORM)) res.Add(PoxiaoKeyConst.RELATIONFORM, new List<string>());
-                    res[PoxiaoKeyConst.RELATIONFORM].Add(item.__vModel__);
+                    res[PoxiaoKeyConst.RELATIONFORM].Add(item.VModel);
                     break;
                 case PoxiaoKeyConst.TABLE: // 遍历 子表 控件
-                    var ctRes = GetParsPoxiaoKeyConstListDetails(item.__config__.children);
+                    var ctRes = GetParsPoxiaoKeyConstListDetails(item.Config.children);
                     if (ctRes != null && ctRes.Any())
                     {
                         foreach (var ct in ctRes)
                         {
                             if (!res.ContainsKey(ct.FirstOrDefault())) res.Add(ct.FirstOrDefault(), new List<string>());
-                            res[ct.FirstOrDefault()].Add(item.__vModel__ + "-" + ct.LastOrDefault());
+                            res[ct.FirstOrDefault()].Add(item.VModel + "-" + ct.LastOrDefault());
                         }
                     }
 
@@ -633,16 +633,16 @@ public class CodeGenControlsAttributeHelper
     private static CodeGenDataRuleModuleResourceModel GetItemRule(RuleFieldModel item, TemplateParsingBase tInfo, string userOrigin, Model.CodeGen.CodeGenConfigModel codeGenConfigModel, ref List<CodeGenDataRuleModuleResourceModel> ruleList)
     {
         var result = new CodeGenDataRuleModuleResourceModel() { FieldRule = 0, TableName = tInfo.MainTableName.ToLower(), UserOrigin = userOrigin, conditionalModel = new List<IConditionalModel>() };
-        if (tInfo.AuxiliaryTableFields.ContainsKey(item.__vModel__))
+        if (tInfo.AuxiliaryTableFields.ContainsKey(item.VModel))
         {
-            var tf = tInfo.AuxiliaryTableFields[item.__vModel__].Split('.');
+            var tf = tInfo.AuxiliaryTableFields[item.VModel].Split('.');
             result.FieldRule = 1;
             result.TableName = tf.FirstOrDefault().ToLower();
             item.field = tf.LastOrDefault();
         }
-        else if (tInfo.ChildTableFields.ContainsKey(item.__vModel__))
+        else if (tInfo.ChildTableFields.ContainsKey(item.VModel))
         {
-            var tf = tInfo.ChildTableFields[item.__vModel__].Split('.');
+            var tf = tInfo.ChildTableFields[item.VModel].Split('.');
             result.FieldRule = 2;
             result.TableName = tf.FirstOrDefault().ToLower();
             item.field = tf.LastOrDefault();
@@ -669,7 +669,7 @@ public class CodeGenControlsAttributeHelper
         {
             var fieldList = codeGenConfigModel.TableField.Where(x => x.LowerColumnName.Equals(item.field)).ToList();
             if (fieldList.Any() && fieldList.Count.Equals(1)) item.field = fieldList.First().OriginalColumnName;
-            else item.field = fieldList.Find(x => x.TableName != null && x.TableName.Equals(item.__config__.tableName)).OriginalColumnName;
+            else item.field = fieldList.Find(x => x.TableName != null && x.TableName.Equals(item.Config.tableName)).OriginalColumnName;
         }
         else if (codeGenConfigModel.TableRelations.Any(x => x.OriginalTableName.Equals(result.TableName)))
         {
@@ -766,7 +766,7 @@ public class CodeGenControlsAttributeHelper
                 if (item.fieldValue != null && item.fieldValue.ToString().Contains("["))
                 {
                     var isListValue = false;
-                    var itemField = tInfo.AllFieldsModel.Find(x => x.__vModel__.Equals(item.__vModel__));
+                    var itemField = tInfo.AllFieldsModel.Find(x => x.VModel.Equals(item.VModel));
                     if (itemField.multiple || item.poxiaoKey.Equals(PoxiaoKeyConst.CHECKBOX) || item.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER) || item.poxiaoKey.Equals(PoxiaoKeyConst.ADDRESS))
                         isListValue = true;
                     if (item.poxiaoKey.Equals(PoxiaoKeyConst.COMSELECT)) isListValue = false;
@@ -820,7 +820,7 @@ public class CodeGenControlsAttributeHelper
                 {
                     ConditionalList = new List<KeyValuePair<WhereType, ConditionalModel>>()
                     {
-                        new KeyValuePair<WhereType, ConditionalModel>((item.logic.Equals("&&") ? WhereType.And : WhereType.Or), new ConditionalModel
+                        new KeyValuePair<WhereType, ConditionalModel>( item.logic.Equals("&&") ? WhereType.And : WhereType.Or, new ConditionalModel
                         {
                             FieldName = item.field,
                             ConditionalType = ConditionalType.GreaterThanOrEqual,
@@ -845,7 +845,7 @@ public class CodeGenControlsAttributeHelper
         {
             ConditionalList = new List<KeyValuePair<WhereType, ConditionalModel>>()
             {
-                new KeyValuePair<WhereType, ConditionalModel>((item.logic.Equals("&&") ? WhereType.And : WhereType.Or), new ConditionalModel
+                new KeyValuePair<WhereType, ConditionalModel>( item.logic.Equals("&&") ? WhereType.And : WhereType.Or, new ConditionalModel
                 {
                     FieldName = item.field,
                     ConditionalType = conditionalType,

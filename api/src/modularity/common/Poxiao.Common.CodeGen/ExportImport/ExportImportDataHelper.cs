@@ -1,5 +1,9 @@
-using System.Reflection;
-using System.Text.RegularExpressions;
+using Mapster;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Poxiao.DataEncryption;
+using Poxiao.DependencyInjection;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.CodeGenUpload;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Const;
@@ -13,9 +17,6 @@ using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Models;
 using Poxiao.Infrastructure.Models.NPOI;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DataEncryption;
-using Poxiao.DependencyInjection;
-using Poxiao.FriendlyException;
 using Poxiao.RemoteRequest.Extensions;
 using Poxiao.Systems.Entitys.Model.DataInterFace;
 using Poxiao.Systems.Entitys.Permission;
@@ -26,10 +27,9 @@ using Poxiao.VisualDev.Engine;
 using Poxiao.VisualDev.Engine.Core;
 using Poxiao.WorkFlow.Entitys.Entity;
 using Poxiao.WorkFlow.Interfaces.Service;
-using Mapster;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using SqlSugar;
+using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace Poxiao.Infrastructure.CodeGen.ExportImport;
 
@@ -328,7 +328,8 @@ public class ExportImportDataHelper : ITransient
             var fs = (firstColumns == null || firstColumns.Count() < 1) ? ExcelExportHelper<Dictionary<string, object>>.ExportMemoryStream(realList, excelconfig, columnList) : ExcelExportHelper<Dictionary<string, object>>.ExportMemoryStream(realList, excelconfig, columnList, firstColumns);
             ExcelExportHelper<Dictionary<string, object>>.Export(fs, addPath);
             var fName = userId + "|" + addPath + "|xls";
-            return new {
+            return new
+            {
                 name = excelconfig.FileName,
                 url = "/api/File/Download?encryption=" + DESCEncryption.Encrypt(fName, "Poxiao")
             };
@@ -353,7 +354,7 @@ public class ExportImportDataHelper : ITransient
                 if (att is CodeGenUploadAttribute)
                 {
                     var configModel = new ConfigModel();
-                    field.__vModel__ = (att as CodeGenUploadAttribute).__Model__;
+                    field.VModel = (att as CodeGenUploadAttribute).Model;
                     field.level = (att as CodeGenUploadAttribute).level;
                     field.min = (att as CodeGenUploadAttribute).min == 0 ? null : (att as CodeGenUploadAttribute).min;
                     field.max = (att as CodeGenUploadAttribute).max == 0 ? null : (att as CodeGenUploadAttribute).max;
@@ -376,9 +377,9 @@ public class ExportImportDataHelper : ITransient
                     field.ableGroupIds = (att as CodeGenUploadAttribute).ableGroupIds;
                     field.ableIds = (att as CodeGenUploadAttribute).ableIds;
                     field.relational = (att as CodeGenUploadAttribute).showField;
-                    configModel = (att as CodeGenUploadAttribute).__config__.Adapt<ConfigModel>();
-                    configModel.label = string.Format("{0}({1})", configModel.label, field.__vModel__);
-                    field.__config__ = configModel;
+                    configModel = (att as CodeGenUploadAttribute).Config.Adapt<ConfigModel>();
+                    configModel.label = string.Format("{0}({1})", configModel.label, field.VModel);
+                    field.Config = configModel;
                     fieldList.Add(field);
                 }
             }
@@ -400,7 +401,7 @@ public class ExportImportDataHelper : ITransient
                 if (att is CodeGenUploadAttribute)
                 {
                     var configModel = new ConfigModel();
-                    field.__vModel__ = (att as CodeGenUploadAttribute).__vModel__ ?? (att as CodeGenUploadAttribute).__Model__;
+                    field.VModel = (att as CodeGenUploadAttribute).VModel ?? (att as CodeGenUploadAttribute).Model;
                     field.level = (att as CodeGenUploadAttribute).level;
                     field.min = (att as CodeGenUploadAttribute).min == 0 ? null : (att as CodeGenUploadAttribute).min;
                     field.max = (att as CodeGenUploadAttribute).max == 0 ? null : (att as CodeGenUploadAttribute).max;
@@ -423,9 +424,9 @@ public class ExportImportDataHelper : ITransient
                     field.ableGroupIds = (att as CodeGenUploadAttribute).ableGroupIds;
                     field.ableIds = (att as CodeGenUploadAttribute).ableIds;
                     field.relational = (att as CodeGenUploadAttribute).showField;
-                    configModel = (att as CodeGenUploadAttribute).__config__.Adapt<ConfigModel>();
-                    configModel.label = string.Format("{0}({1})", configModel.label, field.__vModel__);
-                    field.__config__ = configModel;
+                    configModel = (att as CodeGenUploadAttribute).Config.Adapt<ConfigModel>();
+                    configModel.label = string.Format("{0}({1})", configModel.label, field.VModel);
+                    field.Config = configModel;
                     fieldList.Add(field);
                 }
             }
@@ -447,7 +448,7 @@ public class ExportImportDataHelper : ITransient
                 if (att is CodeGenUploadAttribute)
                 {
                     var configModel = new ConfigModel();
-                    field.__vModel__ = string.Format("poxiao_{0}_poxiao_{1}", tableName, (att as CodeGenUploadAttribute).__Model__);
+                    field.VModel = string.Format("poxiao_{0}_poxiao_{1}", tableName, (att as CodeGenUploadAttribute).Model);
                     field.level = (att as CodeGenUploadAttribute).level;
                     field.min = (att as CodeGenUploadAttribute).min == 0 ? null : (att as CodeGenUploadAttribute).min;
                     field.max = (att as CodeGenUploadAttribute).max == 0 ? null : (att as CodeGenUploadAttribute).max;
@@ -470,9 +471,9 @@ public class ExportImportDataHelper : ITransient
                     field.ableGroupIds = (att as CodeGenUploadAttribute).ableGroupIds;
                     field.ableIds = (att as CodeGenUploadAttribute).ableIds;
                     field.relational = (att as CodeGenUploadAttribute).showField;
-                    configModel = (att as CodeGenUploadAttribute).__config__.Adapt<ConfigModel>();
-                    configModel.label = string.Format("{0}({1})", configModel.label, field.__vModel__);
-                    field.__config__ = configModel;
+                    configModel = (att as CodeGenUploadAttribute).Config.Adapt<ConfigModel>();
+                    configModel.label = string.Format("{0}({1})", configModel.label, field.VModel);
+                    field.Config = configModel;
                     fieldList.Add(field);
                 }
             }
@@ -495,7 +496,7 @@ public class ExportImportDataHelper : ITransient
                 if (att is CodeGenUploadAttribute)
                 {
                     var configModel = new ConfigModel();
-                    field.__vModel__ = string.Format("poxiao_{0}_poxiao_{1}", tableName, (att as CodeGenUploadAttribute).__vModel__ ?? (att as CodeGenUploadAttribute).__Model__);
+                    field.VModel = string.Format("poxiao_{0}_poxiao_{1}", tableName, (att as CodeGenUploadAttribute).VModel ?? (att as CodeGenUploadAttribute).Model);
                     field.level = (att as CodeGenUploadAttribute).level;
                     field.min = (att as CodeGenUploadAttribute).min == 0 ? null : (att as CodeGenUploadAttribute).min;
                     field.max = (att as CodeGenUploadAttribute).max == 0 ? null : (att as CodeGenUploadAttribute).max;
@@ -518,9 +519,9 @@ public class ExportImportDataHelper : ITransient
                     field.ableGroupIds = (att as CodeGenUploadAttribute).ableGroupIds;
                     field.ableIds = (att as CodeGenUploadAttribute).ableIds;
                     field.relational = (att as CodeGenUploadAttribute).showField;
-                    configModel = (att as CodeGenUploadAttribute).__config__.Adapt<ConfigModel>();
-                    configModel.label = string.Format("{0}({1})", configModel.label, field.__vModel__);
-                    field.__config__ = configModel;
+                    configModel = (att as CodeGenUploadAttribute).Config.Adapt<ConfigModel>();
+                    configModel.label = string.Format("{0}({1})", configModel.label, field.VModel);
+                    field.Config = configModel;
                     fieldList.Add(field);
                 }
             }
@@ -544,8 +545,8 @@ public class ExportImportDataHelper : ITransient
         {
             foreach (var att in prop.GetCustomAttributes(typeof(CodeGenUploadAttribute), false))
             {
-                string vModel = (att as CodeGenUploadAttribute).__Model__;
-                CodeGenConfigModel congig = (att as CodeGenUploadAttribute).__config__.ToObject<CodeGenConfigModel>();
+                string vModel = (att as CodeGenUploadAttribute).Model;
+                CodeGenConfigModel congig = (att as CodeGenUploadAttribute).Config.ToObject<CodeGenConfigModel>();
                 bool multiple = (bool)(att as CodeGenUploadAttribute)?.multiple;
                 string format = (att as CodeGenUploadAttribute)?.format;
                 int level = (int)(att as CodeGenUploadAttribute)?.level;
@@ -605,7 +606,7 @@ public class ExportImportDataHelper : ITransient
         var isChildTable = tInfo.selectKey.Any(x => tInfo.ChildTableFields.ContainsKey(x));
         try
         {
-            var FileEncode = tInfo.AllFieldsModel.Where(x => tInfo.selectKey.Contains(x.__vModel__)).ToList();
+            var fileEncode = tInfo.AllFieldsModel.Where(x => tInfo.selectKey.Contains(x.VModel)).ToList();
 
             string? savePath = Path.Combine(FileVariable.TemporaryFilePath, fileName);
 
@@ -617,7 +618,7 @@ public class ExportImportDataHelper : ITransient
             if (excelData.Columns.Count > tInfo.selectKey.Count) excelData.Columns.RemoveAt(tInfo.selectKey.Count);
             foreach (object? item in excelData.Columns)
             {
-                excelData.Columns[item.ToString()].ColumnName = FileEncode.Where(x => x.__config__.label == item.ToString()).FirstOrDefault()?.__vModel__;
+                excelData.Columns[item.ToString()].ColumnName = fileEncode.Where(x => x.Config.label == item.ToString()).FirstOrDefault()?.VModel;
             }
 
             resData = excelData.ToJsonString().ToObjectOld<List<Dictionary<string, object>>>();
@@ -638,7 +639,7 @@ public class ExportImportDataHelper : ITransient
                                 {
                                     child.Add(new { id = x.Key.Replace(childVModel + "-", string.Empty), fullName = x.Value.ToString().Replace(string.Format("({0})", x.Key), string.Empty) });
                                 });
-                                headerRow.Add(new { id = childVModel, fullName = tInfo.AllFieldsModel.Find(x => x.__vModel__.Equals(childVModel)).__config__.label.Replace(string.Format("({0})", childVModel), string.Empty), children = child });
+                                headerRow.Add(new { id = childVModel, fullName = tInfo.AllFieldsModel.Find(x => x.VModel.Equals(childVModel)).Config.label.Replace(string.Format("({0})", childVModel), string.Empty), children = child });
                             }
                         }
                         else
@@ -668,7 +669,7 @@ public class ExportImportDataHelper : ITransient
             {
                 var newData = new List<Dictionary<string, object>>();
                 var singleForm = tInfo.selectKey.Where(x => !x.Contains("tableField")).ToList();
-                var childTableVModel = tInfo.AllFieldsModel.Where(x => x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).Select(x => x.__vModel__).ToList();
+                var childTableVModel = tInfo.AllFieldsModel.Where(x => x.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).Select(x => x.VModel).ToList();
                 resData.ForEach(dataItem =>
                 {
                     var addItem = new Dictionary<string, object>();
@@ -755,18 +756,20 @@ public class ExportImportDataHelper : ITransient
         {
             foreach (var item in items)
             {
-                var vmodel = tInfo.AllFieldsModel.FirstOrDefault(x => x.__vModel__.Equals(item.Key));
-                if (vmodel != null && vmodel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.DATE) && item.Value.IsNotEmptyOrNull())
+                var vmodel = tInfo.AllFieldsModel.FirstOrDefault(x => x.VModel.Equals(item.Key));
+                if (vmodel != null && vmodel.Config.poxiaoKey.Equals(PoxiaoKeyConst.DATE) && item.Value.IsNotEmptyOrNull())
+                {
                     items[item.Key] = string.Format("{0:" + vmodel.format + "} ", item.Value);
-                else if (vmodel != null && vmodel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE) && item.Value.IsNotEmptyOrNull())
+                }
+                else if (vmodel != null && vmodel.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE) && item.Value.IsNotEmptyOrNull())
                 {
                     var ctList = item.Value.ToJsonString().ToObjectOld<List<Dictionary<string, object>>>();
                     ctList.ForEach(ctItems =>
                     {
                         foreach (var ctItem in ctItems)
                         {
-                            var ctVmodel = tInfo.AllFieldsModel.FirstOrDefault(x => x.__vModel__.Equals(vmodel.__vModel__ + "-" + ctItem.Key));
-                            if (ctVmodel != null && ctVmodel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.DATE) && ctItem.Value.IsNotEmptyOrNull())
+                            var ctVmodel = tInfo.AllFieldsModel.FirstOrDefault(x => x.VModel.Equals(vmodel.VModel + "-" + ctItem.Key));
+                            if (ctVmodel != null && ctVmodel.Config.poxiaoKey.Equals(PoxiaoKeyConst.DATE) && ctItem.Value.IsNotEmptyOrNull())
                                 ctItems[ctItem.Key] = string.Format("{0:" + vmodel.format + "} ", ctItem.Value);
                         }
                     });
@@ -789,7 +792,7 @@ public class ExportImportDataHelper : ITransient
     public async Task<object[]> ImportMenuData(TemplateParsingBase tInfo, List<Dictionary<string, object>> list, string vId = "")
     {
         List<Dictionary<string, object>> userInputList = ImportFirstVerify(tInfo, list);
-        List<FieldsModel> fieldsModelList = tInfo.AllFieldsModel.Where(x => tInfo.selectKey.Contains(x.__vModel__)).ToList();
+        List<FieldsModel> fieldsModelList = tInfo.AllFieldsModel.Where(x => tInfo.selectKey.Contains(x.VModel)).ToList();
 
         var successList = new List<Dictionary<string, object>>();
         var errorsList = new List<Dictionary<string, object>>();
@@ -803,7 +806,7 @@ public class ExportImportDataHelper : ITransient
         try
         {
             // 唯一验证已处理，入库前去掉.
-            tInfo.AllFieldsModel.Where(x => x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.COMINPUT) && x.__config__.unique).ToList().ForEach(item => item.__config__.unique = false);
+            tInfo.AllFieldsModel.Where(x => x.Config.poxiaoKey.Equals(PoxiaoKeyConst.COMINPUT) && x.Config.unique).ToList().ForEach(item => item.Config.unique = false);
             _sqlSugarClient.BeginTran();
             foreach (var item in successList)
             {
@@ -818,7 +821,7 @@ public class ExportImportDataHelper : ITransient
                     if ((tInfo.visualDevEntity?.EnableFlow.Equals(1)).ParseToBool())
                     {
                         var flowId = _repository.AsSugarClient().Queryable<WorkFlow.Entitys.Entity.FlowFormEntity>().First(x => x.Id.Equals(vId)).FlowId;
-                        var id = (await _repository.AsSugarClient().Queryable<FlowTemplateJsonEntity>().Where(x => x.TemplateId == flowId && x.EnabledMark == 1 && x.DeleteMark == null).Select(x => x.Id).FirstAsync());
+                        var id = await _repository.AsSugarClient().Queryable<FlowTemplateJsonEntity>().Where(x => x.TemplateId == flowId && x.EnabledMark == 1 && x.DeleteMark == null).Select(x => x.Id).FirstAsync();
                         await _flowTaskService.Create(new Infrastructure.Models.WorkFlow.FlowTaskSubmitModel() { formData = item, flowId = id, flowUrgent = 1, status = 1 });
                     }
                     else
@@ -876,11 +879,11 @@ public class ExportImportDataHelper : ITransient
             excelconfig.ColumnModel = new List<ExcelColumnModel>();
             foreach (string? item in tInfo.selectKey)
             {
-                var excelColumn = tInfo.AllFieldsModel.Find(t => t.__vModel__ == item);
+                var excelColumn = tInfo.AllFieldsModel.Find(t => t.VModel == item);
                 if (excelColumn != null)
                 {
-                    excelconfig.ColumnModel.Add(new ExcelColumnModel() { Column = item, ExcelColumn = excelColumn.__config__.label });
-                    columnList.Add(excelColumn.__config__.label);
+                    excelconfig.ColumnModel.Add(new ExcelColumnModel() { Column = item, ExcelColumn = excelColumn.Config.label });
+                    columnList.Add(excelColumn.Config.label);
                 }
             }
 
@@ -917,11 +920,11 @@ public class ExportImportDataHelper : ITransient
         });
 
         #region 验证必填控件
-        var childTableList = tInfo.AllFieldsModel.Where(x => x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).Select(x => x.__vModel__).ToList();
-        var requiredList = tInfo.AllFieldsModel.Where(x => x.__config__.required).ToList();
-        var VModelList = requiredList.Select(x => x.__vModel__).ToList();
+        var childTableList = tInfo.AllFieldsModel.Where(x => x.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).Select(x => x.VModel).ToList();
+        var requiredList = tInfo.AllFieldsModel.Where(x => x.Config.required).ToList();
+        var vModelList = requiredList.Select(x => x.VModel).ToList();
 
-        if (VModelList.Any())
+        if (vModelList.Any())
         {
             var newResList = new List<Dictionary<string, object>>();
             resList.ForEach(items =>
@@ -929,9 +932,9 @@ public class ExportImportDataHelper : ITransient
                 var newItems = items.Copy();
                 foreach (var item in items)
                 {
-                    if (item.Value.IsNullOrEmpty() && VModelList.Contains(item.Key))
+                    if (item.Value.IsNullOrEmpty() && vModelList.Contains(item.Key))
                     {
-                        var errorInfo = requiredList.Find(x => x.__vModel__.Equals(item.Key)).__config__.label + ": 值不能为空";
+                        var errorInfo = requiredList.Find(x => x.VModel.Equals(item.Key)).Config.label + ": 值不能为空";
                         if (newItems.ContainsKey(errorKey)) newItems[errorKey] = newItems[errorKey] + "," + errorInfo;
                         else newItems.Add(errorKey, errorInfo);
                     }
@@ -943,9 +946,9 @@ public class ExportImportDataHelper : ITransient
                         {
                             foreach (var childItem in childItems)
                             {
-                                if (childItem.Value.IsNullOrEmpty() && VModelList.Contains(item.Key + "-" + childItem.Key))
+                                if (childItem.Value.IsNullOrEmpty() && vModelList.Contains(item.Key + "-" + childItem.Key))
                                 {
-                                    var errorInfo = tInfo.AllFieldsModel.Find(x => x.__vModel__.Equals(item.Key)).__config__.children.Find(x => x.__vModel__.Equals(item.Key + "-" + childItem.Key)).__config__.label + ": 值不能为空";
+                                    var errorInfo = tInfo.AllFieldsModel.Find(x => x.VModel.Equals(item.Key)).Config.children.Find(x => x.VModel.Equals(item.Key + "-" + childItem.Key)).Config.label + ": 值不能为空";
                                     if (newItems.ContainsKey(errorKey)) newItems[errorKey] = newItems[errorKey] + "," + errorInfo;
                                     else newItems.Add(errorKey, errorInfo);
                                 }
@@ -960,8 +963,8 @@ public class ExportImportDataHelper : ITransient
         #endregion
 
         #region 验证唯一
-        var uniqueList = tInfo.AllFieldsModel.Where(x => x.__config__.unique).ToList();
-        VModelList = uniqueList.Select(x => x.__vModel__).ToList();
+        var uniqueList = tInfo.AllFieldsModel.Where(x => x.Config.unique).ToList();
+        vModelList = uniqueList.Select(x => x.VModel).ToList();
 
         if (uniqueList.Any())
         {
@@ -969,7 +972,7 @@ public class ExportImportDataHelper : ITransient
             {
                 foreach (var item in items)
                 {
-                    if (VModelList.Contains(item.Key))
+                    if (vModelList.Contains(item.Key))
                     {
                         var vlist = new List<Dictionary<string, object>>();
                         resList.Where(x => x.ContainsKey(item.Key) && x.ContainsValue(item.Value)).ToList().ForEach(it =>
@@ -987,7 +990,7 @@ public class ExportImportDataHelper : ITransient
                         {
                             for (var i = 1; i < vlist.Count; i++)
                             {
-                                var errorInfo = tInfo.AllFieldsModel.Find(x => x.__vModel__.Equals(item.Key)).__config__.label + ": 值不能重复";
+                                var errorInfo = tInfo.AllFieldsModel.Find(x => x.VModel.Equals(item.Key)).Config.label + ": 值不能重复";
                                 items[errorKey] = items[errorKey] + "," + errorInfo;
                             }
                         }
@@ -1006,7 +1009,7 @@ public class ExportImportDataHelper : ITransient
                                 foreach (var childItem in childItems)
                                 {
                                     var uniqueKey = item.Key + "-" + childItem.Key;
-                                    if (VModelList.Contains(uniqueKey))
+                                    if (vModelList.Contains(uniqueKey))
                                     {
                                         var vlist = itemCList.Where(x => x.ContainsKey(childItem.Key) && x.ContainsValue(childItem.Value)).ToList();
                                         if (!updateItemCList.Any(x => x.ContainsKey(childItem.Key) && x.ContainsValue(childItem.Value)))
@@ -1019,14 +1022,14 @@ public class ExportImportDataHelper : ITransient
                                 foreach (var childItem in childItems)
                                 {
                                     var uniqueKey = item.Key + "-" + childItem.Key;
-                                    if (VModelList.Contains(uniqueKey) && childItem.Value != null)
+                                    if (vModelList.Contains(uniqueKey) && childItem.Value != null)
                                     {
                                         var vlist = itemCList.Where(x => x.ContainsKey(childItem.Key) && x.ContainsValue(childItem.Value)).ToList();
                                         if (vlist.Count > 1)
                                         {
                                             for (var i = 1; i < vlist.Count; i++)
                                             {
-                                                var errorTxt = tInfo.AllFieldsModel.Find(x => x.__vModel__.Equals(uniqueKey)).__config__.label + ": 值不能重复";
+                                                var errorTxt = tInfo.AllFieldsModel.Find(x => x.VModel.Equals(uniqueKey)).Config.label + ": 值不能重复";
                                                 if (!ctItemErrors.Any(x => x.Equals(errorTxt))) ctItemErrors.Add(errorTxt);
                                             }
                                         }
@@ -1046,7 +1049,7 @@ public class ExportImportDataHelper : ITransient
 
             // 表里的数据验证唯一
             List<string>? relationKey = new List<string>();
-            List<string>? auxiliaryFieldList = tInfo.AuxiliaryTableFieldsModelList.Select(x => x.__config__.tableName).Distinct().ToList();
+            List<string>? auxiliaryFieldList = tInfo.AuxiliaryTableFieldsModelList.Select(x => x.Config.tableName).Distinct().ToList();
             auxiliaryFieldList.ForEach(tName =>
             {
                 string? tableField = tInfo.AllTable.Find(tf => tf.table == tName)?.tableField;
@@ -1058,11 +1061,11 @@ public class ExportImportDataHelper : ITransient
                 List<string>? fieldList = new List<string>();
                 var whereList = new List<IConditionalModel>();
                 fieldList.Add(string.Format("{0}.{1}", tInfo.MainTableName, tInfo.MainPrimary));
-                tInfo.SingleFormData.Where(x => x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.COMINPUT) && x.__config__.unique).ToList().ForEach(item =>
+                tInfo.SingleFormData.Where(x => x.Config.poxiaoKey.Equals(PoxiaoKeyConst.COMINPUT) && x.Config.unique).ToList().ForEach(item =>
                 {
-                    fieldList.Add(string.Format("{0}.{1} {2}", item.__config__.tableName, item.__vModel__.Split("_poxiao_").Last(), item.__vModel__));
+                    fieldList.Add(string.Format("{0}.{1} {2}", item.Config.tableName, item.VModel.Split("_poxiao_").Last(), item.VModel));
 
-                    if (allDataMap.ContainsKey(item.__vModel__) && allDataMap[item.__vModel__] != null)
+                    if (allDataMap.ContainsKey(item.VModel) && allDataMap[item.VModel] != null)
                     {
                         whereList.Add(new ConditionalCollections()
                         {
@@ -1070,9 +1073,9 @@ public class ExportImportDataHelper : ITransient
                                 {
                                     new KeyValuePair<WhereType, ConditionalModel>(WhereType.Or, new ConditionalModel
                                     {
-                                        FieldName = string.Format("{0}.{1}", item.__config__.tableName, item.__vModel__.Split("_poxiao_").Last()),
-                                        ConditionalType =allDataMap.ContainsKey(item.__vModel__) ? ConditionalType.Equal: ConditionalType.IsNullOrEmpty,
-                                        FieldValue = allDataMap.ContainsKey(item.__vModel__) ? allDataMap[item.__vModel__].ToString() : string.Empty,
+                                        FieldName = string.Format("{0}.{1}", item.Config.tableName, item.VModel.Split("_poxiao_").Last()),
+                                        ConditionalType = allDataMap.ContainsKey(item.VModel) ? ConditionalType.Equal : ConditionalType.IsNullOrEmpty,
+                                        FieldValue = allDataMap.ContainsKey(item.VModel) ? allDataMap[item.VModel].ToString() : string.Empty,
                                     })
                                 }
                         });
@@ -1110,7 +1113,7 @@ public class ExportImportDataHelper : ITransient
                             {
                                 if (items.Last().Value == null || items.Last().Value.Equals(allDataMap[items.Last().Key].ToString()))
                                 {
-                                    var errorInfo = tInfo.SingleFormData.First(x => x.__vModel__.Equals(items.Last().Key))?.__config__.label + ": 值不能重复";
+                                    var errorInfo = tInfo.SingleFormData.First(x => x.VModel.Equals(items.Last().Key))?.Config.label + ": 值不能重复";
                                     if (allDataMap.ContainsKey(errorKey))
                                     {
                                         if (!allDataMap[errorKey].ToString().Contains(errorInfo)) allDataMap[errorKey] = allDataMap[errorKey] + "," + errorInfo;
@@ -1144,10 +1147,10 @@ public class ExportImportDataHelper : ITransient
     /// <returns></returns>
     private async Task<Dictionary<string, List<Dictionary<string, string>>>> GetCDataList(List<FieldsModel> listFieldsModel, Dictionary<string, List<Dictionary<string, string>>> resData)
     {
-        foreach (var item in listFieldsModel.Where(x => !x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).ToList())
+        foreach (var item in listFieldsModel.Where(x => !x.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).ToList())
         {
             var addItem = new List<Dictionary<string, string>>();
-            switch (item.__config__.poxiaoKey)
+            switch (item.Config.poxiaoKey)
             {
                 case PoxiaoKeyConst.COMSELECT:
                     {
@@ -1290,7 +1293,7 @@ public class ExportImportDataHelper : ITransient
                     break;
                 case PoxiaoKeyConst.SWITCH:
                     {
-                        if (!resData.ContainsKey(item.__vModel__))
+                        if (!resData.ContainsKey(item.VModel))
                         {
                             Dictionary<string, string> dictionary = new Dictionary<string, string>();
                             dictionary.Add("1", item.activeTxt);
@@ -1298,7 +1301,7 @@ public class ExportImportDataHelper : ITransient
                             Dictionary<string, string> dictionary2 = new Dictionary<string, string>();
                             dictionary2.Add("0", item.inactiveTxt);
                             addItem.Add(dictionary2);
-                            resData.Add(item.__vModel__, addItem);
+                            resData.Add(item.VModel, addItem);
                         }
                     }
 
@@ -1307,7 +1310,7 @@ public class ExportImportDataHelper : ITransient
                 case PoxiaoKeyConst.SELECT:
                 case PoxiaoKeyConst.RADIO:
                     {
-                        if (!resData.ContainsKey(item.__vModel__))
+                        if (!resData.ContainsKey(item.VModel))
                         {
                             var propsValue = string.Empty;
                             var propsLabel = string.Empty;
@@ -1319,7 +1322,7 @@ public class ExportImportDataHelper : ITransient
                                 children = item.props.props.children;
                             }
 
-                            if (item.__config__.dataType.Equals("static"))
+                            if (item.Config.dataType.Equals("static"))
                             {
                                 if (item != null && item.options != null)
                                 {
@@ -1329,13 +1332,13 @@ public class ExportImportDataHelper : ITransient
                                         dictionary.Add(option[propsValue].ToString(), option[propsLabel].ToString());
                                         addItem.Add(dictionary);
                                     });
-                                    resData.Add(item.__vModel__, addItem);
+                                    resData.Add(item.VModel, addItem);
                                 }
                             }
-                            else if (item.__config__.dataType.Equals("dictionary"))
+                            else if (item.Config.dataType.Equals("dictionary"))
                             {
                                 var dictionaryDataList = await _repository.AsSugarClient().Queryable<DictionaryDataEntity, DictionaryTypeEntity>((a, b) => new JoinQueryInfos(JoinType.Left, b.Id == a.DictionaryTypeId))
-                                    .WhereIF(item.__config__.dictionaryType.IsNotEmptyOrNull(), (a, b) => b.Id == item.__config__.dictionaryType || b.EnCode == item.__config__.dictionaryType)
+                                    .WhereIF(item.Config.dictionaryType.IsNotEmptyOrNull(), (a, b) => b.Id == item.Config.dictionaryType || b.EnCode == item.Config.dictionaryType)
                                     .Where(a => a.DeleteMark == null).Select(a => new { a.Id, a.EnCode, a.FullName }).ToListAsync();
 
                                 foreach (var it in dictionaryDataList)
@@ -1346,12 +1349,12 @@ public class ExportImportDataHelper : ITransient
                                     addItem.Add(dictionary);
                                 }
 
-                                resData.Add(item.__vModel__, addItem);
+                                resData.Add(item.VModel, addItem);
                             }
-                            else if (item.__config__.dataType.Equals("dynamic"))
+                            else if (item.Config.dataType.Equals("dynamic"))
                             {
                                 var popDataList = await _formDataParsing.GetDynamicList(item);
-                                resData.Add(item.__vModel__, popDataList);
+                                resData.Add(item.VModel, popDataList);
                             }
                         }
                     }
@@ -1359,17 +1362,17 @@ public class ExportImportDataHelper : ITransient
                 case PoxiaoKeyConst.TREESELECT:
                 case PoxiaoKeyConst.CASCADER:
                     {
-                        if (!resData.ContainsKey(item.__vModel__))
+                        if (!resData.ContainsKey(item.VModel))
                         {
-                            if (item.__config__.dataType.Equals("static"))
+                            if (item.Config.dataType.Equals("static"))
                             {
                                 if (item.options != null)
-                                    resData.Add(item.__vModel__, GetStaticList(item));
+                                    resData.Add(item.VModel, GetStaticList(item));
                             }
-                            else if (item.__config__.dataType.Equals("dictionary"))
+                            else if (item.Config.dataType.Equals("dictionary"))
                             {
                                 var dictionaryDataList = await _repository.AsSugarClient().Queryable<DictionaryDataEntity, DictionaryTypeEntity>((a, b) => new JoinQueryInfos(JoinType.Left, b.Id == a.DictionaryTypeId))
-                                    .WhereIF(item.__config__.dictionaryType.IsNotEmptyOrNull(), (a, b) => b.Id == item.__config__.dictionaryType || b.EnCode == item.__config__.dictionaryType)
+                                    .WhereIF(item.Config.dictionaryType.IsNotEmptyOrNull(), (a, b) => b.Id == item.Config.dictionaryType || b.EnCode == item.Config.dictionaryType)
                                     .Where(a => a.DeleteMark == null).Select(a => new { a.Id, a.EnCode, a.FullName }).ToListAsync();
 
                                 foreach (var it in dictionaryDataList)
@@ -1380,12 +1383,12 @@ public class ExportImportDataHelper : ITransient
                                     addItem.Add(dictionary);
                                 }
 
-                                resData.Add(item.__vModel__, addItem);
+                                resData.Add(item.VModel, addItem);
                             }
-                            else if (item.__config__.dataType.Equals("dynamic"))
+                            else if (item.Config.dataType.Equals("dynamic"))
                             {
                                 var popDataList = await _formDataParsing.GetDynamicList(item);
-                                resData.Add(item.__vModel__, popDataList);
+                                resData.Add(item.VModel, popDataList);
                             }
                         }
                     }
@@ -1393,17 +1396,17 @@ public class ExportImportDataHelper : ITransient
                     break;
                 case PoxiaoKeyConst.POPUPTABLESELECT:
                     {
-                        if (!resData.ContainsKey(item.__vModel__))
+                        if (!resData.ContainsKey(item.VModel))
                         {
                             var popDataList = await _formDataParsing.GetDynamicList(item);
-                            resData.Add(item.__vModel__, popDataList);
+                            resData.Add(item.VModel, popDataList);
                         }
                     }
                     break;
 
                 case PoxiaoKeyConst.USERSELECT:
                     {
-                        if (!resData.ContainsKey(item.__vModel__))
+                        if (!resData.ContainsKey(item.VModel))
                         {
                             if (item.selectType.Equals("all"))
                             {
@@ -1414,7 +1417,7 @@ public class ExportImportDataHelper : ITransient
                                     dictionary.Add(item.Id, item.Account);
                                     addItem.Add(dictionary);
                                 });
-                                resData.Add(item.__vModel__, addItem);
+                                resData.Add(item.VModel, addItem);
                             }
                             else if (item.selectType.Equals("custom"))
                             {
@@ -1429,7 +1432,7 @@ public class ExportImportDataHelper : ITransient
                                     dictionary.Add(item.Id, item.Account);
                                     if (!addItem.Any(x => x.ContainsKey(item.Id))) addItem.Add(dictionary);
                                 });
-                                resData.Add(item.__vModel__, addItem);
+                                resData.Add(item.VModel, addItem);
                             }
                         }
                     }
@@ -1437,7 +1440,7 @@ public class ExportImportDataHelper : ITransient
                     break;
                 case PoxiaoKeyConst.USERSSELECT:
                     {
-                        if (!resData.ContainsKey(item.__vModel__))
+                        if (!resData.ContainsKey(item.VModel))
                         {
                             if (item.selectType.Equals("all"))
                             {
@@ -1497,7 +1500,7 @@ public class ExportImportDataHelper : ITransient
                                         if (!addItem.Any(x => x.ContainsKey(item.Id))) addItem.Add(dictionary);
                                     });
                                 }
-                                resData.Add(item.__vModel__, addItem);
+                                resData.Add(item.VModel, addItem);
                             }
                             else if (item.selectType.Equals("custom"))
                             {
@@ -1513,7 +1516,7 @@ public class ExportImportDataHelper : ITransient
                                         dictionary.Add(item.Id + "--user", item.Account);
                                         if (!addItem.Any(x => x.ContainsKey(item.Id))) addItem.Add(dictionary);
                                     });
-                                    resData.Add(item.__vModel__, addItem);
+                                    resData.Add(item.VModel, addItem);
                                 }
                             }
                         }
@@ -1522,7 +1525,7 @@ public class ExportImportDataHelper : ITransient
                     break;
                 case PoxiaoKeyConst.DEPSELECT:
                     {
-                        if (!resData.ContainsKey(item.__vModel__))
+                        if (!resData.ContainsKey(item.VModel))
                         {
                             if (item.selectType.Equals("all"))
                             {
@@ -1533,7 +1536,7 @@ public class ExportImportDataHelper : ITransient
                                     dictionary.Add(item.Id, item.EnCode);
                                     addItem.Add(dictionary);
                                 });
-                                resData.Add(item.__vModel__, addItem);
+                                resData.Add(item.VModel, addItem);
                             }
                             else if (item.selectType.Equals("custom"))
                             {
@@ -1548,7 +1551,7 @@ public class ExportImportDataHelper : ITransient
                                         dictionary.Add(item.Id, item.EnCode);
                                         if (!addItem.Any(x => x.ContainsKey(item.Id))) addItem.Add(dictionary);
                                     });
-                                    resData.Add(item.__vModel__, addItem);
+                                    resData.Add(item.VModel, addItem);
                                 }
                             }
                         }
@@ -1557,7 +1560,7 @@ public class ExportImportDataHelper : ITransient
                     break;
                 case PoxiaoKeyConst.POSSELECT:
                     {
-                        if (!resData.ContainsKey(item.__vModel__))
+                        if (!resData.ContainsKey(item.VModel))
                         {
                             if (item.selectType.Equals("all"))
                             {
@@ -1568,7 +1571,7 @@ public class ExportImportDataHelper : ITransient
                                     dictionary.Add(item.Id, item.EnCode);
                                     addItem.Add(dictionary);
                                 });
-                                resData.Add(item.__vModel__, addItem);
+                                resData.Add(item.VModel, addItem);
                             }
                             else if (item.selectType.Equals("custom"))
                             {
@@ -1582,7 +1585,7 @@ public class ExportImportDataHelper : ITransient
                                         dictionary.Add(item.Id, item.EnCode);
                                         addItem.Add(dictionary);
                                     });
-                                    resData.Add(item.__vModel__, addItem);
+                                    resData.Add(item.VModel, addItem);
                                 }
                                 if (item.ablePosIds.Any())
                                 {
@@ -1595,17 +1598,20 @@ public class ExportImportDataHelper : ITransient
                                         addItem.Add(dictionary);
                                     });
 
-                                    if (resData.ContainsKey(item.__vModel__))
+                                    if (resData.ContainsKey(item.VModel))
                                     {
                                         var newAddItem = new List<Dictionary<string, string>>();
                                         foreach (var it in addItem)
                                         {
                                             var tempIt = it.FirstOrDefault().Value;
-                                            if (tempIt.IsNotEmptyOrNull() && !resData[item.__vModel__].Any(x => x.ContainsValue(tempIt))) newAddItem.Add(it);
+                                            if (tempIt.IsNotEmptyOrNull() && !resData[item.VModel].Any(x => x.ContainsValue(tempIt))) newAddItem.Add(it);
                                         }
-                                        resData[item.__vModel__].AddRange(newAddItem);
+                                        resData[item.VModel].AddRange(newAddItem);
                                     }
-                                    else resData.Add(item.__vModel__, addItem);
+                                    else
+                                    {
+                                        resData.Add(item.VModel, addItem);
+                                    }
                                 }
                             }
                         }
@@ -1615,9 +1621,9 @@ public class ExportImportDataHelper : ITransient
             }
         }
 
-        listFieldsModel.Where(x => x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).ToList().ForEach(async item =>
+        listFieldsModel.Where(x => x.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).ToList().ForEach(async item =>
         {
-            var res = await GetCDataList(item.__config__.children, resData);
+            var res = await GetCDataList(item.Config.children, resData);
             if (res.Any()) foreach (var it in res) if (!resData.ContainsKey(it.Key)) resData.Add(it.Key, it.Value);
         });
 
@@ -1642,13 +1648,13 @@ public class ExportImportDataHelper : ITransient
             var newDataItems = dataItems.Copy();
             foreach (var item in dataItems)
             {
-                var vModel = fieldsModelList.Find(x => x.__vModel__.Equals(item.Key));
+                var vModel = fieldsModelList.Find(x => x.VModel.Equals(item.Key));
                 if (vModel == null) continue;
                 var dicList = new List<Dictionary<string, string>>();
-                if (cDataList.ContainsKey(vModel.__config__.poxiaoKey)) dicList = cDataList[vModel.__config__.poxiaoKey];
-                if ((dicList == null || !dicList.Any()) && cDataList.ContainsKey(vModel.__vModel__)) dicList = cDataList[vModel.__vModel__];
+                if (cDataList.ContainsKey(vModel.Config.poxiaoKey)) dicList = cDataList[vModel.Config.poxiaoKey];
+                if ((dicList == null || !dicList.Any()) && cDataList.ContainsKey(vModel.VModel)) dicList = cDataList[vModel.VModel];
 
-                switch (vModel.__config__.poxiaoKey)
+                switch (vModel.Config.poxiaoKey)
                 {
                     case PoxiaoKeyConst.DATE:
                         try
@@ -1659,23 +1665,23 @@ public class ExportImportDataHelper : ITransient
                                 var value = DateTime.ParseExact(item.Value.ToString().TrimEnd(), vModel.format, System.Globalization.CultureInfo.CurrentCulture);
                                 var date = value.ParseToUnixTime();
 
-                                if (vModel.__config__.startTimeRule && vModel.__config__.startTimeValue.IsNotEmptyOrNull())
+                                if (vModel.Config.startTimeRule && vModel.Config.startTimeValue.IsNotEmptyOrNull())
                                 {
                                     var minDate = DateTime.Now.ParseToUnixTime();
-                                    switch (vModel.__config__.startTimeType)
+                                    switch (vModel.Config.startTimeType)
                                     {
                                         case 1:
                                             {
-                                                if (vModel.__config__.startTimeValue.IsNotEmptyOrNull())
-                                                    minDate = vModel.__config__.startTimeValue.ParseToLong();
+                                                if (vModel.Config.startTimeValue.IsNotEmptyOrNull())
+                                                    minDate = vModel.Config.startTimeValue.ParseToLong();
                                             }
 
                                             break;
                                         case 2:
                                             {
-                                                if (vModel.__config__.startRelationField.IsNotEmptyOrNull() && dataItems.ContainsKey(vModel.__config__.startRelationField))
+                                                if (vModel.Config.startRelationField.IsNotEmptyOrNull() && dataItems.ContainsKey(vModel.Config.startRelationField))
                                                 {
-                                                    var data = dataItems[vModel.__config__.startRelationField].ToString();
+                                                    var data = dataItems[vModel.Config.startRelationField].ToString();
                                                     minDate = data.Substring(0, data.Length - 1).ParseToDateTime().ParseToUnixTime();
                                                 }
                                             }
@@ -1685,16 +1691,16 @@ public class ExportImportDataHelper : ITransient
                                             break;
                                         case 4:
                                             {
-                                                switch (vModel.__config__.startTimeTarget)
+                                                switch (vModel.Config.startTimeTarget)
                                                 {
                                                     case 1:
-                                                        minDate = minDate.TimeStampToDateTime().AddYears(-vModel.__config__.startTimeValue.ParseToInt()).ParseToUnixTime();
+                                                        minDate = minDate.TimeStampToDateTime().AddYears(-vModel.Config.startTimeValue.ParseToInt()).ParseToUnixTime();
                                                         break;
                                                     case 2:
-                                                        minDate = minDate.TimeStampToDateTime().AddMonths(-vModel.__config__.startTimeValue.ParseToInt()).ParseToUnixTime();
+                                                        minDate = minDate.TimeStampToDateTime().AddMonths(-vModel.Config.startTimeValue.ParseToInt()).ParseToUnixTime();
                                                         break;
                                                     case 3:
-                                                        minDate = minDate.TimeStampToDateTime().AddDays(-vModel.__config__.startTimeValue.ParseToInt()).ParseToUnixTime();
+                                                        minDate = minDate.TimeStampToDateTime().AddDays(-vModel.Config.startTimeValue.ParseToInt()).ParseToUnixTime();
                                                         break;
                                                 }
                                             }
@@ -1702,16 +1708,16 @@ public class ExportImportDataHelper : ITransient
                                             break;
                                         case 5:
                                             {
-                                                switch (vModel.__config__.startTimeTarget)
+                                                switch (vModel.Config.startTimeTarget)
                                                 {
                                                     case 1:
-                                                        minDate = minDate.TimeStampToDateTime().AddYears(vModel.__config__.startTimeValue.ParseToInt()).ParseToUnixTime();
+                                                        minDate = minDate.TimeStampToDateTime().AddYears(vModel.Config.startTimeValue.ParseToInt()).ParseToUnixTime();
                                                         break;
                                                     case 2:
-                                                        minDate = minDate.TimeStampToDateTime().AddMonths(vModel.__config__.startTimeValue.ParseToInt()).ParseToUnixTime();
+                                                        minDate = minDate.TimeStampToDateTime().AddMonths(vModel.Config.startTimeValue.ParseToInt()).ParseToUnixTime();
                                                         break;
                                                     case 3:
-                                                        minDate = minDate.TimeStampToDateTime().AddDays(vModel.__config__.startTimeValue.ParseToInt()).ParseToUnixTime();
+                                                        minDate = minDate.TimeStampToDateTime().AddDays(vModel.Config.startTimeValue.ParseToInt()).ParseToUnixTime();
                                                         break;
                                                 }
                                             }
@@ -1721,29 +1727,29 @@ public class ExportImportDataHelper : ITransient
 
                                     if (minDate > date)
                                     {
-                                        var errorInfo = vModel.__config__.label + ": 日期选择值不在范围内";
+                                        var errorInfo = vModel.Config.label + ": 日期选择值不在范围内";
                                         if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                         else newDataItems.Add(errorKey, errorInfo);
                                     }
                                 }
 
-                                if (vModel.__config__.endTimeRule && vModel.__config__.endTimeValue.IsNotEmptyOrNull())
+                                if (vModel.Config.endTimeRule && vModel.Config.endTimeValue.IsNotEmptyOrNull())
                                 {
                                     var maxDate = DateTime.Now.ParseToUnixTime();
-                                    switch (vModel.__config__.endTimeType)
+                                    switch (vModel.Config.endTimeType)
                                     {
                                         case 1:
                                             {
-                                                if (vModel.__config__.endTimeValue.IsNotEmptyOrNull())
-                                                    maxDate = vModel.__config__.endTimeValue.ParseToLong();
+                                                if (vModel.Config.endTimeValue.IsNotEmptyOrNull())
+                                                    maxDate = vModel.Config.endTimeValue.ParseToLong();
                                             }
 
                                             break;
                                         case 2:
                                             {
-                                                if (vModel.__config__.endRelationField.IsNotEmptyOrNull() && dataItems.ContainsKey(vModel.__config__.endRelationField))
+                                                if (vModel.Config.endRelationField.IsNotEmptyOrNull() && dataItems.ContainsKey(vModel.Config.endRelationField))
                                                 {
-                                                    var data = dataItems[vModel.__config__.endRelationField].ToString();
+                                                    var data = dataItems[vModel.Config.endRelationField].ToString();
                                                     maxDate = data.Substring(0, data.Length - 1).ParseToDateTime().ParseToUnixTime();
                                                 }
                                             }
@@ -1753,16 +1759,16 @@ public class ExportImportDataHelper : ITransient
                                             break;
                                         case 4:
                                             {
-                                                switch (vModel.__config__.startTimeTarget)
+                                                switch (vModel.Config.startTimeTarget)
                                                 {
                                                     case 1:
-                                                        maxDate = maxDate.TimeStampToDateTime().AddYears(-vModel.__config__.endTimeValue.ParseToInt()).ParseToUnixTime();
+                                                        maxDate = maxDate.TimeStampToDateTime().AddYears(-vModel.Config.endTimeValue.ParseToInt()).ParseToUnixTime();
                                                         break;
                                                     case 2:
-                                                        maxDate = maxDate.TimeStampToDateTime().AddMonths(-vModel.__config__.endTimeValue.ParseToInt()).ParseToUnixTime();
+                                                        maxDate = maxDate.TimeStampToDateTime().AddMonths(-vModel.Config.endTimeValue.ParseToInt()).ParseToUnixTime();
                                                         break;
                                                     case 3:
-                                                        maxDate = maxDate.TimeStampToDateTime().AddDays(-vModel.__config__.endTimeValue.ParseToInt()).ParseToUnixTime();
+                                                        maxDate = maxDate.TimeStampToDateTime().AddDays(-vModel.Config.endTimeValue.ParseToInt()).ParseToUnixTime();
                                                         break;
                                                 }
                                             }
@@ -1770,16 +1776,16 @@ public class ExportImportDataHelper : ITransient
                                             break;
                                         case 5:
                                             {
-                                                switch (vModel.__config__.startTimeTarget)
+                                                switch (vModel.Config.startTimeTarget)
                                                 {
                                                     case 1:
-                                                        maxDate = maxDate.TimeStampToDateTime().AddYears(vModel.__config__.endTimeValue.ParseToInt()).ParseToUnixTime();
+                                                        maxDate = maxDate.TimeStampToDateTime().AddYears(vModel.Config.endTimeValue.ParseToInt()).ParseToUnixTime();
                                                         break;
                                                     case 2:
-                                                        maxDate = maxDate.TimeStampToDateTime().AddMonths(vModel.__config__.endTimeValue.ParseToInt()).ParseToUnixTime();
+                                                        maxDate = maxDate.TimeStampToDateTime().AddMonths(vModel.Config.endTimeValue.ParseToInt()).ParseToUnixTime();
                                                         break;
                                                     case 3:
-                                                        maxDate = maxDate.TimeStampToDateTime().AddDays(vModel.__config__.endTimeValue.ParseToInt()).ParseToUnixTime();
+                                                        maxDate = maxDate.TimeStampToDateTime().AddDays(vModel.Config.endTimeValue.ParseToInt()).ParseToUnixTime();
                                                         break;
                                                 }
                                             }
@@ -1789,7 +1795,7 @@ public class ExportImportDataHelper : ITransient
 
                                     if (maxDate < date)
                                     {
-                                        var errorInfo = vModel.__config__.label + ": 日期选择值不在范围内";
+                                        var errorInfo = vModel.Config.label + ": 日期选择值不在范围内";
                                         if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                         else newDataItems.Add(errorKey, errorInfo);
                                     }
@@ -1800,7 +1806,7 @@ public class ExportImportDataHelper : ITransient
                         }
                         catch
                         {
-                            var errorInfo = vModel.__config__.label + ": 值不正确";
+                            var errorInfo = vModel.Config.label + ": 值不正确";
                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                             else newDataItems.Add(errorKey, errorInfo);
                         }
@@ -1813,22 +1819,22 @@ public class ExportImportDataHelper : ITransient
                             if (item.Value.IsNotEmptyOrNull())
                             {
                                 var value = DateTime.ParseExact(item.Value.ToString().TrimEnd(), vModel.format, System.Globalization.CultureInfo.CurrentCulture);
-                                if (vModel.__config__.startTimeRule && vModel.__config__.startTimeValue.IsNotEmptyOrNull())
+                                if (vModel.Config.startTimeRule && vModel.Config.startTimeValue.IsNotEmptyOrNull())
                                 {
                                     var minTime = value;
-                                    switch (vModel.__config__.startTimeType)
+                                    switch (vModel.Config.startTimeType)
                                     {
                                         case 1:
                                             {
-                                                if (vModel.__config__.startTimeValue.IsNotEmptyOrNull())
-                                                    minTime = DateTime.Parse(vModel.__config__.startTimeValue);
+                                                if (vModel.Config.startTimeValue.IsNotEmptyOrNull())
+                                                    minTime = DateTime.Parse(vModel.Config.startTimeValue);
                                             }
 
                                             break;
                                         case 2:
                                             {
-                                                if (vModel.__config__.startRelationField.IsNotEmptyOrNull() && dataItems.ContainsKey(vModel.__config__.startRelationField))
-                                                    minTime = DateTime.Parse(dataItems[vModel.__config__.startRelationField].ToString());
+                                                if (vModel.Config.startRelationField.IsNotEmptyOrNull() && dataItems.ContainsKey(vModel.Config.startRelationField))
+                                                    minTime = DateTime.Parse(dataItems[vModel.Config.startRelationField].ToString());
                                             }
 
                                             break;
@@ -1836,16 +1842,16 @@ public class ExportImportDataHelper : ITransient
                                             break;
                                         case 4:
                                             {
-                                                switch (vModel.__config__.startTimeTarget)
+                                                switch (vModel.Config.startTimeTarget)
                                                 {
                                                     case 1:
-                                                        minTime = minTime.AddHours(-vModel.__config__.startTimeValue.ParseToInt());
+                                                        minTime = minTime.AddHours(-vModel.Config.startTimeValue.ParseToInt());
                                                         break;
                                                     case 2:
-                                                        minTime = minTime.AddMinutes(-vModel.__config__.startTimeValue.ParseToInt());
+                                                        minTime = minTime.AddMinutes(-vModel.Config.startTimeValue.ParseToInt());
                                                         break;
                                                     case 3:
-                                                        minTime = minTime.AddSeconds(-vModel.__config__.startTimeValue.ParseToInt());
+                                                        minTime = minTime.AddSeconds(-vModel.Config.startTimeValue.ParseToInt());
                                                         break;
                                                 }
                                             }
@@ -1853,16 +1859,16 @@ public class ExportImportDataHelper : ITransient
                                             break;
                                         case 5:
                                             {
-                                                switch (vModel.__config__.startTimeTarget)
+                                                switch (vModel.Config.startTimeTarget)
                                                 {
                                                     case 1:
-                                                        minTime = minTime.AddHours(vModel.__config__.startTimeValue.ParseToInt());
+                                                        minTime = minTime.AddHours(vModel.Config.startTimeValue.ParseToInt());
                                                         break;
                                                     case 2:
-                                                        minTime = minTime.AddMinutes(vModel.__config__.startTimeValue.ParseToInt());
+                                                        minTime = minTime.AddMinutes(vModel.Config.startTimeValue.ParseToInt());
                                                         break;
                                                     case 3:
-                                                        minTime = minTime.AddSeconds(vModel.__config__.startTimeValue.ParseToInt());
+                                                        minTime = minTime.AddSeconds(vModel.Config.startTimeValue.ParseToInt());
                                                         break;
                                                 }
                                             }
@@ -1872,28 +1878,28 @@ public class ExportImportDataHelper : ITransient
 
                                     if (minTime > value)
                                     {
-                                        var errorInfo = vModel.__config__.label + ": 时间选择值不在范围内";
+                                        var errorInfo = vModel.Config.label + ": 时间选择值不在范围内";
                                         if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                         else newDataItems.Add(errorKey, errorInfo);
                                     }
                                 }
 
-                                if (vModel.__config__.endTimeRule && vModel.__config__.endTimeValue.IsNotEmptyOrNull())
+                                if (vModel.Config.endTimeRule && vModel.Config.endTimeValue.IsNotEmptyOrNull())
                                 {
                                     var maxTime = value;
-                                    switch (vModel.__config__.endTimeType)
+                                    switch (vModel.Config.endTimeType)
                                     {
                                         case 1:
                                             {
-                                                if (vModel.__config__.endTimeValue.IsNotEmptyOrNull())
-                                                    maxTime = DateTime.Parse(vModel.__config__.endTimeValue);
+                                                if (vModel.Config.endTimeValue.IsNotEmptyOrNull())
+                                                    maxTime = DateTime.Parse(vModel.Config.endTimeValue);
                                             }
 
                                             break;
                                         case 2:
                                             {
-                                                if (vModel.__config__.endRelationField.IsNotEmptyOrNull() && dataItems.ContainsKey(vModel.__config__.endRelationField))
-                                                    maxTime = DateTime.Parse(dataItems[vModel.__config__.endRelationField].ToString());
+                                                if (vModel.Config.endRelationField.IsNotEmptyOrNull() && dataItems.ContainsKey(vModel.Config.endRelationField))
+                                                    maxTime = DateTime.Parse(dataItems[vModel.Config.endRelationField].ToString());
                                             }
 
                                             break;
@@ -1901,16 +1907,16 @@ public class ExportImportDataHelper : ITransient
                                             break;
                                         case 4:
                                             {
-                                                switch (vModel.__config__.startTimeTarget)
+                                                switch (vModel.Config.startTimeTarget)
                                                 {
                                                     case 1:
-                                                        maxTime = maxTime.AddHours(-vModel.__config__.endTimeValue.ParseToInt());
+                                                        maxTime = maxTime.AddHours(-vModel.Config.endTimeValue.ParseToInt());
                                                         break;
                                                     case 2:
-                                                        maxTime = maxTime.AddMinutes(-vModel.__config__.endTimeValue.ParseToInt());
+                                                        maxTime = maxTime.AddMinutes(-vModel.Config.endTimeValue.ParseToInt());
                                                         break;
                                                     case 3:
-                                                        maxTime = maxTime.AddSeconds(-vModel.__config__.endTimeValue.ParseToInt());
+                                                        maxTime = maxTime.AddSeconds(-vModel.Config.endTimeValue.ParseToInt());
                                                         break;
                                                 }
                                             }
@@ -1918,16 +1924,16 @@ public class ExportImportDataHelper : ITransient
                                             break;
                                         case 5:
                                             {
-                                                switch (vModel.__config__.startTimeTarget)
+                                                switch (vModel.Config.startTimeTarget)
                                                 {
                                                     case 1:
-                                                        maxTime = maxTime.AddHours(vModel.__config__.endTimeValue.ParseToInt());
+                                                        maxTime = maxTime.AddHours(vModel.Config.endTimeValue.ParseToInt());
                                                         break;
                                                     case 2:
-                                                        maxTime = maxTime.AddMinutes(vModel.__config__.endTimeValue.ParseToInt());
+                                                        maxTime = maxTime.AddMinutes(vModel.Config.endTimeValue.ParseToInt());
                                                         break;
                                                     case 3:
-                                                        maxTime = maxTime.AddSeconds(vModel.__config__.endTimeValue.ParseToInt());
+                                                        maxTime = maxTime.AddSeconds(vModel.Config.endTimeValue.ParseToInt());
                                                         break;
                                                 }
                                             }
@@ -1937,7 +1943,7 @@ public class ExportImportDataHelper : ITransient
 
                                     if (maxTime < value)
                                     {
-                                        var errorInfo = vModel.__config__.label + ": 时间选择值不在范围内";
+                                        var errorInfo = vModel.Config.label + ": 时间选择值不在范围内";
                                         if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                         else newDataItems.Add(errorKey, errorInfo);
                                     }
@@ -1946,7 +1952,7 @@ public class ExportImportDataHelper : ITransient
                         }
                         catch
                         {
-                            var errorInfo = vModel.__config__.label + ": 值不正确";
+                            var errorInfo = vModel.Config.label + ": 值不正确";
                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                             else newDataItems.Add(errorKey, errorInfo);
                         }
@@ -1962,7 +1968,7 @@ public class ExportImportDataHelper : ITransient
                                     var addList = new List<object>();
                                     item.Value.ToString().Split(",").ToList().ForEach(it =>
                                     {
-                                        if (vModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.COMSELECT) || (it.Count(x => x == '/') == vModel.level || (vModel.level == 3 && it.Count(x => x == '/') == 2 && it.Contains("市辖区"))))
+                                        if (vModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.COMSELECT) || (it.Count(x => x == '/') == vModel.level || (vModel.level == 3 && it.Count(x => x == '/') == 2 && it.Contains("市辖区"))))
                                         {
                                             if (dicList.Where(x => x.ContainsValue(it)).Any())
                                             {
@@ -1971,14 +1977,14 @@ public class ExportImportDataHelper : ITransient
                                             }
                                             else
                                             {
-                                                var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                                var errorInfo = vModel.Config.label + ": 值无法匹配";
                                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                 else newDataItems.Add(errorKey, errorInfo);
                                             }
                                         }
                                         else
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                            var errorInfo = vModel.Config.label + ": 值无法匹配";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
@@ -1987,7 +1993,7 @@ public class ExportImportDataHelper : ITransient
                                 }
                                 else
                                 {
-                                    if (vModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.COMSELECT) || (item.Value?.ToString().Count(x => x == '/') == vModel.level || (vModel.level == 3 && item.Value.ToString().Count(x => x == '/') == 2 && item.Value.ToString().Contains("市辖区"))))
+                                    if (vModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.COMSELECT) || (item.Value?.ToString().Count(x => x == '/') == vModel.level || (vModel.level == 3 && item.Value.ToString().Count(x => x == '/') == 2 && item.Value.ToString().Contains("市辖区"))))
                                     {
                                         if (dicList.Where(x => x.ContainsValue(item.Value?.ToString())).Any())
                                         {
@@ -1996,14 +2002,14 @@ public class ExportImportDataHelper : ITransient
                                         }
                                         else
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                            var errorInfo = vModel.Config.label + ": 值无法匹配";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
                                     }
                                     else
                                     {
-                                        var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                        var errorInfo = vModel.Config.label + ": 值无法匹配";
                                         if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                         else newDataItems.Add(errorKey, errorInfo);
                                     }
@@ -2019,7 +2025,7 @@ public class ExportImportDataHelper : ITransient
                         {
                             if (item.Value.IsNotEmptyOrNull())
                             {
-                                if (vModel.multiple || vModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CHECKBOX))
+                                if (vModel.multiple || vModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.CHECKBOX))
                                 {
                                     var addList = new List<object>();
                                     item.Value.ToString().Split(",").ToList().ForEach(it =>
@@ -2028,7 +2034,7 @@ public class ExportImportDataHelper : ITransient
                                         {
                                             if (dicList.Count(x => x.ContainsValue(it)) > 1)
                                             {
-                                                var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                                var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                 else newDataItems.Add(errorKey, errorInfo);
                                             }
@@ -2040,7 +2046,7 @@ public class ExportImportDataHelper : ITransient
                                         }
                                         else
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                            var errorInfo = vModel.Config.label + ": 值无法匹配";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
@@ -2053,7 +2059,7 @@ public class ExportImportDataHelper : ITransient
                                     {
                                         if (dicList.Count(x => x.ContainsValue(item.Value.ToString())) > 1)
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                            var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
@@ -2065,7 +2071,7 @@ public class ExportImportDataHelper : ITransient
                                     }
                                     else
                                     {
-                                        var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                        var errorInfo = vModel.Config.label + ": 值无法匹配";
                                         if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                         else newDataItems.Add(errorKey, errorInfo);
                                     }
@@ -2091,7 +2097,7 @@ public class ExportImportDataHelper : ITransient
                                         {
                                             if (dicList.Count(x => x.ContainsValue(it.Split("/").Last())) > 1)
                                             {
-                                                var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                                var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                 else newDataItems.Add(errorKey, errorInfo);
                                             }
@@ -2103,7 +2109,7 @@ public class ExportImportDataHelper : ITransient
                                         }
                                         else
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                            var errorInfo = vModel.Config.label + ": 值无法匹配";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
@@ -2116,7 +2122,7 @@ public class ExportImportDataHelper : ITransient
                                     {
                                         if (dicList.Count(x => x.ContainsValue(item.Value.ToString().Split("/").Last())) > 1)
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                            var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
@@ -2128,7 +2134,7 @@ public class ExportImportDataHelper : ITransient
                                     }
                                     else
                                     {
-                                        var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                        var errorInfo = vModel.Config.label + ": 值无法匹配";
                                         if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                         else newDataItems.Add(errorKey, errorInfo);
                                     }
@@ -2150,7 +2156,7 @@ public class ExportImportDataHelper : ITransient
                                         {
                                             if (dicList.Count(x => x.ContainsValue(it)) > 1)
                                             {
-                                                var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                                var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                 else newDataItems.Add(errorKey, errorInfo);
                                             }
@@ -2166,7 +2172,7 @@ public class ExportImportDataHelper : ITransient
                                             {
                                                 if (dicList.Count(x => x.ContainsValue(it.Split("/").Last())) > 1)
                                                 {
-                                                    var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                                    var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                                     if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                     else newDataItems.Add(errorKey, errorInfo);
                                                 }
@@ -2178,7 +2184,7 @@ public class ExportImportDataHelper : ITransient
                                             }
                                             else
                                             {
-                                                var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                                var errorInfo = vModel.Config.label + ": 值无法匹配";
                                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                 else newDataItems.Add(errorKey, errorInfo);
                                             }
@@ -2192,7 +2198,7 @@ public class ExportImportDataHelper : ITransient
                                     {
                                         if (dicList.Count(x => x.ContainsValue(item.Value.ToString())) > 1)
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                            var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
@@ -2208,7 +2214,7 @@ public class ExportImportDataHelper : ITransient
                                         {
                                             if (dicList.Count(x => x.ContainsValue(item.Value.ToString().Split("/").Last())) > 1)
                                             {
-                                                var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                                var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                 else newDataItems.Add(errorKey, errorInfo);
                                             }
@@ -2220,7 +2226,7 @@ public class ExportImportDataHelper : ITransient
                                         }
                                         else
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                            var errorInfo = vModel.Config.label + ": 值无法匹配";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
@@ -2243,7 +2249,7 @@ public class ExportImportDataHelper : ITransient
                                         {
                                             if (dicList.Count(x => x.ContainsValue(it)) > 1)
                                             {
-                                                var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                                var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                 else newDataItems.Add(errorKey, errorInfo);
                                             }
@@ -2255,7 +2261,7 @@ public class ExportImportDataHelper : ITransient
                                         }
                                         else
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                            var errorInfo = vModel.Config.label + ": 值无法匹配";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
@@ -2268,7 +2274,7 @@ public class ExportImportDataHelper : ITransient
                                     {
                                         if (dicList.Count(x => x.ContainsValue(item.Value.ToString())) > 1)
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                            var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
@@ -2280,7 +2286,7 @@ public class ExportImportDataHelper : ITransient
                                     }
                                     else
                                     {
-                                        var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                        var errorInfo = vModel.Config.label + ": 值无法匹配";
                                         if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                         else newDataItems.Add(errorKey, errorInfo);
                                     }
@@ -2307,7 +2313,7 @@ public class ExportImportDataHelper : ITransient
                                             {
                                                 if (dicList.Count(x => x.ContainsValue(it)) > 1)
                                                 {
-                                                    var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                                    var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                                     if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                     else newDataItems.Add(errorKey, errorInfo);
                                                 }
@@ -2319,7 +2325,7 @@ public class ExportImportDataHelper : ITransient
                                             }
                                             else
                                             {
-                                                var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                                var errorInfo = vModel.Config.label + ": 值无法匹配";
                                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                 else newDataItems.Add(errorKey, errorInfo);
                                             }
@@ -2339,7 +2345,7 @@ public class ExportImportDataHelper : ITransient
                                         {
                                             if (dicList.Count(x => x.ContainsValue(it)) > 1)
                                             {
-                                                var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                                var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                 else newDataItems.Add(errorKey, errorInfo);
                                             }
@@ -2351,7 +2357,7 @@ public class ExportImportDataHelper : ITransient
                                         }
                                         else
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                            var errorInfo = vModel.Config.label + ": 值无法匹配";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
@@ -2371,11 +2377,11 @@ public class ExportImportDataHelper : ITransient
                                 valueList.ForEach(it =>
                                 {
                                     var addValue = new Dictionary<string, object>();
-                                    foreach (var value in it) addValue.Add(vModel.__vModel__ + "-" + value.Key, value.Value);
+                                    foreach (var value in it) addValue.Add(vModel.VModel + "-" + value.Key, value.Value);
                                     newValueList.Add(addValue);
                                 });
 
-                                var res = await ImportDataAssemble(vModel.__config__.children, newValueList, cDataList);
+                                var res = await ImportDataAssemble(vModel.Config.children, newValueList, cDataList);
                                 if (res.Any(x => x.ContainsKey(errorKey)))
                                 {
                                     if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + res.FirstOrDefault(x => x.ContainsKey(errorKey))[errorKey].ToString();
@@ -2387,7 +2393,7 @@ public class ExportImportDataHelper : ITransient
                                 res.ForEach(it =>
                                 {
                                     var addValue = new Dictionary<string, object>();
-                                    foreach (var value in it) addValue.Add(value.Key.Replace(vModel.__vModel__ + "-", string.Empty), value.Value);
+                                    foreach (var value in it) addValue.Add(value.Key.Replace(vModel.VModel + "-", string.Empty), value.Value);
                                     result.Add(addValue);
                                 });
                                 newDataItems[item.Key] = result;
@@ -2404,7 +2410,7 @@ public class ExportImportDataHelper : ITransient
                                 {
                                     if (vModel.max < value)
                                     {
-                                        var errorInfo = vModel.__config__.label + ": 评分超过设置的最大值";
+                                        var errorInfo = vModel.Config.label + ": 评分超过设置的最大值";
                                         if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                         else newDataItems.Add(errorKey, errorInfo);
                                     }
@@ -2412,7 +2418,7 @@ public class ExportImportDataHelper : ITransient
                             }
                             catch
                             {
-                                var errorInfo = vModel.__config__.label + ": 评分格式错误";
+                                var errorInfo = vModel.Config.label + ": 评分格式错误";
                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                 else newDataItems.Add(errorKey, errorInfo);
                             }
@@ -2428,7 +2434,7 @@ public class ExportImportDataHelper : ITransient
                                 {
                                     if (vModel.max < value)
                                     {
-                                        var errorInfo = vModel.__config__.label + ": 滑块超过设置的最大值";
+                                        var errorInfo = vModel.Config.label + ": 滑块超过设置的最大值";
                                         if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                         else newDataItems.Add(errorKey, errorInfo);
                                     }
@@ -2437,7 +2443,7 @@ public class ExportImportDataHelper : ITransient
                                 {
                                     if (vModel.min > value)
                                     {
-                                        var errorInfo = vModel.__config__.label + ": 滑块超过设置的最小值";
+                                        var errorInfo = vModel.Config.label + ": 滑块超过设置的最小值";
                                         if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                         else newDataItems.Add(errorKey, errorInfo);
                                     }
@@ -2445,7 +2451,7 @@ public class ExportImportDataHelper : ITransient
                             }
                             catch
                             {
-                                var errorInfo = vModel.__config__.label + ": 滑块格式错误";
+                                var errorInfo = vModel.Config.label + ": 滑块格式错误";
                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                 else newDataItems.Add(errorKey, errorInfo);
                             }
@@ -2461,7 +2467,7 @@ public class ExportImportDataHelper : ITransient
                                 {
                                     if (vModel.max < value)
                                     {
-                                        var errorInfo = vModel.__config__.label + ": 数字输入超过设置的最大值";
+                                        var errorInfo = vModel.Config.label + ": 数字输入超过设置的最大值";
                                         if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                         else newDataItems.Add(errorKey, errorInfo);
                                     }
@@ -2470,7 +2476,7 @@ public class ExportImportDataHelper : ITransient
                                 {
                                     if (vModel.min > value)
                                     {
-                                        var errorInfo = vModel.__config__.label + ": 数字输入超过设置的最小值";
+                                        var errorInfo = vModel.Config.label + ": 数字输入超过设置的最小值";
                                         if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                         else newDataItems.Add(errorKey, errorInfo);
                                     }
@@ -2478,7 +2484,7 @@ public class ExportImportDataHelper : ITransient
                             }
                             catch
                             {
-                                var errorInfo = vModel.__config__.label + ": 数字输入格式错误";
+                                var errorInfo = vModel.Config.label + ": 数字输入格式错误";
                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                 else newDataItems.Add(errorKey, errorInfo);
                             }
@@ -2491,13 +2497,13 @@ public class ExportImportDataHelper : ITransient
             foreach (var item in dataItems)
             {
                 if (newDataItems.ContainsKey(errorKey)) continue; // 如果存在错误信息 则 不生成
-                var vModel = fieldsModelList.Find(x => x.__vModel__.Equals(item.Key));
+                var vModel = fieldsModelList.Find(x => x.VModel.Equals(item.Key));
                 if (vModel == null) continue;
 
-                switch (vModel.__config__.poxiaoKey)
+                switch (vModel.Config.poxiaoKey)
                 {
                     case PoxiaoKeyConst.BILLRULE:
-                        string billNumber = await _billRuleService.GetBillNumber(vModel.__config__.rule);
+                        string billNumber = await _billRuleService.GetBillNumber(vModel.Config.rule);
                         if (!"单据规则不存在".Equals(billNumber)) newDataItems[item.Key] = billNumber;
                         else newDataItems[item.Key] = string.Empty;
 

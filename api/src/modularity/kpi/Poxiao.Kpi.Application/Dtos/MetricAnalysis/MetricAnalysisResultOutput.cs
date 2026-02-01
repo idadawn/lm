@@ -6,7 +6,7 @@
 public class MetricAnalysisResultOutput
 {
     /// <summary>
-    /// 
+    ///
     /// </summary>
     [JsonProperty("start_time")]
     public long StartTime { get; set; }
@@ -34,7 +34,6 @@ public class MetricAnalysisResultOutput
 
     [JsonProperty("msg")]
     public string Msg { get; set; }
-
 
 }
 

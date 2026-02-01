@@ -1,4 +1,6 @@
-using System.Net.WebSockets;
+using Mapster;
+using Poxiao.DataEncryption;
+using Poxiao.Extras.WebSockets.Models;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Enums;
@@ -7,8 +9,6 @@ using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Models.User;
 using Poxiao.Infrastructure.Options;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DataEncryption;
-using Poxiao.Extras.WebSockets.Models;
 using Poxiao.Message.Entitys;
 using Poxiao.Message.Entitys.Dto.IM;
 using Poxiao.Message.Entitys.Entity;
@@ -17,8 +17,8 @@ using Poxiao.Message.Entitys.Model.IM;
 using Poxiao.RemoteRequest.Extensions;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.WebSockets;
-using Mapster;
 using SqlSugar;
+using System.Net.WebSockets;
 
 namespace Poxiao.Infrastructure.Core.Handlers;
 
@@ -379,7 +379,7 @@ public class IMHandler : WebSocketHandler
                 var receiveUserId = message.formUserId; // 接收者
 
                 var data = await _sqlSugarClient.Queryable<IMContentEntity>().WhereIF(!string.IsNullOrEmpty(message.keyword), it => it.Content.Contains(message.keyword))
-                        .Where(i => (i.SendUserId == message.toUserId && i.ReceiveUserId == message.formUserId) || (i.SendUserId == message.formUserId && i.ReceiveUserId == message.toUserId) && (SqlFunc.IsNullOrEmpty(i.SendDeleteMark) || i.SendDeleteMark != client.UserId)).OrderBy(it => it.SendTime, message.sord == "asc" ? OrderByType.Asc : OrderByType.Desc)
+                        .Where(i => (i.SendUserId == message.toUserId && i.ReceiveUserId == message.formUserId) || ((i.SendUserId == message.formUserId && i.ReceiveUserId == message.toUserId) && (SqlFunc.IsNullOrEmpty(i.SendDeleteMark) || i.SendDeleteMark != client.UserId))).OrderBy(it => it.SendTime, message.sord == "asc" ? OrderByType.Asc : OrderByType.Desc)
                         .Select(it => new IMContentListOutput
                         {
                             id = it.Id,

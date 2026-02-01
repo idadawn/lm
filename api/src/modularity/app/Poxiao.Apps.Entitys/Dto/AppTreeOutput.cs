@@ -1,10 +1,10 @@
-using Poxiao.Infrastructure.Security;
 using Poxiao.DependencyInjection;
+using Poxiao.Infrastructure.Security;
 
 namespace Poxiao.Apps.Entitys.Dto;
 
 /// <summary>
-/// 
+///
 /// </summary>
 [SuppressSniffer]
 public class AppTreeOutput : TreeModel

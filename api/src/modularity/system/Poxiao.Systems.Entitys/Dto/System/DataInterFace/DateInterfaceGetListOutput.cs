@@ -46,7 +46,7 @@ public class DateInterfaceGetListOutput
     /// <summary>
     /// 数据类型(1-SQL数据，2-静态数据，3-Api数据).
     /// </summary>
-    public int? _dataType { get; set; }
+    public int? DataType { get; set; }
 
     /// <summary>
     /// 数据类型(1-SQL数据，2-静态数据，3-Api数据).
@@ -55,11 +55,11 @@ public class DateInterfaceGetListOutput
     {
         get
         {
-            if (_dataType == 1)
+            if (DataType == 1)
             {
                 return "SQL数据";
             }
-            else if (_dataType == 2)
+            else if (DataType == 2)
             {
                 return "静态数据";
             }

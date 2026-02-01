@@ -46,7 +46,6 @@ public class MetricTagController : IDynamicApiController
     /// 获取指标下拉数据.
     /// </summary>
     /// <returns></returns>
-
     [HttpGet("selector")]
     public async Task<dynamic> GetSelector()
     {

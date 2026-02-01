@@ -6,5 +6,5 @@
 [SuppressSniffer]
 public class MetricCovStatusListQueryInput : PageInputBase
 {
-  
+
 }

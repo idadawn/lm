@@ -8,32 +8,32 @@ namespace Poxiao.Infrastructure.Core.Manager;
 public interface IInfluxDBManager
 {
     /// <summary>
-    /// 
+    ///
     /// </summary>
     void Connect();
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <returns></returns>
     Task<List<string>> GetAllMeasurementsAsync();
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="measurementName"></param>
     /// <returns></returns>
     Task<List<string>> GetMeasurementSchemaAsync(string measurementName);
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="measurementName"></param>
     /// <returns></returns>
     Task<List<LinkAttribute>> GetSeriesByMeasurementAsync(string measurementName);
 
     /// <summary>
-    /// 
+    ///
     /// </summary>
     /// <param name="measurementName"></param>
     /// <param name="key"></param>

@@ -55,7 +55,7 @@ public sealed class OSInfo
     public override string ToString()
     {
         var str = VersionString.Format(Major, Minor, Patch, PatchMinor);
-        return (this.Family + (!string.IsNullOrEmpty(str) ? (" " + str) : null));
+        return this.Family + (!string.IsNullOrEmpty(str) ? (" " + str) : null);
     }
 
     public string Family { get; private set; }
@@ -85,7 +85,7 @@ public sealed class UserAgentInfo
     public override string ToString()
     {
         var str = VersionString.Format(Major, Minor, Patch);
-        return (this.Family + (!string.IsNullOrEmpty(str) ? (" " + str) : null));
+        return this.Family + (!string.IsNullOrEmpty(str) ? (" " + str) : null);
     }
 
     public string Family { get; private set; }

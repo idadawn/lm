@@ -8,7 +8,7 @@
 /// 日 期：2023-11-22.
 /// </summary>
 [SugarTable("metric_category_count", TableDescription = "指标分类计数")]
-public class MetricCategoryCountEntity :CUDEntityBase
+public class MetricCategoryCountEntity : CUDEntityBase
 {
     /// <summary>
     /// 指标分类名称

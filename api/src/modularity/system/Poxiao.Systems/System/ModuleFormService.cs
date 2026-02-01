@@ -1,12 +1,15 @@
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
+using Poxiao.DatabaseAccessor;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DatabaseAccessor;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Dto.ModuleForm;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
@@ -14,9 +17,6 @@ using Poxiao.Systems.Interfaces.System;
 using Poxiao.VisualDev.Engine;
 using Poxiao.VisualDev.Engine.Core;
 using Poxiao.VisualDev.Entitys;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
 using SqlSugar;
 
 namespace Poxiao.Systems;
@@ -126,8 +126,8 @@ public class ModuleFormService : IModuleFormService, IDynamicApiController, ITra
         var visualDevEntity = await _repository.AsSugarClient().Queryable<VisualDevEntity>().FirstAsync(x => x.Id == visualDevId && x.DeleteMark == null);
         var columnList = visualDevEntity.ColumnData.ToObject<ColumnDesignModel>().columnList;
         var formDataModel = visualDevEntity.FormData.ToObject<FormDataModel>();
-        var fields = formDataModel.fields.Where(x => x.__vModel__.IsNotEmptyOrNull()).ToList();
-        var childFieldList = fields.Select(x => new { field = x.__vModel__, fieldName = x.__config__.label }).ToList();
+        var fields = formDataModel.fields.Where(x => x.VModel.IsNotEmptyOrNull()).ToList();
+        var childFieldList = fields.Select(x => new { field = x.VModel, fieldName = x.Config.label }).ToList();
         return columnList.Select(x => new { field = x.prop, fieldName = x.label }).Union(childFieldList).ToList();
     }
     #endregion

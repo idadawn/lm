@@ -1166,7 +1166,7 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
         {
             var aiClassification = await _analysisService.DefineAppearanceFeatureAsync(input.Text);
             Console.WriteLine(
-                $"[Match] AI分析返回: {(aiClassification != null ? "非空" : "null")}, Features数量: {(aiClassification?.Features?.Count ?? 0)}"
+                $"[Match] AI分析返回: {(aiClassification != null ? "非空" : "null")}, Features数量: { aiClassification?.Features?.Count ?? 0}"
             );
 
             if (

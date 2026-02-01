@@ -1,3 +1,5 @@
+using Mapster;
+using Microsoft.Extensions.DependencyInjection;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Extension;
@@ -6,8 +8,6 @@ using Poxiao.Infrastructure.Security;
 using Poxiao.Schedule;
 using Poxiao.TaskScheduler.Entitys;
 using Poxiao.TaskScheduler.Entitys.Enum;
-using Mapster;
-using Microsoft.Extensions.DependencyInjection;
 using SqlSugar;
 
 namespace Poxiao.Infrastructure.Core;
@@ -189,12 +189,12 @@ public class DbJobPersistence : IJobPersistence
 
             if (KeyVariable.MultiTenancyType.Equals("COLUMN"))
             {
-                string ServiceName = tenant.connectionConfig.IsolationField;
+                string serviceName = tenant.connectionConfig.IsolationField;
                 sqlSugarClient.Aop.DataExecuting = (oldValue, entityInfo) =>
                 {
                     if (entityInfo.PropertyName == "TenantId" && entityInfo.OperationType == DataFilterType.InsertByObject)
                     {
-                        entityInfo.SetValue(ServiceName);
+                        entityInfo.SetValue(serviceName);
                     }
                 };
             }

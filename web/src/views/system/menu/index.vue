@@ -96,10 +96,10 @@
         label: '菜单管理',
         onClick: handleMenu.bind(null, record),
       },
-      {
-        label: '门户管理',
-        onClick: handlePortal.bind(null, record),
-      },
+      // {
+      //   label: '门户管理',
+      //   onClick: handlePortal.bind(null, record),
+      // },
     ];
   }
   function addOrUpdateHandle(id = '') {

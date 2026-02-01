@@ -18,7 +18,6 @@ public abstract class CDEntityBase : EntityBase<string>, ICreatorTime, IDeleteTi
     [SugarColumn(ColumnName = "created_userid", ColumnDescription = "创建人")]
     public string? CreatedUserId { get; set; }
 
-    
     /// <summary>
     /// 删除时间.
     /// </summary>

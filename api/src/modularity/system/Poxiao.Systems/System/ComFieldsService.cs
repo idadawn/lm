@@ -1,11 +1,11 @@
-using Poxiao.Infrastructure.Enums;
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
+using Poxiao.Infrastructure.Enums;
 using Poxiao.Systems.Entitys.Dto.ComFields;
 using Poxiao.Systems.Entitys.System;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.Systems;
@@ -101,7 +101,7 @@ public class ComFieldsService : IDynamicApiController, ITransient
     /// <param name="input">请求参数.</param>
     /// <returns></returns>
     [HttpPut("{id}")]
-    public async Task Update_Api(string id, [FromBody] ComFieldsUpInput input)
+    public async Task UpdateApi(string id, [FromBody] ComFieldsUpInput input)
     {
         if (await _repository.IsAnyAsync(x => x.Id != id && x.Field.ToLower() == input.field.ToLower() && x.DeleteMark == null))
             throw Oops.Oh(ErrorCode.COM1004);

@@ -1,6 +1,6 @@
-using Poxiao.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.OpenApi.Models;
+using Poxiao.Extensions;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System.ComponentModel;
 using System.Reflection;

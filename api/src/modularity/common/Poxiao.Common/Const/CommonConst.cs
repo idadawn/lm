@@ -94,12 +94,12 @@ public class CommonConst
     /// <summary>
     /// 第三方登录 票据缓存key.
     /// </summary>
-    public const string PARAMS_Poxiao_TICKET = "poxiao_ticket";
+    public const string PARAMSPoxiaoTICKET = "poxiao_ticket";
 
     /// <summary>
     /// Cas Key.
     /// </summary>
-    public const string CAS_Ticket = "ticket";
+    public const string CASTicket = "ticket";
 
     /// <summary>
     /// Code.
@@ -109,7 +109,7 @@ public class CommonConst
     /// <summary>
     /// 外链密码开关(1：开 , 0：关).
     /// </summary>
-    public const int OnlineDevData_State_Enable = 1;
+    public const int OnlineDevDataStateEnable = 1;
 
     /// <summary>
     /// 门户日程缓存key.

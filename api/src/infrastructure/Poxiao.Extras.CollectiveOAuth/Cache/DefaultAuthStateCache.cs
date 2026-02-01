@@ -8,7 +8,7 @@ public class DefaultAuthStateCache : IAuthStateCache
     /// <summary>
     /// 默认缓存前缀.
     /// </summary>
-    private static string Default_Cache_Prefix = "CollectiveOAuth_Status_";
+    private static string defaultCachePrefix = "CollectiveOAuth_Status_";
 
     /// <summary>
     /// 保存缓存.
@@ -17,7 +17,7 @@ public class DefaultAuthStateCache : IAuthStateCache
     /// <param name="value">值.</param>
     public void cache(string key, string value)
     {
-        HttpRuntimeCache.Set($"{Default_Cache_Prefix}{key}", value);
+        HttpRuntimeCache.Set($"{defaultCachePrefix}{key}", value);
     }
 
     /// <summary>
@@ -28,7 +28,7 @@ public class DefaultAuthStateCache : IAuthStateCache
     /// <param name="timeout">过期时间戳.</param>
     public void cache(string key, string value, long timeout)
     {
-        HttpRuntimeCache.Set($"{Default_Cache_Prefix}{key}", value, timeout);
+        HttpRuntimeCache.Set($"{defaultCachePrefix}{key}", value, timeout);
     }
 
     /// <summary>
@@ -38,7 +38,7 @@ public class DefaultAuthStateCache : IAuthStateCache
     /// <returns>true or false.</returns>
     public bool containsKey(string key)
     {
-        var cacheObj = HttpRuntimeCache.Get($"{Default_Cache_Prefix}{key}");
+        var cacheObj = HttpRuntimeCache.Get($"{defaultCachePrefix}{key}");
         if (cacheObj != null)
         {
             return true;
@@ -54,7 +54,7 @@ public class DefaultAuthStateCache : IAuthStateCache
     /// <returns></returns>
     public string get(string key)
     {
-        var cacheObj = HttpRuntimeCache.Get($"{Default_Cache_Prefix}{key}");
+        var cacheObj = HttpRuntimeCache.Get($"{defaultCachePrefix}{key}");
         if (cacheObj != null)
         {
             return Convert.ToString(cacheObj);

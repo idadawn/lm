@@ -1,5 +1,5 @@
-using Poxiao.Infrastructure.Dtos.DataBase;
 using Poxiao.DependencyInjection;
+using Poxiao.Infrastructure.Dtos.DataBase;
 
 namespace Poxiao.Systems.Entitys.Dto.Database;
 

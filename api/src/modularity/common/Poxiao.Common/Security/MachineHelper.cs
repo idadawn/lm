@@ -1,7 +1,7 @@
+using Poxiao.Infrastructure.Model.Machine;
 using System.Diagnostics;
 using System.Management;
 using System.Runtime.InteropServices;
-using Poxiao.Infrastructure.Model.Machine;
 
 namespace Poxiao.Infrastructure.Security;
 
@@ -17,7 +17,7 @@ public static class MachineHelper
     /// 系统信息.
     /// </summary>
     /// <returns></returns>
-    public static SystemInfoModel GetSystemInfo_Linux()
+    public static SystemInfoModel GetSystemInfoLinux()
     {
         try
         {
@@ -46,7 +46,7 @@ public static class MachineHelper
                 }
             }
 
-            TimeSpan P_TimeSpan = DateTime.Now.Subtract(DateTime.Now);
+            TimeSpan p_TimeSpan = DateTime.Now.Subtract(DateTime.Now);
             systemInfo.os = RuntimeInformation.OSDescription;
             systemInfo.day = FormatTime((long)(DateTimeOffset.Now - Process.GetCurrentProcess().StartTime).TotalMilliseconds);
             return systemInfo;
@@ -61,14 +61,14 @@ public static class MachineHelper
     /// CPU信息
     /// </summary>
     /// <returns></returns>
-    public static CpuInfoModel GetCpuInfo_Linux()
+    public static CpuInfoModel GetCpuInfoLinux()
     {
         var cpuInfo = new CpuInfoModel();
         cpuInfo.core = Environment.ProcessorCount + "个物理核心";
         cpuInfo.logic = Environment.ProcessorCount + "个逻辑CPU";
         cpuInfo.package = Environment.ProcessorCount + "个物理CPU";
         cpuInfo.coreNumber = Environment.ProcessorCount;
-        var cpuInfoList = (File.ReadAllText(@"/proc/cpuinfo")).Split(' ').Where(o => o != string.Empty).ToList();
+        var cpuInfoList = File.ReadAllText(@"/proc/cpuinfo").Split(' ').Where(o => o != string.Empty).ToList();
         cpuInfo.name = string.Format("{0} {1} {2}", cpuInfoList[7], cpuInfoList[8], cpuInfoList[9]);
         var psi = new ProcessStartInfo("top", " -b -n 1") { RedirectStandardOutput = true };
         var proc = Process.Start(psi);
@@ -106,7 +106,7 @@ public static class MachineHelper
     /// 硬盘信息.
     /// </summary>
     /// <returns></returns>
-    public static DiskInfoModel GetDiskInfo_Linux()
+    public static DiskInfoModel GetDiskInfoLinux()
     {
         var output = new DiskInfoModel();
         var process = new Process
@@ -153,7 +153,7 @@ public static class MachineHelper
     /// 内存信息.
     /// </summary>
     /// <returns></returns>
-    public static MemoryInfoModel GetMemoryInfo_Linux()
+    public static MemoryInfoModel GetMemoryInfoLinux()
     {
         var output = new MemoryInfoModel();
         const string CPU_FILE_PATH = "/proc/meminfo";
@@ -222,20 +222,20 @@ public static class MachineHelper
     /// 系统信息.
     /// </summary>
     /// <returns></returns>
-    public static SystemInfoModel GetSystemInfo_Windows()
+    public static SystemInfoModel GetSystemInfoWindows()
     {
         try
         {
             var systemInfo = new SystemInfoModel();
-            ManagementClass MC = new ManagementClass("Win32_NetworkAdapterConfiguration");
-            ManagementObjectCollection MOC = MC.GetInstances();
-            foreach (ManagementObject MO in MOC)
+            ManagementClass mC = new ManagementClass("Win32_NetworkAdapterConfiguration");
+            ManagementObjectCollection mOC = mC.GetInstances();
+            foreach (ManagementObject mO in mOC)
             {
-                if ((bool)MO["IPEnabled"] == true)
+                if ((bool)mO["IPEnabled"] == true)
                 {
-                    string[] IPAddresses = (string[])MO["IPAddress"]; //获取本地的IP地址
-                    if (IPAddresses.Length > 0)
-                        systemInfo.ip = IPAddresses[0];
+                    string[] iPAddresses = (string[])mO["IPAddress"]; //获取本地的IP地址
+                    if (iPAddresses.Length > 0)
+                        systemInfo.ip = iPAddresses[0];
                 }
             }
 
@@ -252,7 +252,7 @@ public static class MachineHelper
     /// CPU信息
     /// </summary>
     /// <returns></returns>
-    public static CpuInfoModel GetCpuInfo_Windows()
+    public static CpuInfoModel GetCpuInfoWindows()
     {
         var cpuInfo = new CpuInfoModel();
         ManagementObjectSearcher mos = new ManagementObjectSearcher("Select * from Win32_Processor");
@@ -279,7 +279,7 @@ public static class MachineHelper
     /// 硬盘信息.
     /// </summary>
     /// <returns></returns>
-    public static DiskInfoModel GetDiskInfo_Windows()
+    public static DiskInfoModel GetDiskInfoWindows()
     {
         var output = new DiskInfoModel();
         long total = 0L;
@@ -303,7 +303,7 @@ public static class MachineHelper
     /// 内存信息.
     /// </summary>
     /// <returns></returns>
-    public static MemoryInfoModel GetMemoryInfo_Windows()
+    public static MemoryInfoModel GetMemoryInfoWindows()
     {
         var output = new MemoryInfoModel();
 
@@ -351,9 +351,9 @@ public static class MachineHelper
         int dd = hh * 24;
 
         long day = ms / dd;
-        long hour = (ms - day * dd) / hh;
-        long minute = (ms - day * dd - hour * hh) / mi;
-        long second = (ms - day * dd - hour * hh - minute * mi) / ss;
+        long hour = (ms - (day * dd)) / hh;
+        long minute = (ms - (day * dd) - (hour * hh)) / mi;
+        long second = (ms - (day * dd) - (hour * hh) - (minute * mi)) / ss;
 
         string sDay = day < 10 ? "0" + day : string.Empty + day; // 天
         string sHour = hour < 10 ? "0" + hour : string.Empty + hour; // 小时

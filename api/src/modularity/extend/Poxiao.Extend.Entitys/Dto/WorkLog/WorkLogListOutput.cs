@@ -3,7 +3,7 @@ using Poxiao.DependencyInjection;
 namespace Poxiao.Extend.Entitys.Dto.WorkLog;
 
 /// <summary>
-/// 
+///
 /// </summary>
 [SuppressSniffer]
 public class WorkLogListOutput

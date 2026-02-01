@@ -1,7 +1,7 @@
+using Mapster;
 using Poxiao.Infrastructure.Models.User;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.TaskScheduler.Entitys;
-using Mapster;
 
 namespace Poxiao.Infrastructure.Core.Mapper;
 

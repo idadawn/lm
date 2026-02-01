@@ -8,7 +8,6 @@ public class MetricAggInfoListOutput
     /// <summary>
     /// 聚合方式.
     /// </summary>
-
     [JsonProperty("aggType")]
     public string AggType { get; set; }
 

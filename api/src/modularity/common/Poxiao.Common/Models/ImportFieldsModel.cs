@@ -8,7 +8,7 @@ public class CodeGenFieldsModel
     /// <summary>
     /// 设置默认值为空字符串.
     /// </summary>
-    public string __vModel__ { get; set; } = string.Empty;
+    public string VModel { get; set; } = string.Empty;
 
     /// <summary>
     /// 层级.
@@ -53,7 +53,7 @@ public class CodeGenFieldsModel
     /// <summary>
     /// 配置.
     /// </summary>
-    public string __config__ { get; set; }
+    public string Config { get; set; }
 
     /// <summary>
     /// 配置选项.
@@ -126,7 +126,7 @@ public class CodeGenChildsModel
     /// <summary>
     /// 设置默认值为空字符串.
     /// </summary>
-    public string __vModel__ { get; set; } = string.Empty;
+    public string VModel { get; set; } = string.Empty;
 
     /// <summary>
     /// 层级.
@@ -171,12 +171,12 @@ public class CodeGenChildsModel
     /// <summary>
     /// 插槽.
     /// </summary>
-    public CodeGenSlotModel __slot__ { get; set; }
+    public CodeGenSlotModel Slot { get; set; }
 
     /// <summary>
     /// 配置.
     /// </summary>
-    public CodeGenConfigModel __config__ { get; set; }
+    public CodeGenConfigModel Config { get; set; }
 
     /// <summary>
     /// 配置选项.

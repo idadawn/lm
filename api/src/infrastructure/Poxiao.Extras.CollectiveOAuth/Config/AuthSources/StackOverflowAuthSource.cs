@@ -34,6 +34,6 @@ public class StackOverflowAuthSource : IAuthSource
 
     public string getName()
     {
-        return DefaultAuthSourceEnum.STACK_OVERFLOW.ToString();
+        return DefaultAuthSourceEnum.STACKOVERFLOW.ToString();
     }
 }

@@ -194,7 +194,7 @@ public class PinyinHelper
         Regex reg = new Regex("^[\u4e00-\u9fa5]$");
         byte[] arr = new byte[2];
         string pystr = string.Empty;
-        int asc = 0, M1 = 0, M2 = 0;
+        int asc = 0, m1 = 0, m2 = 0;
 
         // 获取汉字对应的字符数组
         char[] mChar = Chstr.ToCharArray();
@@ -204,9 +204,9 @@ public class PinyinHelper
             if (reg.IsMatch(mChar[j].ToString()))
             {
                 arr = System.Text.Encoding.Default.GetBytes(mChar[j].ToString());
-                M1 = (short)arr[0];
-                M2 = (short)arr[1];
-                asc = (M1 * 256) + M2 - 65536;
+                m1 = (short)arr[0];
+                m2 = (short)arr[1];
+                asc = (m1 * 256) + m2 - 65536;
                 if (asc > 0 && asc < 160)
                 {
                     pystr += mChar[j];

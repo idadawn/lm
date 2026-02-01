@@ -108,7 +108,7 @@ public class UnitConversionService : IUnitConversionService, IDynamicApiControll
         if (string.IsNullOrWhiteSpace(categoryId))
             throw Oops.Oh("维度 ID 不能为空");
 
-        var units = await _unitRepository.GetListAsync(u => 
+        var units = await _unitRepository.GetListAsync(u =>
             u.CategoryId == categoryId && (u.DeleteMark == 0 || u.DeleteMark == null));
 
         return units

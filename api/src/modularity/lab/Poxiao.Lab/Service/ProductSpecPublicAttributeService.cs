@@ -52,7 +52,7 @@ public class ProductSpecPublicAttributeService : IProductSpecPublicAttributeServ
             .AsQueryable()
             .Where(t => t.AttributeKey == entity.AttributeKey && t.DeleteMark == null)
             .AnyAsync();
-        
+
         if (exists)
             throw Oops.Oh(ErrorCode.COM1003, $"属性键名 {entity.AttributeKey} 已存在");
 
@@ -70,7 +70,7 @@ public class ProductSpecPublicAttributeService : IProductSpecPublicAttributeServ
             .AsInsertable(entity)
             .IgnoreColumns(ignoreNullColumn: true)
             .ExecuteCommandAsync();
-        
+
         if (isOk < 1)
             throw Oops.Oh(ErrorCode.COM1000);
 
@@ -93,7 +93,7 @@ public class ProductSpecPublicAttributeService : IProductSpecPublicAttributeServ
                 .AsQueryable()
                 .Where(t => t.AttributeKey == entity.AttributeKey && t.Id != id && t.DeleteMark == null)
                 .AnyAsync();
-            
+
             if (keyExists)
                 throw Oops.Oh(ErrorCode.COM1003, $"属性键名 {entity.AttributeKey} 已存在");
         }
@@ -111,7 +111,7 @@ public class ProductSpecPublicAttributeService : IProductSpecPublicAttributeServ
             .AsUpdateable(entity)
             .IgnoreColumns(ignoreAllNullColumns: true)
             .ExecuteCommandHasChangeAsync();
-        
+
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1001);
     }
@@ -134,7 +134,7 @@ public class ProductSpecPublicAttributeService : IProductSpecPublicAttributeServ
                 it.DeleteUserId,
             })
             .ExecuteCommandHasChangeAsync();
-        
+
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1002);
     }
@@ -158,8 +158,8 @@ public class ProductSpecPublicAttributeService : IProductSpecPublicAttributeServ
             // 检查该产品是否已有此属性（通过属性键名）
             var exists = await _attributeRepository
                 .AsQueryable()
-                .Where(t => t.ProductSpecId == productSpec.Id 
-                    && t.AttributeKey == publicAttr.AttributeKey 
+                .Where(t => t.ProductSpecId == productSpec.Id
+                    && t.AttributeKey == publicAttr.AttributeKey
                     && t.DeleteMark == null)
                 .AnyAsync();
 
@@ -196,7 +196,7 @@ public class ProductSpecPublicAttributeService : IProductSpecPublicAttributeServ
             .AsQueryable()
             .Where(t => t.DeleteMark == null)
             .MaxAsync(t => t.SortCode);
-        
+
         return (maxSortCode ?? 0) + 1;
     }
 }

@@ -1,9 +1,10 @@
+using Mapster;
+using Poxiao.DependencyInjection;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Models.WorkFlow;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
 using Poxiao.LinqBuilder;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
@@ -19,7 +20,6 @@ using Poxiao.WorkFlow.Entitys.Enum;
 using Poxiao.WorkFlow.Entitys.Model;
 using Poxiao.WorkFlow.Entitys.Model.Properties;
 using Poxiao.WorkFlow.Interfaces.Repository;
-using Mapster;
 using SqlSugar;
 using System.Linq.Expressions;
 
@@ -391,7 +391,7 @@ public class FlowTaskRepository : IFlowTaskRepository, ITransient
     /// <returns></returns>
     public async Task<dynamic> GetTrialList(FlowBeforeListQuery input)
     {
-        var statusList = new List<int>() { 0, 1, 10 };// 同意、拒绝、前签
+        var statusList = new List<int>() { 0, 1, 10 }; // 同意、拒绝、前签
         var whereLambda = LinqExpression.And<FlowBeforeListOutput>();
         if (!input.startTime.IsNullOrEmpty() && !input.endTime.IsNullOrEmpty())
         {
@@ -512,12 +512,13 @@ public class FlowTaskRepository : IFlowTaskRepository, ITransient
         var output = new List<object>();
         foreach (var item in list.GroupBy(x => x.templateId))
         {
-            output.Add(new {
+            output.Add(new
+            {
                 id = item.Key,
                 fullName = string.Format("{0}({1})", item.FirstOrDefault().flowName, item.Count()),
                 count = item.Count()
             });
-        };
+        }
         return output;
     }
 
@@ -702,7 +703,7 @@ public class FlowTaskRepository : IFlowTaskRepository, ITransient
 
         // 委托审核
         var list2 = _repository.AsSugarClient().Queryable<FlowTaskEntity, FlowTaskOperatorEntity, FlowDelegateEntity, UserEntity>((a, b, c, d) =>
-            new JoinQueryInfos(JoinType.Left, a.Id == b.TaskId, JoinType.Left, (a.TemplateId == SqlFunc.ToString(c.FlowId) || SqlFunc.ToString(c.FlowName) == "全部流程"),
+            new JoinQueryInfos(JoinType.Left, a.Id == b.TaskId, JoinType.Left, a.TemplateId == SqlFunc.ToString(c.FlowId) || SqlFunc.ToString(c.FlowName) == "全部流程",
             JoinType.Left, c.UserId == d.Id))
             .Where((a, b, c) => a.Status == 1 && a.DeleteMark == null && b.Completion == 0 && b.State == "0" && a.Suspend == null
              && b.CreatorTime < SqlFunc.GetDate()
@@ -811,7 +812,7 @@ public class FlowTaskRepository : IFlowTaskRepository, ITransient
     /// <returns></returns>
     public async Task<FlowFormModel> GetFlowFromModel(string formId)
     {
-        return (_repository.AsSugarClient().Queryable<FlowFormEntity>().First(x => x.Id == formId && x.DeleteMark == null)).Adapt<FlowFormModel>();
+        return _repository.AsSugarClient().Queryable<FlowFormEntity>().First(x => x.Id == formId && x.DeleteMark == null).Adapt<FlowFormModel>();
     }
 
     /// <summary>
@@ -1601,6 +1602,7 @@ public class FlowTaskRepository : IFlowTaskRepository, ITransient
     #endregion
 
     #region FlowTaskParamter
+
     /// <summary>
     /// 根据任务id获取任务引擎参数.
     /// </summary>
@@ -1659,6 +1661,7 @@ public class FlowTaskRepository : IFlowTaskRepository, ITransient
     #endregion
 
     #region FlowRejectData
+
     /// <summary>
     /// 驳回数据信息.
     /// </summary>

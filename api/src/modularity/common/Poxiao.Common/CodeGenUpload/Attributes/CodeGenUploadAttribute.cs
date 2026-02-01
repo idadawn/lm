@@ -28,8 +28,8 @@ public class CodeGenUploadAttribute : Attribute
     /// </summary>
     public CodeGenUploadAttribute(string Model, string Config)
     {
-        __Model__ = Model;
-        __config__ = Config.ToObject<CodeGenConfigModel>();
+        this.Model = Model;
+        this.Config = Config.ToObject<CodeGenConfigModel>();
     }
 
     /// <summary>
@@ -39,9 +39,9 @@ public class CodeGenUploadAttribute : Attribute
     /// </summary>
     public CodeGenUploadAttribute(string Model, string SecondParameter, string Config)
     {
-        __Model__ = Model;
-        __config__ = Config.ToObject<CodeGenConfigModel>();
-        switch (__config__.poxiaoKey)
+        this.Model = Model;
+        this.Config = Config.ToObject<CodeGenConfigModel>();
+        switch (this.Config.poxiaoKey)
         {
             case PoxiaoKeyConst.CHECKBOX:
             case PoxiaoKeyConst.RADIO:
@@ -59,10 +59,10 @@ public class CodeGenUploadAttribute : Attribute
     /// </summary>
     public CodeGenUploadAttribute(string Model, string Config, int Min = default, int Max = default)
     {
-        __Model__ = Model;
+        this.Model = Model;
         min = Min;
         max = Max;
-        __config__ = Config.ToObject<CodeGenConfigModel>();
+        this.Config = Config.ToObject<CodeGenConfigModel>();
     }
 
     /// <summary>
@@ -73,9 +73,9 @@ public class CodeGenUploadAttribute : Attribute
     /// </summary>
     public CodeGenUploadAttribute(string Model, string ActiveTxt, string InactiveTxt, string Config)
     {
-        __Model__ = Model;
-        __config__ = Config.ToObject<CodeGenConfigModel>();
-        switch (__config__.poxiaoKey)
+        this.Model = Model;
+        this.Config = Config.ToObject<CodeGenConfigModel>();
+        switch (this.Config.poxiaoKey)
         {
             case PoxiaoKeyConst.CHECKBOX:
             case PoxiaoKeyConst.RADIO:
@@ -95,13 +95,13 @@ public class CodeGenUploadAttribute : Attribute
     /// </summary>
     public CodeGenUploadAttribute(string Model, string dataConversionModel, string SecondParameter, string ThreeParameters, string FourParameters, string ShowField, string Config)
     {
-        __Model__ = Model;
-        __vModel__ = dataConversionModel;
+        this.Model = Model;
+        VModel = dataConversionModel;
         interfaceId = SecondParameter;
         propsValue = ThreeParameters;
         relationField = FourParameters;
         showField = ShowField;
-        __config__ = Config.ToObject<CodeGenConfigModel>();
+        this.Config = Config.ToObject<CodeGenConfigModel>();
     }
 
     /// <summary>
@@ -112,9 +112,9 @@ public class CodeGenUploadAttribute : Attribute
     /// </summary>
     public CodeGenUploadAttribute(string Model, bool Multiple, string Config)
     {
-        __Model__ = Model;
+        this.Model = Model;
         multiple = Multiple;
-        __config__ = Config.ToObject<CodeGenConfigModel>();
+        this.Config = Config.ToObject<CodeGenConfigModel>();
     }
 
     /// <summary>
@@ -123,10 +123,10 @@ public class CodeGenUploadAttribute : Attribute
     /// </summary>
     public CodeGenUploadAttribute(string Model, bool Multiple, int Level, string Config)
     {
-        __Model__ = Model;
+        this.Model = Model;
         multiple = Multiple;
         level = Level;
-        __config__ = Config.ToObject<CodeGenConfigModel>();
+        this.Config = Config.ToObject<CodeGenConfigModel>();
     }
 
     /// <summary>
@@ -137,10 +137,10 @@ public class CodeGenUploadAttribute : Attribute
     /// </summary>
     public CodeGenUploadAttribute(string Model, bool Multiple, string ThreeParameters, string FourParameters, string Config)
     {
-        __Model__ = Model;
+        this.Model = Model;
         multiple = Multiple;
-        __config__ = Config.ToObject<CodeGenConfigModel>();
-        switch (__config__.poxiaoKey)
+        this.Config = Config.ToObject<CodeGenConfigModel>();
+        switch (this.Config.poxiaoKey)
         {
             case PoxiaoKeyConst.DEPSELECT:
                 selectType = ThreeParameters;
@@ -159,10 +159,10 @@ public class CodeGenUploadAttribute : Attribute
     /// </summary>
     public CodeGenUploadAttribute(string Model, string dataConversionModel, bool Multiple, string ThreeParameters, string FourParameters, string Config)
     {
-        __Model__ = Model;
-        __vModel__ = dataConversionModel;
+        this.Model = Model;
+        VModel = dataConversionModel;
         multiple = Multiple;
-        __config__ = Config.ToObject<CodeGenConfigModel>();
+        this.Config = Config.ToObject<CodeGenConfigModel>();
         selectType = ThreeParameters;
         ableIds = FourParameters?.ToObject<List<string>>();
     }
@@ -176,10 +176,10 @@ public class CodeGenUploadAttribute : Attribute
     /// </summary>
     public CodeGenUploadAttribute(string Model, bool Multiple, string InterfaceId, string PropsValue, string RelationField, string Config)
     {
-        __Model__ = Model;
+        this.Model = Model;
         multiple = Multiple;
-        __config__ = Config.ToObject<CodeGenConfigModel>();
-        switch (__config__.poxiaoKey)
+        this.Config = Config.ToObject<CodeGenConfigModel>();
+        switch (this.Config.poxiaoKey)
         {
             case PoxiaoKeyConst.CASCADER:
                 separator = InterfaceId;
@@ -205,10 +205,10 @@ public class CodeGenUploadAttribute : Attribute
     /// </summary>
     public CodeGenUploadAttribute(string Model, string dataConversionModel, bool Multiple, string InterfaceId, string PropsValue, string RelationField, string Config)
     {
-        __Model__ = Model;
-        __vModel__ = dataConversionModel;
+        this.Model = Model;
+        VModel = dataConversionModel;
         multiple = Multiple;
-        __config__ = Config.ToObject<CodeGenConfigModel>();
+        this.Config = Config.ToObject<CodeGenConfigModel>();
         modelId = InterfaceId;
         relationField = PropsValue;
         showField = RelationField;
@@ -220,7 +220,7 @@ public class CodeGenUploadAttribute : Attribute
     /// </summary>
     public CodeGenUploadAttribute(string Model, bool Multiple, string SelectType, string AbleDepIds, string AblePosIds, string AbleUserIds, string AbleRoleIds, string AbleGroupIds, string Config)
     {
-        __Model__ = Model;
+        this.Model = Model;
         multiple = Multiple;
         selectType = SelectType;
         ableDepIds = AbleDepIds?.ToObject<List<string>>();
@@ -228,18 +228,18 @@ public class CodeGenUploadAttribute : Attribute
         ableUserIds = AbleUserIds?.ToObject<List<string>>();
         ableRoleIds = AbleRoleIds?.ToObject<List<string>>();
         ableGroupIds = AbleGroupIds?.ToObject<List<string>>();
-        __config__ = Config.ToObject<CodeGenConfigModel>();
+        this.Config = Config.ToObject<CodeGenConfigModel>();
     }
 
     /// <summary>
     /// 设置默认值为空字符串.
     /// </summary>
-    public string __Model__ { get; set; }
+    public string Model { get; set; }
 
     /// <summary>
     /// 数据转换.
     /// </summary>
-    public string __vModel__ { get; set; }
+    public string VModel { get; set; }
 
     /// <summary>
     /// 最小值.
@@ -314,7 +314,7 @@ public class CodeGenUploadAttribute : Attribute
     /// <summary>
     /// 配置.
     /// </summary>
-    public CodeGenConfigModel? __config__ { get; set; }
+    public CodeGenConfigModel? Config { get; set; }
 
     /// <summary>
     /// 可选范围.

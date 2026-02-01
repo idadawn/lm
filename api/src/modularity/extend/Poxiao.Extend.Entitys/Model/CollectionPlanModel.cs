@@ -3,7 +3,7 @@ using Poxiao.DependencyInjection;
 namespace Poxiao.Extend.Entitys.Model;
 
 /// <summary>
-/// 
+///
 /// </summary>
 [SuppressSniffer]
 public class CollectionPlanModel

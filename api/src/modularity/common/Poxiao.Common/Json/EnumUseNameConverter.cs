@@ -1,4 +1,5 @@
-﻿/// <summary>
+﻿
+/// <summary>
 /// 枚举序列化使用枚举名称
 /// </summary>
 [AttributeUsage(AttributeTargets.Enum)]
@@ -10,9 +11,10 @@ public class JsonUseEnumNameAttribute : Attribute
 /// 枚举序列化使用枚举名称.
 /// </summary>
 /// <typeparam name="TEnum">枚举.</typeparam>
-public class EnumUseNameConverter<TEnum> : StringEnumConverter where TEnum : struct
+public class EnumUseNameConverter<TEnum> : StringEnumConverter
+    where TEnum : struct
 {
-    private static readonly Dictionary<string, TEnum> enumMembers = new Dictionary<string, TEnum>();
+    private static readonly Dictionary<string, TEnum> EnumMembers = new Dictionary<string, TEnum>();
 
     static EnumUseNameConverter()
     {
@@ -24,7 +26,7 @@ public class EnumUseNameConverter<TEnum> : StringEnumConverter where TEnum : str
                 var attr = field.GetCustomAttribute<EnumMemberAttribute>();
                 if (attr != null)
                 {
-                    enumMembers[attr.Value] = (TEnum)field.GetValue(null);
+                    EnumMembers[attr.Value] = (TEnum)field.GetValue(null);
                 }
             }
         }
@@ -41,7 +43,7 @@ public class EnumUseNameConverter<TEnum> : StringEnumConverter where TEnum : str
 
         string value = reader.Value.ToString();
 
-        if (enumMembers.TryGetValue(value, out var result))
+        if (EnumMembers.TryGetValue(value, out var result))
         {
             return result;
         }

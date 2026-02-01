@@ -1,7 +1,7 @@
-using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Extension;
-using System.Runtime.InteropServices;
+using Poxiao.Infrastructure.Manager;
 using SkiaSharp;
+using System.Runtime.InteropServices;
 
 namespace Poxiao.Infrastructure.Captcha.General;
 
@@ -98,7 +98,7 @@ public class GeneralCaptcha : IGeneralCaptcha, ITransient
         using var p = img.Encode(SKEncodedImageFormat.Png, 100);
         using var ms = new MemoryStream();
 
-        // 缓存验证码正确集合 
+        // 缓存验证码正确集合
         await SetCode(timestamp, code, TimeSpan.FromMinutes(5));
 
         // 保存到流

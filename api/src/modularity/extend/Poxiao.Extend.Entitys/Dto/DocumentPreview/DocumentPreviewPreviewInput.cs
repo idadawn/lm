@@ -26,7 +26,7 @@ public class DocumentPreviewPreviewInput
     /// <summary>
     /// 0否1是，默认为0。针对单文档设置是否防复制.
     /// </summary>
-    public int isCopy{ get; set; }
+    public int isCopy { get; set; }
 
     /// <summary>
     /// 开始位置.

@@ -1,14 +1,15 @@
 using Poxiao.Extras.CollectiveOAuth.Cache;
 using Poxiao.Extras.CollectiveOAuth.Config;
+using Poxiao.Extras.CollectiveOAuth.Enums;
 using Poxiao.Extras.CollectiveOAuth.Models;
 using Poxiao.Extras.CollectiveOAuth.Utils;
-using Poxiao.Extras.CollectiveOAuth.Enums;
 
 namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class GithubAuthRequest : DefaultAuthRequest
 {
-    public GithubAuthRequest(ClientConfig config) : base(config, new GithubAuthSource())
+    public GithubAuthRequest(ClientConfig config)
+        : base(config, new GithubAuthSource())
     {
     }
 

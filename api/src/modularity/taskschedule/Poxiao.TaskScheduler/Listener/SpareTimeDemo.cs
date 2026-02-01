@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Extension;
@@ -5,8 +7,6 @@ using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Security;
 using Poxiao.Schedule;
 using Poxiao.TaskScheduler.Entitys;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using SqlSugar;
 
 namespace Poxiao.TaskScheduler.Listener;

@@ -24,23 +24,23 @@ public class TwitterBase
     /// </summary>
     protected class QueryParameter
     {
-        private string name = null;
-        private string value = null;
+        private string _name = null;
+        private string _value = null;
 
         public QueryParameter(string name, string value)
         {
-            this.name = name;
-            this.value = value;
+            this._name = name;
+            this._value = value;
         }
 
         public string Name
         {
-            get { return name; }
+            get { return _name; }
         }
 
         public string Value
         {
-            get { return value; }
+            get { return _value; }
         }
     }
 
@@ -169,7 +169,7 @@ public class TwitterBase
             }
             else
             {
-                result.Append('%' + String.Format("{0:X2}", (int)symbol));
+                result.Append('%' + string.Format("{0:X2}", (int)symbol));
             }
         }
 

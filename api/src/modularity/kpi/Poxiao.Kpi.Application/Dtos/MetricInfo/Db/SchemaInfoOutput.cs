@@ -33,7 +33,6 @@ public class SchemaInfoOutput
     /// <summary>
     /// 主机地址.
     /// </summary>
-
     [JsonProperty("host")]
     public string Host { get; set; }
 

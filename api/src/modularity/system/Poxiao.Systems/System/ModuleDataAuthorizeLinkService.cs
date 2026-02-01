@@ -1,19 +1,19 @@
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Dtos.DataBase;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Dto.System.ModuleDataAuthorizeLink;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.VisualDev.Engine.Core;
 using Poxiao.VisualDev.Entitys;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
 using SqlSugar;
 
 namespace Poxiao.Systems;
@@ -102,7 +102,7 @@ public class ModuleDataAuthorizeLinkService : IDynamicApiController, ITransient
     /// <param name="type"></param>
     /// <returns></returns>
     [HttpGet("getInfo/{menudId}/{type}")]
-    public async Task<dynamic> GetInfo_Api(string menudId, string type)
+    public async Task<dynamic> GetInfoApi(string menudId, string type)
     {
         var data = await _repository.GetFirstAsync(x => x.ModuleId == menudId && x.Type == type);
         return data.Adapt<ModuleDataAuthorizeLinkInfoOutput>();

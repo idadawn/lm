@@ -1,8 +1,4 @@
-﻿using System.Globalization;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.RegularExpressions;
-using Mapster;
+﻿using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using MiniExcelLibs;
 using Newtonsoft.Json;
@@ -15,19 +11,23 @@ using Poxiao.Infrastructure.Core.Manager.Files;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Security;
-using Poxiao.Lab.EventBus;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Config;
 using Poxiao.Lab.Entity.Dto.AppearanceFeature;
+using Poxiao.Lab.Entity.Dto.AppearanceFeatureLevel;
+using Poxiao.Lab.Entity.Dto.ProductSpec;
 using Poxiao.Lab.Entity.Dto.RawData;
 using Poxiao.Lab.Entity.Enum;
 using Poxiao.Lab.Entity.Models;
+using Poxiao.Lab.EventBus;
 using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
 using Poxiao.Systems.Interfaces.Common;
 using SqlSugar;
-using Poxiao.Lab.Entity.Dto.ProductSpec;
-using Poxiao.Lab.Entity.Dto.AppearanceFeatureLevel;
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Poxiao.Lab.Service;
 
@@ -731,7 +731,7 @@ public class RawDataImportSessionService
         // 从JSON文件加载数据
         var entities = await LoadParsedDataFromFile(sessionId);
         var entityDict = entities.ToDictionary(e => e.Id, e => e);
-        
+
         var productSpecList = await _productSpecService.GetList(new ProductSpecListQuery());
         var productSpecDict = productSpecList.Cast<ProductSpecEntity>().ToDictionary(s => s.Id);
 
@@ -1306,6 +1306,7 @@ public class RawDataImportSessionService
             PreviewIntermediateData = previewData,
         };
     }
+
     /// <inheritdoc />
     [HttpGet("{sessionId}/review-data")]
     public async Task<RawDataReviewDataOutput> GetReviewDataPage(
@@ -2385,7 +2386,7 @@ public class RawDataImportSessionService
         {
             if (c < 'A' || c > 'Z')
                 return -1;
-            number = number * 26 + (c - 'A' + 1);
+            number = (number * 26) + (c - 'A' + 1);
         }
 
         return number - 1;

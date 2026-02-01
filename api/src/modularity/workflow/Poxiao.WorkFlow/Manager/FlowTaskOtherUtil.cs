@@ -1,9 +1,9 @@
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Models.WorkFlow;
 using Poxiao.Infrastructure.Security;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Interfaces.Permission;
 using Poxiao.TaskScheduler;
 using Poxiao.VisualDev.Interfaces;
@@ -40,7 +40,7 @@ public class FlowTaskOtherUtil
     /// <returns></returns>
     public async Task UpdateFlowTaskOperator(FlowTaskParamter flowTaskParamter, int handleStatus)
     {
-        var updateOperatorList = new List<FlowTaskOperatorEntity>();// 要修改的经办
+        var updateOperatorList = new List<FlowTaskOperatorEntity>(); // 要修改的经办
         // 加签
         if (flowTaskParamter.freeApproverUserId.IsNotEmptyOrNull())
         {
@@ -484,14 +484,14 @@ public class FlowTaskOtherUtil
     /// <returns></returns>
     public ApproversProperties SyncApproProCofig(ApproversProperties approversPro, StartProperties startPro)
     {
-        approversPro.timeLimitConfig = approversPro.timeLimitConfig.on == 2 ? startPro.timeLimitConfig : approversPro.timeLimitConfig;//限时配置
-        approversPro.noticeConfig = approversPro.noticeConfig.on == 2 ? startPro.noticeConfig : approversPro.noticeConfig;//提醒配置
-        approversPro.overTimeConfig = approversPro.overTimeConfig.on == 2 ? startPro.overTimeConfig : approversPro.overTimeConfig;//超时配置
-        approversPro.approveMsgConfig = approversPro.approveMsgConfig.on == 2 ? startPro.approveMsgConfig : approversPro.approveMsgConfig;//同意
-        approversPro.rejectMsgConfig = approversPro.rejectMsgConfig.on == 2 ? startPro.rejectMsgConfig : approversPro.rejectMsgConfig;//退回
-        approversPro.copyMsgConfig = approversPro.copyMsgConfig.on == 2 ? startPro.copyMsgConfig : approversPro.copyMsgConfig;//抄送
-        approversPro.overTimeMsgConfig = approversPro.overTimeMsgConfig.on == 2 ? startPro.overTimeMsgConfig : approversPro.overTimeMsgConfig;//超时
-        approversPro.noticeMsgConfig = approversPro.noticeMsgConfig.on == 2 ? startPro.noticeMsgConfig : approversPro.noticeMsgConfig;//提醒
+        approversPro.timeLimitConfig = approversPro.timeLimitConfig.on == 2 ? startPro.timeLimitConfig : approversPro.timeLimitConfig; //限时配置
+        approversPro.noticeConfig = approversPro.noticeConfig.on == 2 ? startPro.noticeConfig : approversPro.noticeConfig; //提醒配置
+        approversPro.overTimeConfig = approversPro.overTimeConfig.on == 2 ? startPro.overTimeConfig : approversPro.overTimeConfig; //超时配置
+        approversPro.approveMsgConfig = approversPro.approveMsgConfig.on == 2 ? startPro.approveMsgConfig : approversPro.approveMsgConfig; //同意
+        approversPro.rejectMsgConfig = approversPro.rejectMsgConfig.on == 2 ? startPro.rejectMsgConfig : approversPro.rejectMsgConfig; //退回
+        approversPro.copyMsgConfig = approversPro.copyMsgConfig.on == 2 ? startPro.copyMsgConfig : approversPro.copyMsgConfig; //抄送
+        approversPro.overTimeMsgConfig = approversPro.overTimeMsgConfig.on == 2 ? startPro.overTimeMsgConfig : approversPro.overTimeMsgConfig; //超时
+        approversPro.noticeMsgConfig = approversPro.noticeMsgConfig.on == 2 ? startPro.noticeMsgConfig : approversPro.noticeMsgConfig; //提醒
         return approversPro;
     }
 }

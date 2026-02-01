@@ -11,25 +11,25 @@ public class DynamicDbTableModel
     /// <summary>
     /// 表名.
     /// </summary>
-    public string? F_TABLE { get; set; }
+    public string? FTABLE { get; set; }
 
     /// <summary>
     /// 表说明.
     /// </summary>
-    public string? F_TABLENAME { get; set; }
+    public string? FTABLENAME { get; set; }
 
     /// <summary>
     /// 大小.
     /// </summary>
-    public string? F_SIZE { get; set; }
+    public string? FSIZE { get; set; }
 
     /// <summary>
     /// 总数.
     /// </summary>
-    public string? F_SUM { get; set; }
+    public string? FSUM { get; set; }
 
     /// <summary>
     /// 主键.
     /// </summary>
-    public string? F_PRIMARYKEY { get; set; }
+    public string? FPRIMARYKEY { get; set; }
 }

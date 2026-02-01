@@ -45,7 +45,8 @@ public static class EqualityHelper<T>
 
         public CommonEqualityComparer(Func<T, TV> keySelector)
             : this(keySelector, EqualityComparer<TV>.Default)
-        { }
+        {
+        }
 
         public bool Equals(T x, T y)
         {

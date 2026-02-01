@@ -1,18 +1,18 @@
-using Poxiao.Infrastructure.Core.Manager;
-using Poxiao.Infrastructure.Enums;
-using Poxiao.Infrastructure.Filter;
-using Poxiao.Infrastructure.Security;
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
+using Poxiao.Infrastructure.Core.Manager;
+using Poxiao.Infrastructure.Enums;
+using Poxiao.Infrastructure.Extension;
+using Poxiao.Infrastructure.Filter;
+using Poxiao.Infrastructure.Security;
 using Poxiao.LinqBuilder;
 using Poxiao.Systems.Entitys.Dto.System.PrintLog;
 using Poxiao.Systems.Entitys.Entity.System;
 using Poxiao.Systems.Entitys.Permission;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
-using Poxiao.Infrastructure.Extension;
 
 namespace Poxiao.Systems.System;
 
@@ -49,6 +49,7 @@ public class PrintLogService : IDynamicApiController, ITransient
     }
 
     #region Get
+
     /// <summary>
     /// 列表(分页).
     /// </summary>
@@ -85,6 +86,7 @@ public class PrintLogService : IDynamicApiController, ITransient
     #endregion
 
     #region Post
+
     /// <summary>
     /// 新增.
     /// </summary>
@@ -94,7 +96,7 @@ public class PrintLogService : IDynamicApiController, ITransient
     public async Task Delete([FromBody] PrintLogOutuut input)
     {
         var entity = input.Adapt<PrintLogEntity>();
-        entity.Id= SnowflakeIdHelper.NextId();
+        entity.Id = SnowflakeIdHelper.NextId();
         entity.PrintMan = _userManager.UserId;
         entity.PrintTime = DateTime.Now;
         var isOk = await _repository.AsInsertable(entity).ExecuteCommandAsync();

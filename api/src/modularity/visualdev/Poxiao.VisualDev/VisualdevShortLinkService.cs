@@ -1,3 +1,12 @@
+using Mapster;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Poxiao.DataEncryption;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Core.Manager.Files;
@@ -8,10 +17,6 @@ using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Net;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DataEncryption;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Logging.Attributes;
 using Poxiao.RemoteRequest.Extensions;
 using Poxiao.UnifyResult;
@@ -19,11 +24,6 @@ using Poxiao.VisualDev.Entitys;
 using Poxiao.VisualDev.Entitys.Dto.VisualDev;
 using Poxiao.VisualDev.Entitys.Dto.VisualDevModelData;
 using Poxiao.VisualDev.Interfaces;
-using Mapster;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 using SqlSugar;
 
 namespace Poxiao.VisualDev;
@@ -147,7 +147,7 @@ public class VisualdevShortLinkService : IDynamicApiController, ITransient
     {
         InitConnectionConfig(model.encryption);
         var link = string.Empty;
-        var decValue = AESEncryption.AesDecrypt(model.encryption, shortLinkKey);
+        var decValue = AESEncryption.AesDecrypt(model.encryption, _shortLinkKey);
         var modelDic = decValue.ToObject<VisualDevShortLinkInput>();
         var entity = await _repository.AsQueryable().FirstAsync(v => v.Id == id && v.DeleteMark == null);
         if (entity != null)
@@ -165,7 +165,7 @@ public class VisualdevShortLinkService : IDynamicApiController, ITransient
         parame.Add("modelId", id);
         parame.Add("type", modelDic.type);
         parame.Add("tenantId", modelDic.tenantId);
-        var encryption = AESEncryption.AesEncrypt(parame.ToJsonString(), shortLinkKey);
+        var encryption = AESEncryption.AesEncrypt(parame.ToJsonString(), _shortLinkKey);
         link += "&encryption=" + encryption;
         App.HttpContext.Response.Redirect(link);
     }
@@ -260,11 +260,11 @@ public class VisualdevShortLinkService : IDynamicApiController, ITransient
         var info = await _repository.AsQueryable().FirstAsync(v => v.Id == form.id && v.DeleteMark == null);
         var flag = false;
 
-        if (CommonConst.OnlineDevData_State_Enable.Equals(info.FormPassUse) && form.type.Equals(0))
+        if (CommonConst.OnlineDevDataStateEnable.Equals(info.FormPassUse) && form.type.Equals(0))
         {
             if (MD5Encryption.Encrypt(info.FormPassword).Equals(form.password)) flag = true;
         }
-        else if (CommonConst.OnlineDevData_State_Enable.Equals(info.ColumnPassUse) && form.type.Equals(1))
+        else if (CommonConst.OnlineDevDataStateEnable.Equals(info.ColumnPassUse) && form.type.Equals(1))
         {
             if (MD5Encryption.Encrypt(info.ColumnPassword).Equals(form.password)) flag = true;
         }
@@ -310,7 +310,7 @@ public class VisualdevShortLinkService : IDynamicApiController, ITransient
 
     #region PrivateMethod
 
-    private string shortLinkKey = "poxiaolinkpoxiaolink";
+    private string _shortLinkKey = "poxiaolinkpoxiaolink";
 
     private string GetUrl(string id, string type)
     {
@@ -325,14 +325,14 @@ public class VisualdevShortLinkService : IDynamicApiController, ITransient
         if (_tenant.MultiTenancy) parame.Add("tenantId", _userManager.TenantId);
 
         // 参数加密
-        var encryption = AESEncryption.AesEncrypt(parame.ToJsonString(), shortLinkKey);
+        var encryption = AESEncryption.AesEncrypt(parame.ToJsonString(), _shortLinkKey);
         url += encryption;
         return url;
     }
 
     private void InitConnectionConfig(string encryption)
     {
-        var info = AESEncryption.AesDecrypt(encryption, shortLinkKey).ToObject<VisualDevShortLinkInput>();
+        var info = AESEncryption.AesDecrypt(encryption, _shortLinkKey).ToObject<VisualDevShortLinkInput>();
         if (info.tenantId.IsNotEmptyOrNull() && _tenant.MultiTenancy)
         {
             var options = new ConnectionConfigOptions();

@@ -70,7 +70,7 @@ public static class ObjectExtensions
         using var stream = formFile.OpenReadStream();
         var bytes = new byte[fileLength];
 
-        stream.Read(bytes, 0, (int)fileLength);
+        stream.ReadExactly(bytes, 0, (int)fileLength);
 
         return bytes;
     }

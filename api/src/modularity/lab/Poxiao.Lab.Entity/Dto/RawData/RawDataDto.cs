@@ -171,7 +171,9 @@ public class RawDataListOutput : RawDataEntity
 /// <summary>
 /// 原始数据详情输出.
 /// </summary>
-public class RawDataInfoOutput : RawDataEntity { }
+public class RawDataInfoOutput : RawDataEntity
+{
+}
 
 /// <summary>
 /// 原始数据预览输出.

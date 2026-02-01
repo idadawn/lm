@@ -11,7 +11,8 @@ public static class ReflectionHelper
     /// <param name="field"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public static T GetDescriptionValue<T>(this FieldInfo field) where T : Attribute
+    public static T GetDescriptionValue<T>(this FieldInfo field)
+        where T : Attribute
     {
         // 获取字段的指定特性，不包含继承中的特性
         object[] customAttributes = field.GetCustomAttributes(typeof(T), false);

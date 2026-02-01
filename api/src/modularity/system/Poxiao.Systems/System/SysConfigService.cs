@@ -1,6 +1,4 @@
-using Poxiao.Infrastructure.Dtos;
-using Poxiao.Infrastructure.Enums;
-using Poxiao.Infrastructure.Security;
+using Microsoft.AspNetCore.Mvc;
 using Poxiao.DatabaseAccessor;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
@@ -8,11 +6,13 @@ using Poxiao.Extras.Thirdparty.DingDing;
 using Poxiao.Extras.Thirdparty.Email;
 using Poxiao.Extras.Thirdparty.WeChat;
 using Poxiao.FriendlyException;
+using Poxiao.Infrastructure.Dtos;
+using Poxiao.Infrastructure.Enums;
+using Poxiao.Infrastructure.Security;
 using Poxiao.Systems.Entitys.Dto.SysConfig;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.Systems.Interfaces.System;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.Systems.System;

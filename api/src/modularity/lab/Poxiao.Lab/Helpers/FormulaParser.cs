@@ -1,13 +1,13 @@
-using System.Data;
-using System.Globalization;
-using System.Reflection;
-using System.Text.RegularExpressions;
 using Microsoft.Extensions.Options;
 using Poxiao.DependencyInjection;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Attributes;
 using Poxiao.Lab.Entity.Config;
 using Poxiao.Lab.Interfaces;
+using System.Data;
+using System.Globalization;
+using System.Reflection;
+using System.Text.RegularExpressions;
 
 namespace Poxiao.Lab.Service;
 
@@ -43,8 +43,6 @@ public class FormulaParser : IFormulaParser, ITransient
         @"RANGE\s*\(\s*(\w+)\s*\)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase
     );
-
-
 
     // 匹配 DIFF_FIRST 函数: DIFF_FIRST(prefix, count) 或 DIFF_FIRST(prefix, count, maxColumns)
     // 计算前N列差值（第1列值 - 第N列值）
@@ -376,8 +374,6 @@ public class FormulaParser : IFormulaParser, ITransient
             return roundedRange.ToString(CultureInfo.InvariantCulture);
         });
     }
-
-
 
     /// <summary>
     /// 处理 DIFF_FIRST 函数
@@ -1138,8 +1134,14 @@ public class FormulaParser : IFormulaParser, ITransient
 
 public class FormulaCalculationException : Exception
 {
-    public FormulaCalculationException(string message) : base(message) { }
-    public FormulaCalculationException(string message, Exception inner) : base(message, inner) { }
+    public FormulaCalculationException(string message)
+        : base(message)
+    {
+    }
+    public FormulaCalculationException(string message, Exception inner)
+        : base(message, inner)
+    {
+    }
 }
 
 

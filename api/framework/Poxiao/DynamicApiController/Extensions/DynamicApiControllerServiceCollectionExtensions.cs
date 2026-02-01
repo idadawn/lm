@@ -1,9 +1,9 @@
-﻿using Poxiao;
-using Poxiao.DynamicApiController;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Poxiao;
+using Poxiao.DynamicApiController;
 using System.Reflection;
 
 namespace Microsoft.Extensions.DependencyInjection;

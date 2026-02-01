@@ -66,10 +66,10 @@ public class CodeGenFieldJudgeHelper
     public static bool IsMultipleColumn(List<FieldsModel> columnList, string fieldName)
     {
         bool isMultiple = false;
-        var column = columnList.Find(s => s.__vModel__ == fieldName);
+        var column = columnList.Find(s => s.VModel == fieldName);
         if (column != null)
         {
-            switch (column?.__config__.poxiaoKey)
+            switch (column?.Config.poxiaoKey)
             {
                 case PoxiaoKeyConst.CASCADER:
                     isMultiple = column.props.props.multiple;
@@ -94,7 +94,7 @@ public class CodeGenFieldJudgeHelper
         bool isMultiple = false;
         if (column != null)
         {
-            switch (column?.__config__.poxiaoKey)
+            switch (column?.Config.poxiaoKey)
             {
                 case PoxiaoKeyConst.CASCADER:
                     isMultiple = column.props.props.multiple;
@@ -116,7 +116,7 @@ public class CodeGenFieldJudgeHelper
     public static bool IsControlParsing(FieldsModel column)
     {
         bool isExist = false;
-        switch (column?.__config__.poxiaoKey)
+        switch (column?.Config.poxiaoKey)
         {
             case PoxiaoKeyConst.RELATIONFORM:
             case PoxiaoKeyConst.POPUPSELECT:
@@ -135,7 +135,7 @@ public class CodeGenFieldJudgeHelper
     public static bool IsDateTime(FieldsModel? fields)
     {
         bool isDateTime = false;
-        if (fields?.__config__.poxiaoKey == PoxiaoKeyConst.DATE || fields?.__config__.poxiaoKey == PoxiaoKeyConst.TIME)
+        if (fields?.Config.poxiaoKey == PoxiaoKeyConst.DATE || fields?.Config.poxiaoKey == PoxiaoKeyConst.TIME)
             isDateTime = true;
         return isDateTime;
     }
@@ -148,7 +148,7 @@ public class CodeGenFieldJudgeHelper
     public static bool IsSecondaryTableDateTime(FieldsModel? fields)
     {
         bool isDateTime = false;
-        if (fields?.__config__.poxiaoKey == PoxiaoKeyConst.DATE || fields?.__config__.poxiaoKey == PoxiaoKeyConst.TIME || fields?.__config__.poxiaoKey == PoxiaoKeyConst.CREATETIME || fields?.__config__.poxiaoKey == PoxiaoKeyConst.MODIFYTIME)
+        if (fields?.Config.poxiaoKey == PoxiaoKeyConst.DATE || fields?.Config.poxiaoKey == PoxiaoKeyConst.TIME || fields?.Config.poxiaoKey == PoxiaoKeyConst.CREATETIME || fields?.Config.poxiaoKey == PoxiaoKeyConst.MODIFYTIME)
             isDateTime = true;
         return isDateTime;
     }

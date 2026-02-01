@@ -36,5 +36,5 @@ public class DbSyncActionsExecuteInput
     /// <summary>
     /// 字段类型.
     /// </summary>
-    public Dictionary<string,string> convertRuleMap { get; set; }
+    public Dictionary<string, string> convertRuleMap { get; set; }
 }

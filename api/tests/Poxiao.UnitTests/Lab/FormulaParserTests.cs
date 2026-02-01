@@ -124,7 +124,7 @@ public class FormulaParserTests
         // Assert
         Assert.Equal(1.5m, result);
     }
-    
+
     [Fact]
     public void Calculate_CaseInsensitive_Success()
     {
@@ -174,7 +174,7 @@ public class FormulaParserTests
 
         Assert.Equal(15.0m, result);
     }
-    
+
     [Fact]
     public void Calculate_RangeWithDollarVariable_Success()
     {
@@ -209,7 +209,7 @@ public class FormulaParserTests
 
         Assert.Equal(2.0m, result);
     }
-    
+
     [Fact]
     public void ExtractVariables_BracketFormat_ReturnsWithoutBrackets()
     {
@@ -218,10 +218,10 @@ public class FormulaParserTests
         Assert.Contains("N3", vars);
         Assert.Contains("O3", vars);
         Assert.Contains("Factor", vars);
-        Assert.DoesNotContain("[N3]", vars); 
+        Assert.DoesNotContain("[N3]", vars);
         Assert.Equal(3, vars.Count);
     }
-    
+
     [Fact]
     public void ExtractVariables_DollarFormat_ReturnsWithoutDollar()
     {
@@ -244,7 +244,7 @@ public class FormulaParserTests
 
         // Act
         var result = _formulaParser.Calculate(formula, variables);
-        
+
         // Assert
         Assert.Null(result);
     }
@@ -266,7 +266,7 @@ public class FormulaParserTests
         Assert.True(isValid);
         _output.WriteLine($"表达式验证通过: {expression}");
     }
-    
+
     [Fact]
     public void Calculate_RangeFunction_Success()
     {
@@ -279,14 +279,14 @@ public class FormulaParserTests
         context["Detection4"] = 25m; // max
         context["Detection5"] = 15m;
         context["DetectionColumns"] = 5;
-        
+
         // Act: RANGE(Detection) = Max - Min = 25 - 5 = 20
         var result = _formulaParser.Calculate("RANGE(Detection)", context);
-        
+
         // Assert
         Assert.Equal(20m, result);
     }
-    
+
     [Fact]
     public void Calculate_DiffFirstLastFunction_Success()
     {
@@ -299,10 +299,10 @@ public class FormulaParserTests
         context["Detection4"] = 25m;
         context["Detection5"] = 15m; // last
         context["DetectionColumns"] = 5;
-        
+
         // Act: DIFF_FIRST_LAST(Detection) = |First - Last| = |10 - 15| = 5
         var result = _formulaParser.Calculate("DIFF_FIRST_LAST(Detection)", context);
-        
+
         // Assert
         Assert.Equal(5m, result);
     }

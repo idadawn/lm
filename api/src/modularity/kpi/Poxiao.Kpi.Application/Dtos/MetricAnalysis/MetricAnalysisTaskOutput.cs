@@ -36,7 +36,6 @@ public class MetricAnalysisTaskOutput
     [JsonProperty("task_status")]
     public AnalysisStatus TaskStatus { get; set; } = AnalysisStatus.InProgress;
 
-
     /// <summary>
     /// 开始时间.
     /// </summary>

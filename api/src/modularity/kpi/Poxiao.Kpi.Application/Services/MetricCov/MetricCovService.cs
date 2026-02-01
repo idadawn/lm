@@ -17,11 +17,11 @@ public class MetricCovService : IMetricCovService, ITransient
     private readonly ISqlSugarRepository<MetricCovEntity> _repository;
 
     private readonly IMetricGotService _gotService;
+
     /// <summary>
     /// 多租户事务.
     /// </summary>
     private readonly ITenant _db;
-
 
     /// <summary>
     /// 初始化一个<see cref="MetricCovService"/>类型的新实例.
@@ -66,7 +66,6 @@ public class MetricCovService : IMetricCovService, ITransient
             })
             .ToListAsync();
 
-
         foreach (var x in data) x.CovTreeIds = x.CovTreeId.Split(",").ToList();
         var treeList = data.Any(x => x.ParentId.Equals("-1"))
             ? data.OrderBy(x => x.CreatedTime).ToList().ToTree("-1")
@@ -85,7 +84,6 @@ public class MetricCovService : IMetricCovService, ITransient
 
         var entity = input.Adapt<MetricCovEntity>();
         entity.Id = SnowflakeIdHelper.NextId();
-
 
         var idList = new List<string> { entity.Id };
         if (entity.ParentId != "-1")

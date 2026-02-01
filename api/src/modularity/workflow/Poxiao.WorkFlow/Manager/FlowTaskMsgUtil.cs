@@ -1,3 +1,4 @@
+using Newtonsoft.Json.Linq;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Dtos.Message;
 using Poxiao.Infrastructure.Extension;
@@ -9,7 +10,6 @@ using Poxiao.WorkFlow.Entitys.Entity;
 using Poxiao.WorkFlow.Entitys.Model;
 using Poxiao.WorkFlow.Entitys.Model.Conifg;
 using Poxiao.WorkFlow.Interfaces.Repository;
-using Newtonsoft.Json.Linq;
 
 namespace Poxiao.WorkFlow.Manager;
 
@@ -143,7 +143,7 @@ public class FlowTaskMsgUtil
             item.value = value;
             dic.Add(item.field, value);
         }
-        if (!templateJsonItems.Any(x=>x.field== "@Title"))
+        if (!templateJsonItems.Any(x => x.field == "@Title"))
         {
             templateJsonItems.Add(new MessageSendParam
             {
@@ -177,7 +177,8 @@ public class FlowTaskMsgUtil
         {
             foreach (var item in flowTaskOperatorEntities)
             {
-                var value = new {
+                var value = new
+                {
                     enCode = flowTaskParamter.flowTaskEntity.FlowCode,
                     flowId = flowTaskParamter.flowTaskEntity.FlowId,
                     status = type == 1 ? 0 : 1,
@@ -197,7 +198,8 @@ public class FlowTaskMsgUtil
         }
         else
         {
-            var value = new {
+            var value = new
+            {
                 enCode = flowTaskParamter.flowTaskEntity.FlowCode,
                 flowId = flowTaskParamter.flowTaskEntity.FlowId,
                 status = type == 1 ? 0 : 1,

@@ -1,9 +1,9 @@
-using System.ComponentModel;
 using Newtonsoft.Json;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Contracts;
 using Poxiao.Lab.Entity.Attributes;
 using SqlSugar;
+using System.ComponentModel;
 
 namespace Poxiao.Lab.Entity;
 
@@ -306,6 +306,7 @@ public class RawDataEntity : CLDEntityBase
     public long? SortCode { get; set; }
 
     #region 辅助属性（不存储到数据库）
+
     /// <summary>
     /// 特性ID列表（辅助属性，从JSON字段解析）.
     /// </summary>

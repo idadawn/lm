@@ -1,11 +1,13 @@
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.JsonSerialization;
 using Poxiao.LinqBuilder;
 using Poxiao.Systems.Entitys.Dto.Organize;
@@ -14,8 +16,6 @@ using Poxiao.Systems.Entitys.Dto.User;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Interfaces.Permission;
 using Poxiao.Systems.Interfaces.System;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 using Yitter.IdGenerator;
 
@@ -149,12 +149,14 @@ public class OrganizeService : IOrganizeService, IDynamicApiController, ITransie
         });
 
         return data.Any(x => x.ParentId.Equals("-1"))
-            ? new {
+            ? new
+            {
                 list = data.OrderBy(x => x.sortCode)
                     .ToList()
                     .ToTree("-1")
             }
-            : new {
+            : new
+            {
                 list = data.OrderBy(x => x.sortCode)
                     .ToList()
                     .ToTree("0")
@@ -236,7 +238,7 @@ public class OrganizeService : IOrganizeService, IDynamicApiController, ITransie
                     addItem.fullName = orgTree.FirstOrDefault(x => x.Id.Equals(addItem.Id))?.Description;
                     addItem.organize = addItem.fullName;
                     addItem.organizeIds = addItem.organizeIdTree.Split(",").ToList();
-                    addItem.disabled = true;
+                    addItem.Disabled = true;
                     addItem.sortCode = 0;
                     if (!treeList.Any(x => x.Id.Equals(addItem.Id))) treeList.Add(addItem);
                 }
@@ -327,23 +329,23 @@ public class OrganizeService : IOrganizeService, IDynamicApiController, ITransie
     public async Task<dynamic> OrganizeCondition([FromBody] OrganizeConditionInput input)
     {
         var queryWhere = LinqExpression.Or<OrganizeEntity>();
-        input.departIds.ForEach(id => queryWhere = queryWhere.Or(x => x.OrganizeIdTree.Contains(id)));
+        input.DepartIds.ForEach(id => queryWhere = queryWhere.Or(x => x.OrganizeIdTree.Contains(id)));
         queryWhere = queryWhere.And(x => x.DeleteMark == null);
         List<OrganizeListOutput>? data = await _repository.AsQueryable().Where(queryWhere)
             .WhereIF(input.Keyword.IsNotEmptyOrNull(), a => a.FullName.Contains(input.Keyword) || a.EnCode.Contains(input.Keyword)).Select(a => new OrganizeListOutput
-        {
-            Id = a.Id,
-            organizeIdTree = a.OrganizeIdTree,
-            type = a.Category,
-            ParentId = a.ParentId,
-            lastFullName = a.FullName,
-            fullName = a.FullName,
-            enabledMark = a.EnabledMark,
-            creatorTime = a.CreatorTime,
-            icon = a.Category.Equals("company") ? "icon-ym icon-ym-tree-organization3" : "icon-ym icon-ym-tree-department1",
-            sortCode = a.SortCode,
-            IsLeaf = true
-        }).ToListAsync();
+            {
+                Id = a.Id,
+                organizeIdTree = a.OrganizeIdTree,
+                type = a.Category,
+                ParentId = a.ParentId,
+                lastFullName = a.FullName,
+                fullName = a.FullName,
+                enabledMark = a.EnabledMark,
+                creatorTime = a.CreatorTime,
+                icon = a.Category.Equals("company") ? "icon-ym icon-ym-tree-organization3" : "icon-ym icon-ym-tree-department1",
+                sortCode = a.SortCode,
+                IsLeaf = true
+            }).ToListAsync();
 
         // 获取所有组织
         List<OrganizeEntity>? allOrgList = GetOrgListTreeName();
@@ -434,7 +436,7 @@ public class OrganizeService : IOrganizeService, IDynamicApiController, ITransie
             });
         });
 
-        if(adminlist.Any()) await _repository.AsSugarClient().Insertable(adminlist).CallEntityMethod(m => m.Create()).ExecuteReturnEntityAsync();
+        if (adminlist.Any()) await _repository.AsSugarClient().Insertable(adminlist).CallEntityMethod(m => m.Create()).ExecuteReturnEntityAsync();
         #endregion
 
         #region 第三方同步

@@ -1,5 +1,5 @@
-﻿using System.Formats.Asn1;
-using Senparc.Weixin.Work.AdvancedAPIs.OaDataOpen;
+﻿using Senparc.Weixin.Work.AdvancedAPIs.OaDataOpen;
+using System.Formats.Asn1;
 
 namespace Poxiao.Kpi.Application;
 
@@ -390,8 +390,10 @@ public class DbService : IDbService, ITransient
         var groupStr = $"{SanitizeIdentifier(input.ColumnField.field)}";
         var orderStr = "";
         if (input.OrderByField.field.IsNotEmptyOrNull())
+        {
             orderStr =
                 $"{SanitizeIdentifier(input.OrderByField.field)} {input.OrderByField.SortBy}";
+        }
 
         var executedSql = new StringBuilder();
         executedSql.AppendFormatLine(
@@ -451,7 +453,7 @@ public class DbService : IDbService, ITransient
             case DBAggType.COUNT:
                 sqlAggType = $"COUNT({fileId}) {fileId}";
                 break;
-            case DBAggType.COUNT_DISTINCT:
+            case DBAggType.COUNTDISTINCT:
                 sqlAggType = $"COUNT_DISTINCT({fileId}) {fileId}";
                 break;
         }
@@ -581,7 +583,7 @@ public class DbService : IDbService, ITransient
             case DBAggType.COUNT:
                 sqlAggType = $"COUNT({fileId}) AS value";
                 break;
-            case DBAggType.COUNT_DISTINCT:
+            case DBAggType.COUNTDISTINCT:
                 sqlAggType = $"COUNT(DISTINCT {fileId}) AS value";
                 break;
         }

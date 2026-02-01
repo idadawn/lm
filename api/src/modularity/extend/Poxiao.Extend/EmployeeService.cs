@@ -1,3 +1,12 @@
+using Mapster;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DataEncryption;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.Extend.Entitys;
+using Poxiao.Extend.Entitys.Dto.Employee;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Core.Manager.Files;
@@ -8,16 +17,7 @@ using Poxiao.Infrastructure.Helper;
 using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Models.NPOI;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DataEncryption;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.Extend.Entitys;
-using Poxiao.Extend.Entitys.Dto.Employee;
-using Poxiao.FriendlyException;
 using Poxiao.LinqBuilder;
-using Mapster;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.Extend;
@@ -38,7 +38,7 @@ public class EmployeeService : IDynamicApiController, ITransient
     private readonly IUserManager _userManager;
     private readonly ICacheManager _cacheManager;
 
-    public EmployeeService(ISqlSugarRepository<EmployeeEntity> repository, IFileManager fileManager, IUserManager userManager,ICacheManager cacheManager)
+    public EmployeeService(ISqlSugarRepository<EmployeeEntity> repository, IFileManager fileManager, IUserManager userManager, ICacheManager cacheManager)
     {
         _repository = repository;
         _fileManager = fileManager;
@@ -230,7 +230,7 @@ public class EmployeeService : IDynamicApiController, ITransient
     /// <param name="input">请求参数</param>
     /// <returns></returns>
     [HttpPost("ImportData")]
-    public async Task<dynamic> ImportData_Api([FromBody] ImportDataInput input)
+    public async Task<dynamic> ImportDataApi([FromBody] ImportDataInput input)
     {
         var output = new ImportDataOutput();
         foreach (var item in input.list)
@@ -306,19 +306,19 @@ public class EmployeeService : IDynamicApiController, ITransient
             string propertyValue = input.Keyword;
             switch (propertyName)
             {
-                case "EnCode":            //工号
+                case "EnCode": //工号
                     whereLambda = whereLambda.And(t => t.EnCode.Contains(propertyValue));
                     break;
-                case "FullName":          //姓名
+                case "FullName": //姓名
                     whereLambda = whereLambda.And(t => t.FullName.Contains(propertyValue));
                     break;
-                case "Telephone":         //电话
+                case "Telephone": //电话
                     whereLambda = whereLambda.And(t => t.Telephone.Contains(propertyValue));
                     break;
-                case "DepartmentName":    //部门
+                case "DepartmentName": //部门
                     whereLambda = whereLambda.And(t => t.DepartmentName.Contains(propertyValue));
                     break;
-                case "PositionName":      //职位
+                case "PositionName": //职位
                     whereLambda = whereLambda.And(t => t.PositionName.Contains(propertyValue));
                     break;
                 default:

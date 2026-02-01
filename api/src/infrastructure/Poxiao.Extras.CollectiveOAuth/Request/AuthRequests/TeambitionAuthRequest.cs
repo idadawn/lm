@@ -1,14 +1,15 @@
 using Poxiao.Extras.CollectiveOAuth.Cache;
 using Poxiao.Extras.CollectiveOAuth.Config;
+using Poxiao.Extras.CollectiveOAuth.Enums;
 using Poxiao.Extras.CollectiveOAuth.Models;
 using Poxiao.Extras.CollectiveOAuth.Utils;
-using Poxiao.Extras.CollectiveOAuth.Enums;
 
 namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class TeambitionAuthRequest : DefaultAuthRequest
 {
-    public TeambitionAuthRequest(ClientConfig config) : base(config, new GithubAuthSource())
+    public TeambitionAuthRequest(ClientConfig config)
+        : base(config, new GithubAuthSource())
     {
     }
 
@@ -74,7 +75,6 @@ public class TeambitionAuthRequest : DefaultAuthRequest
         return authUser;
     }
 
-    
     public override AuthResponse refresh(AuthToken oldToken)
     {
         string uid = oldToken.uid;
@@ -101,7 +101,6 @@ public class TeambitionAuthRequest : DefaultAuthRequest
 
         return new AuthResponse(AuthResponseStatus.SUCCESS.GetCode(), AuthResponseStatus.SUCCESS.GetDesc(), authToken);
     }
-
 
     /**
     * 校验请求结果

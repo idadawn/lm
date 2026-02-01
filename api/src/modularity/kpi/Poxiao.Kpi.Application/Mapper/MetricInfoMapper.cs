@@ -50,7 +50,6 @@ public class MetricInfoMapper : IRegister
             .Map(dest => dest.TimeDimensions, src => src.TimeDimensions != null && src.TimeDimensions.IsNotEmptyOrNull() ? src.TimeDimensions.ToObject<MetricTimeDimensionDto>() : null)
             ;
 
-
         config.ForType<MetricInfoEntity, MetricInfo4DeriveOutput>()
             .Map(dest => dest.DataModelId, src => src.DataModelId.IsNotEmptyOrNull() ? src.DataModelId.ToObject<DbSchemaOutput>() : new DbSchemaOutput())
             .Map(dest => dest.Column, src => src.Column.IsNotEmptyOrNull() ? src.Column.ToObject<TableFieldOutput>() : new TableFieldOutput())

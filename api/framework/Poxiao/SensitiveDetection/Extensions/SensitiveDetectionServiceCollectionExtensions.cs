@@ -1,5 +1,5 @@
-﻿using Poxiao.SensitiveDetection;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Poxiao.SensitiveDetection;
 
 namespace Microsoft.Extensions.DependencyInjection;
 

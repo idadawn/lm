@@ -1,7 +1,8 @@
-using Poxiao.Infrastructure.Security;
 using Poxiao.DependencyInjection;
+using Poxiao.Infrastructure.Security;
 
 namespace Poxiao.WorkFlow.Entitys.Dto.FlowTemplate;
+
 [SuppressSniffer]
 public class FlowTemplateTreeOutput : TreeModel
 {

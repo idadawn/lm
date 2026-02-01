@@ -1,4 +1,9 @@
 using Aop.Api.Domain;
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Core.Handlers;
 using Poxiao.Infrastructure.Core.Manager;
@@ -7,9 +12,6 @@ using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Models.User;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Dto.Authorize;
 using Poxiao.Systems.Entitys.Model.Authorize;
 using Poxiao.Systems.Entitys.Model.Menu;
@@ -17,8 +19,6 @@ using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.Systems.Interfaces.Permission;
 using Poxiao.VisualDev.Entitys.Entity;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.Systems;

@@ -1,14 +1,14 @@
-using Poxiao.Infrastructure.Core.Manager;
-using Poxiao.Infrastructure.Enums;
-using Poxiao.Infrastructure.Security;
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
+using Poxiao.Infrastructure.Core.Manager;
+using Poxiao.Infrastructure.Enums;
+using Poxiao.Infrastructure.Security;
 using Poxiao.Systems.Entitys.Dto.DictionaryType;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.Systems.Interfaces.System;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.Systems;
@@ -53,7 +53,7 @@ public class DictionaryTypeService : IDictionaryTypeService, IDynamicApiControll
     /// <param name="id">请求参数.</param>
     /// <returns></returns>
     [HttpGet("{id}")]
-    public async Task<dynamic> GetInfo_Api(string id)
+    public async Task<dynamic> GetInfoApi(string id)
     {
         var data = await GetInfo(id);
         return data.Adapt<DictionaryTypeInfoOutput>();
@@ -63,7 +63,7 @@ public class DictionaryTypeService : IDictionaryTypeService, IDynamicApiControll
     /// 列表.
     /// </summary>
     [HttpGet("")]
-    public async Task<dynamic> GetList_Api()
+    public async Task<dynamic> GetListApi()
     {
         var data = await GetList();
         var output = data.Adapt<List<DictionaryTypeListOutput>>();
@@ -95,7 +95,7 @@ public class DictionaryTypeService : IDictionaryTypeService, IDynamicApiControll
     /// <param name="input">请求参数.</param>
     /// <returns></returns>
     [HttpPost("")]
-    public async Task Create_Api([FromBody] DictionaryTypeCrInput input)
+    public async Task CreateApi([FromBody] DictionaryTypeCrInput input)
     {
         if (await _repository.IsAnyAsync(x => x.EnCode == input.enCode && x.DeleteMark == null) || await _repository.IsAnyAsync(x => x.FullName == input.fullName && x.DeleteMark == null))
             throw Oops.Oh(ErrorCode.D3001);
@@ -111,7 +111,7 @@ public class DictionaryTypeService : IDictionaryTypeService, IDynamicApiControll
     /// <param name="id">请求参数.</param>
     /// <returns></returns>
     [HttpDelete("{id}")]
-    public async Task Delete_Api(string id)
+    public async Task DeleteApi(string id)
     {
         if (!await _repository.IsAnyAsync(x => x.Id == id && x.DeleteMark == null))
             throw Oops.Oh(ErrorCode.D3000);
@@ -139,7 +139,7 @@ public class DictionaryTypeService : IDictionaryTypeService, IDynamicApiControll
     /// <param name="input">请求参数.</param>
     /// <returns></returns>
     [HttpPut("{id}")]
-    public async Task Update_Api(string id, [FromBody] DictionaryTypeUpInput input)
+    public async Task UpdateApi(string id, [FromBody] DictionaryTypeUpInput input)
     {
         if (await _repository.IsAnyAsync(x => x.Id != id && x.EnCode == input.enCode && x.DeleteMark == null) || await _repository.IsAnyAsync(x => x.Id != id && x.FullName == input.fullName && x.DeleteMark == null))
             throw Oops.Oh(ErrorCode.D3001);

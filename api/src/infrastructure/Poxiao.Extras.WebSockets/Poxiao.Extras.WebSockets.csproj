@@ -17,4 +17,8 @@
 		<ProjectReference Include="..\..\modularity\common\Poxiao.Common\Poxiao.Infrastructure.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <PackageReference Update="StyleCop.Analyzers" Version="1.1.118" />
+	</ItemGroup>
+
 </Project>

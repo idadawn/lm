@@ -1,3 +1,14 @@
+using Mapster;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Poxiao.DatabaseAccessor;
+using Poxiao.DataEncryption;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Core.Manager;
@@ -10,11 +21,6 @@ using Poxiao.Infrastructure.Helper;
 using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Models.NPOI;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DatabaseAccessor;
-using Poxiao.DataEncryption;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Logging.Attributes;
 using Poxiao.RemoteRequest.Extensions;
 using Poxiao.Systems.Entitys.Model.DataInterFace;
@@ -29,12 +35,6 @@ using Poxiao.VisualDev.Entitys.Dto.VisualDevModelData;
 using Poxiao.VisualDev.Interfaces;
 using Poxiao.WorkFlow.Entitys.Entity;
 using Poxiao.WorkFlow.Interfaces.Service;
-using Mapster;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using SqlSugar;
 
 namespace Poxiao.VisualDev
@@ -369,7 +369,7 @@ namespace Poxiao.VisualDev
         public async Task BatchDelete(string modelId, [FromBody] VisualDevModelDataBatchDelInput input)
         {
             VisualDevEntity? templateEntity = await _visualDevService.GetInfoById(modelId, true);
-            if (!string.IsNullOrEmpty(templateEntity.Tables) && !"[]".Equals(templateEntity.Tables)) await _runService.BatchDelHaveTableData(input.ids, templateEntity);
+            if (!string.IsNullOrEmpty(templateEntity.Tables) && !"[]".Equals(templateEntity.Tables)) await _runService.BatchDelHaveTableData(input.Ids, templateEntity);
         }
 
         /// <summary>
@@ -448,9 +448,9 @@ namespace Poxiao.VisualDev
 
             // 赋予默认值
             var dicItem = new Dictionary<string, object>();
-            tInfo.AllFieldsModel.Where(x => tInfo.selectKey.Contains(x.__vModel__)).ToList().ForEach(item =>
+            tInfo.AllFieldsModel.Where(x => tInfo.selectKey.Contains(x.VModel)).ToList().ForEach(item =>
             {
-                switch (item.__config__.poxiaoKey)
+                switch (item.Config.poxiaoKey)
                 {
                     case PoxiaoKeyConst.CREATEUSER:
                     case PoxiaoKeyConst.MODIFYUSER:
@@ -460,54 +460,54 @@ namespace Poxiao.VisualDev
                     case PoxiaoKeyConst.CURRPOSITION:
                     case PoxiaoKeyConst.CURRDEPT:
                     case PoxiaoKeyConst.BILLRULE:
-                        dicItem.Add(item.__vModel__, "系统自动生成");
+                        dicItem.Add(item.VModel, "系统自动生成");
                         break;
                     case PoxiaoKeyConst.COMSELECT:
-                        dicItem.Add(item.__vModel__, item.multiple ? "例:XX集团/产品部,XX集团/技术部" : "例:XX集团/技术部");
+                        dicItem.Add(item.VModel, item.multiple ? "例:XX集团/产品部,XX集团/技术部" : "例:XX集团/技术部");
                         break;
                     case PoxiaoKeyConst.DEPSELECT:
-                        dicItem.Add(item.__vModel__, item.multiple ? "例:产品部/部门编码,技术部/部门编码" : "例:技术部/部门编码");
+                        dicItem.Add(item.VModel, item.multiple ? "例:产品部/部门编码,技术部/部门编码" : "例:技术部/部门编码");
                         break;
                     case PoxiaoKeyConst.POSSELECT:
-                        dicItem.Add(item.__vModel__, item.multiple ? "例:技术经理/岗位编码,技术员/岗位编码" : "例:技术员/岗位编码");
+                        dicItem.Add(item.VModel, item.multiple ? "例:技术经理/岗位编码,技术员/岗位编码" : "例:技术员/岗位编码");
                         break;
                     case PoxiaoKeyConst.USERSSELECT:
-                        dicItem.Add(item.__vModel__, item.selectType.Equals("all") ? "例:XX集团/产品部,产品部/部门编码,技术经理/岗位编码,研发人员/角色编码,A分组/分组编码,张三/账号" : "例:李四/账号");
+                        dicItem.Add(item.VModel, item.selectType.Equals("all") ? "例:XX集团/产品部,产品部/部门编码,技术经理/岗位编码,研发人员/角色编码,A分组/分组编码,张三/账号" : "例:李四/账号");
                         break;
                     case PoxiaoKeyConst.USERSELECT:
-                        dicItem.Add(item.__vModel__, item.multiple ? "例:张三/账号,李四/账号" : "例:张三/账号");
+                        dicItem.Add(item.VModel, item.multiple ? "例:张三/账号,李四/账号" : "例:张三/账号");
                         break;
                     case PoxiaoKeyConst.ROLESELECT:
-                        dicItem.Add(item.__vModel__, item.multiple ? "例:研发人员/角色编码,测试人员/角色编码" : "例:研发人员/角色编码");
+                        dicItem.Add(item.VModel, item.multiple ? "例:研发人员/角色编码,测试人员/角色编码" : "例:研发人员/角色编码");
                         break;
                     case PoxiaoKeyConst.GROUPSELECT:
-                        dicItem.Add(item.__vModel__, item.multiple ? "例:A分组/分组编码,B分组/分组编码" : "例:A分组/分组编码");
+                        dicItem.Add(item.VModel, item.multiple ? "例:A分组/分组编码,B分组/分组编码" : "例:A分组/分组编码");
                         break;
                     case PoxiaoKeyConst.DATE:
-                        dicItem.Add(item.__vModel__, string.Format("例:{0}", item.format));
+                        dicItem.Add(item.VModel, string.Format("例:{0}", item.format));
                         break;
                     case PoxiaoKeyConst.TIME:
-                        dicItem.Add(item.__vModel__, string.Format("例:{0}", item.format));
+                        dicItem.Add(item.VModel, string.Format("例:{0}", item.format));
                         break;
                     case PoxiaoKeyConst.ADDRESS:
                         switch (item.level)
                         {
                             case 0:
-                                dicItem.Add(item.__vModel__, item.multiple ? "例:福建省,广东省" : "例:福建省");
+                                dicItem.Add(item.VModel, item.multiple ? "例:福建省,广东省" : "例:福建省");
                                 break;
                             case 1:
-                                dicItem.Add(item.__vModel__, item.multiple ? "例:福建省/莆田市,广东省/广州市" : "例:福建省/莆田市");
+                                dicItem.Add(item.VModel, item.multiple ? "例:福建省/莆田市,广东省/广州市" : "例:福建省/莆田市");
                                 break;
                             case 2:
-                                dicItem.Add(item.__vModel__, item.multiple ? "例:福建省/莆田市/城厢区,广东省/广州市/荔湾区" : "例:福建省/莆田市/城厢区");
+                                dicItem.Add(item.VModel, item.multiple ? "例:福建省/莆田市/城厢区,广东省/广州市/荔湾区" : "例:福建省/莆田市/城厢区");
                                 break;
                             case 3:
-                                dicItem.Add(item.__vModel__, item.multiple ? "例:福建省/莆田市/城厢区/霞林街道,广东省/广州市/荔湾区/沙面街道" : "例:福建省/莆田市/城厢区/霞林街道");
+                                dicItem.Add(item.VModel, item.multiple ? "例:福建省/莆田市/城厢区/霞林街道,广东省/广州市/荔湾区/沙面街道" : "例:福建省/莆田市/城厢区/霞林街道");
                                 break;
                         }
                         break;
                     default:
-                        dicItem.Add(item.__vModel__, string.Empty);
+                        dicItem.Add(item.VModel, string.Empty);
                         break;
                 }
             });
@@ -553,7 +553,7 @@ namespace Poxiao.VisualDev
             var isChildTable = tInfo.selectKey.Any(x => tInfo.ChildTableFields.ContainsKey(x));
             try
             {
-                var FileEncode = tInfo.AllFieldsModel.Where(x => tInfo.selectKey.Contains(x.__vModel__)).ToList();
+                var fileEncode = tInfo.AllFieldsModel.Where(x => tInfo.selectKey.Contains(x.VModel)).ToList();
 
                 string? savePath = Path.Combine(FileVariable.TemporaryFilePath, fileName);
 
@@ -565,7 +565,7 @@ namespace Poxiao.VisualDev
                 if (excelData.Columns.Count > tInfo.selectKey.Count) excelData.Columns.RemoveAt(tInfo.selectKey.Count);
                 foreach (object? item in excelData.Columns)
                 {
-                    excelData.Columns[item.ToString()].ColumnName = FileEncode.Where(x => x.__config__.label == item.ToString()).FirstOrDefault().__vModel__;
+                    excelData.Columns[item.ToString()].ColumnName = fileEncode.Where(x => x.Config.label == item.ToString()).FirstOrDefault().VModel;
                 }
 
                 resData = excelData.ToJsonString().ToObjectOld<List<Dictionary<string, object>>>();
@@ -586,7 +586,7 @@ namespace Poxiao.VisualDev
                                     {
                                         child.Add(new { id = x.Key.Replace(childVModel + "-", string.Empty), fullName = x.Value.ToString().Replace(string.Format("({0})", x.Key), string.Empty) });
                                     });
-                                    headerRow.Add(new { id = childVModel, fullName = tInfo.AllFieldsModel.Find(x => x.__vModel__.Equals(childVModel)).__config__.label.Replace(string.Format("({0})", childVModel), string.Empty), children = child });
+                                    headerRow.Add(new { id = childVModel, fullName = tInfo.AllFieldsModel.Find(x => x.VModel.Equals(childVModel)).Config.label.Replace(string.Format("({0})", childVModel), string.Empty), children = child });
                                 }
                             }
                             else
@@ -616,7 +616,7 @@ namespace Poxiao.VisualDev
                 {
                     var newData = new List<Dictionary<string, object>>();
                     var singleForm = tInfo.selectKey.Where(x => !x.Contains("tableField")).ToList();
-                    var childTableVModel = tInfo.AllFieldsModel.Where(x => x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).Select(x => x.__vModel__).ToList();
+                    var childTableVModel = tInfo.AllFieldsModel.Where(x => x.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).Select(x => x.VModel).ToList();
                     resData.ForEach(dataItem =>
                     {
                         var addItem = new Dictionary<string, object>();
@@ -703,18 +703,20 @@ namespace Poxiao.VisualDev
             {
                 foreach (var item in items)
                 {
-                    var vmodel = tInfo.AllFieldsModel.FirstOrDefault(x => x.__vModel__.Equals(item.Key));
-                    if (vmodel != null && vmodel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.DATE) && item.Value.IsNotEmptyOrNull())
+                    var vmodel = tInfo.AllFieldsModel.FirstOrDefault(x => x.VModel.Equals(item.Key));
+                    if (vmodel != null && vmodel.Config.poxiaoKey.Equals(PoxiaoKeyConst.DATE) && item.Value.IsNotEmptyOrNull())
+                    {
                         items[item.Key] = string.Format("{0:" + vmodel.format + "} ", item.Value);
-                    else if (vmodel != null && vmodel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE) && item.Value.IsNotEmptyOrNull())
+                    }
+                    else if (vmodel != null && vmodel.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE) && item.Value.IsNotEmptyOrNull())
                     {
                         var ctList = item.Value.ToJsonString().ToObjectOld<List<Dictionary<string, object>>>();
                         ctList.ForEach(ctItems =>
                         {
                             foreach (var ctItem in ctItems)
                             {
-                                var ctVmodel = tInfo.AllFieldsModel.FirstOrDefault(x => x.__vModel__.Equals(vmodel.__vModel__ + "-" + ctItem.Key));
-                                if (ctVmodel != null && ctVmodel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.DATE) && ctItem.Value.IsNotEmptyOrNull())
+                                var ctVmodel = tInfo.AllFieldsModel.FirstOrDefault(x => x.VModel.Equals(vmodel.VModel + "-" + ctItem.Key));
+                                if (ctVmodel != null && ctVmodel.Config.poxiaoKey.Equals(PoxiaoKeyConst.DATE) && ctItem.Value.IsNotEmptyOrNull())
                                     ctItems[ctItem.Key] = string.Format("{0:" + vmodel.format + "} ", ctItem.Value);
                             }
                         });
@@ -741,7 +743,7 @@ namespace Poxiao.VisualDev
 
             // 错误数据
             tInfo.selectKey.Add("errorsInfo");
-            tInfo.AllFieldsModel.Add(new FieldsModel() { __vModel__ = "errorsInfo", __config__ = new ConfigModel() { label = "异常原因" } });
+            tInfo.AllFieldsModel.Add(new FieldsModel() { VModel = "errorsInfo", Config = new ConfigModel() { label = "异常原因" } });
             for (var i = 0; i < list.list.Count(); i++) list.list[i].Add("id", i);
 
             var result = GetCreateFirstColumnsHeader(tInfo.selectKey, list.list, tInfo.AllFieldsModel);
@@ -764,7 +766,7 @@ namespace Poxiao.VisualDev
         public async Task<dynamic> ImportData(string modelId, [FromBody] VisualDevImportDataInput list)
         {
             var tInfo = await GetUploaderTemplateInfoAsync(modelId);
-            object[]? res = await ImportMenuData(tInfo, list.list, tInfo.visualDevEntity);
+            object[] ? res = await ImportMenuData(tInfo, list.list, tInfo.visualDevEntity);
             var addlist = res.First() as List<Dictionary<string, object>>;
             var errorlist = res.Last() as List<Dictionary<string, object>>;
             var result = new VisualDevImportDataOutput()
@@ -805,11 +807,11 @@ namespace Poxiao.VisualDev
                 excelconfig.ColumnModel = new List<ExcelColumnModel>();
                 foreach (string? item in keys)
                 {
-                    FieldsModel? excelColumn = fieldList.Find(t => t.__vModel__ == item);
+                    FieldsModel? excelColumn = fieldList.Find(t => t.VModel == item);
                     if (excelColumn != null)
                     {
-                        excelconfig.ColumnModel.Add(new ExcelColumnModel() { Column = item, ExcelColumn = excelColumn.__config__.label });
-                        columnList.Add(excelColumn.__config__.label);
+                        excelconfig.ColumnModel.Add(new ExcelColumnModel() { Column = item, ExcelColumn = excelColumn.Config.label });
+                        columnList.Add(excelColumn.Config.label);
                     }
                 }
 
@@ -921,7 +923,7 @@ namespace Poxiao.VisualDev
                 {
                     if (item.ToLower().Contains("tablefield"))
                     {
-                        var title = fieldList.FirstOrDefault(x => x.__vModel__.Equals(item))?.__config__.label;
+                        var title = fieldList.FirstOrDefault(x => x.VModel.Equals(item))?.Config.label;
                         firstColumns.Add(title + empty, selectKey.Count(x => x.Contains(item)));
                         empty += " ";
                         mainFieldIndex = 1;
@@ -957,18 +959,18 @@ namespace Poxiao.VisualDev
             var mainPrimary = tableList.Find(t => t.primaryKey); // 主表主键
             if (mainPrimary == null || mainPrimary.IsNullOrEmpty()) throw Oops.Oh(ErrorCode.D1402); // 主表未设置主键
             tInfo.MainPrimary = mainPrimary.field;
-            tInfo.AllFieldsModel = tInfo.AllFieldsModel.Where(x => !x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.UPLOADFZ)
-            && !x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.UPLOADIMG)
-            && !x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.COLORPICKER)
-            && !x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.POPUPTABLESELECT)
-            && !x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.RELATIONFORM)
-            && !x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.POPUPSELECT)
-            && !x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.RELATIONFORMATTR)
-            && !x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.POPUPATTR)
-            && !x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.QRCODE)
-            && !x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.BARCODE)
-            && !x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CALCULATE)).ToList();
-            tInfo.AllFieldsModel.Where(x => x.__vModel__.IsNotEmptyOrNull()).ToList().ForEach(item => item.__config__.label = string.Format("{0}({1})", item.__config__.label, item.__vModel__));
+            tInfo.AllFieldsModel = tInfo.AllFieldsModel.Where(x => !x.Config.poxiaoKey.Equals(PoxiaoKeyConst.UPLOADFZ)
+            && !x.Config.poxiaoKey.Equals(PoxiaoKeyConst.UPLOADIMG)
+            && !x.Config.poxiaoKey.Equals(PoxiaoKeyConst.COLORPICKER)
+            && !x.Config.poxiaoKey.Equals(PoxiaoKeyConst.POPUPTABLESELECT)
+            && !x.Config.poxiaoKey.Equals(PoxiaoKeyConst.RELATIONFORM)
+            && !x.Config.poxiaoKey.Equals(PoxiaoKeyConst.POPUPSELECT)
+            && !x.Config.poxiaoKey.Equals(PoxiaoKeyConst.RELATIONFORMATTR)
+            && !x.Config.poxiaoKey.Equals(PoxiaoKeyConst.POPUPATTR)
+            && !x.Config.poxiaoKey.Equals(PoxiaoKeyConst.QRCODE)
+            && !x.Config.poxiaoKey.Equals(PoxiaoKeyConst.BARCODE)
+            && !x.Config.poxiaoKey.Equals(PoxiaoKeyConst.CALCULATE)).ToList();
+            tInfo.AllFieldsModel.Where(x => x.VModel.IsNotEmptyOrNull()).ToList().ForEach(item => item.Config.label = string.Format("{0}({1})", item.Config.label, item.VModel));
             return tInfo;
         }
 
@@ -982,7 +984,7 @@ namespace Poxiao.VisualDev
         private async Task<object[]> ImportMenuData(TemplateParsingBase tInfo, List<Dictionary<string, object>> list, VisualDevEntity tEntity = null)
         {
             List<Dictionary<string, object>> userInputList = ImportFirstVerify(tInfo, list);
-            List<FieldsModel> fieldsModelList = tInfo.AllFieldsModel.Where(x => tInfo.selectKey.Contains(x.__vModel__)).ToList();
+            List<FieldsModel> fieldsModelList = tInfo.AllFieldsModel.Where(x => tInfo.selectKey.Contains(x.VModel)).ToList();
 
             var successList = new List<Dictionary<string, object>>();
             var errorsList = new List<Dictionary<string, object>>();
@@ -996,7 +998,7 @@ namespace Poxiao.VisualDev
             try
             {
                 // 唯一验证已处理，入库前去掉.
-                tInfo.AllFieldsModel.Where(x => x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.COMINPUT) && x.__config__.unique).ToList().ForEach(item => item.__config__.unique = false);
+                tInfo.AllFieldsModel.Where(x => x.Config.poxiaoKey.Equals(PoxiaoKeyConst.COMINPUT) && x.Config.unique).ToList().ForEach(item => item.Config.unique = false);
                 _db.BeginTran();
                 foreach (var item in successList)
                 {
@@ -1011,7 +1013,7 @@ namespace Poxiao.VisualDev
                         if (tInfo.visualDevEntity.EnableFlow.Equals(1))
                         {
                             var flowId = _visualDevRepository.AsSugarClient().Queryable<WorkFlow.Entitys.Entity.FlowFormEntity>().First(x => x.Id.Equals(tInfo.visualDevEntity.Id)).FlowId;
-                            var id = (await _visualDevRepository.AsSugarClient().Queryable<FlowTemplateJsonEntity>().Where(x => x.TemplateId == flowId && x.EnabledMark == 1 && x.DeleteMark == null).Select(x => x.Id).FirstAsync());
+                            var id = await _visualDevRepository.AsSugarClient().Queryable<FlowTemplateJsonEntity>().Where(x => x.TemplateId == flowId && x.EnabledMark == 1 && x.DeleteMark == null).Select(x => x.Id).FirstAsync();
                             await _flowTaskService.Create(new Infrastructure.Models.WorkFlow.FlowTaskSubmitModel() { formData = item, flowId = id, flowUrgent = 1, status = 1 });
                         }
                         else
@@ -1058,11 +1060,11 @@ namespace Poxiao.VisualDev
             });
 
             #region 验证必填控件
-            var childTableList = tInfo.AllFieldsModel.Where(x => x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).Select(x => x.__vModel__).ToList();
-            var requiredList = tInfo.AllFieldsModel.Where(x => x.__config__.required).ToList();
-            var VModelList = requiredList.Select(x => x.__vModel__).ToList();
+            var childTableList = tInfo.AllFieldsModel.Where(x => x.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).Select(x => x.VModel).ToList();
+            var requiredList = tInfo.AllFieldsModel.Where(x => x.Config.required).ToList();
+            var vModelList = requiredList.Select(x => x.VModel).ToList();
 
-            if (VModelList.Any())
+            if (vModelList.Any())
             {
                 var newResList = new List<Dictionary<string, object>>();
                 resList.ForEach(items =>
@@ -1070,9 +1072,9 @@ namespace Poxiao.VisualDev
                     var newItems = items.Copy();
                     foreach (var item in items)
                     {
-                        if (item.Value.IsNullOrEmpty() && VModelList.Contains(item.Key))
+                        if (item.Value.IsNullOrEmpty() && vModelList.Contains(item.Key))
                         {
-                            var errorInfo = requiredList.Find(x => x.__vModel__.Equals(item.Key)).__config__.label + ": 值不能为空";
+                            var errorInfo = requiredList.Find(x => x.VModel.Equals(item.Key)).Config.label + ": 值不能为空";
                             if (newItems.ContainsKey(errorKey)) newItems[errorKey] = newItems[errorKey] + "," + errorInfo;
                             else newItems.Add(errorKey, errorInfo);
                         }
@@ -1084,9 +1086,9 @@ namespace Poxiao.VisualDev
                             {
                                 foreach (var childItem in childItems)
                                 {
-                                    if (childItem.Value.IsNullOrEmpty() && VModelList.Contains(item.Key + "-" + childItem.Key))
+                                    if (childItem.Value.IsNullOrEmpty() && vModelList.Contains(item.Key + "-" + childItem.Key))
                                     {
-                                        var errorInfo = tInfo.AllFieldsModel.Find(x => x.__vModel__.Equals(item.Key)).__config__.children.Find(x => x.__vModel__.Equals(item.Key + "-" + childItem.Key)).__config__.label + ": 值不能为空";
+                                        var errorInfo = tInfo.AllFieldsModel.Find(x => x.VModel.Equals(item.Key)).Config.children.Find(x => x.VModel.Equals(item.Key + "-" + childItem.Key)).Config.label + ": 值不能为空";
                                         if (newItems.ContainsKey(errorKey)) newItems[errorKey] = newItems[errorKey] + "," + errorInfo;
                                         else newItems.Add(errorKey, errorInfo);
                                     }
@@ -1101,8 +1103,8 @@ namespace Poxiao.VisualDev
             #endregion
 
             #region 验证唯一
-            var uniqueList = tInfo.AllFieldsModel.Where(x => x.__config__.unique).ToList();
-            VModelList = uniqueList.Select(x => x.__vModel__).ToList();
+            var uniqueList = tInfo.AllFieldsModel.Where(x => x.Config.unique).ToList();
+            vModelList = uniqueList.Select(x => x.VModel).ToList();
 
             if (uniqueList.Any())
             {
@@ -1110,7 +1112,7 @@ namespace Poxiao.VisualDev
                 {
                     foreach (var item in items)
                     {
-                        if (VModelList.Contains(item.Key))
+                        if (vModelList.Contains(item.Key))
                         {
                             var vlist = new List<Dictionary<string, object>>();
                             resList.Where(x => x.ContainsKey(item.Key) && x.ContainsValue(item.Value)).ToList().ForEach(it =>
@@ -1129,7 +1131,7 @@ namespace Poxiao.VisualDev
                             {
                                 for (var i = 1; i < vlist.Count; i++)
                                 {
-                                    var errorInfo = tInfo.AllFieldsModel.Find(x => x.__vModel__.Equals(item.Key)).__config__.label + ": 值不能重复";
+                                    var errorInfo = tInfo.AllFieldsModel.Find(x => x.VModel.Equals(item.Key)).Config.label + ": 值不能重复";
                                     items[errorKey] = items[errorKey] + "," + errorInfo;
                                 }
                             }
@@ -1148,7 +1150,7 @@ namespace Poxiao.VisualDev
                                     foreach (var childItem in childItems)
                                     {
                                         var uniqueKey = item.Key + "-" + childItem.Key;
-                                        if (VModelList.Contains(uniqueKey))
+                                        if (vModelList.Contains(uniqueKey))
                                         {
                                             var vlist = itemCList.Where(x => x.ContainsKey(childItem.Key) && x.ContainsValue(childItem.Value)).ToList();
                                             if (!updateItemCList.Any(x => x.ContainsKey(childItem.Key) && x.ContainsValue(childItem.Value)))
@@ -1161,14 +1163,14 @@ namespace Poxiao.VisualDev
                                     foreach (var childItem in childItems)
                                     {
                                         var uniqueKey = item.Key + "-" + childItem.Key;
-                                        if (VModelList.Contains(uniqueKey) && childItem.Value != null)
+                                        if (vModelList.Contains(uniqueKey) && childItem.Value != null)
                                         {
                                             var vlist = itemCList.Where(x => x.ContainsKey(childItem.Key) && x.ContainsValue(childItem.Value)).ToList();
                                             if (vlist.Count > 1)
                                             {
                                                 for (var i = 1; i < vlist.Count; i++)
                                                 {
-                                                    var errorTxt = tInfo.AllFieldsModel.Find(x => x.__vModel__.Equals(uniqueKey)).__config__.label + ": 值不能重复";
+                                                    var errorTxt = tInfo.AllFieldsModel.Find(x => x.VModel.Equals(uniqueKey)).Config.label + ": 值不能重复";
                                                     if (!ctItemErrors.Any(x => x.Equals(errorTxt))) ctItemErrors.Add(errorTxt);
                                                 }
                                             }
@@ -1188,7 +1190,7 @@ namespace Poxiao.VisualDev
 
                 // 表里的数据验证唯一
                 List<string>? relationKey = new List<string>();
-                List<string>? auxiliaryFieldList = tInfo.AuxiliaryTableFieldsModelList.Select(x => x.__config__.tableName).Distinct().ToList();
+                List<string>? auxiliaryFieldList = tInfo.AuxiliaryTableFieldsModelList.Select(x => x.Config.tableName).Distinct().ToList();
                 auxiliaryFieldList.ForEach(tName =>
                 {
                     string? tableField = tInfo.AllTable.Find(tf => tf.table == tName)?.tableField;
@@ -1200,11 +1202,11 @@ namespace Poxiao.VisualDev
                     List<string>? fieldList = new List<string>();
                     var whereList = new List<IConditionalModel>();
                     fieldList.Add(string.Format("{0}.{1}", tInfo.MainTableName, tInfo.MainPrimary));
-                    tInfo.SingleFormData.Where(x => x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.COMINPUT) && x.__config__.unique).ToList().ForEach(item =>
+                    tInfo.SingleFormData.Where(x => x.Config.poxiaoKey.Equals(PoxiaoKeyConst.COMINPUT) && x.Config.unique).ToList().ForEach(item =>
                     {
-                        fieldList.Add(string.Format("{0}.{1} {2}", item.__config__.tableName, item.__vModel__.Split("_poxiao_").Last(), item.__vModel__));
+                        fieldList.Add(string.Format("{0}.{1} {2}", item.Config.tableName, item.VModel.Split("_poxiao_").Last(), item.VModel));
 
-                        if (allDataMap.ContainsKey(item.__vModel__) && allDataMap[item.__vModel__] != null)
+                        if (allDataMap.ContainsKey(item.VModel) && allDataMap[item.VModel] != null)
                         {
                             whereList.Add(new ConditionalCollections()
                             {
@@ -1212,9 +1214,9 @@ namespace Poxiao.VisualDev
                                 {
                                     new KeyValuePair<WhereType, ConditionalModel>(WhereType.Or, new ConditionalModel
                                     {
-                                        FieldName = string.Format("{0}.{1}", item.__config__.tableName, item.__vModel__.Split("_poxiao_").Last()),
-                                        ConditionalType =allDataMap.ContainsKey(item.__vModel__) ? ConditionalType.Equal: ConditionalType.IsNullOrEmpty,
-                                        FieldValue = allDataMap.ContainsKey(item.__vModel__) ? allDataMap[item.__vModel__].ToString() : string.Empty,
+                                        FieldName = string.Format("{0}.{1}", item.Config.tableName, item.VModel.Split("_poxiao_").Last()),
+                                        ConditionalType = allDataMap.ContainsKey(item.VModel) ? ConditionalType.Equal : ConditionalType.IsNullOrEmpty,
+                                        FieldValue = allDataMap.ContainsKey(item.VModel) ? allDataMap[item.VModel].ToString() : string.Empty,
                                     })
                                 }
                             });
@@ -1252,7 +1254,7 @@ namespace Poxiao.VisualDev
                                 {
                                     if (items.Last().Value == null || items.Last().Value.Equals(allDataMap[items.Last().Key].ToString()))
                                     {
-                                        var errorInfo = tInfo.SingleFormData.First(x => x.__vModel__.Equals(items.Last().Key))?.__config__.label + ": 值不能重复";
+                                        var errorInfo = tInfo.SingleFormData.First(x => x.VModel.Equals(items.Last().Key))?.Config.label + ": 值不能重复";
                                         if (allDataMap.ContainsKey(errorKey))
                                         {
                                             if (!allDataMap[errorKey].ToString().Contains(errorInfo)) allDataMap[errorKey] = allDataMap[errorKey] + "," + errorInfo;
@@ -1286,10 +1288,10 @@ namespace Poxiao.VisualDev
         /// <returns></returns>
         private async Task<Dictionary<string, List<Dictionary<string, string>>>> GetCDataList(List<FieldsModel> listFieldsModel, Dictionary<string, List<Dictionary<string, string>>> resData)
         {
-            foreach (var item in listFieldsModel.Where(x => !x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).ToList())
+            foreach (var item in listFieldsModel.Where(x => !x.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).ToList())
             {
                 var addItem = new List<Dictionary<string, string>>();
-                switch (item.__config__.poxiaoKey)
+                switch (item.Config.poxiaoKey)
                 {
                     case PoxiaoKeyConst.COMSELECT:
                         {
@@ -1432,7 +1434,7 @@ namespace Poxiao.VisualDev
                         break;
                     case PoxiaoKeyConst.SWITCH:
                         {
-                            if (!resData.ContainsKey(item.__vModel__))
+                            if (!resData.ContainsKey(item.VModel))
                             {
                                 Dictionary<string, string> dictionary = new Dictionary<string, string>();
                                 dictionary.Add("1", item.activeTxt);
@@ -1440,7 +1442,7 @@ namespace Poxiao.VisualDev
                                 Dictionary<string, string> dictionary2 = new Dictionary<string, string>();
                                 dictionary2.Add("0", item.inactiveTxt);
                                 addItem.Add(dictionary2);
-                                resData.Add(item.__vModel__, addItem);
+                                resData.Add(item.VModel, addItem);
                             }
                         }
 
@@ -1449,7 +1451,7 @@ namespace Poxiao.VisualDev
                     case PoxiaoKeyConst.SELECT:
                     case PoxiaoKeyConst.RADIO:
                         {
-                            if (!resData.ContainsKey(item.__vModel__))
+                            if (!resData.ContainsKey(item.VModel))
                             {
                                 var propsValue = string.Empty;
                                 var propsLabel = string.Empty;
@@ -1461,7 +1463,7 @@ namespace Poxiao.VisualDev
                                     children = item.props.props.children;
                                 }
 
-                                if (item.__config__.dataType.Equals("static"))
+                                if (item.Config.dataType.Equals("static"))
                                 {
                                     if (item != null && item.options != null)
                                     {
@@ -1471,13 +1473,13 @@ namespace Poxiao.VisualDev
                                             dictionary.Add(option[propsValue].ToString(), option[propsLabel].ToString());
                                             addItem.Add(dictionary);
                                         });
-                                        resData.Add(item.__vModel__, addItem);
+                                        resData.Add(item.VModel, addItem);
                                     }
                                 }
-                                else if (item.__config__.dataType.Equals("dictionary"))
+                                else if (item.Config.dataType.Equals("dictionary"))
                                 {
                                     var dictionaryDataList = await _visualDevRepository.AsSugarClient().Queryable<DictionaryDataEntity, DictionaryTypeEntity>((a, b) => new JoinQueryInfos(JoinType.Left, b.Id == a.DictionaryTypeId))
-                                        .WhereIF(item.__config__.dictionaryType.IsNotEmptyOrNull(), (a, b) => b.Id == item.__config__.dictionaryType || b.EnCode == item.__config__.dictionaryType)
+                                        .WhereIF(item.Config.dictionaryType.IsNotEmptyOrNull(), (a, b) => b.Id == item.Config.dictionaryType || b.EnCode == item.Config.dictionaryType)
                                         .Where(a => a.DeleteMark == null).Select(a => new { a.Id, a.EnCode, a.FullName }).ToListAsync();
 
                                     foreach (var it in dictionaryDataList)
@@ -1488,12 +1490,12 @@ namespace Poxiao.VisualDev
                                         addItem.Add(dictionary);
                                     }
 
-                                    resData.Add(item.__vModel__, addItem);
+                                    resData.Add(item.VModel, addItem);
                                 }
-                                else if (item.__config__.dataType.Equals("dynamic"))
+                                else if (item.Config.dataType.Equals("dynamic"))
                                 {
                                     var popDataList = await _formDataParsing.GetDynamicList(item);
-                                    resData.Add(item.__vModel__, popDataList);
+                                    resData.Add(item.VModel, popDataList);
                                 }
                             }
                         }
@@ -1501,17 +1503,17 @@ namespace Poxiao.VisualDev
                     case PoxiaoKeyConst.TREESELECT:
                     case PoxiaoKeyConst.CASCADER:
                         {
-                            if (!resData.ContainsKey(item.__vModel__))
+                            if (!resData.ContainsKey(item.VModel))
                             {
-                                if (item.__config__.dataType.Equals("static"))
+                                if (item.Config.dataType.Equals("static"))
                                 {
                                     if (item.options != null)
-                                        resData.Add(item.__vModel__, GetStaticList(item));
+                                        resData.Add(item.VModel, GetStaticList(item));
                                 }
-                                else if (item.__config__.dataType.Equals("dictionary"))
+                                else if (item.Config.dataType.Equals("dictionary"))
                                 {
                                     var dictionaryDataList = await _visualDevRepository.AsSugarClient().Queryable<DictionaryDataEntity, DictionaryTypeEntity>((a, b) => new JoinQueryInfos(JoinType.Left, b.Id == a.DictionaryTypeId))
-                                        .WhereIF(item.__config__.dictionaryType.IsNotEmptyOrNull(), (a, b) => b.Id == item.__config__.dictionaryType || b.EnCode == item.__config__.dictionaryType)
+                                        .WhereIF(item.Config.dictionaryType.IsNotEmptyOrNull(), (a, b) => b.Id == item.Config.dictionaryType || b.EnCode == item.Config.dictionaryType)
                                         .Where(a => a.DeleteMark == null).Select(a => new { a.Id, a.EnCode, a.FullName }).ToListAsync();
                                     if (item.props.props.value.ToLower().Equals("encode"))
                                     {
@@ -1532,12 +1534,12 @@ namespace Poxiao.VisualDev
                                         }
                                     }
 
-                                    resData.Add(item.__vModel__, addItem);
+                                    resData.Add(item.VModel, addItem);
                                 }
-                                else if (item.__config__.dataType.Equals("dynamic"))
+                                else if (item.Config.dataType.Equals("dynamic"))
                                 {
                                     var popDataList = await _formDataParsing.GetDynamicList(item);
-                                    resData.Add(item.__vModel__, popDataList);
+                                    resData.Add(item.VModel, popDataList);
                                 }
                             }
                         }
@@ -1545,17 +1547,17 @@ namespace Poxiao.VisualDev
                         break;
                     case PoxiaoKeyConst.POPUPTABLESELECT:
                         {
-                            if (!resData.ContainsKey(item.__vModel__))
+                            if (!resData.ContainsKey(item.VModel))
                             {
                                 var popDataList = await _formDataParsing.GetDynamicList(item);
-                                resData.Add(item.__vModel__, popDataList);
+                                resData.Add(item.VModel, popDataList);
                             }
                         }
                         break;
 
                     case PoxiaoKeyConst.USERSELECT:
                         {
-                            if (!resData.ContainsKey(item.__vModel__))
+                            if (!resData.ContainsKey(item.VModel))
                             {
                                 if (item.selectType.Equals("all"))
                                 {
@@ -1566,7 +1568,7 @@ namespace Poxiao.VisualDev
                                         dictionary.Add(item.Id, item.Account);
                                         addItem.Add(dictionary);
                                     });
-                                    resData.Add(item.__vModel__, addItem);
+                                    resData.Add(item.VModel, addItem);
                                 }
                                 else if (item.selectType.Equals("custom"))
                                 {
@@ -1581,7 +1583,7 @@ namespace Poxiao.VisualDev
                                         dictionary.Add(item.Id, item.Account);
                                         if (!addItem.Any(x => x.ContainsKey(item.Id))) addItem.Add(dictionary);
                                     });
-                                    resData.Add(item.__vModel__, addItem);
+                                    resData.Add(item.VModel, addItem);
                                 }
                             }
                         }
@@ -1589,7 +1591,7 @@ namespace Poxiao.VisualDev
                         break;
                     case PoxiaoKeyConst.USERSSELECT:
                         {
-                            if (!resData.ContainsKey(item.__vModel__))
+                            if (!resData.ContainsKey(item.VModel))
                             {
                                 if (item.selectType.Equals("all"))
                                 {
@@ -1649,7 +1651,7 @@ namespace Poxiao.VisualDev
                                             if (!addItem.Any(x => x.ContainsKey(item.Id))) addItem.Add(dictionary);
                                         });
                                     }
-                                    resData.Add(item.__vModel__, addItem);
+                                    resData.Add(item.VModel, addItem);
                                 }
                                 else if (item.selectType.Equals("custom"))
                                 {
@@ -1665,7 +1667,7 @@ namespace Poxiao.VisualDev
                                             dictionary.Add(item.Id + "--user", item.Account);
                                             if (!addItem.Any(x => x.ContainsKey(item.Id))) addItem.Add(dictionary);
                                         });
-                                        resData.Add(item.__vModel__, addItem);
+                                        resData.Add(item.VModel, addItem);
                                     }
                                 }
                             }
@@ -1674,7 +1676,7 @@ namespace Poxiao.VisualDev
                         break;
                     case PoxiaoKeyConst.DEPSELECT:
                         {
-                            if (!resData.ContainsKey(item.__vModel__))
+                            if (!resData.ContainsKey(item.VModel))
                             {
                                 if (item.selectType.Equals("all"))
                                 {
@@ -1685,7 +1687,7 @@ namespace Poxiao.VisualDev
                                         dictionary.Add(item.Id, item.EnCode);
                                         addItem.Add(dictionary);
                                     });
-                                    resData.Add(item.__vModel__, addItem);
+                                    resData.Add(item.VModel, addItem);
                                 }
                                 else if (item.selectType.Equals("custom"))
                                 {
@@ -1700,7 +1702,7 @@ namespace Poxiao.VisualDev
                                             dictionary.Add(item.Id, item.EnCode);
                                             if (!addItem.Any(x => x.ContainsKey(item.Id))) addItem.Add(dictionary);
                                         });
-                                        resData.Add(item.__vModel__, addItem);
+                                        resData.Add(item.VModel, addItem);
                                     }
                                 }
                             }
@@ -1709,7 +1711,7 @@ namespace Poxiao.VisualDev
                         break;
                     case PoxiaoKeyConst.POSSELECT:
                         {
-                            if (!resData.ContainsKey(item.__vModel__))
+                            if (!resData.ContainsKey(item.VModel))
                             {
                                 if (item.selectType.Equals("all"))
                                 {
@@ -1720,7 +1722,7 @@ namespace Poxiao.VisualDev
                                         dictionary.Add(item.Id, item.EnCode);
                                         addItem.Add(dictionary);
                                     });
-                                    resData.Add(item.__vModel__, addItem);
+                                    resData.Add(item.VModel, addItem);
                                 }
                                 else if (item.selectType.Equals("custom"))
                                 {
@@ -1734,7 +1736,7 @@ namespace Poxiao.VisualDev
                                             dictionary.Add(item.Id, item.EnCode);
                                             addItem.Add(dictionary);
                                         });
-                                        resData.Add(item.__vModel__, addItem);
+                                        resData.Add(item.VModel, addItem);
                                     }
                                     if (item.ablePosIds.Any())
                                     {
@@ -1747,17 +1749,20 @@ namespace Poxiao.VisualDev
                                             addItem.Add(dictionary);
                                         });
 
-                                        if (resData.ContainsKey(item.__vModel__))
+                                        if (resData.ContainsKey(item.VModel))
                                         {
                                             var newAddItem = new List<Dictionary<string, string>>();
                                             foreach (var it in addItem)
                                             {
                                                 var tempIt = it.FirstOrDefault().Value;
-                                                if (tempIt.IsNotEmptyOrNull() && !resData[item.__vModel__].Any(x => x.ContainsValue(tempIt))) newAddItem.Add(it);
+                                                if (tempIt.IsNotEmptyOrNull() && !resData[item.VModel].Any(x => x.ContainsValue(tempIt))) newAddItem.Add(it);
                                             }
-                                            resData[item.__vModel__].AddRange(newAddItem);
+                                            resData[item.VModel].AddRange(newAddItem);
                                         }
-                                        else resData.Add(item.__vModel__, addItem);
+                                        else
+                                        {
+                                            resData.Add(item.VModel, addItem);
+                                        }
                                     }
                                 }
                             }
@@ -1767,9 +1772,9 @@ namespace Poxiao.VisualDev
                 }
             }
 
-            listFieldsModel.Where(x => x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).ToList().ForEach(async item =>
+            listFieldsModel.Where(x => x.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).ToList().ForEach(async item =>
             {
-                var res = await GetCDataList(item.__config__.children, resData);
+                var res = await GetCDataList(item.Config.children, resData);
                 if (res.Any()) foreach (var it in res) if (!resData.ContainsKey(it.Key)) resData.Add(it.Key, it.Value);
             });
 
@@ -1794,13 +1799,13 @@ namespace Poxiao.VisualDev
                 var newDataItems = dataItems.Copy();
                 foreach (var item in dataItems)
                 {
-                    var vModel = fieldsModelList.Find(x => x.__vModel__.Equals(item.Key));
+                    var vModel = fieldsModelList.Find(x => x.VModel.Equals(item.Key));
                     if (vModel == null) continue;
                     var dicList = new List<Dictionary<string, string>>();
-                    if (cDataList.ContainsKey(vModel.__config__.poxiaoKey)) dicList = cDataList[vModel.__config__.poxiaoKey];
-                    if ((dicList == null || !dicList.Any()) && cDataList.ContainsKey(vModel.__vModel__)) dicList = cDataList[vModel.__vModel__];
+                    if (cDataList.ContainsKey(vModel.Config.poxiaoKey)) dicList = cDataList[vModel.Config.poxiaoKey];
+                    if ((dicList == null || !dicList.Any()) && cDataList.ContainsKey(vModel.VModel)) dicList = cDataList[vModel.VModel];
 
-                    switch (vModel.__config__.poxiaoKey)
+                    switch (vModel.Config.poxiaoKey)
                     {
                         case PoxiaoKeyConst.DATE:
                             try
@@ -1809,23 +1814,23 @@ namespace Poxiao.VisualDev
                                 {
                                     // 判断格式是否正确
                                     var value = DateTime.ParseExact(item.Value.ToString().TrimEnd(), vModel.format, System.Globalization.CultureInfo.CurrentCulture);
-                                    if (vModel.__config__.startTimeRule && vModel.__config__.startTimeValue.IsNotEmptyOrNull())
+                                    if (vModel.Config.startTimeRule && vModel.Config.startTimeValue.IsNotEmptyOrNull())
                                     {
                                         var minDate = string.Format("{0:" + vModel.format + "}", DateTime.Now).ParseToDateTime();
-                                        switch (vModel.__config__.startTimeType)
+                                        switch (vModel.Config.startTimeType)
                                         {
                                             case 1:
                                                 {
-                                                    if (vModel.__config__.startTimeValue.IsNotEmptyOrNull())
-                                                        minDate = vModel.__config__.startTimeValue.TimeStampToDateTime();
+                                                    if (vModel.Config.startTimeValue.IsNotEmptyOrNull())
+                                                        minDate = vModel.Config.startTimeValue.TimeStampToDateTime();
                                                 }
 
                                                 break;
                                             case 2:
                                                 {
-                                                    if (vModel.__config__.startRelationField.IsNotEmptyOrNull() && dataItems.ContainsKey(vModel.__config__.startRelationField))
+                                                    if (vModel.Config.startRelationField.IsNotEmptyOrNull() && dataItems.ContainsKey(vModel.Config.startRelationField))
                                                     {
-                                                        var data = dataItems[vModel.__config__.startRelationField].ToString();
+                                                        var data = dataItems[vModel.Config.startRelationField].ToString();
                                                         minDate = data.TrimEnd().ParseToDateTime();
                                                     }
                                                 }
@@ -1835,16 +1840,16 @@ namespace Poxiao.VisualDev
                                                 break;
                                             case 4:
                                                 {
-                                                    switch (vModel.__config__.startTimeTarget)
+                                                    switch (vModel.Config.startTimeTarget)
                                                     {
                                                         case 1:
-                                                            minDate = minDate.AddYears(-vModel.__config__.startTimeValue.ParseToInt());
+                                                            minDate = minDate.AddYears(-vModel.Config.startTimeValue.ParseToInt());
                                                             break;
                                                         case 2:
-                                                            minDate = minDate.AddMonths(-vModel.__config__.startTimeValue.ParseToInt());
+                                                            minDate = minDate.AddMonths(-vModel.Config.startTimeValue.ParseToInt());
                                                             break;
                                                         case 3:
-                                                            minDate = minDate.AddDays(-vModel.__config__.startTimeValue.ParseToInt());
+                                                            minDate = minDate.AddDays(-vModel.Config.startTimeValue.ParseToInt());
                                                             break;
                                                     }
                                                 }
@@ -1852,16 +1857,16 @@ namespace Poxiao.VisualDev
                                                 break;
                                             case 5:
                                                 {
-                                                    switch (vModel.__config__.startTimeTarget)
+                                                    switch (vModel.Config.startTimeTarget)
                                                     {
                                                         case 1:
-                                                            minDate = minDate.AddYears(vModel.__config__.startTimeValue.ParseToInt());
+                                                            minDate = minDate.AddYears(vModel.Config.startTimeValue.ParseToInt());
                                                             break;
                                                         case 2:
-                                                            minDate = minDate.AddMonths(vModel.__config__.startTimeValue.ParseToInt());
+                                                            minDate = minDate.AddMonths(vModel.Config.startTimeValue.ParseToInt());
                                                             break;
                                                         case 3:
-                                                            minDate = minDate.AddDays(vModel.__config__.startTimeValue.ParseToInt());
+                                                            minDate = minDate.AddDays(vModel.Config.startTimeValue.ParseToInt());
                                                             break;
                                                     }
                                                 }
@@ -1871,29 +1876,29 @@ namespace Poxiao.VisualDev
 
                                         if (minDate > value)
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 日期选择值不在范围内";
+                                            var errorInfo = vModel.Config.label + ": 日期选择值不在范围内";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
                                     }
 
-                                    if (vModel.__config__.endTimeRule && vModel.__config__.endTimeValue.IsNotEmptyOrNull())
+                                    if (vModel.Config.endTimeRule && vModel.Config.endTimeValue.IsNotEmptyOrNull())
                                     {
                                         var maxDate = string.Format("{0:" + vModel.format + "}", DateTime.Now).ParseToDateTime();
-                                        switch (vModel.__config__.endTimeType)
+                                        switch (vModel.Config.endTimeType)
                                         {
                                             case 1:
                                                 {
-                                                    if (vModel.__config__.endTimeValue.IsNotEmptyOrNull())
-                                                        maxDate = vModel.__config__.endTimeValue.TimeStampToDateTime();
+                                                    if (vModel.Config.endTimeValue.IsNotEmptyOrNull())
+                                                        maxDate = vModel.Config.endTimeValue.TimeStampToDateTime();
                                                 }
 
                                                 break;
                                             case 2:
                                                 {
-                                                    if (vModel.__config__.endRelationField.IsNotEmptyOrNull() && dataItems.ContainsKey(vModel.__config__.endRelationField))
+                                                    if (vModel.Config.endRelationField.IsNotEmptyOrNull() && dataItems.ContainsKey(vModel.Config.endRelationField))
                                                     {
-                                                        var data = dataItems[vModel.__config__.endRelationField].ToString();
+                                                        var data = dataItems[vModel.Config.endRelationField].ToString();
                                                         maxDate = data.TrimEnd().ParseToDateTime();
                                                     }
                                                 }
@@ -1903,16 +1908,16 @@ namespace Poxiao.VisualDev
                                                 break;
                                             case 4:
                                                 {
-                                                    switch (vModel.__config__.startTimeTarget)
+                                                    switch (vModel.Config.startTimeTarget)
                                                     {
                                                         case 1:
-                                                            maxDate = maxDate.AddYears(-vModel.__config__.endTimeValue.ParseToInt());
+                                                            maxDate = maxDate.AddYears(-vModel.Config.endTimeValue.ParseToInt());
                                                             break;
                                                         case 2:
-                                                            maxDate = maxDate.AddMonths(-vModel.__config__.endTimeValue.ParseToInt());
+                                                            maxDate = maxDate.AddMonths(-vModel.Config.endTimeValue.ParseToInt());
                                                             break;
                                                         case 3:
-                                                            maxDate = maxDate.AddDays(-vModel.__config__.endTimeValue.ParseToInt());
+                                                            maxDate = maxDate.AddDays(-vModel.Config.endTimeValue.ParseToInt());
                                                             break;
                                                     }
                                                 }
@@ -1920,16 +1925,16 @@ namespace Poxiao.VisualDev
                                                 break;
                                             case 5:
                                                 {
-                                                    switch (vModel.__config__.startTimeTarget)
+                                                    switch (vModel.Config.startTimeTarget)
                                                     {
                                                         case 1:
-                                                            maxDate = maxDate.AddYears(vModel.__config__.endTimeValue.ParseToInt());
+                                                            maxDate = maxDate.AddYears(vModel.Config.endTimeValue.ParseToInt());
                                                             break;
                                                         case 2:
-                                                            maxDate = maxDate.AddMonths(vModel.__config__.endTimeValue.ParseToInt());
+                                                            maxDate = maxDate.AddMonths(vModel.Config.endTimeValue.ParseToInt());
                                                             break;
                                                         case 3:
-                                                            maxDate = maxDate.AddDays(vModel.__config__.endTimeValue.ParseToInt());
+                                                            maxDate = maxDate.AddDays(vModel.Config.endTimeValue.ParseToInt());
                                                             break;
                                                     }
                                                 }
@@ -1939,7 +1944,7 @@ namespace Poxiao.VisualDev
 
                                         if (maxDate < value)
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 日期选择值不在范围内";
+                                            var errorInfo = vModel.Config.label + ": 日期选择值不在范围内";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
@@ -1950,7 +1955,7 @@ namespace Poxiao.VisualDev
                             }
                             catch
                             {
-                                var errorInfo = vModel.__config__.label + ": 值不正确";
+                                var errorInfo = vModel.Config.label + ": 值不正确";
                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                 else newDataItems.Add(errorKey, errorInfo);
                             }
@@ -1962,22 +1967,22 @@ namespace Poxiao.VisualDev
                                 if (item.Value.IsNotEmptyOrNull())
                                 {
                                     var value = DateTime.ParseExact(item.Value.ToString().TrimEnd(), vModel.format, System.Globalization.CultureInfo.CurrentCulture);
-                                    if (vModel.__config__.startTimeRule && vModel.__config__.startTimeValue.IsNotEmptyOrNull())
+                                    if (vModel.Config.startTimeRule && vModel.Config.startTimeValue.IsNotEmptyOrNull())
                                     {
                                         var minTime = value;
-                                        switch (vModel.__config__.startTimeType)
+                                        switch (vModel.Config.startTimeType)
                                         {
                                             case 1:
                                                 {
-                                                    if (vModel.__config__.startTimeValue.IsNotEmptyOrNull())
-                                                        minTime = DateTime.Parse(vModel.__config__.startTimeValue);
+                                                    if (vModel.Config.startTimeValue.IsNotEmptyOrNull())
+                                                        minTime = DateTime.Parse(vModel.Config.startTimeValue);
                                                 }
 
                                                 break;
                                             case 2:
                                                 {
-                                                    if (vModel.__config__.startRelationField.IsNotEmptyOrNull() && dataItems.ContainsKey(vModel.__config__.startRelationField))
-                                                        minTime = DateTime.Parse(dataItems[vModel.__config__.startRelationField].ToString());
+                                                    if (vModel.Config.startRelationField.IsNotEmptyOrNull() && dataItems.ContainsKey(vModel.Config.startRelationField))
+                                                        minTime = DateTime.Parse(dataItems[vModel.Config.startRelationField].ToString());
                                                 }
 
                                                 break;
@@ -1985,16 +1990,16 @@ namespace Poxiao.VisualDev
                                                 break;
                                             case 4:
                                                 {
-                                                    switch (vModel.__config__.startTimeTarget)
+                                                    switch (vModel.Config.startTimeTarget)
                                                     {
                                                         case 1:
-                                                            minTime = minTime.AddHours(-vModel.__config__.startTimeValue.ParseToInt());
+                                                            minTime = minTime.AddHours(-vModel.Config.startTimeValue.ParseToInt());
                                                             break;
                                                         case 2:
-                                                            minTime = minTime.AddMinutes(-vModel.__config__.startTimeValue.ParseToInt());
+                                                            minTime = minTime.AddMinutes(-vModel.Config.startTimeValue.ParseToInt());
                                                             break;
                                                         case 3:
-                                                            minTime = minTime.AddSeconds(-vModel.__config__.startTimeValue.ParseToInt());
+                                                            minTime = minTime.AddSeconds(-vModel.Config.startTimeValue.ParseToInt());
                                                             break;
                                                     }
                                                 }
@@ -2002,16 +2007,16 @@ namespace Poxiao.VisualDev
                                                 break;
                                             case 5:
                                                 {
-                                                    switch (vModel.__config__.startTimeTarget)
+                                                    switch (vModel.Config.startTimeTarget)
                                                     {
                                                         case 1:
-                                                            minTime = minTime.AddHours(vModel.__config__.startTimeValue.ParseToInt());
+                                                            minTime = minTime.AddHours(vModel.Config.startTimeValue.ParseToInt());
                                                             break;
                                                         case 2:
-                                                            minTime = minTime.AddMinutes(vModel.__config__.startTimeValue.ParseToInt());
+                                                            minTime = minTime.AddMinutes(vModel.Config.startTimeValue.ParseToInt());
                                                             break;
                                                         case 3:
-                                                            minTime = minTime.AddSeconds(vModel.__config__.startTimeValue.ParseToInt());
+                                                            minTime = minTime.AddSeconds(vModel.Config.startTimeValue.ParseToInt());
                                                             break;
                                                     }
                                                 }
@@ -2021,28 +2026,28 @@ namespace Poxiao.VisualDev
 
                                         if (minTime > value)
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 时间选择值不在范围内";
+                                            var errorInfo = vModel.Config.label + ": 时间选择值不在范围内";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
                                     }
 
-                                    if (vModel.__config__.endTimeRule && vModel.__config__.endTimeValue.IsNotEmptyOrNull())
+                                    if (vModel.Config.endTimeRule && vModel.Config.endTimeValue.IsNotEmptyOrNull())
                                     {
                                         var maxTime = value;
-                                        switch (vModel.__config__.endTimeType)
+                                        switch (vModel.Config.endTimeType)
                                         {
                                             case 1:
                                                 {
-                                                    if (vModel.__config__.endTimeValue.IsNotEmptyOrNull())
-                                                        maxTime = DateTime.Parse(vModel.__config__.endTimeValue);
+                                                    if (vModel.Config.endTimeValue.IsNotEmptyOrNull())
+                                                        maxTime = DateTime.Parse(vModel.Config.endTimeValue);
                                                 }
 
                                                 break;
                                             case 2:
                                                 {
-                                                    if (vModel.__config__.endRelationField.IsNotEmptyOrNull() && dataItems.ContainsKey(vModel.__config__.endRelationField))
-                                                        maxTime = DateTime.Parse(dataItems[vModel.__config__.endRelationField].ToString());
+                                                    if (vModel.Config.endRelationField.IsNotEmptyOrNull() && dataItems.ContainsKey(vModel.Config.endRelationField))
+                                                        maxTime = DateTime.Parse(dataItems[vModel.Config.endRelationField].ToString());
                                                 }
 
                                                 break;
@@ -2050,16 +2055,16 @@ namespace Poxiao.VisualDev
                                                 break;
                                             case 4:
                                                 {
-                                                    switch (vModel.__config__.startTimeTarget)
+                                                    switch (vModel.Config.startTimeTarget)
                                                     {
                                                         case 1:
-                                                            maxTime = maxTime.AddHours(-vModel.__config__.endTimeValue.ParseToInt());
+                                                            maxTime = maxTime.AddHours(-vModel.Config.endTimeValue.ParseToInt());
                                                             break;
                                                         case 2:
-                                                            maxTime = maxTime.AddMinutes(-vModel.__config__.endTimeValue.ParseToInt());
+                                                            maxTime = maxTime.AddMinutes(-vModel.Config.endTimeValue.ParseToInt());
                                                             break;
                                                         case 3:
-                                                            maxTime = maxTime.AddSeconds(-vModel.__config__.endTimeValue.ParseToInt());
+                                                            maxTime = maxTime.AddSeconds(-vModel.Config.endTimeValue.ParseToInt());
                                                             break;
                                                     }
                                                 }
@@ -2067,16 +2072,16 @@ namespace Poxiao.VisualDev
                                                 break;
                                             case 5:
                                                 {
-                                                    switch (vModel.__config__.startTimeTarget)
+                                                    switch (vModel.Config.startTimeTarget)
                                                     {
                                                         case 1:
-                                                            maxTime = maxTime.AddHours(vModel.__config__.endTimeValue.ParseToInt());
+                                                            maxTime = maxTime.AddHours(vModel.Config.endTimeValue.ParseToInt());
                                                             break;
                                                         case 2:
-                                                            maxTime = maxTime.AddMinutes(vModel.__config__.endTimeValue.ParseToInt());
+                                                            maxTime = maxTime.AddMinutes(vModel.Config.endTimeValue.ParseToInt());
                                                             break;
                                                         case 3:
-                                                            maxTime = maxTime.AddSeconds(vModel.__config__.endTimeValue.ParseToInt());
+                                                            maxTime = maxTime.AddSeconds(vModel.Config.endTimeValue.ParseToInt());
                                                             break;
                                                     }
                                                 }
@@ -2086,7 +2091,7 @@ namespace Poxiao.VisualDev
 
                                         if (maxTime < value)
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 时间选择值不在范围内";
+                                            var errorInfo = vModel.Config.label + ": 时间选择值不在范围内";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
@@ -2095,7 +2100,7 @@ namespace Poxiao.VisualDev
                             }
                             catch
                             {
-                                var errorInfo = vModel.__config__.label + ": 值不正确";
+                                var errorInfo = vModel.Config.label + ": 值不正确";
                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                 else newDataItems.Add(errorKey, errorInfo);
                             }
@@ -2111,7 +2116,7 @@ namespace Poxiao.VisualDev
                                         var addList = new List<object>();
                                         item.Value.ToString().Split(",").ToList().ForEach(it =>
                                         {
-                                            if (vModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.COMSELECT) || (it.Count(x => x == '/') == vModel.level || (vModel.level == 3 && it.Count(x => x == '/') == 2 && it.Contains("市辖区"))))
+                                            if (vModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.COMSELECT) || (it.Count(x => x == '/') == vModel.level || (vModel.level == 3 && it.Count(x => x == '/') == 2 && it.Contains("市辖区"))))
                                             {
                                                 if (dicList.Where(x => x.ContainsValue(it)).Any())
                                                 {
@@ -2120,14 +2125,14 @@ namespace Poxiao.VisualDev
                                                 }
                                                 else
                                                 {
-                                                    var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                                    var errorInfo = vModel.Config.label + ": 值无法匹配";
                                                     if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                     else newDataItems.Add(errorKey, errorInfo);
                                                 }
                                             }
                                             else
                                             {
-                                                var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                                var errorInfo = vModel.Config.label + ": 值无法匹配";
                                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                 else newDataItems.Add(errorKey, errorInfo);
                                             }
@@ -2136,7 +2141,7 @@ namespace Poxiao.VisualDev
                                     }
                                     else
                                     {
-                                        if (vModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.COMSELECT) || (item.Value?.ToString().Count(x => x == '/') == vModel.level || (vModel.level == 3 && item.Value.ToString().Count(x => x == '/') == 2 && item.Value.ToString().Contains("市辖区"))))
+                                        if (vModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.COMSELECT) || (item.Value?.ToString().Count(x => x == '/') == vModel.level || (vModel.level == 3 && item.Value.ToString().Count(x => x == '/') == 2 && item.Value.ToString().Contains("市辖区"))))
                                         {
                                             if (dicList.Where(x => x.ContainsValue(item.Value?.ToString())).Any())
                                             {
@@ -2145,14 +2150,14 @@ namespace Poxiao.VisualDev
                                             }
                                             else
                                             {
-                                                var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                                var errorInfo = vModel.Config.label + ": 值无法匹配";
                                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                 else newDataItems.Add(errorKey, errorInfo);
                                             }
                                         }
                                         else
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                            var errorInfo = vModel.Config.label + ": 值无法匹配";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
@@ -2168,7 +2173,7 @@ namespace Poxiao.VisualDev
                             {
                                 if (item.Value.IsNotEmptyOrNull())
                                 {
-                                    if (vModel.multiple || vModel.__config__.poxiaoKey.Equals(PoxiaoKeyConst.CHECKBOX))
+                                    if (vModel.multiple || vModel.Config.poxiaoKey.Equals(PoxiaoKeyConst.CHECKBOX))
                                     {
                                         var addList = new List<object>();
                                         item.Value.ToString().Split(",").ToList().ForEach(it =>
@@ -2177,7 +2182,7 @@ namespace Poxiao.VisualDev
                                             {
                                                 if (dicList.Count(x => x.ContainsValue(it)) > 1)
                                                 {
-                                                    var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                                    var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                                     if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                     else newDataItems.Add(errorKey, errorInfo);
                                                 }
@@ -2189,7 +2194,7 @@ namespace Poxiao.VisualDev
                                             }
                                             else
                                             {
-                                                var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                                var errorInfo = vModel.Config.label + ": 值无法匹配";
                                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                 else newDataItems.Add(errorKey, errorInfo);
                                             }
@@ -2202,7 +2207,7 @@ namespace Poxiao.VisualDev
                                         {
                                             if (dicList.Count(x => x.ContainsValue(item.Value.ToString())) > 1)
                                             {
-                                                var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                                var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                 else newDataItems.Add(errorKey, errorInfo);
                                             }
@@ -2214,7 +2219,7 @@ namespace Poxiao.VisualDev
                                         }
                                         else
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                            var errorInfo = vModel.Config.label + ": 值无法匹配";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
@@ -2240,7 +2245,7 @@ namespace Poxiao.VisualDev
                                             {
                                                 if (dicList.Count(x => x.ContainsValue(it.Split("/").Last())) > 1)
                                                 {
-                                                    var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                                    var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                                     if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                     else newDataItems.Add(errorKey, errorInfo);
                                                 }
@@ -2252,7 +2257,7 @@ namespace Poxiao.VisualDev
                                             }
                                             else
                                             {
-                                                var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                                var errorInfo = vModel.Config.label + ": 值无法匹配";
                                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                 else newDataItems.Add(errorKey, errorInfo);
                                             }
@@ -2265,7 +2270,7 @@ namespace Poxiao.VisualDev
                                         {
                                             if (dicList.Count(x => x.ContainsValue(item.Value.ToString().Split("/").Last())) > 1)
                                             {
-                                                var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                                var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                 else newDataItems.Add(errorKey, errorInfo);
                                             }
@@ -2277,7 +2282,7 @@ namespace Poxiao.VisualDev
                                         }
                                         else
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                            var errorInfo = vModel.Config.label + ": 值无法匹配";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
@@ -2299,7 +2304,7 @@ namespace Poxiao.VisualDev
                                             {
                                                 if (dicList.Count(x => x.ContainsValue(it)) > 1)
                                                 {
-                                                    var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                                    var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                                     if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                     else newDataItems.Add(errorKey, errorInfo);
                                                 }
@@ -2315,7 +2320,7 @@ namespace Poxiao.VisualDev
                                                 {
                                                     if (dicList.Count(x => x.ContainsValue(it.Split("/").Last())) > 1)
                                                     {
-                                                        var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                                        var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                                         if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                         else newDataItems.Add(errorKey, errorInfo);
                                                     }
@@ -2327,7 +2332,7 @@ namespace Poxiao.VisualDev
                                                 }
                                                 else
                                                 {
-                                                    var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                                    var errorInfo = vModel.Config.label + ": 值无法匹配";
                                                     if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                     else newDataItems.Add(errorKey, errorInfo);
                                                 }
@@ -2341,7 +2346,7 @@ namespace Poxiao.VisualDev
                                         {
                                             if (dicList.Count(x => x.ContainsValue(item.Value.ToString())) > 1)
                                             {
-                                                var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                                var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                 else newDataItems.Add(errorKey, errorInfo);
                                             }
@@ -2357,7 +2362,7 @@ namespace Poxiao.VisualDev
                                             {
                                                 if (dicList.Count(x => x.ContainsValue(item.Value.ToString().Split("/").Last())) > 1)
                                                 {
-                                                    var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                                    var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                                     if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                     else newDataItems.Add(errorKey, errorInfo);
                                                 }
@@ -2369,7 +2374,7 @@ namespace Poxiao.VisualDev
                                             }
                                             else
                                             {
-                                                var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                                var errorInfo = vModel.Config.label + ": 值无法匹配";
                                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                 else newDataItems.Add(errorKey, errorInfo);
                                             }
@@ -2392,7 +2397,7 @@ namespace Poxiao.VisualDev
                                             {
                                                 if (dicList.Count(x => x.ContainsValue(it)) > 1)
                                                 {
-                                                    var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                                    var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                                     if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                     else newDataItems.Add(errorKey, errorInfo);
                                                 }
@@ -2404,7 +2409,7 @@ namespace Poxiao.VisualDev
                                             }
                                             else
                                             {
-                                                var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                                var errorInfo = vModel.Config.label + ": 值无法匹配";
                                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                 else newDataItems.Add(errorKey, errorInfo);
                                             }
@@ -2417,7 +2422,7 @@ namespace Poxiao.VisualDev
                                         {
                                             if (dicList.Count(x => x.ContainsValue(item.Value.ToString())) > 1)
                                             {
-                                                var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                                var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                 else newDataItems.Add(errorKey, errorInfo);
                                             }
@@ -2429,7 +2434,7 @@ namespace Poxiao.VisualDev
                                         }
                                         else
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                            var errorInfo = vModel.Config.label + ": 值无法匹配";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
@@ -2456,7 +2461,7 @@ namespace Poxiao.VisualDev
                                                 {
                                                     if (dicList.Count(x => x.ContainsValue(it)) > 1)
                                                     {
-                                                        var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                                        var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                                         if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                         else newDataItems.Add(errorKey, errorInfo);
                                                     }
@@ -2468,7 +2473,7 @@ namespace Poxiao.VisualDev
                                                 }
                                                 else
                                                 {
-                                                    var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                                    var errorInfo = vModel.Config.label + ": 值无法匹配";
                                                     if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                     else newDataItems.Add(errorKey, errorInfo);
                                                 }
@@ -2488,7 +2493,7 @@ namespace Poxiao.VisualDev
                                             {
                                                 if (dicList.Count(x => x.ContainsValue(it)) > 1)
                                                 {
-                                                    var errorInfo = vModel.__config__.label + ": 存在多条值-无法匹配";
+                                                    var errorInfo = vModel.Config.label + ": 存在多条值-无法匹配";
                                                     if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                     else newDataItems.Add(errorKey, errorInfo);
                                                 }
@@ -2500,7 +2505,7 @@ namespace Poxiao.VisualDev
                                             }
                                             else
                                             {
-                                                var errorInfo = vModel.__config__.label + ": 值无法匹配";
+                                                var errorInfo = vModel.Config.label + ": 值无法匹配";
                                                 if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                                 else newDataItems.Add(errorKey, errorInfo);
                                             }
@@ -2520,11 +2525,11 @@ namespace Poxiao.VisualDev
                                     valueList.ForEach(it =>
                                     {
                                         var addValue = new Dictionary<string, object>();
-                                        foreach (var value in it) addValue.Add(vModel.__vModel__ + "-" + value.Key, value.Value);
+                                        foreach (var value in it) addValue.Add(vModel.VModel + "-" + value.Key, value.Value);
                                         newValueList.Add(addValue);
                                     });
 
-                                    var res = await ImportDataAssemble(vModel.__config__.children, newValueList, cDataList);
+                                    var res = await ImportDataAssemble(vModel.Config.children, newValueList, cDataList);
                                     if (res.Any(x => x.ContainsKey(errorKey)))
                                     {
                                         if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + res.FirstOrDefault(x => x.ContainsKey(errorKey))[errorKey].ToString();
@@ -2536,7 +2541,7 @@ namespace Poxiao.VisualDev
                                     res.ForEach(it =>
                                     {
                                         var addValue = new Dictionary<string, object>();
-                                        foreach (var value in it) addValue.Add(value.Key.Replace(vModel.__vModel__ + "-", string.Empty), value.Value);
+                                        foreach (var value in it) addValue.Add(value.Key.Replace(vModel.VModel + "-", string.Empty), value.Value);
                                         result.Add(addValue);
                                     });
                                     newDataItems[item.Key] = result;
@@ -2553,7 +2558,7 @@ namespace Poxiao.VisualDev
                                     {
                                         if (vModel.max < value)
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 评分超过设置的最大值";
+                                            var errorInfo = vModel.Config.label + ": 评分超过设置的最大值";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
@@ -2561,7 +2566,7 @@ namespace Poxiao.VisualDev
                                 }
                                 catch
                                 {
-                                    var errorInfo = vModel.__config__.label + ": 评分格式错误";
+                                    var errorInfo = vModel.Config.label + ": 评分格式错误";
                                     if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                     else newDataItems.Add(errorKey, errorInfo);
                                 }
@@ -2577,7 +2582,7 @@ namespace Poxiao.VisualDev
                                     {
                                         if (vModel.max < value)
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 滑块超过设置的最大值";
+                                            var errorInfo = vModel.Config.label + ": 滑块超过设置的最大值";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
@@ -2586,7 +2591,7 @@ namespace Poxiao.VisualDev
                                     {
                                         if (vModel.min > value)
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 滑块超过设置的最小值";
+                                            var errorInfo = vModel.Config.label + ": 滑块超过设置的最小值";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
@@ -2594,7 +2599,7 @@ namespace Poxiao.VisualDev
                                 }
                                 catch
                                 {
-                                    var errorInfo = vModel.__config__.label + ": 滑块格式错误";
+                                    var errorInfo = vModel.Config.label + ": 滑块格式错误";
                                     if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                     else newDataItems.Add(errorKey, errorInfo);
                                 }
@@ -2610,7 +2615,7 @@ namespace Poxiao.VisualDev
                                     {
                                         if (vModel.max < value)
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 数字输入超过设置的最大值";
+                                            var errorInfo = vModel.Config.label + ": 数字输入超过设置的最大值";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
@@ -2619,7 +2624,7 @@ namespace Poxiao.VisualDev
                                     {
                                         if (vModel.min > value)
                                         {
-                                            var errorInfo = vModel.__config__.label + ": 数字输入超过设置的最小值";
+                                            var errorInfo = vModel.Config.label + ": 数字输入超过设置的最小值";
                                             if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                             else newDataItems.Add(errorKey, errorInfo);
                                         }
@@ -2627,7 +2632,7 @@ namespace Poxiao.VisualDev
                                 }
                                 catch
                                 {
-                                    var errorInfo = vModel.__config__.label + ": 数字输入格式错误";
+                                    var errorInfo = vModel.Config.label + ": 数字输入格式错误";
                                     if (newDataItems.ContainsKey(errorKey)) newDataItems[errorKey] = newDataItems[errorKey] + "," + errorInfo;
                                     else newDataItems.Add(errorKey, errorInfo);
                                 }
@@ -2640,13 +2645,13 @@ namespace Poxiao.VisualDev
                 foreach (var item in dataItems)
                 {
                     if (newDataItems.ContainsKey(errorKey)) continue; // 如果存在错误信息 则 不生成
-                    var vModel = fieldsModelList.Find(x => x.__vModel__.Equals(item.Key));
+                    var vModel = fieldsModelList.Find(x => x.VModel.Equals(item.Key));
                     if (vModel == null) continue;
 
-                    switch (vModel.__config__.poxiaoKey)
+                    switch (vModel.Config.poxiaoKey)
                     {
                         case PoxiaoKeyConst.BILLRULE:
-                            string billNumber = await _billRuleService.GetBillNumber(vModel.__config__.rule);
+                            string billNumber = await _billRuleService.GetBillNumber(vModel.Config.rule);
                             if (!"单据规则不存在".Equals(billNumber)) newDataItems[item.Key] = billNumber;
                             else newDataItems[item.Key] = string.Empty;
 
@@ -2809,7 +2814,7 @@ namespace Poxiao.VisualDev
         {
             if (config.WebType.Equals(4)) return config.Adapt<VisualDevModelDataConfigOutput>();
             var tInfo = new TemplateParsingBase(config);
-            if (tInfo.AllFieldsModel.Any(x => (x.__config__.defaultCurrent) && (x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) || x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.DEPSELECT))))
+            if (tInfo.AllFieldsModel.Any(x => x.Config.defaultCurrent && (x.Config.poxiaoKey.Equals(PoxiaoKeyConst.USERSELECT) || x.Config.poxiaoKey.Equals(PoxiaoKeyConst.DEPSELECT))))
             {
                 var userId = _userManager.UserId;
 

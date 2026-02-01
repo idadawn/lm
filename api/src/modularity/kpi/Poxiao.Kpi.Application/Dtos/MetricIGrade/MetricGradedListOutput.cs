@@ -90,5 +90,4 @@ public class MetricGradedListOutput
     [JsonProperty("tenantId")]
     public string? TenantId { get; set; }
 
-
 }

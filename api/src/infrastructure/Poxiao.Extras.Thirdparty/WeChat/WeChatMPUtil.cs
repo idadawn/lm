@@ -19,7 +19,9 @@ public class WeChatMPUtil
     /// <summary>
     /// 构造函数.
     /// </summary>
-    public WeChatMPUtil() { }
+    public WeChatMPUtil()
+    {
+    }
 
     /// <summary>
     /// 构造函数.
@@ -65,22 +67,22 @@ public class WeChatMPUtil
             GroupMessageType messageType = new GroupMessageType();
             switch (type)
             {
-                case 1://文本
+                case 1: //文本
                     messageType = GroupMessageType.text;
                     break;
-                case 2://图片
+                case 2: //图片
                     messageType = GroupMessageType.image;
                     break;
-                case 3://语音
+                case 3: //语音
                     messageType = GroupMessageType.voice;
                     break;
-                case 4://视频
+                case 4: //视频
                     messageType = GroupMessageType.video;
                     break;
-                case 5://图文
+                case 5: //图文
                     messageType = GroupMessageType.mpnews;
                     break;
-                case 6:// 卡券
+                case 6: // 卡券
                     messageType = GroupMessageType.wxcard;
                     break;
                 default:
@@ -102,7 +104,6 @@ public class WeChatMPUtil
     /// <param name="templateId"></param>
     /// <param name="url"></param>
     /// <param name="data"></param>
-    /// <returns></returns>
     public void SendTemplateMessage(string openId, string templateId, string url, object data, TemplateModel_MiniProgram miniProgram = null)
     {
         var result = TemplateApi.SendTemplateMessage(accessToken, openId, templateId, url, data, miniProgram);

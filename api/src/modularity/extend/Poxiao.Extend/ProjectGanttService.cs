@@ -1,15 +1,15 @@
-using Poxiao.Infrastructure.Enums;
-using Poxiao.Infrastructure.Extension;
-using Poxiao.Infrastructure.Filter;
-using Poxiao.Infrastructure.Security;
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.Extend.Entitys;
 using Poxiao.Extend.Entitys.Dto.ProjectGantt;
 using Poxiao.FriendlyException;
+using Poxiao.Infrastructure.Enums;
+using Poxiao.Infrastructure.Extension;
+using Poxiao.Infrastructure.Filter;
+using Poxiao.Infrastructure.Security;
 using Poxiao.Systems.Entitys.Permission;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.Extend;
@@ -81,7 +81,7 @@ public class ProjectGanttService : IDynamicApiController, ITransient
     [HttpGet("{projectId}/Task/Selector/{id}")]
     public async Task<dynamic> GetTaskTreeView(string projectId, string id)
     {
-        var data = (await _repository.AsQueryable().Where(x => x.Type == 2 && x.ProjectId == projectId && x.DeleteMark == null).OrderBy(x => x.CreatorTime, OrderByType.Desc).ToListAsync());
+        var data = await _repository.AsQueryable().Where(x => x.Type == 2 && x.ProjectId == projectId && x.DeleteMark == null).OrderBy(x => x.CreatorTime, OrderByType.Desc).ToListAsync();
         data.Add(await _repository.GetFirstAsync(x => x.Id == projectId));
         if (!id.Equals("0"))
         {

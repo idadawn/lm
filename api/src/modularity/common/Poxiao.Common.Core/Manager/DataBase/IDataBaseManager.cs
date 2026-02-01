@@ -1,4 +1,3 @@
-using System.Data;
 using Poxiao.Infrastructure.Dtos.DataBase;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Models.VisualDev;
@@ -7,6 +6,7 @@ using Poxiao.Systems.Entitys.Model.DataBase;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.VisualDev.Entitys.Dto.VisualDevModelData;
 using SqlSugar;
+using System.Data;
 
 namespace Poxiao.Infrastructure.Core.Manager;
 
@@ -87,7 +87,7 @@ public interface IDataBaseManager
     /// </summary>
     /// <param name="tableName">表名.</param>
     /// <param name="tableFieldList">表字段集合.</param>
-    void AddTableColumn(DbLinkEntity link ,string tableName, List<DbTableFieldModel> tableFieldList);
+    void AddTableColumn(DbLinkEntity link, string tableName, List<DbTableFieldModel> tableFieldList);
 
     /// <summary>
     /// 删除表.

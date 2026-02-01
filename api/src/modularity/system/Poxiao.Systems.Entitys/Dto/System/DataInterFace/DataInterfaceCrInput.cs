@@ -34,7 +34,7 @@ public class DataInterfaceCrInput
     public string responseType { get; set; }
 
     /// <summary>
-    ///排序.
+    /// 排序.
     /// </summary>
     public long? sortCode { get; set; }
 

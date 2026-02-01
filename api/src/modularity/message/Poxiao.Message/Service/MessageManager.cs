@@ -1,3 +1,9 @@
+using Poxiao.DependencyInjection;
+using Poxiao.Extras.Thirdparty.DingDing;
+using Poxiao.Extras.Thirdparty.Email;
+using Poxiao.Extras.Thirdparty.Sms;
+using Poxiao.Extras.Thirdparty.WeChat;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Handlers;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Dtos.Message;
@@ -5,12 +11,6 @@ using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Options;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.Extras.Thirdparty.DingDing;
-using Poxiao.Extras.Thirdparty.Email;
-using Poxiao.Extras.Thirdparty.Sms;
-using Poxiao.Extras.Thirdparty.WeChat;
-using Poxiao.FriendlyException;
 using Poxiao.Message.Entitys;
 using Poxiao.Message.Entitys.Entity;
 using Poxiao.Message.Interfaces;
@@ -90,7 +90,7 @@ public class MessageManager : IMessageManager, ITransient
         var errorList = new List<string>();
         var messageTemplateEntity = await _repository.AsSugarClient().Queryable<MessageTemplateEntity>().FirstAsync(x => x.Id == messageSendModel.templateId && x.DeleteMark == null);
         var messageAccountEntity = await _repository.AsSugarClient().Queryable<MessageAccountEntity>().FirstAsync(x => x.Id == messageSendModel.accountConfigId && x.DeleteMark == null);
-        var paramsDic = messageSendModel.paramJson.ToDictionary(x => x.field, y => y.value);//参数
+        var paramsDic = messageSendModel.paramJson.ToDictionary(x => x.field, y => y.value); //参数
         var title = messageTemplateEntity.Title;
         var content = messageTemplateEntity.Content;
         if (messageTemplateEntity.MessageType == "6") messageSendModel.toUser = new List<string> { _userManager.UserId };
@@ -109,7 +109,7 @@ public class MessageManager : IMessageManager, ITransient
                 messageTemplateEntity.Content = MessageTemplateManage(content, paramsDic);
                 switch (messageTemplateEntity.MessageType)
                 {
-                    case "1"://站内信
+                    case "1": //站内信
                         var messageEntity = new MessageEntity();
                         var messageReceiveList = new List<MessageReceiveEntity>();
                         if (paramsDic.ContainsKey("@MsgId") && messageTemplateEntity.MessageSource == "1")
@@ -124,13 +124,13 @@ public class MessageManager : IMessageManager, ITransient
                         messageReceiveList = GetMessageReceiveList(new List<string>() { userId }, messageEntity, bodyDic);
                         await WebSocketSend(new List<string>() { userId }, messageEntity, messageReceiveList);
                         break;
-                    case "2"://邮件
+                    case "2": //邮件
                         EmailSend(new List<string>() { userId }, messageTemplateEntity, messageAccountEntity);
                         break;
-                    case "3"://短信
+                    case "3": //短信
                         SmsSend(new List<string>() { userId }, messageTemplateEntity, messageAccountEntity, paramsDic);
                         break;
-                    case "4"://钉钉
+                    case "4": //钉钉
                         var dingIds = _repository.AsSugarClient().Queryable<SynThirdInfoEntity>()
                             .Where(x => x.ThirdType == 2 && x.DataType == 3 && x.SysObjId == userId && !SqlFunc.IsNullOrEmpty(x.ThirdObjId))
                         .Select(x => x.ThirdObjId).ToList();
@@ -150,7 +150,7 @@ public class MessageManager : IMessageManager, ITransient
                             throw Oops.Oh(ErrorCode.D7015);
                         }
                         break;
-                    case "5"://企业微信
+                    case "5": //企业微信
                         var qyIds = _repository.AsSugarClient().Queryable<SynThirdInfoEntity>()
                             .Where(x => x.ThirdType == 1 && x.DataType == 3 && x.SysObjId == userId && !SqlFunc.IsNullOrEmpty(x.ThirdObjId))
                         .Select(x => x.ThirdObjId).ToList();
@@ -164,10 +164,10 @@ public class MessageManager : IMessageManager, ITransient
                             throw Oops.Oh(ErrorCode.D7015);
                         }
                         break;
-                    case "6"://WebHook
+                    case "6": //WebHook
                         await WebHookSend(messageTemplateEntity, messageAccountEntity);
                         break;
-                    case "7"://微信公众号
+                    case "7": //微信公众号
                         var body = bodyDic.ContainsKey(item) ? bodyDic[item].ToJsonString() : string.Empty;
                         WeChatMpSend(userId, messageTemplateEntity, messageAccountEntity, paramsDic, body);
                         break;
@@ -295,7 +295,7 @@ public class MessageManager : IMessageManager, ITransient
     public List<MessageReceiveEntity> GetMessageReceiveList(List<string> toUserIds, MessageEntity messageEntity, Dictionary<string, object> bodyDic = null)
     {
         List<MessageReceiveEntity> receiveEntityList = new List<MessageReceiveEntity>();
-        if (messageEntity.Type == 1|| messageEntity.Type == 3)
+        if (messageEntity.Type == 1 || messageEntity.Type == 3)
         {
             receiveEntityList = toUserIds
                 .Select(x => new MessageReceiveEntity()
@@ -436,7 +436,7 @@ public class MessageManager : IMessageManager, ITransient
     /// <param name="smsParams"></param>
     private void SmsSend(List<string> userList, MessageTemplateEntity messageTemplateEntity, MessageAccountEntity messageAccountEntity, Dictionary<string, string> smsParams)
     {
-        var phoneList = new List<string>();//电话号码
+        var phoneList = new List<string>(); //电话号码
         foreach (var item in userList)
         {
             var user = _usersService.GetInfoByUserId(item);

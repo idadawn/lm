@@ -202,7 +202,8 @@ public class HttpUtils
     /// <param name="value"></param>
     public static void SetSpecialHeaderValue(WebHeaderCollection header, string name, string value)
     {
-        var property = typeof(WebHeaderCollection).GetProperty("InnerCollection",
+        var property = typeof(WebHeaderCollection).GetProperty(
+            "InnerCollection",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
         if (property != null)
         {

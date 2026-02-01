@@ -1,5 +1,5 @@
-using Poxiao.Infrastructure.Model.Machine;
 using Poxiao.DependencyInjection;
+using Poxiao.Infrastructure.Model.Machine;
 
 namespace Poxiao.Systems.Entitys.Dto.Monitor;
 

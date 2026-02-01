@@ -90,7 +90,6 @@ public class MetricDataIEService : IMetricDataIEService, ITransient
             throw;
         }
 
-
         var insertObj = new MetricDataIETableCollectionEntity
         {
             TableName = input.TableName
@@ -253,7 +252,7 @@ public class MetricDataIEService : IMetricDataIEService, ITransient
             if (primary is not null)
             {
                 var pro = table.GetProperty(primary.DbColumnName);
-                if(pro?.GetValue(obj) is null) pro?.SetValue(obj, SnowflakeIdHelper.NextId());
+                if (pro?.GetValue(obj) is null) pro?.SetValue(obj, SnowflakeIdHelper.NextId());
             }
 
             list.Add(obj);

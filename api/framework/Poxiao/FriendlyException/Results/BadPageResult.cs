@@ -1,6 +1,6 @@
-﻿using Poxiao.Reflection;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Poxiao.Reflection;
 using System.Text;
 
 namespace Poxiao.FriendlyException;
@@ -130,7 +130,7 @@ public class BadPageResult : StatusCodeResult
         using (var readStream = thisAssembly.GetManifestResourceStream(errorhtml))
         {
             buffer = new byte[readStream.Length];
-            readStream.Read(buffer, 0, buffer.Length);
+            readStream.ReadExactly(buffer);
         }
 
         // 读取内容并替换

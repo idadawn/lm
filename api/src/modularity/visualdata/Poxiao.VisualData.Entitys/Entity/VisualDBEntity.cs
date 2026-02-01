@@ -1,8 +1,8 @@
+using Poxiao.Extras.DatabaseAccessor.SqlSugar.Models;
 using Poxiao.Infrastructure.Const;
+using Poxiao.Infrastructure.Security;
 using SqlSugar;
 using Yitter.IdGenerator;
-using Poxiao.Extras.DatabaseAccessor.SqlSugar.Models;
-using Poxiao.Infrastructure.Security;
 
 namespace Poxiao.VisualData.Entity;
 

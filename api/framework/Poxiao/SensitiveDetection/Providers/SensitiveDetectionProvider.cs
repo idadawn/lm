@@ -1,6 +1,6 @@
+using Microsoft.Extensions.Caching.Distributed;
 using Poxiao.Reflection;
 using Poxiao.Templates.Extensions;
-using Microsoft.Extensions.Caching.Distributed;
 using System.Text;
 
 namespace Poxiao.SensitiveDetection;
@@ -47,7 +47,7 @@ public class SensitiveDetectionProvider : ISensitiveDetectionProvider
         using (var readStream = entryAssembly.GetManifestResourceStream($"{Reflect.GetAssemblyName(entryAssembly)}.sensitive-words.txt"))
         {
             buffer = new byte[readStream.Length];
-            await readStream.ReadAsync(buffer.AsMemory(0, buffer.Length));
+            await readStream.ReadExactlyAsync(buffer.AsMemory(0, buffer.Length));
         }
 
         // 同时兼容 UTF-8 BOM，UTF-8

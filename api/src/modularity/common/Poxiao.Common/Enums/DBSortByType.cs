@@ -37,35 +37,35 @@ public enum DBAggType
     /// 最大值.
     /// </summary>s
     [Description("最大值")]
-    MAX =1,
+    MAX = 1,
 
     /// <summary>
     /// 最小值.
     /// </summary>s
     [Description("最小值")]
-    MIN =2,
+    MIN = 2,
 
     /// <summary>
     /// 平均值.
     /// </summary>s
     [Description("平均值")]
-    AVG =3,
+    AVG = 3,
 
     /// <summary>
     /// 计数.
     /// </summary>s
     [Description("计数")]
-    COUNT =4,
+    COUNT = 4,
 
     /// <summary>
     /// 不重复计数.
     /// </summary>s
     [Description("不重复计数")]
-    COUNT_DISTINCT =5,
+    COUNTDISTINCT = 5,
 
     /// <summary>
     /// 无.
     /// </summary>s
     [Description("无")]
-    None =6
+    None = 6
 }

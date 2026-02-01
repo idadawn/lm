@@ -1,11 +1,6 @@
-using System.Web;
-using Poxiao.Infrastructure.Const;
-using Poxiao.Infrastructure.Core.Manager;
-using Poxiao.Infrastructure.Enums;
-using Poxiao.Infrastructure.Manager;
-using Poxiao.Infrastructure.Models.User;
-using Poxiao.Infrastructure.Options;
-using Poxiao.Infrastructure.Security;
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.Extras.CollectiveOAuth.Cache;
@@ -15,16 +10,21 @@ using Poxiao.Extras.CollectiveOAuth.Models;
 using Poxiao.Extras.CollectiveOAuth.Request;
 using Poxiao.Extras.CollectiveOAuth.Utils;
 using Poxiao.FriendlyException;
+using Poxiao.Infrastructure.Const;
+using Poxiao.Infrastructure.Core.Manager;
+using Poxiao.Infrastructure.Enums;
+using Poxiao.Infrastructure.Manager;
+using Poxiao.Infrastructure.Models.User;
+using Poxiao.Infrastructure.Options;
+using Poxiao.Infrastructure.Security;
 using Poxiao.Logging.Attributes;
 using Poxiao.RemoteRequest.Extensions;
 using Poxiao.Systems.Entitys.Dto.Socials;
 using Poxiao.Systems.Entitys.Model.Permission.SocialsUser;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Interfaces.Permission;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using SqlSugar;
+using System.Web;
 
 namespace Poxiao.Systems;
 
@@ -202,7 +202,7 @@ public class SocialsUserService : ISocialsUserService, IDynamicApiController, IT
             socialsUserEntity.SocialType = model.source;
             socialsUserEntity.SocialName = resData.username;
             socialsUserEntity.SocialId = uuid;
-            if (model.poxiao_ticket.IsNullOrEmpty())
+            if (model.poxiaoTicket.IsNullOrEmpty())
             {
                 var sInfo = await _repository.AsQueryable().Where(x => (x.SocialId.Equals(uuid) || x.UserId.Equals(model.userId)) && x.SocialType.Equals(model.source) && x.DeleteMark == null).FirstAsync();
                 if (sInfo != null)
@@ -347,23 +347,23 @@ public class SocialsUserService : ISocialsUserService, IDynamicApiController, IT
 
         switch (authSourceEnum)
         {
-            case DefaultAuthSourceEnum.WECHAT_MP:
+            case DefaultAuthSourceEnum.WECHATMP:
                 return new WeChatMpAuthRequest(clientConfig, authStateCache);
 
-            case DefaultAuthSourceEnum.WECHAT_OPEN:
+            case DefaultAuthSourceEnum.WECHATOPEN:
                 return new WeChatOpenAuthRequest(clientConfig, authStateCache);
 
-            case DefaultAuthSourceEnum.WECHAT_APPLETS:
+            case DefaultAuthSourceEnum.WECHATAPPLETS:
                 return new WeChatAppletsAuthRequest(clientConfig, authStateCache);
 
-            case DefaultAuthSourceEnum.WECHAT_ENTERPRISE:
-                //return new WeChatEnterpriseAuthRequest(clientConfig, authStateCache);
+            case DefaultAuthSourceEnum.WECHATENTERPRISE:
+            //return new WeChatEnterpriseAuthRequest(clientConfig, authStateCache);
 
-            case DefaultAuthSourceEnum.WECHAT_ENTERPRISE_SCAN:
+            case DefaultAuthSourceEnum.WECHATENTERPRISESCAN:
                 clientConfig.redirectUri = HttpUtility.UrlEncode(clientConfig.redirectUri);
                 return new WeChatEnterpriseScanAuthRequest(clientConfig, authStateCache);
 
-            case DefaultAuthSourceEnum.ALIPAY_MP:
+            case DefaultAuthSourceEnum.ALIPAYMP:
                 return new AlipayMpAuthRequest(clientConfig, authStateCache);
 
             case DefaultAuthSourceEnum.GITEE:
@@ -421,7 +421,7 @@ public class SocialsUserService : ISocialsUserService, IDynamicApiController, IT
             case DefaultAuthSourceEnum.PINTEREST:
                 return new PinterestAuthRequest(clientConfig, authStateCache);
 
-            case DefaultAuthSourceEnum.STACK_OVERFLOW:
+            case DefaultAuthSourceEnum.STACKOVERFLOW:
                 return new StackOverflowAuthRequest(clientConfig, authStateCache);
 
             case DefaultAuthSourceEnum.HUAWEI:
@@ -457,9 +457,9 @@ public class SocialsUserService : ISocialsUserService, IDynamicApiController, IT
     public AuthCallbackNew SetAuthCallback(string code, string state)
     {
         AuthCallbackNew callback = new AuthCallbackNew();
-        callback.authCode = code;
-        callback.auth_code = code;
-        callback.authorization_code = code;
+        callback.AuthCode = code;
+        callback.AuthCode = code;
+        callback.authorizationCode = code;
         callback.code = code;
         callback.state = state;
         return callback;

@@ -1,3 +1,13 @@
+using Mapster;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
+using Poxiao.DatabaseAccessor;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.Extras.Thirdparty.JSEngine;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Core.Manager;
@@ -11,11 +21,6 @@ using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Models;
 using Poxiao.Infrastructure.Net;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DatabaseAccessor;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.Extras.Thirdparty.JSEngine;
-using Poxiao.FriendlyException;
 using Poxiao.LinqBuilder;
 using Poxiao.Logging.Attributes;
 using Poxiao.RemoteRequest.Extensions;
@@ -27,11 +32,6 @@ using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.Systems.Interfaces.System;
 using Poxiao.UnifyResult;
-using Mapster;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
 using SqlSugar;
 using System.Data;
 using System.Diagnostics;
@@ -95,11 +95,11 @@ public class DataInterfaceNewService : IDataInterfaceService, IDynamicApiControl
 
     private readonly DataInterfaceService _dataInterfaceService;
 
-    private int currentPage = 1;
-    private int pageSize = 20;
-    private string keyword = string.Empty;
-    private string showKey = string.Empty;
-    private string showValue = string.Empty;
+    private int _currentPage = 1;
+    private int _pageSize = 20;
+    private string _keyword = string.Empty;
+    private string _showKey = string.Empty;
+    private string _showValue = string.Empty;
 
     /// <summary>
     /// 初始化一个<see cref="DataInterfaceService"/>类型的新实例.
@@ -161,7 +161,7 @@ public class DataInterfaceNewService : IDataInterfaceService, IDynamicApiControl
                 id = a.Id,
                 fullName = a.FullName,
                 enCode = a.EnCode,
-                _dataType = a.DataType,
+                DataType = a.DataType,
                 creatorTime = a.CreatorTime,
                 creatorUser = SqlFunc.Subqueryable<UserEntity>().Where(u => u.Id == a.CreatorUserId).Select(u => SqlFunc.MergeString(u.RealName, "/", u.Account)),
                 sortCode = a.SortCode,
@@ -288,12 +288,12 @@ public class DataInterfaceNewService : IDataInterfaceService, IDynamicApiControl
         {
             var dicParameters = input.paramList != null && input.paramList.Any() ? input.paramList.ToDictionary(x => x.field, y => y.defaultValue) : new Dictionary<string, string>();
             var output = new List<object>();
-            keyword = input.Keyword;
-            showKey = input.propsValue;
+            _keyword = input.Keyword;
+            _showKey = input.propsValue;
             dicParameters.Add("@showKey", input.propsValue);
             foreach (var item in input.ids)
             {
-                showValue = item;
+                _showValue = item;
                 dicParameters["@showValue"] = item;
                 var data = await GetDataInterfaceData(id, dicParameters, true);
                 output.Add(data);
@@ -318,9 +318,9 @@ public class DataInterfaceNewService : IDataInterfaceService, IDynamicApiControl
         }
         else
         {
-            currentPage = input.CurrentPage;
-            pageSize = input.PageSize;
-            keyword = input.Keyword;
+            _currentPage = input.CurrentPage;
+            _pageSize = input.PageSize;
+            _keyword = input.Keyword;
             var dicParameters = input.paramList != null && input.paramList.Any() ? input.paramList.ToDictionary(x => x.field, y => y.defaultValue) : new Dictionary<string, string>();
             return await GetDataInterfaceData(id, dicParameters);
         }
@@ -447,7 +447,8 @@ public class DataInterfaceNewService : IDataInterfaceService, IDynamicApiControl
         if (interfaceOauthEntity == null) return null;
         var ymDate = DateTime.Now.ParseToUnixTime().ToString();
         var authorization = GetVerifySignature(interfaceOauthEntity, intefaceId, ymDate);
-        return new {
+        return new
+        {
             YmDate = ymDate,
             Authorization = authorization,
         };
@@ -557,7 +558,7 @@ public class DataInterfaceNewService : IDataInterfaceService, IDynamicApiControl
         {
             string sheetData = Regex.Match(info.DataProcessing, @"\{(.*)\}", RegexOptions.Singleline).Groups[1].Value;
             var scriptStr = "var result = function(data){data = JSON.parse(data);" + sheetData + "}";
-            output = JsEngineUtil.CallFunction(scriptStr, output.ToJsonString(CommonConst.options));//此处时间非时间戳
+            output = JsEngineUtil.CallFunction(scriptStr, output.ToJsonString(CommonConst.options)); //此处时间非时间戳
         }
         return output;
     }
@@ -616,7 +617,7 @@ public class DataInterfaceNewService : IDataInterfaceService, IDynamicApiControl
                 var propJson = entity.PropertyJson.ToObject<DataInterfaceProperJson>();
                 propJson.countSql = await GetSqlParameter(propJson.countSql, parameter);
                 var count = _dataBaseManager.GetCount(tenantLink, propJson.countSql, parameter.ToArray());
-                return new { list = dt, pagination = new PageInfo() { currentPage = currentPage, pageSize = pageSize, total = count } };
+                return new { list = dt, pagination = new PageInfo() { currentPage = _currentPage, pageSize = _pageSize, total = count } };
             }
             else
             {
@@ -651,7 +652,7 @@ public class DataInterfaceNewService : IDataInterfaceService, IDynamicApiControl
                 {
                     heraderParameters = propJson.echoReqHeaders.ToObject<List<DataInterfaceReqParameter>>();
                     reqParameters = propJson.echoReqParameters.ToObject<List<DataInterfaceReqParameter>>();
-                    path = propJson.echoPath.Replace("{showValue}", showValue);
+                    path = propJson.echoPath.Replace("{showValue}", _showValue);
                     requestMethod = propJson.echoReqMethod;
                 }
             }
@@ -714,9 +715,9 @@ public class DataInterfaceNewService : IDataInterfaceService, IDynamicApiControl
             }
             if (input.IsNotEmptyOrNull())
             {
-                currentPage = input.CurrentPage;
-                pageSize = input.PageSize;
-                keyword = input.Keyword.IsNotEmptyOrNull() ? input.Keyword : string.Empty;
+                _currentPage = input.CurrentPage;
+                _pageSize = input.PageSize;
+                _keyword = input.Keyword.IsNotEmptyOrNull() ? input.Keyword : string.Empty;
                 dicParameters = input.paramList != null && input.paramList.Any() ? input.paramList.ToDictionary(x => x.field, y => y.defaultValue) : new Dictionary<string, string>();
             }
             return await GetDataInterfaceData(id, dicParameters);
@@ -938,15 +939,15 @@ public class DataInterfaceNewService : IDataInterfaceService, IDynamicApiControl
                 {
                     if (item.fieldName.Equals("currentPage"))
                     {
-                        parameterList.Add(new DataInterfaceReqParameter { field = item.field, defaultValue = currentPage.ToString() });
+                        parameterList.Add(new DataInterfaceReqParameter { field = item.field, defaultValue = _currentPage.ToString() });
                     }
                     if (item.fieldName.Equals("pageSize"))
                     {
-                        parameterList.Add(new DataInterfaceReqParameter { field = item.field, defaultValue = pageSize.ToString() });
+                        parameterList.Add(new DataInterfaceReqParameter { field = item.field, defaultValue = _pageSize.ToString() });
                     }
                     if (item.fieldName.Equals("keyword"))
                     {
-                        parameterList.Add(new DataInterfaceReqParameter { field = item.field, defaultValue = keyword });
+                        parameterList.Add(new DataInterfaceReqParameter { field = item.field, defaultValue = _keyword });
                     }
                 }
                 foreach (var item in propertyJson.echoReqParameters)
@@ -1016,23 +1017,23 @@ public class DataInterfaceNewService : IDataInterfaceService, IDynamicApiControl
             }
             if (sql.Contains("@offsetSize") && !sugarParameters.Any(x => x.ParameterName == "@offsetSize"))
             {
-                sugarParameters.Add(new SugarParameter("@offsetSize", (currentPage - 1) * pageSize));
+                sugarParameters.Add(new SugarParameter("@offsetSize", (_currentPage - 1) * _pageSize));
             }
             if (sql.Contains("@pageSize") && !sugarParameters.Any(x => x.ParameterName == "@pageSize"))
             {
-                sugarParameters.Add(new SugarParameter("@pageSize", pageSize));
+                sugarParameters.Add(new SugarParameter("@pageSize", _pageSize));
             }
             if (sql.Contains("@showValue") && !sugarParameters.Any(x => x.ParameterName == "@showValue"))
             {
-                sugarParameters.Add(new SugarParameter("@showValue", showValue));
+                sugarParameters.Add(new SugarParameter("@showValue", _showValue));
             }
             if (sql.Contains("@keyword") && !sugarParameters.Any(x => x.ParameterName == "@keyword"))
             {
-                sugarParameters.Add(new SugarParameter("@keyword", keyword));
+                sugarParameters.Add(new SugarParameter("@keyword", _keyword));
             }
             if (sql.Contains("@showKey"))
             {
-                sql = sql.Replace("@showKey", showKey);
+                sql = sql.Replace("@showKey", _showKey);
             }
             if (sql.Contains("@user"))
             {

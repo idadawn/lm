@@ -1,7 +1,8 @@
-using Poxiao.Infrastructure.Filter;
 using Poxiao.DependencyInjection;
+using Poxiao.Infrastructure.Filter;
 
 namespace Poxiao.WorkFlow.Entitys.Dto.FlowTemplate;
+
 [SuppressSniffer]
 public class FlowTemplateListQuery : PageInputBase
 {

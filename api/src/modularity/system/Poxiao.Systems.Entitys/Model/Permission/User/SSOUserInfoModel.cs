@@ -2,13 +2,13 @@ namespace Poxiao.Systems.Entitys.Model.Permission.User;
 
 public class UserInfo
 {
-    private static readonly long serialVersionUID = 6402443942083382236L;
+    private static readonly long SerialVersionUID = 6402443942083382236L;
 
-    public static readonly string CLASS_TYPE = "UserInfo";
+    public static readonly string CLASSTYPE = "UserInfo";
 
-    public static readonly string DEFAULT_PASSWORD_SUFFIX = "MaxKey@888";
+    public static readonly string DEFAULTPASSWORDSUFFIX = "MaxKey@888";
 
-    string sessionId { get; set; }
+    private string sessionId { get; set; }
 
     public string id { get; set; }
     public string username { get; set; }
@@ -147,7 +147,7 @@ public class UserInfo
     public string modifiedBy { get; set; }
     public string modifiedDate { get; set; }
     public int status { get; set; }
-    string description { get; set; }
+    private string description { get; set; }
 
     /// <summary>
     /// 租户Id.
@@ -156,15 +156,15 @@ public class UserInfo
 
     public string instName { get; set; }
 
-    string syncId { get; set; }
+    private string syncId { get; set; }
 
-    string syncName { get; set; }
+    private string syncName { get; set; }
 
-    string originId { get; set; }
+    private string originId { get; set; }
 
-    string originId2 { get; set; }
+    private string originId2 { get; set; }
 
-    string gradingUserId { get; set; }
+    private string gradingUserId { get; set; }
 
     public override string ToString()
     {

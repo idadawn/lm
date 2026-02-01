@@ -1,3 +1,10 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using NPOI.Util;
+using Poxiao.DataEncryption;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Core.Manager;
@@ -5,10 +12,6 @@ using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DataEncryption;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.Systems.Interfaces.Common;
 using Poxiao.Systems.Interfaces.System;
@@ -20,9 +23,6 @@ using Poxiao.VisualDev.Engine.Security;
 using Poxiao.VisualDev.Entitys;
 using Poxiao.VisualDev.Entitys.Dto.CodeGen;
 using Poxiao.VisualDev.Entitys.Enum;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using NPOI.Util;
 using SqlSugar;
 using System.IO.Compression;
 using System.Text;
@@ -338,9 +338,9 @@ public class CodeGenService : IDynamicApiController, ITransient
                     {
                         tableNo++;
                         var controlId = string.Empty;
-                        var children = controls.Find(it => it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE) && it.__config__.tableName.Equals(item.table));
-                        controlId = children.__vModel__;
-                        if (children != null) controls = children.__config__.children;
+                        var children = controls.Find(it => it.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE) && it.Config.tableName.Equals(item.table));
+                        controlId = children.VModel;
+                        if (children != null) controls = children.Config.children;
 
                         var fieldList = _databaseManager.GetFieldList(targetLink, item.table);
 
@@ -355,7 +355,7 @@ public class CodeGenService : IDynamicApiController, ITransient
 
                         // 后端生成
                         codeGenConfigModel = CodeGenWay.ChildTableBackEnd(item.table, item.className, fieldList, controls, templateEntity, controlId, item.tableField);
-                        codeGenConfigModel.BusName = children.__config__.label;
+                        codeGenConfigModel.BusName = children.Config.label;
                         codeGenConfigModel.ClassName = item.className;
 
                         targetPathList = CodeGenTargetPathHelper.BackendChildTableTargetPathList(codeGenConfigModel.ClassName, fileName, templateEntity.WebType, templateEntity.Type, codeGenConfigModel.IsMapper, codeGenConfigModel.IsShowSubTableField);
@@ -365,7 +365,8 @@ public class CodeGenService : IDynamicApiController, ITransient
                         for (int i = 0; i < templatePathList.Count; i++)
                         {
                             var tContent = File.ReadAllText(templatePathList[i]);
-                            var tResult = _viewEngine.RunCompileFromCached(tContent, new {
+                            var tResult = _viewEngine.RunCompileFromCached(tContent, new
+                            {
                                 BusName = codeGenConfigModel.BusName,
                                 ClassName = codeGenConfigModel.ClassName,
                                 NameSpace = formDataModel.areasName,
@@ -502,7 +503,8 @@ public class CodeGenService : IDynamicApiController, ITransient
                         for (int i = 0; i < templatePathList.Count; i++)
                         {
                             string tContent = File.ReadAllText(templatePathList[i]);
-                            string tResult = _viewEngine.RunCompileFromCached(tContent, new {
+                            string tResult = _viewEngine.RunCompileFromCached(tContent, new
+                            {
                                 NameSpace = codeGenConfigModel.NameSpace,
                                 BusName = codeGenConfigModel.BusName,
                                 ClassName = codeGenConfigModel.ClassName,
@@ -593,7 +595,7 @@ public class CodeGenService : IDynamicApiController, ITransient
                     foreach (DbTableRelationModel? item in tableRelation.FindAll(it => it.typeId == "0"))
                     {
                         tableNo++;
-                        var auxiliaryControls = controls.FindAll(it => it.__config__.tableName == item.table);
+                        var auxiliaryControls = controls.FindAll(it => it.Config.tableName == item.table);
                         var fieldList = _databaseManager.GetFieldList(targetLink, item.table);
 
                         // 默认主表开启自增副表也需要开启自增
@@ -621,7 +623,8 @@ public class CodeGenService : IDynamicApiController, ITransient
                         for (int i = 0; i < templatePathList.Count; i++)
                         {
                             var tContent = File.ReadAllText(templatePathList[i]);
-                            var tResult = _viewEngine.RunCompileFromCached(tContent, new {
+                            var tResult = _viewEngine.RunCompileFromCached(tContent, new
+                            {
                                 BusName = codeGenConfigModel.BusName,
                                 ClassName = codeGenConfigModel.ClassName,
                                 NameSpace = formDataModel.areasName,
@@ -747,7 +750,8 @@ public class CodeGenService : IDynamicApiController, ITransient
                         for (var i = 0; i < templatePathList.Count; i++)
                         {
                             var tContent = File.ReadAllText(templatePathList[i]);
-                            var tResult = _viewEngine.RunCompileFromCached(tContent, new {
+                            var tResult = _viewEngine.RunCompileFromCached(tContent, new
+                            {
                                 NameSpace = codeGenConfigModel.NameSpace,
                                 BusName = codeGenConfigModel.BusName,
                                 ClassName = codeGenConfigModel.ClassName,
@@ -829,7 +833,7 @@ public class CodeGenService : IDynamicApiController, ITransient
                     {
                         // 解析子表比副表效率
                         // 先获取出子表 其他的默认为副表
-                        switch (controls.Any(it => it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE) && it.__config__.tableName.Equals(item.table)))
+                        switch (controls.Any(it => it.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE) && it.Config.tableName.Equals(item.table)))
                         {
                             case true:
                                 subTable.Add(item);
@@ -850,9 +854,9 @@ public class CodeGenService : IDynamicApiController, ITransient
                     foreach (DbTableRelationModel? item in subTable)
                     {
                         var controlId = string.Empty;
-                        var children = controls.Find(it => it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE) && it.__config__.tableName.Equals(item.table));
-                        controlId = children.__vModel__;
-                        if (children != null) controls = children.__config__.children;
+                        var children = controls.Find(it => it.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE) && it.Config.tableName.Equals(item.table));
+                        controlId = children.VModel;
+                        if (children != null) controls = children.Config.children;
 
                         var fieldList = _databaseManager.GetFieldList(targetLink, item.table);
 
@@ -867,7 +871,7 @@ public class CodeGenService : IDynamicApiController, ITransient
 
                         // 后端生成
                         codeGenConfigModel = CodeGenWay.ChildTableBackEnd(item.table, item.className, fieldList, controls, templateEntity, controlId, item.tableField);
-                        codeGenConfigModel.BusName = children.__config__.label;
+                        codeGenConfigModel.BusName = children.Config.label;
                         codeGenConfigModel.ClassName = item.className;
 
                         targetPathList = CodeGenTargetPathHelper.BackendChildTableTargetPathList(codeGenConfigModel.ClassName, fileName, templateEntity.WebType, templateEntity.Type, codeGenConfigModel.IsMapper, codeGenConfigModel.IsShowSubTableField);
@@ -877,7 +881,8 @@ public class CodeGenService : IDynamicApiController, ITransient
                         for (int i = 0; i < templatePathList.Count; i++)
                         {
                             var tContent = File.ReadAllText(templatePathList[i]);
-                            var tResult = _viewEngine.RunCompileFromCached(tContent, new {
+                            var tResult = _viewEngine.RunCompileFromCached(tContent, new
+                            {
                                 BusName = codeGenConfigModel.BusName,
                                 ClassName = codeGenConfigModel.ClassName,
                                 NameSpace = formDataModel.areasName,
@@ -939,7 +944,7 @@ public class CodeGenService : IDynamicApiController, ITransient
                     // 生成副表
                     foreach (DbTableRelationModel? item in secondaryTable)
                     {
-                        var auxiliaryControls = controls.FindAll(it => it.__config__.tableName == item.table);
+                        var auxiliaryControls = controls.FindAll(it => it.Config.tableName == item.table);
                         var fieldList = _databaseManager.GetFieldList(targetLink, item.table);
 
                         // 默认主表开启自增副表也需要开启自增
@@ -959,7 +964,8 @@ public class CodeGenService : IDynamicApiController, ITransient
                         for (int i = 0; i < templatePathList.Count; i++)
                         {
                             var tContent = File.ReadAllText(templatePathList[i]);
-                            var tResult = _viewEngine.RunCompileFromCached(tContent, new {
+                            var tResult = _viewEngine.RunCompileFromCached(tContent, new
+                            {
                                 BusName = codeGenConfigModel.BusName,
                                 ClassName = codeGenConfigModel.ClassName,
                                 NameSpace = formDataModel.areasName,
@@ -1093,7 +1099,8 @@ public class CodeGenService : IDynamicApiController, ITransient
                         for (int i = 0; i < templatePathList.Count; i++)
                         {
                             string tContent = File.ReadAllText(templatePathList[i]);
-                            string tResult = _viewEngine.RunCompileFromCached(tContent, new {
+                            string tResult = _viewEngine.RunCompileFromCached(tContent, new
+                            {
                                 NameSpace = codeGenConfigModel.NameSpace,
                                 BusName = codeGenConfigModel.BusName,
                                 ClassName = codeGenConfigModel.ClassName,
@@ -1247,7 +1254,8 @@ public class CodeGenService : IDynamicApiController, ITransient
                     for (var i = 0; i < templatePathList.Count; i++)
                     {
                         var tContent = File.ReadAllText(templatePathList[i]);
-                        var tResult = _viewEngine.RunCompileFromCached(tContent, new {
+                        var tResult = _viewEngine.RunCompileFromCached(tContent, new
+                        {
                             NameSpace = codeGenConfigModel.NameSpace,
                             BusName = codeGenConfigModel.BusName,
                             ClassName = codeGenConfigModel.ClassName,
@@ -1436,11 +1444,11 @@ public class CodeGenService : IDynamicApiController, ITransient
         var codeModel = GeneratePatterns.PrimaryTable;
 
         // 找副表控件
-        if (tableRelation.Count > 1 && controls.Any(x => x.__vModel__.Contains("_poxiao_")) && controls.Any(it => it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)))
+        if (tableRelation.Count > 1 && controls.Any(x => x.VModel.Contains("_poxiao_")) && controls.Any(it => it.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)))
             codeModel = GeneratePatterns.PrimarySecondary;
-        else if (tableRelation.Count > 1 && controls.Any(x => x.__vModel__.Contains("_poxiao_")))
+        else if (tableRelation.Count > 1 && controls.Any(x => x.VModel.Contains("_poxiao_")))
             codeModel = GeneratePatterns.MainBeltVice;
-        else if (tableRelation.Count > 1 && controls.Any(it => it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)))
+        else if (tableRelation.Count > 1 && controls.Any(it => it.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)))
             codeModel = GeneratePatterns.MainBelt;
         return codeModel;
     }
@@ -1536,7 +1544,8 @@ public class CodeGenService : IDynamicApiController, ITransient
                 {
                     msg = templatePathList[i];
                     string tContent = File.ReadAllText(templatePathList[i]);
-                    var tResult = _viewEngine.RunCompileFromCached(tContent, new {
+                    var tResult = _viewEngine.RunCompileFromCached(tContent, new
+                    {
                         NameSpace = frondEndGenConfig.NameSpace,
                         ClassName = frondEndGenConfig.ClassName,
                         FormRef = frondEndGenConfig.FormRef,
@@ -1619,7 +1628,7 @@ public class CodeGenService : IDynamicApiController, ITransient
                         GroupShowField = frondEndGenConfig.GroupShowField,
                         PrimaryKeyPolicy = frondEndGenConfig.PrimaryKeyPolicy,
                         IsRelationForm = frondEndGenConfig.IsRelationForm,
-                        ChildTableStyle = controls.Any(it => it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)) ? frondEndGenConfig.ChildTableStyle : 1,
+                        ChildTableStyle = controls.Any(it => it.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)) ? frondEndGenConfig.ChildTableStyle : 1,
                         IsFixed = frondEndGenConfig.IsFixed,
                         IsChildrenRegular = frondEndGenConfig.IsChildrenRegular,
                         TreeSynType = frondEndGenConfig.TreeSynType,

@@ -1,3 +1,13 @@
+using Mapster;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis;
+using Microsoft.Extensions.Options;
+using Poxiao.DatabaseAccessor;
+using Poxiao.DataEncryption;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Core.Handlers;
@@ -12,11 +22,6 @@ using Poxiao.Infrastructure.Models.NPOI;
 using Poxiao.Infrastructure.Models.User;
 using Poxiao.Infrastructure.Options;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DatabaseAccessor;
-using Poxiao.DataEncryption;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.RemoteRequest.Extensions;
 using Poxiao.Systems.Entitys.Dto.Organize;
 using Poxiao.Systems.Entitys.Dto.Role;
@@ -28,11 +33,6 @@ using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.Systems.Interfaces.Permission;
 using Poxiao.Systems.Interfaces.System;
-using Mapster;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis;
-using Microsoft.Extensions.Options;
 using SqlSugar;
 using System.Linq.Expressions;
 
@@ -295,7 +295,8 @@ public class UsersService : IUsersService, IDynamicApiController, ITransient
                 .Where((a, b) => b.ObjectType == "Organize" && orgList.Contains(b.ObjectId)).Where((a, b) => a.EnabledMark == 1 && a.DeleteMark == null)
                 .Where((a, b) => a.RealName.Contains(input.Keyword) || a.Account.Contains(input.Keyword))
                 .GroupBy((a, b) => new { a.Id, a.RealName, a.Account, a.EnabledMark })
-                .Select((a, b) => new {
+                .Select((a, b) => new
+                {
                     id = a.Id,
                     fullName = SqlFunc.MergeString(a.RealName, "/", a.Account),
                     enabledMark = a.EnabledMark,
@@ -340,7 +341,8 @@ public class UsersService : IUsersService, IDynamicApiController, ITransient
             var res = await _repository.AsSugarClient().Queryable<UserEntity, UserRelationEntity>((a, b) => new JoinQueryInfos(JoinType.Left, b.UserId == a.Id))
                 .Where((a, b) => b.ObjectType == "Organize" && b.ObjectId == input.organizeId).Where((a, b) => a.EnabledMark == 1 && a.DeleteMark == null)
                 .GroupBy((a, b) => new { a.Id, a.RealName, a.Account, a.EnabledMark })
-                .Select((a, b) => new {
+                .Select((a, b) => new
+                {
                     id = a.Id,
                     fullName = SqlFunc.MergeString(a.RealName, "/", a.Account),
                     enabledMark = a.EnabledMark,
@@ -989,7 +991,7 @@ public class UsersService : IUsersService, IDynamicApiController, ITransient
         #region 多组织 优先选择有权限组织
 
         // 多组织
-        string[]? orgList = entity.OrganizeId.Split(",");
+        string[] ? orgList = entity.OrganizeId.Split(",");
         entity.OrganizeId = string.Empty;
 
         foreach (string? item in orgList)
@@ -1010,7 +1012,7 @@ public class UsersService : IUsersService, IDynamicApiController, ITransient
 
         #endregion
 
-        string[]? positionIds = entity.PositionId?.Split(",");
+        string[] ? positionIds = entity.PositionId?.Split(",");
         List<string>? pIdList = await _repository.AsSugarClient().Queryable<PositionEntity>().Where(x => x.OrganizeId == entity.OrganizeId && positionIds.Contains(x.Id)).Select(x => x.Id).ToListAsync();
         entity.PositionId = pIdList.FirstOrDefault(); // 多 岗位 默认取当前组织第一个
 
@@ -1167,7 +1169,7 @@ public class UsersService : IUsersService, IDynamicApiController, ITransient
         #region 多组织 优先选择有权限组织
 
         // 多 组织
-        string[]? orgList = entity.OrganizeId.Split(",");
+        string[] ? orgList = entity.OrganizeId.Split(",");
         entity.OrganizeId = string.Empty;
 
         if (orgList.Contains(oldUserEntity.OrganizeId))
@@ -1212,7 +1214,7 @@ public class UsersService : IUsersService, IDynamicApiController, ITransient
             entity.SystemId = oldUserEntity.SystemId;
 
         // 获取默认组织下的岗位
-        string[]? positionIds = entity.PositionId?.Split(",");
+        string[] ? positionIds = entity.PositionId?.Split(",");
         List<string>? pIdList = await _repository.AsSugarClient().Queryable<PositionEntity>().Where(x => x.OrganizeId == entity.OrganizeId && positionIds.Contains(x.Id)).Select(x => x.Id).ToListAsync();
 
         if (entity.PositionId.IsNotEmptyOrNull() && pIdList.Contains(oldUserEntity.PositionId))
@@ -1222,7 +1224,8 @@ public class UsersService : IUsersService, IDynamicApiController, ITransient
         try
         {
             // 更新用户记录
-            int newEntity = await _repository.AsUpdateable(entity).UpdateColumns(it => new {
+            int newEntity = await _repository.AsUpdateable(entity).UpdateColumns(it => new
+            {
                 it.Account,
                 it.RealName,
                 it.QuickQuery,
@@ -1272,7 +1275,7 @@ public class UsersService : IUsersService, IDynamicApiController, ITransient
             // 修改该用户信息，该用户会立即退出登录
             var onlineCacheKey = string.Format("{0}:{1}", CommonConst.CACHEKEYONLINEUSER, _userManager.TenantId);
             var list = await _cacheManager.GetAsync<List<UserOnlineModel>>(onlineCacheKey);
-            var user = list.Find(it => it.tenantId == _userManager.TenantId && it.userId == id);
+            var user = list?.Find(it => it.tenantId == _userManager.TenantId && it.userId == id);
             if (user != null)
             {
                 await _imHandler.SendMessageAsync(user.connectionId, new { method = "logout", msg = "用户信息已变更，请重新登录！" }.ToJsonString());
@@ -1562,7 +1565,7 @@ public class UsersService : IUsersService, IDynamicApiController, ITransient
     [HttpGet("TemplateDownload")]
     public async Task<dynamic> TemplateDownload()
     {
-        // 初始化 一条空数据 
+        // 初始化 一条空数据
         List<UserListImportDataInput>? dataList = new List<UserListImportDataInput>() { new UserListImportDataInput() { } };
 
         ExcelConfig excelconfig = new ExcelConfig();
@@ -1612,7 +1615,7 @@ public class UsersService : IUsersService, IDynamicApiController, ITransient
     {
         try
         {
-            Dictionary<string, string>? FileEncode = GetUserInfoFieldToTitle();
+            Dictionary<string, string>? fileEncode = GetUserInfoFieldToTitle();
 
             string? filePath = FileVariable.TemporaryFilePath;
             string? savePath = Path.Combine(filePath, fileName);
@@ -1622,7 +1625,7 @@ public class UsersService : IUsersService, IDynamicApiController, ITransient
             global::System.Data.DataTable? excelData = ExcelImportHelper.ToDataTable(savePath, sr);
             foreach (object? item in excelData.Columns)
             {
-                excelData.Columns[item.ToString()].ColumnName = FileEncode.Where(x => x.Value == item.ToString()).FirstOrDefault().Key;
+                excelData.Columns[item.ToString()].ColumnName = fileEncode.Where(x => x.Value == item.ToString()).FirstOrDefault().Key;
             }
 
             if (excelData.Rows.Count > 0) excelData.Rows.RemoveAt(0);
@@ -1645,7 +1648,7 @@ public class UsersService : IUsersService, IDynamicApiController, ITransient
     [UnitOfWork]
     public async Task<dynamic> ExportExceptionData([FromBody] UserImportDataInput list)
     {
-        object[]? res = await ImportUserData(list.list);
+        object[] ? res = await ImportUserData(list.list);
 
         // 错误数据
         List<UserListImportDataInput>? errorlist = res.Last() as List<UserListImportDataInput>;
@@ -1679,7 +1682,7 @@ public class UsersService : IUsersService, IDynamicApiController, ITransient
     [UnitOfWork]
     public async Task<dynamic> ImportData([FromBody] UserImportDataInput list)
     {
-        object[]? res = await ImportUserData(list.list);
+        object[] ? res = await ImportUserData(list.list);
         List<UserEntity>? addlist = res.First() as List<UserEntity>;
         List<UserListImportDataInput>? errorlist = res.Last() as List<UserListImportDataInput>;
         return new UserImportResultOutput() { snum = addlist.Count, fnum = errorlist.Count, failResult = errorlist, resultType = errorlist.Count < 1 ? 0 : 1 };
@@ -1777,7 +1780,7 @@ public class UsersService : IUsersService, IDynamicApiController, ITransient
     [NonAction]
     public async Task<List<PositionInfoModel>> GetPosition(string PositionIds)
     {
-        string[]? ids = PositionIds.Split(",");
+        string[] ? ids = PositionIds.Split(",");
         return await _repository.AsSugarClient().Queryable<PositionEntity>().In(it => it.Id, ids).Select(it => new PositionInfoModel { id = it.Id, name = it.FullName }).ToListAsync();
     }
 
@@ -2011,7 +2014,7 @@ public class UsersService : IUsersService, IDynamicApiController, ITransient
                 uentity.RoleId = string.Join(",", _roleRepositoryList.Where(r => item.roleId.Split(";").Contains(r.FullName)).Select(x => x.Id).ToList());
 
             // 寻找组织
-            string[]? userOidList = item.organizeId.Split(";");
+            string[] ? userOidList = item.organizeId.Split(";");
             if (userOidList.Any())
             {
                 foreach (string? oinfo in userOidList)
@@ -2036,7 +2039,7 @@ public class UsersService : IUsersService, IDynamicApiController, ITransient
             // 寻找岗位
             item.positionId?.Split(';').ToList().ForEach(it =>
             {
-                string[]? pinfo = it.Split("/");
+                string[] ? pinfo = it.Split("/");
                 string? pid = _positionRepositoryList.Find(x => x.FullName == pinfo.FirstOrDefault() && x.EnCode == pinfo.LastOrDefault())?.Id;
                 if (pid.IsNotEmptyOrNull()) posIds.Add(pid); // 多岗位
             });
@@ -2086,10 +2089,10 @@ public class UsersService : IUsersService, IDynamicApiController, ITransient
 
             foreach (string? it in orgIds)
             {
-                List<string>? UserRoleList = await _userManager.GetUserOrgRoleIds(uentity.RoleId, it);
+                List<string>? userRoleList = await _userManager.GetUserOrgRoleIds(uentity.RoleId, it);
 
                 // 如果该组织下有角色并且有角色权限 则为默认组织
-                if (UserRoleList.Any() && _repository.AsSugarClient().Queryable<AuthorizeEntity>().Where(x => x.ObjectType == "Role" && x.ItemType == "module" && UserRoleList.Contains(x.ObjectId)).Any())
+                if (userRoleList.Any() && _repository.AsSugarClient().Queryable<AuthorizeEntity>().Where(x => x.ObjectType == "Role" && x.ItemType == "module" && userRoleList.Contains(x.ObjectId)).Any())
                 {
                     uentity.OrganizeId = it; // 多 组织 默认
                     break;

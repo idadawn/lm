@@ -1,19 +1,20 @@
+using DingTalk.Api;
+using DingTalk.Api.Request;
+using DingTalk.Api.Response;
+using Newtonsoft.Json;
 using Poxiao.Extras.CollectiveOAuth.Cache;
 using Poxiao.Extras.CollectiveOAuth.Config;
+using Poxiao.Extras.CollectiveOAuth.Enums;
 using Poxiao.Extras.CollectiveOAuth.Models;
 using Poxiao.Extras.CollectiveOAuth.Utils;
-using Poxiao.Extras.CollectiveOAuth.Enums;
-using Newtonsoft.Json;
-using DingTalk.Api;
-using DingTalk.Api.Response;
-using DingTalk.Api.Request;
 using Poxiao.Infrastructure.Security;
 
 namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class DingTalkScanAuthRequest : DefaultAuthRequest
 {
-    public DingTalkScanAuthRequest(ClientConfig config) : base(config, new DingTalkScanAuthSource())
+    public DingTalkScanAuthRequest(ClientConfig config)
+        : base(config, new DingTalkScanAuthSource())
     {
     }
 
@@ -21,7 +22,6 @@ public class DingTalkScanAuthRequest : DefaultAuthRequest
         : base(config, new DingTalkScanAuthSource(), authStateCache)
     {
     }
-
 
     protected override AuthToken getAccessToken(AuthCallback authCallback)
     {

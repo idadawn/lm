@@ -1,5 +1,5 @@
-﻿using Poxiao.Localization;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Poxiao.Localization;
 
 namespace Microsoft.AspNetCore.Builder;
 

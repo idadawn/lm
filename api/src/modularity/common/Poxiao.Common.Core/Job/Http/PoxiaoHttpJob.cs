@@ -1,13 +1,13 @@
 using Aop.Api.Domain;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Poxiao.DependencyInjection;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Core.Job;
 using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
 using Poxiao.Systems.Entitys.Permission;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using SqlSugar;
 using System.Net.Http.Headers;
 using System.Text;
@@ -95,12 +95,12 @@ public class PoxiaoHttpJob : IJob
 
             if (KeyVariable.MultiTenancyType.Equals("COLUMN"))
             {
-                string ServiceName = tenant.connectionConfig.IsolationField;
+                string serviceName = tenant.connectionConfig.IsolationField;
                 _sqlSugarClient.Aop.DataExecuting = (oldValue, entityInfo) =>
                 {
                     if (entityInfo.PropertyName == "TenantId" && entityInfo.OperationType == DataFilterType.InsertByObject)
                     {
-                        entityInfo.SetValue(ServiceName);
+                        entityInfo.SetValue(serviceName);
                     }
                 };
             }
@@ -142,7 +142,8 @@ public class PoxiaoHttpJob : IJob
         _logger.LogInformation($"Received HTTP response body with a length of <{bodyString.Length}> output as follows - {(int)httpResponseMessage.StatusCode}{Environment.NewLine}{bodyString}");
 
         // 设置本次执行结果
-        context.Result = Penetrates.Serialize(new {
+        context.Result = Penetrates.Serialize(new
+        {
             httpResponseMessage.StatusCode,
             Body = bodyString
         });

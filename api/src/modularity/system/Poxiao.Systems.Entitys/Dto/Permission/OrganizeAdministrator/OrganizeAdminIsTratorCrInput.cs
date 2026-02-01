@@ -1,5 +1,5 @@
-using Poxiao.Infrastructure.Security;
 using Poxiao.DependencyInjection;
+using Poxiao.Infrastructure.Security;
 
 namespace Poxiao.Systems.Entitys.Dto.OrganizeAdministrator;
 
@@ -7,7 +7,7 @@ namespace Poxiao.Systems.Entitys.Dto.OrganizeAdministrator;
 /// 机构分级管理创建输入.
 /// </summary>
 [SuppressSniffer]
-public class OrganizeAdminIsTratorCrInput: TreeModel
+public class OrganizeAdminIsTratorCrInput : TreeModel
 {
     /// <summary>
     /// 用户主键.

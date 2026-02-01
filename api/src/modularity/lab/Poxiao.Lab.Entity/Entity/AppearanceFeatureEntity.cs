@@ -1,7 +1,7 @@
-using System.Text.Json.Serialization;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Contracts;
 using SqlSugar;
+using System.Text.Json.Serialization;
 
 namespace Poxiao.Lab.Entity;
 

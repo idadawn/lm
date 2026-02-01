@@ -35,5 +35,5 @@ public class MetricDimensionCrInput
     /// </summary>
     [JsonProperty("column")]
     public TableFieldOutput Column { get; set; }
-    
+
 }

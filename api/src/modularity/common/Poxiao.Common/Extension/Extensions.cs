@@ -689,7 +689,9 @@ public static partial class Extensions
     public static bool IsNullOrEmpty(this object obj)
     {
         if (obj == null)
+        {
             return true;
+        }
         else
         {
             string objStr = obj.ToString();
@@ -741,6 +743,37 @@ public static partial class Extensions
                 result.Add(item.Last());
         }
         return result;
+    }
+
+    #endregion
+
+    #region Copy
+
+    /// <summary>
+    /// 创建对象的深拷贝.
+    /// </summary>
+    /// <typeparam name="T">对象类型.</typeparam>
+    /// <param name="source">源对象.</param>
+    /// <returns>深拷贝后的对象.</returns>
+    public static T Copy<T>(this T source)
+    {
+        if (source == null)
+            return default(T);
+
+        // 如果是值类型或字符串，直接返回
+        if (typeof(T).IsValueType || typeof(T) == typeof(string))
+            return source;
+
+        // 使用JSON序列化进行深拷贝
+        try
+        {
+            var json = Poxiao.Infrastructure.Security.JsonHelper.ToJsonString(source);
+            return Poxiao.Infrastructure.Security.JsonHelper.ToObject<T>(json);
+        }
+        catch
+        {
+            return default(T);
+        }
     }
 
     #endregion

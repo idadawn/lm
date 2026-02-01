@@ -1,19 +1,19 @@
-using System.Web;
+using Mapster;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.Extend.Entitys.Dto.DocumentPreview;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Core.Manager.Files;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Options;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.Extend.Entitys.Dto.DocumentPreview;
-using Poxiao.FriendlyException;
 using Poxiao.Logging.Attributes;
-using Mapster;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
+using System.Web;
 
 namespace Poxiao.Extend;
 
@@ -43,7 +43,7 @@ public class DocumentPreview : IDynamicApiController, ITransient
     /// <param name="input">请求参数.</param>
     /// <returns></returns>
     [HttpGet("")]
-    public async Task<dynamic> GetList_Api([FromQuery] KeywordInput input)
+    public async Task<dynamic> GetListApi([FromQuery] KeywordInput input)
     {
         var filePath = FileVariable.DocumentPreviewFilePath;
         var list = await _fileManager.GetObjList(filePath);
@@ -60,7 +60,7 @@ public class DocumentPreview : IDynamicApiController, ITransient
     /// <param name="input"></param>
     /// <returns></returns>
     [HttpGet("{fileId}/Preview")]
-    public async Task<dynamic> DocumentPreview_Api(string fileId, [FromQuery] DocumentPreviewPreviewInput input)
+    public async Task<dynamic> DocumentPreviewApi(string fileId, [FromQuery] DocumentPreviewPreviewInput input)
     {
         var filePath = FileVariable.DocumentPreviewFilePath;
         var files = await _fileManager.GetObjList(filePath);
@@ -103,7 +103,7 @@ public class DocumentPreview : IDynamicApiController, ITransient
 
         byte[] bytes = new byte[fileStreamResult.FileStream.Length];
 
-        fileStreamResult.FileStream.Read(bytes, 0, bytes.Length);
+        fileStreamResult.FileStream.ReadExactly(bytes);
 
         fileStreamResult.FileStream.Close();
         var httpContext = App.HttpContext;

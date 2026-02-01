@@ -6,4 +6,9 @@
 		<ProjectReference Include="..\..\system\Poxiao.Systems.Interfaces\Poxiao.Systems.Interfaces.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <PackageReference Include="SkiaSharp" Version="3.119.1" />
+	  <PackageReference Include="System.Drawing.Common" Version="10.0.2" />
+	</ItemGroup>
+
 </Project>

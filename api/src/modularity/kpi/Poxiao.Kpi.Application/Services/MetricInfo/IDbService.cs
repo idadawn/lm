@@ -1,7 +1,7 @@
 ﻿namespace Poxiao.Kpi.Application;
 
 /// <summary>
-/// 
+///
 /// </summary>
 public interface IDbService
 {
@@ -10,7 +10,6 @@ public interface IDbService
     /// </summary>
     /// <returns></returns>
     Task<List<DataModel4DbOutput>> GetDbListAsync();
-
 
     /// <summary>
     /// 根据数据源获取表.

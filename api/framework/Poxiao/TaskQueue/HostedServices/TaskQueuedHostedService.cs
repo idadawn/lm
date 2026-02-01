@@ -1,6 +1,6 @@
-﻿using Poxiao.FriendlyException;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Poxiao.FriendlyException;
 using System.Logging;
 
 namespace Poxiao.TaskQueue;

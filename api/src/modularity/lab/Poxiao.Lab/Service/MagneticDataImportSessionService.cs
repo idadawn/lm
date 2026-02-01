@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using NPOI.HSSF.UserModel;
@@ -18,6 +17,7 @@ using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
 using Poxiao.Systems.Interfaces.Common;
 using SqlSugar;
+using System.Text.RegularExpressions;
 using static Poxiao.Lab.Helpers.FurnaceNoHelper;
 
 namespace Poxiao.Lab.Service;
@@ -792,7 +792,7 @@ public class MagneticDataImportSessionService
             char c = columnLetter[i];
             if (c < 'A' || c > 'Z')
                 return -1;
-            index = index * 26 + (c - 'A' + 1);
+            index = (index * 26) + (c - 'A' + 1);
         }
         return index - 1; // 转换为从0开始的索引
     }

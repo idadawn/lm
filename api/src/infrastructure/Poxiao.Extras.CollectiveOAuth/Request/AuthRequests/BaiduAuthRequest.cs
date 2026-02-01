@@ -8,7 +8,8 @@ namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class BaiduAuthRequest : DefaultAuthRequest
 {
-    public BaiduAuthRequest(ClientConfig config) : base(config, new BaiduAuthSource())
+    public BaiduAuthRequest(ClientConfig config)
+        : base(config, new BaiduAuthSource())
     {
     }
 

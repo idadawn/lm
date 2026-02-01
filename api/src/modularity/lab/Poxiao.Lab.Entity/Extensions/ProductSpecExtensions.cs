@@ -1,7 +1,7 @@
+using Poxiao.Infrastructure.Security;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Poxiao.Infrastructure.Security;
 
 namespace Poxiao.Lab.Entity.Extensions;
 

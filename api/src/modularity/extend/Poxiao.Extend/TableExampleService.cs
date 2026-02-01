@@ -1,23 +1,23 @@
-using System.Reflection;
-using Poxiao.Infrastructure.Core.Manager;
-using Poxiao.Infrastructure.Enums;
-using Poxiao.Infrastructure.Extension;
-using Poxiao.Infrastructure.Filter;
-using Poxiao.Infrastructure.Security;
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.Extend.Entitys;
 using Poxiao.Extend.Entitys.Dto.TableExample;
 using Poxiao.Extend.Entitys.Model;
 using Poxiao.FriendlyException;
+using Poxiao.Infrastructure.Core.Manager;
+using Poxiao.Infrastructure.Enums;
+using Poxiao.Infrastructure.Extension;
+using Poxiao.Infrastructure.Filter;
+using Poxiao.Infrastructure.Security;
 using Poxiao.LinqBuilder;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
 using SqlSugar;
+using System.Reflection;
 using Yitter.IdGenerator;
 
 namespace Poxiao.Extend;
@@ -153,7 +153,8 @@ public class TableExampleService : IDynamicApiController, ITransient
     /// </summary>
     /// <param name="id">主键值</param>
     /// <returns></returns>
-    [HttpGet, Route("{id}")]
+    [HttpGet]
+    [Route("{id}")]
     public async Task<dynamic> GetInfo(string id)
     {
         var data = (await _repository.GetFirstAsync(x => x.Id == id)).Adapt<TableExampleInfoOutput>();
@@ -268,7 +269,6 @@ public class TableExampleService : IDynamicApiController, ITransient
         await _repository.AsSugarClient().Updateable(tableExampleEntity).IgnoreColumns(ignoreAllNullColumns: true).ExecuteCommandAsync();
     }
 
-
     /// <summary>
     /// 发送批注
     /// </summary>
@@ -368,7 +368,9 @@ public class TableExampleService : IDynamicApiController, ITransient
     /// <param name="entity1">实体1</param>
     /// <param name="entity2">实体2</param>
     /// <returns>赋值后的model1</returns>
-    private T1 BindModelValue<T1, T2>(T1 entity1, T2 entity2) where T1 : class where T2 : class
+    private T1 BindModelValue<T1, T2>(T1 entity1, T2 entity2)
+        where T1 : class
+        where T2 : class
     {
         Type t1 = entity1.GetType();
         Type t2 = entity2.GetType();

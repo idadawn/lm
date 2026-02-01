@@ -1,6 +1,6 @@
-using System;
 using Poxiao.Infrastructure.Contracts;
 using SqlSugar;
+using System;
 
 namespace Poxiao.Lab.Entity.Entity
 {

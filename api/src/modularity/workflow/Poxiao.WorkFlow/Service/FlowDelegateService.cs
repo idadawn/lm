@@ -1,11 +1,13 @@
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Message.Interfaces.Message;
 using Poxiao.Systems.Entitys.Dto.User;
 using Poxiao.Systems.Entitys.Permission;
@@ -14,8 +16,6 @@ using Poxiao.WorkFlow.Entitys.Dto.FlowDelegete;
 using Poxiao.WorkFlow.Entitys.Dto.FlowTemplate;
 using Poxiao.WorkFlow.Entitys.Entity;
 using Poxiao.WorkFlow.Interfaces.Service;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.WorkFlow.Service;
@@ -89,7 +89,7 @@ public class FlowDelegateService : IDynamicApiController, ITransient
     /// <param name="id">主键值.</param>
     /// <returns></returns>
     [HttpGet("{id}")]
-    public async Task<dynamic> GetInfo_Api(string id)
+    public async Task<dynamic> GetInfoApi(string id)
     {
         return (await _repository.GetFirstAsync(x => x.Id == id && x.DeleteMark == null)).Adapt<FlowDelegeteInfoOutput>();
     }
@@ -182,7 +182,7 @@ public class FlowDelegateService : IDynamicApiController, ITransient
     public async Task<dynamic> GetFlowList([FromQuery] string flowId)
     {
         var userList = _repository.AsSugarClient()
-          .Queryable<FlowTemplateJsonEntity, FlowDelegateEntity, UserEntity>((a, b, c) => new JoinQueryInfos(JoinType.Left, b.FlowId.Contains(a.TemplateId)||b.FlowName=="全部流程", JoinType.Left, b.UserId == c.Id))
+          .Queryable<FlowTemplateJsonEntity, FlowDelegateEntity, UserEntity>((a, b, c) => new JoinQueryInfos(JoinType.Left, b.FlowId.Contains(a.TemplateId) || b.FlowName == "全部流程", JoinType.Left, b.UserId == c.Id))
           .Where((a, b, c) => a.Id == flowId && b.Type == "0" && b.ToUserId == _userManager.UserId && b.EndTime > DateTime.Now && b.StartTime < DateTime.Now).Select((a, b, c) => new UserListOutput
           {
               id = c.Id,

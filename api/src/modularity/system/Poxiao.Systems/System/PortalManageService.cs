@@ -1,18 +1,18 @@
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Dto.System.PortalManage;
 using Poxiao.Systems.Entitys.Entity.System;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.VisualDev.Entitys;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.Systems.System;
@@ -145,7 +145,8 @@ public class PortalManageService : IDynamicApiController, ITransient
         entity.LastModifyUserId = _userManager.UserId;
 
         var isOk = await _repository.AsUpdateable(entity)
-            .UpdateColumns(it => new {
+            .UpdateColumns(it => new
+            {
                 it.PortalId,
                 it.EnabledMark,
                 it.Description,

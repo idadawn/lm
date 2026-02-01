@@ -1,21 +1,21 @@
+using Mapster;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Core.Manager.Files;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Dto.PrintDev;
 using Poxiao.Systems.Entitys.Model.PrintDev;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.Systems.Interfaces.System;
 using Poxiao.WorkFlow.Entitys.Entity;
-using Mapster;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 using System.Data;
 
@@ -89,7 +89,7 @@ public class PrintDevService : IDynamicApiController, ITransient
     /// <param name="input">请求参数.</param>
     /// <returns></returns>
     [HttpGet("")]
-    public async Task<dynamic> GetList_Api([FromQuery] PrintDevListInput input)
+    public async Task<dynamic> GetListApi([FromQuery] PrintDevListInput input)
     {
         var dictionaryTypeEntity = await _repository.AsSugarClient().Queryable<DictionaryTypeEntity>().FirstAsync(x => x.EnCode == "printDev" && x.DeleteMark == null);
         var list = await _repository.AsSugarClient().Queryable<PrintDevEntity, UserEntity, UserEntity, DictionaryDataEntity>((a, b, c, d) =>
@@ -119,7 +119,7 @@ public class PrintDevService : IDynamicApiController, ITransient
     /// </summary>
     /// <returns></returns>
     [HttpGet("Selector")]
-    public async Task<dynamic> GetList_Api([FromQuery] string type)
+    public async Task<dynamic> GetListApi([FromQuery] string type)
     {
         var dictionaryTypeEntity = await _repository.AsSugarClient().Queryable<DictionaryTypeEntity>().FirstAsync(x => x.EnCode == "printDev" && x.DeleteMark == null);
         var list = await _repository.AsSugarClient().Queryable<PrintDevEntity, UserEntity, UserEntity, DictionaryDataEntity>((a, b, c, d) => new JoinQueryInfos(JoinType.Left, b.Id == a.CreatorUserId, JoinType.Left, c.Id == a.LastModifyUserId, JoinType.Left, a.Category == d.EnCode))
@@ -168,7 +168,7 @@ public class PrintDevService : IDynamicApiController, ITransient
     /// <param name="id">主键值.</param>
     /// <returns></returns>
     [HttpGet("{id}")]
-    public async Task<dynamic> GetInfo_Api(string id)
+    public async Task<dynamic> GetInfoApi(string id)
     {
         return (await GetInfo(id)).Adapt<PrintDevInfoOutput>();
     }
@@ -272,7 +272,7 @@ public class PrintDevService : IDynamicApiController, ITransient
     /// <param name="input">实体对象.</param>
     /// <returns></returns>
     [HttpPost("")]
-    public async Task Create_Api([FromBody] PrintDevCrInput input)
+    public async Task CreateApi([FromBody] PrintDevCrInput input)
     {
         if (await _repository.IsAnyAsync(x => x.EnCode == input.enCode && x.DeleteMark == null) || await _repository.IsAnyAsync(x => x.FullName == input.fullName && x.DeleteMark == null))
             throw Oops.Oh(ErrorCode.COM1004);
@@ -310,7 +310,7 @@ public class PrintDevService : IDynamicApiController, ITransient
     /// <param name="input">实体对象.</param>
     /// <returns></returns>
     [HttpPut("{id}")]
-    public async Task Update_Api(string id, [FromBody] PrintDevUpInput input)
+    public async Task UpdateApi(string id, [FromBody] PrintDevUpInput input)
     {
         if (await _repository.IsAnyAsync(x => x.Id != id && x.EnCode == input.enCode && x.DeleteMark == null) || await _repository.IsAnyAsync(x => x.Id != id && x.FullName == input.fullName && x.DeleteMark == null))
             throw Oops.Oh(ErrorCode.COM1004);
@@ -326,7 +326,7 @@ public class PrintDevService : IDynamicApiController, ITransient
     /// <param name="id">主键值.</param>
     /// <returns></returns>
     [HttpPut("{id}/Actions/State")]
-    public async Task ActionsState_Api(string id)
+    public async Task ActionsStateApi(string id)
     {
         var isOk = await _repository.AsSugarClient().Updateable<BillRuleEntity>().SetColumns(it => new BillRuleEntity()
         {

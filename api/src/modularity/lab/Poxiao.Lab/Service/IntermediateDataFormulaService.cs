@@ -1,13 +1,11 @@
-using System;
-using System.Reflection;
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using Poxiao.DatabaseAccessor;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
-using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Core.Manager;
+using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Manager;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Attributes;
@@ -16,6 +14,8 @@ using Poxiao.Lab.Entity.Enums;
 using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
 using SqlSugar;
+using System;
+using System.Reflection;
 
 namespace Poxiao.Lab.Service;
 
@@ -413,7 +413,7 @@ public class IntermediateDataFormulaService
         // 优化：如果有旧 JSON，尝试迁移条件。
         if (!string.IsNullOrWhiteSpace(entity.Formula))
         {
-            try 
+            try
             {
                 var oldRules = Newtonsoft.Json.Linq.JArray.Parse(entity.Formula);
                 foreach (var newRule in rules)
@@ -425,7 +425,7 @@ public class IntermediateDataFormulaService
                         newRule["rootGroup"] = oldRule["rootGroup"];
                     }
                 }
-            } 
+            }
             catch { /* 忽略解析错误，直接使用新结构 */ }
         }
 
@@ -639,6 +639,28 @@ public class IntermediateDataFormulaService
         {
             col.FeatureCategories = featureCategories;
             col.FeatureLevels = featureLevels;
+        }
+
+        // 获取所有特性列表（用于 AppearanceFeatureIds 选择）
+        // 注意：如果特性非常多（例如 > 500），可能需要考虑性能或改为前端搜索 API
+        var allFeatures = await _appearanceFeatureRepository
+            .AsQueryable()
+            .Where(t => t.DeleteMark == null)
+            .Select(t => new { t.Id, t.Name })
+            .ToListAsync();
+
+        // 我们只在 AppearanceFeatureIds 列中填充这个大列表，避免数据冗余
+        var featureIdCol = sortedColumns.FirstOrDefault(c => c.ColumnName == "AppearanceFeatureIds");
+        if (featureIdCol != null)
+        {
+            // 暂时借用 FeatureCategories 字段来传递特性列表，或者扩展 DTO
+            // 为了避免修改 DTO 定义引起更多变动，我们将特性列表作为 FeatureCategories 的一种特殊形式传递
+            // 前端 ConditionRow 需要识别：如果是 AppearanceFeatureIds，则 FeatureCategories 实际是 Features
+            featureIdCol.FeatureCategories = allFeatures.Select(f => new AppearanceFeatureCategoryEntity
+            {
+                Id = f.Id,
+                Name = f.Name
+            }).ToList();
         }
 
         return sortedColumns;

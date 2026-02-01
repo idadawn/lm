@@ -19,11 +19,11 @@ public class CodeGenUnifiedHandlerHelper
         // 循环表单内控件
         foreach (var item in formDataModel)
         {
-            var config = item.__config__;
+            var config = item.Config;
             switch (config.poxiaoKey)
             {
                 case PoxiaoKeyConst.TABLE:
-                    item.__config__.children = UnifiedHandlerFormDataModel(item.__config__.children, pcColumnDesignModel, appColumnDesignModel, false, item.__vModel__);
+                    item.Config.children = UnifiedHandlerFormDataModel(item.Config.children, pcColumnDesignModel, appColumnDesignModel, false, item.VModel);
                     template.Add(item);
                     break;
                 default:
@@ -31,15 +31,15 @@ public class CodeGenUnifiedHandlerHelper
                         if (isMain)
                         {
                             // 是否为PC端查询字段与移动端查询字段
-                            bool pcSearch = (pcColumnDesignModel?.searchList?.Any(it => it.__vModel__.Equals(item.__vModel__))).ParseToBool();
-                            bool appSearch = (appColumnDesignModel?.searchList?.Any(it => it.__vModel__.Equals(item.__vModel__))).ParseToBool();
+                            bool pcSearch = (pcColumnDesignModel?.searchList?.Any(it => it.VModel.Equals(item.VModel))).ParseToBool();
+                            bool appSearch = (appColumnDesignModel?.searchList?.Any(it => it.VModel.Equals(item.VModel))).ParseToBool();
                             if (pcSearch || appSearch)
                                 item.isQueryField = true;
                             else
                                 item.isQueryField = false;
 
-                            bool pcColumn = (pcColumnDesignModel?.columnList?.Any(it => it.__vModel__.Equals(item.__vModel__))).ParseToBool();
-                            bool appColumn = (appColumnDesignModel?.columnList?.Any(it => it.__vModel__.Equals(item.__vModel__))).ParseToBool();
+                            bool pcColumn = (pcColumnDesignModel?.columnList?.Any(it => it.VModel.Equals(item.VModel))).ParseToBool();
+                            bool appColumn = (appColumnDesignModel?.columnList?.Any(it => it.VModel.Equals(item.VModel))).ParseToBool();
                             if (pcColumn || appColumn)
                                 item.isIndexShow = true;
                             else
@@ -47,15 +47,15 @@ public class CodeGenUnifiedHandlerHelper
                         }
                         else
                         {
-                            bool pcSearch = (pcColumnDesignModel?.searchList?.Any(it => it.__vModel__.Equals(string.Format("{0}-{1}", tableControlsKey, item.__vModel__)))).ParseToBool();
-                            bool appSearch = (appColumnDesignModel?.searchList?.Any(it => it.__vModel__.Equals(string.Format("{0}-{1}", tableControlsKey, item.__vModel__)))).ParseToBool();
+                            bool pcSearch = (pcColumnDesignModel?.searchList?.Any(it => it.VModel.Equals(string.Format("{0}-{1}", tableControlsKey, item.VModel)))).ParseToBool();
+                            bool appSearch = (appColumnDesignModel?.searchList?.Any(it => it.VModel.Equals(string.Format("{0}-{1}", tableControlsKey, item.VModel)))).ParseToBool();
                             if (pcSearch || appSearch)
                                 item.isQueryField = true;
                             else
                                 item.isQueryField = false;
 
-                            bool pcColumn = (pcColumnDesignModel?.columnList?.Any(it => it.__vModel__.Equals(string.Format("{0}-{1}", tableControlsKey, item.__vModel__)))).ParseToBool();
-                            bool appColumn = (appColumnDesignModel?.columnList?.Any(it => it.__vModel__.Equals(string.Format("{0}-{1}", tableControlsKey, item.__vModel__)))).ParseToBool();
+                            bool pcColumn = (pcColumnDesignModel?.columnList?.Any(it => it.VModel.Equals(string.Format("{0}-{1}", tableControlsKey, item.VModel)))).ParseToBool();
+                            bool appColumn = (appColumnDesignModel?.columnList?.Any(it => it.VModel.Equals(string.Format("{0}-{1}", tableControlsKey, item.VModel)))).ParseToBool();
                             if (pcColumn || appColumn)
                                 item.isIndexShow = true;
                             else
@@ -83,11 +83,11 @@ public class CodeGenUnifiedHandlerHelper
         // 循环表单内控件
         formDataModel.ForEach(item =>
         {
-            var config = item.__config__;
+            var config = item.Config;
             switch (config.poxiaoKey)
             {
                 case PoxiaoKeyConst.TABLE:
-                    item.__config__.children = UnifiedHandlerFormDataModel(item.__config__.children, columnDesignModel, false, item.__vModel__);
+                    item.Config.children = UnifiedHandlerFormDataModel(item.Config.children, columnDesignModel, false, item.VModel);
                     template.Add(item);
                     break;
                 default:
@@ -95,13 +95,13 @@ public class CodeGenUnifiedHandlerHelper
                         if (isMain)
                         {
                             // 是否为PC端查询字段与移动端查询字段
-                            bool search = (bool)columnDesignModel?.searchList?.Any(it => it.__vModel__.Equals(item.__vModel__));
+                            bool search = (bool)columnDesignModel?.searchList?.Any(it => it.VModel.Equals(item.VModel));
                             if (search)
                                 item.isQueryField = true;
                             else
                                 item.isQueryField = false;
 
-                            bool column = (bool)columnDesignModel?.columnList?.Any(it => it.__vModel__.Equals(item.__vModel__));
+                            bool column = (bool)columnDesignModel?.columnList?.Any(it => it.VModel.Equals(item.VModel));
                             if (column)
                                 item.isIndexShow = true;
                             else
@@ -109,7 +109,7 @@ public class CodeGenUnifiedHandlerHelper
                         }
                         else
                         {
-                            bool search = (bool)columnDesignModel?.searchList?.Any(it => it.__vModel__.Equals(string.Format("{0}-{1}", tableControlsKey, item.__vModel__)));
+                            bool search = (bool)columnDesignModel?.searchList?.Any(it => it.VModel.Equals(string.Format("{0}-{1}", tableControlsKey, item.VModel)));
                             if (search)
                             {
                                 item.isQueryField = true;
@@ -120,7 +120,7 @@ public class CodeGenUnifiedHandlerHelper
                                 item.isQueryField = false;
                             }
 
-                            bool column = (bool)columnDesignModel?.columnList?.Any(it => it.__vModel__.Equals(string.Format("{0}-{1}", tableControlsKey, item.__vModel__)));
+                            bool column = (bool)columnDesignModel?.columnList?.Any(it => it.VModel.Equals(string.Format("{0}-{1}", tableControlsKey, item.VModel)));
                             if (column)
                                 item.isIndexShow = true;
                             else
@@ -147,22 +147,22 @@ public class CodeGenUnifiedHandlerHelper
     /// <returns></returns>
     public static List<FieldsModel> LinkageChainJudgment(List<FieldsModel> formDataModel, ColumnDesignModel columnDesignModel, bool isMain = true, string tableControlsKey = "")
     {
-        var NewFormDataModel = formDataModel.Copy();
+        var newFormDataModel = formDataModel.Copy();
         var childrenFormModel = new List<FieldsModel>();
         if (!isMain)
         {
-            formDataModel = NewFormDataModel.Find(it => it.__vModel__.Equals(tableControlsKey) && it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).__config__.children;
+            formDataModel = newFormDataModel.Find(it => it.VModel.Equals(tableControlsKey) && it.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).Config.children;
             childrenFormModel = formDataModel.Copy();
         }
 
         formDataModel.ForEach(item =>
         {
-            var config = item.__config__;
+            var config = item.Config;
             switch (config.poxiaoKey)
             {
                 case PoxiaoKeyConst.TABLE:
                     {
-                        NewFormDataModel = LinkageChainJudgment(NewFormDataModel, columnDesignModel, false, item.__vModel__);
+                        newFormDataModel = LinkageChainJudgment(newFormDataModel, columnDesignModel, false, item.VModel);
                     }
                     break;
                 case PoxiaoKeyConst.RADIO:
@@ -176,21 +176,21 @@ public class CodeGenUnifiedHandlerHelper
                             // dataType = dynamic && templateJson属性有长度，则代表有远端联动
                             if (config.dataType == "dynamic" && config.templateJson?.Count() > 0)
                             {
-                                var mainFieldModel = NewFormDataModel.Where(it => item.__vModel__.Equals(it.__vModel__) && it.__config__.poxiaoKey.Equals(config.poxiaoKey)).FirstOrDefault();
+                                var mainFieldModel = newFormDataModel.Where(it => item.VModel.Equals(it.VModel) && it.Config.poxiaoKey.Equals(config.poxiaoKey)).FirstOrDefault();
                                 config.templateJson.FindAll(it => it.relationField != null && it.relationField.Any()).ForEach(items =>
                                 {
                                     mainFieldModel.IsLinkage = true;
                                     // 被联动控件信息
-                                    var fieldModel = NewFormDataModel.Where(it => it.__vModel__.Equals(items.relationField) && it.__config__.poxiaoKey.Equals(items.poxiaoKey)).FirstOrDefault();
+                                    var fieldModel = newFormDataModel.Where(it => it.VModel.Equals(items.relationField) && it.Config.poxiaoKey.Equals(items.poxiaoKey)).FirstOrDefault();
                                     fieldModel.IsLinked = true;
                                     List<LinkageConfig> linkageConfigs = new List<LinkageConfig>
                                     {
                                         new LinkageConfig()
                                         {
-                                            field = item.__vModel__,
-                                            fieldName = item.__vModel__.ToLowerCase(),
+                                            field = item.VModel,
+                                            fieldName = item.VModel.ToLowerCase(),
                                             poxiaoKey = config.poxiaoKey,
-                                            IsMultiple = config.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER) ? item.props.props.multiple : config.poxiaoKey.Equals(PoxiaoKeyConst.CHECKBOX)? true: item.multiple,
+                                            IsMultiple = config.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER) ? item.props.props.multiple : config.poxiaoKey.Equals(PoxiaoKeyConst.CHECKBOX) ? true : item.multiple,
                                         }
                                     };
                                     fieldModel.linkageReverseRelationship.AddRange(linkageConfigs);
@@ -200,23 +200,23 @@ public class CodeGenUnifiedHandlerHelper
                         default:
                             if (config.dataType == "dynamic" && config.templateJson?.Count() > 0)
                             {
-                                var childrenFieldModel = childrenFormModel.Where(it => item.__vModel__.Equals(it.__vModel__) && it.__config__.poxiaoKey.Equals(config.poxiaoKey)).FirstOrDefault();
+                                var childrenFieldModel = childrenFormModel.Where(it => item.VModel.Equals(it.VModel) && it.Config.poxiaoKey.Equals(config.poxiaoKey)).FirstOrDefault();
                                 config.templateJson.FindAll(it => it.relationField != null && it.relationField.Any()).ForEach(items =>
                                 {
                                     childrenFieldModel.IsLinkage = true;
                                     var isTrigger = false;
-                                    var fieldModel = childrenFormModel.Where(it => items.relationField.Equals(string.Format("{0}-{1}", tableControlsKey, it.__vModel__)) && it.__config__.poxiaoKey.Equals(items.poxiaoKey)).FirstOrDefault();
+                                    var fieldModel = childrenFormModel.Where(it => items.relationField.Equals(string.Format("{0}-{1}", tableControlsKey, it.VModel)) && it.Config.poxiaoKey.Equals(items.poxiaoKey)).FirstOrDefault();
                                     if (fieldModel == null)
                                     {
                                         isTrigger = true;
-                                        fieldModel = NewFormDataModel.Where(it => it.__vModel__.Equals(items.relationField) && it.__config__.poxiaoKey.Equals(items.poxiaoKey)).FirstOrDefault();
+                                        fieldModel = newFormDataModel.Where(it => it.VModel.Equals(items.relationField) && it.Config.poxiaoKey.Equals(items.poxiaoKey)).FirstOrDefault();
                                     }
                                     fieldModel.IsLinked = true;
                                     List<LinkageConfig> linkageConfigs = new List<LinkageConfig>
                                     {
                                         new LinkageConfig()
                                         {
-                                            field = item.__vModel__,
+                                            field = item.VModel,
                                             fieldName = tableControlsKey,
                                             poxiaoKey = config.poxiaoKey,
                                             isChildren = isTrigger,
@@ -234,11 +234,11 @@ public class CodeGenUnifiedHandlerHelper
                     switch (isMain)
                     {
                         case true:
-                            var mainFieldModel = NewFormDataModel.Where(it => item.__vModel__.Equals(it.__vModel__) && it.__config__.poxiaoKey.Equals(config.poxiaoKey)).FirstOrDefault();
+                            var mainFieldModel = newFormDataModel.Where(it => item.VModel.Equals(it.VModel) && it.Config.poxiaoKey.Equals(config.poxiaoKey)).FirstOrDefault();
                             item.templateJson?.FindAll(it => it.relationField != null && it.relationField.Any()).ForEach(items =>
                             {
                                 mainFieldModel.IsLinkage = true;
-                                var fieldModel = NewFormDataModel.Where(it => it.__vModel__.Equals(items.relationField) && it.__config__.poxiaoKey.Equals(items.poxiaoKey)).FirstOrDefault();
+                                var fieldModel = newFormDataModel.Where(it => it.VModel.Equals(items.relationField) && it.Config.poxiaoKey.Equals(items.poxiaoKey)).FirstOrDefault();
                                 if (fieldModel != null)
                                 {
                                     fieldModel.IsLinked = true;
@@ -246,8 +246,8 @@ public class CodeGenUnifiedHandlerHelper
                                     {
                                         new LinkageConfig()
                                         {
-                                            field = item.__vModel__,
-                                            fieldName = item.__vModel__.ToLowerCase(),
+                                            field = item.VModel,
+                                            fieldName = item.VModel.ToLowerCase(),
                                             poxiaoKey = config.poxiaoKey,
                                             IsMultiple = config.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER) ? item.props.props.multiple : config.poxiaoKey.Equals(PoxiaoKeyConst.CHECKBOX) ? true : item.multiple,
                                         }
@@ -257,23 +257,23 @@ public class CodeGenUnifiedHandlerHelper
                             });
                             break;
                         default:
-                            var childrenFieldModel = childrenFormModel.Where(it => item.__vModel__.Equals(it.__vModel__) && it.__config__.poxiaoKey.Equals(config.poxiaoKey)).FirstOrDefault();
+                            var childrenFieldModel = childrenFormModel.Where(it => item.VModel.Equals(it.VModel) && it.Config.poxiaoKey.Equals(config.poxiaoKey)).FirstOrDefault();
                             item.templateJson?.FindAll(it => it.relationField != null && it.relationField.Any()).ForEach(items =>
                             {
                                 childrenFieldModel.IsLinkage = true;
                                 var isTrigger = false;
-                                var fieldModel = childrenFormModel.Where(it => items.relationField.Equals(string.Format("{0}-{1}", tableControlsKey, it.__vModel__)) && it.__config__.poxiaoKey.Equals(items.poxiaoKey)).FirstOrDefault();
+                                var fieldModel = childrenFormModel.Where(it => items.relationField.Equals(string.Format("{0}-{1}", tableControlsKey, it.VModel)) && it.Config.poxiaoKey.Equals(items.poxiaoKey)).FirstOrDefault();
                                 if (fieldModel == null)
                                 {
                                     isTrigger = true;
-                                    fieldModel = NewFormDataModel.Where(it => it.__vModel__.Equals(items.relationField) && it.__config__.poxiaoKey.Equals(items.poxiaoKey)).FirstOrDefault();
+                                    fieldModel = newFormDataModel.Where(it => it.VModel.Equals(items.relationField) && it.Config.poxiaoKey.Equals(items.poxiaoKey)).FirstOrDefault();
                                 }
                                 fieldModel.IsLinked = true;
                                 List<LinkageConfig> linkageConfigs = new List<LinkageConfig>
                                 {
                                     new LinkageConfig()
                                     {
-                                        field = item.__vModel__,
+                                        field = item.VModel,
                                         fieldName = tableControlsKey,
                                         poxiaoKey = config.poxiaoKey,
                                         isChildren = isTrigger,
@@ -290,9 +290,9 @@ public class CodeGenUnifiedHandlerHelper
 
         if (!isMain)
         {
-            NewFormDataModel.Find(it => it.__vModel__.Equals(tableControlsKey) && it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).__config__.children = childrenFormModel;
+            newFormDataModel.Find(it => it.VModel.Equals(tableControlsKey) && it.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).Config.children = childrenFormModel;
         }
-        return NewFormDataModel;
+        return newFormDataModel;
     }
 
     /// <summary>
@@ -304,24 +304,24 @@ public class CodeGenUnifiedHandlerHelper
     {
         formDataModel.ForEach(item =>
         {
-            switch (item.__config__.poxiaoKey)
+            switch (item.Config.poxiaoKey)
             {
                 case PoxiaoKeyConst.RELATIONFORM:
                     {
-                        var list = formDataModel.FindAll(it => it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.RELATIONFORMATTR) && it.relationField.Equals(string.Format("{0}_poxiaoTable_{1}{2}", item.__vModel__, item.__config__.tableName, isMain ? 1 : 0)) && it.__config__.isStorage.Equals(1));
+                        var list = formDataModel.FindAll(it => it.Config.poxiaoKey.Equals(PoxiaoKeyConst.RELATIONFORMATTR) && it.relationField.Equals(string.Format("{0}_poxiaoTable_{1}{2}", item.VModel, item.Config.tableName, isMain ? 1 : 0)) && it.Config.isStorage.Equals(1));
                         item.relational = string.Join(",", list.Select(it => it.showField).ToList());
                     }
 
                     break;
                 case PoxiaoKeyConst.TABLE:
                     {
-                        item.__config__.children = UnifiedHandlerControlRelationship(item.__config__.children, false);
+                        item.Config.children = UnifiedHandlerControlRelationship(item.Config.children, false);
                     }
 
                     break;
                 case PoxiaoKeyConst.POPUPSELECT:
                     {
-                        var list = formDataModel.FindAll(it => it.__config__.poxiaoKey.Equals(PoxiaoKeyConst.POPUPATTR) && it.relationField.Equals(string.Format("{0}_poxiaoTable_{1}{2}", item.__vModel__, item.__config__.tableName, isMain ? 1 : 0)) && it.__config__.isStorage.Equals(1));
+                        var list = formDataModel.FindAll(it => it.Config.poxiaoKey.Equals(PoxiaoKeyConst.POPUPATTR) && it.relationField.Equals(string.Format("{0}_poxiaoTable_{1}{2}", item.VModel, item.Config.tableName, isMain ? 1 : 0)) && it.Config.isStorage.Equals(1));
                         item.relational = string.Join(",", list.Select(it => it.showField).ToList());
                     }
 

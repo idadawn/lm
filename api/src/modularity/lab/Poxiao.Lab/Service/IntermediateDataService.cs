@@ -1,6 +1,3 @@
-using System.Globalization;
-using System.Text.Json;
-using System.Text.RegularExpressions;
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -16,13 +13,16 @@ using Poxiao.Lab.Entity.Dto.IntermediateData;
 using Poxiao.Lab.Entity.Dto.IntermediateDataFormula;
 using Poxiao.Lab.Entity.Dto.RawData;
 using Poxiao.Lab.Entity.Enums;
-using Poxiao.Lab.EventBus;
 using Poxiao.Lab.Entity.Extensions;
 using Poxiao.Lab.Entity.Models;
+using Poxiao.Lab.EventBus;
 using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
 using Poxiao.Systems.Entitys.Permission;
 using SqlSugar;
+using System.Globalization;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace Poxiao.Lab.Service;
 
@@ -145,6 +145,13 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             }
         }
 
+        // 按计算状态筛选
+        if (input.CalcStatus.HasValue)
+        {
+            var status = (IntermediateDataCalcStatus)input.CalcStatus.Value;
+            query = query.Where(t => t.CalcStatus == status);
+        }
+
         // 先查询所有符合条件的数据（不排序，不分页）
         var allData = await query.ToListAsync();
 
@@ -230,7 +237,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
                 {
                     var key = kvp.Key;
                     var lowerKey = key.ToLowerInvariant();
-                    
+
                     // 尝试从映射表中获取标准的 CamelCase 名称
                     if (_propertyCamelCaseMapping.TryGetValue(lowerKey, out var correctKey))
                     {
@@ -945,7 +952,9 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     private async Task CalculateIndicatorsAsync(
         IntermediateDataEntity entity,
         string productSpecId
-    ) { }
+    )
+    {
+    }
 
     /// <summary>
     /// 批量计算公式（用于后台任务）.

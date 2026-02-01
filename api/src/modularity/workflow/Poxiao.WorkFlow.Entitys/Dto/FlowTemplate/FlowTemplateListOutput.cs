@@ -1,6 +1,7 @@
 using Poxiao.DependencyInjection;
 
 namespace Poxiao.WorkFlow.Entitys.Dto.FlowTemplate;
+
 [SuppressSniffer]
 public class FlowTemplateListOutput
 {

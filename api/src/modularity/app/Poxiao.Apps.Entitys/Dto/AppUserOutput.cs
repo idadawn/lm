@@ -1,10 +1,10 @@
-using Poxiao.Infrastructure.Models.User;
 using Poxiao.DependencyInjection;
+using Poxiao.Infrastructure.Models.User;
 
 namespace Poxiao.Apps.Entitys.Dto;
 
 /// <summary>
-/// 
+///
 /// </summary>
 [SuppressSniffer]
 public class AppUserOutput

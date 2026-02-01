@@ -15,7 +15,7 @@ public class PageInputBase : KeywordInput
     /// <summary>
     /// 当前页码:pageIndex.
     /// </summary>
-    [JsonProperty("currentPage")] 
+    [JsonProperty("currentPage")]
     public virtual int CurrentPage { get; set; } = 1;
 
     /// <summary>

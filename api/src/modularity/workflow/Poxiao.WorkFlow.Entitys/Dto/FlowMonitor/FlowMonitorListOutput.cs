@@ -78,7 +78,7 @@ public class FlowMonitorListOutput
     /// <summary>
     /// 用户名称.
     /// </summary>
-    public string? userName{ get; set; }
+    public string? userName { get; set; }
 
     /// <summary>
     /// 描述.

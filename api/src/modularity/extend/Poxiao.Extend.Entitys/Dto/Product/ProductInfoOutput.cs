@@ -112,5 +112,5 @@ public class ProductInfoOutput
     /// <summary>
     /// 子表数据.
     /// </summary>
-    public List<ProductEntryInfoOutput> productEntryList;
+    public List<ProductEntryInfoOutput> ProductEntryList;
 }

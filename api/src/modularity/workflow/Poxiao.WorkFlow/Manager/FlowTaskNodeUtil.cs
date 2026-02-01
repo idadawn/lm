@@ -1,7 +1,7 @@
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Security;
-using Poxiao.FriendlyException;
 using Poxiao.WorkFlow.Entitys.Entity;
 using Poxiao.WorkFlow.Entitys.Enum;
 using Poxiao.WorkFlow.Entitys.Model;
@@ -217,10 +217,10 @@ public class FlowTaskNodeUtil
     /// </summary>
     /// <param name="dataAll">所有节点.</param>
     /// <param name="nodeCode">节点编码.</param>
-    /// <param name="_treeList">节点集合(容器).</param>
+    /// <param name="TreeList">节点集合(容器).</param>
     /// <param name="num">递归次数.</param>
     /// <param name="max">递归次数值.</param>
-    public void NodeList(List<FlowTaskNodeEntity> dataAll, string nodeCode, List<FlowTaskNodeEntity> _treeList, long num, List<long> max)
+    public void NodeList(List<FlowTaskNodeEntity> dataAll, string nodeCode, List<FlowTaskNodeEntity> TreeList, long num, List<long> max)
     {
         num++;
         max.Add(num);
@@ -230,13 +230,13 @@ public class FlowTaskNodeUtil
             {
                 item.SortCode = num;
                 item.State = "0";
-                _treeList.Add(item);
+                TreeList.Add(item);
                 foreach (var nodeNext in item.NodeNext.Split(","))
                 {
-                    long nums = _treeList.FindAll(x => x.NodeCode.Equals(nodeNext)).Count;
+                    long nums = TreeList.FindAll(x => x.NodeCode.Equals(nodeNext)).Count;
                     if (nodeNext.IsNotEmptyOrNull() && nums == 0)
                     {
-                        NodeList(dataAll, nodeNext, _treeList, num, max);
+                        NodeList(dataAll, nodeNext, TreeList, num, max);
                     }
                 }
             }

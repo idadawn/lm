@@ -1,7 +1,7 @@
-using Poxiao.ConfigurableOptions;
-using Poxiao.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.OpenApi.Models;
+using Poxiao.ConfigurableOptions;
+using Poxiao.Reflection;
 using Swashbuckle.AspNetCore.SwaggerUI;
 
 namespace Poxiao.SpecificationDocument;

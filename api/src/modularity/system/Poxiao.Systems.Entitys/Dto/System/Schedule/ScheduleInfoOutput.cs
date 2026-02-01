@@ -11,7 +11,7 @@ public class ScheduleInfoOutput
     /// <summary>
     /// 主键.
     /// </summary>
-    public string id { get;set; }
+    public string id { get; set; }
 
     /// <summary>
     /// 类型.

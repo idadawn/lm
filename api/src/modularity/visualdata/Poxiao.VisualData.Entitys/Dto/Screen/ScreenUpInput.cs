@@ -8,12 +8,12 @@ namespace Poxiao.VisualData.Entitys.Dto.Screen
     public class ScreenUpInput
     {
         /// <summary>
-        /// 
+        ///
         /// </summary>
         public ScreenConfigUpInput config { get; set; }
 
         /// <summary>
-        /// 
+        ///
         /// </summary>
         public ScreenEntityUpInput visual { get; set; }
     }

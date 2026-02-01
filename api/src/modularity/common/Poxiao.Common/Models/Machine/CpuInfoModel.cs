@@ -18,7 +18,7 @@ public class CpuInfoModel
 
     /// <summary>
     /// CPU内核个数.
-    /// </summary> 
+    /// </summary>
     public string core { get; set; }
 
     /// <summary>

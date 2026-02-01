@@ -1,6 +1,5 @@
 ﻿namespace Poxiao.Kpi.Application;
 
-
 /// <summary>
 /// 拖拽指标.
 /// </summary>

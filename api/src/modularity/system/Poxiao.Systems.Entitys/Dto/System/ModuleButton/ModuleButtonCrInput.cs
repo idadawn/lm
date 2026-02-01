@@ -19,7 +19,7 @@ public class ModuleButtonCrInput
     public string fullName { get; set; }
 
     /// <summary>
-    /// 按钮图标	
+    /// 按钮图标
     /// </summary>
     public string icon { get; set; }
 

@@ -1,3 +1,12 @@
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using NPOI.OpenXmlFormats.Dml;
+using Poxiao.DataEncryption;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.Extras.CollectiveOAuth.Utils;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Dtos.Message;
@@ -6,11 +15,6 @@ using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Models;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DataEncryption;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.Extras.CollectiveOAuth.Utils;
-using Poxiao.FriendlyException;
 using Poxiao.Message.Interfaces;
 using Poxiao.RemoteRequest.Extensions;
 using Poxiao.Systems.Entitys.Dto.Schedule;
@@ -19,10 +23,6 @@ using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.Systems.Interfaces.System;
 using Poxiao.TaskQueue;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
-using NPOI.OpenXmlFormats.Dml;
 using SqlSugar;
 
 namespace Poxiao.Systems.System;
@@ -682,7 +682,8 @@ public class ScheduleService : IScheduleService, IDynamicApiController, ITransie
         if (upEntityList.Count > 0)
         {
             var upIsOk = await _repository.AsUpdateable(upEntityList)
-                .UpdateColumns(it => new {
+                .UpdateColumns(it => new
+                {
                     it.AllDay,
                     it.Color,
                     it.Content,

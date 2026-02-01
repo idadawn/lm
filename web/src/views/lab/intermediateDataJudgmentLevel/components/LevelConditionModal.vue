@@ -1,23 +1,15 @@
 <template>
-  <BasicModal v-bind="$attrs" @register="registerModal" :title="modalTitle" @ok="handleSubmit" :width="1200" :min-height="600" :show-ok-btn="!isReadOnly">
+  <BasicModal v-bind="$attrs" @register="registerModal" :title="modalTitle" @ok="handleSubmit" :width="1200"
+    :min-height="600" :show-ok-btn="!isReadOnly">
     <div class="p-4">
       <div v-if="loading" class="text-center py-10">
         <a-spin />
       </div>
       <div v-else>
         <!-- 使用规则卡片 -->
-        <RuleCard
-          v-if="currentRule"
-          :rule="currentRule"
-          :rule-index="0"
-          :field-options="fieldOptions"
-          :read-only-result="true"
-          :borderless="true"
-          :read-only="isReadOnly"
-          hint="条件组之间为「或」关系，组内条件为「且」关系"
-          @update:rule="handleRuleUpdate"
-          @open-formula-editor="handleOpenFormulaEditor"
-        />
+        <RuleCard v-if="currentRule" :rule="currentRule" :rule-index="0" :field-options="fieldOptions"
+          :read-only-result="true" :borderless="true" :read-only="isReadOnly" hint="条件组之间为「或」关系，组内条件为「且」关系"
+          @update:rule="handleRuleUpdate" @open-formula-editor="handleOpenFormulaEditor" />
       </div>
     </div>
 
@@ -66,8 +58,8 @@ const [registerModal, { setModalProps, closeModal }] = useModalInner(async (data
   levelName.value = data.levelName;
   resultValue.value = data.levelName;
   isReadOnly.value = !!data.readOnly;
-  modalTitle.value = isReadOnly.value 
-    ? `查看判定条件: ${levelName.value}` 
+  modalTitle.value = isReadOnly.value
+    ? `查看判定条件: ${levelName.value}`
     : `编辑判定条件: ${levelName.value}`;
 
   await loadData();
@@ -99,6 +91,9 @@ const loadData = async () => {
         const rule = JSON.parse(levelData.condition);
         console.log('DEBUG parsed rule:', rule);
         if (rule && rule.groups) {
+          // Force resultValue to match the current level name
+          // This fixes the issue where copied levels retain the old name in condition JSON
+          rule.resultValue = levelData.name;
           currentRule.value = rule;
         } else {
           createDefaultRule();
@@ -132,7 +127,7 @@ const handleRuleUpdate = (rule: AdvancedJudgmentRule) => {
 
 const handleOpenFormulaEditor = (data: any) => {
   if (isReadOnly.value) return;
-  
+
   currentFormulaCallback.value = data.onSave;
   openFormulaModal(true, {
     record: {
@@ -147,7 +142,7 @@ const handleOpenFormulaEditor = (data: any) => {
 const handleSaveFormula = (data: { id: string; formula: string }) => {
   if (currentFormulaCallback.value) {
     currentFormulaCallback.value(data.formula);
-    currentFormulaCallback.value = null; 
+    currentFormulaCallback.value = null;
   }
 };
 

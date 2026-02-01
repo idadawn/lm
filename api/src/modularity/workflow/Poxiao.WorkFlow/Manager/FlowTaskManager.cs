@@ -1,3 +1,7 @@
+using Mapster;
+using Microsoft.Extensions.DependencyInjection;
+using Poxiao.DependencyInjection;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
@@ -5,8 +9,6 @@ using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Models;
 using Poxiao.Infrastructure.Models.WorkFlow;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.FriendlyException;
 using Poxiao.Message.Interfaces;
 using Poxiao.Message.Interfaces.Message;
 using Poxiao.RemoteRequest.Extensions;
@@ -21,8 +23,6 @@ using Poxiao.WorkFlow.Entitys.Model;
 using Poxiao.WorkFlow.Entitys.Model.Properties;
 using Poxiao.WorkFlow.Interfaces.Manager;
 using Poxiao.WorkFlow.Interfaces.Repository;
-using Mapster;
-using Microsoft.Extensions.DependencyInjection;
 using SqlSugar;
 
 namespace Poxiao.WorkFlow.Manager;
@@ -35,11 +35,11 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
     private readonly IUserManager _userManager;
     private readonly ITenant _db;
     private readonly IServiceScopeFactory _serviceScopeFactory;
-    private FlowTemplateUtil flowTemplateUtil;
-    private FlowTaskUserUtil flowTaskUserUtil;
-    private FlowTaskNodeUtil flowTaskNodeUtil;
-    private FlowTaskMsgUtil flowTaskMsgUtil;
-    private FlowTaskOtherUtil flowTaskOtherUtil;
+    private FlowTemplateUtil _flowTemplateUtil;
+    private FlowTaskUserUtil _flowTaskUserUtil;
+    private FlowTaskNodeUtil _flowTaskNodeUtil;
+    private FlowTaskMsgUtil _flowTaskMsgUtil;
+    private FlowTaskOtherUtil _flowTaskOtherUtil;
 
     public FlowTaskManager(
         IFlowTaskRepository flowTaskRepository,
@@ -61,11 +61,11 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
         _usersService = usersService;
         _runService = runService;
         _userManager = userManager;
-        flowTemplateUtil = new FlowTemplateUtil(dataBaseManager, userManager, flowTaskRepository, usersService);
-        flowTaskUserUtil = new FlowTaskUserUtil(flowTaskRepository, usersService, organizeService, departmentService, userRelationService, userManager, cacheManager);
-        flowTaskNodeUtil = new FlowTaskNodeUtil(flowTaskRepository);
-        flowTaskMsgUtil = new FlowTaskMsgUtil(messageManager, flowTaskRepository, userManager, usersService, dataInterfaceService);
-        flowTaskOtherUtil = new FlowTaskOtherUtil(flowTaskRepository, usersService, runService, userManager);
+        _flowTemplateUtil = new FlowTemplateUtil(dataBaseManager, userManager, flowTaskRepository, usersService);
+        _flowTaskUserUtil = new FlowTaskUserUtil(flowTaskRepository, usersService, organizeService, departmentService, userRelationService, userManager, cacheManager);
+        _flowTaskNodeUtil = new FlowTaskNodeUtil(flowTaskRepository);
+        _flowTaskMsgUtil = new FlowTaskMsgUtil(messageManager, flowTaskRepository, userManager, usersService, dataInterfaceService);
+        _flowTaskOtherUtil = new FlowTaskOtherUtil(flowTaskRepository, usersService, runService, userManager);
         _db = context.AsTenant();
     }
 
@@ -166,7 +166,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                     {
                         item.type = "1";
                     }
-                    item.userName = await flowTaskUserUtil.GetApproverUserName(item, flowTaskParamter, output.flowTemplateInfo);
+                    item.userName = await _flowTaskUserUtil.GetApproverUserName(item, flowTaskParamter, output.flowTemplateInfo);
                 }
             }
             else
@@ -197,9 +197,9 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
         {
             var flowTaskEntity = new FlowTaskEntity();
             var flowJsonInfo = _flowTaskRepository.GetFlowTemplateInfo(flowTaskSubmitModel.flowId);
-            flowTaskSubmitModel.isDev = _flowTaskRepository.IsDevFlow(flowJsonInfo.templateId);//是否为功能表单
+            flowTaskSubmitModel.isDev = _flowTaskRepository.IsDevFlow(flowJsonInfo.templateId); //是否为功能表单
             flowTaskSubmitModel.flowJsonModel = flowJsonInfo;
-            await flowTaskOtherUtil.GetFlowTitle(flowTaskSubmitModel);
+            await _flowTaskOtherUtil.GetFlowTitle(flowTaskSubmitModel);
             // 表单数据处理
             var processId = await FlowDynamicDataManage(flowTaskSubmitModel);
             if (flowTaskSubmitModel.id.IsNullOrEmpty())
@@ -246,8 +246,8 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                         throw Oops.Oh(ErrorCode.WF0031);
                     flowTaskEntity.FlowUrgent = flowTaskSubmitModel.flowUrgent;
                     flowTaskSubmitModel.crUser = flowTaskEntity.CreatorUserId;
-                    await flowTaskOtherUtil.GetFlowTitle(flowTaskSubmitModel);
-                    flowTaskEntity.FullName = flowTaskEntity.ParentId.Equals("0") ? flowTaskSubmitModel.flowTitle : string.Format("{0}(子流程)", flowTaskSubmitModel.flowTitle); ;
+                    await _flowTaskOtherUtil.GetFlowTitle(flowTaskSubmitModel);
+                    flowTaskEntity.FullName = flowTaskEntity.ParentId.Equals("0") ? flowTaskSubmitModel.flowTitle : string.Format("{0}(子流程)", flowTaskSubmitModel.flowTitle);
                     flowTaskEntity.FlowFormContentJson = flowTaskSubmitModel.formData.ToJsonString();
                     if (flowTaskSubmitModel.status == 0)
                     {
@@ -301,20 +301,20 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
             var flowEngineEntity = flowTaskSubmitModel.flowJsonModel.ToObject<FlowJsonModel>();
 
             // 流程节点
-            flowTemplateUtil.Load(flowEngineEntity, flowTaskSubmitModel.formData.ToJsonString(), flowTaskParamter.flowTaskEntity.Id);
-            flowTaskParamter.flowTaskNodeEntityList = flowTemplateUtil.flowTaskNodeEntityList;
-            flowTaskParamter.flowTaskNodeEntity = flowTemplateUtil.startNode;
-            flowTaskParamter.approversProperties = flowTemplateUtil.startPro.ToObject<ApproversProperties>();
-            flowTaskParamter.startProperties = flowTemplateUtil.startPro;
-            flowTaskParamter.flowTaskOperatorEntity = flowTemplateUtil.startNode.Adapt<FlowTaskOperatorEntity>();
-            flowTaskParamter.flowTaskOperatorEntity.TaskId = flowTemplateUtil.startNode.TaskId;
-            flowTaskParamter.flowTaskOperatorEntity.TaskNodeId = flowTemplateUtil.startNode.Id;
+            _flowTemplateUtil.Load(flowEngineEntity, flowTaskSubmitModel.formData.ToJsonString(), flowTaskParamter.flowTaskEntity.Id);
+            flowTaskParamter.flowTaskNodeEntityList = _flowTemplateUtil.flowTaskNodeEntityList;
+            flowTaskParamter.flowTaskNodeEntity = _flowTemplateUtil.startNode;
+            flowTaskParamter.approversProperties = _flowTemplateUtil.startPro.ToObject<ApproversProperties>();
+            flowTaskParamter.startProperties = _flowTemplateUtil.startPro;
+            flowTaskParamter.flowTaskOperatorEntity = _flowTemplateUtil.startNode.Adapt<FlowTaskOperatorEntity>();
+            flowTaskParamter.flowTaskOperatorEntity.TaskId = _flowTemplateUtil.startNode.TaskId;
+            flowTaskParamter.flowTaskOperatorEntity.TaskNodeId = _flowTemplateUtil.startNode.Id;
             flowTaskParamter.flowTaskOperatorEntity.Id = "0";
 
             // 选择分支变更节点
-            await flowTaskNodeUtil.ChangeNodeListByBranch(flowTaskParamter);
+            await _flowTaskNodeUtil.ChangeNodeListByBranch(flowTaskParamter);
             #region 保存候选人/异常节点处理
-            flowTaskOtherUtil.SaveNodeCandidates(flowTaskParamter);
+            _flowTaskOtherUtil.SaveNodeCandidates(flowTaskParamter);
             #endregion
             await _flowTaskRepository.CreateTaskNode(flowTaskParamter.flowTaskNodeEntityList);
 
@@ -335,38 +335,38 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
             #endregion
 
             #region 更新当前抄送
-            await flowTaskUserUtil.GetflowTaskCirculateEntityList(flowTaskParamter, 1);
+            await _flowTaskUserUtil.GetflowTaskCirculateEntityList(flowTaskParamter, 1);
             await _flowTaskRepository.CreateTaskCirculate(flowTaskParamter.flowTaskCirculateEntityList);
             #endregion
 
             #region 流程经办记录
-            await flowTaskOtherUtil.CreateOperatorRecode(flowTaskParamter, 2);
+            await _flowTaskOtherUtil.CreateOperatorRecode(flowTaskParamter, 2);
             #endregion
 
             _db.CommitTran();
 
             #region 开始事件
-            await flowTaskMsgUtil.RequestEvents(flowTaskParamter.startProperties.initFuncConfig, flowTaskParamter);
+            await _flowTaskMsgUtil.RequestEvents(flowTaskParamter.startProperties.initFuncConfig, flowTaskParamter);
             #endregion
 
             #region 消息提醒
             // 审批消息
-            var messageDic = flowTaskOtherUtil.GroupByOperator(flowTaskParamter.flowTaskOperatorEntityList);
+            var messageDic = _flowTaskOtherUtil.GroupByOperator(flowTaskParamter.flowTaskOperatorEntityList);
             var bodyDic = new Dictionary<string, object>();
 
             //抄送
             var userIdList = flowTaskParamter.flowTaskCirculateEntityList.Select(x => x.ObjectId).ToList();
             if (userIdList.Any())
             {
-                bodyDic = flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userIdList, null, 3, flowTaskParamter.flowTaskOperatorEntity.Id);
-                await flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.copyMsgConfig, userIdList, flowTaskParamter, "MBXTLC007", bodyDic);
+                bodyDic = _flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userIdList, null, 3, flowTaskParamter.flowTaskOperatorEntity.Id);
+                await _flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.copyMsgConfig, userIdList, flowTaskParamter, "MBXTLC007", bodyDic);
             }
 
             foreach (var item in messageDic.Keys)
             {
                 var userList = messageDic[item].Select(x => x.HandleId).ToList();
-                bodyDic = flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userList, messageDic[item], 2);
-                await flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.waitMsgConfig, bodyDic.Keys.ToList(), flowTaskParamter, "MBXTLC001", bodyDic);
+                bodyDic = _flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userList, messageDic[item], 2);
+                await _flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.waitMsgConfig, bodyDic.Keys.ToList(), flowTaskParamter, "MBXTLC001", bodyDic);
                 // 超时提醒
                 await TimeoutOrRemind(flowTaskParamter, item, messageDic[item]);
             }
@@ -375,17 +375,17 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
             if (flowTaskParamter.flowTaskEntity.Status == FlowTaskStatusEnum.Adopt.ParseToInt())
             {
                 #region 结束事件
-                await flowTaskMsgUtil.RequestEvents(flowTaskParamter.startProperties.endFuncConfig, flowTaskParamter);
+                await _flowTaskMsgUtil.RequestEvents(flowTaskParamter.startProperties.endFuncConfig, flowTaskParamter);
                 #endregion
 
-                bodyDic = flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, new List<string>() { flowTaskParamter.flowTaskEntity.CreatorUserId }, null, 1);
-                await flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.endMsgConfig, new List<string>() { flowTaskParamter.flowTaskEntity.CreatorUserId }, flowTaskParamter, "MBXTLC010", bodyDic);
+                bodyDic = _flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, new List<string>() { flowTaskParamter.flowTaskEntity.CreatorUserId }, null, 1);
+                await _flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.endMsgConfig, new List<string>() { flowTaskParamter.flowTaskEntity.CreatorUserId }, flowTaskParamter, "MBXTLC010", bodyDic);
             }
 
             //委托发起消息
             if (flowTaskSubmitModel.isDelegate)
             {
-                await flowTaskMsgUtil.SendDelegateMsg("发起", flowTaskParamter.flowTaskEntity.CreatorUserId, flowTaskParamter.flowTaskEntity.FlowName);
+                await _flowTaskMsgUtil.SendDelegateMsg("发起", flowTaskParamter.flowTaskEntity.CreatorUserId, flowTaskParamter.flowTaskEntity.FlowName);
             }
             #endregion
 
@@ -409,7 +409,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
     /// <returns></returns>
     public async Task<dynamic> Audit(FlowTaskParamter flowTaskParamter, bool isAuto = false)
     {
-        var candidates = flowTaskParamter.flowTaskEntity.RejectDataId.IsNotEmptyOrNull() ? new List<FlowCandidatesEntity>() : flowTaskOtherUtil.SaveNodeCandidates(flowTaskParamter);
+        var candidates = flowTaskParamter.flowTaskEntity.RejectDataId.IsNotEmptyOrNull() ? new List<FlowCandidatesEntity>() : _flowTaskOtherUtil.SaveNodeCandidates(flowTaskParamter);
         try
         {
             _db.BeginTran();
@@ -424,7 +424,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
             }
             if (flowTaskParamter.flowTaskEntity.RejectDataId.IsNullOrEmpty())
             {
-                await flowTaskNodeUtil.ChangeNodeListByBranch(flowTaskParamter);
+                await _flowTaskNodeUtil.ChangeNodeListByBranch(flowTaskParamter);
             }
             // 依次审批当前节点所有审批人
             if (flowTaskParamter.approversProperties.counterSign == 2)
@@ -437,11 +437,11 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
             if (flowTaskParamter.flowTaskOperatorEntity.Id.IsNotEmptyOrNull())
             {
                 #region 更新当前经办数据
-                await flowTaskOtherUtil.UpdateFlowTaskOperator(flowTaskParamter, 1);
+                await _flowTaskOtherUtil.UpdateFlowTaskOperator(flowTaskParamter, 1);
                 #endregion
 
                 #region 更新当前抄送
-                await flowTaskUserUtil.GetflowTaskCirculateEntityList(flowTaskParamter, 1);
+                await _flowTaskUserUtil.GetflowTaskCirculateEntityList(flowTaskParamter, 1);
                 await _flowTaskRepository.CreateTaskCirculate(flowTaskParamter.flowTaskCirculateEntityList);
                 #endregion
             }
@@ -453,7 +453,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                 // 冻结驳回解冻必须是非前加签
                 if (flowTaskParamter.freeApproverUserId.IsNullOrEmpty() && flowTaskParamter.flowTaskOperatorEntity.RollbackId.IsNullOrEmpty())
                 {
-                    if (flowTaskParamter.approversProperties.counterSign == 0 || flowTaskOtherUtil.IsAchievebilProportion(flowTaskParamter, 1))
+                    if (flowTaskParamter.approversProperties.counterSign == 0 || _flowTaskOtherUtil.IsAchievebilProportion(flowTaskParamter, 1))
                     {
                         var fEntity = _flowTaskRepository.GetFlowFromEntity(flowTaskParamter.flowTaskNodeEntity.FormId);
                         await _runService.SaveFlowFormData(fEntity, flowTaskParamter.formData.ToJsonString(), flowTaskParamter.flowTaskEntity.Id, flowTaskParamter.flowTaskEntity.FlowId, true);
@@ -500,20 +500,20 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
             _db.CommitTran();
             #region 消息与事件
             var bodyDic = new Dictionary<string, object>();
-            flowTaskParamter.approversProperties = flowTaskOtherUtil.SyncApproProCofig(flowTaskParamter.approversProperties, flowTaskParamter.startProperties);
+            flowTaskParamter.approversProperties = _flowTaskOtherUtil.SyncApproProCofig(flowTaskParamter.approversProperties, flowTaskParamter.startProperties);
             //抄送
             var userIdList = flowTaskParamter.flowTaskCirculateEntityList.Select(x => x.ObjectId).ToList();
             if (userIdList.Any())
             {
-                bodyDic = flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userIdList, null, 3, flowTaskParamter.flowTaskOperatorEntity.Id);
-                await flowTaskMsgUtil.Alerts(flowTaskParamter.approversProperties.copyMsgConfig, userIdList, flowTaskParamter, "MBXTLC007", bodyDic);
+                bodyDic = _flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userIdList, null, 3, flowTaskParamter.flowTaskOperatorEntity.Id);
+                await _flowTaskMsgUtil.Alerts(flowTaskParamter.approversProperties.copyMsgConfig, userIdList, flowTaskParamter, "MBXTLC007", bodyDic);
             }
             //加签
             if (flowTaskParamter.freeApproverUserId.IsNotEmptyOrNull())
             {
                 userIdList = flowTaskParamter.flowTaskOperatorEntityList.Select(x => x.HandleId).ToList();
-                bodyDic = flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userIdList, flowTaskParamter.flowTaskOperatorEntityList, 2);
-                await flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.waitMsgConfig, bodyDic.Keys.ToList(), flowTaskParamter, "MBXTLC001", bodyDic);
+                bodyDic = _flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userIdList, flowTaskParamter.flowTaskOperatorEntityList, 2);
+                await _flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.waitMsgConfig, bodyDic.Keys.ToList(), flowTaskParamter, "MBXTLC001", bodyDic);
             }
             if (flowTaskParamter.flowTaskNodeEntity.Completion > 0)
             {
@@ -522,18 +522,18 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                 SpareTime.Cancel("TX_" + flowTaskParamter.flowTaskNodeEntity.Id);
 
                 #region 审批事件
-                await flowTaskMsgUtil.RequestEvents(flowTaskParamter.approversProperties.approveFuncConfig, flowTaskParamter);
+                await _flowTaskMsgUtil.RequestEvents(flowTaskParamter.approversProperties.approveFuncConfig, flowTaskParamter);
                 #endregion
 
                 #region 消息提醒
-                var messageDic = flowTaskOtherUtil.GroupByOperator(flowTaskParamter.flowTaskOperatorEntityList);
+                var messageDic = _flowTaskOtherUtil.GroupByOperator(flowTaskParamter.flowTaskOperatorEntityList);
                 //审批
                 foreach (var item in messageDic.Keys)
                 {
                     var userList = messageDic[item].Select(x => x.HandleId).ToList();
-                    bodyDic = flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userList, messageDic[item], 2);
-                    await flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.waitMsgConfig, bodyDic.Keys.ToList(), flowTaskParamter, "MBXTLC001", bodyDic);
-                    await flowTaskMsgUtil.Alerts(flowTaskParamter.approversProperties.approveMsgConfig, bodyDic.Keys.ToList(), flowTaskParamter, "MBXTLC002", bodyDic);
+                    bodyDic = _flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userList, messageDic[item], 2);
+                    await _flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.waitMsgConfig, bodyDic.Keys.ToList(), flowTaskParamter, "MBXTLC001", bodyDic);
+                    await _flowTaskMsgUtil.Alerts(flowTaskParamter.approversProperties.approveMsgConfig, bodyDic.Keys.ToList(), flowTaskParamter, "MBXTLC002", bodyDic);
                     // 超时提醒
                     await TimeoutOrRemind(flowTaskParamter, item, messageDic[item]);
                 }
@@ -542,17 +542,17 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                 if (flowTaskParamter.flowTaskEntity.Status == FlowTaskStatusEnum.Adopt.ParseToInt())
                 {
                     #region 结束事件
-                    await flowTaskMsgUtil.RequestEvents(flowTaskParamter.startProperties.endFuncConfig, flowTaskParamter);
+                    await _flowTaskMsgUtil.RequestEvents(flowTaskParamter.startProperties.endFuncConfig, flowTaskParamter);
                     #endregion
                     //结束
-                    bodyDic = flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, new List<string>() { flowTaskParamter.flowTaskEntity.CreatorUserId }, null, 1);
-                    await flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.endMsgConfig, new List<string>() { flowTaskParamter.flowTaskEntity.CreatorUserId }, flowTaskParamter, "MBXTLC010", bodyDic);
+                    bodyDic = _flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, new List<string>() { flowTaskParamter.flowTaskEntity.CreatorUserId }, null, 1);
+                    await _flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.endMsgConfig, new List<string>() { flowTaskParamter.flowTaskEntity.CreatorUserId }, flowTaskParamter, "MBXTLC010", bodyDic);
                 }
 
                 //委托审批消息
                 if (flowTaskParamter.flowTaskOperatorEntity.HandleId.IsNotEmptyOrNull() && !_userManager.UserId.Equals(flowTaskParamter.flowTaskOperatorEntity.HandleId))
                 {
-                    await flowTaskMsgUtil.SendDelegateMsg("审批", flowTaskParamter.flowTaskOperatorEntity.HandleId, flowTaskParamter.flowTaskEntity.FlowName);
+                    await _flowTaskMsgUtil.SendDelegateMsg("审批", flowTaskParamter.flowTaskOperatorEntity.HandleId, flowTaskParamter.flowTaskEntity.FlowName);
                 }
             }
             #endregion
@@ -586,11 +586,11 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
             flowTaskParamter.formData = await _runService.GetFlowFormDataDetails(flowTaskParamter.flowTaskNodeEntity.FormId, flowTaskParamter.flowTaskEntity.Id);
             var flowEngineEntity = _flowTaskRepository.GetFlowTemplateInfo(flowTaskParamter.flowTaskEntity.FlowId);
             #region 更新当前经办数据
-            await flowTaskOtherUtil.UpdateFlowTaskOperator(flowTaskParamter, 0);
+            await _flowTaskOtherUtil.UpdateFlowTaskOperator(flowTaskParamter, 0);
             #endregion
 
             #region 自定义抄送
-            await flowTaskUserUtil.GetflowTaskCirculateEntityList(flowTaskParamter, 0);
+            await _flowTaskUserUtil.GetflowTaskCirculateEntityList(flowTaskParamter, 0);
             await _flowTaskRepository.CreateTaskCirculate(flowTaskParamter.flowTaskCirculateEntityList);
             #endregion
 
@@ -624,15 +624,15 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
 
             #region 消息与事件
             //退回事件
-            await flowTaskMsgUtil.RequestEvents(flowTaskParamter.approversProperties.rejectFuncConfig, flowTaskParamter);
-            flowTaskParamter.approversProperties = flowTaskOtherUtil.SyncApproProCofig(flowTaskParamter.approversProperties, flowTaskParamter.startProperties);
+            await _flowTaskMsgUtil.RequestEvents(flowTaskParamter.approversProperties.rejectFuncConfig, flowTaskParamter);
+            flowTaskParamter.approversProperties = _flowTaskOtherUtil.SyncApproProCofig(flowTaskParamter.approversProperties, flowTaskParamter.startProperties);
             var bodyDic = new Dictionary<string, object>();
             //抄送
             var userIdList = flowTaskParamter.flowTaskCirculateEntityList.Select(x => x.ObjectId).ToList();
             if (userIdList.Any())
             {
-                bodyDic = flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userIdList, null, 3, flowTaskParamter.flowTaskOperatorEntity.Id);
-                await flowTaskMsgUtil.Alerts(flowTaskParamter.approversProperties.copyMsgConfig, userIdList, flowTaskParamter, "MBXTLC007", bodyDic);
+                bodyDic = _flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userIdList, null, 3, flowTaskParamter.flowTaskOperatorEntity.Id);
+                await _flowTaskMsgUtil.Alerts(flowTaskParamter.approversProperties.copyMsgConfig, userIdList, flowTaskParamter, "MBXTLC007", bodyDic);
             }
 
             if (flowTaskParamter.flowTaskOperatorEntityList.Any())
@@ -642,18 +642,18 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                 SpareTime.Cancel("TX_" + flowTaskParamter.flowTaskNodeEntity.Id);
 
                 #region 审批事件
-                await flowTaskMsgUtil.RequestEvents(flowTaskParamter.approversProperties.approveFuncConfig, flowTaskParamter);
+                await _flowTaskMsgUtil.RequestEvents(flowTaskParamter.approversProperties.approveFuncConfig, flowTaskParamter);
                 #endregion
 
                 #region 消息提醒
-                var messageDic = flowTaskOtherUtil.GroupByOperator(flowTaskParamter.flowTaskOperatorEntityList);
+                var messageDic = _flowTaskOtherUtil.GroupByOperator(flowTaskParamter.flowTaskOperatorEntityList);
                 //审批
                 foreach (var item in messageDic.Keys)
                 {
                     var userList = messageDic[item].Select(x => x.HandleId).ToList();
-                    bodyDic = flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userList, messageDic[item], 2);
-                    await flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.waitMsgConfig, bodyDic.Keys.ToList(), flowTaskParamter, "MBXTLC001", bodyDic);
-                    await flowTaskMsgUtil.Alerts(flowTaskParamter.approversProperties.rejectMsgConfig, bodyDic.Keys.ToList(), flowTaskParamter, "MBXTLC003", bodyDic);
+                    bodyDic = _flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userList, messageDic[item], 2);
+                    await _flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.waitMsgConfig, bodyDic.Keys.ToList(), flowTaskParamter, "MBXTLC001", bodyDic);
+                    await _flowTaskMsgUtil.Alerts(flowTaskParamter.approversProperties.rejectMsgConfig, bodyDic.Keys.ToList(), flowTaskParamter, "MBXTLC003", bodyDic);
                     // 超时提醒
                     await TimeoutOrRemind(flowTaskParamter, item, messageDic[item]);
                 }
@@ -664,13 +664,13 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
             //委托审批消息
             if (!_userManager.UserId.Equals(flowTaskParamter.flowTaskOperatorEntity.HandleId))
             {
-                await flowTaskMsgUtil.SendDelegateMsg("审批", flowTaskParamter.flowTaskOperatorEntity.HandleId, flowTaskParamter.flowTaskEntity.FlowName);
+                await _flowTaskMsgUtil.SendDelegateMsg("审批", flowTaskParamter.flowTaskOperatorEntity.HandleId, flowTaskParamter.flowTaskEntity.FlowName);
             }
             //退回到发起.
             if (flowTaskParamter.flowTaskEntity.Status == FlowTaskStatusEnum.Reject.ParseToInt())
             {
-                bodyDic = flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, new List<string>() { flowTaskParamter.flowTaskEntity.CreatorUserId }, null, 2);
-                await flowTaskMsgUtil.Alerts(flowTaskParamter.approversProperties.rejectMsgConfig, new List<string>() { flowTaskParamter.flowTaskEntity.CreatorUserId }, flowTaskParamter, "MBXTLC003", bodyDic);
+                bodyDic = _flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, new List<string>() { flowTaskParamter.flowTaskEntity.CreatorUserId }, null, 2);
+                await _flowTaskMsgUtil.Alerts(flowTaskParamter.approversProperties.rejectMsgConfig, new List<string>() { flowTaskParamter.flowTaskEntity.CreatorUserId }, flowTaskParamter, "MBXTLC003", bodyDic);
             }
             #endregion
 
@@ -728,7 +728,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
             #region 经办修改
             var delOperatorRecordIds = new List<string>();
             //加签人
-            var upOperatorList = await flowTaskUserUtil.GetOperatorNew(flowTaskParamter.flowTaskOperatorEntity.Id, new List<FlowTaskOperatorEntity>());
+            var upOperatorList = await _flowTaskUserUtil.GetOperatorNew(flowTaskParamter.flowTaskOperatorEntity.Id, new List<FlowTaskOperatorEntity>());
             // 前加签回滚经办撤回
             if (!upOperatorList.Any() && flowTaskParamter.flowTaskOperatorEntity.ParentId.IsNotEmptyOrNull() && flowTaskParamter.flowTaskOperatorEntity.RollbackId.IsNotEmptyOrNull())
             {
@@ -789,8 +789,8 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                 #endregion
 
                 #region 更新任务流程
-                flowTaskParamter.flowTaskEntity.ThisStepId = flowTaskNodeUtil.GetRecallThisStepId(new List<FlowTaskNodeEntity>() { flowTaskParamter.flowTaskNodeEntity }, flowTaskParamter.flowTaskEntity.ThisStepId);
-                flowTaskParamter.flowTaskEntity.ThisStep = flowTaskNodeUtil.GetThisStep(flowTaskParamter.flowTaskNodeEntityList, flowTaskParamter.flowTaskEntity.ThisStepId);
+                flowTaskParamter.flowTaskEntity.ThisStepId = _flowTaskNodeUtil.GetRecallThisStepId(new List<FlowTaskNodeEntity>() { flowTaskParamter.flowTaskNodeEntity }, flowTaskParamter.flowTaskEntity.ThisStepId);
+                flowTaskParamter.flowTaskEntity.ThisStep = _flowTaskNodeUtil.GetThisStep(flowTaskParamter.flowTaskNodeEntityList, flowTaskParamter.flowTaskEntity.ThisStepId);
                 flowTaskParamter.flowTaskEntity.Completion = flowTaskParamter.flowTaskNodeEntity.NodePropertyJson.ToObject<ApproversProperties>().progress.ParseToInt();
                 flowTaskParamter.flowTaskEntity.Status = FlowTaskStatusEnum.Handle.ParseToInt();
                 await _flowTaskRepository.UpdateTask(flowTaskParamter.flowTaskEntity);
@@ -835,12 +835,12 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
 
             #region 撤回记录
 
-            await flowTaskOtherUtil.CreateOperatorRecode(flowTaskParamter, 3);
+            await _flowTaskOtherUtil.CreateOperatorRecode(flowTaskParamter, 3);
             #endregion
 
             _db.CommitTran();
             #region 撤回事件
-            await flowTaskMsgUtil.RequestEvents(flowTaskParamter.approversProperties.recallFuncConfig, flowTaskParamter);
+            await _flowTaskMsgUtil.RequestEvents(flowTaskParamter.approversProperties.recallFuncConfig, flowTaskParamter);
             #endregion
         }
         catch (AppFriendlyException ex)
@@ -881,7 +881,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
             #endregion
 
             #region 撤回记录
-            await flowTaskOtherUtil.CreateOperatorRecode(flowTaskParamter, 3);
+            await _flowTaskOtherUtil.CreateOperatorRecode(flowTaskParamter, 3);
             #endregion
             _db.CommitTran();
 
@@ -897,7 +897,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
             #endregion
 
             #region 撤回事件
-            await flowTaskMsgUtil.RequestEvents(flowTaskParamter.startProperties.flowRecallFuncConfig, flowTaskParamter);
+            await _flowTaskMsgUtil.RequestEvents(flowTaskParamter.startProperties.flowRecallFuncConfig, flowTaskParamter);
             #endregion
         }
         catch (AppFriendlyException ex)
@@ -917,16 +917,16 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
         {
             _db.BeginTran();
             #region 更新实例
-            await flowTaskOtherUtil.CancelTask(flowTaskParamter.flowTaskEntity);
+            await _flowTaskOtherUtil.CancelTask(flowTaskParamter.flowTaskEntity);
             #endregion
 
             #region 作废记录
-            await flowTaskOtherUtil.CreateOperatorRecode(flowTaskParamter, 4);
+            await _flowTaskOtherUtil.CreateOperatorRecode(flowTaskParamter, 4);
             #endregion
             _db.CommitTran();
             //结束
-            var bodyDic = flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, new List<string>() { flowTaskParamter.flowTaskEntity.CreatorUserId }, null, 1);
-            await flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.endMsgConfig, new List<string>() { flowTaskParamter.flowTaskEntity.CreatorUserId }, flowTaskParamter, "MBXTLC010", bodyDic);
+            var bodyDic = _flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, new List<string>() { flowTaskParamter.flowTaskEntity.CreatorUserId }, null, 1);
+            await _flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.endMsgConfig, new List<string>() { flowTaskParamter.flowTaskEntity.CreatorUserId }, flowTaskParamter, "MBXTLC010", bodyDic);
         }
         catch (AppFriendlyException ex)
         {
@@ -945,11 +945,11 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
         try
         {
             _db.BeginTran();
-            var OperatorIds = flowTaskParamter.thisFlowTaskOperatorEntityList.Select(x => x.Id).ToList();
-            await _flowTaskRepository.DeleteTaskOperator(OperatorIds);
-            await _flowTaskRepository.DeleteTaskOperatorUser(OperatorIds);
-            var OperatorRecordIds = (await _flowTaskRepository.GetTaskOperatorRecordList(x => x.TaskId == flowTaskParamter.flowTaskEntity.Id && OperatorIds.Contains(x.TaskOperatorId))).Select(x => x.Id).ToList();
-            await _flowTaskRepository.DeleteTaskOperatorRecord(OperatorRecordIds);
+            var operatorIds = flowTaskParamter.thisFlowTaskOperatorEntityList.Select(x => x.Id).ToList();
+            await _flowTaskRepository.DeleteTaskOperator(operatorIds);
+            await _flowTaskRepository.DeleteTaskOperatorUser(operatorIds);
+            var operatorRecordIds = (await _flowTaskRepository.GetTaskOperatorRecordList(x => x.TaskId == flowTaskParamter.flowTaskEntity.Id && operatorIds.Contains(x.TaskOperatorId))).Select(x => x.Id).ToList();
+            await _flowTaskRepository.DeleteTaskOperatorRecord(operatorRecordIds);
             flowTaskParamter.flowTaskOperatorEntity = flowTaskParamter.thisFlowTaskOperatorEntityList.FirstOrDefault().Copy();
             flowTaskParamter.flowTaskOperatorEntity.Id = SnowflakeIdHelper.NextId();
             flowTaskParamter.flowTaskOperatorEntity.HandleId = flowTaskParamter.freeApproverUserId;
@@ -961,15 +961,15 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                 throw Oops.Oh(ErrorCode.WF0008);
 
             #region 流转记录
-            await flowTaskOtherUtil.CreateOperatorRecode(flowTaskParamter, 5);
+            await _flowTaskOtherUtil.CreateOperatorRecode(flowTaskParamter, 5);
             #endregion
             _db.CommitTran();
 
             SpareTime.Cancel("CS_" + flowTaskParamter.flowTaskOperatorEntity.TaskNodeId);
             SpareTime.Cancel("TX_" + flowTaskParamter.flowTaskOperatorEntity.TaskNodeId);
             var userList = new List<string>() { flowTaskParamter.freeApproverUserId };
-            var bodyDic = flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userList, new List<FlowTaskOperatorEntity>() { flowTaskParamter.flowTaskOperatorEntity }, 2);
-            await flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.waitMsgConfig, bodyDic.Keys.ToList(), flowTaskParamter, "MBXTLC001", bodyDic);
+            var bodyDic = _flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userList, new List<FlowTaskOperatorEntity>() { flowTaskParamter.flowTaskOperatorEntity }, 2);
+            await _flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.waitMsgConfig, bodyDic.Keys.ToList(), flowTaskParamter, "MBXTLC001", bodyDic);
             // 超时提醒
             await TimeoutOrRemind(flowTaskParamter, flowTaskParamter.flowTaskOperatorEntity.TaskNodeId, new List<FlowTaskOperatorEntity>() { flowTaskParamter.flowTaskOperatorEntity });
         }
@@ -999,13 +999,13 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                 throw Oops.Oh(ErrorCode.WF0007);
 
             #region 流转记录
-            await flowTaskOtherUtil.CreateOperatorRecode(flowTaskParamter, 7);
+            await _flowTaskOtherUtil.CreateOperatorRecode(flowTaskParamter, 7);
             #endregion
             _db.CommitTran();
 
             var userList = new List<string>() { flowTaskParamter.freeApproverUserId };
-            var bodyDic = flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userList, new List<FlowTaskOperatorEntity>() { flowTaskParamter.flowTaskOperatorEntity }, 2);
-            await flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.waitMsgConfig, bodyDic.Keys.ToList(), flowTaskParamter, "MBXTLC001", bodyDic);
+            var bodyDic = _flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userList, new List<FlowTaskOperatorEntity>() { flowTaskParamter.flowTaskOperatorEntity }, 2);
+            await _flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.waitMsgConfig, bodyDic.Keys.ToList(), flowTaskParamter, "MBXTLC001", bodyDic);
             // 超时提醒
             await TimeoutOrRemind(flowTaskParamter, flowTaskParamter.flowTaskOperatorEntity.TaskNodeId, new List<FlowTaskOperatorEntity>() { flowTaskParamter.flowTaskOperatorEntity });
 
@@ -1037,12 +1037,12 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
             _db.CommitTran();
 
             var bodyDic = new Dictionary<string, object>();
-            var messageDic = flowTaskOtherUtil.GroupByOperator(flowTaskOperatorEntityList);
+            var messageDic = _flowTaskOtherUtil.GroupByOperator(flowTaskOperatorEntityList);
             foreach (var item in messageDic.Keys)
             {
                 var userList = messageDic[item].Select(x => x.HandleId).ToList();
-                bodyDic = flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userList, messageDic[item], 2);
-                await flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.waitMsgConfig, bodyDic.Keys.ToList(), flowTaskParamter, "MBXTLC001", bodyDic);
+                bodyDic = _flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userList, messageDic[item], 2);
+                await _flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.waitMsgConfig, bodyDic.Keys.ToList(), flowTaskParamter, "MBXTLC001", bodyDic);
             }
         }
         catch (AppFriendlyException ex)
@@ -1072,25 +1072,25 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
         var formData = flowHandleModel.formData;
         // 是否达到会签比例
         var isCom = true;
-        flowTemplateUtil.Load(flowEngineEntity, formData.ToJsonString(), string.Empty);
+        _flowTemplateUtil.Load(flowEngineEntity, formData.ToJsonString(), string.Empty);
         if (id == "0")
         {
             //所有节点
-            flowTaskNodeEntityList = flowTemplateUtil.flowTaskNodeEntityList;
-            nextNodeEntityList = flowTaskNodeEntityList.FindAll(m => flowTemplateUtil.startNode.NodeNext.Contains(m.NodeCode));
+            flowTaskNodeEntityList = _flowTemplateUtil.flowTaskNodeEntityList;
+            nextNodeEntityList = flowTaskNodeEntityList.FindAll(m => _flowTemplateUtil.startNode.NodeNext.Contains(m.NodeCode));
         }
         else
         {
             var flowTaskOperator = await _flowTaskRepository.GetTaskOperatorInfo(id);
-            if (flowTaskOperator.ParentId.IsNotEmptyOrNull() && type == 0) return output;// 加签不弹窗
+            if (flowTaskOperator.ParentId.IsNotEmptyOrNull() && type == 0) return output; // 加签不弹窗
             // 选择分支：初始审批人前加签不算审批 后加签算审批
             var flowTaskOperatorList = await _flowTaskRepository.GetTaskOperatorList(x => x.TaskId == flowTaskOperator.TaskId && x.TaskNodeId == flowTaskOperator.TaskNodeId && x.State == "0" && (SqlFunc.IsNullOrEmpty(x.ParentId) || !SqlFunc.IsNullOrEmpty(x.RollbackId)));
             var flowTaskNodeEntity = await _flowTaskRepository.GetTaskNodeInfo(flowTaskOperator.TaskNodeId);
             flowTaskNodeEntityList = await _flowTaskRepository.GetTaskNodeList(x => x.State == "0" && x.TaskId == flowTaskOperator.TaskId);
             #region 审批驳回撤回还原选择分支父节点下一节点数据
-            if (flowTemplateUtil.flowTaskNodeEntityList.Any(m => flowTaskNodeEntity.NodeNext.Contains(m.NodeCode) && m.NodePropertyJson.ToObject<ApproversProperties>().isBranchFlow))
+            if (_flowTemplateUtil.flowTaskNodeEntityList.Any(m => flowTaskNodeEntity.NodeNext.Contains(m.NodeCode) && m.NodePropertyJson.ToObject<ApproversProperties>().isBranchFlow))
             {
-                flowTaskNodeEntity.NodeNext = flowTemplateUtil.flowTaskNodeEntityList.Find(x => x.NodeCode == flowTaskNodeEntity.NodeCode).NodeNext;
+                flowTaskNodeEntity.NodeNext = _flowTemplateUtil.flowTaskNodeEntityList.Find(x => x.NodeCode == flowTaskNodeEntity.NodeCode).NodeNext;
             }
             #endregion
             nextNodeEntityList = flowTaskNodeEntityList.FindAll(m => flowTaskNodeEntity.NodeNext.Contains(m.NodeCode));
@@ -1102,15 +1102,15 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                     flowTaskNodeEntity = flowTaskNodeEntity,
                     approversProperties = flowTaskNodeEntity.NodePropertyJson.ToObject<ApproversProperties>(),
                 };
-                isCom = flowTaskOtherUtil.IsAchievebilProportion(flowTaskParamter, 1);
+                isCom = _flowTaskOtherUtil.IsAchievebilProportion(flowTaskParamter, 1);
             }
         }
         nextNodeEntity = flowTaskNodeEntityList.Find(x => x.NodeCode.Equals(flowHandleModel.nodeCode));
         if (type == 1)
         {
-            return flowTaskUserUtil.GetCandidateItems(nextNodeEntity, flowHandleModel);
+            return _flowTaskUserUtil.GetCandidateItems(nextNodeEntity, flowHandleModel);
         }
-        await flowTaskUserUtil.GetCandidates(output, nextNodeEntityList, flowTaskNodeEntityList);
+        await _flowTaskUserUtil.GetCandidates(output, nextNodeEntityList, flowTaskNodeEntityList);
         // 弹窗类型 1:条件分支弹窗(包含候选人) 2:候选人弹窗 3:无弹窗
         var branchType = output.Count > 0 ? (output.Any(x => x.isBranchFlow) ? 1 : 2) : 3;
         // 无弹窗：1.条件分支且未达到会签比例，2.任务冻结驳回
@@ -1130,8 +1130,8 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
     public async Task<dynamic> NodeSelector(string flowId)
     {
         var flowJsonModel = _flowTaskRepository.GetFlowTemplateInfo(flowId);
-        flowTemplateUtil.Load(flowJsonModel, null, string.Empty);
-        var taskNodeList = flowTemplateUtil.flowTaskNodeEntityList;
+        _flowTemplateUtil.Load(flowJsonModel, null, string.Empty);
+        var taskNodeList = _flowTemplateUtil.flowTaskNodeEntityList;
         return taskNodeList.FindAll(x => FlowTaskNodeTypeEnum.approver.ParseToString().Equals(x.NodeType)).Select(x => new { id = x.NodeCode, fullName = x.NodePropertyJson.ToObject<ApproversProperties>().title }).ToList();
     }
 
@@ -1145,8 +1145,8 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
     {
         //所有节点
         var flowEngineEntity = _flowTaskRepository.GetFlowTemplateInfo(flowId);
-        flowTemplateUtil.Load(flowEngineEntity, null, string.Empty);
-        var taskNodeList = flowTemplateUtil.flowTaskNodeEntityList;
+        _flowTemplateUtil.Load(flowEngineEntity, null, string.Empty);
+        var taskNodeList = _flowTemplateUtil.flowTaskNodeEntityList;
         var flowTaskOperator = await _flowTaskRepository.GetTaskOperatorInfo(flowTaskOperatorId);
         // 当前经办节点实例
         var node = await _flowTaskRepository.GetTaskNodeInfo(flowTaskOperator.TaskNodeId);
@@ -1231,9 +1231,9 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
     public async Task AdjustNodeByConNew(FlowJsonModel flowJsonEntity, object formData, FlowTaskOperatorEntity flowTaskOperatorEntity, bool isBranchFlow = false)
     {
         var data = formData.ToJsonString();
-        flowTemplateUtil.Load(flowJsonEntity, data, flowTaskOperatorEntity.TaskId, false);
-        var flag1 = flowTemplateUtil.taskNodeList.Any(x => x.upNodeId == flowTaskOperatorEntity.NodeCode && x.isBranchFlow);
-        var flag2 = flowTemplateUtil.taskNodeList.Any(x => x.upNodeId == flowTaskOperatorEntity.NodeCode && FlowTaskNodeTypeEnum.condition.ParseToString().Equals(x.type));
+        _flowTemplateUtil.Load(flowJsonEntity, data, flowTaskOperatorEntity.TaskId, false);
+        var flag1 = _flowTemplateUtil.taskNodeList.Any(x => x.upNodeId == flowTaskOperatorEntity.NodeCode && x.isBranchFlow);
+        var flag2 = _flowTemplateUtil.taskNodeList.Any(x => x.upNodeId == flowTaskOperatorEntity.NodeCode && FlowTaskNodeTypeEnum.condition.ParseToString().Equals(x.type));
 
         //if (isBranchFlow)
         //{
@@ -1251,14 +1251,14 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
             var oldNodeList = await _flowTaskRepository.GetTaskNodeList(x => x.TaskId == flowTaskOperatorEntity.TaskId && x.State != "-2");
             var newNodeList = new List<FlowTaskNodeEntity>();
             // 获取新的节点数据
-            flowTemplateUtil.Load(flowJsonEntity, data, flowTaskOperatorEntity.TaskId);
+            _flowTemplateUtil.Load(flowJsonEntity, data, flowTaskOperatorEntity.TaskId);
             // 替换原有id
-            flowTemplateUtil.flowTaskNodeEntityList.Where(x => oldNodeList.Select(y => y.NodeCode).Contains(x.NodeCode)).ToList().ForEach(item =>
+            _flowTemplateUtil.flowTaskNodeEntityList.Where(x => oldNodeList.Select(y => y.NodeCode).Contains(x.NodeCode)).ToList().ForEach(item =>
             {
                 item.Id = oldNodeList.FirstOrDefault(x => x.NodeCode == item.NodeCode).Id;
             });
 
-            var flowNodeList = flowTemplateUtil.flowTaskNodeEntityList;
+            var flowNodeList = _flowTemplateUtil.flowTaskNodeEntityList;
 
             // 当前节点以下节点数据
             var nodeList = new List<FlowTaskNodeEntity>();
@@ -1266,8 +1266,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
             {
                 nodeList.Add(flowNodeList.Find(x => x.NodeCode == flowTaskOperatorEntity.NodeCode));
             }
-            flowTaskNodeUtil.RecursiveNode(flowNodeList, flowTaskOperatorEntity.NodeCode, nodeList);
-
+            _flowTaskNodeUtil.RecursiveNode(flowNodeList, flowTaskOperatorEntity.NodeCode, nodeList);
 
             foreach (var item in oldNodeList)
             {
@@ -1288,7 +1287,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                 x.State = "1";
             });
             newNodeList.Remove(flowNodeList.FirstOrDefault(x => x.NodeCode == "end"));
-            flowTemplateUtil.UpdateNodeSort(newNodeList);
+            _flowTemplateUtil.UpdateNodeSort(newNodeList);
             await _flowTaskRepository.UpdateTaskNode(newNodeList);
         }
     }
@@ -1300,7 +1299,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
     /// <returns></returns>
     public bool IsSubFlowUpNode(FlowTaskParamter flowTaskParamter)
     {
-        var rejectNodeList = flowTaskNodeUtil.GetRejectNode(flowTaskParamter);
+        var rejectNodeList = _flowTaskNodeUtil.GetRejectNode(flowTaskParamter);
         return rejectNodeList.Any(x => FlowTaskNodeTypeEnum.subFlow.ParseToString().Equals(x.NodeType));
     }
 
@@ -1360,7 +1359,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                 throw Oops.Oh(ErrorCode.WF0034);
             // 递归获取变更节点下级所有节点
             var changeNodeNextList = new List<FlowTaskNodeEntity>();
-            await flowTaskNodeUtil.RecursiveNode(flowTaskParamter.flowTaskNodeEntityList, changeNode.NodeCode, changeNodeNextList);
+            await _flowTaskNodeUtil.RecursiveNode(flowTaskParamter.flowTaskNodeEntityList, changeNode.NodeCode, changeNodeNextList);
             changeNodeNextList.Add(changeNode);
             var changeNodeNextIds = changeNodeNextList.Select(x => x.Id).ToList();
             // 将非变更节点以及其下级节点全部已完成
@@ -1403,7 +1402,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
             {
                 flowTaskParamter.formData = await _runService.GetFlowFormDataDetails(changeNode.FormId, changeNode.TaskId);
             }
-            await flowTaskUserUtil.AddFlowTaskOperatorEntityByAssigneeType(flowTaskParamter, changeNode, 3);
+            await _flowTaskUserUtil.AddFlowTaskOperatorEntityByAssigneeType(flowTaskParamter, changeNode, 3);
             if (flowTaskParamter.errorNodeList.Any())
             {
                 _db.RollbackTran();
@@ -1451,19 +1450,19 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
 
             #region 流程经办记录
             var handleStatus = flowTaskParamter.resurgence ? 9 : 8;
-            await flowTaskOtherUtil.CreateOperatorRecode(flowTaskParamter, handleStatus);
+            await _flowTaskOtherUtil.CreateOperatorRecode(flowTaskParamter, handleStatus);
             #endregion
             _db.CommitTran();
 
             #region 消息提醒
-            var messageDic = flowTaskOtherUtil.GroupByOperator(flowTaskOperatorEntityList);
+            var messageDic = _flowTaskOtherUtil.GroupByOperator(flowTaskOperatorEntityList);
             //审批
             foreach (var item in messageDic.Keys)
             {
                 var userList = messageDic[item].Select(x => x.HandleId).ToList();
-                var bodyDic = flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userList, new List<FlowTaskOperatorEntity>() { flowTaskParamter.flowTaskOperatorEntity }, 2);
-                await flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.waitMsgConfig, bodyDic.Keys.ToList(), flowTaskParamter, "MBXTLC001", bodyDic);
-                await TimeoutOrRemind(flowTaskParamter, item, messageDic[item]);// 超时提醒
+                var bodyDic = _flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userList, new List<FlowTaskOperatorEntity>() { flowTaskParamter.flowTaskOperatorEntity }, 2);
+                await _flowTaskMsgUtil.Alerts(flowTaskParamter.startProperties.waitMsgConfig, bodyDic.Keys.ToList(), flowTaskParamter, "MBXTLC001", bodyDic);
+                await TimeoutOrRemind(flowTaskParamter, item, messageDic[item]); // 超时提醒
             }
             #endregion
             return flowTaskCandidateModels;
@@ -1493,12 +1492,12 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                 return new { list = new List<object>() { new { id = "0", nodeCode = string.Join(",", upNodeCodeList1), nodeName = "上级审批节点" } }, isLastAppro = true };
             case "2":
                 var upNodeList = new List<FlowTaskNodeEntity>();
-                await flowTaskNodeUtil.RecursiveNode(flowTaskParamter.flowTaskNodeEntityList, flowTaskParamter.flowTaskNodeEntity.NodeCode, upNodeList, true);
-                var isLastAppro = flowTaskParamter.approversProperties.counterSign == 0 || flowTaskOtherUtil.IsAchievebilProportion(flowTaskParamter, 0);
+                await _flowTaskNodeUtil.RecursiveNode(flowTaskParamter.flowTaskNodeEntityList, flowTaskParamter.flowTaskNodeEntity.NodeCode, upNodeList, true);
+                var isLastAppro = flowTaskParamter.approversProperties.counterSign == 0 || _flowTaskOtherUtil.IsAchievebilProportion(flowTaskParamter, 0);
                 var upNodeCodeList2 = upNodeList.FindAll(x => !FlowTaskNodeTypeEnum.subFlow.ParseToString().Equals(x.NodeType)).Select(x => new { id = x.Id, nodeCode = x.NodeCode, nodeName = x.NodeName }).ToList();
                 return new { list = upNodeCodeList2, isLastAppro = isLastAppro };
             default:
-                var upNodeCodeList = new List<object>() { new { id = "0", nodeCode = flowTaskParamter.approversProperties.rejectStep, nodeName = flowTaskNodeUtil.GetThisStep(flowTaskParamter.flowTaskNodeEntityList, flowTaskParamter.approversProperties.rejectStep) } };
+                var upNodeCodeList = new List<object>() { new { id = "0", nodeCode = flowTaskParamter.approversProperties.rejectStep, nodeName = _flowTaskNodeUtil.GetThisStep(flowTaskParamter.flowTaskNodeEntityList, flowTaskParamter.approversProperties.rejectStep) } };
                 return new { list = upNodeCodeList, isLastAppro = true };
         }
     }
@@ -1514,7 +1513,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
         await _flowTaskRepository.UpdateTask(flowTaskParamter.flowTaskEntity);
 
         #region 流转记录
-        await flowTaskOtherUtil.CreateOperatorRecode(flowTaskParamter, 11);
+        await _flowTaskOtherUtil.CreateOperatorRecode(flowTaskParamter, 11);
         #endregion
 
         if (!flowTaskParamter.suspend)
@@ -1545,7 +1544,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
         await _flowTaskRepository.UpdateTask(flowTaskParamter.flowTaskEntity);
 
         #region 流转记录
-        await flowTaskOtherUtil.CreateOperatorRecode(flowTaskParamter, 12);
+        await _flowTaskOtherUtil.CreateOperatorRecode(flowTaskParamter, 12);
         #endregion
 
         var childTask = await _flowTaskRepository.GetTaskList(x => flowTaskParamter.flowTaskEntity.Id == x.ParentId && x.DeleteMark == null);
@@ -1565,6 +1564,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
 
     #region PrivateMethod
     #region 经办处理
+
     /// <summary>
     /// 根据当前审批节点插入下一节点经办.
     /// </summary>
@@ -1576,7 +1576,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
     {
         try
         {
-            var isInsert = false;// 当前节点是否完成.
+            var isInsert = false; // 当前节点是否完成.
             //下个节点集合
             List<FlowTaskNodeEntity> nextNodeEntityList = new List<FlowTaskNodeEntity>();
             if (handleStatus == 0)
@@ -1590,11 +1590,11 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
 
             foreach (var nextNodeEntity in nextNodeEntityList)
             {
-                var isShuntNodeCompletion = flowTaskNodeUtil.IsShuntNodeCompletion(flowTaskParamter.flowTaskNodeEntityList, nextNodeEntity.NodeCode, flowTaskParamter.flowTaskNodeEntity);
-                if (flowTaskParamter.approversProperties.counterSign == 0 || flowTaskOtherUtil.IsAchievebilProportion(flowTaskParamter, handleStatus))
+                var isShuntNodeCompletion = _flowTaskNodeUtil.IsShuntNodeCompletion(flowTaskParamter.flowTaskNodeEntityList, nextNodeEntity.NodeCode, flowTaskParamter.flowTaskNodeEntity);
+                if (flowTaskParamter.approversProperties.counterSign == 0 || _flowTaskOtherUtil.IsAchievebilProportion(flowTaskParamter, handleStatus))
                 {
                     isInsert = true;
-                    await flowTaskUserUtil.AddFlowTaskOperatorEntityByAssigneeType(flowTaskParamter, nextNodeEntity, 1, isShuntNodeCompletion);
+                    await _flowTaskUserUtil.AddFlowTaskOperatorEntityByAssigneeType(flowTaskParamter, nextNodeEntity, 1, isShuntNodeCompletion);
                 }
                 else if (flowTaskParamter.approversProperties.counterSign == 2)
                 {
@@ -1607,7 +1607,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                 // 如果下一节点是子流程，则要获取子流程下的审批节点的异常节点（审批同意）
                 if (FlowTaskNodeTypeEnum.subFlow.ParseToString().Equals(nextNodeEntity.NodeType) && handleStatus == 1 && isShuntNodeCompletion)
                 {
-                    await flowTaskUserUtil.GetErrorNode(flowTaskParamter, flowTaskParamter.flowTaskNodeEntityList.FindAll(m => nextNodeEntity.NodeNext.Contains(m.NodeCode)));
+                    await _flowTaskUserUtil.GetErrorNode(flowTaskParamter, flowTaskParamter.flowTaskNodeEntityList.FindAll(m => nextNodeEntity.NodeNext.Contains(m.NodeCode)));
                 }
             }
 
@@ -1638,7 +1638,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
         {
             if (isInsert)
             {
-                var rejectsubFlowNodeList = await flowTaskNodeUtil.RejectManager(flowTaskParamter, nextNodeEntityList, nextNodeCodeList, nextNodeCompletion);
+                var rejectsubFlowNodeList = await _flowTaskNodeUtil.RejectManager(flowTaskParamter, nextNodeEntityList, nextNodeCodeList, nextNodeCompletion);
                 if (flowTaskParamter.approversProperties.rejectType == 1)//重新审批
                 {
                     // 终止驳回节点与当前节点中的子流程节点
@@ -1648,7 +1648,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                         var childTaskList = await _flowTaskRepository.GetTaskList(x => childPro.childTaskId.Contains(x.Id) && x.DeleteMark == null);
                         foreach (var childTask in childTaskList)
                         {
-                            await flowTaskOtherUtil.CancelTask(childTask);
+                            await _flowTaskOtherUtil.CancelTask(childTask);
                         }
                     }
                 }
@@ -1664,41 +1664,41 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                 // 当前节点为分流的发起节点,下一节点必定都是审批节点
                 if (nextNodeEntityList.Count > 1)
                 {
-                    flowTaskParamter.flowTaskEntity.ThisStepId = flowTaskNodeUtil.GetThisStepId(flowTaskParamter.flowTaskNodeEntityList, nextNodeCodeList, flowTaskParamter.flowTaskEntity.ThisStepId);
-                    flowTaskParamter.flowTaskEntity.ThisStep = flowTaskNodeUtil.GetThisStep(flowTaskParamter.flowTaskNodeEntityList, flowTaskParamter.flowTaskEntity.ThisStepId);
+                    flowTaskParamter.flowTaskEntity.ThisStepId = _flowTaskNodeUtil.GetThisStepId(flowTaskParamter.flowTaskNodeEntityList, nextNodeCodeList, flowTaskParamter.flowTaskEntity.ThisStepId);
+                    flowTaskParamter.flowTaskEntity.ThisStep = _flowTaskNodeUtil.GetThisStep(flowTaskParamter.flowTaskNodeEntityList, flowTaskParamter.flowTaskEntity.ThisStepId);
                     flowTaskParamter.flowTaskEntity.Completion = nextNodeCompletion.Count == 0 ? flowTaskParamter.flowTaskEntity.Completion : nextNodeCompletion.Min();
                     await _flowTaskRepository.CreateTaskOperator(flowTaskParamter.flowTaskOperatorEntityList);
-                    await flowTaskOtherUtil.GetNextFormData(flowTaskParamter, nextNodeEntityList);
+                    await _flowTaskOtherUtil.GetNextFormData(flowTaskParamter, nextNodeEntityList);
                 }
                 else
                 {
                     // 非分流的发起节点下一节点只有一个.
                     var nextNode = nextNodeEntityList.FirstOrDefault();
                     // 合流节点的上级节点是否都完成.
-                    var isShuntNodeCompletion = flowTaskNodeUtil.IsShuntNodeCompletion(flowTaskParamter.flowTaskNodeEntityList, nextNode.NodeCode, flowTaskParamter.flowTaskNodeEntity);
+                    var isShuntNodeCompletion = _flowTaskNodeUtil.IsShuntNodeCompletion(flowTaskParamter.flowTaskNodeEntityList, nextNode.NodeCode, flowTaskParamter.flowTaskNodeEntity);
                     if (isShuntNodeCompletion)
                     {
                         // 修改当前节点以及插入数据.
-                        flowTaskParamter.flowTaskEntity.ThisStepId = flowTaskNodeUtil.GetThisStepId(flowTaskParamter.flowTaskNodeEntityList, nextNodeCodeList, flowTaskParamter.flowTaskEntity.ThisStepId);
-                        flowTaskParamter.flowTaskEntity.ThisStep = flowTaskNodeUtil.GetThisStep(flowTaskParamter.flowTaskNodeEntityList, flowTaskParamter.flowTaskEntity.ThisStepId);
+                        flowTaskParamter.flowTaskEntity.ThisStepId = _flowTaskNodeUtil.GetThisStepId(flowTaskParamter.flowTaskNodeEntityList, nextNodeCodeList, flowTaskParamter.flowTaskEntity.ThisStepId);
+                        flowTaskParamter.flowTaskEntity.ThisStep = _flowTaskNodeUtil.GetThisStep(flowTaskParamter.flowTaskNodeEntityList, flowTaskParamter.flowTaskEntity.ThisStepId);
                         flowTaskParamter.flowTaskEntity.Completion = nextNodeCompletion.Count == 0 ? flowTaskParamter.flowTaskEntity.Completion : nextNodeCompletion.Min();
                         if (flowTaskParamter.flowTaskOperatorEntityList.Any())
                         {
                             await _flowTaskRepository.CreateTaskOperator(flowTaskParamter.flowTaskOperatorEntityList);
-                            await flowTaskOtherUtil.GetNextFormData(flowTaskParamter, nextNodeEntityList);
+                            await _flowTaskOtherUtil.GetNextFormData(flowTaskParamter, nextNodeEntityList);
                         }
                         // 下一节点是子流程节点.
                         if (FlowTaskNodeTypeEnum.subFlow.ParseToString().Equals(nextNode.NodeType))
                         {
                             var childTaskPro = nextNode.NodePropertyJson.ToObject<ChildTaskProperties>();
-                            var childFLowEngine = _flowTaskRepository.GetFlowTemplateInfo(childTaskPro.flowId);//子流程引擎
+                            var childFLowEngine = _flowTaskRepository.GetFlowTemplateInfo(childTaskPro.flowId); //子流程引擎
                             if (childFLowEngine.IsNullOrEmpty())
                                 throw Oops.Oh(ErrorCode.WF0026);
-                            var childTaskCrUserList = await flowTaskUserUtil.GetSubFlowCrUser(childTaskPro, flowTaskParamter, nextNode);//子流程发起人
-                            var childFormData = await flowTaskOtherUtil.GetSubFlowFormData(flowTaskParamter, childTaskPro);//子流程发起表单数据.
+                            var childTaskCrUserList = await _flowTaskUserUtil.GetSubFlowCrUser(childTaskPro, flowTaskParamter, nextNode); //子流程发起人
+                            var childFormData = await _flowTaskOtherUtil.GetSubFlowFormData(flowTaskParamter, childTaskPro); //子流程发起表单数据.
                             // 子流程任务id
                             childTaskPro.childTaskId = await CreateSubProcesses(childTaskPro, childFormData, flowTaskParamter.flowTaskEntity.Id, childTaskCrUserList);
-                            childTaskPro.formData = flowTaskParamter.formData.ToJsonString();//子流程结束回到主流程表单数据.
+                            childTaskPro.formData = flowTaskParamter.formData.ToJsonString(); //子流程结束回到主流程表单数据.
                             nextNode.NodePropertyJson = childTaskPro.ToJsonString();
                             nextNode.Completion = childTaskPro.isAsync ? 1 : 0;
                             await _flowTaskRepository.UpdateTaskNode(nextNode);
@@ -1713,7 +1713,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                                 flowTaskParamterSubAsync.flowTaskNodeEntity = nextNode;
                                 flowTaskParamterSubAsync.approversProperties = nextNode.NodePropertyJson.ToObject<ApproversProperties>();
                                 await CreateNextFlowTaskOperator(flowTaskParamterSubAsync, handleStatus, type);
-                                flowTaskParamter.flowTaskEntity = flowTaskParamterSubAsync.flowTaskEntity;//更新已完成的子流程节点任务信息
+                                flowTaskParamter.flowTaskEntity = flowTaskParamterSubAsync.flowTaskEntity; //更新已完成的子流程节点任务信息
                             }
                         }
                         // 下一节点是结束节点.
@@ -1753,7 +1753,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                             var thisStepIds = flowTaskParamter.flowTaskEntity.ThisStepId.Split(",").ToList();
                             thisStepIds.Remove(flowTaskParamter.flowTaskNodeEntity.NodeCode);
                             flowTaskParamter.flowTaskEntity.ThisStepId = string.Join(",", thisStepIds.ToArray());
-                            flowTaskParamter.flowTaskEntity.ThisStep = flowTaskNodeUtil.GetThisStep(flowTaskParamter.flowTaskNodeEntityList, flowTaskParamter.flowTaskEntity.ThisStepId);
+                            flowTaskParamter.flowTaskEntity.ThisStep = _flowTaskNodeUtil.GetThisStep(flowTaskParamter.flowTaskNodeEntityList, flowTaskParamter.flowTaskEntity.ThisStepId);
                         }
                     }
                 }
@@ -1794,8 +1794,8 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
             };
             var childTaskEntity = await this.Save(flowTaskSubmitModel);
             var flowTaskParamter = new FlowTaskParamter { flowTaskEntity = childTaskEntity };
-            var bodyDic = flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, new List<string> { item }, null, 1);
-            await flowTaskMsgUtil.Alerts(childTaskPro.launchMsgConfig, new List<string> { item }, flowTaskParamter, "MBXTLC011", bodyDic);
+            var bodyDic = _flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, new List<string> { item }, null, 1);
+            await _flowTaskMsgUtil.Alerts(childTaskPro.launchMsgConfig, new List<string> { item }, flowTaskParamter, "MBXTLC011", bodyDic);
             childTaskId.Add(childTaskEntity.Id);
         }
         return childTaskId;
@@ -1828,7 +1828,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
             }
             // 判断是否插入子流程节点下一节点数据
             var subFlowNextNode = flowTaskNodeEntityList.Find(m => parentSubFlowNode.NodeNext.Contains(m.NodeCode));
-            var isShuntNodeCompletion = flowTaskNodeUtil.IsShuntNodeCompletion(flowTaskNodeEntityList, subFlowNextNode.NodeCode, parentSubFlowNode);
+            var isShuntNodeCompletion = _flowTaskNodeUtil.IsShuntNodeCompletion(flowTaskNodeEntityList, subFlowNextNode.NodeCode, parentSubFlowNode);
             if (parentSubFlowNode.Completion == 1)
             {
                 // 分流合流完成则插入，反之则修改父流程当前节点
@@ -1849,7 +1849,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                     var thisStepIds = parentFlowTask.ThisStepId.Split(",").ToList();
                     thisStepIds.Remove(parentSubFlowNode.NodeCode);
                     parentFlowTask.ThisStepId = string.Join(",", thisStepIds.ToArray());
-                    parentFlowTask.ThisStep = flowTaskNodeUtil.GetThisStep(flowTaskNodeEntityList, parentFlowTask.ThisStepId);
+                    parentFlowTask.ThisStep = _flowTaskNodeUtil.GetThisStep(flowTaskNodeEntityList, parentFlowTask.ThisStepId);
                     await _flowTaskRepository.UpdateTask(parentFlowTask);
                 }
             }
@@ -1862,6 +1862,7 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
     #endregion
 
     #region 其他
+
     /// <summary>
     /// 自动同意审批.
     /// </summary>
@@ -1880,8 +1881,8 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                 var nextTaskNodeEntity = flowTaskParamter.flowTaskNodeEntityList.Find(m => m.Id.Equals(item.TaskNodeId));
                 var approverPropertiers = nextTaskNodeEntity.NodePropertyJson.ToObject<ApproversProperties>();
                 // 看下个审批节点是否是候选人或异常节点
-                await flowTaskUserUtil.GetErrorNode(flowTaskParamter, flowTaskParamter.flowTaskNodeEntityList.FindAll(m => nextTaskNodeEntity.NodeNext.Contains(m.NodeCode)));
-                await flowTaskUserUtil.GetCandidates(flowTaskCandidateModels, flowTaskParamter.flowTaskNodeEntityList.FindAll(m => nextTaskNodeEntity.NodeNext.Contains(m.NodeCode)), flowTaskParamter.flowTaskNodeEntityList);
+                await _flowTaskUserUtil.GetErrorNode(flowTaskParamter, flowTaskParamter.flowTaskNodeEntityList.FindAll(m => nextTaskNodeEntity.NodeNext.Contains(m.NodeCode)));
+                await _flowTaskUserUtil.GetCandidates(flowTaskCandidateModels, flowTaskParamter.flowTaskNodeEntityList.FindAll(m => nextTaskNodeEntity.NodeNext.Contains(m.NodeCode)), flowTaskParamter.flowTaskNodeEntityList);
                 var falag = flowTaskCandidateModels.Count == 0;
                 // 如果自动审批下一节点是选择分支或候选人由超管审批
                 if (!falag && item.HandleId.Equals("poxiao"))
@@ -1989,16 +1990,16 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
     private async Task TimeoutOrRemind(FlowTaskParamter flowTaskParamter, string nodeId, List<FlowTaskOperatorEntity> flowTaskOperatorEntities)
     {
         var flowNode = await _flowTaskRepository.GetTaskNodeInfo(nodeId);
-        var nodeProp = flowTaskOtherUtil.SyncApproProCofig(flowNode?.NodePropertyJson?.ToObject<ApproversProperties>(), flowTaskParamter.startProperties);
+        var nodeProp = _flowTaskOtherUtil.SyncApproProCofig(flowNode?.NodePropertyJson?.ToObject<ApproversProperties>(), flowTaskParamter.startProperties);
         if (nodeProp.timeLimitConfig.on > 0)
         {
             // 起始时间
-            var startingTime = flowTaskOtherUtil.GetStartingTime(nodeProp.timeLimitConfig, (DateTime)flowTaskOperatorEntities.FirstOrDefault().CreatorTime, (DateTime)flowTaskParamter.flowTaskEntity.CreatorTime, flowTaskParamter.formData.ToJsonString());
+            var startingTime = _flowTaskOtherUtil.GetStartingTime(nodeProp.timeLimitConfig, (DateTime)flowTaskOperatorEntities.FirstOrDefault().CreatorTime, (DateTime)flowTaskParamter.flowTaskEntity.CreatorTime, flowTaskParamter.formData.ToJsonString());
 
             // 创建限时提醒
             if (nodeProp.noticeConfig.on > 0)
             {
-                var cron = flowTaskOtherUtil.GetCron(nodeProp.noticeConfig.overTimeDuring, startingTime, 1); // 参数1换成0即可切换成小时
+                var cron = _flowTaskOtherUtil.GetCron(nodeProp.noticeConfig.overTimeDuring, startingTime, 1); // 参数1换成0即可切换成小时
                 //var startTime = startingTime.AddHours(nodeProp.noticeConfig.firstOver); // 提醒开始时间
                 //var endTime = startingTime.AddHours(nodeProp.overTimeConfig.duringDeal); // 提醒结束时间
                 // 分钟
@@ -2011,8 +2012,8 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                     Console.WriteLine("提醒cron表达式：" + cron);
                     Console.WriteLine("提醒开始时间：" + startTime.ToString("yyyy-MM-dd HH:mm:ss"));
                     Console.WriteLine("提醒结束时间：" + endTime.ToString("yyyy-MM-dd HH:mm:ss"));
-                    var interval = 1;//第一次执行间隔
-                    var runCount = 0;// 已执行次数
+                    var interval = 1; //第一次执行间隔
+                    var runCount = 0; // 已执行次数
                     if (DateTime.Now < startTime)
                     {
                         interval = (startTime - DateTime.Now).TotalMilliseconds.ParseToInt();
@@ -2032,15 +2033,15 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
             // 创建超时提醒
             if (nodeProp.overTimeConfig.on > 0)
             {
-                var cron = flowTaskOtherUtil.GetCron(nodeProp.overTimeConfig.overTimeDuring, startingTime, 1);// 参数1换成0即可切换成小时
+                var cron = _flowTaskOtherUtil.GetCron(nodeProp.overTimeConfig.overTimeDuring, startingTime, 1); // 参数1换成0即可切换成小时
                 //var startTime = startingTime.AddHours(nodeProp.overTimeConfig.duringDeal + nodeProp.overTimeConfig.firstOver); // 超时开始时间
                 // 分钟
                 var startTime = startingTime.AddMinutes(nodeProp.timeLimitConfig.duringDeal + nodeProp.overTimeConfig.firstOver); // 超时开始时间
 
                 Console.WriteLine("超时cron表达式：" + cron);
                 Console.WriteLine("超时开始时间：" + startTime.ToString("yyyy-MM-dd HH:mm:ss"));
-                var interval = 1;//第一次执行间隔
-                var runCount = 0;// 已执行次数
+                var interval = 1; //第一次执行间隔
+                var runCount = 0; // 已执行次数
                 if (DateTime.Now < startTime)
                 {
                     interval = (startTime - DateTime.Now).TotalMilliseconds.ParseToInt();
@@ -2087,17 +2088,17 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                 var userList = operatorList.Select(x => x.HandleId).ToList();
                 var remark = string.Format("现在时间：{3},节点{0}：第{1}次{2}通知", nodeId, count, msgReMark, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
                 Console.WriteLine(remark);
-                var bodyDic = flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userList, operatorList, 2, remark);
+                var bodyDic = _flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userList, operatorList, 2, remark);
                 if (msgConfig.on > 0)
                 {
-                    await flowTaskMsgUtil.Alerts(msgConfig, userList, flowTaskParamter, msgEncode, bodyDic);
+                    await _flowTaskMsgUtil.Alerts(msgConfig, userList, flowTaskParamter, msgEncode, bodyDic);
                 }
             }
             // 事件
             if (funcConfig.on && timeOutConfig.overEvent && timeOutConfig.overEventTime == count)
             {
                 Console.WriteLine(string.Format("开始执行{0}事件，现在时间：{1}", msgReMark, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")));
-                await flowTaskMsgUtil.RequestEvents(funcConfig, flowTaskParamter);
+                await _flowTaskMsgUtil.RequestEvents(funcConfig, flowTaskParamter);
             }
             //自动审批
             if (isTimeOut && timeOutConfig.overAutoApproveTime == count && timeOutConfig.overAutoApprove)

@@ -167,7 +167,7 @@ public class AppearanceFeatureCategoryService : IAppearanceFeatureCategoryServic
         // 唯一性检查（同一父级下名称唯一）
         var parentId = input.ParentId == "-1" ? "-1" : input.ParentId;
         var existingCategory = await _categoryRepository.GetFirstAsync(t =>
-            t.Name == input.Name && 
+            t.Name == input.Name &&
             (t.ParentId ?? "-1") == parentId &&
             t.DeleteMark == null
         );
@@ -180,7 +180,7 @@ public class AppearanceFeatureCategoryService : IAppearanceFeatureCategoryServic
         AppearanceFeatureCategoryEntity parent = null;
         if (input.ParentId != "-1")
         {
-            parent = await _categoryRepository.GetFirstAsync(t => 
+            parent = await _categoryRepository.GetFirstAsync(t =>
                 t.Id == input.ParentId && t.DeleteMark == null);
             if (parent == null)
             {
@@ -208,7 +208,7 @@ public class AppearanceFeatureCategoryService : IAppearanceFeatureCategoryServic
         // 计算并设置根分类ID和路径（参考 OrganizeIdTree 的实现方式）
         List<string> idList = new List<string>();
         idList.Add(entity.Id);
-        
+
         if (entity.ParentId != "-1")
         {
             // 使用 ToParentList 向上查找所有父级ID
@@ -224,7 +224,7 @@ public class AppearanceFeatureCategoryService : IAppearanceFeatureCategoryServic
         // 反转列表（根节点在前）
         idList.Reverse();
         entity.Path = string.Join(",", idList);
-        
+
         // 设置根分类ID（路径的第一个ID）
         entity.RootId = idList.FirstOrDefault();
 
@@ -295,7 +295,7 @@ public class AppearanceFeatureCategoryService : IAppearanceFeatureCategoryServic
             }
 
             // 验证父级是否存在
-            var parent = await _categoryRepository.GetFirstAsync(t => 
+            var parent = await _categoryRepository.GetFirstAsync(t =>
                 t.Id == input.ParentId && t.DeleteMark == null);
             if (parent == null)
             {
@@ -306,7 +306,7 @@ public class AppearanceFeatureCategoryService : IAppearanceFeatureCategoryServic
         // 唯一性检查（同一父级下名称唯一，排除自身）
         var parentId = input.ParentId == "-1" ? "-1" : input.ParentId;
         var existingCategory = await _categoryRepository.GetFirstAsync(t =>
-            t.Name == input.Name && 
+            t.Name == input.Name &&
             t.Id != categoryId &&
             (t.ParentId ?? "-1") == parentId &&
             t.DeleteMark == null
@@ -330,7 +330,7 @@ public class AppearanceFeatureCategoryService : IAppearanceFeatureCategoryServic
         {
             List<string> idList = new List<string>();
             idList.Add(entity.Id); // 使用 entity.Id（应该等于 categoryId）
-            
+
             if (entity.ParentId != "-1")
             {
                 // 使用 ToParentList 向上查找所有父级ID
@@ -348,7 +348,7 @@ public class AppearanceFeatureCategoryService : IAppearanceFeatureCategoryServic
             string newPath = string.Join(",", idList);
             string oldPath = entity.Path;
             entity.Path = newPath;
-            
+
             // 设置根分类ID（路径的第一个ID）
             entity.RootId = idList.FirstOrDefault();
 
@@ -360,16 +360,16 @@ public class AppearanceFeatureCategoryService : IAppearanceFeatureCategoryServic
                     .AsQueryable()
                     .Where(x => x.Path.Contains(entity.Id) && x.Id != entity.Id && x.DeleteMark == null)
                     .ToListAsync();
-                
+
                 childEntities.ForEach(item =>
                 {
                     // 参考 OrganizeService 的实现：找到旧路径中当前ID之后的部分
                     string[] pathParts = item.Path.Split(new[] { entity.Id }, StringSplitOptions.None);
                     string childList = pathParts.Length > 1 ? pathParts.LastOrDefault() : string.Empty;
-                    
+
                     // 拼接新路径：新路径 + 子分类ID之后的部分
                     item.Path = newPath + childList;
-                    
+
                     // 更新根分类ID（路径的第一个ID）
                     var newPathParts = item.Path.Split(',');
                     item.RootId = newPathParts.FirstOrDefault();

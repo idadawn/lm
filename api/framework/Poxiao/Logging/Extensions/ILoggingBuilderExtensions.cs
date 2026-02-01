@@ -1,6 +1,6 @@
-﻿using Poxiao.Logging;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Poxiao.Logging;
 using System.Diagnostics;
 
 namespace Microsoft.Extensions.Logging;

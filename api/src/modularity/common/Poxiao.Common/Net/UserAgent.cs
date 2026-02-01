@@ -1,5 +1,5 @@
-using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http;
+using System.Text.RegularExpressions;
 using UAParser;
 
 namespace Poxiao.Infrastructure.Net;
@@ -10,11 +10,11 @@ namespace Poxiao.Infrastructure.Net;
 [SuppressSniffer]
 public class UserAgent : IUserAgent
 {
-    private readonly static Parser s_uap;
+    private static readonly Parser S_uap;
 
     #region Mobile UAs, OS & Devices
 
-    private static readonly HashSet<string> s_MobileOS = new HashSet<string>
+    private static readonly HashSet<string> S_MobileOS = new HashSet<string>
     {
         "Android",
         "iOS",
@@ -32,7 +32,7 @@ public class UserAgent : IUserAgent
         "Maemo"
     };
 
-    private static readonly HashSet<string> s_MobileBrowsers = new HashSet<string>
+    private static readonly HashSet<string> S_MobileBrowsers = new HashSet<string>
     {
         "Android",
         "Firefox Mobile",
@@ -81,7 +81,7 @@ public class UserAgent : IUserAgent
         "Skyfire"
     };
 
-    private static readonly HashSet<string> s_MobileDevices = new HashSet<string>
+    private static readonly HashSet<string> S_MobileDevices = new HashSet<string>
     {
         "BlackBerry",
         "MI PAD",
@@ -117,7 +117,7 @@ public class UserAgent : IUserAgent
 
     static UserAgent()
     {
-        s_uap = Parser.GetDefault();
+        S_uap = Parser.GetDefault();
     }
 
     public UserAgent(HttpContext httpContext)
@@ -163,7 +163,7 @@ public class UserAgent : IUserAgent
         {
             if (_userAgent == null)
             {
-                var tmp = s_uap.ParseUserAgent(this.RawValue);
+                var tmp = S_uap.ParseUserAgent(this.RawValue);
                 _userAgent = new UserAgentInfo(tmp.Family, tmp.Major, tmp.Minor, tmp.Patch);
             }
             return _userAgent;
@@ -176,7 +176,7 @@ public class UserAgent : IUserAgent
         {
             if (_device == null)
             {
-                var tmp = s_uap.ParseDevice(this.RawValue);
+                var tmp = S_uap.ParseDevice(this.RawValue);
                 _device = new DeviceInfo(tmp.Family, tmp.IsSpider);
             }
             return _device;
@@ -189,7 +189,7 @@ public class UserAgent : IUserAgent
         {
             if (_os == null)
             {
-                var tmp = s_uap.ParseOS(this.RawValue);
+                var tmp = S_uap.ParseOS(this.RawValue);
                 _os = new OSInfo(tmp.Family, tmp.Major, tmp.Minor, tmp.Patch, tmp.PatchMinor);
             }
             return _os;
@@ -203,9 +203,9 @@ public class UserAgent : IUserAgent
             if (!_isMobileDevice.HasValue)
             {
                 _isMobileDevice =
-                    s_MobileOS.Contains(this.OS.Family) ||
-                    s_MobileBrowsers.Contains(this.userAgent.Family) ||
-                    s_MobileDevices.Contains(this.Device.Family);
+                    S_MobileOS.Contains(this.OS.Family) ||
+                    S_MobileBrowsers.Contains(this.userAgent.Family) ||
+                    S_MobileDevices.Contains(this.Device.Family);
             }
             return _isMobileDevice.Value;
         }

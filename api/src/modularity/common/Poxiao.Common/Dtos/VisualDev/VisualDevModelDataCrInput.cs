@@ -6,7 +6,7 @@ namespace Poxiao.Infrastructure.Dtos.VisualDev;
 /// 在线功能开发数据创建输入.
 /// </summary>
 [SuppressSniffer]
-public class VisualDevModelDataCrInput: FlowTaskOtherModel
+public class VisualDevModelDataCrInput : FlowTaskOtherModel
 {
     /// <summary>
     /// 数据.

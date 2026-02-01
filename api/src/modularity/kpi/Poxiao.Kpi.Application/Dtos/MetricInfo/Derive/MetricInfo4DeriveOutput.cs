@@ -228,7 +228,6 @@ public class MetricInfo4DeriveOutput
     [JsonProperty("formatValue")]
     public string FormatValue { get; set; }
 
-
     /// <summary>
     /// 父级.
     /// </summary>

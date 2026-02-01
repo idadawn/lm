@@ -1,10 +1,10 @@
+using Mapster;
 using Poxiao.Extend.Entitys.Dto.Email;
 using Poxiao.Extend.Entitys.Dto.Order;
-using Mapster;
 
 namespace Poxiao.Extend.Entitys.Mapper
 {
-    class Mapper : IRegister
+    internal class Mapper : IRegister
     {
         public void Register(TypeAdapterConfig config)
         {

@@ -1,6 +1,6 @@
-﻿using Poxiao.CorsAccessor;
-using Microsoft.AspNetCore.Cors.Infrastructure;
+﻿using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Poxiao.CorsAccessor;
 
 namespace Microsoft.AspNetCore.Builder;
 

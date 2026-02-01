@@ -1,5 +1,5 @@
-using System.ComponentModel.DataAnnotations;
 using Poxiao.Infrastructure.Contracts;
+using System.ComponentModel.DataAnnotations;
 
 namespace Poxiao.Lab.Entity.Dto.IntermediateDataJudgmentLevel;
 

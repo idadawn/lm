@@ -134,6 +134,6 @@ public class UnitConversionServiceTests
         }
 
         // 验证至少有一个基准单位
-        Assert.True(units.Any(u => u.IsBase));
+        Assert.Contains(units, u => u.IsBase);
     }
 }

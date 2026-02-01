@@ -1,14 +1,15 @@
 using Poxiao.Extras.CollectiveOAuth.Cache;
 using Poxiao.Extras.CollectiveOAuth.Config;
+using Poxiao.Extras.CollectiveOAuth.Enums;
 using Poxiao.Extras.CollectiveOAuth.Models;
 using Poxiao.Extras.CollectiveOAuth.Utils;
-using Poxiao.Extras.CollectiveOAuth.Enums;
 
 namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class DouyinAuthRequest : DefaultAuthRequest
 {
-    public DouyinAuthRequest(ClientConfig config) : base(config, new DouyinAuthSource())
+    public DouyinAuthRequest(ClientConfig config)
+        : base(config, new DouyinAuthSource())
     {
     }
 
@@ -51,7 +52,6 @@ public class DouyinAuthRequest : DefaultAuthRequest
         var data = getToken(refreshTokenUrl(oldToken.refreshToken));
         return new AuthResponse(AuthResponseStatus.SUCCESS.GetCode(), AuthResponseStatus.SUCCESS.GetDesc(), data);
     }
-
 
     /**
      * 获取token，适用于获取access_token和刷新token

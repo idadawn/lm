@@ -1,3 +1,9 @@
+using Mapster;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Core.Manager.Files;
 using Poxiao.Infrastructure.Enums;
@@ -5,9 +11,6 @@ using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Models.WorkFlow;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.LinqBuilder;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
@@ -20,9 +23,6 @@ using Poxiao.WorkFlow.Entitys.Model;
 using Poxiao.WorkFlow.Entitys.Model.Properties;
 using Poxiao.WorkFlow.Interfaces.Repository;
 using Poxiao.WorkFlow.Interfaces.Service;
-using Mapster;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.WorkFlow.Service;
@@ -88,7 +88,7 @@ public class FlowTemplateService : IFlowTemplateService, IDynamicApiController, 
                 lastModifyUser = SqlFunc.Subqueryable<UserEntity>().Where(u => u.Id == a.LastModifyUserId).Select(u => SqlFunc.MergeString(u.RealName, "/", u.Account)),
                 sortCode = a.SortCode,
                 type = a.Type,
-                hasAssistBtn = SqlFunc.IIF((_userManager.UserId == a.CreatorUserId || _userManager.User.IsAdministrator == 1), 1, 0),
+                hasAssistBtn = SqlFunc.IIF( _userManager.UserId == a.CreatorUserId || _userManager.User.IsAdministrator == 1, 1, 0),
             }).Distinct().MergeTable().OrderBy(a => a.sortCode).OrderBy(a => a.creatorTime, OrderByType.Desc)
             .OrderByIF(!string.IsNullOrEmpty(input.Keyword), t => t.lastModifyTime, OrderByType.Desc).ToPagedListAsync(input.CurrentPage, input.PageSize);
         return PageResult<FlowTemplateListOutput>.SqlSugarPageResult(list);
@@ -703,18 +703,18 @@ public class FlowTemplateService : IFlowTemplateService, IDynamicApiController, 
     public async Task<List<FlowTemplateTreeOutput>> GetFlowFormList(int flowType, string userId = null)
     {
         var list = await GetOutList(flowType);
-        var IsAdministrator = false;
+        var isAdministrator = false;
         if (userId.IsNullOrEmpty())
         {
             userId = _userManager.UserId;
-            IsAdministrator = _userManager.User.IsAdministrator == 0;
+            isAdministrator = _userManager.User.IsAdministrator == 0;
         }
         else
         {
-            IsAdministrator = _repository.AsSugarClient().Queryable<UserEntity>().Any(x => x.Id == userId && x.IsAdministrator == 0);
+            isAdministrator = _repository.AsSugarClient().Queryable<UserEntity>().Any(x => x.Id == userId && x.IsAdministrator == 0);
         }
 
-        if (IsAdministrator)
+        if (isAdministrator)
         {
             var data = await GetVisibleFlowList(userId, flowType);
             data = data.Union(list.FindAll(x => x.visibleType == 0)).ToList();
@@ -877,7 +877,7 @@ public class FlowTemplateService : IFlowTemplateService, IDynamicApiController, 
                         {
                             groupIdList.Add(flowTemplateJsonEntity.GroupId);
                         }
-                        var isCreate = flowTemplateJsonEntity.FlowTemplateJson.Equals(item.flowTemplateJson.ToJsonString());//流程json是否变更
+                        var isCreate = flowTemplateJsonEntity.FlowTemplateJson.Equals(item.flowTemplateJson.ToJsonString()); //流程json是否变更
                         flowTemplateJsonEntity.FlowTemplateJson = item.flowTemplateJson.ToJsonString();
                         flowTemplateJsonEntity.SortCode = index++;
                         flowTemplateJsonEntity.FullName = item.fullName;
@@ -919,7 +919,7 @@ public class FlowTemplateService : IFlowTemplateService, IDynamicApiController, 
                         {
                             formIdList.Add(formId);
                         }
-                        if ((_repository.AsSugarClient().Queryable<FlowFormEntity>().Any(x => x.Id == formId && x.FlowId != entity.Id && !SqlFunc.IsNullOrEmpty(x.FlowId))) && formId != onlineFormId)
+                        if ( _repository.AsSugarClient().Queryable<FlowFormEntity>().Any(x => x.Id == formId && x.FlowId != entity.Id && !SqlFunc.IsNullOrEmpty(x.FlowId)) && formId != onlineFormId)
                             throw Oops.Oh(ErrorCode.WF0043);
                         await _repository.AsSugarClient().Updateable<FlowFormEntity>().SetColumns(x => x.FlowId == entity.Id).Where(x => x.Id == formId).ExecuteCommandAsync();
                     }

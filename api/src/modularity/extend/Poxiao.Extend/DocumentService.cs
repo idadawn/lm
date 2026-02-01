@@ -1,3 +1,11 @@
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DataEncryption;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.Extend.Entitys;
+using Poxiao.Extend.Entitys.Dto.Document;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Core.Manager.Files;
 using Poxiao.Infrastructure.Enums;
@@ -7,15 +15,7 @@ using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Models;
 using Poxiao.Infrastructure.Options;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DataEncryption;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.Extend.Entitys;
-using Poxiao.Extend.Entitys.Dto.Document;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Permission;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 using Yitter.IdGenerator;
 
@@ -85,7 +85,7 @@ public class DocumentService : IDynamicApiController, ITransient
             .WhereIF(input.Keyword.IsNotEmptyOrNull(), t => t.FullName.Contains(input.Keyword))
             .OrderBy(x => x.SortCode).OrderBy(x => x.CreatorTime, OrderByType.Desc)
             .OrderByIF(!string.IsNullOrEmpty(input.Keyword), t => t.LastModifyTime, OrderByType.Desc).ToListAsync()).Adapt<List<DocumentListOutput>>();
-        string[]? typeList = new string[] { "doc", "docx", "xls", "xlsx", "ppt", "pptx", "pdf", "jpg", "jpeg", "gif", "png", "bmp" };
+        string[] ? typeList = new string[] { "doc", "docx", "xls", "xlsx", "ppt", "pptx", "pdf", "jpg", "jpeg", "gif", "png", "bmp" };
         foreach (var item in data)
         {
             string? type = item.fullName.Split('.').LastOrDefault();
@@ -269,7 +269,7 @@ public class DocumentService : IDynamicApiController, ITransient
     [HttpPost("merge")]
     public async Task<dynamic> merge([FromForm] ChunkModel input)
     {
-        if (await _repository.IsAnyAsync(x =>x.CreatorUserId==_userManager.UserId && x.FullName == input.fileName && x.Type == 1 && x.DeleteMark != 1))
+        if (await _repository.IsAnyAsync(x => x.CreatorUserId == _userManager.UserId && x.FullName == input.fileName && x.Type == 1 && x.DeleteMark != 1))
         {
             //string directoryPath = Path.Combine(App.GetConfig<AppOptions>("Poxiao_App", true).SystemPath, "TemporaryFile", input.identifier);
             //FileHelper.DeleteDirectory(directoryPath);
@@ -309,7 +309,8 @@ public class DocumentService : IDynamicApiController, ITransient
             throw Oops.Oh(ErrorCode.D8000);
         var fileName = _userManager.UserId + "|" + entity.FilePath + "|document";
         _cacheManager.Set(entity.FilePath, string.Empty);
-        return new {
+        return new
+        {
             name = entity.FullName,
             url = "/api/File/Download?encryption=" + DESCEncryption.Encrypt(fileName, "Poxiao")
         };

@@ -64,7 +64,6 @@ public class InfluxDBManager : IInfluxDBManager, ITransient
         return attributes;
     }
 
-
     /// <inheritdoc />
     public async Task<List<List<object>>> QueryByKeyAndTimeRangeAsync(string measurementName, string key, int min)
     {
@@ -86,7 +85,6 @@ public class InfluxDBManager : IInfluxDBManager, ITransient
         var value = enumerable.Select(p => p.Values[0][7].ToString()).FirstOrDefault();
         return value; // 根据实际情况调整返回值的格式
     }
-
 
     public LinkAttribute ParseLinkAttribute(string data)
     {
@@ -131,11 +129,10 @@ public class InfluxDBManager : IInfluxDBManager, ITransient
         return linkAttribute;
     }
 
-
 }
 
 /// <summary>
-/// 
+///
 /// </summary>
 public class LinkAttribute
 {

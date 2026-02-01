@@ -1,6 +1,6 @@
+using Poxiao.EventBus;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Security;
-using Poxiao.EventBus;
 using Poxiao.Logging;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;

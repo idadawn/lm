@@ -1,18 +1,18 @@
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Models;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Dto.DbLink;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.Systems.Interfaces.System;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.Systems;
@@ -160,7 +160,7 @@ public class DbLinkService : IDbLinkService, IDynamicApiController, ITransient
     /// <param name="id">主键值.</param>
     /// <returns></returns>
     [HttpGet("{id}")]
-    public async Task<dynamic> GetInfo_Api(string id)
+    public async Task<dynamic> GetInfoApi(string id)
     {
         var data = await GetInfo(id);
         var oracleParam = data.OracleParam?.ToObject<OracleParamModel>();
@@ -200,7 +200,7 @@ public class DbLinkService : IDbLinkService, IDynamicApiController, ITransient
     /// <param name="input">实体对象.</param>
     /// <returns></returns>
     [HttpPost("")]
-    public async Task Create_Api([FromBody] DbLinkCrInput input)
+    public async Task CreateApi([FromBody] DbLinkCrInput input)
     {
         if (await _repository.IsAnyAsync(x => x.FullName == input.fullName && x.DeleteMark == null))
             throw Oops.Oh(ErrorCode.COM1004);
@@ -228,7 +228,7 @@ public class DbLinkService : IDbLinkService, IDynamicApiController, ITransient
     /// <param name="input">实体对象.</param>
     /// <returns></returns>
     [HttpPut("{id}")]
-    public async Task Update_Api(string id, [FromBody] DbLinkUpInput input)
+    public async Task UpdateApi(string id, [FromBody] DbLinkUpInput input)
     {
         if (await _repository.IsAnyAsync(x => x.Id != id && x.FullName == input.fullName && x.DeleteMark == null))
             throw Oops.Oh(ErrorCode.COM1004);

@@ -3,4 +3,7 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="..\Poxiao.Lab.Entity\Poxiao.Lab.Entity.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Update="StyleCop.Analyzers" Version="1.1.118" />
+  </ItemGroup>
 </Project>

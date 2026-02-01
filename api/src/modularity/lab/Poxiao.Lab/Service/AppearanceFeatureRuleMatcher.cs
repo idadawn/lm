@@ -484,11 +484,11 @@ public class AppearanceFeatureRuleMatcher : ITransient
                 {
                     var kws = GetKeywords(f);
                     var list = kws.Select(k => new
-                        {
-                            Feature = f,
-                            MatchText = k,
-                            Type = "keyword",
-                        })
+                    {
+                        Feature = f,
+                        MatchText = k,
+                        Type = "keyword",
+                    })
                         .ToList();
                     if (!string.IsNullOrEmpty(f.Name))
                     {

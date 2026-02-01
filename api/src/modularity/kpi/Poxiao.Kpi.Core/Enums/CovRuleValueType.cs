@@ -19,7 +19,6 @@ public enum CovRuleValueType
     Percent = 1,
 }
 
-
 /// <summary>
 /// 价值链规则操作符.
 /// </summary>

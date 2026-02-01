@@ -1,6 +1,5 @@
 ﻿namespace Poxiao.Kpi.Application;
 
-
 /// <summary>
 /// 指标分析任务创建成功返回.
 /// </summary>
@@ -23,7 +22,6 @@ public class MetricAnalysisSummaryOutput
     /// </summary>
     [JsonProperty("summary_content")]
     public string SummaryContent { get; set; }
-
 
     /// <summary>
     /// 信息.

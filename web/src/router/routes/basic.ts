@@ -75,7 +75,7 @@ export const COMMON_ROUTE: AppRouteRecordRaw = {
   path: '/common-route',
   name: 'commonRoute',
   component: LAYOUT,
-  redirect: '/home',
+  redirect: '/lab/dashboard',
   meta: {
     title: 'commonRoute',
     hideBreadcrumb: true,
@@ -105,8 +105,8 @@ export const COMMON_ROUTE: AppRouteRecordRaw = {
       },
     },
     {
-      path: '/home',
-      component: () => import('/@/views/basic/home/index.vue'),
+      path: '/lab/dashboard',
+      component: () => import('/@/views/lab/dashboard/index.vue'),
       name: 'home',
       meta: {
         title: 'routes.basic.home',

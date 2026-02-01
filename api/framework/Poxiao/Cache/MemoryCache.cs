@@ -1,5 +1,5 @@
-﻿using Poxiao.DependencyInjection;
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
+using Poxiao.DependencyInjection;
 using System.Reflection;
 
 namespace Poxiao.Infrastructure.Cache;

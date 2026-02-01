@@ -1,17 +1,18 @@
+using Newtonsoft.Json;
 using Poxiao.Extras.CollectiveOAuth.Cache;
 using Poxiao.Extras.CollectiveOAuth.Config;
+using Poxiao.Extras.CollectiveOAuth.Enums;
 using Poxiao.Extras.CollectiveOAuth.Models;
 using Poxiao.Extras.CollectiveOAuth.Utils;
-using Poxiao.Extras.CollectiveOAuth.Enums;
-using System.Text;
 using System.Security.Cryptography;
-using Newtonsoft.Json;
+using System.Text;
 
 namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class ElemeAuthRequest : DefaultAuthRequest
 {
-    public ElemeAuthRequest(ClientConfig config) : base(config, new ElemeAuthSource())
+    public ElemeAuthRequest(ClientConfig config)
+        : base(config, new ElemeAuthSource())
     {
     }
 
@@ -49,11 +50,10 @@ public class ElemeAuthRequest : DefaultAuthRequest
         return authToken;
     }
 
-
     protected override AuthUser getUserInfo(AuthToken authToken)
     {
         // 获取商户账号信息的API接口名称
-        String action = "eleme.user.getUser";
+        string action = "eleme.user.getUser";
         // 时间戳，单位秒。API服务端允许客户端请求最大时间误差为正负5分钟。
         long timestamp = DateTime.Now.Ticks;
         // 公共参数
@@ -166,12 +166,10 @@ public class ElemeAuthRequest : DefaultAuthRequest
         return headers;
     }
 
-
     private string getRequestId()
     {
         return (Guid.NewGuid().ToString() + "|" + DateTime.Now.Ticks.ToString()).ToUpper();
     }
-
 
     /**
     * 校验请求结果
@@ -187,7 +185,7 @@ public class ElemeAuthRequest : DefaultAuthRequest
         }
     }
 
-    ///编码
+    // 编码
     public string encodeBase64(string contentStr, string encodeType = "utf-8")
     {
         string encode = "";
@@ -202,7 +200,8 @@ public class ElemeAuthRequest : DefaultAuthRequest
         }
         return encode;
     }
-    ///解码
+
+    // 解码
     public string decodeBase64(string contentStr, string encodeType = "utf-8")
     {
         string decode = "";
@@ -217,7 +216,6 @@ public class ElemeAuthRequest : DefaultAuthRequest
         }
         return decode;
     }
-
 
     /**
      * 生成饿了么请求的Signature
@@ -260,7 +258,7 @@ public class ElemeAuthRequest : DefaultAuthRequest
 
             //X为     十六进制 X都是大写 x都为小写
             //2为 每次都是两位数
-            //假设有两个数10和26，正常情况十六进制显示0xA、0x1A，这样看起来不整齐，为了好看，可以指定"X2"，这样显示出来就是：0x0A、0x1A。 
+            //假设有两个数10和26，正常情况十六进制显示0xA、0x1A，这样看起来不整齐，为了好看，可以指定"X2"，这样显示出来就是：0x0A、0x1A。
             //遍历哈希数据的每个字节
             //并将每个字符串格式化为十六进制字符串。
             int length = data.Length;

@@ -1,7 +1,11 @@
-using System.IO.Compression;
-using System.Security.Cryptography;
-using System.Text;
-using System.Web;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using Poxiao.DataEncryption;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Captcha.General;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Core.Manager;
@@ -12,17 +16,13 @@ using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Models;
 using Poxiao.Infrastructure.Options;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DataEncryption;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Logging.Attributes;
 using Poxiao.RemoteRequest.Extensions;
 using Poxiao.Systems.Interfaces.Common;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
+using System.IO.Compression;
+using System.Security.Cryptography;
+using System.Text;
+using System.Web;
 
 namespace Poxiao.Systems.Common;
 
@@ -83,7 +83,7 @@ public class FileService : IFileService, IDynamicApiController, ITransient
     [HttpGet("Uploader/Preview")]
     public async Task<dynamic> Preview(string fileName, string fileDownloadUrl)
     {
-        string[]? typeList = new string[] { "doc", "docx", "xls", "xlsx", "ppt", "pptx", "pdf", "jpg", "jpeg", "gif", "png", "bmp" };
+        string[] ? typeList = new string[] { "doc", "docx", "xls", "xlsx", "ppt", "pptx", "pdf", "jpg", "jpeg", "gif", "png", "bmp" };
         string? type = fileName.Split('.').LastOrDefault();
         if (typeList.Contains(type))
         {
@@ -167,7 +167,7 @@ public class FileService : IFileService, IDynamicApiController, ITransient
         var fileStreamResult = await _fileManager.DownloadFileByType(systemFilePath, fileName);
         byte[] bytes = new byte[fileStreamResult.FileStream.Length];
 
-        fileStreamResult.FileStream.Read(bytes, 0, bytes.Length);
+        fileStreamResult.FileStream.ReadExactly(bytes);
 
         fileStreamResult.FileStream.Close();
         var httpContext = App.HttpContext;
@@ -329,14 +329,14 @@ public class FileService : IFileService, IDynamicApiController, ITransient
     [IgnoreLog]
     public async Task<dynamic> UploadImage(IFormFile file)
     {
-        string? ImgType = Path.GetExtension(file.FileName).Replace(".", string.Empty);
-        if (!this.AllowImageType(ImgType))
+        string? imgType = Path.GetExtension(file.FileName).Replace(".", string.Empty);
+        if (!this.AllowImageType(imgType))
             throw Oops.Oh(ErrorCode.D5013);
         string? filePath = FileVariable.UserAvatarFilePath;
         string? fileName = string.Format("{0}{1}{2}", DateTime.Now.ToString("yyyyMMdd"), RandomExtensions.NextLetterAndNumberString(new Random(), 5), Path.GetExtension(file.FileName));
         var stream = file.OpenReadStream();
         await _fileManager.UploadFileByType(stream, filePath, fileName);
-        return new FileControlsModel { name = fileName, url = string.Format("/api/file/Image/userAvatar/{0}", fileName), fileSize = file.Length, fileExtension = ImgType };
+        return new FileControlsModel { name = fileName, url = string.Format("/api/file/Image/userAvatar/{0}", fileName), fileSize = file.Length, fileExtension = imgType };
     }
 
     /// <summary>

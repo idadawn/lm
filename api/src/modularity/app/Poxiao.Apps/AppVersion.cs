@@ -1,10 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
-using Poxiao.Infrastructure.Configuration;
+using Microsoft.AspNetCore.Mvc;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
-using Poxiao.Systems.Entitys.System;
-using Microsoft.AspNetCore.Mvc;
+using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Security;
+using Poxiao.Systems.Entitys.System;
 using SqlSugar;
 using System.Text;
 
@@ -77,7 +77,7 @@ public class AppVersion : IDynamicApiController, ITransient
     {
         // 获取使用的环境变量
         var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-        // 获取配置文件的数据库信息 
+        // 获取配置文件的数据库信息
         var dbOptions = App.GetOptions<ConnectionStringsOptions>();
         var version = "1.0.0";
         return await Task.FromResult(new { env, dbOptions, version });

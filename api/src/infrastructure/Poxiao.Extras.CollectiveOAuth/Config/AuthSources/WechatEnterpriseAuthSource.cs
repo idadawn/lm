@@ -21,7 +21,7 @@ public class WechatEnterpriseAuthSource : IAuthSource
 
     public string getName()
     {
-        return DefaultAuthSourceEnum.WECHAT_ENTERPRISE.ToString();
+        return DefaultAuthSourceEnum.WECHATENTERPRISE.ToString();
     }
 
     public string refresh()

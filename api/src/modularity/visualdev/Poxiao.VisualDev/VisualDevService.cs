@@ -1,3 +1,9 @@
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
@@ -5,9 +11,6 @@ using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Models.Authorize;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Model.DataBase;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
@@ -20,9 +23,6 @@ using Poxiao.VisualDev.Entitys.Dto.VisualDev;
 using Poxiao.VisualDev.Entitys.Dto.VisualDevModelData;
 using Poxiao.VisualDev.Interfaces;
 using Poxiao.WorkFlow.Entitys.Entity;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using SqlSugar;
 
 namespace Poxiao.VisualDev;
@@ -145,7 +145,7 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
     {
         var webType = input.webType.IsNotEmptyOrNull() ? input.webType.Split(',').ToObject<List<int>>() : new List<int>();
         var data = await _visualDevRepository.AsSugarClient().Queryable<VisualDevReleaseEntity>().Where(v => v.Type == input.type && v.DeleteMark == null).
-            WhereIF(webType.Any(), v=>webType.Contains(v.WebType)).
+            WhereIF(webType.Any(), v => webType.Contains(v.WebType)).
             OrderBy(a => a.Category).OrderBy(a => a.SortCode).ToListAsync();
         List<VisualDevSelectorOutput>? output = data.Adapt<List<VisualDevSelectorOutput>>();
         IEnumerable<string>? parentIds = output.Select(x => x.ParentId).ToList().Distinct();
@@ -184,21 +184,21 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
     {
         var templateEntity = await _visualDevRepository.AsSugarClient().Queryable<VisualDevReleaseEntity>().FirstAsync(v => v.Id == id && v.DeleteMark == null);
         TemplateParsingBase? tInfo = new TemplateParsingBase(templateEntity.Adapt<VisualDevEntity>()); // 解析模板
-        List<FieldsModel>? fieldsModels = tInfo.SingleFormData.FindAll(x => x.__vModel__.IsNotEmptyOrNull() && !PoxiaoKeyConst.RELATIONFORM.Equals(x.__config__.poxiaoKey));
+        List<FieldsModel>? fieldsModels = tInfo.SingleFormData.FindAll(x => x.VModel.IsNotEmptyOrNull() && !PoxiaoKeyConst.RELATIONFORM.Equals(x.Config.poxiaoKey));
         if (filterType.Equals(1))
         {
-            fieldsModels = fieldsModels.FindAll(x => !PoxiaoKeyConst.UPLOADIMG.Equals(x.__config__.poxiaoKey) && !PoxiaoKeyConst.UPLOADFZ.Equals(x.__config__.poxiaoKey)
-                        && !PoxiaoKeyConst.MODIFYUSER.Equals(x.__config__.poxiaoKey) && !PoxiaoKeyConst.MODIFYTIME.Equals(x.__config__.poxiaoKey) && !PoxiaoKeyConst.LINK.Equals(x.__config__.poxiaoKey)
-                        && !PoxiaoKeyConst.BUTTON.Equals(x.__config__.poxiaoKey) && !PoxiaoKeyConst.ALERT.Equals(x.__config__.poxiaoKey) && !PoxiaoKeyConst.PoxiaoTEXT.Equals(x.__config__.poxiaoKey)
-                        && !PoxiaoKeyConst.BARCODE.Equals(x.__config__.poxiaoKey) && !PoxiaoKeyConst.QRCODE.Equals(x.__config__.poxiaoKey) && !PoxiaoKeyConst.TABLE.Equals(x.__config__.poxiaoKey)
-                        && !PoxiaoKeyConst.CREATEUSER.Equals(x.__config__.poxiaoKey) && !PoxiaoKeyConst.CREATETIME.Equals(x.__config__.poxiaoKey) && !PoxiaoKeyConst.BILLRULE.Equals(x.__config__.poxiaoKey)
-                        && !PoxiaoKeyConst.POPUPSELECT.Equals(x.__config__.poxiaoKey));
+            fieldsModels = fieldsModels.FindAll(x => !PoxiaoKeyConst.UPLOADIMG.Equals(x.Config.poxiaoKey) && !PoxiaoKeyConst.UPLOADFZ.Equals(x.Config.poxiaoKey)
+                        && !PoxiaoKeyConst.MODIFYUSER.Equals(x.Config.poxiaoKey) && !PoxiaoKeyConst.MODIFYTIME.Equals(x.Config.poxiaoKey) && !PoxiaoKeyConst.LINK.Equals(x.Config.poxiaoKey)
+                        && !PoxiaoKeyConst.BUTTON.Equals(x.Config.poxiaoKey) && !PoxiaoKeyConst.ALERT.Equals(x.Config.poxiaoKey) && !PoxiaoKeyConst.PoxiaoTEXT.Equals(x.Config.poxiaoKey)
+                        && !PoxiaoKeyConst.BARCODE.Equals(x.Config.poxiaoKey) && !PoxiaoKeyConst.QRCODE.Equals(x.Config.poxiaoKey) && !PoxiaoKeyConst.TABLE.Equals(x.Config.poxiaoKey)
+                        && !PoxiaoKeyConst.CREATEUSER.Equals(x.Config.poxiaoKey) && !PoxiaoKeyConst.CREATETIME.Equals(x.Config.poxiaoKey) && !PoxiaoKeyConst.BILLRULE.Equals(x.Config.poxiaoKey)
+                        && !PoxiaoKeyConst.POPUPSELECT.Equals(x.Config.poxiaoKey));
         }
 
         List<VisualDevFormDataFieldsOutput>? output = fieldsModels.Select(x => new VisualDevFormDataFieldsOutput()
         {
-            label = x.__config__.label,
-            vmodel = x.__vModel__
+            label = x.Config.label,
+            vmodel = x.VModel
         }).ToList();
         return new { list = output };
     }
@@ -226,7 +226,7 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
             List<IndexGridFieldModel>? clist = new List<IndexGridFieldModel>();
 
             // 获取 调用 该功能表单 的功能模板
-            FieldsModel? smodel = tInfo.FieldsModelList.Where(x => x.__vModel__ == input.relationField).First();
+            FieldsModel? smodel = tInfo.FieldsModelList.Where(x => x.VModel == input.relationField).First();
             smodel.searchType = 2;
             flist.Add(smodel); // 添加 关联查询字段
             if (tInfo.ColumnData == null)
@@ -240,15 +240,15 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
 
             if (!tInfo.ColumnData.columnList.Where(x => x.prop == input.relationField).Any())
                 tInfo.ColumnData.columnList.Add(new IndexGridFieldModel() { prop = input.relationField, label = input.relationField });
-            if (tInfo.ColumnData.defaultSidx.IsNotEmptyOrNull() && tInfo.FieldsModelList.Any(x => x.__vModel__ == tInfo.ColumnData?.defaultSidx))
-                flist.Add(tInfo.FieldsModelList.Where(x => x.__vModel__ == tInfo.ColumnData?.defaultSidx).FirstOrDefault()); // 添加 关联排序字段
+            if (tInfo.ColumnData.defaultSidx.IsNotEmptyOrNull() && tInfo.FieldsModelList.Any(x => x.VModel == tInfo.ColumnData?.defaultSidx))
+                flist.Add(tInfo.FieldsModelList.Where(x => x.VModel == tInfo.ColumnData?.defaultSidx).FirstOrDefault()); // 添加 关联排序字段
 
             tInfo.FieldsModelList.ForEach(item =>
             {
-                if (showFieldList.Find(x => x == item.__vModel__) != null) flist.Add(item);
+                if (showFieldList.Find(x => x == item.VModel) != null) flist.Add(item);
             });
             clist.Add(tInfo.ColumnData.columnList.Where(x => x.prop == input.relationField).FirstOrDefault()); // 添加 关联查询字段
-            if (tInfo.ColumnData.defaultSidx.IsNotEmptyOrNull() && tInfo.FieldsModelList.Any(x => x.__vModel__ == tInfo.ColumnData?.defaultSidx))
+            if (tInfo.ColumnData.defaultSidx.IsNotEmptyOrNull() && tInfo.FieldsModelList.Any(x => x.VModel == tInfo.ColumnData?.defaultSidx))
                 clist.Add(tInfo.ColumnData.columnList.Where(x => x.prop == tInfo.ColumnData?.defaultSidx).FirstOrDefault()); // 添加 关联排序字段
             showFieldList.ForEach(item =>
             {
@@ -591,10 +591,10 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
             .WhereIF(oldAppModule != null, x => x.ModuleId == oldAppModule.Id).WhereIF(oldAppModule == null, x => x.ModuleId == "0").ToListAsync();
         #endregion
 
-        var oldWebId = (oldWebModule != null ? oldWebModule.Id : "null");
+        var oldWebId = oldWebModule != null ? oldWebModule.Id : "null";
         if (_visualDevRepository.AsSugarClient().Queryable<ModuleEntity>().Any(x => (x.EnCode == entity.EnCode || x.FullName == entity.FullName) && x.Id != oldWebId && x.SystemId == input.pcSystemId && x.Category == "Web" && x.DeleteMark == null))
             throw Oops.Oh(ErrorCode.COM1015);
-        var oldAppId = (oldAppModule != null ? oldAppModule.Id : "null");
+        var oldAppId = oldAppModule != null ? oldAppModule.Id : "null";
         if (_visualDevRepository.AsSugarClient().Queryable<ModuleEntity>().Any(x => (x.EnCode == entity.EnCode || x.FullName == entity.FullName) && x.Id != oldAppId && x.SystemId == input.appSystemId && x.Category == "App" && x.DeleteMark == null))
             throw Oops.Oh(ErrorCode.COM1015);
 
@@ -619,7 +619,7 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
             moduleModel.IsDataAuthorize = 1;
             moduleModel.SortCode = oldWebModule != null ? oldWebModule.SortCode : 999;
             moduleModel.CreatorTime = DateTime.Now;
-            moduleModel.PropertyJson = (new { moduleId = input.id, iconBackgroundColor = string.Empty, isTree = 0 }).ToJsonString();
+            moduleModel.PropertyJson = new { moduleId = input.id, iconBackgroundColor = string.Empty, isTree = 0 }.ToJsonString();
             moduleModel.SystemId = oldWebModule != null ? oldWebModule.SystemId : input.pcSystemId;
 
             #endregion
@@ -753,7 +753,7 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
             moduleModel.IsDataAuthorize = 1;
             moduleModel.SortCode = oldWebModule != null ? oldWebModule.SortCode : 999;
             moduleModel.CreatorTime = DateTime.Now;
-            moduleModel.PropertyJson = (new { moduleId = input.id, iconBackgroundColor = string.Empty, isTree = 0 }).ToJsonString();
+            moduleModel.PropertyJson = new { moduleId = input.id, iconBackgroundColor = string.Empty, isTree = 0 }.ToJsonString();
             moduleModel.SystemId = oldWebModule != null ? oldWebModule.SystemId : input.pcSystemId;
 
             #endregion
@@ -785,25 +785,25 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
             var fieldList = tInfo.AllFieldsModel;
             var formAuth = new List<ModuleFormEntity>();
 
-            var ctList = tInfo.AllFieldsModel.Where(x => x.__config__.poxiaoKey == PoxiaoKeyConst.TABLE).ToList();
+            var ctList = tInfo.AllFieldsModel.Where(x => x.Config.poxiaoKey == PoxiaoKeyConst.TABLE).ToList();
             var childTableIndex = new Dictionary<string, string>();
-            for (var i = 0; i < ctList.Count; i++) childTableIndex.Add(ctList[i].__vModel__, ctList[i].__config__.label + (i + 1));
+            for (var i = 0; i < ctList.Count; i++) childTableIndex.Add(ctList[i].VModel, ctList[i].Config.label + (i + 1));
 
-            fieldList = fieldList.Where(x => x.__config__.poxiaoKey != PoxiaoKeyConst.TABLE).ToList();
-            fieldList.Where(x => x.__vModel__.IsNotEmptyOrNull()).ToList().ForEach(item =>
+            fieldList = fieldList.Where(x => x.Config.poxiaoKey != PoxiaoKeyConst.TABLE).ToList();
+            fieldList.Where(x => x.VModel.IsNotEmptyOrNull()).ToList().ForEach(item =>
             {
-                var fRule = item.__vModel__.Contains("_poxiao_") ? 1 : 0;
-                fRule = item.__vModel__.ToLower().Contains("tablefield") && item.__vModel__.Contains("-") ? 2 : fRule;
-                var ctName = item.__vModel__.Split("-");
+                var fRule = item.VModel.Contains("_poxiao_") ? 1 : 0;
+                fRule = item.VModel.ToLower().Contains("tablefield") && item.VModel.Contains("-") ? 2 : fRule;
+                var ctName = item.VModel.Split("-");
                 formAuth.Add(new ModuleFormEntity()
                 {
                     ParentId = "-1",
-                    EnCode = item.__vModel__,
-                    BindTable = fRule.Equals(2) ? item.__config__.relationTable : item.__config__.tableName,
+                    EnCode = item.VModel,
+                    BindTable = fRule.Equals(2) ? item.Config.relationTable : item.Config.tableName,
                     ChildTableKey = fRule.Equals(2) ? ctName.FirstOrDefault() : string.Empty,
                     FieldRule = fRule,
                     ModuleId = moduleModel.Id,
-                    FullName = fRule.Equals(2) ? childTableIndex[item.__vModel__.Split('-').First()] + "-" + item.__config__.label : item.__config__.label,
+                    FullName = fRule.Equals(2) ? childTableIndex[item.VModel.Split('-').First()] + "-" + item.Config.label : item.Config.label,
                     EnabledMark = 1,
                     SortCode = 0
                 });
@@ -814,12 +814,12 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
                 formAuth.Add(new ModuleFormEntity()
                 {
                     ParentId = "-1",
-                    EnCode = item.__vModel__,
+                    EnCode = item.VModel,
                     BindTable = tInfo.MainTableName,
-                    ChildTableKey = item.__vModel__,
+                    ChildTableKey = item.VModel,
                     FieldRule = 0,
                     ModuleId = moduleModel.Id,
-                    FullName = childTableIndex[item.__vModel__],
+                    FullName = childTableIndex[item.VModel],
                     EnabledMark = 1,
                     SortCode = 0
                 });
@@ -828,21 +828,21 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
             // 列表权限
             columnData.defaultColumnList.ForEach(item =>
             {
-                var itemModel = fieldList.FirstOrDefault(x => x.__config__.poxiaoKey == item.poxiaoKey && x.__vModel__ == item.prop);
+                var itemModel = fieldList.FirstOrDefault(x => x.Config.poxiaoKey == item.poxiaoKey && x.VModel == item.prop);
                 if (itemModel != null)
                 {
-                    var fRule = itemModel.__vModel__.Contains("_poxiao_") ? 1 : 0;
-                    fRule = itemModel.__vModel__.ToLower().Contains("tablefield") && itemModel.__vModel__.Contains("-") ? 2 : fRule;
-                    var ctName = item.__vModel__.Split("-");
+                    var fRule = itemModel.VModel.Contains("_poxiao_") ? 1 : 0;
+                    fRule = itemModel.VModel.ToLower().Contains("tablefield") && itemModel.VModel.Contains("-") ? 2 : fRule;
+                    var ctName = item.VModel.Split("-");
                     columnAuth.Add(new ModuleColumnEntity()
                     {
                         ParentId = "-1",
-                        EnCode = itemModel.__vModel__,
-                        BindTable = fRule.Equals(2) ? itemModel.__config__.relationTable : itemModel.__config__.tableName,
-                        ChildTableKey = fRule.Equals(2) ? itemModel.__vModel__.Split("-").FirstOrDefault() : string.Empty,
+                        EnCode = itemModel.VModel,
+                        BindTable = fRule.Equals(2) ? itemModel.Config.relationTable : itemModel.Config.tableName,
+                        ChildTableKey = fRule.Equals(2) ? itemModel.VModel.Split("-").FirstOrDefault() : string.Empty,
                         FieldRule = fRule,
                         ModuleId = moduleModel.Id,
-                        FullName = fRule.Equals(2) ? childTableIndex[item.__vModel__.Split('-').First()] + item.__config__.label.Replace(item.__config__.label.Split("-").First(), string.Empty) : item.__config__.label,
+                        FullName = fRule.Equals(2) ? childTableIndex[item.VModel.Split('-').First()] + item.Config.label.Replace(item.Config.label.Split("-").First(), string.Empty) : item.Config.label,
                         EnabledMark = 0,
                         SortCode = 0
                     });
@@ -946,7 +946,7 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
                     if (!_visualDevRepository.AsSugarClient().Queryable<ModuleDataAuthorizeSchemeEntity>().Where(x => x.EnCode.Equals("poxiao_alldata") && x.ModuleId == moduleModel.Id && x.DeleteMark == null).Any())
                     {
                         // 全部数据权限方案
-                        var AllDataAuthScheme = new ModuleDataAuthorizeSchemeEntity()
+                        var allDataAuthScheme = new ModuleDataAuthorizeSchemeEntity()
                         {
                             FullName = "全部数据",
                             EnCode = "poxiao_alldata",
@@ -955,13 +955,13 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
                             ConditionJson = string.Empty,
                             ModuleId = moduleModel.Id
                         };
-                        await _visualDevRepository.AsSugarClient().Insertable(AllDataAuthScheme).CallEntityMethod(m => m.Create()).ExecuteCommandAsync();
+                        await _visualDevRepository.AsSugarClient().Insertable(allDataAuthScheme).CallEntityMethod(m => m.Create()).ExecuteCommandAsync();
                     }
 
                     // 创建用户和所属组织权限方案
                     // 只添加 主表控件的数据权限
-                    var fList = fieldList.Where(x => !x.__vModel__.Contains("_poxiao_") && x.__vModel__.IsNotEmptyOrNull() && x.__config__.visibility.Contains("pc"))
-                        .Where(x => x.__config__.poxiaoKey == PoxiaoKeyConst.CREATEUSER || x.__config__.poxiaoKey == PoxiaoKeyConst.CURRORGANIZE).ToList();
+                    var fList = fieldList.Where(x => !x.VModel.Contains("_poxiao_") && x.VModel.IsNotEmptyOrNull() && x.Config.visibility.Contains("pc"))
+                        .Where(x => x.Config.poxiaoKey == PoxiaoKeyConst.CREATEUSER || x.Config.poxiaoKey == PoxiaoKeyConst.CURRORGANIZE).ToList();
 
                     var authList = await MenuMergeDataAuth(moduleModel.Id, fList);
                     await MenuMergeDataAuthScheme(moduleModel.Id, authList, fList);
@@ -995,19 +995,19 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
             });
 
             formAuth.Clear();
-            fieldList.Where(x => x.__vModel__.IsNotEmptyOrNull()).ToList().ForEach(item =>
+            fieldList.Where(x => x.VModel.IsNotEmptyOrNull()).ToList().ForEach(item =>
             {
-                var fRule = item.__vModel__.Contains("_poxiao_") ? 1 : 0;
-                fRule = item.__vModel__.ToLower().Contains("tablefield") && item.__vModel__.Contains("-") ? 2 : fRule;
+                var fRule = item.VModel.Contains("_poxiao_") ? 1 : 0;
+                fRule = item.VModel.ToLower().Contains("tablefield") && item.VModel.Contains("-") ? 2 : fRule;
                 formAuth.Add(new ModuleFormEntity()
                 {
                     ParentId = "-1",
-                    EnCode = item.__vModel__,
-                    BindTable = fRule.Equals(2) ? item.__config__.relationTable : item.__config__.tableName,
-                    ChildTableKey = fRule.Equals(2) ? item.__vModel__.Split("-").FirstOrDefault() : string.Empty,
+                    EnCode = item.VModel,
+                    BindTable = fRule.Equals(2) ? item.Config.relationTable : item.Config.tableName,
+                    ChildTableKey = fRule.Equals(2) ? item.VModel.Split("-").FirstOrDefault() : string.Empty,
                     FieldRule = fRule,
                     ModuleId = moduleModel.Id,
-                    FullName = fRule.Equals(2) ? childTableIndex[item.__vModel__.Split('-').First()] + "-" + item.__config__.label : item.__config__.label,
+                    FullName = fRule.Equals(2) ? childTableIndex[item.VModel.Split('-').First()] + "-" + item.Config.label : item.Config.label,
                     EnabledMark = 1,
                     SortCode = 0
                 });
@@ -1018,12 +1018,12 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
                 formAuth.Add(new ModuleFormEntity()
                 {
                     ParentId = "-1",
-                    EnCode = item.__vModel__,
+                    EnCode = item.VModel,
                     BindTable = tInfo.MainTableName,
-                    ChildTableKey = item.__vModel__,
+                    ChildTableKey = item.VModel,
                     FieldRule = 0,
                     ModuleId = moduleModel.Id,
-                    FullName = childTableIndex[item.__vModel__],
+                    FullName = childTableIndex[item.VModel],
                     EnabledMark = 1,
                     SortCode = 0
                 });
@@ -1032,20 +1032,20 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
             columnAuth.Clear();
             appColumnData.defaultColumnList.ForEach(item =>
             {
-                var itemModel = fieldList.FirstOrDefault(x => x.__config__.poxiaoKey == item.poxiaoKey && x.__vModel__ == item.prop);
+                var itemModel = fieldList.FirstOrDefault(x => x.Config.poxiaoKey == item.poxiaoKey && x.VModel == item.prop);
                 if (itemModel != null)
                 {
-                    var fRule = itemModel.__vModel__.Contains("_poxiao_") ? 1 : 0;
-                    fRule = itemModel.__vModel__.ToLower().Contains("tablefield") && itemModel.__vModel__.Contains("-") ? 2 : fRule;
+                    var fRule = itemModel.VModel.Contains("_poxiao_") ? 1 : 0;
+                    fRule = itemModel.VModel.ToLower().Contains("tablefield") && itemModel.VModel.Contains("-") ? 2 : fRule;
                     columnAuth.Add(new ModuleColumnEntity()
                     {
                         ParentId = "-1",
-                        EnCode = itemModel.__vModel__,
-                        BindTable = fRule.Equals(2) ? itemModel.__config__.relationTable : itemModel.__config__.tableName,
-                        ChildTableKey = fRule.Equals(2) ? itemModel.__vModel__.Split("-").FirstOrDefault() : string.Empty,
+                        EnCode = itemModel.VModel,
+                        BindTable = fRule.Equals(2) ? itemModel.Config.relationTable : itemModel.Config.tableName,
+                        ChildTableKey = fRule.Equals(2) ? itemModel.VModel.Split("-").FirstOrDefault() : string.Empty,
                         FieldRule = fRule,
                         ModuleId = moduleModel.Id,
-                        FullName = fRule.Equals(2) ? childTableIndex[item.__vModel__.Split('-').First()] + item.__config__.label.Replace(item.__config__.label.Split("-").First(), string.Empty) : item.__config__.label,
+                        FullName = fRule.Equals(2) ? childTableIndex[item.VModel.Split('-').First()] + item.Config.label.Replace(item.Config.label.Split("-").First(), string.Empty) : item.Config.label,
                         EnabledMark = 0,
                         SortCode = 0
                     });
@@ -1151,7 +1151,7 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
                     if (!_visualDevRepository.AsSugarClient().Queryable<ModuleDataAuthorizeSchemeEntity>().Where(x => x.EnCode.Equals("poxiao_alldata") && x.ModuleId == moduleModel.Id && x.DeleteMark == null).Any())
                     {
                         // 全部数据权限方案
-                        var AllDataAuthScheme = new ModuleDataAuthorizeSchemeEntity()
+                        var allDataAuthScheme = new ModuleDataAuthorizeSchemeEntity()
                         {
                             FullName = "全部数据",
                             EnCode = "poxiao_alldata",
@@ -1160,13 +1160,13 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
                             ConditionJson = string.Empty,
                             ModuleId = moduleModel.Id
                         };
-                        await _visualDevRepository.AsSugarClient().Insertable(AllDataAuthScheme).CallEntityMethod(m => m.Create()).ExecuteCommandAsync();
+                        await _visualDevRepository.AsSugarClient().Insertable(allDataAuthScheme).CallEntityMethod(m => m.Create()).ExecuteCommandAsync();
                     }
 
                     // 创建用户和所属组织权限方案
                     // 只添加 主表控件的数据权限
-                    var fList = fieldList.Where(x => !x.__vModel__.Contains("_poxiao_") && x.__vModel__.IsNotEmptyOrNull() && x.__config__.visibility.Contains("app"))
-                        .Where(x => x.__config__.poxiaoKey == PoxiaoKeyConst.CREATEUSER || x.__config__.poxiaoKey == PoxiaoKeyConst.CURRORGANIZE).ToList();
+                    var fList = fieldList.Where(x => !x.VModel.Contains("_poxiao_") && x.VModel.IsNotEmptyOrNull() && x.Config.visibility.Contains("app"))
+                        .Where(x => x.Config.poxiaoKey == PoxiaoKeyConst.CREATEUSER || x.Config.poxiaoKey == PoxiaoKeyConst.CURRORGANIZE).ToList();
 
                     var authList = await MenuMergeDataAuth(moduleModel.Id, fList);
                     await MenuMergeDataAuthScheme(moduleModel.Id, authList, fList);
@@ -1368,14 +1368,14 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
 
         // 子表信息
         Dictionary<string, string>? childTableDic = new Dictionary<string, string>();
-        fieldsModelList.Where(x => x.__config__.poxiaoKey == PoxiaoKeyConst.TABLE).ToList().ForEach(item =>
+        fieldsModelList.Where(x => x.Config.poxiaoKey == PoxiaoKeyConst.TABLE).ToList().ForEach(item =>
         {
             DbTableAndFieldModel? childTInfo = new DbTableAndFieldModel();
             childTInfo.table = "ct" + SnowflakeIdHelper.NextId();
             childTInfo.table = isUpper ? childTInfo.table.ToUpper() : childTInfo.table.ToLower();
-            childTableDic.Add(item.__vModel__, childTInfo.table);
+            childTableDic.Add(item.VModel, childTInfo.table);
             childTInfo.tableName = vEntity.FullName + "_子表";
-            childTInfo.FieldList = FieldsModelToTableFile(item.__config__.children, formModel.primaryKeyPolicy == 2);
+            childTInfo.FieldList = FieldsModelToTableFile(item.Config.children, formModel.primaryKeyPolicy == 2);
             childTInfo.FieldList.Add(new DbTableFieldModel() { dataLength = "50", allowNull = 1, dataType = "varchar", field = "F_Relation_Id", fieldName = vEntity.FullName + "_关联外键" });
             addTableList.Add(childTInfo);
         });
@@ -1485,8 +1485,8 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
     private List<DbTableFieldModel> FieldsModelToTableFile(List<FieldsModel> fmList, bool isIdentity)
     {
         List<DbTableFieldModel>? fieldList = new List<DbTableFieldModel>(); // 表字段
-        List<FieldsModel>? mList = fmList.Where(x => x.__config__.poxiaoKey.IsNotEmptyOrNull())
-            .Where(x => x.__config__.poxiaoKey != PoxiaoKeyConst.QRCODE && x.__config__.poxiaoKey != PoxiaoKeyConst.BARCODE && x.__config__.poxiaoKey != PoxiaoKeyConst.TABLE).ToList(); // 非存储字段
+        List<FieldsModel>? mList = fmList.Where(x => x.Config.poxiaoKey.IsNotEmptyOrNull())
+            .Where(x => x.Config.poxiaoKey != PoxiaoKeyConst.QRCODE && x.Config.poxiaoKey != PoxiaoKeyConst.BARCODE && x.Config.poxiaoKey != PoxiaoKeyConst.TABLE).ToList(); // 非存储字段
         fieldList.Add(new DbTableFieldModel()
         {
             primaryKey = true,
@@ -1500,12 +1500,12 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
         foreach (var item in mList)
         {
             // 不生成数据库字段(控件类型为：展示数据)，关联表单、弹窗选择、计算公式.
-            if ((item.__config__.poxiaoKey == PoxiaoKeyConst.RELATIONFORMATTR || item.__config__.poxiaoKey == PoxiaoKeyConst.POPUPATTR || item.__config__.poxiaoKey == PoxiaoKeyConst.CALCULATE) && item.__config__.isStorage.Equals(1))
+            if ((item.Config.poxiaoKey == PoxiaoKeyConst.RELATIONFORMATTR || item.Config.poxiaoKey == PoxiaoKeyConst.POPUPATTR || item.Config.poxiaoKey == PoxiaoKeyConst.CALCULATE) && item.Config.isStorage.Equals(1))
                 continue;
             DbTableFieldModel? field = new DbTableFieldModel();
-            field.field = item.__vModel__;
-            field.fieldName = item.__config__.label;
-            switch (item.__config__.poxiaoKey)
+            field.field = item.VModel;
+            field.fieldName = item.Config.label;
+            switch (item.Config.poxiaoKey)
             {
                 case PoxiaoKeyConst.NUMINPUT:
                     field.dataType = item.precision == 0 ? "int" : "decimal";
@@ -1583,51 +1583,51 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
         List<ModuleDataAuthorizeEntity>? noDelData = new List<ModuleDataAuthorizeEntity>(); // 记录未删除
 
         // 当前用户
-        FieldsModel? item = fields.FirstOrDefault(x => x.__config__.poxiaoKey == PoxiaoKeyConst.CREATEUSER);
+        FieldsModel? item = fields.FirstOrDefault(x => x.Config.poxiaoKey == PoxiaoKeyConst.CREATEUSER);
         if (item != null)
         {
-            var fRule = item.__vModel__.Contains("_poxiao_") ? 1 : 0;
-            fRule = item.__vModel__.ToLower().Contains("tablefield") && item.__vModel__.Contains("-") ? 2 : fRule;
+            var fRule = item.VModel.Contains("_poxiao_") ? 1 : 0;
+            fRule = item.VModel.ToLower().Contains("tablefield") && item.VModel.Contains("-") ? 2 : fRule;
 
             // 新增
-            if (!oldDataAuth.Any(x => x.EnCode == item.__vModel__ && x.ConditionText == "@userId"))
+            if (!oldDataAuth.Any(x => x.EnCode == item.VModel && x.ConditionText == "@userId"))
             {
                 authList.Add(new ModuleDataAuthorizeEntity()
                 {
                     Id = SnowflakeIdHelper.NextId(),
                     ConditionSymbol = "Equal", // 条件符号
                     Type = "varchar", // 字段类型
-                    FullName = item.__config__.label, // 字段说明
+                    FullName = item.Config.label, // 字段说明
                     ConditionText = "@userId", // 条件内容（当前用户）
                     EnabledMark = 1,
                     SortCode = -9527,
                     FieldRule = fRule, // 主表/副表/子表
-                    EnCode = fRule.Equals(1) ? item.__vModel__.Split("poxiao_").LastOrDefault() : item.__vModel__,
-                    BindTable = fRule.Equals(2) ? item.__config__.relationTable : item.__config__.tableName,
+                    EnCode = fRule.Equals(1) ? item.VModel.Split("poxiao_").LastOrDefault() : item.VModel,
+                    BindTable = fRule.Equals(2) ? item.Config.relationTable : item.Config.tableName,
                     ModuleId = menuId
                 });
             }
 
-            if (!oldDataAuth.Any(x => x.EnCode == item.__vModel__ && x.ConditionText == "@userAraSubordinates"))
+            if (!oldDataAuth.Any(x => x.EnCode == item.VModel && x.ConditionText == "@userAraSubordinates"))
             {
                 authList.Add(new ModuleDataAuthorizeEntity()
                 {
                     Id = SnowflakeIdHelper.NextId(),
                     ConditionSymbol = "Equal", // 条件符号
                     Type = "varchar", // 字段类型
-                    FullName = item.__config__.label, // 字段说明
+                    FullName = item.Config.label, // 字段说明
                     ConditionText = "@userAraSubordinates", // 条件内容（当前用户及下属）
                     EnabledMark = 1,
                     SortCode = -9527,
                     FieldRule = fRule, // 主表/副表/子表
-                    EnCode = fRule.Equals(1) ? item.__vModel__.Split("poxiao_").LastOrDefault() : item.__vModel__,
-                    BindTable = fRule.Equals(2) ? item.__config__.relationTable : item.__config__.tableName,
+                    EnCode = fRule.Equals(1) ? item.VModel.Split("poxiao_").LastOrDefault() : item.VModel,
+                    BindTable = fRule.Equals(2) ? item.Config.relationTable : item.Config.tableName,
                     ModuleId = menuId
                 });
             }
 
             // 删除
-            List<ModuleDataAuthorizeEntity>? delData = oldDataAuth.Where(x => x.EnCode != item.__vModel__ && (x.ConditionText == "@userId" || x.ConditionText == "@userAraSubordinates")).ToList();
+            List<ModuleDataAuthorizeEntity>? delData = oldDataAuth.Where(x => x.EnCode != item.VModel && (x.ConditionText == "@userId" || x.ConditionText == "@userAraSubordinates")).ToList();
             await _visualDevRepository.AsSugarClient().Deleteable(delData).ExecuteCommandAsync();
 
             noDelData = oldDataAuth.Except(delData).ToList(); // 记录未删除
@@ -1640,51 +1640,51 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
         }
 
         // 所属组织
-        item = fields.FirstOrDefault(x => x.__config__.poxiaoKey == PoxiaoKeyConst.CURRORGANIZE);
+        item = fields.FirstOrDefault(x => x.Config.poxiaoKey == PoxiaoKeyConst.CURRORGANIZE);
         if (item != null)
         {
-            var fRule = item.__vModel__.Contains("_poxiao_") ? 1 : 0;
-            fRule = item.__vModel__.ToLower().Contains("tablefield") && item.__vModel__.Contains("-") ? 2 : fRule;
+            var fRule = item.VModel.Contains("_poxiao_") ? 1 : 0;
+            fRule = item.VModel.ToLower().Contains("tablefield") && item.VModel.Contains("-") ? 2 : fRule;
 
             // 新增
-            if (!oldDataAuth.Any(x => x.EnCode == item.__vModel__ && x.ConditionText == "@organizeId"))
+            if (!oldDataAuth.Any(x => x.EnCode == item.VModel && x.ConditionText == "@organizeId"))
             {
                 authList.Add(new ModuleDataAuthorizeEntity()
                 {
                     Id = SnowflakeIdHelper.NextId(),
                     ConditionSymbol = "Equal", // 条件符号
                     Type = "varchar", // 字段类型
-                    FullName = item.__config__.label, // 字段说明
+                    FullName = item.Config.label, // 字段说明
                     ConditionText = "@organizeId", // 条件内容（当前组织）
                     EnabledMark = 1,
                     SortCode = -9527,
                     FieldRule = fRule, // 主表/副表/子表
-                    EnCode = fRule.Equals(1) ? item.__vModel__.Split("poxiao_").LastOrDefault() : item.__vModel__,
-                    BindTable = fRule.Equals(2) ? item.__config__.relationTable : item.__config__.tableName,
+                    EnCode = fRule.Equals(1) ? item.VModel.Split("poxiao_").LastOrDefault() : item.VModel,
+                    BindTable = fRule.Equals(2) ? item.Config.relationTable : item.Config.tableName,
                     ModuleId = menuId
                 });
             }
 
-            if (!oldDataAuth.Any(x => x.EnCode == item.__vModel__ && x.ConditionText == "@organizationAndSuborganization"))
+            if (!oldDataAuth.Any(x => x.EnCode == item.VModel && x.ConditionText == "@organizationAndSuborganization"))
             {
                 authList.Add(new ModuleDataAuthorizeEntity()
                 {
                     Id = SnowflakeIdHelper.NextId(),
                     ConditionSymbol = "Equal", // 条件符号
                     Type = "varchar", // 字段类型
-                    FullName = item.__config__.label, // 字段说明
+                    FullName = item.Config.label, // 字段说明
                     ConditionText = "@organizationAndSuborganization", // 条件内容（当前组织及组织）
                     EnabledMark = 1,
                     SortCode = -9527,
                     FieldRule = fRule, // 主表/副表/子表
-                    EnCode = fRule.Equals(1) ? item.__vModel__.Split("poxiao_").LastOrDefault() : item.__vModel__,
-                    BindTable = fRule.Equals(2) ? item.__config__.relationTable : item.__config__.tableName,
+                    EnCode = fRule.Equals(1) ? item.VModel.Split("poxiao_").LastOrDefault() : item.VModel,
+                    BindTable = fRule.Equals(2) ? item.Config.relationTable : item.Config.tableName,
                     ModuleId = menuId
                 });
             }
 
             // 删除
-            List<ModuleDataAuthorizeEntity>? delData = oldDataAuth.Where(x => x.EnCode != item.__vModel__ && (x.ConditionText == "@organizeId" || x.ConditionText == "@organizationAndSuborganization")).ToList();
+            List<ModuleDataAuthorizeEntity>? delData = oldDataAuth.Where(x => x.EnCode != item.VModel && (x.ConditionText == "@organizeId" || x.ConditionText == "@organizationAndSuborganization")).ToList();
             await _visualDevRepository.AsSugarClient().Deleteable(delData).ExecuteCommandAsync();
 
             noDelData = oldDataAuth.Except(delData).ToList(); // 记录未删除
@@ -1697,51 +1697,51 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
         }
 
         // 当前分管组织
-        item = fields.FirstOrDefault(x => x.__config__.poxiaoKey == PoxiaoKeyConst.CURRORGANIZE);
+        item = fields.FirstOrDefault(x => x.Config.poxiaoKey == PoxiaoKeyConst.CURRORGANIZE);
         if (item != null)
         {
-            var fRule = item.__vModel__.Contains("_poxiao_") ? 1 : 0;
-            fRule = item.__vModel__.ToLower().Contains("tablefield") && item.__vModel__.Contains("-") ? 2 : fRule;
+            var fRule = item.VModel.Contains("_poxiao_") ? 1 : 0;
+            fRule = item.VModel.ToLower().Contains("tablefield") && item.VModel.Contains("-") ? 2 : fRule;
 
             // 新增
-            if (!oldDataAuth.Any(x => x.EnCode == item.__vModel__ && x.ConditionText == "@branchManageOrganize"))
+            if (!oldDataAuth.Any(x => x.EnCode == item.VModel && x.ConditionText == "@branchManageOrganize"))
             {
                 authList.Add(new ModuleDataAuthorizeEntity()
                 {
                     Id = SnowflakeIdHelper.NextId(),
                     ConditionSymbol = "Equal", // 条件符号
                     Type = "varchar", // 字段类型
-                    FullName = item.__config__.label, // 字段说明
+                    FullName = item.Config.label, // 字段说明
                     ConditionText = "@branchManageOrganize", // 条件内容（当前分管组织）
                     EnabledMark = 1,
                     SortCode = -9527,
                     FieldRule = fRule, // 主表/副表/子表
-                    EnCode = fRule.Equals(1) ? item.__vModel__.Split("poxiao_").LastOrDefault() : item.__vModel__,
-                    BindTable = fRule.Equals(2) ? item.__config__.relationTable : item.__config__.tableName,
+                    EnCode = fRule.Equals(1) ? item.VModel.Split("poxiao_").LastOrDefault() : item.VModel,
+                    BindTable = fRule.Equals(2) ? item.Config.relationTable : item.Config.tableName,
                     ModuleId = menuId
                 });
             }
 
-            if (!oldDataAuth.Any(x => x.EnCode == item.__vModel__ && x.ConditionText == "@branchManageOrganizeAndSub"))
+            if (!oldDataAuth.Any(x => x.EnCode == item.VModel && x.ConditionText == "@branchManageOrganizeAndSub"))
             {
                 authList.Add(new ModuleDataAuthorizeEntity()
                 {
                     Id = SnowflakeIdHelper.NextId(),
                     ConditionSymbol = "Equal", // 条件符号
                     Type = "varchar", // 字段类型
-                    FullName = item.__config__.label, // 字段说明
+                    FullName = item.Config.label, // 字段说明
                     ConditionText = "@branchManageOrganizeAndSub", // 条件内容（当前分管组织及子组织）
                     EnabledMark = 1,
                     SortCode = -9527,
                     FieldRule = fRule, // 主表/副表/子表
-                    EnCode = fRule.Equals(1) ? item.__vModel__.Split("poxiao_").LastOrDefault() : item.__vModel__,
-                    BindTable = fRule.Equals(2) ? item.__config__.relationTable : item.__config__.tableName,
+                    EnCode = fRule.Equals(1) ? item.VModel.Split("poxiao_").LastOrDefault() : item.VModel,
+                    BindTable = fRule.Equals(2) ? item.Config.relationTable : item.Config.tableName,
                     ModuleId = menuId
                 });
             }
 
             // 删除
-            List<ModuleDataAuthorizeEntity>? delData = oldDataAuth.Where(x => x.EnCode != item.__vModel__ && (x.ConditionText == "@branchManageOrganize" || x.ConditionText == "@branchManageOrganizeAndSub")).ToList();
+            List<ModuleDataAuthorizeEntity>? delData = oldDataAuth.Where(x => x.EnCode != item.VModel && (x.ConditionText == "@branchManageOrganize" || x.ConditionText == "@branchManageOrganizeAndSub")).ToList();
             await _visualDevRepository.AsSugarClient().Deleteable(delData).ExecuteCommandAsync();
 
             noDelData = oldDataAuth.Except(delData).ToList(); // 记录未删除
@@ -1781,7 +1781,7 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
         List<ModuleDataAuthorizeSchemeEntity>? authSchemeList = new List<ModuleDataAuthorizeSchemeEntity>(); // 方案管理
 
         // 当前用户
-        FieldsModel? item = fields.FirstOrDefault(x => x.__config__.poxiaoKey == PoxiaoKeyConst.CREATEUSER);
+        FieldsModel? item = fields.FirstOrDefault(x => x.Config.poxiaoKey == PoxiaoKeyConst.CREATEUSER);
         var condJson = new AuthorizeModuleResourceConditionModelInput()
         {
             logic = "and",
@@ -1790,42 +1790,42 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
 
         if (item != null)
         {
-            ModuleDataAuthorizeEntity? model = authList.FirstOrDefault(x => x.EnCode == item.__vModel__ && x.ConditionText.Equals("@userId"));
+            ModuleDataAuthorizeEntity? model = authList.FirstOrDefault(x => x.EnCode == item.VModel && x.ConditionText.Equals("@userId"));
 
             if (model != null)
             {
                 condJson.groups.First().id = model.Id;
                 condJson.groups.First().bindTable = model.BindTable;
-                condJson.groups.First().field = item.__vModel__;
+                condJson.groups.First().field = item.VModel;
                 condJson.groups.First().fieldRule = model.FieldRule.ParseToInt();
                 condJson.groups.First().value = "@userId";
 
                 // 新增
-                if (!oldDataAuthScheme.Any(x => x.ConditionText == "【{" + item.__config__.label + "} {等于} {@userId}】"))
+                if (!oldDataAuthScheme.Any(x => x.ConditionText == "【{" + item.Config.label + "} {等于} {@userId}】"))
                 {
                     authSchemeList.Add(new ModuleDataAuthorizeSchemeEntity()
                     {
                         FullName = "当前用户",
                         EnCode = SnowflakeIdHelper.NextId(),
                         SortCode = -9527,
-                        ConditionText = "【{" + item.__config__.label + "} {等于} {@userId}】",
+                        ConditionText = "【{" + item.Config.label + "} {等于} {@userId}】",
                         ConditionJson = new List<AuthorizeModuleResourceConditionModelInput>() { condJson }.ToJsonString(),
                         ModuleId = menuId
                     });
                 }
 
-                model = authList.FirstOrDefault(x => x.EnCode == item.__vModel__ && x.ConditionText.Equals("@userAraSubordinates"));
+                model = authList.FirstOrDefault(x => x.EnCode == item.VModel && x.ConditionText.Equals("@userAraSubordinates"));
                 condJson.groups.First().id = model.Id;
                 condJson.groups.First().op = "Equal";
                 condJson.groups.First().value = "@userAraSubordinates";
-                if (!oldDataAuthScheme.Any(x => x.ConditionText == "【{" + item.__config__.label + "} {等于} {@userAraSubordinates}】"))
+                if (!oldDataAuthScheme.Any(x => x.ConditionText == "【{" + item.Config.label + "} {等于} {@userAraSubordinates}】"))
                 {
                     authSchemeList.Add(new ModuleDataAuthorizeSchemeEntity()
                     {
                         FullName = "当前用户及下属",
                         EnCode = SnowflakeIdHelper.NextId(),
                         SortCode = -9527,
-                        ConditionText = "【{" + item.__config__.label + "} {等于} {@userAraSubordinates}】",
+                        ConditionText = "【{" + item.Config.label + "} {等于} {@userAraSubordinates}】",
                         ConditionJson = new List<AuthorizeModuleResourceConditionModelInput>() { condJson }.ToJsonString(),
                         ModuleId = menuId
                     });
@@ -1853,46 +1853,46 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
         }
 
         // 当前组织
-        item = fields.FirstOrDefault(x => x.__config__.poxiaoKey == PoxiaoKeyConst.CURRORGANIZE);
+        item = fields.FirstOrDefault(x => x.Config.poxiaoKey == PoxiaoKeyConst.CURRORGANIZE);
         if (item != null)
         {
-            ModuleDataAuthorizeEntity? model = authList.FirstOrDefault(x => x.EnCode == item.__vModel__ && x.ConditionText.Equals("@organizeId"));
+            ModuleDataAuthorizeEntity? model = authList.FirstOrDefault(x => x.EnCode == item.VModel && x.ConditionText.Equals("@organizeId"));
 
             if (model != null)
             {
                 condJson.groups.First().id = model.Id;
                 condJson.groups.First().bindTable = model.BindTable;
-                condJson.groups.First().field = item.__vModel__;
+                condJson.groups.First().field = item.VModel;
                 condJson.groups.First().fieldRule = model.FieldRule.ParseToInt();
                 condJson.groups.First().op = "Equal";
                 condJson.groups.First().value = "@organizeId";
 
                 // 新增
-                if (!oldDataAuthScheme.Any(x => x.ConditionText == "【{" + item.__config__.label + "} {等于} {@organizeId}】"))
+                if (!oldDataAuthScheme.Any(x => x.ConditionText == "【{" + item.Config.label + "} {等于} {@organizeId}】"))
                 {
                     authSchemeList.Add(new ModuleDataAuthorizeSchemeEntity()
                     {
                         FullName = "当前组织",
                         EnCode = SnowflakeIdHelper.NextId(),
                         SortCode = -9527,
-                        ConditionText = "【{" + item.__config__.label + "} {等于} {@organizeId}】",
+                        ConditionText = "【{" + item.Config.label + "} {等于} {@organizeId}】",
                         ConditionJson = new List<AuthorizeModuleResourceConditionModelInput>() { condJson }.ToJsonString(),
                         ModuleId = menuId
                     });
                 }
 
-                model = authList.FirstOrDefault(x => x.EnCode == item.__vModel__ && x.ConditionText.Equals("@organizationAndSuborganization"));
+                model = authList.FirstOrDefault(x => x.EnCode == item.VModel && x.ConditionText.Equals("@organizationAndSuborganization"));
                 condJson.groups.First().id = model.Id;
                 condJson.groups.First().op = "Equal";
                 condJson.groups.First().value = "@organizationAndSuborganization";
-                if (!oldDataAuthScheme.Any(x => x.ConditionText == "【{" + item.__config__.label + "} {等于} {@organizationAndSuborganization}】"))
+                if (!oldDataAuthScheme.Any(x => x.ConditionText == "【{" + item.Config.label + "} {等于} {@organizationAndSuborganization}】"))
                 {
                     authSchemeList.Add(new ModuleDataAuthorizeSchemeEntity()
                     {
                         FullName = "当前组织及子组织",
                         EnCode = SnowflakeIdHelper.NextId(),
                         SortCode = -9527,
-                        ConditionText = "【{" + item.__config__.label + "} {等于} {@organizationAndSuborganization}】",
+                        ConditionText = "【{" + item.Config.label + "} {等于} {@organizationAndSuborganization}】",
                         ConditionJson = new List<AuthorizeModuleResourceConditionModelInput>() { condJson }.ToJsonString(),
                         ModuleId = menuId
                     });
@@ -1920,46 +1920,46 @@ public class VisualDevService : IVisualDevService, IDynamicApiController, ITrans
         }
 
         // 当前分管组织
-        item = fields.FirstOrDefault(x => x.__config__.poxiaoKey == PoxiaoKeyConst.CURRORGANIZE);
+        item = fields.FirstOrDefault(x => x.Config.poxiaoKey == PoxiaoKeyConst.CURRORGANIZE);
         if (item != null)
         {
-            ModuleDataAuthorizeEntity? model = authList.FirstOrDefault(x => x.EnCode == item.__vModel__ && x.ConditionText.Equals("@branchManageOrganize"));
+            ModuleDataAuthorizeEntity? model = authList.FirstOrDefault(x => x.EnCode == item.VModel && x.ConditionText.Equals("@branchManageOrganize"));
 
             if (model != null)
             {
                 condJson.groups.First().id = model.Id;
                 condJson.groups.First().bindTable = model.BindTable;
-                condJson.groups.First().field = item.__vModel__;
+                condJson.groups.First().field = item.VModel;
                 condJson.groups.First().fieldRule = model.FieldRule.ParseToInt();
                 condJson.groups.First().op = "Equal";
                 condJson.groups.First().value = "@branchManageOrganize";
 
                 // 新增
-                if (!oldDataAuthScheme.Any(x => x.ConditionText == "【{" + item.__config__.label + "} {等于} {@branchManageOrganize}】"))
+                if (!oldDataAuthScheme.Any(x => x.ConditionText == "【{" + item.Config.label + "} {等于} {@branchManageOrganize}】"))
                 {
                     authSchemeList.Add(new ModuleDataAuthorizeSchemeEntity()
                     {
                         FullName = "当前分管组织",
                         EnCode = SnowflakeIdHelper.NextId(),
                         SortCode = -9527,
-                        ConditionText = "【{" + item.__config__.label + "} {等于} {@branchManageOrganize}】",
+                        ConditionText = "【{" + item.Config.label + "} {等于} {@branchManageOrganize}】",
                         ConditionJson = new List<AuthorizeModuleResourceConditionModelInput>() { condJson }.ToJsonString(),
                         ModuleId = menuId
                     });
                 }
 
-                model = authList.FirstOrDefault(x => x.EnCode == item.__vModel__ && x.ConditionText.Equals("@branchManageOrganizeAndSub"));
+                model = authList.FirstOrDefault(x => x.EnCode == item.VModel && x.ConditionText.Equals("@branchManageOrganizeAndSub"));
                 condJson.groups.First().id = model.Id;
                 condJson.groups.First().op = "Equal";
                 condJson.groups.First().value = "@branchManageOrganizeAndSub";
-                if (!oldDataAuthScheme.Any(x => x.ConditionText == "【{" + item.__config__.label + "} {等于} {@branchManageOrganizeAndSub}】"))
+                if (!oldDataAuthScheme.Any(x => x.ConditionText == "【{" + item.Config.label + "} {等于} {@branchManageOrganizeAndSub}】"))
                 {
                     authSchemeList.Add(new ModuleDataAuthorizeSchemeEntity()
                     {
                         FullName = "当前分管组织及子组织",
                         EnCode = SnowflakeIdHelper.NextId(),
                         SortCode = -9527,
-                        ConditionText = "【{" + item.__config__.label + "} {等于} {@branchManageOrganizeAndSub}】",
+                        ConditionText = "【{" + item.Config.label + "} {等于} {@branchManageOrganizeAndSub}】",
                         ConditionJson = new List<AuthorizeModuleResourceConditionModelInput>() { condJson }.ToJsonString(),
                         ModuleId = menuId
                     });

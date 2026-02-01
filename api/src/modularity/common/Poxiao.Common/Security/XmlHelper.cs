@@ -9,7 +9,7 @@ public static class XmlHelper
     /// </summary>
     /// <param name="type">类型.</param>
     /// <param name="xml">XML字符串.</param>
-    /// <returns></returns> 
+    /// <returns></returns>
     public static object Deserialize(Type type, string xml)
     {
         using (StringReader sr = new StringReader(xml))

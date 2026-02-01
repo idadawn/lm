@@ -248,10 +248,12 @@ public class ProductSpecService : IProductSpecService, IDynamicApiController, IT
             .Where(t => t.Code == entity.Code && t.Id != id && t.DeleteMark == null)
             .AnyAsync();
         if (exists)
+        {
             throw Oops.Oh(
                 ErrorCode.COM1003,
                 $"规格代码 '{entity.Code}' 已被其他产品规格使用，不能重复"
             );
+        }
 
         entity.LastModify();
 

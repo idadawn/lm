@@ -1,7 +1,7 @@
+using Microsoft.Extensions.DependencyInjection;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Manager;
 using Poxiao.Schedule;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Poxiao.TaskScheduler.Listener;
 

@@ -58,7 +58,6 @@ public class MetricAnalysisController : IDynamicApiController
         return info;
     }
 
-
     /// <summary>
     /// 获取图表分析结果.
     /// </summary>

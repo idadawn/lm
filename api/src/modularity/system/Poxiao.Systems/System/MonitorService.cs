@@ -1,9 +1,9 @@
-using Poxiao.Infrastructure.Security;
+using Microsoft.AspNetCore.Mvc;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
+using Poxiao.Infrastructure.Security;
 using Poxiao.Systems.Entitys.Dto.Monitor;
 using Poxiao.Systems.Interfaces.System;
-using Microsoft.AspNetCore.Mvc;
 using System.Runtime.InteropServices;
 
 namespace Poxiao.Systems;
@@ -33,17 +33,17 @@ public class MonitorService : IDynamicApiController, ITransient
         MonitorOutput output = new MonitorOutput();
         if (flag_Linux)
         {
-            output.system = MachineHelper.GetSystemInfo_Linux();
-            output.cpu = MachineHelper.GetCpuInfo_Linux();
-            output.memory = MachineHelper.GetMemoryInfo_Linux();
-            output.disk = MachineHelper.GetDiskInfo_Linux();
+            output.system = MachineHelper.GetSystemInfoLinux();
+            output.cpu = MachineHelper.GetCpuInfoLinux();
+            output.memory = MachineHelper.GetMemoryInfoLinux();
+            output.disk = MachineHelper.GetDiskInfoLinux();
         }
         else if (flag_Windows)
         {
-            output.system = MachineHelper.GetSystemInfo_Windows();
-            output.cpu = MachineHelper.GetCpuInfo_Windows();
-            output.memory = MachineHelper.GetMemoryInfo_Windows();
-            output.disk = MachineHelper.GetDiskInfo_Windows();
+            output.system = MachineHelper.GetSystemInfoWindows();
+            output.cpu = MachineHelper.GetCpuInfoWindows();
+            output.memory = MachineHelper.GetMemoryInfoWindows();
+            output.disk = MachineHelper.GetDiskInfoWindows();
         }
 
         output.time = DateTime.Now;

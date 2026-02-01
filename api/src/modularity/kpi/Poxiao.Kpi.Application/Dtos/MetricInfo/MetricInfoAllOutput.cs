@@ -11,6 +11,7 @@ public class MetricInfoAllOutput
     /// </summary>
     [JsonProperty("id")]
     public string Id { get; set; }
+
     /// <summary>
     /// 指标名称.
     /// </summary>

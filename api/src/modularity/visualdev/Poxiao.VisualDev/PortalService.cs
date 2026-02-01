@@ -1,12 +1,15 @@
+using Mapster;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Core.Manager.Files;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Dto.System.Portal;
 using Poxiao.Systems.Entitys.Entity.System;
 using Poxiao.Systems.Entitys.Permission;
@@ -14,9 +17,6 @@ using Poxiao.Systems.Entitys.System;
 using Poxiao.VisualDev.Entitys;
 using Poxiao.VisualDev.Entitys.Dto.Portal;
 using Poxiao.VisualDev.Entitys.Entity;
-using Mapster;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.VisualDev;
@@ -507,7 +507,8 @@ public class PortalService : IDynamicApiController, ITransient
         if (input.fullName.IsNotEmptyOrNull())
         {
             await _portalRepository.AsSugarClient().Updateable(entity)
-                .UpdateColumns(it => new {
+                .UpdateColumns(it => new
+                {
                     it.CustomUrl,
                     //it.AppCustomUrl,
                     it.EnCode,
@@ -526,7 +527,8 @@ public class PortalService : IDynamicApiController, ITransient
         else
         {
             await _portalRepository.AsSugarClient().Updateable(entity)
-                .UpdateColumns(it => new {
+                .UpdateColumns(it => new
+                {
                     it.LastModifyTime,
                     it.LastModifyUserId
                 }).ExecuteCommandAsync();
@@ -826,7 +828,8 @@ public class PortalService : IDynamicApiController, ITransient
         if (portalDataList.Count > 0)
         {
             var isOk = await _portalRepository.AsSugarClient().Updateable(portalDataList)
-                .UpdateColumns(it => new {
+                .UpdateColumns(it => new
+                {
                     it.FormData,
                     it.LastModifyTime,
                     it.LastModifyUserId
@@ -853,7 +856,7 @@ public class PortalService : IDynamicApiController, ITransient
         {
             if (!string.IsNullOrEmpty(user.RoleId))
             {
-                string[]? roleIds = user.RoleId.Split(',');
+                string[] ? roleIds = user.RoleId.Split(',');
                 List<string>? roleId = await _portalRepository.AsSugarClient().Queryable<RoleEntity>().Where(r => roleIds.Contains(r.Id)).Where(r => r.EnabledMark == 1 && r.DeleteMark == null).Select(r => r.Id).ToListAsync();
                 var items = await _portalRepository.AsSugarClient().Queryable<AuthorizeEntity>().Where(a => roleId.Contains(a.ObjectId)).Where(a => a.ItemType == "portal").GroupBy(it => new { it.ItemId }).Select(it => new { it.ItemId }).ToListAsync();
                 if (items.Count == 0) return string.Empty;

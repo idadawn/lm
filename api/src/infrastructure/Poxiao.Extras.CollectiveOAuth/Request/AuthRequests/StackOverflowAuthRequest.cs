@@ -1,14 +1,15 @@
 using Poxiao.Extras.CollectiveOAuth.Cache;
 using Poxiao.Extras.CollectiveOAuth.Config;
+using Poxiao.Extras.CollectiveOAuth.Enums;
 using Poxiao.Extras.CollectiveOAuth.Models;
 using Poxiao.Extras.CollectiveOAuth.Utils;
-using Poxiao.Extras.CollectiveOAuth.Enums;
 
 namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class StackOverflowAuthRequest : DefaultAuthRequest
 {
-    public StackOverflowAuthRequest(ClientConfig config) : base(config, new StackOverflowAuthSource())
+    public StackOverflowAuthRequest(ClientConfig config)
+        : base(config, new StackOverflowAuthSource())
     {
     }
 
@@ -73,7 +74,6 @@ public class StackOverflowAuthRequest : DefaultAuthRequest
      * @return 返回授权地址
      * @since 1.9.3
      */
-
     public override string authorize(string state)
     {
         return UrlBuilder.fromBaseUrl(source.authorize())
@@ -84,7 +84,6 @@ public class StackOverflowAuthRequest : DefaultAuthRequest
             .queryParam("state", getRealState(state))
             .build();
     }
-
 
     /**
      * 检查响应内容是否正确

@@ -1,13 +1,6 @@
 <template>
-  <BasicModal
-    v-bind="$attrs"
-    @register="registerModal"
-    title="判定等级预览"
-    :showOkBtn="false"
-    cancelText="关闭"
-    width="900px"
-    :minHeight="650"
-  >
+  <BasicModal v-bind="$attrs" @register="registerModal" title="判定等级预览" :showOkBtn="false" cancelText="关闭" width="1400px"
+    :minHeight="750">
     <div class="judgment-view-container">
       <!-- 加载中 -->
       <div v-if="loading" class="loading-wrapper">
@@ -18,18 +11,11 @@
       <div v-else-if="sortedLevels.length > 0" class="levels-wrapper">
         <!-- 可滚动的非默认等级列表 -->
         <div class="scrollable-levels">
-          <div
-            v-for="(level, index) in normalLevels"
-            :key="level.id"
-            class="level-card"
-          >
+          <div v-for="(level, index) in normalLevels" :key="level.id" class="level-card">
             <div class="level-content">
               <div class="level-left">
                 <div class="level-order">{{ index + 1 }}</div>
-                <div
-                  class="level-color-dot"
-                  :style="{ backgroundColor: level.color || '#cbd5e1' }"
-                ></div>
+                <div class="level-color-dot" :style="{ backgroundColor: level.color || '#cbd5e1' }"></div>
                 <span class="level-name">{{ level.name }}</span>
                 <span v-if="level.qualityStatus" class="quality-badge">{{ level.qualityStatus }}</span>
               </div>
@@ -37,37 +23,46 @@
               <div class="level-right">
                 <a-tag v-if="hasCondition(level)" color="blue">{{ getConditionCount(level) }}个条件</a-tag>
                 <a-tag v-else color="default">无条件</a-tag>
-                <a-button type="link" size="small" @click="handleViewCondition(level)">
-                  查看条件
-                </a-button>
+
+                <!-- 展开/收起按钮 -->
+                <div v-if="hasCondition(level)" class="expand-btn" @click="toggleExpand(level.id)">
+                  <Icon :icon="isExpanded(level.id) ? 'ant-design:up-outlined' : 'ant-design:down-outlined'"
+                    size="16" />
+                  {{ isExpanded(level.id) ? '收起' : '展开' }}
+                </div>
               </div>
             </div>
+
+            <!-- 展开的条件区域 -->
+            <div v-if="isExpanded(level.id)" class="level-conditions">
+              <RulePreviewCard v-if="getRuleFromLevel(level)" :rule="getRuleFromLevel(level)"
+                :field-options="fieldOptions" :feature-list="featureList" :feature-category-list="featureCategoryList"
+                :feature-severity-list="featureSeverityList" />
+            </div>
           </div>
-        </div>
 
-        <!-- 固定在底部的默认等级 -->
-        <div v-if="defaultLevel" class="fixed-default-section">
-          <div class="level-card is-default">
-            <div class="level-content">
-              <div class="level-left">
-                <div class="level-order is-default">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                  </svg>
+          <!-- 固定在底部的默认等级 -->
+          <div v-if="defaultLevel" class="fixed-default-section">
+            <div class="level-card is-default">
+              <div class="level-content">
+                <div class="level-left">
+                  <div class="level-order is-default">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="16" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                  </div>
+                  <div class="level-color-dot" :style="{ backgroundColor: defaultLevel.color || '#94a3b8' }"></div>
+                  <span class="level-name">{{ defaultLevel.name }}</span>
+                  <a-tag color="warning">兜底默认</a-tag>
+                  <span v-if="defaultLevel.qualityStatus" class="quality-badge">{{ defaultLevel.qualityStatus }}</span>
                 </div>
-                <div
-                  class="level-color-dot"
-                  :style="{ backgroundColor: defaultLevel.color || '#94a3b8' }"
-                ></div>
-                <span class="level-name">{{ defaultLevel.name }}</span>
-                <a-tag color="warning">兜底默认</a-tag>
-                <span v-if="defaultLevel.qualityStatus" class="quality-badge">{{ defaultLevel.qualityStatus }}</span>
-              </div>
 
-              <div class="level-right">
-                <span class="default-hint">当所有条件都不满足时使用</span>
+                <div class="level-right">
+                  <span class="default-hint">当所有条件都不满足时使用</span>
+                </div>
               </div>
             </div>
           </div>
@@ -81,17 +76,18 @@
         <p class="empty-desc">请先在判定等级管理中配置</p>
       </div>
     </div>
-    <!-- 条件查看弹窗 -->
-    <LevelConditionModal @register="registerConditionModal" />
   </BasicModal>
 </template>
 
 <script lang="ts" setup>
 import { ref, computed } from 'vue';
-import { BasicModal, useModalInner, useModal } from '/@/components/Modal';
+import { BasicModal, useModalInner } from '/@/components/Modal';
 import { useMessage } from '/@/hooks/web/useMessage';
+import { Icon } from '/@/components/Icon';
+import RulePreviewCard from './RulePreviewCard.vue';
 import { getIntermediateDataJudgmentLevelList } from '/@/api/lab/intermediateDataJudgmentLevel';
-import LevelConditionModal from '/@/views/lab/intermediateDataJudgmentLevel/components/LevelConditionModal.vue';
+import { getAvailableColumns } from '/@/api/lab/intermediateDataFormula';
+import { getAppearanceFeatureList, AppearanceFeatureInfo, getAllAppearanceFeatureCategories, getEnabledSeverityLevels, AppearanceFeatureCategoryInfo } from '/@/api/lab/appearanceFeature';
 
 defineEmits(['register']);
 const { createMessage } = useMessage();
@@ -99,9 +95,12 @@ const { createMessage } = useMessage();
 const loading = ref(false);
 const formulaId = ref('');
 const levels = ref<any[]>([]);
-
-// 条件查看弹窗
-const [registerConditionModal, { openModal: openConditionModal }] = useModal();
+const availableFields = ref<any[]>([]);
+const fieldOptions = ref<any[]>([]);
+const expandedLevelIds = ref<Set<string>>(new Set());
+const featureList = ref<AppearanceFeatureInfo[]>([]);
+const featureCategoryList = ref<AppearanceFeatureCategoryInfo[]>([]);
+const featureSeverityList = ref<any[]>([]);
 
 // 排序后的等级列表
 const sortedLevels = computed(() => levels.value);
@@ -116,6 +115,7 @@ const [registerModal, { setModalProps }] = useModalInner(async (data) => {
   setModalProps({ confirmLoading: false });
   formulaId.value = data.formulaId;
   levels.value = [];
+  expandedLevelIds.value.clear();
 
   await loadData();
 });
@@ -123,8 +123,31 @@ const [registerModal, { setModalProps }] = useModalInner(async (data) => {
 const loadData = async () => {
   loading.value = true;
   try {
-    const levelsRes: any = await getIntermediateDataJudgmentLevelList({ formulaId: formulaId.value });
+    // 并行加载数据
+    const [levelsRes, fieldsRes, featuresRes, categoriesRes, severityRes]: [any, any, any, any, any] = await Promise.all([
+      getIntermediateDataJudgmentLevelList({ formulaId: formulaId.value }),
+      getAvailableColumns(),
+      getAppearanceFeatureList({ pageSize: 1000, currentPage: 1 }),
+      getAllAppearanceFeatureCategories(),
+      getEnabledSeverityLevels()
+    ]);
+
     levels.value = Array.isArray(levelsRes) ? levelsRes : (levelsRes.data || []);
+
+    // 处理特性相关列表
+    featureList.value = featuresRes.list || [];
+    featureCategoryList.value = Array.isArray(categoriesRes) ? categoriesRes : (categoriesRes.list || categoriesRes.data || []);
+    featureSeverityList.value = Array.isArray(severityRes) ? severityRes : (severityRes.list || severityRes.data || []);
+
+    // 处理字段选项
+    availableFields.value = fieldsRes.data || fieldsRes || [];
+    fieldOptions.value = availableFields.value.map(f => ({
+      label: f.displayName ? `${f.displayName} (${f.columnName})` : f.columnName,
+      value: f.columnName,
+      featureCategories: f.featureCategories || [],
+      featureLevels: f.featureLevels || [],
+    }));
+
   } catch (error) {
     console.error(error);
     createMessage.error('加载数据失败');
@@ -148,29 +171,56 @@ const getConditionCount = (level: any): number => {
   try {
     const parsed = JSON.parse(level.condition);
     if (!parsed || !parsed.groups) return 0;
-    return parsed.groups.reduce((sum: number, g: any) => sum + (g.conditions?.length || 0), 0);
+
+    let count = 0;
+    for (const group of parsed.groups) {
+      if (Array.isArray(group.conditions)) {
+        count += group.conditions.length;
+      }
+      if (Array.isArray(group.subGroups)) {
+        for (const subGroup of group.subGroups) {
+          if (Array.isArray(subGroup.conditions)) {
+            count += subGroup.conditions.length;
+          }
+        }
+      }
+    }
+    return count;
+
   } catch {
     return 0;
   }
 };
 
-// 查看条件 - 打开条件查看弹窗
-const handleViewCondition = (level: any) => {
-  openConditionModal(true, {
-    levelId: level.id,
-    formulaId: formulaId.value,
-    levelName: level.name,
-    readOnly: true,
-  });
+// 展开/收起逻辑
+const isExpanded = (id: string) => expandedLevelIds.value.has(id);
+const toggleExpand = (id: string) => {
+  if (expandedLevelIds.value.has(id)) {
+    expandedLevelIds.value.delete(id);
+  } else {
+    expandedLevelIds.value.add(id);
+  }
+};
+
+// 将等级转换为RuleCard需要的格式
+const getRuleFromLevel = (level: any) => {
+  if (!level.condition) return null;
+  try {
+    const parsed = JSON.parse(level.condition);
+    return {
+      ...parsed,
+      resultValue: level.name, // 确保显示等级名称作为结果
+    };
+  } catch {
+    return null;
+  }
 };
 </script>
 
 <style scoped lang="less">
 .judgment-view-container {
-  padding: 16px 16px 8px 16px;
-  background: #f8fafc;
   height: 100%;
-  min-height: 600px;
+  min-height: px;
   display: flex;
   flex-direction: column;
   overflow: visible;
@@ -187,8 +237,7 @@ const handleViewCondition = (level: any) => {
   display: flex;
   flex-direction: column;
   flex: 1;
-  min-height: 0; 
-  /* overflow: hidden; Removed to support sticky footer relative to modal body scroll if needed */
+  min-height: 0;
 }
 
 .scrollable-levels {
@@ -210,7 +259,7 @@ const handleViewCondition = (level: any) => {
   flex-shrink: 0;
   margin-top: 8px;
   padding-top: 8px;
-  padding-bottom: 8px; /* add some padding at bottom for better look */
+  padding-bottom: 8px;
   border-top: 1px dashed #cbd5e1;
 }
 
@@ -218,10 +267,10 @@ const handleViewCondition = (level: any) => {
   background: #fff;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
-  transition: background-color 0.15s ease;
+  transition: all 0.2s ease;
 
   &:hover {
-    background: #f8fafc;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   }
 
   &.is-default {
@@ -267,7 +316,10 @@ const handleViewCondition = (level: any) => {
   flex-shrink: 0;
 
   &.is-default {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    background: linear-gradient(135deg, #f59e0b 0%, #fcd34d 100%);
+    /* Adjusted gradient end for better visibility */
+    color: #92400e;
+    /* Darker text for contest on yellow */
   }
 }
 
@@ -302,6 +354,35 @@ const handleViewCondition = (level: any) => {
   font-size: 12px;
   color: #92400e;
   font-style: italic;
+}
+
+.expand-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #f1f5f9;
+    color: #3b82f6;
+  }
+}
+
+.level-conditions {
+  border-top: 1px dashed #cbd5e1;
+  /* 稍微深一点的虚线 */
+  padding: 12px 16px 16px;
+  background: #f1f5f9;
+  /* 明显的底色 */
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+  /* 内阴影增加层次感 */
 }
 
 .empty-state {

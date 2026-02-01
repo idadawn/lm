@@ -1,10 +1,10 @@
-using Poxiao;
-using Poxiao.Extras.DatabaseAccessor.SqlSugar.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Poxiao;
+using Poxiao.Extras.DatabaseAccessor.SqlSugar.Models;
 using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Manager;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace SqlSugar;
 
@@ -116,7 +116,8 @@ where TEntity : class, new()
                         //如果是DbTppe=string设置成OracleDbType.Nvarchar2 
                         item.IsNvarchar2 = true;
                     }
-                };
+                }
+                ;
                 return new KeyValuePair<string, SugarParameter[]>(sql, pars);
             };
         }

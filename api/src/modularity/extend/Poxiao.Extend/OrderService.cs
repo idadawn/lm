@@ -1,4 +1,10 @@
-using System.Data;
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.Extend.Entitys;
+using Poxiao.Extend.Entitys.Dto.Order;
+using Poxiao.Extend.Entitys.Model;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Core.Manager;
@@ -8,19 +14,13 @@ using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Models;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.Extend.Entitys;
-using Poxiao.Extend.Entitys.Dto.Order;
-using Poxiao.Extend.Entitys.Model;
 using Poxiao.LinqBuilder;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.Systems.Interfaces.Permission;
 using Poxiao.WorkFlow.Entitys.Entity;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
+using System.Data;
 using Yitter.IdGenerator;
 
 namespace Poxiao.Extend;
@@ -314,13 +314,13 @@ public class OrderService : IDynamicApiController, ITransient
     private DataTable GetSelectTop(DataTable data, int top)
     {
         if (data.Rows.Count < top) return data;
-        DataTable NewTable = data.Clone();
+        DataTable newTable = data.Clone();
         DataRow[] rows = data.Select("1=1");
         for (int i = 0; i < top; i++)
         {
-            NewTable.ImportRow((DataRow)rows[i]);
+            newTable.ImportRow((DataRow)rows[i]);
         }
-        return NewTable;
+        return newTable;
     }
     #endregion
 }

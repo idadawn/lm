@@ -42,11 +42,13 @@ export interface AdvancedJudgmentRule {
 // 操作符选项
 export const OPERATORS = [
   { label: '等于 (=)', value: '=' },
-  { label: '不等于 (≠)', value: '!=' },
+  { label: '不等于 (≠)', value: '<>' },
   { label: '大于 (>)', value: '>' },
   { label: '大于等于 (≥)', value: '>=' },
   { label: '小于 (<)', value: '<' },
   { label: '小于等于 (≤)', value: '<=' },
+  { label: '包含任意 (CONTAINS ANY)', value: 'CONTAINS_ANY' },
+  { label: '包含所有 (CONTAINS ALL)', value: 'CONTAINS_ALL' },
   { label: '为空', value: 'IS_NULL' },
   { label: '不为空', value: 'NOT_NULL' },
 ];

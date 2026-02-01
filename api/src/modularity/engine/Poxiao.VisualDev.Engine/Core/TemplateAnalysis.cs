@@ -19,11 +19,11 @@ public static class TemplateAnalysis
         // 不包含子表children
         foreach (FieldsModel? item in fieldsModelList)
         {
-            ConfigModel? config = item.__config__;
+            ConfigModel? config = item.Config;
             switch (config.poxiaoKey)
             {
                 case PoxiaoKeyConst.TABLE: // 设计子表
-                    item.__config__.defaultCurrent = item.__config__.children.Any(it => it.__config__.defaultCurrent);
+                    item.Config.defaultCurrent = item.Config.children.Any(it => it.Config.defaultCurrent);
                     template.Add(item);
                     break;
                 case PoxiaoKeyConst.ROW: // 栅格布局
@@ -36,7 +36,7 @@ public static class TemplateAnalysis
                 case PoxiaoKeyConst.COLLAPSE: // 折叠面板
                 case PoxiaoKeyConst.TAB: // 标签面板
                 case PoxiaoKeyConst.TABLEGRID: // 表格容器
-                    config.children.ForEach(item => template.AddRange(AnalysisTemplateData(item.__config__.children)));
+                    config.children.ForEach(item => template.AddRange(AnalysisTemplateData(item.Config.children)));
                     break;
                 case PoxiaoKeyConst.PoxiaoTEXT: // 文本
                 case PoxiaoKeyConst.DIVIDER: // 分割线

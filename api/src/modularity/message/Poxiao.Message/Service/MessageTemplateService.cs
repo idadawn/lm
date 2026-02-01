@@ -1,16 +1,16 @@
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Message.Entitys.Dto.MessageTemplate;
 using Poxiao.Message.Entitys.Entity;
 using Poxiao.Message.Entitys.Model.MessageTemplate;
 using Poxiao.Systems.Entitys.Permission;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.Message.Service;
@@ -204,7 +204,7 @@ public class MessageTemplateService : IDynamicApiController, ITransient
         {
             var paramEntity = item.Adapt<MessageTemplateParamEntity>();
             paramEntity.TemplateId = entity.Id;
-            paramEntity.Id= SnowflakeIdHelper.NextId();
+            paramEntity.Id = SnowflakeIdHelper.NextId();
             await _repository.AsSugarClient().Insertable(paramEntity).IgnoreColumns(ignoreNullColumn: true).CallEntityMethod(m => m.Create()).ExecuteCommandAsync();
         }
         var smsFieldList = await _repository.AsSugarClient().Queryable<MessageSmsFieldEntity>().Where(x => x.TemplateId == id && x.DeleteMark == null).ToListAsync();

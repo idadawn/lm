@@ -1,7 +1,7 @@
-using System.Data;
-using System.IO.Compression;
 using Microsoft.AspNetCore.Mvc;
 using MiniExcelLibs;
+using NPOI.SS.UserModel;
+using NPOI.XSSF.UserModel;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
@@ -9,12 +9,11 @@ using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.IntermediateData;
 using Poxiao.Lab.Entity.Enums;
-using SqlSugar;
-
-using System.Text.Json;
 using Poxiao.Lab.Interfaces;
-using NPOI.SS.UserModel;
-using NPOI.XSSF.UserModel;
+using SqlSugar;
+using System.Data;
+using System.IO.Compression;
+using System.Text.Json;
 namespace Poxiao.Lab.Service;
 
 /// <summary>
@@ -58,7 +57,7 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
 
         var startDate = input.StartDate.Value;
         var endDate = input.EndDate.Value;
-        
+
         // 验证最多一年
         if ((endDate - startDate).TotalDays > 366)
         {
@@ -102,7 +101,7 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
                 // 解析 ProdDate
                 Year = d.ContainsKey("prodDate") && DateTime.TryParse(d["prodDate"]?.ToString(), out var dt) ? dt.Year : 0,
                 Month = d.ContainsKey("prodDate") && DateTime.TryParse(d["prodDate"]?.ToString(), out var dt2) ? dt2.Month : 0,
-                
+
                 ProductSpecId = d.ContainsKey("productSpecId") ? d["productSpecId"]?.ToString() : "",
                 ProductSpecCode = d.ContainsKey("productSpecCode") ? d["productSpecCode"]?.ToString() ?? "未知" : "未知",
                 ProductSpecName = d.ContainsKey("productSpecName") ? d["productSpecName"]?.ToString() ?? "未知规格" : "未知规格"
@@ -133,18 +132,18 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         // 4. 生成Excel
         var memoryStream = new MemoryStream();
         var sheets = new Dictionary<string, object>();
-        
+
         foreach (var group in groupedData)
         {
             var dataTable = BuildDataTableFromDict(group.DataList, group.DetectionColumns, categoryMap);
-            
+
             // Sheet名称不能超过31个字符，且不能包含特殊字符
             // 移除导入文件名称可能包含的前缀 "_______"
             var sheetName = group.SheetName.Replace("_______", "");
-            
+
             var safeSheetName = sheetName.Replace(":", "").Replace("\\", "").Replace("/", "").Replace("?", "").Replace("*", "").Replace("[", "").Replace("]", "");
             if (safeSheetName.Length > 30) safeSheetName = safeSheetName.Substring(0, 30);
-            
+
             // 如果名称重复，添加后缀
             int suffix = 1;
             var originalName = safeSheetName;
@@ -190,17 +189,17 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         style.BorderLeft = BorderStyle.Thin;
         style.BorderRight = BorderStyle.Thin;
         style.BorderTop = BorderStyle.Thin;
-        
+
         // 定义需要垂直合并（Row 0 & Row 1）的列名
         var verticalMergedColumns = new HashSet<string>
         {
-            "检测日期", "喷次", "贴标", "炉号", "性能录入员", 
-            "一米带重(g)", "带宽 (mm)", "带厚极差", 
-            "密度 (g/cm³)", "叠片系数", "Hc (A/m)", 
-            "韧性", "脆边", "麻点", "划痕", "网眼", "毛边", "亮线", "劈裂", "棱", "龟裂纹", 
-            "断头数(个)", "单卷重量(kg)", "外观检验员", 
-            "平均厚度", "磁性能判定", "厚度判定", "叠片系数判定", 
-            "四米带重(g)", "最大厚度", "最大平均厚度", 
+            "检测日期", "喷次", "贴标", "炉号", "性能录入员",
+            "一米带重(g)", "带宽 (mm)", "带厚极差",
+            "密度 (g/cm³)", "叠片系数", "Hc (A/m)",
+            "韧性", "脆边", "麻点", "划痕", "网眼", "毛边", "亮线", "劈裂", "棱", "龟裂纹",
+            "断头数(个)", "单卷重量(kg)", "外观检验员",
+            "平均厚度", "磁性能判定", "厚度判定", "叠片系数判定",
+            "四米带重(g)", "最大厚度", "最大平均厚度",
             "录入人", "带型", "一次交检", "班次"
         };
 
@@ -240,12 +239,12 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
             headerStyle.BorderRight = BorderStyle.Thin;
             headerStyle.BorderTop = BorderStyle.Thin;
             headerStyle.WrapText = true; // 自动换行
-            
+
             for (int r = 0; r <= sheet.LastRowNum; r++)
             {
                 var row = sheet.GetRow(r);
                 if (row == null) continue;
-                
+
                 // 设置行高: Row 0=20, Row 1=30, 数据行=20
                 if (r == 0)
                     row.HeightInPoints = 20;
@@ -253,7 +252,7 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
                     row.HeightInPoints = 30;
                 else
                     row.HeightInPoints = 20;
-                
+
                 for (int c = 0; c < row.LastCellNum; c++)
                 {
                     var cell = row.GetCell(c);
@@ -266,10 +265,11 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
             }
 
             // 强制合并第一列 (检测日期) - Row 0 & Row 1
-            try 
+            try
             {
                 sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(0, 1, 0, 0));
-            } catch { /* Already merged */ }
+            }
+            catch { /* Already merged */ }
 
             // 2. 表头纵向合并 (Vertical Merge) - Row 0 & Row 1
             for (int c = 0; c < row0.LastCellNum; c++)
@@ -280,29 +280,29 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
                     var val = cell0.StringCellValue?.Trim();
                     if (!string.IsNullOrEmpty(val) && verticalMergedColumns.Contains(val))
                     {
-                         var range = new NPOI.SS.Util.CellRangeAddress(0, 1, c, c);
-                         sheet.AddMergedRegion(range);
+                        var range = new NPOI.SS.Util.CellRangeAddress(0, 1, c, c);
+                        sheet.AddMergedRegion(range);
                     }
                 }
             }
-            
+
             // 3. 表头横向合并 (Horizontal Merge) - Row 0
             // 自动检测 Row 0 中连续相同的非空值
             int mergeStart = -1;
             string currentVal = null;
-            
+
             for (int c = 0; c <= row0.LastCellNum; c++)
             {
                 string val = null;
                 bool isVertical = false;
-                
+
                 if (c < row0.LastCellNum)
                 {
                     var cell = row0.GetCell(c);
                     val = cell?.StringCellValue?.Trim();
                     if (val != null && verticalMergedColumns.Contains(val)) isVertical = true;
                 }
-                
+
                 // 如果遇到垂直合并列，或者值改变了，或者到了末尾 -> 结束之前的合并
                 if (isVertical || val != currentVal || c == row0.LastCellNum)
                 {
@@ -312,17 +312,17 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
                         // 只有 "带厚" 需要 Block Merge，"叠片系数厚度分布" 保留 1-N
                         if (currentVal == "带厚")
                         {
-                             var range = new NPOI.SS.Util.CellRangeAddress(0, 1, mergeStart, c - 1);
-                             sheet.AddMergedRegion(range);
+                            var range = new NPOI.SS.Util.CellRangeAddress(0, 1, mergeStart, c - 1);
+                            sheet.AddMergedRegion(range);
                         }
                         else
                         {
-                             // 普通横向合并 (Row 0)
-                             var range = new NPOI.SS.Util.CellRangeAddress(0, 0, mergeStart, c - 1);
-                             sheet.AddMergedRegion(range);
+                            // 普通横向合并 (Row 0)
+                            var range = new NPOI.SS.Util.CellRangeAddress(0, 0, mergeStart, c - 1);
+                            sheet.AddMergedRegion(range);
                         }
                     }
-                    
+
                     if (isVertical)
                     {
                         mergeStart = -1;
@@ -362,8 +362,6 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         return new MemoryStream(outputStream.ToArray());
     }
 
-
-
     /// <summary>
     /// 构建 DataTable (从字典列表).
     /// </summary>
@@ -380,7 +378,7 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         AddCol("C2"); // 喷次
         AddCol("C3"); // 贴标
         AddCol("C4"); // 炉号
-        
+
         // 2. 性能 (1.35T: Ss; 50Hz: Ps; Hc; 刻痕后: Ss, Ps, Hc)
         AddCol("C5"); // 1.35T -> Ss
         AddCol("C6"); // 50Hz -> Ps
@@ -389,24 +387,24 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         AddCol("C9"); // 刻痕后 -> Ps
         AddCol("C10"); // 刻痕后 -> Hc
         AddCol("C11"); // 性能录入员
-        
+
         // 3. 物理
         AddCol("C12"); // 一米带重
         AddCol("C13"); // 带宽
-        
+
         // 4. 带厚 (1..N)
         for (int i = 1; i <= detectionColumns; i++) AddCol($"Thick{i}");
-        
+
         // 5. 带厚范围 (改为3列: 最小值, ~, 最大值)
-        AddCol("C_ThickMin"); 
+        AddCol("C_ThickMin");
         AddCol("C_ThickSep"); // 分隔符 ~
-        AddCol("C_ThickMax"); 
-        
+        AddCol("C_ThickMax");
+
         // 6. 规格与物理特性
         AddCol("C_Diff"); // 极差
         AddCol("C_Density"); // 密度
         AddCol("C_Lam"); // 叠片系数
-        
+
         // 7. 外观缺陷 (动态列)
         // 获取排序后的分类列表
         // 注意：categoryMap 是 Id -> Name。可以按照 SortCode 排序吗？
@@ -428,18 +426,18 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         // Ideally should be sorted by SortCode.
         // I'll stick to simple iteration for now, or just ID sort.
         foreach (var kvp in categoryMap) AddCol($"Appear_{kvp.Key}");
-        
+
         // 8. 外观固定字段
         AddCol("C_Break"); // 断头数
         AddCol("C_CoilW"); // 单卷重
         AddCol("C_AppearUser"); // 外观员
-        
+
         // 9. 汇总判定
         AddCol("C_AvgThick"); // 平均厚度
         AddCol("C_MagRes"); // 磁性能判定
         AddCol("C_ThickRes"); // 厚度判定
         AddCol("C_LamRes"); // 叠片判定
-        
+
         // 10. 花纹 (中Si: L, R; 中B: L, R; 左: W, S; 中: W, S; 右: W, S)
         AddCol("C_MidSiL");
         AddCol("C_MidSiR");
@@ -451,13 +449,13 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         AddCol("C_MPS");
         AddCol("C_RPW");
         AddCol("C_RPS");
-        
+
         // 11. 四米带重
         AddCol("C_FullW");
-        
+
         // 12. 叠片分布 (1..N)
         for (int i = 1; i <= detectionColumns; i++) AddCol($"LamDist{i}");
-        
+
         // 13. 其他
         AddCol("C_MaxThick"); // 最大厚度
         AddCol("C_MaxAvg"); // 最大平均
@@ -469,13 +467,13 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         // --- 构建表头行 1 ---
         var r1 = dataTable.NewRow();
         int c = 0;
-        
+
         // 1.
         r1[c++] = "检验日期";
         r1[c++] = "喷次";
         r1[c++] = "贴标";
         r1[c++] = "炉号";
-        
+
         // 2. 性能 (Groups)
         r1[c++] = "1.35T"; // Ss
         r1[c++] = "50Hz"; // Ps
@@ -484,51 +482,56 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         r1[c++] = "刻痕后性能"; // Ps
         r1[c++] = "刻痕后性能"; // Hc
         r1[c++] = "性能录入员";
-        
+
         // 3.
         r1[c++] = "一米带重(g)";
         r1[c++] = "带宽 (mm)";
-        
+
         // 4. 带厚 Group
         for (int i = 1; i <= detectionColumns; i++) r1[c++] = "带厚";
-        
+
         // 5. 带厚范围 (3列)
         r1[c++] = "带厚范围";
         r1[c++] = "带厚范围";
         r1[c++] = "带厚范围";
-        
+
         // 6.
         r1[c++] = "带厚极差";
         r1[c++] = "密度 (g/cm³)";
         r1[c++] = "叠片系数";
-        
+
         // 7. 外观缺陷 (Top level)
         foreach (var kvp in categoryMap) r1[c++] = kvp.Value;
-        
+
         // 8.
         r1[c++] = "断头数(个)";
         r1[c++] = "单卷重量(kg)";
         r1[c++] = "外观检验员";
-        
+
         // 9.
         r1[c++] = "平均厚度";
         r1[c++] = "磁性能判定";
         r1[c++] = "厚度判定";
         r1[c++] = "叠片系数判定";
-        
+
         // 10. 花纹 Groups
-        r1[c++] = "中Si"; r1[c++] = "中Si";
-        r1[c++] = "中B"; r1[c++] = "中B";
-        r1[c++] = "左花纹"; r1[c++] = "左花纹";
-        r1[c++] = "中花纹"; r1[c++] = "中花纹";
-        r1[c++] = "右花纹"; r1[c++] = "右花纹";
-        
+        r1[c++] = "中Si";
+        r1[c++] = "中Si";
+        r1[c++] = "中B";
+        r1[c++] = "中B";
+        r1[c++] = "左花纹";
+        r1[c++] = "左花纹";
+        r1[c++] = "中花纹";
+        r1[c++] = "中花纹";
+        r1[c++] = "右花纹";
+        r1[c++] = "右花纹";
+
         // 11.
         r1[c++] = "四米带重(g)";
-        
+
         // 12. 叠片分布 Group
         for (int i = 1; i <= detectionColumns; i++) r1[c++] = "叠片系数厚度分布";
-        
+
         // 13.
         r1[c++] = "最大厚度";
         r1[c++] = "最大平均厚度";
@@ -536,16 +539,19 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         r1[c++] = "带型";
         r1[c++] = "一次交检";
         r1[c++] = "班次";
-        
+
         dataTable.Rows.Add(r1);
 
         // --- 构建表头行 2 ---
         var r2 = dataTable.NewRow();
         c = 0;
-        
+
         // 1. (Empty for span)
-        r2[c++] = ""; r2[c++] = ""; r2[c++] = ""; r2[c++] = "";
-        
+        r2[c++] = "";
+        r2[c++] = "";
+        r2[c++] = "";
+        r2[c++] = "";
+
         // 2.
         r2[c++] = "Ss激磁功率 (VA/kg)"; // 1.35T child
         r2[c++] = "Ps铁损 (W/kg)"; // 50Hz child
@@ -554,46 +560,64 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         r2[c++] = "Ps铁损 (W/kg)";
         r2[c++] = "Hc (A/m)";
         r2[c++] = ""; // Editor
-        
+
         // 3.
-        r2[c++] = ""; r2[c++] = "";
-        
+        r2[c++] = "";
+        r2[c++] = "";
+
         // 4. 带厚 N
         for (int i = 1; i <= detectionColumns; i++) r2[c++] = ""; // 合并成大标题，不需要 1..N
-        
+
         // 5. 带厚范围子标题 (3列)
         r2[c++] = "最小值";
         r2[c++] = "~";
         r2[c++] = "最大值";
-        
+
         // 6.
-        r2[c++] = ""; r2[c++] = ""; r2[c++] = "";
-        
+        r2[c++] = "";
+        r2[c++] = "";
+        r2[c++] = "";
+
         // 7. 外观 (Empty for span)
         foreach (var kvp in categoryMap) r2[c++] = "";
-        
+
         // 8.
-        r2[c++] = ""; r2[c++] = ""; r2[c++] = "";
-        
+        r2[c++] = "";
+        r2[c++] = "";
+        r2[c++] = "";
+
         // 9.
-        r2[c++] = ""; r2[c++] = ""; r2[c++] = ""; r2[c++] = "";
-        
+        r2[c++] = "";
+        r2[c++] = "";
+        r2[c++] = "";
+        r2[c++] = "";
+
         // 10. 花纹
-        r2[c++] = "左"; r2[c++] = "右";
-        r2[c++] = "左"; r2[c++] = "右";
-        r2[c++] = "纹宽"; r2[c++] = "纹距";
-        r2[c++] = "纹宽"; r2[c++] = "纹距";
-        r2[c++] = "纹宽"; r2[c++] = "纹距";
-        
+        r2[c++] = "左";
+        r2[c++] = "右";
+        r2[c++] = "左";
+        r2[c++] = "右";
+        r2[c++] = "纹宽";
+        r2[c++] = "纹距";
+        r2[c++] = "纹宽";
+        r2[c++] = "纹距";
+        r2[c++] = "纹宽";
+        r2[c++] = "纹距";
+
         // 11.
         r2[c++] = "";
-        
+
         // 12. 叠片 N
         for (int i = 1; i <= detectionColumns; i++) r2[c++] = i.ToString();
-        
+
         // 13.
-        r2[c++] = ""; r2[c++] = ""; r2[c++] = ""; r2[c++] = ""; r2[c++] = ""; r2[c++] = "";
-        
+        r2[c++] = "";
+        r2[c++] = "";
+        r2[c++] = "";
+        r2[c++] = "";
+        r2[c++] = "";
+        r2[c++] = "";
+
         dataTable.Rows.Add(r2);
 
         // --- 填充数据 ---
@@ -608,7 +632,7 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
             row[c++] = Get("sprayNo");
             row[c++] = Get("labeling");
             row[c++] = Get("furnaceNoFormatted");
-            
+
             // 2.
             row[c++] = Get("perfSsPower");
             row[c++] = Get("perfPsLoss");
@@ -617,24 +641,24 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
             row[c++] = Get("perfAfterPsLoss");
             row[c++] = Get("perfAfterHc");
             row[c++] = Get("perfEditorName");
-            
+
             // 3.
             row[c++] = Get("oneMeterWeight");
             row[c++] = Get("width");
-            
+
             // 4.
             for (int i = 1; i <= detectionColumns; i++) row[c++] = Get($"thickness{i}");
-            
+
             // 5. 带厚范围 (3列: 最小值, ~, 最大值)
             row[c++] = Get("thicknessMin");
             row[c++] = "~";
             row[c++] = Get("thicknessMax");
-            
+
             // 6.
             row[c++] = Get("thicknessDiff");
             row[c++] = Get("density");
             row[c++] = Get("laminationFactor");
-            
+
             // 7. 外观特性动态列
             var appearIds = new HashSet<string>();
             if (d.ContainsKey("appearanceFeatureCategoryIds") && d["appearanceFeatureCategoryIds"] != null)
@@ -648,25 +672,25 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
                         if (ids != null) foreach (var id in ids) appearIds.Add(id);
                     }
                 }
-                catch {}
+                catch { }
             }
             foreach (var kvp in categoryMap)
             {
-                 // Check if the current Column's category ID (Key) is in the data's appearIds
-                 row[c++] = appearIds.Contains(kvp.Key) ? "✓" : "";
+                // Check if the current Column's category ID (Key) is in the data's appearIds
+                row[c++] = appearIds.Contains(kvp.Key) ? "✓" : "";
             }
-            
+
             // 8.
             row[c++] = Get("breakCount");
             row[c++] = Get("singleCoilWeight");
             row[c++] = Get("appearEditorName");
-            
+
             // 9.
             row[c++] = Get("avgThickness");
             row[c++] = Get("magneticResult");
             row[c++] = Get("thicknessResult");
             row[c++] = Get("laminationResult");
-            
+
             // 10.
             row[c++] = Get("midSiLeft");
             row[c++] = Get("midSiRight");
@@ -678,13 +702,13 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
             row[c++] = Get("midPatternSpacing");
             row[c++] = Get("rightPatternWidth");
             row[c++] = Get("rightPatternSpacing");
-            
+
             // 11.
             row[c++] = Get("coilWeight");
-            
+
             // 12.
             for (int i = 1; i <= detectionColumns; i++) row[c++] = Get($"detection{i}");
-            
+
             // 13.
             row[c++] = Get("maxThicknessRaw");
             row[c++] = Get("maxAvgThickness");
@@ -692,7 +716,7 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
             row[c++] = Get("stripType");
             row[c++] = Get("firstInspection");
             row[c++] = Get("shiftNo");
-            
+
             dataTable.Rows.Add(row);
         }
 

@@ -1,47 +1,47 @@
-using Poxiao.Infrastructure.Const;
-using Poxiao.Infrastructure.Captcha.General;
-using Poxiao.Infrastructure.Core.Manager;
-using Poxiao.Infrastructure.Dtos.OAuth;
-using Poxiao.Infrastructure.Enums;
-using Poxiao.Infrastructure.Extension;
-using Poxiao.Infrastructure.Manager;
-using Poxiao.Infrastructure.Models.User;
-using Poxiao.Infrastructure.Net;
-using Poxiao.Infrastructure.Security;
+using Aop.Api.Domain;
+using Mapster;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis;
+using Microsoft.Extensions.Options;
 using Poxiao.DataEncryption;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.EventBus;
 using Poxiao.EventHandler;
+using Poxiao.Extras.CollectiveOAuth.Models;
+using Poxiao.Extras.DatabaseAccessor.SqlSugar.Models;
 using Poxiao.FriendlyException;
+using Poxiao.Infrastructure.Captcha.General;
+using Poxiao.Infrastructure.Const;
+using Poxiao.Infrastructure.Core.Handlers;
+using Poxiao.Infrastructure.Core.Manager;
+using Poxiao.Infrastructure.Dtos.OAuth;
+using Poxiao.Infrastructure.Enums;
+using Poxiao.Infrastructure.Extension;
+using Poxiao.Infrastructure.Manager;
+using Poxiao.Infrastructure.Models;
+using Poxiao.Infrastructure.Models.User;
+using Poxiao.Infrastructure.Net;
+using Poxiao.Infrastructure.Options;
+using Poxiao.Infrastructure.Security;
 using Poxiao.Logging.Attributes;
+using Poxiao.Message.Interfaces;
+using Poxiao.Message.Interfaces.Message;
 using Poxiao.OAuth.Dto;
 using Poxiao.OAuth.Model;
 using Poxiao.RemoteRequest.Extensions;
+using Poxiao.Systems.Entitys.Dto.Module;
 using Poxiao.Systems.Entitys.Enum;
+using Poxiao.Systems.Entitys.Model.Permission.SocialsUser;
 using Poxiao.Systems.Entitys.Model.SysConfig;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
+using Poxiao.Systems.Interfaces.Permission;
 using Poxiao.Systems.Interfaces.System;
 using Poxiao.UnifyResult;
-using Mapster;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
 using SqlSugar;
-using Poxiao.Systems.Entitys.Dto.Module;
-using Poxiao.Systems.Entitys.Model.Permission.SocialsUser;
-using Poxiao.Systems.Interfaces.Permission;
-using Poxiao.Extras.CollectiveOAuth.Models;
-using Poxiao.Infrastructure.Models;
-using Poxiao.Infrastructure.Options;
-using Microsoft.CodeAnalysis;
-using Poxiao.Infrastructure.Core.Handlers;
-using Poxiao.Message.Interfaces.Message;
-using Poxiao.Extras.DatabaseAccessor.SqlSugar.Models;
-using Poxiao.Message.Interfaces;
-using Aop.Api.Domain;
 
 namespace Poxiao.OAuth;
 
@@ -771,11 +771,11 @@ public class OAuthService : IDynamicApiController, ITransient
                     { ClaimConst.CLAINMREALNAME, userAnyPwd.RealName },
                     { ClaimConst.CLAINMADMINISTRATOR, userAnyPwd.IsAdministrator },
                     { ClaimConst.TENANTID, tenantId},
-                    { ClaimConst.OnlineTicket, input.online_ticket }
+                    { ClaimConst.OnlineTicket, input.onlineTicket }
                 }, tokenTimeout);
 
         // 单点登录标识缓存
-        if (_oauthOptions.Enabled) _cacheManager.Set("OnlineTicket_" + input.online_ticket, options.ConfigId);
+        if (_oauthOptions.Enabled) _cacheManager.Set("OnlineTicket_" + input.onlineTicket, options.ConfigId);
 
         // 设置Swagger自动登录
         _httpContextAccessor.HttpContext.SigninToSwagger(accessToken);
@@ -840,10 +840,10 @@ public class OAuthService : IDynamicApiController, ITransient
             CreatorTime = DateTime.Now
         }));
 
-        var ticket = await _cacheManager.GetAsync<SocialsLoginTicketModel>(input.poxiao_ticket);
+        var ticket = await _cacheManager.GetAsync<SocialsLoginTicketModel>(input.poxiaoTicket);
         if (ticket.IsNotEmptyOrNull())
         {
-            var socialsEntity = ticket.value.ToObject<SocialsUsersEntity>();
+            var socialsEntity = ticket.Value.ToObject<SocialsUsersEntity>();
             var sInfo = await _userRepository.AsSugarClient().Queryable<SocialsUsersEntity>().Where(x => (x.SocialId.Equals(socialsEntity.SocialId) || x.UserId.Equals(user.Id)) && x.SocialType.Equals(socialsEntity.SocialType) && x.DeleteMark == null).FirstAsync();
             if (sInfo == null)
             {
@@ -875,7 +875,8 @@ public class OAuthService : IDynamicApiController, ITransient
             }
         }
 
-        return new {
+        return new
+        {
             theme = user.Theme == null ? "classic" : user.Theme,
             token = string.Format("Bearer {0}", accessToken)
         };
@@ -1228,12 +1229,12 @@ public class OAuthService : IDynamicApiController, ITransient
                     throw Oops.Oh(resultObj["msg"].ToString());
                 }
 
-                var ticket = _cacheManager.Get<SocialsLoginTicketModel>(req.poxiao_ticket);
+                var ticket = _cacheManager.Get<SocialsLoginTicketModel>(req.poxiaoTicket);
                 if (ticket == null && req.code.IsNullOrWhiteSpace()) Oops.Oh(ErrorCode.D1035);
                 if (ticket.IsNotEmptyOrNull())
                 {
                     // 修改 缓存 状态
-                    ticket.status = (int)SocialsLoginTicketStatus.Multitenancy;
+                    ticket.Status = (int)SocialsLoginTicketStatus.Multitenancy;
                     if (resultObj["data"] != null && resultObj["data"].ToJsonString().Equals("[]"))
                     {
                         if (result.ok())
@@ -1242,9 +1243,9 @@ public class OAuthService : IDynamicApiController, ITransient
                             socialsUserEntity.SocialType = resData.source;
                             socialsUserEntity.SocialName = resData.username;
                             socialsUserEntity.SocialId = uuid;
-                            ticket.status = (int)SocialsLoginTicketStatus.UnBind;
-                            ticket.value = socialsUserEntity.ToJsonString();
-                            _cacheManager.Set(req.poxiao_ticket, ticket, TimeSpan.FromMinutes(5));
+                            ticket.Status = (int)SocialsLoginTicketStatus.UnBind;
+                            ticket.Value = socialsUserEntity.ToJsonString();
+                            _cacheManager.Set(req.poxiaoTicket, ticket, TimeSpan.FromMinutes(5));
                             resStr = new { code = 400, msg = "等待登录自动绑定!", message = "等待登录自动绑定!" }.ToJsonString();
                         }
                         else
@@ -1295,14 +1296,14 @@ public class OAuthService : IDynamicApiController, ITransient
                             var loginRes = await Login(new LoginInput() { account = userEntity.Account, password = userEntity.Password, isSocialsLoginCallBack = true, socialsOptions = options });
 
                             // 修改 缓存 状态
-                            ticket.status = (int)SocialsLoginTicketStatus.Success;
-                            ticket.value = loginRes.token;
-                            _cacheManager.Set(req.poxiao_ticket, ticket.ToJsonString(), TimeSpan.FromMinutes(5));
+                            ticket.Status = (int)SocialsLoginTicketStatus.Success;
+                            ticket.Value = loginRes.token;
+                            _cacheManager.Set(req.poxiaoTicket, ticket.ToJsonString(), TimeSpan.FromMinutes(5));
                             return new { code = 200, data = ticket };
                         }
-                        ticket.value = resultObj["data"].ToJsonString();
-                        _cacheManager.Set(req.poxiao_ticket, ticket.ToJsonString(), TimeSpan.FromMinutes(5));
-                        resStr = new { code = 200, data = ticket.value }.ToJsonString();
+                        ticket.Value = resultObj["data"].ToJsonString();
+                        _cacheManager.Set(req.poxiaoTicket, ticket.ToJsonString(), TimeSpan.FromMinutes(5));
+                        resStr = new { code = 200, data = ticket.Value }.ToJsonString();
                     }
                 }
             }
@@ -1311,7 +1312,7 @@ public class OAuthService : IDynamicApiController, ITransient
                 resStr = new { code = 400, msg = "第三方回调失败!", message = "第三方回调失败!" }.ToJsonString();
             }
 
-            if (req.poxiao_ticket.IsNullOrEmpty())
+            if (req.poxiaoTicket.IsNullOrEmpty())
             {
                 return new ContentResult()
                 {
@@ -1364,9 +1365,9 @@ public class OAuthService : IDynamicApiController, ITransient
 
         var res = await _socialsUserService.Binding(req);
 
-        if (req.poxiao_ticket.IsNotEmptyOrNull())
+        if (req.poxiaoTicket.IsNotEmptyOrNull())
         {
-            var ticket = _cacheManager.Get<SocialsLoginTicketModel>(req.poxiao_ticket);
+            var ticket = _cacheManager.Get<SocialsLoginTicketModel>(req.poxiaoTicket);
             if (ticket == null && req.code.IsNullOrWhiteSpace()) Oops.Oh(ErrorCode.D1035);
 
             var data = res.ToObject<Dictionary<string, object>>();
@@ -1383,19 +1384,19 @@ public class OAuthService : IDynamicApiController, ITransient
                     var loginRes = await Login(new LoginInput() { account = userEntity.Account, password = userEntity.Password, isSocialsLoginCallBack = true, socialsOptions = options });
 
                     // 修改 缓存 状态
-                    ticket.status = (int)SocialsLoginTicketStatus.Success;
-                    ticket.value = loginRes.token;
-                    _cacheManager.Set(req.poxiao_ticket, ticket.ToJsonString(), TimeSpan.FromMinutes(5));
+                    ticket.Status = (int)SocialsLoginTicketStatus.Success;
+                    ticket.Value = loginRes.token;
+                    _cacheManager.Set(req.poxiaoTicket, ticket.ToJsonString(), TimeSpan.FromMinutes(5));
                     return new { code = 200, data = ticket };
                 }
                 else
                 {
-                    var ticketValue = _cacheManager.Get(req.poxiao_ticket);
+                    var ticketValue = _cacheManager.Get(req.poxiaoTicket);
                     if (ticketValue.IsNotEmptyOrNull())
                     {
-                        ticket.status = (int)SocialsLoginTicketStatus.UnBind;
-                        ticket.value = socialsEntity.ToJsonString();
-                        _cacheManager.Set(req.poxiao_ticket, ticket, TimeSpan.FromMinutes(5));
+                        ticket.Status = (int)SocialsLoginTicketStatus.UnBind;
+                        ticket.Value = socialsEntity.ToJsonString();
+                        _cacheManager.Set(req.poxiaoTicket, ticket, TimeSpan.FromMinutes(5));
                         res = new { code = 400, msg = "等待登录自动绑定!", message = "等待登录自动绑定!" }.ToJsonString();
                     }
                     else
@@ -1410,7 +1411,7 @@ public class OAuthService : IDynamicApiController, ITransient
             }
         }
 
-        if (req.poxiao_ticket.IsNullOrEmpty())
+        if (req.poxiaoTicket.IsNullOrEmpty())
         {
             var result = res.ToObject<Dictionary<string, object>>();
             if (result.ContainsKey("data")) result.Remove("data");
@@ -1491,20 +1492,20 @@ public class OAuthService : IDynamicApiController, ITransient
         if (_oauthOptions.Enabled)
         {
             var url = _oauthOptions.LoginPath + "/" + _oauthOptions.DefaultSSO;
-            loginConfigModel.redirect = true;
-            loginConfigModel.url = url;
-            loginConfigModel.ticketParams = CommonConst.PARAMS_Poxiao_TICKET;
+            loginConfigModel.Redirect = true;
+            loginConfigModel.Url = url;
+            loginConfigModel.TicketParams = CommonConst.PARAMSPoxiaoTICKET;
         }
         else
         {
             // 追加第三方登录配置
-            var loginList = _socialsUserService.GetLoginList(CommonConst.PARAMS_Poxiao_TICKET.ToUpper());
+            var loginList = _socialsUserService.GetLoginList(CommonConst.PARAMSPoxiaoTICKET.ToUpper());
             if (loginList == null) return loginConfigModel;
             if (loginList.Any())
             {
-                loginConfigModel.socialsList = loginList.ToObject<List<object>>();
-                loginConfigModel.redirect = false;
-                loginConfigModel.ticketParams = CommonConst.PARAMS_Poxiao_TICKET;
+                loginConfigModel.SocialsList = loginList.ToObject<List<object>>();
+                loginConfigModel.Redirect = false;
+                loginConfigModel.TicketParams = CommonConst.PARAMSPoxiaoTICKET;
             }
         }
 
@@ -1522,7 +1523,7 @@ public class OAuthService : IDynamicApiController, ITransient
     {
         SocialsLoginTicketModel ticketModel = new SocialsLoginTicketModel();
         var curDate = DateTime.Now.AddMinutes(_oauthOptions.TicketTimeout); // 默认过期5分钟.
-        ticketModel.ticketTimeout = curDate.ParseToUnixTime();
+        ticketModel.TicketTimeout = curDate.ParseToUnixTime();
         var key = "SocialsLogin_" + SnowflakeIdHelper.NextId();
         _cacheManager.Set(key, ticketModel.ToJsonString(), TimeSpan.FromMinutes(_oauthOptions.TicketTimeout));
         return key;
@@ -1540,7 +1541,7 @@ public class OAuthService : IDynamicApiController, ITransient
         var ticketModel = _cacheManager.Get<SocialsLoginTicketModel>(ticket);
         if (ticketModel == null)
         {
-            ticketModel = new SocialsLoginTicketModel() { status = (int)SocialsLoginTicketStatus.Invalid };
+            ticketModel = new SocialsLoginTicketModel() { Status = (int)SocialsLoginTicketStatus.Invalid };
         }
 
         return ticketModel;
@@ -1590,9 +1591,9 @@ public class OAuthService : IDynamicApiController, ITransient
         if (type.ToLower().Equals("auth2"))
         {
             var ticket = string.Empty;
-            if (input.ContainsKey(CommonConst.PARAMS_Poxiao_TICKET) && input[CommonConst.PARAMS_Poxiao_TICKET].IsNotEmptyOrNull())
+            if (input.ContainsKey(CommonConst.PARAMSPoxiaoTICKET) && input[CommonConst.PARAMSPoxiaoTICKET].IsNotEmptyOrNull())
             {
-                ticket = input[CommonConst.PARAMS_Poxiao_TICKET];
+                ticket = input[CommonConst.PARAMSPoxiaoTICKET];
                 var ticketModel = _cacheManager.Get<SocialsLoginTicketModel>(ticket);
                 if (ticketModel == null) return "登录票据已失效";
             }
@@ -1633,7 +1634,7 @@ public class OAuthService : IDynamicApiController, ITransient
         if (ticket.IsNotEmptyOrNull())
         {
             tmpAuthCallbackUrl = Extras.CollectiveOAuth.Utils.UrlBuilder.fromBaseUrl(tmpAuthCallbackUrl)
-                    .queryParam(CommonConst.PARAMS_Poxiao_TICKET, ticket)
+                    .queryParam(CommonConst.PARAMSPoxiaoTICKET, ticket)
                     .build();
         }
 
@@ -1671,15 +1672,15 @@ public class OAuthService : IDynamicApiController, ITransient
 
         // 登录账号
         var loginInput = await GetUserInfoByUserAccount(userAccount);
-        loginInput.online_ticket = remoteUserInfo["online_ticket"].ToString();
+        loginInput.onlineTicket = remoteUserInfo["online_ticket"].ToString();
         var loginRes = await Login(loginInput);
 
         var poxiaoTicket = _cacheManager.Get<SocialsLoginTicketModel>(ticket);
         if (poxiaoTicket.IsNotEmptyOrNull())
         {
             // 修改 缓存 状态
-            poxiaoTicket.status = (int)SocialsLoginTicketStatus.Success;
-            poxiaoTicket.value = loginRes.token;
+            poxiaoTicket.Status = (int)SocialsLoginTicketStatus.Success;
+            poxiaoTicket.Value = loginRes.token;
             _cacheManager.Set(ticket, poxiaoTicket.ToJsonString(), TimeSpan.FromMinutes(_oauthOptions.TicketTimeout));
         }
         else

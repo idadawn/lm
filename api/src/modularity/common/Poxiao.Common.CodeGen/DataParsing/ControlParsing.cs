@@ -1,19 +1,19 @@
+using Newtonsoft.Json.Linq;
+using Poxiao.DependencyInjection;
 using Poxiao.Infrastructure.Const;
+using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
 using Poxiao.Systems.Entitys.Permission;
-using Poxiao.VisualDev.Engine;
-using Poxiao.VisualDev.Entitys.Dto.VisualDevModelData;
-using Poxiao.VisualDev.Entitys;
-using Poxiao.VisualDev.Interfaces;
-using Newtonsoft.Json.Linq;
-using SqlSugar;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.Systems.Interfaces.System;
-using Poxiao.Infrastructure.Core.Manager;
+using Poxiao.VisualDev.Engine;
 using Poxiao.VisualDev.Engine.Core;
+using Poxiao.VisualDev.Entitys;
+using Poxiao.VisualDev.Entitys.Dto.VisualDevModelData;
+using Poxiao.VisualDev.Interfaces;
+using SqlSugar;
 
 namespace Poxiao.Infrastructure.CodeGen.DataParsing;
 
@@ -139,7 +139,7 @@ public class ControlParsing : ITransient
 
                 if (vModels.Any(x => x.Key.Equals(item.Key)) && items[item.Key] != null)
                 {
-                    FieldsModel model = fields.Any(x => x.__vModel__.Equals(item.Key)) ? fields.Find(x => x.__vModel__.Equals(item.Key)) : (fields.Any(x => x.__vModel__.Equals(item.Key.Replace("_name", string.Empty))) ? fields.Find(x => x.__vModel__.Equals(item.Key.Replace("_name", string.Empty))) : new FieldsModel());
+                    FieldsModel model = fields.Any(x => x.VModel.Equals(item.Key)) ? fields.Find(x => x.VModel.Equals(item.Key)) : (fields.Any(x => x.VModel.Equals(item.Key.Replace("_name", string.Empty))) ? fields.Find(x => x.VModel.Equals(item.Key.Replace("_name", string.Empty))) : new FieldsModel());
                     model.separator = ",";
                     var poxiaoKey = vModels.FirstOrDefault(x => x.Key.Equals(item.Key)).Value;
                     switch (poxiaoKey)
@@ -192,12 +192,12 @@ public class ControlParsing : ITransient
                                             if (specificData != null)
                                             {
                                                 // 要用模板的 “显示字段 - relationField”来展示数据
-                                                items[model.__vModel__ + "_id"] = items[item.Key];
+                                                items[model.VModel + "_id"] = items[item.Key];
                                                 items[item.Key] = specificData[model.relationField];
 
                                                 // 弹窗选择属性
                                                 if (model.relational.IsNotEmptyOrNull())
-                                                    foreach (var fItem in model.relational.Split(",")) items[model.__vModel__ + "_" + fItem] = specificData[fItem];
+                                                    foreach (var fItem in model.relational.Split(",")) items[model.VModel + "_" + fItem] = specificData[fItem];
                                             }
                                         }
                                         break;
@@ -206,12 +206,12 @@ public class ControlParsing : ITransient
                                             var vara = popupselectDataList.Where(a => a.ContainsValue(items[item.Key] == null ? model.interfaceId : items[item.Key].ToString())).FirstOrDefault();
                                             if (vara != null)
                                             {
-                                                items[model.__vModel__ + "_id"] = items[item.Key];
+                                                items[model.VModel + "_id"] = items[item.Key];
                                                 items[item.Key] = vara[items[item.Key].ToString()];
 
                                                 // 弹窗选择属性
                                                 if (model.relational.IsNotEmptyOrNull())
-                                                    foreach (var fItem in model.relational.Split(",")) items[model.__vModel__ + "_" + fItem] = vara[fItem];
+                                                    foreach (var fItem in model.relational.Split(",")) items[model.VModel + "_" + fItem] = vara[fItem];
                                             }
                                         }
                                         break;
@@ -254,7 +254,7 @@ public class ControlParsing : ITransient
                                 {
                                     // 根据可视化功能ID获取该模板全部数据
                                     var relationFormModel = await _repository.AsSugarClient().Queryable<VisualDevEntity>().FirstAsync(v => v.Id == model.modelId);
-                                    var newFieLdsModelList = relationFormModel.FormData.ToObject<FormDataModel>().fields.FindAll(x => model.relationField.Equals(x.__vModel__));
+                                    var newFieLdsModelList = relationFormModel.FormData.ToObject<FormDataModel>().fields.FindAll(x => model.relationField.Equals(x.VModel));
                                     VisualDevModelListQueryInput listQueryInput = new VisualDevModelListQueryInput
                                     {
                                         dataType = "1",
@@ -275,12 +275,12 @@ public class ControlParsing : ITransient
                                 var relationFormRealData = relationFormDataList.Where(it => it["id"].Equals(items[item.Key])).FirstOrDefault();
                                 if (relationFormRealData != null && relationFormRealData.Count > 0)
                                 {
-                                    items[model.__vModel__ + "_id"] = relationFormRealData["id"];
+                                    items[model.VModel + "_id"] = relationFormRealData["id"];
                                     items[item.Key] = relationFormRealData.ContainsKey(model.relationField) ? relationFormRealData[model.relationField] : string.Empty;
 
                                     // 关联表单属性
                                     if (model.relational.IsNotEmptyOrNull())
-                                        foreach (var fItem in model.relational.Split(",")) items[model.__vModel__ + "_" + fItem] = relationFormRealData[fItem];
+                                        foreach (var fItem in model.relational.Split(",")) items[model.VModel + "_" + fItem] = relationFormRealData[fItem];
                                 }
                                 else
                                 {
@@ -300,7 +300,7 @@ public class ControlParsing : ITransient
                     foreach (var ctItem in vModels.Where(x => x.Key.Contains(item.Key)).ToList())
                     {
                         ctVModels.Add(ctItem.Key.Split("-").LastOrDefault(), ctItem.Value);
-                        var ctFields = fields.Find(x => x.__vModel__.Equals(ctItem.Key.Split("-").FirstOrDefault())).__config__.children;
+                        var ctFields = fields.Find(x => x.VModel.Equals(ctItem.Key.Split("-").FirstOrDefault())).Config.children;
                         if (ctList.Any()) items[item.Key] = await GetParsDataByList(ctFields, ctList, ctVModels, tenantId, isInlineEditor, userOrigin, true);
                     }
                 }

@@ -83,7 +83,6 @@ public class MetricCategoryService : IMetricCategoryService, ITransient
         var entity = input.Adapt<MetricCategoryEntity>();
         entity.Id = SnowflakeIdHelper.NextId();
 
-
         var idList = new List<string> { entity.Id };
 
         if (entity.ParentId != "-1")
@@ -178,7 +177,8 @@ public class MetricCategoryService : IMetricCategoryService, ITransient
 
         var count = await _repository.AsUpdateable(entity)
         .CallEntityMethod(x => x.Delete())
-        .UpdateColumns(it => new {
+        .UpdateColumns(it => new
+        {
             it.DeleteTime,
             it.DeleteUserId,
             it.IsDeleted

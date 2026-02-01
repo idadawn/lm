@@ -129,19 +129,19 @@ public class ProductSpecVersionService : IDynamicApiController, ITransient
     {
         // 1. 获取当前版本号
         var currentVersion = await GetCurrentVersionAsync(productSpecId);
-        
+
         // 如果没有版本记录（返回1表示默认值），创建初始版本
         var existingVersion = await _versionRepository
             .AsQueryable()
             .Where(v => v.ProductSpecId == productSpecId && v.IsCurrent == 1 && v.DeleteMark == null)
             .FirstAsync();
-        
+
         if (existingVersion == null)
         {
             // 没有版本记录，创建初始版本1
             return await CreateInitialVersionAsync(productSpecId, versionDescription ?? "初始版本");
         }
-        
+
         var newVersion = currentVersion + 1;
 
         // 2. 将当前版本标记为非当前版本

@@ -1,14 +1,15 @@
 using Poxiao.Extras.CollectiveOAuth.Cache;
 using Poxiao.Extras.CollectiveOAuth.Config;
+using Poxiao.Extras.CollectiveOAuth.Enums;
 using Poxiao.Extras.CollectiveOAuth.Models;
 using Poxiao.Extras.CollectiveOAuth.Utils;
-using Poxiao.Extras.CollectiveOAuth.Enums;
 
 namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class MeituanAuthRequest : DefaultAuthRequest
 {
-    public MeituanAuthRequest(ClientConfig config) : base(config, new MeituanAuthSource())
+    public MeituanAuthRequest(ClientConfig config)
+        : base(config, new MeituanAuthSource())
     {
     }
 
@@ -96,7 +97,6 @@ public class MeituanAuthRequest : DefaultAuthRequest
         return new AuthResponse(AuthResponseStatus.SUCCESS.GetCode(), AuthResponseStatus.SUCCESS.GetDesc(), authToken);
     }
 
-
     public override string authorize(string state)
     {
         return UrlBuilder.fromBaseUrl(source.authorize())
@@ -107,7 +107,6 @@ public class MeituanAuthRequest : DefaultAuthRequest
             .queryParam("scope", config.scope)
             .build();
     }
-
 
     /**
    * 校验请求结果

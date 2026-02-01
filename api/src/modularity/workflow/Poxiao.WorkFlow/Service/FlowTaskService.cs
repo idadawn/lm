@@ -1,12 +1,12 @@
-using Poxiao.Infrastructure.Core.Manager;
-using Poxiao.Infrastructure.Models.WorkFlow;
+using Microsoft.AspNetCore.Mvc;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
+using Poxiao.Infrastructure.Core.Manager;
+using Poxiao.Infrastructure.Models.WorkFlow;
 using Poxiao.WorkFlow.Entitys.Model;
 using Poxiao.WorkFlow.Interfaces.Manager;
 using Poxiao.WorkFlow.Interfaces.Service;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Poxiao.WorkFlow.Service;
 
@@ -39,7 +39,7 @@ public class FlowTaskService : IFlowTaskService, IDynamicApiController, ITransie
         try
         {
             var flowTaskCandidateModel = new List<FlowTaskCandidateModel>();
-            flowTaskSubmit.isDelegate = flowTaskSubmit.delegateUserList.Any();//是否委托发起.
+            flowTaskSubmit.isDelegate = flowTaskSubmit.delegateUserList.Any(); //是否委托发起.
             if (!flowTaskSubmit.isDelegate) flowTaskSubmit.delegateUserList.Add(_userManager.UserId);
             foreach (var item in flowTaskSubmit.delegateUserList)
             {

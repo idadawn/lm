@@ -18,6 +18,7 @@ public class MetricDashService : IMetricDashService, ITransient
     /// 指标服务
     /// </summary>
     private readonly IMetricInfoService _metricInfoService;
+
     /// <summary>
     /// 初始化一个<see cref="MetricDashService"/>类型的新实例.
     /// </summary>
@@ -65,7 +66,6 @@ public class MetricDashService : IMetricDashService, ITransient
             .ExecuteCommandAsync();
         return count;
     }
-
 
     public async Task<bool> IsMetricCanDragToDashAsync(MetricDashDragInput input)
     {

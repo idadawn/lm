@@ -1,10 +1,15 @@
-using System.Data;
-using System.Diagnostics;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Web;
+using Mapster;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json.Linq;
 using Poxiao.ClayObject;
+using Poxiao.DatabaseAccessor;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.Extras.DatabaseAccessor.SqlSugar.Models;
+using Poxiao.Extras.Thirdparty.JSEngine;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Core.Manager;
@@ -18,12 +23,6 @@ using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Models;
 using Poxiao.Infrastructure.Net;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DatabaseAccessor;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.Extras.DatabaseAccessor.SqlSugar.Models;
-using Poxiao.Extras.Thirdparty.JSEngine;
-using Poxiao.FriendlyException;
 using Poxiao.LinqBuilder;
 using Poxiao.Logging.Attributes;
 using Poxiao.RemoteRequest.Extensions;
@@ -35,12 +34,13 @@ using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.Systems.Interfaces.System;
 using Poxiao.UnifyResult;
-using Mapster;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Linq;
 using SqlSugar;
+using System.Data;
+using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Web;
 
 namespace Poxiao.Systems;
 
@@ -190,7 +190,7 @@ public class DataInterfaceService : IDynamicApiController, ITransient
                 categoryId = a.CategoryId,
                 creatorTime = a.CreatorTime,
                 creatorUser = SqlFunc.MergeString(b.RealName, "/", b.Account),
-                _dataType = a.DataType,
+                DataType = a.DataType,
                 dbLinkId = a.DBLinkId,
                 description = a.Description,
                 enCode = a.EnCode,
@@ -253,7 +253,7 @@ public class DataInterfaceService : IDynamicApiController, ITransient
     /// </summary>
     /// <returns></returns>
     [HttpGet("{id}")]
-    public async Task<dynamic> GetInfo_Api(string id)
+    public async Task<dynamic> GetInfoApi(string id)
     {
         return (await GetInfo(id)).Adapt<DataInterfaceInfoOutput>();
     }
@@ -347,7 +347,7 @@ public class DataInterfaceService : IDynamicApiController, ITransient
         {
             string sheetData = Regex.Match(info.DataProcessing, @"\{(.*)\}", RegexOptions.Singleline).Groups[1].Value;
             var scriptStr = "var result = function(data){data = JSON.parse(data);" + sheetData + "}";
-            return JsEngineUtil.CallFunction(scriptStr, output.ToJsonString(CommonConst.options));//此处时间非时间戳
+            return JsEngineUtil.CallFunction(scriptStr, output.ToJsonString(CommonConst.options)); //此处时间非时间戳
         }
     }
 
@@ -425,7 +425,7 @@ public class DataInterfaceService : IDynamicApiController, ITransient
     /// <param name="id">主键id.</param>
     /// <returns></returns>
     [HttpDelete("{id}")]
-    public async Task Delete_Api(string id)
+    public async Task DeleteApi(string id)
     {
         var isOk = await _repository.AsUpdateable().SetColumns(it => new DataInterfaceEntity()
         {
@@ -520,7 +520,8 @@ public class DataInterfaceService : IDynamicApiController, ITransient
         if (interfaceOauthEntity == null) return null;
         var ymDate = DateTime.Now.ParseToUnixTime().ToString();
         var authorization = GetVerifySignature(interfaceOauthEntity, intefaceId, ymDate);
-        return new {
+        return new
+        {
             YmDate = ymDate,
             Authorization = authorization,
         };
@@ -701,7 +702,8 @@ public class DataInterfaceService : IDynamicApiController, ITransient
                 {
                     // 分页
                     var dt = GetPageToDataTable(resTable, input.CurrentPage, input.PageSize);
-                    output = new {
+                    output = new
+                    {
                         pagination = new PageInfo()
                         {
                             currentPage = input.CurrentPage,
@@ -756,7 +758,8 @@ public class DataInterfaceService : IDynamicApiController, ITransient
                     //}
                     if (input.Keyword.IsNotEmptyOrNull())
                         resList = resList.FindAll(x => x.Where(xx => xx.Value != null && xx.Value.ToString().Contains(input.Keyword)).Any());
-                    output = new {
+                    output = new
+                    {
                         pagination = new PageInfo()
                         {
                             currentPage = input.CurrentPage,
@@ -795,7 +798,8 @@ public class DataInterfaceService : IDynamicApiController, ITransient
                             if (input.Sort.Equals("desc")) resList = resList.OrderBy(x => x[input.Sidx]).ToList();
                             else resList = resList.OrderByDescending(x => x[input.Sidx]).ToList();
                         }
-                        output = new {
+                        output = new
+                        {
                             pagination = new PageInfo()
                             {
                                 currentPage = input.CurrentPage,
@@ -807,7 +811,8 @@ public class DataInterfaceService : IDynamicApiController, ITransient
                     }
                     else
                     {
-                        output = new {
+                        output = new
+                        {
                             pagination = new PageInfo()
                             {
                                 currentPage = input.CurrentPage,
@@ -1144,7 +1149,9 @@ public class DataInterfaceService : IDynamicApiController, ITransient
                     entity.Query = entity.Query?.Replace("{" + item.field + "}", "'" + item.defaultValue + "'");
                 }
                 else
+                {
                     entity.Query = entity.Query?.Replace("{" + item.field + "}", item.defaultValue);
+                }
             }
 
             entity.RequestParameters = parameterList.ToJsonString();

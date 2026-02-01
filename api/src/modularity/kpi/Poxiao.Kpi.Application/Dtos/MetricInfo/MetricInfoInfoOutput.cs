@@ -53,7 +53,7 @@ public class MetricInfoInfoOutput
     /// </summary>
     [JsonProperty("dataModelId")]
     public DbSchemaOutput DataModelId { get; set; }
-    
+
     /// <summary>
     /// 指标列.
     /// </summary>

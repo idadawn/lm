@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
@@ -15,6 +11,10 @@ using Poxiao.Lab.Entity.Dto.IntermediateData;
 using Poxiao.Lab.Entity.Entity;
 using Poxiao.Lab.Interfaces;
 using SqlSugar;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Yitter.IdGenerator;
 
 namespace Poxiao.Lab.Service
@@ -138,7 +138,7 @@ namespace Poxiao.Lab.Service
                 cachedColors = await _db.Queryable<IntermediateDataColorEntity>()
                     .Where(x => x.ProductSpecId == input.ProductSpecId)
                     .ToListAsync();
-                
+
                 await _cacheManager.SetAsync(cacheKey, cachedColors, TimeSpan.FromHours(6));
             }
 
@@ -221,14 +221,14 @@ namespace Poxiao.Lab.Service
             // 尝试从缓存获取
             var cacheKey = GetCacheKey($"spec:{productSpecId}");
             var cachedColors = await _cacheManager.GetAsync<List<IntermediateDataColorEntity>>(cacheKey);
-            
+
             if (cachedColors == null)
             {
                 // 获取该产品规格的所有颜色配置
                 cachedColors = await _db.Queryable<IntermediateDataColorEntity>()
                     .Where(x => x.ProductSpecId == productSpecId)
                     .ToListAsync();
-                
+
                 // 缓存6小时
                 await _cacheManager.SetAsync(cacheKey, cachedColors, TimeSpan.FromHours(6));
             }

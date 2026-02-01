@@ -22,18 +22,17 @@ public static class DatabaseInitExtension
         // 初始化所有 Lab 模块的表
         repository
             .AsSugarClient()
-            .CodeFirst.InitTables(
-                //typeof(ProductSpecEntity),o
-                //typeof(AppearanceFeatureEntity),
-                //typeof(AppearanceFeatureCategoryEntity),
-                //typeof(AppearanceFeatureCorrectionEntity),
-                //typeof(AppearanceFeatureLevelEntity),
-                //typeof(RawDataEntity),
-                //typeof(RawDataImportLogEntity),
-                //typeof(ExcelImportTemplateEntity),
-                //typeof(UnitCategoryEntity),
-                //typeof(UnitDefinitionEntity)
-            );
+            .CodeFirst.InitTables();
+            //typeof(ProductSpecEntity),o
+            //typeof(AppearanceFeatureEntity),
+            //typeof(AppearanceFeatureCategoryEntity),
+            //typeof(AppearanceFeatureCorrectionEntity),
+            //typeof(AppearanceFeatureLevelEntity),
+            //typeof(RawDataEntity),
+            //typeof(RawDataImportLogEntity),
+            //typeof(ExcelImportTemplateEntity),
+            //typeof(UnitCategoryEntity),
+            //typeof(UnitDefinitionEntity)
 
         // 初始化磁性能单位
         SeedMagneticUnits(repository);

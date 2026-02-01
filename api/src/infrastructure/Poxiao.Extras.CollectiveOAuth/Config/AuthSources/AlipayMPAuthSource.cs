@@ -34,6 +34,6 @@ public class AlipayMPAuthSource : IAuthSource
 
     public string getName()
     {
-        return DefaultAuthSourceEnum.ALIPAY_MP.ToString();
+        return DefaultAuthSourceEnum.ALIPAYMP.ToString();
     }
 }

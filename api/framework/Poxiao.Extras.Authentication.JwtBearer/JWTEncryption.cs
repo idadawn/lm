@@ -1,4 +1,3 @@
-using Poxiao.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -7,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using Poxiao.Authorization;
 using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Reflection;

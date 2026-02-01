@@ -9,7 +9,7 @@ namespace Poxiao.Systems.Entitys.Dto.SysConfig;
 public class SetAdminInput
 {
     /// <summary>
- /// 赋予超级管理员 Id 集合.
- /// </summary>
+    /// 赋予超级管理员 Id 集合.
+    /// </summary>
     public List<string> adminIds { get; set; }
 }

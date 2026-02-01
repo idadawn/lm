@@ -1,4 +1,3 @@
-using System;
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using Poxiao.DatabaseAccessor;
@@ -12,6 +11,7 @@ using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.IntermediateDataJudgmentLevel;
 using Poxiao.Lab.Entity.Enum;
 using SqlSugar;
+using System;
 
 namespace Poxiao.Lab.Service;
 
@@ -127,7 +127,7 @@ public class IntermediateDataJudgmentLevelService
             throw Oops.Oh(ErrorCode.COM1005, "关联的判定公式不存在");
 
         var entity = input.Adapt<IntermediateDataJudgmentLevelEntity>();
-        
+
         // 自动生成 Priority (当前最大 + 1)
         var maxPriority = await _repository
             .AsQueryable()
@@ -149,7 +149,7 @@ public class IntermediateDataJudgmentLevelService
         }
 
         entity.Creator();
-        
+
         var isOk = await _repository.InsertAsync(entity);
         if (!isOk)
             throw Oops.Oh(ErrorCode.COM1000);
@@ -221,15 +221,15 @@ public class IntermediateDataJudgmentLevelService
                 t => t.FormulaId == input.FormulaId && t.IsDefault == true && t.Id != input.Id
             );
         }
-        
+
         // 确保 FormulaId 不被篡改，或者如果允许修改则需要处理
         if (entity.FormulaId != input.FormulaId)
         {
-             var formula = await _formulaRepository.GetFirstAsync(t => t.Id == input.FormulaId && t.DeleteMark == null);
-             if (formula == null)
-                 throw Oops.Oh(ErrorCode.COM1005, "关联的判定公式不存在");
-             entity.FormulaId = input.FormulaId;
-             entity.FormulaName = formula.FormulaName;
+            var formula = await _formulaRepository.GetFirstAsync(t => t.Id == input.FormulaId && t.DeleteMark == null);
+            if (formula == null)
+                throw Oops.Oh(ErrorCode.COM1005, "关联的判定公式不存在");
+            entity.FormulaId = input.FormulaId;
+            entity.FormulaName = formula.FormulaName;
         }
 
         entity.LastModify();
@@ -242,7 +242,7 @@ public class IntermediateDataJudgmentLevelService
         await ClearCacheAsync(entity.FormulaId);
         if (entity.FormulaId != input.FormulaId)
         {
-             await ClearCacheAsync(input.FormulaId);
+            await ClearCacheAsync(input.FormulaId);
         }
 
         return entity.Adapt<IntermediateDataJudgmentLevelDto>();

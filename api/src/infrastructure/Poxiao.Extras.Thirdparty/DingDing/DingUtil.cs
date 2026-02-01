@@ -383,7 +383,6 @@ public class DingUtil
     /// <summary>
     /// 获取部门id列表.
     /// </summary>
-    /// <returns></returns>
     public void GetDepIdList(long depId, ref List<long> ids)
     {
         try

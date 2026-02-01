@@ -1,4 +1,9 @@
 using Aop.Api.Domain;
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Core.Handlers;
 using Poxiao.Infrastructure.Core.Manager;
@@ -7,16 +12,11 @@ using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Models.User;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.LinqBuilder;
 using Poxiao.Systems.Entitys.Dto.System.System;
 using Poxiao.Systems.Entitys.Entity.System;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.Systems.System;
@@ -160,7 +160,7 @@ public class SystemService : IDynamicApiController, ITransient
             throw Oops.Oh(ErrorCode.COM1001);
 
         // 当用户的子系统被禁用时，提醒在线用户.
-        if (!input.id.Equals(mainSystem.Id) && (input.enabledMark.Equals(0)))
+        if (!input.id.Equals(mainSystem.Id) && input.enabledMark.Equals(0))
         {
             var systemUser = await _repository.AsSugarClient().Queryable<UserEntity>()
                 .Where(it => it.DeleteMark == null && (input.id.Equals(it.SystemId) || input.id.Equals(it.AppSystemId)))
@@ -178,7 +178,8 @@ public class SystemService : IDynamicApiController, ITransient
 
             // 更新用户的系统id.
             var res = await _repository.AsSugarClient().Updateable(upUserList)
-                .UpdateColumns(it => new {
+                .UpdateColumns(it => new
+                {
                     it.SystemId,
                     it.AppSystemId,
                     it.LastModifyTime,

@@ -19,7 +19,7 @@ public class WechatOpenAuthSource : IAuthSource
 
     public string getName()
     {
-        return DefaultAuthSourceEnum.WECHAT_OPEN.ToString();
+        return DefaultAuthSourceEnum.WECHATOPEN.ToString();
     }
 
     public string refresh()

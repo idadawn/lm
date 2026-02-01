@@ -5,8 +5,8 @@ namespace Poxiao.Extras.CollectiveOAuth.Utils;
 /// </summary>
 public class UrlBuilder
 {
-    private Dictionary<string, object> paramDic = new Dictionary<string, object>();
-    private string baseUrl;
+    private Dictionary<string, object> _paramDic = new Dictionary<string, object>();
+    private string _baseUrl;
 
     /// <summary>
     /// 初始化一个<see cref="UrlBuilder"/>类型的新实例.
@@ -24,7 +24,7 @@ public class UrlBuilder
     public static UrlBuilder fromBaseUrl(string baseUrl)
     {
         UrlBuilder builder = new UrlBuilder();
-        builder.baseUrl = baseUrl;
+        builder._baseUrl = baseUrl;
         return builder;
     }
 
@@ -41,8 +41,8 @@ public class UrlBuilder
             throw new Exception("参数名不能为空");
         }
 
-        string valueAsString = (value != null ? Convert.ToString(value) : null);
-        this.paramDic.Add(key, valueAsString);
+        string valueAsString = value != null ? Convert.ToString(value) : null;
+        this._paramDic.Add(key, valueAsString);
         return this;
     }
 
@@ -62,13 +62,13 @@ public class UrlBuilder
     /// <returns>url.</returns>
     public string build(bool encode)
     {
-        if (this.paramDic.Count == 0 || this.paramDic == null)
+        if (this._paramDic.Count == 0 || this._paramDic == null)
         {
-            return this.baseUrl;
+            return this._baseUrl;
         }
 
-        string baseUrl = this.appendIfNotContain(this.baseUrl, "?", "&");
-        string paramString = GlobalAuthUtil.parseMapToString(this.paramDic);
+        string baseUrl = this.appendIfNotContain(this._baseUrl, "?", "&");
+        string paramString = GlobalAuthUtil.parseMapToString(this._paramDic);
         return baseUrl + paramString;
     }
 

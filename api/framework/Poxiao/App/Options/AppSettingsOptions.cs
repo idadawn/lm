@@ -1,6 +1,6 @@
-﻿using Poxiao.ConfigurableOptions;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Poxiao.ConfigurableOptions;
 
 namespace Poxiao;
 

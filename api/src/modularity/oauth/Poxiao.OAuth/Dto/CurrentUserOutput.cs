@@ -1,6 +1,6 @@
+using Poxiao.DependencyInjection;
 using Poxiao.Infrastructure.Models.User;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
 using Poxiao.Systems.Entitys.Dto.Module;
 
 namespace Poxiao.OAuth.Dto;

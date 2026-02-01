@@ -1,14 +1,14 @@
+using Microsoft.Extensions.DependencyInjection;
+using Poxiao.DataEncryption;
+using Poxiao.DependencyInjection;
+using Poxiao.EventBus;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DataEncryption;
-using Poxiao.DependencyInjection;
-using Poxiao.EventBus;
 using Poxiao.Systems.Entitys.Model.Permission.User;
 using Poxiao.Systems.Entitys.Permission;
-using Microsoft.Extensions.DependencyInjection;
 using SqlSugar;
 
 namespace Poxiao.EventHandler;
@@ -56,12 +56,12 @@ public class UserEventSubscriber : IEventSubscriber, ISingleton
 
             if (KeyVariable.MultiTenancyType.Equals("COLUMN"))
             {
-                string ServiceName = tenant.connectionConfig.IsolationField;
+                string serviceName = tenant.connectionConfig.IsolationField;
                 _sqlSugarClient.Aop.DataExecuting = (oldValue, entityInfo) =>
                 {
                     if (entityInfo.PropertyName == "TenantId" && entityInfo.OperationType == DataFilterType.InsertByObject)
                     {
-                        entityInfo.SetValue(ServiceName);
+                        entityInfo.SetValue(serviceName);
                     }
                 };
             }
@@ -129,12 +129,12 @@ public class UserEventSubscriber : IEventSubscriber, ISingleton
 
                 if (KeyVariable.MultiTenancyType.Equals("COLUMN"))
                 {
-                    string ServiceName = tenant.connectionConfig.IsolationField;
+                    string serviceName = tenant.connectionConfig.IsolationField;
                     _sqlSugarClient.Aop.DataExecuting = (oldValue, entityInfo) =>
                     {
                         if (entityInfo.PropertyName == "TenantId" && entityInfo.OperationType == DataFilterType.InsertByObject)
                         {
-                            entityInfo.SetValue(ServiceName);
+                            entityInfo.SetValue(serviceName);
                         }
                     };
                 }

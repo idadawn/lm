@@ -1,3 +1,6 @@
+using Mapster;
+using Newtonsoft.Json.Linq;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
@@ -7,7 +10,6 @@ using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Models.User;
 using Poxiao.Infrastructure.Models.WorkFlow;
 using Poxiao.Infrastructure.Security;
-using Poxiao.FriendlyException;
 using Poxiao.RemoteRequest.Extensions;
 using Poxiao.Systems.Entitys.Dto.User;
 using Poxiao.Systems.Entitys.Permission;
@@ -18,8 +20,6 @@ using Poxiao.WorkFlow.Entitys.Enum;
 using Poxiao.WorkFlow.Entitys.Model;
 using Poxiao.WorkFlow.Entitys.Model.Properties;
 using Poxiao.WorkFlow.Interfaces.Repository;
-using Mapster;
-using Newtonsoft.Json.Linq;
 using SqlSugar;
 
 namespace Poxiao.WorkFlow.Manager;
@@ -137,8 +137,8 @@ public class FlowTaskUserUtil
             case (int)FlowTaskOperatorEnum.ServiceApprover:
                 try
                 {
-                    var Token = _userManager.ToKen.IsNotEmptyOrNull() ? _userManager.ToKen : _cacheManager.Get<List<UserOnlineModel>>(string.Format("{0}:{1}", CommonConst.CACHEKEYONLINEUSER, _userManager.TenantId)).Find(x => x.userId == _userManager.UserId).token;
-                    var data = await approversProperties.getUserUrl.SetHeaders(new { Authorization = Token }).SetBody(flowTaskParamter.formData).PostAsStringAsync();
+                    var token = _userManager.ToKen.IsNotEmptyOrNull() ? _userManager.ToKen : _cacheManager.Get<List<UserOnlineModel>>(string.Format("{0}:{1}", CommonConst.CACHEKEYONLINEUSER, _userManager.TenantId)).Find(x => x.userId == _userManager.UserId).token;
+                    var data = await approversProperties.getUserUrl.SetHeaders(new { Authorization = token }).SetBody(flowTaskParamter.formData).PostAsStringAsync();
                     var result = data.ToObject<RESTfulResult<object>>();
                     if (result.IsNotEmptyOrNull())
                     {
@@ -166,11 +166,11 @@ public class FlowTaskUserUtil
                 userIdList = _flowTaskRepository.GetFlowCandidates(flowTaskNodeEntity.Id);
                 break;
             default:
-                userIdList = (await GetUserDefined(approversProperties));
+                userIdList = await GetUserDefined(approversProperties);
                 userIdList = await GetExtraRuleUsers(userIdList, approversProperties.extraRule, flowTaskNodeEntity.TaskId);
                 break;
         }
-        userIdList = userList1.Select(x => x.Id).Intersect(userIdList).ToList();// 过滤掉作废人员和非用户人员
+        userIdList = userList1.Select(x => x.Id).Intersect(userIdList).ToList(); // 过滤掉作废人员和非用户人员
         if (userIdList.Count == 0)
         {
             userIdList = _flowTaskRepository.GetFlowCandidates(flowTaskNodeEntity.Id);
@@ -301,8 +301,8 @@ public class FlowTaskUserUtil
                     }
                 }
                 var index = 0;
-                var isAnyOperatorUser = !_flowTaskRepository.AnyTaskOperatorUser(x => x.TaskNodeId == nextFlowTaskNodeEntity.Id && x.State == "0");// 不存在依次审批插入.
-                var OperatorUserList = new List<FlowTaskOperatorUserEntity>();
+                var isAnyOperatorUser = !_flowTaskRepository.AnyTaskOperatorUser(x => x.TaskNodeId == nextFlowTaskNodeEntity.Id && x.State == "0"); // 不存在依次审批插入.
+                var operatorUserList = new List<FlowTaskOperatorUserEntity>();
                 foreach (var item in handleIds)
                 {
                     if (item.IsNotEmptyOrNull())
@@ -321,10 +321,10 @@ public class FlowTaskUserUtil
                             flowTaskOperatorUserEntity.Type = approverPropertiers.assigneeType.ToString();
                             flowTaskOperatorUserEntity.HandleId = item;
                             flowTaskOperatorUserEntity.SortCode = index++;
-                            OperatorUserList.Add(flowTaskOperatorUserEntity);
+                            operatorUserList.Add(flowTaskOperatorUserEntity);
                             if (index == 1)
                             {
-                                flowTaskParamter.flowTaskOperatorEntityList.Add(OperatorUserList.FirstOrDefault().Adapt<FlowTaskOperatorEntity>());
+                                flowTaskParamter.flowTaskOperatorEntityList.Add(operatorUserList.FirstOrDefault().Adapt<FlowTaskOperatorEntity>());
                             }
                         }
                         else
@@ -345,7 +345,7 @@ public class FlowTaskUserUtil
                         }
                     }
                 }
-                await _flowTaskRepository.CreateTaskOperatorUser(OperatorUserList);
+                await _flowTaskRepository.CreateTaskOperatorUser(operatorUserList);
             }
         }
         catch (AppFriendlyException ex)
@@ -427,7 +427,7 @@ public class FlowTaskUserUtil
         foreach (var item in nextNodeEntities)
         {
             ApproversProperties approverPropertiers = null;
-            var isSubFlow = false;//是否子流程节点.
+            var isSubFlow = false; //是否子流程节点.
             if (FlowTaskNodeTypeEnum.approver.ParseToString().Equals(item.NodeType))
                 approverPropertiers = item.NodePropertyJson.ToObject<ApproversProperties>();
             if (FlowTaskNodeTypeEnum.subFlow.ParseToString().Equals(item.NodeType))
@@ -449,7 +449,7 @@ public class FlowTaskUserUtil
                         .Union(approverPropertiers.approverPos)
                         .Union(approverPropertiers.approverOrg)
                         .Union(approverPropertiers.approverGroup).ToList();
-                    var flag = false;//是否有数据
+                    var flag = false; //是否有数据
                     var input = new UserConditionInput()
                     {
                         departIds = objIds,
@@ -614,10 +614,10 @@ public class FlowTaskUserUtil
             var userIdList = (await _flowTaskRepository.GetTaskOperatorList(x => x.TaskNodeId == flowTaskNodeModel.id && SqlFunc.IsNullOrEmpty(x.ParentId) && !x.State.Equals("-1"))).Select(x => x.HandleId).Distinct().ToList();
             if (approverProperties.counterSign == 2)
             {
-                var OperatorUserIdList = (await _flowTaskRepository.GetTaskOperatorUserList(x => x.TaskId == flowTaskNodeModel.taskId && x.TaskNodeId == flowTaskNodeModel.id && !x.State.Equals("-1"))).Select(x => x.HandleId).ToList();
-                if (OperatorUserIdList.Any())
+                var operatorUserIdList = (await _flowTaskRepository.GetTaskOperatorUserList(x => x.TaskId == flowTaskNodeModel.taskId && x.TaskNodeId == flowTaskNodeModel.id && !x.State.Equals("-1"))).Select(x => x.HandleId).ToList();
+                if (operatorUserIdList.Any())
                 {
-                    userIdList = OperatorUserIdList;
+                    userIdList = operatorUserIdList;
                 }
             }
             if (!userIdList.Any())

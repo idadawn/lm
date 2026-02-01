@@ -181,14 +181,14 @@ public static partial class Extensions
     [StructLayout(LayoutKind.Sequential)]
     private struct SystemTime
     {
-        public short year;
-        public short month;
-        public short dayOfWeek;
-        public short day;
-        public short hour;
-        public short minute;
-        public short second;
-        public short milliseconds;
+        public short Year;
+        public short Month;
+        public short DayOfWeek;
+        public short Day;
+        public short Hour;
+        public short Minute;
+        public short Second;
+        public short Milliseconds;
     }
 
     /// <summary>
@@ -198,14 +198,14 @@ public static partial class Extensions
     public static void SetLocalTime(this in DateTime dt)
     {
         SystemTime st;
-        st.year = (short)dt.Year;
-        st.month = (short)dt.Month;
-        st.dayOfWeek = (short)dt.DayOfWeek;
-        st.day = (short)dt.Day;
-        st.hour = (short)dt.Hour;
-        st.minute = (short)dt.Minute;
-        st.second = (short)dt.Second;
-        st.milliseconds = (short)dt.Millisecond;
+        st.Year = (short)dt.Year;
+        st.Month = (short)dt.Month;
+        st.DayOfWeek = (short)dt.DayOfWeek;
+        st.Day = (short)dt.Day;
+        st.Hour = (short)dt.Hour;
+        st.Minute = (short)dt.Minute;
+        st.Second = (short)dt.Second;
+        st.Milliseconds = (short)dt.Millisecond;
         SetLocalTime(ref st);
     }
 
@@ -252,7 +252,7 @@ public static partial class Extensions
     /// </summary>
     /// <param name="dt"></param>
     /// <returns></returns>
-    public static long GetTotalNanoseconds(this in DateTime dt) => new DateTimeOffset(dt).Ticks * 100 + Stopwatch.GetTimestamp() % 100;
+    public static long GetTotalNanoseconds(this in DateTime dt) => (new DateTimeOffset(dt).Ticks * 100) + (Stopwatch.GetTimestamp() % 100);
 
     /// <summary>
     /// 获取该时间相对于1970-01-01 00:00:00的分钟数.
@@ -306,7 +306,7 @@ public static partial class Extensions
         return month switch
         {
             1 => 31,
-            2 => (IsRuYear(iYear) ? 29 : 28),
+            2 => IsRuYear(iYear) ? 29 : 28,
             3 => 31,
             4 => 30,
             5 => 31,
@@ -330,7 +330,7 @@ public static partial class Extensions
         return dt.Month switch
         {
             1 => 31,
-            2 => (IsRuYear(dt.Year) ? 29 : 28),
+            2 => IsRuYear(dt.Year) ? 29 : 28,
             3 => 31,
             4 => 30,
             5 => 31,
@@ -389,7 +389,7 @@ public static partial class Extensions
         // 形式参数为年份
         // 例如：2003
         var n = iYear;
-        return n % 400 == 0 || n % 4 == 0 && n % 100 != 0;
+        return n % 400 == 0 || (n % 4 == 0 && n % 100 != 0);
     }
 
     /// <summary>
@@ -432,7 +432,7 @@ public static partial class Extensions
     /// <param name="lastDay">最后一天.</param>
     public static void ReturnDateFormat(this DateTime _, int month, out string firstDay, out string lastDay)
     {
-        int year = DateTime.Now.Year + month / 12;
+        int year = DateTime.Now.Year + (month / 12);
         if (month != 12)
         {
             month %= 12;
@@ -526,8 +526,8 @@ public static partial class Extensions
     {
         long lTicks = (dtEnd.Ticks - dtStar.Ticks) / 10000000;
         string sTemp = (lTicks / 3600).ToString().PadLeft(2, '0') + ":";
-        sTemp += (lTicks % 3600 / 60).ToString().PadLeft(2, '0') + ":";
-        sTemp += (lTicks % 3600 % 60).ToString().PadLeft(2, '0');
+        sTemp += ((lTicks % 3600) / 60).ToString().PadLeft(2, '0') + ":";
+        sTemp += ((lTicks % 3600) % 60).ToString().PadLeft(2, '0');
         return sTemp;
     }
 
@@ -585,31 +585,31 @@ public static partial class Extensions
         // 提醒时间,到了返回1,否则返回0
         if (sec > year)
         {
-            strResout += sec / year + "年";
+            strResout += (sec / year) + "年";
             sec %= year; // 剩余
         }
 
         if (sec > month)
         {
-            strResout += sec / month + "月";
+            strResout += (sec / month) + "月";
             sec %= month;
         }
 
         if (sec > day)
         {
-            strResout += sec / day + "天";
+            strResout += (sec / day) + "天";
             sec %= day;
         }
 
         if (sec > hours)
         {
-            strResout += sec / hours + "小时";
+            strResout += (sec / hours) + "小时";
             sec %= hours;
         }
 
         if (sec > minutes)
         {
-            strResout += sec / minutes + "分";
+            strResout += (sec / minutes) + "分";
             sec %= minutes;
         }
 
@@ -663,10 +663,10 @@ public static partial class Extensions
                 end = new DateTime(now.Year - 1, 12, 31);
                 break;
             case "本季度":
-                start = new DateTime(now.Year, (now.Month - 1) / 3 * 3 + 1, 1);
+                start = new DateTime(now.Year, ((now.Month - 1) / 3 * 3) + 1, 1);
                 break;
             case "上季度":
-                start = new DateTime(now.Year, (now.Month - 1) / 3 * 3 - 2, 1);
+                start = new DateTime(now.Year, ((now.Month - 1) / 3 * 3) - 2, 1);
                 end = new DateTime(now.Year, (now.Month - 1) / 3 * 3, DateTime.DaysInMonth(now.Year, (now.Month - 1) / 3 * 3));
                 break;
             default:

@@ -8,11 +8,12 @@ namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class WeChatEnterpriseAuthRequest : DefaultAuthRequest
 {
-    public WeChatEnterpriseAuthRequest(ClientConfig config) : base(config, new WechatEnterpriseAuthSource())
+    public WeChatEnterpriseAuthRequest(ClientConfig config)
+        : base(config, new WechatEnterpriseAuthSource())
     {
     }
 
-    public WeChatEnterpriseAuthRequest(ClientConfig config, IAuthStateCache authStateCache) 
+    public WeChatEnterpriseAuthRequest(ClientConfig config, IAuthStateCache authStateCache)
         : base(config, new WechatEnterpriseAuthSource(), authStateCache)
     {
     }
@@ -47,7 +48,7 @@ public class WeChatEnterpriseAuthRequest : DefaultAuthRequest
         // 返回 OpenId 或其他，均代表非当前企业用户，不支持
         if (!jsonObj.ContainsKey("UserId"))
         {
-            throw new Exception(AuthResponseStatus.UNIDENTIFIED_PLATFORM.GetDesc());
+            throw new Exception(AuthResponseStatus.UNIDENTIFIEDPLATFORM.GetDesc());
         }
         string userId = jsonObj.getString("UserId");
         string userDetailResponse = getUserDetail(authToken.accessToken, userId);
@@ -108,7 +109,7 @@ public class WeChatEnterpriseAuthRequest : DefaultAuthRequest
      * @param code 授权码
      * @return 返回获取accessToken的url
      */
-    protected override string accessTokenUrl(String code)
+    protected override string accessTokenUrl(string code)
     {
         return UrlBuilder.fromBaseUrl(source.accessToken())
             .queryParam("corpid", config.clientId)

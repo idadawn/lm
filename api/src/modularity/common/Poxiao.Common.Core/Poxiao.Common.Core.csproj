@@ -6,7 +6,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="InfluxData.Net" Version="8.0.1" />
-		<PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="2.88.3" />
+		<PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.1" />
 		<PackageReference Include="DotNetCore.Natasha.CSharp" Version="5.2.2.1" />
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0" />
 	</ItemGroup>
@@ -19,6 +19,10 @@
 		<ProjectReference Include="..\..\system\Poxiao.Systems.Entitys\Poxiao.Systems.Entitys.csproj" />
 		<ProjectReference Include="..\..\taskschedule\Poxiao.TaskScheduler.Entitys\Poxiao.TaskScheduler.Entitys.csproj" />
 		<ProjectReference Include="..\..\visualdev\Poxiao.VisualDev.Entitys\Poxiao.VisualDev.Entitys.csproj" />
+	</ItemGroup>
+	
+	<ItemGroup>
+	  <PackageReference Update="StyleCop.Analyzers" Version="1.1.118" />
 	</ItemGroup>
 
 </Project>

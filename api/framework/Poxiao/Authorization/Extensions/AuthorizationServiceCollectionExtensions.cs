@@ -1,8 +1,8 @@
-﻿using Poxiao.Authorization;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Poxiao.Authorization;
 
 namespace Microsoft.Extensions.DependencyInjection;
 

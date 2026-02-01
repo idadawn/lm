@@ -1,6 +1,6 @@
+using Newtonsoft.Json;
 using Poxiao.Extras.CollectiveOAuth.Enums;
 using System.Text;
-using Newtonsoft.Json;
 using System.Web;
 
 namespace Poxiao.Extras.CollectiveOAuth.Utils;
@@ -72,7 +72,7 @@ public static class GlobalAuthUtil
     /// <returns>用户性别.</returns>
     public static AuthUserGender getRealGender(string originalGender)
     {
-        if (null == originalGender || Convert.ToInt32(AuthUserGender.UNKNOWN).ToString().Equals(originalGender))
+        if (originalGender == null || Convert.ToInt32(AuthUserGender.UNKNOWN).ToString().Equals(originalGender))
         {
             return AuthUserGender.UNKNOWN;
         }
@@ -522,7 +522,7 @@ public static class GlobalAuthUtil
         if (dic.Count > 0)
         {
             List<KeyValuePair<string, object>> lst = new List<KeyValuePair<string, object>>(dic);
-            lst.Sort(delegate (KeyValuePair<string, object> s1, KeyValuePair<string, object> s2)
+            lst.Sort(delegate(KeyValuePair<string, object> s1, KeyValuePair<string, object> s2)
             {
                 if (isAsc)
                 {

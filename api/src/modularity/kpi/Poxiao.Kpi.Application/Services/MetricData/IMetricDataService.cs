@@ -19,7 +19,6 @@ public interface IMetricDataService
     /// <returns></returns>
     Task<MetricChartDataOutput> GetChartDataAsync(MetricDataQryInput input);
 
-
     /// <summary>
     /// 获取指标图标数据.
     /// </summary>

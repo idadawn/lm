@@ -1,6 +1,5 @@
 ﻿namespace Poxiao.Infrastructure.Contracts;
 
-
 /// <summary>
 /// 实体类基类.
 /// </summary>

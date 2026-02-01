@@ -24,7 +24,6 @@ public class MetricChartDataOutput
     public List<MetricInfoGradeExtInput> MetricInfoGrade { get; set; }
 }
 
-
 /// <summary>
 /// 指标图表数据.
 /// </summary>

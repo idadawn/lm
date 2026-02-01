@@ -134,3 +134,31 @@ dotnet_style_qualification_for_method = false:suggestion
 dotnet_style_qualification_for_property = false:suggestion
 
 # Add copyright file header
+
+# 警告严重性配置 - 减少警告数量
+
+# 禁用 StyleCop 文档警告（占 2180 个警告）
+dotnet_diagnostic.SA1629.severity = none
+
+# 降低 nullable 警告级别（占约 14000 个警告）
+dotnet_diagnostic.CS8618.severity = suggestion
+dotnet_diagnostic.CS8604.severity = suggestion
+dotnet_diagnostic.CS8602.severity = suggestion
+dotnet_diagnostic.CS8625.severity = suggestion
+dotnet_diagnostic.CS8601.severity = suggestion
+dotnet_diagnostic.CS8603.severity = suggestion
+dotnet_diagnostic.CS8600.severity = suggestion
+
+# 降低代码风格警告级别
+dotnet_diagnostic.SA1513.severity = suggestion
+dotnet_diagnostic.SA1001.severity = suggestion
+dotnet_diagnostic.SA1005.severity = suggestion
+dotnet_diagnostic.SA1111.severity = suggestion
+dotnet_diagnostic.SA1515.severity = suggestion
+dotnet_diagnostic.SA1021.severity = suggestion
+dotnet_diagnostic.SA1122.severity = suggestion
+dotnet_diagnostic.SA1123.severity = suggestion
+
+# 保留重要的安全和质量警告
+dotnet_diagnostic.NU1903.severity = high
+dotnet_diagnostic.NU1904.severity = high

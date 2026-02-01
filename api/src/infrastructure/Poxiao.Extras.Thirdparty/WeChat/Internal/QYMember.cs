@@ -21,7 +21,7 @@ public sealed class QYMember
     /// 摘要:
     ///     英文名。长度为1-64个字节，由字母、数字、点(.)、减号(-)、空格或下划线(_)组成.
     /// </summary>
-    public string english_name { get; set; }
+    public string englishName { get; set; }
 
     /// <summary>
     /// 摘要:
@@ -75,7 +75,7 @@ public sealed class QYMember
     /// 摘要:
     ///     成员头像的mediaid，通过素材管理接口上传图片获得的mediaid.
     /// </summary>
-    public string avatar_mediaid { get; set; }
+    public string avatarMediaid { get; set; }
 
     /// <summary>
     /// 摘要:
@@ -93,5 +93,5 @@ public sealed class QYMember
     /// 摘要:
     ///     成员对外属性，字段详情见对外属性： http://work.weixin.qq.com/api/doc#13450.
     /// </summary>
-    public object external_profile { get; set; }
+    public object externalProfile { get; set; }
 }

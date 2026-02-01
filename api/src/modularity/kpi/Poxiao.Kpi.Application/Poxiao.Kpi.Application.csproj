@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="MailKit" Version="2.15.0" />
-    <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
+    <PackageReference Include="MathNet.Numerics" Version="5.0.0" Aliases="MathNetOfficial" />
     <PackageReference Include="NCalcSync" Version="3.9.0" />
   </ItemGroup>
 
@@ -16,6 +16,10 @@
     <ProjectReference Include="..\..\common\Poxiao.Common.Core\Poxiao.Common.Core.csproj" />
     <ProjectReference Include="..\..\system\Poxiao.Systems.Interfaces\Poxiao.Systems.Interfaces.csproj" />
     <ProjectReference Include="..\Poxiao.Kpi.Core\Poxiao.Kpi.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="StyleCop.Analyzers" Version="1.1.118" />
   </ItemGroup>
 
 </Project>

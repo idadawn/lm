@@ -1,5 +1,5 @@
-using Poxiao.Infrastructure.Security;
 using Poxiao.DependencyInjection;
+using Poxiao.Infrastructure.Security;
 
 namespace Poxiao.Systems.Entitys.Dto.Department;
 
@@ -52,5 +52,5 @@ public class DepartmentSelectorOutput : TreeModel
     /// <summary>
     /// 是否可选.
     /// </summary>
-    public bool disabled = false;
+    public bool Disabled = false;
 }

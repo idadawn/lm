@@ -1,3 +1,9 @@
+using Mapster;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Core.Manager.Files;
@@ -5,9 +11,6 @@ using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.Systems.Interfaces.System;
@@ -20,9 +23,6 @@ using Poxiao.WorkFlow.Entitys.Model;
 using Poxiao.WorkFlow.Entitys.Model.Properties;
 using Poxiao.WorkFlow.Interfaces.Repository;
 using Poxiao.WorkFlow.Interfaces.Service;
-using Mapster;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.WorkFlow.Service;
@@ -147,7 +147,7 @@ public class FlowEngineService : IFlowEngineService, IDynamicApiController, ITra
             data = data.FindAll(o => o.fullName.Contains(input.Keyword) || o.enCode.Contains(input.Keyword));
         var pageList = new SqlSugarPagedList<FlowEngineListOutput>()
         {
-            list = data.Skip((input.CurrentPage - 1)* input.PageSize).Take(input.PageSize).ToList(),
+            list = data.Skip((input.CurrentPage - 1) * input.PageSize).Take(input.PageSize).ToList(),
             pagination = new Pagination()
             {
                 CurrentPage = input.CurrentPage,
@@ -164,7 +164,7 @@ public class FlowEngineService : IFlowEngineService, IDynamicApiController, ITra
     /// <param name="id">主键值.</param>
     /// <returns></returns>
     [HttpGet("{id}")]
-    public async Task<dynamic> GetInfo_Api(string id)
+    public async Task<dynamic> GetInfoApi(string id)
     {
         return (await GetInfo(id)).Adapt<FlowEngineInfoOutput>();
     }
@@ -226,8 +226,8 @@ public class FlowEngineService : IFlowEngineService, IDynamicApiController, ITra
         {
             var formTemplateBase = new TemplateParsingBase(entity.FormTemplateJson, entity.Tables, true);
             formDataFieldList = formTemplateBase.SingleFormData
-                .Where(x => x.__config__.poxiaoKey != PoxiaoKeyConst.RELATIONFORM && x.__config__.poxiaoKey != "relationFlow")
-                .Select(x => new FlowEngineFieldOutput() { vmodel = x.__vModel__, label = x.__config__.label }).ToList();
+                .Where(x => x.Config.poxiaoKey != PoxiaoKeyConst.RELATIONFORM && x.Config.poxiaoKey != "relationFlow")
+                .Select(x => new FlowEngineFieldOutput() { vmodel = x.VModel, label = x.Config.label }).ToList();
         }
 
         return new { list = formDataFieldList };
@@ -535,7 +535,7 @@ public class FlowEngineService : IFlowEngineService, IDynamicApiController, ITra
             {
                 #region  处理旧无表数据
                 //无表转有表
-                var mTableName = "wform_" + entity.EnCode;//主表名称
+                var mTableName = "wform_" + entity.EnCode; //主表名称
                 if (entity.Tables.IsNullOrEmpty() || entity.Tables == "[]")
                 {
                     var devEntity = new VisualDevEntity()
@@ -619,7 +619,7 @@ public class FlowEngineService : IFlowEngineService, IDynamicApiController, ITra
                 sortCode = a.SortCode,
                 type = c.Type,
                 visibleType = c.VisibleType,
-                ParentId = SqlFunc.Subqueryable<DictionaryDataEntity>().Where(d => d.EnCode == c.Category && d.DictionaryTypeId== "507f4f5df86b47588138f321e0b0dac7").Select(d => d.Id),
+                ParentId = SqlFunc.Subqueryable<DictionaryDataEntity>().Where(d => d.EnCode == c.Category && d.DictionaryTypeId == "507f4f5df86b47588138f321e0b0dac7").Select(d => d.Id),
             }).MergeTable().OrderBy(a => a.sortCode).OrderBy(a => a.creatorTime, OrderByType.Desc)
              .OrderBy(a => a.lastModifyTime, OrderByType.Desc).ToListAsync();
     }

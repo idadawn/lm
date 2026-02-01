@@ -57,6 +57,11 @@ public class IntermediateDataListQuery : PageInputBase
     /// 排序规则（JSON格式）.
     /// </summary>
     public string SortRules { get; set; }
+
+    /// <summary>
+    /// 计算状态 (0=Pending, 1=Processing, 2=Success, 3=Failed).
+    /// </summary>
+    public int? CalcStatus { get; set; }
 }
 
 /// <summary>

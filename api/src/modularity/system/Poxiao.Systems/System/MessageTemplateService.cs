@@ -1,15 +1,16 @@
-using System.Web;
-using Poxiao.Infrastructure.Core.Manager;
-using Poxiao.Infrastructure.Enums;
-using Poxiao.Infrastructure.Extension;
-using Poxiao.Infrastructure.Filter;
-using Poxiao.Infrastructure.Security;
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.Extras.Thirdparty.DingDing;
 using Poxiao.Extras.Thirdparty.Email;
 using Poxiao.Extras.Thirdparty.WeChat;
 using Poxiao.FriendlyException;
+using Poxiao.Infrastructure.Core.Manager;
+using Poxiao.Infrastructure.Enums;
+using Poxiao.Infrastructure.Extension;
+using Poxiao.Infrastructure.Filter;
+using Poxiao.Infrastructure.Security;
 using Poxiao.Message.Interfaces.Message;
 using Poxiao.Systems.Entitys.Dto.MessageTemplate;
 using Poxiao.Systems.Entitys.Dto.SysConfig;
@@ -17,9 +18,8 @@ using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.Systems.Interfaces.Permission;
 using Poxiao.Systems.Interfaces.System;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
+using System.Web;
 
 namespace Poxiao.Systems;
 
@@ -108,7 +108,8 @@ public class MessageTemplateService : IMessageTemplateService, IDynamicApiContro
                 enCode = a.EnCode,
                 title = a.Title,
                 content = a.Content,
-                _noticeMethod = SqlFunc.MergeString(SqlFunc.IIF(a.IsDingTalk == 1, "阿里钉钉,", string.Empty),
+                NoticeMethod = SqlFunc.MergeString(
+                    SqlFunc.IIF(a.IsDingTalk == 1, "阿里钉钉,", string.Empty),
                     SqlFunc.IIF(a.IsEmail == 1, "电子邮箱,", string.Empty), SqlFunc.IIF(a.IsSms == 1, "短信,", string.Empty),
                     SqlFunc.IIF(a.IsStationLetter == 1, "站内信,", string.Empty), SqlFunc.IIF(a.IsWeCom == 1, "企业微信,", string.Empty)),
                 enabledMark = a.EnabledMark,
@@ -153,7 +154,7 @@ public class MessageTemplateService : IMessageTemplateService, IDynamicApiContro
     /// <param name="id">参数.</param>
     /// <returns></returns>
     [HttpGet("{id}")]
-    public async Task<dynamic> GetInfo_Api(string id)
+    public async Task<dynamic> GetInfoApi(string id)
     {
         return await _repository.AsSugarClient().Queryable<MessageTemplateEntity, SmsTemplateEntity>((a, b) => new JoinQueryInfos(JoinType.Left, a.SmsId == b.Id))
             .Where((a, b) => a.Id == id && a.DeleteMark == null && b.DeleteMark == null).Select((a, b) => new MessageTemplateInfoOutput()
@@ -255,7 +256,7 @@ public class MessageTemplateService : IMessageTemplateService, IDynamicApiContro
     /// <param name="id">主键值.</param>
     /// <returns></returns>
     [HttpPut("{id}/Actions/State")]
-    public async Task ActionsState_Api(string id)
+    public async Task ActionsStateApi(string id)
     {
         var isOk = await _repository.AsUpdateable().SetColumns(it => new MessageTemplateEntity()
         {
@@ -351,7 +352,6 @@ public class MessageTemplateService : IMessageTemplateService, IDynamicApiContro
     /// <param name="userList"></param>
     /// <param name="context"></param>
     /// <param name="sysconfig"></param>
-    /// <returns></returns>
     private void EmailSend(string titile, List<string> userList, string context, SysConfigOutput sysconfig)
     {
         var emailList = new List<string>();

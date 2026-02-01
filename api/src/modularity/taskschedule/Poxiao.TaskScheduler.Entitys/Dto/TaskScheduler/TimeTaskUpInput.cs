@@ -3,7 +3,7 @@ using Poxiao.DependencyInjection;
 namespace Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler;
 
 [SuppressSniffer]
-public class TimeTaskUpInput:TimeTaskCrInput
+public class TimeTaskUpInput : TimeTaskCrInput
 {
     /// <summary>
     /// id.

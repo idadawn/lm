@@ -1,4 +1,3 @@
-using System; // For TimeSpan
 using Microsoft.AspNetCore.Mvc;
 using Poxiao.DatabaseAccessor;
 using Poxiao.DependencyInjection;
@@ -8,6 +7,7 @@ using Poxiao.Infrastructure.Manager; // For ICacheManager
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Interfaces;
 using SqlSugar;
+using System; // For TimeSpan
 
 namespace Poxiao.Lab.Service;
 

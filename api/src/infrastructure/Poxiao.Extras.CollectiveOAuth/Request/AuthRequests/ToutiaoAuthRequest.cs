@@ -1,14 +1,15 @@
 using Poxiao.Extras.CollectiveOAuth.Cache;
 using Poxiao.Extras.CollectiveOAuth.Config;
+using Poxiao.Extras.CollectiveOAuth.Enums;
 using Poxiao.Extras.CollectiveOAuth.Models;
 using Poxiao.Extras.CollectiveOAuth.Utils;
-using Poxiao.Extras.CollectiveOAuth.Enums;
 
 namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class ToutiaoAuthRequest : DefaultAuthRequest
 {
-    public ToutiaoAuthRequest(ClientConfig config) : base(config, new ToutiaoAuthSource())
+    public ToutiaoAuthRequest(ClientConfig config)
+        : base(config, new ToutiaoAuthSource())
     {
     }
 

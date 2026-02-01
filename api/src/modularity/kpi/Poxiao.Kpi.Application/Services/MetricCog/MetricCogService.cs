@@ -84,7 +84,8 @@ public class MetricCogService : IMetricCogService, ITransient
         if (entity == null) return 1;
         var count = await _repository.AsUpdateable(entity)
             .CallEntityMethod(x => x.Delete())
-            .UpdateColumns(it => new {
+            .UpdateColumns(it => new
+            {
                 it.DeleteTime,
                 it.DeleteUserId,
                 it.IsDeleted

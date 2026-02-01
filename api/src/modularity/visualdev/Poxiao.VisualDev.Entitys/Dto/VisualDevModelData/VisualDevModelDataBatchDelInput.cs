@@ -8,5 +8,5 @@ public class VisualDevModelDataBatchDelInput
     /// <summary>
     /// 待删除id数组.
     /// </summary>
-    public List<string> ids;
+    public List<string> Ids;
 }

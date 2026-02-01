@@ -1,7 +1,7 @@
-﻿using Poxiao;
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Poxiao;
 
 namespace System;
 

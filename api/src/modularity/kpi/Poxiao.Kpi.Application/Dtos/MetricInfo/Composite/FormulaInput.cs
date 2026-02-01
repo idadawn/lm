@@ -1,6 +1,5 @@
 ﻿namespace Poxiao.Kpi.Application;
 
-
 /// <summary>
 /// 公式信息.
 /// </summary>

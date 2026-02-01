@@ -1,6 +1,7 @@
-using System.Data;
-using System.Dynamic;
-using System.Text;
+using Mapster;
+using Microsoft.Extensions.Options;
+using Poxiao.DependencyInjection;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Dtos.DataBase;
 using Poxiao.Infrastructure.Enums;
@@ -10,15 +11,14 @@ using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Models;
 using Poxiao.Infrastructure.Models.VisualDev;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DependencyInjection;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Dto.Database;
 using Poxiao.Systems.Entitys.Model.DataBase;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.VisualDev.Entitys.Dto.VisualDevModelData;
-using Mapster;
-using Microsoft.Extensions.Options;
 using SqlSugar;
+using System.Data;
+using System.Dynamic;
+using System.Text;
 
 namespace Poxiao.Infrastructure.Core.Manager;
 
@@ -682,7 +682,7 @@ public class DataBaseManager : IDataBaseManager, ITransient
         else
         {
             var modelList = _sqlSugarClient.Ado.SqlQuery<DynamicDbTableModel>(sql).ToList();
-            data = modelList.Select(x => new DatabaseTableListOutput { table = x.F_TABLE, tableName = x.F_TABLENAME, sum = x.F_SUM.ParseToInt() }).ToList();
+            data = modelList.Select(x => new DatabaseTableListOutput { table = x.FTABLE, tableName = x.FTABLENAME, sum = x.FSUM.ParseToInt() }).ToList();
         }
         _sqlSugarClient.ChangeDatabase(_connectionStrings.ConnectionConfigs.Find(it => it.ConfigId?.ToString() == "default").ConfigId);
         return data;
@@ -739,7 +739,6 @@ public class DataBaseManager : IDataBaseManager, ITransient
     /// <param name="link">数据连接.</param>
     /// <param name="dbSql">数据SQL.</param>
     /// <returns></returns>
-
     public async Task<List<string>> GetListStringAsync(DbLinkEntity link, string dbSql)
     {
         if (link != null && _sqlSugarClient.CurrentConnectionConfig.ConfigId != link.Id)

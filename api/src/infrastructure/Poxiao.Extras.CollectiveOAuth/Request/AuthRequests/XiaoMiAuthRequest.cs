@@ -9,7 +9,8 @@ namespace Poxiao.Extras.CollectiveOAuth.Request;
 public class XiaoMiAuthRequest : DefaultAuthRequest
 {
     private static readonly string PREFIX = "&&&START&&&";
-    public XiaoMiAuthRequest(ClientConfig config) : base(config, new XiaoMiAuthSource())
+    public XiaoMiAuthRequest(ClientConfig config)
+        : base(config, new XiaoMiAuthSource())
     {
     }
 
@@ -112,7 +113,7 @@ public class XiaoMiAuthRequest : DefaultAuthRequest
      * @return 返回授权地址
      * @since 1.9.3
      */
-    public override String authorize(String state)
+    public override string authorize(string state)
     {
         return UrlBuilder.fromBaseUrl(source.authorize())
             .queryParam("response_type", "code")

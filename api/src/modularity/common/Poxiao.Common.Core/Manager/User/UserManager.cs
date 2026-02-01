@@ -1,3 +1,7 @@
+using Mapster;
+using Microsoft.AspNetCore.Http;
+using Poxiao.DataEncryption;
+using Poxiao.DependencyInjection;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
@@ -6,15 +10,11 @@ using Poxiao.Infrastructure.Models.Authorize;
 using Poxiao.Infrastructure.Models.User;
 using Poxiao.Infrastructure.Net;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DataEncryption;
-using Poxiao.DependencyInjection;
 using Poxiao.Systems.Entitys.Entity.Permission;
 using Poxiao.Systems.Entitys.Entity.System;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.VisualDev.Entitys;
-using Mapster;
-using Microsoft.AspNetCore.Http;
 using SqlSugar;
 using System.Security.Claims;
 
@@ -598,7 +598,8 @@ public class UserManager : IUserManager, IScoped
         {
             conModels.Add(new ConditionalCollections()
             {
-                ConditionalList = new List<KeyValuePair<WhereType, SqlSugar.ConditionalModel>>() {
+                ConditionalList = new List<KeyValuePair<WhereType, SqlSugar.ConditionalModel>>()
+                {
                             new KeyValuePair<WhereType, ConditionalModel>(WhereType.And, new ConditionalModel() { FieldName = string.Format("{0}{1}", tableNumber, primaryKey), ConditionalType = ConditionalType.NoEqual, FieldValue = "0", FieldValueConvertFunc = it => SqlSugar.UtilMethods.ChangeType2(it, typeof(string)) })
                         }
             });
@@ -912,7 +913,8 @@ public class UserManager : IUserManager, IScoped
         {
             conModels.Add(new ConditionalCollections()
             {
-                ConditionalList = new List<KeyValuePair<WhereType, SqlSugar.ConditionalModel>>() {
+                ConditionalList = new List<KeyValuePair<WhereType, SqlSugar.ConditionalModel>>()
+                {
                             new KeyValuePair<WhereType, ConditionalModel>(WhereType.And, new ConditionalModel() { FieldName = primaryKey, ConditionalType = ConditionalType.NoEqual, FieldValue = "0", FieldValueConvertFunc = it => SqlSugar.UtilMethods.ChangeType2(it, typeof(string)) })
                         }
             });
@@ -1602,7 +1604,8 @@ public class UserManager : IUserManager, IScoped
         {
             conModels.Add(new ConditionalCollections()
             {
-                ConditionalList = new List<KeyValuePair<WhereType, SqlSugar.ConditionalModel>>() {
+                ConditionalList = new List<KeyValuePair<WhereType, SqlSugar.ConditionalModel>>()
+                {
                     new KeyValuePair<WhereType, ConditionalModel>(WhereType.And, new ConditionalModel() { FieldName = primaryKey, ConditionalType = ConditionalType.NoEqual, FieldValue = "0", FieldValueConvertFunc = it => SqlSugar.UtilMethods.ChangeType2(it, typeof(string)) })
                 }
             });

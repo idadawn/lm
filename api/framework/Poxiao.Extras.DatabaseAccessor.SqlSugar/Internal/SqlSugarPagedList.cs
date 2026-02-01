@@ -42,4 +42,4 @@ public class SqlSugarPagedList<TEntity>
 /// 分页集合
 /// </summary>
 public class PagedModel : SqlSugarPagedList<object>
-{}
+{ }

@@ -1,7 +1,7 @@
+using Mapster;
 using Poxiao.Infrastructure.Models;
 using Poxiao.Infrastructure.Models.VisualDev;
 using Poxiao.Infrastructure.Security;
-using Mapster;
 
 namespace Poxiao.VisualDev.Engine.Mapper;
 
@@ -10,13 +10,13 @@ internal class VisualDev : IRegister
     public void Register(TypeAdapterConfig config)
     {
         config.ForType<FieldsModel, ListSearchParametersModel>()
-           .Map(dest => dest.poxiaoKey, src => src.__config__.poxiaoKey)
+           .Map(dest => dest.poxiaoKey, src => src.Config.poxiaoKey)
            .Map(dest => dest.format, src => src.format)
            .Map(dest => dest.multiple, src => src.multiple)
            .Map(dest => dest.searchType, src => src.searchType)
-           .Map(dest => dest.vModel, src => src.__vModel__);
+           .Map(dest => dest.vModel, src => src.VModel);
         config.ForType<CodeGenFieldsModel, FieldsModel>()
-           .Map(dest => dest.__config__, src => src.__config__.ToObject<ConfigModel>())
+           .Map(dest => dest.Config, src => src.Config.ToObject<ConfigModel>())
            .Map(dest => dest.props, src => string.IsNullOrEmpty(src.props) ? null : src.props.ToObject<CodeGenPropsModel>())
            .Map(dest => dest.options, src => string.IsNullOrEmpty(src.options) ? null : src.options.ToObject<List<object>>())
            .Map(dest => dest.ableDepIds, src => string.IsNullOrEmpty(src.ableDepIds) ? null : src.ableDepIds.ToObject<List<string>>())

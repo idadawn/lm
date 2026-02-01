@@ -1,5 +1,5 @@
-﻿using Poxiao.DataValidation;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Poxiao.DataValidation;
 
 namespace Microsoft.Extensions.DependencyInjection;
 

@@ -283,7 +283,7 @@ public class MetricInfoService : IMetricInfoService, ITransient
             case DBAggType.COUNT:
                 entity.Expression = $"COUNT('{input.Column.field}')";
                 break;
-            case DBAggType.COUNT_DISTINCT:
+            case DBAggType.COUNTDISTINCT:
                 entity.Expression = $"COUNT_DISTINCT('{input.Column.field}')";
                 break;
         }
@@ -610,16 +610,18 @@ public class MetricInfoService : IMetricInfoService, ITransient
             _influxDbManager.Connect();
             var list = await _influxDbManager.GetSeriesByMeasurementAsync(name);
             if (list.Count > 0)
+            {
                 rlt = list.Select(x => new TableFieldOutput()
-                    {
-                        field = x.AttrName,
-                        fieldName = x.AttrDescription,
-                        dataType = "string",
-                        primaryKey = 0,
-                        allowNull = 0,
-                        dataLength = "50",
-                    })
+                {
+                    field = x.AttrName,
+                    fieldName = x.AttrDescription,
+                    dataType = "string",
+                    primaryKey = 0,
+                    allowNull = 0,
+                    dataLength = "50",
+                })
                     .ToList();
+            }
         }
         catch
         {

@@ -1,14 +1,15 @@
 using Poxiao.Extras.CollectiveOAuth.Cache;
 using Poxiao.Extras.CollectiveOAuth.Config;
+using Poxiao.Extras.CollectiveOAuth.Enums;
 using Poxiao.Extras.CollectiveOAuth.Models;
 using Poxiao.Extras.CollectiveOAuth.Utils;
-using Poxiao.Extras.CollectiveOAuth.Enums;
 
 namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class HuaweiAuthRequest : DefaultAuthRequest
 {
-    public HuaweiAuthRequest(ClientConfig config) : base(config, new HuaweiAuthSource())
+    public HuaweiAuthRequest(ClientConfig config)
+        : base(config, new HuaweiAuthSource())
     {
     }
 
@@ -30,7 +31,7 @@ public class HuaweiAuthRequest : DefaultAuthRequest
         var reqParams = new Dictionary<string, object>
         {
             { "grant_type", "authorization_code" },
-            { "code", authCallback.authorization_code },
+            { "code", authCallback.authorizationCode },
             { "client_id", config.clientId },
             { "client_secret", config.clientSecret },
             { "redirect_uri", config.redirectUri },
@@ -71,7 +72,7 @@ public class HuaweiAuthRequest : DefaultAuthRequest
         authUser.nickname = userObj.getString("userName");
         authUser.gender = gender;
         authUser.avatar = userObj.getString("headPictureURL");
-      
+
         authUser.token = authToken;
         authUser.source = source.getName();
         authUser.originalUser = userObj;

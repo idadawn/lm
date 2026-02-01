@@ -13,7 +13,9 @@ namespace Poxiao.VisualDev.Engine.Core;
 /// </summary>
 public class TemplateParsingBase
 {
-    public TemplateParsingBase() { }
+    public TemplateParsingBase()
+    {
+    }
 
     /// <summary>
     /// 模板实体.
@@ -196,13 +198,13 @@ public class TemplateParsingBase
             AllFieldsModel = new List<FieldsModel>();
             ColumnData.columnList.ForEach(item =>
             {
-                AllFieldsModel.Add(new FieldsModel() { __vModel__ = item.__vModel__, __config__ = new ConfigModel() { label = item.label, poxiaoKey = item.poxiaoKey } });
+                AllFieldsModel.Add(new FieldsModel() { VModel = item.VModel, Config = new ConfigModel() { label = item.label, poxiaoKey = item.poxiaoKey } });
             });
             AppColumnData.columnList.ForEach(item =>
             {
-                AllFieldsModel.Add(new FieldsModel() { __vModel__ = item.__vModel__, __config__ = new ConfigModel() { label = item.label, poxiaoKey = item.poxiaoKey } });
+                AllFieldsModel.Add(new FieldsModel() { VModel = item.VModel, Config = new ConfigModel() { label = item.label, poxiaoKey = item.poxiaoKey } });
             });
-            AllFieldsModel = AllFieldsModel.DistinctBy(x => x.__vModel__).ToList();
+            AllFieldsModel = AllFieldsModel.DistinctBy(x => x.VModel).ToList();
             FieldsModelList = AllFieldsModel;
             AuxiliaryTableFieldsModelList = AllFieldsModel;
             MainTableFieldsModelList = AllFieldsModel;
@@ -220,38 +222,38 @@ public class TemplateParsingBase
             AddChlidTableFeildsModel();
 
             // 处理旧控件 部分没有 tableName
-            FieldsModelList.Where(x => string.IsNullOrWhiteSpace(x.__config__.tableName)).ToList().ForEach(item =>
+            FieldsModelList.Where(x => string.IsNullOrWhiteSpace(x.Config.tableName)).ToList().ForEach(item =>
             {
-                if (item.__vModel__.Contains("_poxiao_")) item.__config__.tableName = item.__vModel__.ReplaceRegex(@"_poxiao_(\w+)", string.Empty).Replace("poxiao_", string.Empty); // 副表
-                else item.__config__.tableName = MainTableName != null ? MainTableName : string.Empty; // 主表
+                if (item.VModel.Contains("_poxiao_")) item.Config.tableName = item.VModel.ReplaceRegex(@"_poxiao_(\w+)", string.Empty).Replace("poxiao_", string.Empty); // 副表
+                else item.Config.tableName = MainTableName != null ? MainTableName : string.Empty; // 主表
             });
             AllTable = entity.Tables.ToObject<List<TableModel>>(); // 所有表
-            AuxiliaryTableFieldsModelList = FieldsModelList.Where(x => x.__vModel__.Contains("_poxiao_")).ToList(); // 单控件副表集合
-            ChildTableFieldsModelList = FieldsModelList.Where(x => x.__config__.poxiaoKey == PoxiaoKeyConst.TABLE).ToList(); // 子表集合
+            AuxiliaryTableFieldsModelList = FieldsModelList.Where(x => x.VModel.Contains("_poxiao_")).ToList(); // 单控件副表集合
+            ChildTableFieldsModelList = FieldsModelList.Where(x => x.Config.poxiaoKey == PoxiaoKeyConst.TABLE).ToList(); // 子表集合
             MainTableFieldsModelList = FieldsModelList.Except(AuxiliaryTableFieldsModelList).Except(ChildTableFieldsModelList).ToList(); // 主表控件集合
-            SingleFormData = FieldsModelList.Where(x => x.__config__.poxiaoKey != PoxiaoKeyConst.TABLE).ToList(); // 非子表集合
+            SingleFormData = FieldsModelList.Where(x => x.Config.poxiaoKey != PoxiaoKeyConst.TABLE).ToList(); // 非子表集合
             GenerateFields = GetGenerateFields(); // 系统生成控件
 
             MainTableFields = new Dictionary<string, string>();
             AuxiliaryTableFields = new Dictionary<string, string>();
             ChildTableFields = new Dictionary<string, string>();
             AllTableFields = new Dictionary<string, string>();
-            MainTableFieldsModelList.Where(x => x.__vModel__.IsNotEmptyOrNull()).ToList().ForEach(x =>
+            MainTableFieldsModelList.Where(x => x.VModel.IsNotEmptyOrNull()).ToList().ForEach(x =>
             {
-                MainTableFields.Add(x.__vModel__, x.__config__.tableName + "." + x.__vModel__);
-                AllTableFields.Add(x.__vModel__, x.__config__.tableName + "." + x.__vModel__);
+                MainTableFields.Add(x.VModel, x.Config.tableName + "." + x.VModel);
+                AllTableFields.Add(x.VModel, x.Config.tableName + "." + x.VModel);
             });
-            AuxiliaryTableFieldsModelList.Where(x => x.__vModel__.IsNotEmptyOrNull()).ToList().ForEach(x =>
+            AuxiliaryTableFieldsModelList.Where(x => x.VModel.IsNotEmptyOrNull()).ToList().ForEach(x =>
             {
-                AuxiliaryTableFields.Add(x.__vModel__, x.__vModel__.Replace("_poxiao_", ".").Replace("poxiao_", string.Empty));
-                AllTableFields.Add(x.__vModel__, x.__vModel__.Replace("_poxiao_", ".").Replace("poxiao_", string.Empty));
+                AuxiliaryTableFields.Add(x.VModel, x.VModel.Replace("_poxiao_", ".").Replace("poxiao_", string.Empty));
+                AllTableFields.Add(x.VModel, x.VModel.Replace("_poxiao_", ".").Replace("poxiao_", string.Empty));
             });
             ChildTableFieldsModelList.ForEach(item =>
             {
-                item.__config__.children.Where(x => x.__vModel__.IsNotEmptyOrNull()).ToList().ForEach(x =>
+                item.Config.children.Where(x => x.VModel.IsNotEmptyOrNull()).ToList().ForEach(x =>
                 {
-                    ChildTableFields.Add(item.__vModel__ + "-" + x.__vModel__, item.__config__.tableName + "." + x.__vModel__);
-                    AllTableFields.Add(item.__vModel__ + "-" + x.__vModel__, item.__config__.tableName + "." + x.__vModel__);
+                    ChildTableFields.Add(item.VModel + "-" + x.VModel, item.Config.tableName + "." + x.VModel);
+                    AllTableFields.Add(item.VModel + "-" + x.VModel, item.Config.tableName + "." + x.VModel);
                 });
             });
             InitColumnData(entity);
@@ -268,7 +270,7 @@ public class TemplateParsingBase
     /// <param name="webType">页面类型 （1、纯表单，2、表单加列表，3、表单列表工作流）.</param>
     /// <param name="primaryKeyPolicy">主键策略(1 雪花ID 2 自增长ID).</param>
     /// <param name="uploaderKey">导入导出数据列名集合.</param>
-    /// <param name="_dataType">导入类型 1 新增, 2 新增和修改.</param>
+    /// <param name="DataType">导入类型 1 新增, 2 新增和修改.</param>
     /// <param name="enableFlow">是否开启流程 1 开启.</param>
     /// <param name="flowFormId">流程表单Id.</param>
     public TemplateParsingBase(
@@ -279,7 +281,7 @@ public class TemplateParsingBase
         int webType,
         int primaryKeyPolicy,
         List<string> uploaderKey,
-        string _dataType,
+        string DataType,
         int enableFlow = 0,
         string flowFormId = "")
     {
@@ -294,37 +296,37 @@ public class TemplateParsingBase
         AddCodeGenChlidTableFeildsModel();
 
         // 处理旧控件 部分没有 tableName
-        FieldsModelList.Where(x => string.IsNullOrWhiteSpace(x.__config__.tableName)).ToList().ForEach(item =>
+        FieldsModelList.Where(x => string.IsNullOrWhiteSpace(x.Config.tableName)).ToList().ForEach(item =>
         {
-            if (item.__vModel__.Contains("_poxiao_")) item.__config__.tableName = item.__vModel__.ReplaceRegex(@"_poxiao_(\w+)", string.Empty).Replace("poxiao_", string.Empty); // 副表
-            else item.__config__.tableName = MainTableName != null ? MainTableName : string.Empty; // 主表
+            if (item.VModel.Contains("_poxiao_")) item.Config.tableName = item.VModel.ReplaceRegex(@"_poxiao_(\w+)", string.Empty).Replace("poxiao_", string.Empty); // 副表
+            else item.Config.tableName = MainTableName != null ? MainTableName : string.Empty; // 主表
         });
-        AuxiliaryTableFieldsModelList = FieldsModelList.Where(x => x.__vModel__.Contains("_poxiao_")).ToList(); // 单控件副表集合
-        ChildTableFieldsModelList = FieldsModelList.Where(x => x.__config__.poxiaoKey == PoxiaoKeyConst.TABLE).ToList(); // 子表集合
+        AuxiliaryTableFieldsModelList = FieldsModelList.Where(x => x.VModel.Contains("_poxiao_")).ToList(); // 单控件副表集合
+        ChildTableFieldsModelList = FieldsModelList.Where(x => x.Config.poxiaoKey == PoxiaoKeyConst.TABLE).ToList(); // 子表集合
         MainTableFieldsModelList = FieldsModelList.Except(AuxiliaryTableFieldsModelList).Except(ChildTableFieldsModelList).ToList(); // 主表控件集合
-        SingleFormData = FieldsModelList.Where(x => x.__config__.poxiaoKey != PoxiaoKeyConst.TABLE).ToList(); // 非子表集合
+        SingleFormData = FieldsModelList.Where(x => x.Config.poxiaoKey != PoxiaoKeyConst.TABLE).ToList(); // 非子表集合
         GenerateFields = GetGenerateFields(); // 系统生成控件
 
         MainTableFields = new Dictionary<string, string>();
         AuxiliaryTableFields = new Dictionary<string, string>();
         ChildTableFields = new Dictionary<string, string>();
         AllTableFields = new Dictionary<string, string>();
-        MainTableFieldsModelList.Where(x => x.__vModel__.IsNotEmptyOrNull()).ToList().ForEach(x =>
+        MainTableFieldsModelList.Where(x => x.VModel.IsNotEmptyOrNull()).ToList().ForEach(x =>
         {
-            MainTableFields.Add(x.__vModel__, x.__config__.tableName + "." + x.__vModel__);
-            AllTableFields.Add(x.__vModel__, x.__config__.tableName + "." + x.__vModel__);
+            MainTableFields.Add(x.VModel, x.Config.tableName + "." + x.VModel);
+            AllTableFields.Add(x.VModel, x.Config.tableName + "." + x.VModel);
         });
-        AuxiliaryTableFieldsModelList.Where(x => x.__vModel__.IsNotEmptyOrNull()).ToList().ForEach(x =>
+        AuxiliaryTableFieldsModelList.Where(x => x.VModel.IsNotEmptyOrNull()).ToList().ForEach(x =>
         {
-            AuxiliaryTableFields.Add(x.__vModel__, x.__vModel__.Replace("_poxiao_", ".").Replace("poxiao_", string.Empty));
-            AllTableFields.Add(x.__vModel__, x.__vModel__.Replace("_poxiao_", ".").Replace("poxiao_", string.Empty));
+            AuxiliaryTableFields.Add(x.VModel, x.VModel.Replace("_poxiao_", ".").Replace("poxiao_", string.Empty));
+            AllTableFields.Add(x.VModel, x.VModel.Replace("_poxiao_", ".").Replace("poxiao_", string.Empty));
         });
         ChildTableFieldsModelList.ForEach(item =>
         {
-            item.__config__.children.Where(x => x.__vModel__.IsNotEmptyOrNull()).ToList().ForEach(x =>
+            item.Config.children.Where(x => x.VModel.IsNotEmptyOrNull()).ToList().ForEach(x =>
             {
-                ChildTableFields.Add(item.__vModel__ + "-" + x.__vModel__, item.__config__.tableName + "." + x.__vModel__);
-                AllTableFields.Add(item.__vModel__ + "-" + x.__vModel__, item.__config__.tableName + "." + x.__vModel__);
+                ChildTableFields.Add(item.VModel + "-" + x.VModel, item.Config.tableName + "." + x.VModel);
+                AllTableFields.Add(item.VModel + "-" + x.VModel, item.Config.tableName + "." + x.VModel);
             });
         });
 
@@ -335,7 +337,7 @@ public class TemplateParsingBase
         ColumnData.type = 1;
         AppColumnData = new ColumnDesignModel();
         selectKey = uploaderKey;
-        dataType = _dataType;
+        dataType = DataType;
     }
 
     /// <summary>
@@ -344,11 +346,11 @@ public class TemplateParsingBase
     /// <returns>true 通过.</returns>
     public bool VerifyTemplate()
     {
-        if (FieldsModelList != null && FieldsModelList.Any(x => x.__config__.poxiaoKey == PoxiaoKeyConst.TABLE))
+        if (FieldsModelList != null && FieldsModelList.Any(x => x.Config.poxiaoKey == PoxiaoKeyConst.TABLE))
         {
             foreach (FieldsModel? item in ChildTableFieldsModelList)
             {
-                FieldsModel? tc = AuxiliaryTableFieldsModelList.Find(x => x.__vModel__.Contains(item.__config__.tableName + "_poxiao_"));
+                FieldsModel? tc = AuxiliaryTableFieldsModelList.Find(x => x.VModel.Contains(item.Config.tableName + "_poxiao_"));
                 if (tc != null) return false;
             }
         }
@@ -365,7 +367,7 @@ public class TemplateParsingBase
         // 系统生成字段 key
         var gfList = new List<string>() { PoxiaoKeyConst.BILLRULE, PoxiaoKeyConst.CREATEUSER, PoxiaoKeyConst.CREATETIME, PoxiaoKeyConst.MODIFYUSER, PoxiaoKeyConst.MODIFYTIME, PoxiaoKeyConst.CURRPOSITION, PoxiaoKeyConst.CURRORGANIZE, PoxiaoKeyConst.UPLOADFZ };
 
-        return SingleFormData.Where(x => gfList.Contains(x.__config__.poxiaoKey)).ToList();
+        return SingleFormData.Where(x => gfList.Contains(x.Config.poxiaoKey)).ToList();
     }
 
     /// <summary>
@@ -374,10 +376,10 @@ public class TemplateParsingBase
     private void AddChlidTableFeildsModel()
     {
         var ctList = new List<FieldsModel>();
-        AllFieldsModel.Where(x => x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).ToList().ForEach(item =>
+        AllFieldsModel.Where(x => x.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).ToList().ForEach(item =>
         {
-            item.__config__.children.Where(it => it.__vModel__.IsNotEmptyOrNull()).ToList().ForEach(it => it.__vModel__ = item.__vModel__ + "-" + it.__vModel__);
-            ctList.AddRange(TemplateAnalysis.AnalysisTemplateData(item.__config__.children));
+            item.Config.children.Where(it => it.VModel.IsNotEmptyOrNull()).ToList().ForEach(it => it.VModel = item.VModel + "-" + it.VModel);
+            ctList.AddRange(TemplateAnalysis.AnalysisTemplateData(item.Config.children));
         });
         AllFieldsModel.AddRange(ctList);
     }
@@ -388,14 +390,14 @@ public class TemplateParsingBase
     private void AddCodeGenChlidTableFeildsModel()
     {
         var ctList = new List<FieldsModel>();
-        AllFieldsModel.Where(x => x.__config__.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).ToList().ForEach(item =>
+        AllFieldsModel.Where(x => x.Config.poxiaoKey.Equals(PoxiaoKeyConst.TABLE)).ToList().ForEach(item =>
         {
-            item.__config__.children.Where(it => it.__vModel__.IsNotEmptyOrNull()).ToList().ForEach(it =>
+            item.Config.children.Where(it => it.VModel.IsNotEmptyOrNull()).ToList().ForEach(it =>
             {
-                it.__config__.label = it.__config__.label.Replace(it.__vModel__, item.__vModel__ + "-" + it.__vModel__);
-                it.__vModel__ = item.__vModel__ + "-" + it.__vModel__;
+                it.Config.label = it.Config.label.Replace(it.VModel, item.VModel + "-" + it.VModel);
+                it.VModel = item.VModel + "-" + it.VModel;
             });
-            ctList.AddRange(item.__config__.children);
+            ctList.AddRange(item.Config.children);
         });
         AllFieldsModel.AddRange(ctList);
     }
@@ -415,7 +417,7 @@ public class TemplateParsingBase
             fields.ForEach(it =>
             {
                 if (it.ContainsKey("filedId"))
-                    AllFieldsModel.Add(new FieldsModel() { __vModel__ = it["filedId"].ToString(), __config__ = new ConfigModel() { label = it["filedName"].ToString(), poxiaoKey = PoxiaoKeyConst.COMINPUT } });
+                    AllFieldsModel.Add(new FieldsModel() { VModel = it["filedId"].ToString(), Config = new ConfigModel() { label = it["filedName"].ToString(), poxiaoKey = PoxiaoKeyConst.COMINPUT } });
             });
             FieldsModelList = AllFieldsModel;
         }
@@ -431,38 +433,38 @@ public class TemplateParsingBase
             AddChlidTableFeildsModel();
 
             // 处理旧控件 部分没有 tableName
-            FieldsModelList.Where(x => string.IsNullOrWhiteSpace(x.__config__.tableName)).ToList().ForEach(item =>
+            FieldsModelList.Where(x => string.IsNullOrWhiteSpace(x.Config.tableName)).ToList().ForEach(item =>
             {
-                if (item.__vModel__.Contains("_poxiao_")) item.__config__.tableName = item.__vModel__.ReplaceRegex(@"_poxiao_(\w+)", string.Empty).Replace("poxiao_", string.Empty); // 副表
-                else item.__config__.tableName = MainTableName != null ? MainTableName : string.Empty; // 主表
+                if (item.VModel.Contains("_poxiao_")) item.Config.tableName = item.VModel.ReplaceRegex(@"_poxiao_(\w+)", string.Empty).Replace("poxiao_", string.Empty); // 副表
+                else item.Config.tableName = MainTableName != null ? MainTableName : string.Empty; // 主表
             });
             AllTable = tables.ToObject<List<TableModel>>(); // 所有表
-            AuxiliaryTableFieldsModelList = FieldsModelList.Where(x => x.__vModel__.Contains("_poxiao_")).ToList(); // 单控件副表集合
-            ChildTableFieldsModelList = FieldsModelList.Where(x => x.__config__.poxiaoKey == PoxiaoKeyConst.TABLE).ToList(); // 子表集合
+            AuxiliaryTableFieldsModelList = FieldsModelList.Where(x => x.VModel.Contains("_poxiao_")).ToList(); // 单控件副表集合
+            ChildTableFieldsModelList = FieldsModelList.Where(x => x.Config.poxiaoKey == PoxiaoKeyConst.TABLE).ToList(); // 子表集合
             MainTableFieldsModelList = FieldsModelList.Except(AuxiliaryTableFieldsModelList).Except(ChildTableFieldsModelList).ToList(); // 主表控件集合
-            SingleFormData = FieldsModelList.Where(x => x.__config__.poxiaoKey != PoxiaoKeyConst.TABLE).ToList(); // 非子表集合
+            SingleFormData = FieldsModelList.Where(x => x.Config.poxiaoKey != PoxiaoKeyConst.TABLE).ToList(); // 非子表集合
             GenerateFields = GetGenerateFields(); // 系统生成控件
 
             MainTableFields = new Dictionary<string, string>();
             AuxiliaryTableFields = new Dictionary<string, string>();
             ChildTableFields = new Dictionary<string, string>();
             AllTableFields = new Dictionary<string, string>();
-            MainTableFieldsModelList.Where(x => x.__vModel__.IsNotEmptyOrNull()).ToList().ForEach(x =>
+            MainTableFieldsModelList.Where(x => x.VModel.IsNotEmptyOrNull()).ToList().ForEach(x =>
             {
-                MainTableFields.Add(x.__vModel__, x.__config__.tableName + "." + x.__vModel__);
-                AllTableFields.Add(x.__vModel__, x.__config__.tableName + "." + x.__vModel__);
+                MainTableFields.Add(x.VModel, x.Config.tableName + "." + x.VModel);
+                AllTableFields.Add(x.VModel, x.Config.tableName + "." + x.VModel);
             });
-            AuxiliaryTableFieldsModelList.Where(x => x.__vModel__.IsNotEmptyOrNull()).ToList().ForEach(x =>
+            AuxiliaryTableFieldsModelList.Where(x => x.VModel.IsNotEmptyOrNull()).ToList().ForEach(x =>
             {
-                AuxiliaryTableFields.Add(x.__vModel__, x.__vModel__.Replace("_poxiao_", ".").Replace("poxiao_", string.Empty));
-                AllTableFields.Add(x.__vModel__, x.__vModel__.Replace("_poxiao_", ".").Replace("poxiao_", string.Empty));
+                AuxiliaryTableFields.Add(x.VModel, x.VModel.Replace("_poxiao_", ".").Replace("poxiao_", string.Empty));
+                AllTableFields.Add(x.VModel, x.VModel.Replace("_poxiao_", ".").Replace("poxiao_", string.Empty));
             });
             ChildTableFieldsModelList.ForEach(item =>
             {
-                item.__config__.children.Where(x => x.__vModel__.IsNotEmptyOrNull()).ToList().ForEach(x =>
+                item.Config.children.Where(x => x.VModel.IsNotEmptyOrNull()).ToList().ForEach(x =>
                 {
-                    ChildTableFields.Add(item.__vModel__ + "-" + x.__vModel__, item.__config__.tableName + "." + x.__vModel__);
-                    AllTableFields.Add(item.__vModel__ + "-" + x.__vModel__, item.__config__.tableName + "." + x.__vModel__);
+                    ChildTableFields.Add(item.VModel + "-" + x.VModel, item.Config.tableName + "." + x.VModel);
+                    AllTableFields.Add(item.VModel + "-" + x.VModel, item.Config.tableName + "." + x.VModel);
                 });
             });
 
@@ -495,16 +497,16 @@ public class TemplateParsingBase
         {
             AppColumnData.searchList.ForEach(item =>
             {
-                var addSearch = ColumnData.searchList.Find(x => x.__config__.poxiaoKey == item.__config__.poxiaoKey);
+                var addSearch = ColumnData.searchList.Find(x => x.Config.poxiaoKey == item.Config.poxiaoKey);
                 if (addSearch == null) ColumnData.searchList.Add(item);
             });
         }
 
         if (ColumnData.searchList != null && ColumnData.searchList.Any())
         {
-            ColumnData.searchList.Where(x => x.__config__.poxiaoKey == PoxiaoKeyConst.CASCADER).ToList().ForEach(item =>
+            ColumnData.searchList.Where(x => x.Config.poxiaoKey == PoxiaoKeyConst.CASCADER).ToList().ForEach(item =>
             {
-                var it = SingleFormData.FirstOrDefault(x => x.__vModel__ == item.__vModel__);
+                var it = SingleFormData.FirstOrDefault(x => x.VModel == item.VModel);
                 if (it != null) item.multiple = it.props.props.multiple;
             });
         }
@@ -519,7 +521,7 @@ public class TemplateParsingBase
             // 列顺序
             AllFieldsModel.ForEach(item =>
             {
-                if (ColumnData.uploaderTemplateJson.selectKey.Any(x => x.Equals(item.__vModel__))) selectKey.Add(item.__vModel__);
+                if (ColumnData.uploaderTemplateJson.selectKey.Any(x => x.Equals(item.VModel))) selectKey.Add(item.VModel);
             });
         }
 
@@ -633,7 +635,7 @@ public class TemplateParsingBase
                 if (item.fieldValue != null && item.fieldValue.ToString().Contains("["))
                 {
                     var isListValue = false;
-                    var itemField = AllFieldsModel.Find(x => x.__vModel__.Equals(item.field));
+                    var itemField = AllFieldsModel.Find(x => x.VModel.Equals(item.field));
                     if (itemField.multiple || item.poxiaoKey.Equals(PoxiaoKeyConst.CHECKBOX) || item.poxiaoKey.Equals(PoxiaoKeyConst.CASCADER) || item.poxiaoKey.Equals(PoxiaoKeyConst.ADDRESS))
                         isListValue = true;
                     if (item.poxiaoKey.Equals(PoxiaoKeyConst.COMSELECT)) isListValue = false;
@@ -687,7 +689,7 @@ public class TemplateParsingBase
                 {
                     ConditionalList = new List<KeyValuePair<WhereType, ConditionalModel>>()
                     {
-                            new KeyValuePair<WhereType, ConditionalModel>((item.logic.Equals("&&") ? WhereType.And : WhereType.Or), new ConditionalModel
+                            new KeyValuePair<WhereType, ConditionalModel>( item.logic.Equals("&&") ? WhereType.And : WhereType.Or, new ConditionalModel
                             {
                                 FieldName = item.field,
                                 ConditionalType = ConditionalType.GreaterThanOrEqual,
@@ -709,7 +711,7 @@ public class TemplateParsingBase
         {
             ConditionalList = new List<KeyValuePair<WhereType, ConditionalModel>>()
             {
-                new KeyValuePair<WhereType, ConditionalModel>((item.logic.Equals("&&") ? WhereType.And : WhereType.Or), new ConditionalModel
+                new KeyValuePair<WhereType, ConditionalModel>( item.logic.Equals("&&") ? WhereType.And : WhereType.Or, new ConditionalModel
                 {
                     FieldName = item.field,
                     ConditionalType = conditionalType,

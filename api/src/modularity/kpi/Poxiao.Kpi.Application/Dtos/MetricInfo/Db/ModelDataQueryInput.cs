@@ -43,6 +43,7 @@ public class ModelDataListQueryInput
     /// </summary>
     [JsonProperty("metrics")]
     public List<string> Metrics { get; set; }
+
     /// <summary>
     /// 列字段集合.
     /// </summary>
@@ -121,7 +122,7 @@ public class ModelDataAggQueryInput
     /// </summary>
     [JsonProperty("filters")]
     public List<MetricFilterDto>? Filters { get; set; }
-   
+
     /// <summary>
     /// 限制条数.
     /// </summary>

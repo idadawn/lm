@@ -1,15 +1,16 @@
-using Poxiao.Infrastructure.Security;
 using Poxiao.Extras.CollectiveOAuth.Cache;
 using Poxiao.Extras.CollectiveOAuth.Config;
 using Poxiao.Extras.CollectiveOAuth.Models;
 using Poxiao.Extras.CollectiveOAuth.Utils;
+using Poxiao.Infrastructure.Security;
 using System.Web;
 
 namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class FeiShuAuthRequest : DefaultAuthRequest
 {
-    public FeiShuAuthRequest(ClientConfig config) : base(config, new FeiShuAuthSource())
+    public FeiShuAuthRequest(ClientConfig config)
+        : base(config, new FeiShuAuthSource())
     {
     }
 
@@ -89,7 +90,6 @@ public class FeiShuAuthRequest : DefaultAuthRequest
         authUser.originalUserStr = response;
         return authUser;
     }
-
 
     /**
      * 返回带{@code state}参数的授权url，授权回调时会带上这个{@code state}

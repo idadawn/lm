@@ -1,10 +1,12 @@
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.LinqBuilder;
 using Poxiao.Systems.Entitys.Dto.DataInterFace;
 using Poxiao.Systems.Entitys.Dto.DataInterfaceLog;
@@ -12,8 +14,6 @@ using Poxiao.Systems.Entitys.Dto.System.DataInterfaceLog;
 using Poxiao.Systems.Entitys.Dto.System.InterfaceOauth;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.Systems.System;
@@ -165,7 +165,7 @@ public class InterfaceOauthService : IDynamicApiController, ITransient
     /// <param name="input">请求参数.</param>
     /// <returns></returns>
     [HttpPost("")]
-    public async Task Create_Api([FromBody] InterfaceOauthInput input)
+    public async Task CreateApi([FromBody] InterfaceOauthInput input)
     {
         if (await _repository.IsAnyAsync(x => (x.AppId == input.appId || x.AppName == input.appName) && x.DeleteMark == null))
             throw Oops.Oh(ErrorCode.D3001);

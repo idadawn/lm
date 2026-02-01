@@ -1,8 +1,8 @@
-using System.Text.Json;
 using Senparc.Weixin.Work.AdvancedAPIs;
 using Senparc.Weixin.Work.AdvancedAPIs.MailList;
 using Senparc.Weixin.Work.AdvancedAPIs.MailList.Member;
 using Senparc.Weixin.Work.Containers;
+using System.Text.Json;
 
 namespace Poxiao.Extras.Thirdparty.WeChat;
 
@@ -191,13 +191,13 @@ public class WeChatUtil
         {
             MemberCreateRequest memberCreate = new MemberCreateRequest();
             memberCreate.name = member.name;
-            memberCreate.avatar_mediaid = member.avatar_mediaid;
+            memberCreate.avatar_mediaid = member.avatarMediaid;
             memberCreate.department = member.department;
             memberCreate.email = member.email;
             memberCreate.enable = member.enable;
-            memberCreate.english_name = member.english_name;
+            memberCreate.english_name = member.englishName;
             memberCreate.extattr = (Extattr)member.extattr;
-            memberCreate.external_profile = (External_Profile)member.external_profile;
+            memberCreate.external_profile = (External_Profile)member.externalProfile;
             memberCreate.gender = member.gender;
             memberCreate.mobile = member.mobile;
             memberCreate.order = member.order;
@@ -228,13 +228,13 @@ public class WeChatUtil
         {
             MemberUpdateRequest memberUpdate = new MemberUpdateRequest();
             memberUpdate.name = member.name;
-            memberUpdate.avatar_mediaid = member.avatar_mediaid;
+            memberUpdate.avatar_mediaid = member.avatarMediaid;
             memberUpdate.department = member.department;
             memberUpdate.email = member.email;
             memberUpdate.enable = member.enable;
-            memberUpdate.english_name = member.english_name;
+            memberUpdate.english_name = member.englishName;
             memberUpdate.extattr = (Extattr)member.extattr;
-            memberUpdate.external_profile = (External_Profile)member.external_profile;
+            memberUpdate.external_profile = (External_Profile)member.externalProfile;
             memberUpdate.gender = member.gender;
             memberUpdate.mobile = member.mobile;
             memberUpdate.order = member.order;

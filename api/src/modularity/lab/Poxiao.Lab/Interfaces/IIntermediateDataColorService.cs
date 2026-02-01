@@ -1,6 +1,6 @@
+using Poxiao.Lab.Entity.Dto.IntermediateData;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Poxiao.Lab.Entity.Dto.IntermediateData;
 
 namespace Poxiao.Lab.Interfaces
 {

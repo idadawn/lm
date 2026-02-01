@@ -1,3 +1,9 @@
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DatabaseAccessor;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Contracts;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Enums;
@@ -5,16 +11,10 @@ using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Models.User;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DatabaseAccessor;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Systems.Entitys.Dto.OrganizeAdministrator;
 using Poxiao.Systems.Entitys.Dto.Permission.OrganizeAdministrator;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Interfaces.Permission;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.Systems;
@@ -79,7 +79,8 @@ public class OrganizeAdministratorService : IOrganizeAdministratorService, IDyna
         List<string>? orgIds = dataScope.Where(x => x.ThisLayerSelect.Equals(1)).Select(x => x.OrganizeId).ToList();
         if (dataScope.Any(x => x.SubLayerSelect.Equals(1)))
         {
-            dataScope.Where(x => x.SubLayerSelect.Equals(1)).ToList().ForEach(item => {
+            dataScope.Where(x => x.SubLayerSelect.Equals(1)).ToList().ForEach(item =>
+            {
                 var resList = _repository.AsSugarClient().Queryable<OrganizeEntity>().Where(o => !o.Id.Equals(item.OrganizeId) && o.OrganizeIdTree.Contains(item.OrganizeId) && o.DeleteMark == null && o.EnabledMark == 1).Select(x => x.Id).ToList();
                 orgIds.AddRange(resList);
             });
@@ -354,7 +355,7 @@ public class OrganizeAdministratorService : IOrganizeAdministratorService, IDyna
                 resultItem.organizeIdTree = orgItem.OrganizeIdTree;
 
                 if (userItem.ThisLayerAdd.Equals(0)) resultItem.thisLayerAdd = -1;
-                else if(userItem.ThisLayerAdd.Equals(1)) resultItem.thisLayerAdd = 2;
+                else if (userItem.ThisLayerAdd.Equals(1)) resultItem.thisLayerAdd = 2;
                 else if (userItem.ThisLayerAdd.Equals(3) || userItem.ThisLayerAdd.Equals(1)) resultItem.thisLayerAdd = 3;
 
                 if (userItem.ThisLayerEdit.Equals(0)) resultItem.thisLayerEdit = -1;
@@ -506,7 +507,7 @@ public class OrganizeAdministratorService : IOrganizeAdministratorService, IDyna
     [UnitOfWork]
     public async Task Save([FromBody] OrganizeAdminIsTratorUpInput input)
     {
-        if(input.userId.Equals(_userManager.UserId)) throw Oops.Oh(ErrorCode.D2304);
+        if (input.userId.Equals(_userManager.UserId)) throw Oops.Oh(ErrorCode.D2304);
 
         // 处理组织树 名称
         List<OrganizeEntity> orgTreeNameList = GetOrgListTreeName();
@@ -554,7 +555,7 @@ public class OrganizeAdministratorService : IOrganizeAdministratorService, IDyna
         });
 
         // 管理员权限
-        var adminList= currList.Where(x => x.ThisLayerAdd.Equals(1) || x.ThisLayerEdit.Equals(1) || x.ThisLayerDelete.Equals(1) || x.ThisLayerSelect.Equals(1) ||
+        var adminList = currList.Where(x => x.ThisLayerAdd.Equals(1) || x.ThisLayerEdit.Equals(1) || x.ThisLayerDelete.Equals(1) || x.ThisLayerSelect.Equals(1) ||
           x.SubLayerAdd.Equals(1) || x.SubLayerEdit.Equals(1) || x.SubLayerDelete.Equals(1) || x.SubLayerSelect.Equals(1)).Where(x => x.UserId.Equals(_userManager.UserId)).ToList().Copy();
         adminList.Where(x => x.SubLayerAdd.Equals(1) || x.SubLayerEdit.Equals(1) || x.SubLayerDelete.Equals(1) || x.SubLayerSelect.Equals(1)).ToList().ForEach(item =>
         {
@@ -772,7 +773,7 @@ public class OrganizeAdministratorService : IOrganizeAdministratorService, IDyna
             });
             oldList.ForEach(item =>
             {
-                if(!orgAdminList.Any(x => x.organizeId.Equals(item.OrganizeId)) && !adminList.Any(x => x.OrganizeId.Equals(item.OrganizeId)))
+                if (!orgAdminList.Any(x => x.organizeId.Equals(item.OrganizeId)) && !adminList.Any(x => x.OrganizeId.Equals(item.OrganizeId)))
                 {
                     addItems.Add(new OrganizeAdminCrInput()
                     {

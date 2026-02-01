@@ -1,6 +1,6 @@
-using Poxiao.Infrastructure.Models.WorkFlow;
-using Poxiao.DependencyInjection;
 using Newtonsoft.Json;
+using Poxiao.DependencyInjection;
+using Poxiao.Infrastructure.Models.WorkFlow;
 
 namespace Poxiao.Extend.Entitys.Dto.Order;
 
@@ -8,7 +8,7 @@ namespace Poxiao.Extend.Entitys.Dto.Order;
 /// 新建订单.
 /// </summary>
 [SuppressSniffer]
-public class OrderCrInput: FlowTaskOtherModel
+public class OrderCrInput : FlowTaskOtherModel
 {
     /// <summary>
     /// 客户名称.
@@ -81,7 +81,7 @@ public class OrderCrInput: FlowTaskOtherModel
     public string? salesmanName { get; set; }
 
     /// <summary>
-    ///备注.
+    /// 备注.
     /// </summary>
     public string? description { get; set; }
 

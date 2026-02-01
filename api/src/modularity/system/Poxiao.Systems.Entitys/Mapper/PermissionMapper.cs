@@ -1,10 +1,10 @@
+using Mapster;
 using Poxiao.Infrastructure.Models.User;
 using Poxiao.Systems.Entitys.Dto.Department;
 using Poxiao.Systems.Entitys.Dto.Organize;
 using Poxiao.Systems.Entitys.Dto.OrganizeAdministrator;
 using Poxiao.Systems.Entitys.Dto.User;
 using Poxiao.Systems.Entitys.Permission;
-using Mapster;
 
 namespace Poxiao.Systems.Entitys.Mapper;
 

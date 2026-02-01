@@ -20,5 +20,5 @@ public class DbSyncOutput
     /// <summary>
     /// 映射字段.
     /// </summary>
-    public Dictionary<string,List<string>> convertRuleMap { get; set; }
+    public Dictionary<string, List<string>> convertRuleMap { get; set; }
 }

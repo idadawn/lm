@@ -33,8 +33,8 @@ namespace Poxiao.Infrastructure.Helper
                     workbook = new HSSFWorkbook(file);
                 else
                     workbook = new XSSFWorkbook(file);
-                string SheetName = workbook.GetSheetName(SheetIndex);
-                return ToDataTable(workbook, SheetName, HeaderRowIndex);
+                string sheetName = workbook.GetSheetName(SheetIndex);
+                return ToDataTable(workbook, sheetName, HeaderRowIndex);
             }
         }
 
@@ -56,8 +56,8 @@ namespace Poxiao.Infrastructure.Helper
             {
                 workbook = new XSSFWorkbook(sr);
             }
-            string SheetName = workbook.GetSheetName(SheetIndex);
-            return ToDataTable(workbook, SheetName, HeaderRowIndex);
+            string sheetName = workbook.GetSheetName(SheetIndex);
+            return ToDataTable(workbook, sheetName, HeaderRowIndex);
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace Poxiao.Infrastructure.Helper
                 if (rowCount > 0)
                 {
                     #region 循环各行各列,写入数据到DataTable
-                    for (int i = (sheet.FirstRowNum); i <= sheet.LastRowNum; i++)
+                    for (int i = sheet.FirstRowNum; i <= sheet.LastRowNum; i++)
                     {
                         IRow row = sheet.GetRow(i);
                         DataRow dataRow = table.NewRow();
@@ -108,7 +108,7 @@ namespace Poxiao.Infrastructure.Helper
                                 //}
                                 //else
                                 //{
-                                    dataRow[j] = cell.ToString().Trim();
+                                dataRow[j] = cell.ToString().Trim();
                                 //}
                             }
                         }
@@ -134,7 +134,7 @@ namespace Poxiao.Infrastructure.Helper
                 sheet = null;
             }
             #region 清除最后的空行
-            for (int i = table.Rows.Count-1; i >= 0; i--)
+            for (int i = table.Rows.Count - 1; i >= 0; i--)
             {
                 bool isnull = true;
                 for (int j = 0; j < table.Columns.Count; j++)

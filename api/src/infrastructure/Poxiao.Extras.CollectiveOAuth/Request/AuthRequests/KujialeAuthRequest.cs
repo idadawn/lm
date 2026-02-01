@@ -1,14 +1,15 @@
 using Poxiao.Extras.CollectiveOAuth.Cache;
 using Poxiao.Extras.CollectiveOAuth.Config;
+using Poxiao.Extras.CollectiveOAuth.Enums;
 using Poxiao.Extras.CollectiveOAuth.Models;
 using Poxiao.Extras.CollectiveOAuth.Utils;
-using Poxiao.Extras.CollectiveOAuth.Enums;
 
 namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public class KujialeAuthRequest : DefaultAuthRequest
 {
-    public KujialeAuthRequest(ClientConfig config) : base(config, new KujialeAuthSource())
+    public KujialeAuthRequest(ClientConfig config)
+        : base(config, new KujialeAuthSource())
     {
     }
 
@@ -56,7 +57,6 @@ public class KujialeAuthRequest : DefaultAuthRequest
         authToken.expireIn = resultObject.getInt32("expiresIn");
         return authToken;
     }
-
 
     protected override AuthUser getUserInfo(AuthToken authToken)
     {

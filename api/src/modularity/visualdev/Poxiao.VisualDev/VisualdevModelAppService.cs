@@ -1,3 +1,10 @@
+using Mapster;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DataEncryption;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Core.Manager;
 using Poxiao.Infrastructure.Core.Manager.Files;
@@ -7,18 +14,11 @@ using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Infrastructure.Models.NPOI;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DataEncryption;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.VisualDev.Engine;
 using Poxiao.VisualDev.Engine.Core;
 using Poxiao.VisualDev.Entitys;
 using Poxiao.VisualDev.Entitys.Dto.VisualDevModelData;
 using Poxiao.VisualDev.Interfaces;
-using Mapster;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Poxiao.VisualDev;
 
@@ -270,7 +270,7 @@ public class VisualdevModelAppService : IDynamicApiController, ITransient
     {
         VisualDevEntity? templateEntity = await _visualDevService.GetInfoById(modelId, true);
         if (!string.IsNullOrEmpty(templateEntity.Tables) && !"[]".Equals(templateEntity.Tables))
-            await _runService.BatchDelHaveTableData(input.ids, templateEntity);
+            await _runService.BatchDelHaveTableData(input.Ids, templateEntity);
     }
 
     /// <summary>
@@ -285,8 +285,8 @@ public class VisualdevModelAppService : IDynamicApiController, ITransient
 
         #region 如果是 分组表格 模板
 
-        ColumnDesignModel? ColumnData = templateEntity.ColumnData.ToObject<ColumnDesignModel>(); // 列配置模型
-        if (ColumnData.type == 3)
+        ColumnDesignModel? columnData = templateEntity.ColumnData.ToObject<ColumnDesignModel>(); // 列配置模型
+        if (columnData.type == 3)
         {
             List<Dictionary<string, object>>? newValueList = new List<Dictionary<string, object>>();
             pageList.list.ForEach(item =>
@@ -346,11 +346,11 @@ public class VisualdevModelAppService : IDynamicApiController, ITransient
             excelconfig.ColumnModel = new List<ExcelColumnModel>();
             foreach (string? item in keys)
             {
-                FieldsModel? excelColumn = templateInfo.AllFieldsModel.Find(t => t.__vModel__ == item);
+                FieldsModel? excelColumn = templateInfo.AllFieldsModel.Find(t => t.VModel == item);
                 if (excelColumn != null)
                 {
-                    excelconfig.ColumnModel.Add(new ExcelColumnModel() { Column = item, ExcelColumn = excelColumn.__config__.label });
-                    columnList.Add(excelColumn.__config__.label);
+                    excelconfig.ColumnModel.Add(new ExcelColumnModel() { Column = item, ExcelColumn = excelColumn.Config.label });
+                    columnList.Add(excelColumn.Config.label);
                 }
             }
 
@@ -462,7 +462,7 @@ public class VisualdevModelAppService : IDynamicApiController, ITransient
             {
                 if (item.Contains("tableField"))
                 {
-                    var title = templateInfo.AllFieldsModel.FirstOrDefault(x => x.__vModel__.Equals(item))?.__config__.label;
+                    var title = templateInfo.AllFieldsModel.FirstOrDefault(x => x.VModel.Equals(item))?.Config.label;
                     firstColumns.Add(title + empty, selectKey.Count(x => x.Contains(item)));
                     empty += " ";
                     mainFieldIndex = 1;

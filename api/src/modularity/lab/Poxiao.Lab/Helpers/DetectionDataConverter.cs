@@ -145,7 +145,7 @@ public static class DetectionDataConverter
 
         // 找到最大的列序号
         var maxColumn = dict.Keys.Max();
-        
+
         // 检查从1到maxColumn是否连续
         for (int i = 1; i <= maxColumn; i++)
         {

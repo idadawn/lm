@@ -70,7 +70,8 @@ internal static class Penetrates
     internal static DateTime GetUnspecifiedTime(DateTime dateTime)
     {
         // 采用 DateTimeKind.Unspecified 转换当前时间并忽略毫秒之后部分（用于减少误差）
-        return new DateTime(dateTime.Year,
+        return new DateTime(
+            dateTime.Year,
             dateTime.Month,
             dateTime.Day,
             dateTime.Hour,

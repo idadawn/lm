@@ -1,13 +1,13 @@
-using Poxiao.Infrastructure.Enums;
-using Poxiao.Infrastructure.Extension;
+using Microsoft.AspNetCore.Mvc;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
+using Poxiao.Infrastructure.Enums;
+using Poxiao.Infrastructure.Extension;
 using Poxiao.WorkFlow.Entitys.Dto.FlowLaunch;
 using Poxiao.WorkFlow.Entitys.Model;
 using Poxiao.WorkFlow.Interfaces.Manager;
 using Poxiao.WorkFlow.Interfaces.Repository;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Poxiao.WorkFlow.Service;
 
@@ -80,7 +80,7 @@ public class FlowLaunchService : IDynamicApiController, ITransient
         if (await _flowTaskRepository.AnyFlowTask(x => flowTaskParamter.flowTaskEntity.Id == x.ParentId && x.DeleteMark == null && x.Suspend == 1)) throw Oops.Oh(ErrorCode.WF0046);
         if (flowTaskParamter.flowTaskEntity.Status != 1)
             throw Oops.Oh(ErrorCode.WF0011);
-        if (flowTaskParamter.flowTaskEntity.ParentId.IsNotEmptyOrNull()&& !flowTaskParamter.flowTaskEntity.ParentId.Equals("0"))
+        if (flowTaskParamter.flowTaskEntity.ParentId.IsNotEmptyOrNull() && !flowTaskParamter.flowTaskEntity.ParentId.Equals("0"))
             throw Oops.Oh(ErrorCode.WF0015);
         await _flowTaskManager.Revoke(flowTaskParamter);
     }

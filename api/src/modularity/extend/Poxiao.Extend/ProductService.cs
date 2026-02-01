@@ -1,7 +1,5 @@
-using Poxiao.Infrastructure.Core.Manager;
-using Poxiao.Infrastructure.Enums;
-using Poxiao.Infrastructure.Filter;
-using Poxiao.Infrastructure.Security;
+using Mapster;
+using Microsoft.AspNetCore.Mvc;
 using Poxiao.DatabaseAccessor;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
@@ -10,9 +8,11 @@ using Poxiao.Extend.Entitys.Dto.Product;
 using Poxiao.Extend.Entitys.Dto.ProductEntry;
 using Poxiao.Extend.Entitys.Model;
 using Poxiao.FriendlyException;
+using Poxiao.Infrastructure.Core.Manager;
+using Poxiao.Infrastructure.Enums;
+using Poxiao.Infrastructure.Filter;
+using Poxiao.Infrastructure.Security;
 using Poxiao.Systems.Interfaces.System;
-using Mapster;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.Extend;
@@ -97,7 +97,7 @@ public class ProductService : IDynamicApiController, ITransient
                 reducedPrice = it.ReducedPrice,
                 discountPrice = it.DiscountPrice,
                 description = it.Description,
-                productEntryList = it.productEntryList.Adapt<List<ProductEntryInfoOutput>>()
+                ProductEntryList = it.productEntryList.Adapt<List<ProductEntryInfoOutput>>()
             }))?.FirstOrDefault();
     }
 

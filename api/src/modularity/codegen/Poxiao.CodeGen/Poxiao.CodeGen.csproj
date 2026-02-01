@@ -5,4 +5,8 @@
 		<ProjectReference Include="..\..\visualdev\Poxiao.VisualDev.Interfaces\Poxiao.VisualDev.Interfaces.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <PackageReference Update="StyleCop.Analyzers" Version="1.1.118" />
+	</ItemGroup>
+
 </Project>

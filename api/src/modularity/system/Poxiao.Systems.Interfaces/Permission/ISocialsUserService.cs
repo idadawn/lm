@@ -1,8 +1,8 @@
+using Microsoft.AspNetCore.Mvc;
 using Poxiao.Extras.CollectiveOAuth.Models;
 using Poxiao.Extras.CollectiveOAuth.Request;
 using Poxiao.Systems.Entitys.Dto.Socials;
 using Poxiao.Systems.Entitys.Model.Permission.SocialsUser;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Poxiao.Systems.Interfaces.Permission;
 
@@ -17,7 +17,7 @@ public interface ISocialsUserService
 
     List<SocialsUserListOutput> GetLoginList(string ticket);
 
-    Task<string>  Binding([FromQuery] SocialsUserInputModel model);
+    Task<string> Binding([FromQuery] SocialsUserInputModel model);
 
     Task<dynamic> GetSocialsUserInfo([FromQuery] SocialsUserInputModel model);
 

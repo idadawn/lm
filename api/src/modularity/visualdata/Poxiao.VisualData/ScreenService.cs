@@ -1,22 +1,22 @@
+using Mapster;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Poxiao.DatabaseAccessor;
+using Poxiao.DependencyInjection;
+using Poxiao.DynamicApiController;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Core.Manager.Files;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DatabaseAccessor;
-using Poxiao.DependencyInjection;
-using Poxiao.DynamicApiController;
-using Poxiao.FriendlyException;
 using Poxiao.Logging.Attributes;
 using Poxiao.VisualData.Entity;
 using Poxiao.VisualData.Entitys.Dto.Screen;
 using Poxiao.VisualData.Entitys.Dto.ScreenCategory;
 using Poxiao.VisualData.Entitys.Dto.ScreenConfig;
 using Poxiao.VisualData.Entitys.Enum;
-using Mapster;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using SqlSugar;
 
 namespace Poxiao.VisualData;
@@ -138,7 +138,9 @@ public class ScreenService : IDynamicApiController, ITransient
     /// 查看图片.
     /// </summary>
     /// <returns></returns>
-    [HttpGet("{type}/{fileName}"), AllowAnonymous, IgnoreLog]
+    [HttpGet("{type}/{fileName}")]
+    [AllowAnonymous]
+    [IgnoreLog]
     public async Task<dynamic> GetImgFile(string type, string fileName)
     {
         var typeEnum = EnumExtensions.GetEnumDescDictionary(typeof(ScreenImgEnum));
@@ -283,21 +285,23 @@ public class ScreenService : IDynamicApiController, ITransient
     /// 上传文件.
     /// </summary>
     /// <returns></returns>
-    [HttpPost("put-file/{type}"), AllowAnonymous, IgnoreLog]
+    [HttpPost("put-file/{type}")]
+    [AllowAnonymous]
+    [IgnoreLog]
     public async Task<dynamic> SaveFile(string type, IFormFile file)
     {
         var typeEnum = EnumExtensions.GetEnumDescDictionary(typeof(ScreenImgEnum));
         var imgEnum = typeEnum.Where(t => t.Value.Equals(type)).FirstOrDefault();
         if (imgEnum.Value != null)
         {
-            string? ImgType = Path.GetExtension(file.FileName).Replace(".", string.Empty);
-            if (!this.AllowImageType(ImgType))
+            string? imgType = Path.GetExtension(file.FileName).Replace(".", string.Empty);
+            if (!this.AllowImageType(imgType))
                 throw Oops.Oh(ErrorCode.D5013);
             var path = imgEnum.Value;
             string? filePath = Path.Combine(FileVariable.BiVisualPath, path);
             if (!Directory.Exists(filePath))
                 Directory.CreateDirectory(filePath);
-            string? fileName = SnowflakeIdHelper.NextId() + "." + ImgType;
+            string? fileName = SnowflakeIdHelper.NextId() + "." + imgType;
             var stream = file.OpenReadStream();
             await _fileManager.UploadFileByType(stream, filePath, fileName);
             var fielNameUrl = string.Format("/{0}/{1}/{2}/{3}/{4}/{5}", "api", "file", "VisusalImg", "BiVisualPath", path, fileName);

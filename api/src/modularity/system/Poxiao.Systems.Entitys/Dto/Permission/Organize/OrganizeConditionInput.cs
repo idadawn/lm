@@ -1,5 +1,5 @@
-using Poxiao.Infrastructure.Filter;
 using Poxiao.DependencyInjection;
+using Poxiao.Infrastructure.Filter;
 
 namespace Poxiao.Systems.Entitys.Dto.Organize;
 
@@ -12,5 +12,5 @@ public class OrganizeConditionInput : KeywordInput
     /// <summary>
     /// 部门id.
     /// </summary>
-    public List<string> departIds;
+    public List<string> DepartIds;
 }

@@ -19,7 +19,7 @@ public class WechatAppletsAuthSource : IAuthSource
 
     public string getName()
     {
-        return DefaultAuthSourceEnum.WECHAT_APPLETS.ToString();
+        return DefaultAuthSourceEnum.WECHATAPPLETS.ToString();
     }
 
     public string refresh()

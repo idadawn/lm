@@ -1,3 +1,9 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using OnceMi.AspNetCore.OSS;
+using Poxiao.DataEncryption;
+using Poxiao.DependencyInjection;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
@@ -5,13 +11,7 @@ using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Models;
 using Poxiao.Infrastructure.Options;
 using Poxiao.Infrastructure.Security;
-using Poxiao.DataEncryption;
-using Poxiao.DependencyInjection;
-using Poxiao.FriendlyException;
 using Poxiao.RemoteRequest.Extensions;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using OnceMi.AspNetCore.OSS;
 using System.Text;
 
 namespace Poxiao.Infrastructure.Core.Manager.Files
@@ -320,7 +320,8 @@ namespace Poxiao.Infrastructure.Core.Manager.Files
             var stream = new MemoryStream(byteList);
             await UploadFileByType(stream, _filePath, _fileName);
             _cacheManager.Set(_fileName, string.Empty);
-            return new {
+            return new
+            {
                 name = _fileName,
                 url = string.Format("/api/file/Download?encryption={0}", DESCEncryption.Encrypt(string.Format("{0}|{1}|json", _userManager.UserId, _fileName), "Poxiao"))
             };
@@ -335,7 +336,7 @@ namespace Poxiao.Infrastructure.Core.Manager.Files
         {
             var stream = file.OpenReadStream();
             var byteList = new byte[file.Length];
-            stream.Read(byteList, 0, (int)file.Length);
+            stream.ReadExactly(byteList, 0, (int)file.Length);
             stream.Position = 0;
             var sr = new StreamReader(stream, Encoding.Default);
             var json = sr.ReadToEnd();

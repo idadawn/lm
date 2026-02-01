@@ -1,18 +1,20 @@
+using Poxiao.Extras.CollectiveOAuth.Cache;
 using Poxiao.Extras.CollectiveOAuth.Config;
+using Poxiao.Extras.CollectiveOAuth.Enums;
 using Poxiao.Extras.CollectiveOAuth.Models;
 using Poxiao.Extras.CollectiveOAuth.Utils;
-using Poxiao.Extras.CollectiveOAuth.Enums;
-using Poxiao.Extras.CollectiveOAuth.Cache;
 
 namespace Poxiao.Extras.CollectiveOAuth.Request;
 
 public partial class WeChatMpAuthRequest : DefaultAuthRequest
 {
-    public WeChatMpAuthRequest(ClientConfig config) : base(config, new WechatMPAuthSource())
+    public WeChatMpAuthRequest(ClientConfig config)
+        : base(config, new WechatMPAuthSource())
     {
     }
 
-    public WeChatMpAuthRequest(ClientConfig config, IAuthStateCache authStateCache) : base(config, new WechatMPAuthSource(), authStateCache)
+    public WeChatMpAuthRequest(ClientConfig config, IAuthStateCache authStateCache)
+        : base(config, new WechatMPAuthSource(), authStateCache)
     {
     }
 
@@ -157,7 +159,7 @@ public partial class WeChatMpAuthRequest : DefaultAuthRequest
      * @param refreshToken getAccessToken方法返回的refreshToken
      * @return 返回获取userInfo的url
      */
-    protected override string refreshTokenUrl(String refreshToken)
+    protected override string refreshTokenUrl(string refreshToken)
     {
         return UrlBuilder.fromBaseUrl(source.refresh())
             .queryParam("appid", config.clientId)

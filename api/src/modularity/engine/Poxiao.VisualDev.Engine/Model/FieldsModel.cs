@@ -1,5 +1,5 @@
-using Poxiao.DependencyInjection;
 using Newtonsoft.Json;
+using Poxiao.DependencyInjection;
 
 namespace Poxiao.VisualDev.Engine;
 
@@ -12,12 +12,12 @@ public class FieldsModel
     /// <summary>
     /// 配置.
     /// </summary>
-    public ConfigModel __config__ { get; set; }
+    public ConfigModel Config { get; set; }
 
     /// <summary>
     /// 插槽.
     /// </summary>
-    public SlotModel __slot__ { get; set; }
+    public SlotModel Slot { get; set; }
 
     /// <summary>
     /// 占位提示.
@@ -70,7 +70,7 @@ public class FieldsModel
     /// <summary>
     /// 设置默认值为空字符串.
     /// </summary>
-    public string __vModel__ { get; set; } = string.Empty;
+    public string VModel { get; set; } = string.Empty;
 
     /// <summary>
     /// 类型.

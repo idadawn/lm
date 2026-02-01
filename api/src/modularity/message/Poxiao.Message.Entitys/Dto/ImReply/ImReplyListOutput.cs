@@ -1,5 +1,5 @@
-using System.Text.Json.Serialization;
 using Poxiao.DependencyInjection;
+using System.Text.Json.Serialization;
 
 namespace Poxiao.Message.Entitys.Dto.ImReply;
 
@@ -12,7 +12,7 @@ public class ImReplyListOutput
     /// <summary>
     /// 主键.
     /// </summary>
-    public string id;
+    public string Id;
 
     /// <summary>
     /// 发送者.
@@ -24,40 +24,40 @@ public class ImReplyListOutput
     /// 接受者.
     /// </summary>
     [JsonIgnore]
-    public string userId;
+    public string UserId;
 
     /// <summary>
     /// 名称.
     /// </summary>
-    public string realName;
+    public string RealName;
 
     /// <summary>
     /// 头像.
     /// </summary>
-    public string headIcon;
+    public string HeadIcon;
 
     /// <summary>
     /// 最新消息.
     /// </summary>
-    public string latestMessage;
+    public string LatestMessage;
 
     /// <summary>
     /// 最新时间.
     /// </summary>
-    public DateTime latestDate;
+    public DateTime LatestDate;
 
     /// <summary>
     /// 未读消息.
     /// </summary>
-    public int unreadMessage;
+    public int UnreadMessage;
 
     /// <summary>
     /// 消息类型.
     /// </summary>
-    public string messageType;
+    public string MessageType;
 
     /// <summary>
     /// 账号.
     /// </summary>
-    public string account;
+    public string Account;
 }

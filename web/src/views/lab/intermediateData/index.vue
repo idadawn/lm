@@ -43,8 +43,8 @@
                 <a-button type="primary" :loading="batchCalculating" @click="handleBatchRecalculate">
                   <ReloadOutlined v-if="!batchCalculating" /> 批量计算
                 </a-button>
-                <a-button type="primary" color="success" :loading="batchCalculating" @click="handleBatchRecalculate">
-                  <CheckCircleOutlined v-if="!batchCalculating" /> 批量判定
+                <a-button type="primary" color="success" :loading="batchJudging" @click="handleBatchJudge">
+                  <CheckCircleOutlined v-if="!batchJudging" /> 批量判定
                 </a-button>
                 <a-dropdown>
                   <a-button :loading="exporting">
@@ -159,6 +159,28 @@
                 </div>
               </template>
 
+              <!-- 判定状态 -->
+              <template v-else-if="column.key === 'judgeStatus'">
+                <div class="cell-content flex items-center justify-center" @click.stop>
+                  <a-tooltip v-if="record.judgeStatus === 3" :title="record.judgeErrorMessage || '判定失败'">
+                    <a-tag color="error" class="cursor-pointer">
+                      <template #icon>
+                        <CloseCircleOutlined />
+                      </template>
+                      失败
+                    </a-tag>
+                  </a-tooltip>
+                  <a-tag v-else :color="getCalcStatusInfo(record.judgeStatus).color">
+                    <template #icon>
+                      <CheckCircleOutlined v-if="record.judgeStatus === 2" />
+                      <SyncOutlined v-else-if="record.judgeStatus === 1" spin />
+                      <ClockCircleOutlined v-else />
+                    </template>
+                    {{ getCalcStatusInfo(record.judgeStatus).text }}
+                  </a-tag>
+                </div>
+              </template>
+
               <!-- 计算日志 -->
               <template v-else-if="column.key === 'calcLog'">
                 <div class="cell-content cell-content--no-pointer" @click.stop>
@@ -260,6 +282,7 @@ import {
   updateAppearance,
   updateBaseInfo,
   recalculateIntermediateData,
+  judgeIntermediateData,
   exportIntermediateData,
 } from '/@/api/lab/intermediateData';
 import {
@@ -332,6 +355,7 @@ const coloredCells = ref<Record<string, string>>({}); // 存储单元格颜色 {
 const colorLoaded = ref<boolean>(false); // 颜色数据是否已加载
 const savingColors = ref<boolean>(false); // 是否正在保存颜色
 const batchCalculating = ref<boolean>(false); // 是否正在批量计算
+const batchJudging = ref<boolean>(false); // 是否正在批量判定
 const exporting = ref<boolean>(false); // 是否正在导出
 const exportModalVisible = ref<boolean>(false); // 导出模态框是否可见
 const exportDateRange = ref<number[]>([]); // 导出日期范围（时间戳数组）
@@ -749,7 +773,9 @@ const allColumns = computed(() => {
     { title: '班次', dataIndex: 'shiftNo', key: 'shiftNo', width: 100, align: 'center' },
 
     // --- 计算状态与日志（固定右侧） ---
-    { title: '计算/判定状态', dataIndex: 'calcStatus', key: 'calcStatus', width: 100, fixed: 'right', align: 'center' },
+    // --- 计算状态与日志（固定右侧） ---
+    { title: '计算状态', dataIndex: 'calcStatus', key: 'calcStatus', width: 100, fixed: 'right', align: 'center' },
+    { title: '判定状态', dataIndex: 'judgeStatus', key: 'judgeStatus', width: 100, fixed: 'right', align: 'center' },
     { title: '日志', dataIndex: 'calcLog', key: 'calcLog', width: 70, fixed: 'right', align: 'center' },
   ];
 
@@ -811,6 +837,22 @@ const [registerTable, { reload, getDataSource }] = useTable({
           options: [
             { label: '未计算', value: 0 },
             { label: '计算中', value: 1 },
+            { label: '成功', value: 2 },
+            { label: '失败', value: 3 },
+          ],
+          placeholder: '所有状态',
+          allowClear: true,
+        },
+      },
+      {
+        field: 'judgeStatus',
+        label: '判定状态',
+        component: 'Select',
+        colProps: { span: 4 },
+        componentProps: {
+          options: [
+            { label: '未判定', value: 0 },
+            { label: '判定中', value: 1 },
             { label: '成功', value: 2 },
             { label: '失败', value: 3 },
           ],
@@ -1216,6 +1258,44 @@ async function handleBatchRecalculate() {
   } catch (error) {
     createMessage.error('批量触发计算失败');
     batchCalculating.value = false;
+  }
+}
+
+// 批量判定（针对计算成功的数据执行判定逻辑）
+async function handleBatchJudge() {
+  if (batchJudging.value) return;
+
+  // 获取当前表格数据
+  const data = getDataSource();
+  if (!data || data.length === 0) {
+    createMessage.warning('当前没有数据');
+    return;
+  }
+
+  // 筛选出计算成功的数据（只有计算成功的才能执行判定）
+  const successRecords = data.filter(record => {
+    const status = normalizeCalcStatus(record?.calcStatus);
+    return status === 'SUCCESS';
+  });
+
+  if (successRecords.length === 0) {
+    createMessage.info('没有计算成功的数据可供判定');
+    return;
+  }
+
+  try {
+    batchJudging.value = true;
+    const ids = successRecords.map(record => record.id);
+    await judgeIntermediateData(ids);
+    createMessage.success(`已触发 ${ids.length} 条数据的判定`);
+    // 稍后刷新
+    setTimeout(() => {
+      reload();
+      batchJudging.value = false;
+    }, 1000);
+  } catch (error) {
+    createMessage.error('批量判定失败');
+    batchJudging.value = false;
   }
 }
 

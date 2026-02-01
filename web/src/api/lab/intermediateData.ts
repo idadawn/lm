@@ -40,6 +40,11 @@ export function recalculateIntermediateData(ids: string[]) {
     return defHttp.post({ url: Api.Prefix + '/recalculate', data: ids });
 }
 
+// 批量判定（仅执行判定逻辑）
+export function judgeIntermediateData(ids: string[]) {
+    return defHttp.post({ url: Api.Prefix + '/judge', data: ids });
+}
+
 // 批量删除中间数据
 export function batchDeleteIntermediateData(ids: string[]) {
     return defHttp.delete({ url: Api.Prefix + '/batch', data: ids });
@@ -58,8 +63,8 @@ export function getIntermediateDataCalcLogs(params: IntermediateDataCalcLogQuery
 // 导出中间数据Excel
 export function exportIntermediateData(startDate: string, endDate: string) {
     return defHttp.get(
-        { 
-            url: Api.Prefix + '/export', 
+        {
+            url: Api.Prefix + '/export',
             params: { startDate, endDate },
             responseType: 'blob'
         },

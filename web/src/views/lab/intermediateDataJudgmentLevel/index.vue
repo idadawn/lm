@@ -76,10 +76,8 @@
                   </a-tag>
                 </template>
                 <template v-else-if="column.key === 'action'">
-                  <div v-if="record.isDefault" class="text-gray-400 cursor-not-allowed" title="系统默认生成，不可编辑删除">
-                    系统默认
-                  </div>
-                  <a-space v-else>
+                  <!-- 已移除系统默认兜底等级，所有等级可编辑删除 -->
+                  <a-space>
                     <a-button type="link" size="small" @click="handleEditCondition(record)">条件</a-button>
                     <a-divider type="vertical" />
                     <a-button type="link" size="small" @click="handleCopy(record)">拷贝</a-button>
@@ -209,14 +207,14 @@ const columns = [
 ];
 
 // 计算固定宽度列的总宽度（不包括弹性列）
-const fixedColumnsWidth = columns.reduce((total, column) => {
+const ca = columns.reduce((total, column) => {
   const width = Number(column.width) || 0;
   return total + width;
 }, 0);
 
 // scroll.x 设置为大于列宽总和的值，确保水平滚动条正常显示
 // 非固定列宽度之和不超过 scroll.x
-const tableScrollX = fixedColumnsWidth + 200; // 额外留出弹性空间
+const tableScrollX = ca + 200; // 额外留出弹性空间
 
 // 初始化拖拽
 const initSortable = () => {

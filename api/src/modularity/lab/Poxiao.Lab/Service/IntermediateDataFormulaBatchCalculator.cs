@@ -105,6 +105,36 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         return await CalculateInternalAsync(entities, batchId, unitPrecisions);
     }
 
+    /// <summary>
+    /// 批量执行判定逻辑（仅判定，不计算）。
+    /// </summary>
+    public async Task<FormulaCalculationResult> JudgeByIdsAsync(List<string> intermediateDataIds)
+    {
+        if (intermediateDataIds == null || intermediateDataIds.Count == 0)
+        {
+            return new FormulaCalculationResult { Message = "未传入数据ID，未执行判定。" };
+        }
+
+        var ids = intermediateDataIds
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (ids.Count == 0)
+        {
+            return new FormulaCalculationResult { Message = "未传入有效数据ID，未执行判定。" };
+        }
+
+        var entities = await _intermediateRepository
+            .AsQueryable()
+            .Where(t => ids.Contains(t.Id) && t.DeleteMark == null)
+            .ToListAsync();
+
+        var batchId = entities.Select(t => t.BatchId).FirstOrDefault();
+        return await JudgeInternalAsync(entities, batchId);
+    }
+
+
     private async Task<FormulaCalculationResult> CalculateInternalAsync(
         List<IntermediateDataEntity> entities,
         string batchId,
@@ -181,18 +211,8 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
                     );
                 }
 
-                foreach (var judgeFormula in formulaSet.JudgeFormulas)
-                {
-                    var levels = formulaSet.Levels.GetValueOrDefault(judgeFormula.Id);
-                    ApplyJudgeFormula(
-                        judgeFormula,
-                        entity,
-                        contextData,
-                        levels, // Pass loaded levels
-                        entityErrors,
-                        batchId
-                    );
-                }
+                // 注意：判定逻辑已移至单独的 JudgeInternalAsync 方法
+
 
                 entity.CalcStatusTime = DateTime.Now;
                 if (entityErrors.Count > 0)
@@ -246,6 +266,118 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         result.Errors = resultErrors.ToList();
         result.Message =
             $"计算完成，共{result.TotalCount}条，成功{result.SuccessCount}条，失败{result.FailedCount}条。";
+
+        return result;
+    }
+
+    /// <summary>
+    /// 仅执行判定逻辑（不执行计算公式）。
+    /// </summary>
+    private async Task<FormulaCalculationResult> JudgeInternalAsync(
+        List<IntermediateDataEntity> entities,
+        string batchId
+    )
+    {
+        var result = new FormulaCalculationResult { TotalCount = entities?.Count ?? 0 };
+
+        if (entities == null || entities.Count == 0)
+        {
+            result.Message = "未找到待判定的数据。";
+            return result;
+        }
+
+        var formulaSet = await LoadFormulasAsync();
+        if (formulaSet.JudgeFormulas.Count == 0)
+        {
+            result.Message = "未找到可用判定公式，未执行判定。";
+            return result;
+        }
+
+        var errorItems = new ConcurrentBag<CalcErrorItem>();
+        var resultErrors = new ConcurrentBag<FormulaCalculationError>();
+        var successCount = 0;
+        var failedCount = 0;
+
+        var parallelOptions = new ParallelOptions
+        {
+            MaxDegreeOfParallelism = Math.Max(1, Environment.ProcessorCount)
+        };
+
+        await Parallel.ForEachAsync(
+            entities,
+            parallelOptions,
+            (entity, _) =>
+            {
+                var entityErrors = new List<CalcErrorItem>();
+                var contextData = IntermediateDataFormulaCalcHelper.ExtractContextDataFromEntity(
+                    entity
+                );
+
+                foreach (var judgeFormula in formulaSet.JudgeFormulas)
+                {
+                    var levels = formulaSet.Levels.GetValueOrDefault(judgeFormula.Id);
+                    ApplyJudgeFormula(
+                        judgeFormula,
+                        entity,
+                        contextData,
+                        levels,
+                        entityErrors,
+                        batchId
+                    );
+                }
+
+                entity.JudgeStatusTime = DateTime.Now;
+                if (entityErrors.Count > 0)
+                {
+                    entity.JudgeStatus = IntermediateDataCalcStatus.FAILED;
+                    entity.JudgeErrorMessage = BuildErrorSummary(entityErrors);
+                    Interlocked.Increment(ref failedCount);
+
+                    var detail = JsonConvert.SerializeObject(
+                        entityErrors.Select(err => new
+                        {
+                            err.ColumnName,
+                            err.FormulaType,
+                            err.ErrorType,
+                            err.ErrorMessage,
+                            err.ErrorDetail
+                        })
+                    );
+
+                    resultErrors.Add(
+                        new FormulaCalculationError
+                        {
+                            IntermediateDataId = entity.Id,
+                            FurnaceNo = entity.FurnaceNo,
+                            ErrorMessage = entity.JudgeErrorMessage,
+                            ErrorDetail = detail
+                        }
+                    );
+                }
+                else
+                {
+                    entity.JudgeStatus = IntermediateDataCalcStatus.SUCCESS;
+                    entity.JudgeErrorMessage = null;
+                    Interlocked.Increment(ref successCount);
+                }
+
+                foreach (var err in entityErrors)
+                {
+                    errorItems.Add(err);
+                }
+
+                return ValueTask.CompletedTask;
+            }
+        );
+
+        await UpdateEntitiesAsync(entities);
+        await InsertCalcLogsAsync(errorItems);
+
+        result.SuccessCount = successCount;
+        result.FailedCount = failedCount;
+        result.Errors = resultErrors.ToList();
+        result.Message =
+            $"判定完成，共{result.TotalCount}条，成功{result.SuccessCount}条，失败{result.FailedCount}条。";
 
         return result;
     }
@@ -552,6 +684,8 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         JudgeResult judgeResult = null;
         IntermediateDataJudgmentLevelEntity defaultLevel = null;
 
+        Console.WriteLine($"[Judge] Start judging for Column: {formula.ColumnName}, Entity ID: {entity.Id}");
+
         if (levels != null && levels.Count > 0)
         {
             foreach (var level in levels)
@@ -568,14 +702,19 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
                     try
                     {
                         var ruleGroup = JObject.Parse(level.Condition);
-                        if (EvaluateRuleGroup(ruleGroup, entity, contextData))
+                        var matched = EvaluateRuleGroup(ruleGroup, entity, contextData);
+                        Console.WriteLine($"[Judge] Level '{level.Name}' (Priority {level.Priority}): Match = {matched}");
+                        
+                        if (matched)
                         {
                             judgeResult = new JudgeResult { ResultValue = level.QualityStatus, HasError = false };
+                            Console.WriteLine($"[Judge] Level '{level.Name}' matched! Result: {level.QualityStatus}");
                             break;
                         }
                     }
                     catch (Exception ex)
                     {
+                        Console.WriteLine($"[Judge] Level '{level.Name}' error: {ex.Message}");
                         // Log error but continue to next level or fallback?
                         // Current decision: Record error and stop for this formula to avoid incorrect judgment
                         judgeResult = new JudgeResult
@@ -589,11 +728,12 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
                 }
             }
 
-            // Fallback to default if no match found
-            if (judgeResult == null && defaultLevel != null)
-            {
-                judgeResult = new JudgeResult { ResultValue = defaultLevel.QualityStatus, HasError = false };
-            }
+            // 已移除默认等级兜底逻辑 - 如果没有匹配到任何等级，则视为判定失败
+            // if (judgeResult == null && defaultLevel != null)
+            // {
+            //     judgeResult = new JudgeResult { ResultValue = defaultLevel.QualityStatus, HasError = false };
+            //     Console.WriteLine($"[Judge] No level matched. Using Default Level '{defaultLevel.Name}'. Result: {defaultLevel.QualityStatus}");
+            // }
         }
         else
         {
@@ -604,10 +744,15 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         // If result is still null here, it means no match and no default level (or old logic returned null)
         if (judgeResult == null)
         {
-            // Do nothing? Or set to null?
-            // If we don't have a result, we might want to clear the previous value or leave it.
-            // Usually it's better to explicitly set to null/empty if no rule matched.
-            judgeResult = new JudgeResult { ResultValue = null, HasError = false };
+            // 没有匹配到任何等级，且没有默认等级，标记为判定失败
+            Console.WriteLine($"[Judge] FAILED: No level matched for Column: {formula.ColumnName}, Entity ID: {entity.Id}");
+            judgeResult = new JudgeResult 
+            { 
+                ResultValue = null, 
+                HasError = true,
+                ErrorMessage = $"[{formula.DisplayName ?? formula.ColumnName}] 无匹配的判定等级",
+                ErrorDetail = "所有判定条件均不满足，且未设置默认等级。"
+            };
         }
 
         if (judgeResult.HasError)
@@ -746,6 +891,26 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         if (group == null)
         {
             return false;
+        }
+
+        // 处理嵌套的 groups 数组结构（前端保存的条件格式）
+        // 结构: { "id": "xxx", "resultValue": "A", "groups": [{ "logic": "AND", "conditions": [...] }] }
+        var groups = group["groups"] as JArray;
+        if (groups != null && groups.Count > 0)
+        {
+            // 递归评估 groups 数组中的每个组（默认使用 AND 逻辑）
+            foreach (var groupToken in groups)
+            {
+                if (groupToken is JObject subGroup)
+                {
+                    var matched = EvaluateRuleGroup(subGroup, entity, contextData);
+                    if (!matched)
+                    {
+                        return false; // AND 逻辑：任一组不满足则失败
+                    }
+                }
+            }
+            return true; // 所有组都满足
         }
 
         var logic = (group["logic"]?.ToString() ?? "AND").Trim().ToUpperInvariant();

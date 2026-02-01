@@ -62,6 +62,11 @@ public class IntermediateDataListQuery : PageInputBase
     /// 计算状态 (0=Pending, 1=Processing, 2=Success, 3=Failed).
     /// </summary>
     public int? CalcStatus { get; set; }
+
+    /// <summary>
+    /// 判定状态 (0=Pending, 1=Processing, 2=Success, 3=Failed).
+    /// </summary>
+    public int? JudgeStatus { get; set; }
 }
 
 /// <summary>

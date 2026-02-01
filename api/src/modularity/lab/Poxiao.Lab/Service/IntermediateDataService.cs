@@ -152,6 +152,13 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             query = query.Where(t => t.CalcStatus == status);
         }
 
+        // 按判定状态筛选
+        if (input.JudgeStatus.HasValue)
+        {
+            var status = (IntermediateDataCalcStatus)input.JudgeStatus.Value;
+            query = query.Where(t => t.JudgeStatus == status);
+        }
+
         // 先查询所有符合条件的数据（不排序，不分页）
         var allData = await query.ToListAsync();
 
@@ -492,6 +499,15 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     public async Task<FormulaCalculationResult> Recalculate([FromBody] List<string> ids)
     {
         return await _formulaBatchCalculator.CalculateByIdsAsync(ids);
+    }
+
+    /// <summary>
+    /// 批量执行判定逻辑（仅判定，不重新计算）。
+    /// </summary>
+    [HttpPost("judge")]
+    public async Task<FormulaCalculationResult> Judge([FromBody] List<string> ids)
+    {
+        return await _formulaBatchCalculator.JudgeByIdsAsync(ids);
     }
 
     /// <inheritdoc />

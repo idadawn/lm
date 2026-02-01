@@ -941,6 +941,24 @@ public class IntermediateDataEntity : CLDEntityBase
     [SugarColumn(ColumnName = "F_CALC_ERROR_MESSAGE", Length = 500, IsNullable = true)]
     public string CalcErrorMessage { get; set; }
 
+    /// <summary>
+    /// 判定状态：0-未判定(PENDING), 1-判定中(PROCESSING), 2-成功(SUCCESS), 3-失败(FAILED).
+    /// </summary>
+    [SugarColumn(ColumnName = "F_JUDGE_STATUS")]
+    public IntermediateDataCalcStatus JudgeStatus { get; set; } = IntermediateDataCalcStatus.PENDING;
+
+    /// <summary>
+    /// 判定状态更新时间.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_JUDGE_STATUS_TIME", IsNullable = true)]
+    public DateTime? JudgeStatusTime { get; set; }
+
+    /// <summary>
+    /// 判定错误摘要（简要错误信息，用于前端展示）.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_JUDGE_ERROR_MESSAGE", Length = 500, IsNullable = true)]
+    public string JudgeErrorMessage { get; set; }
+
     #endregion
 
     #region 辅助属性（不存储到数据库）

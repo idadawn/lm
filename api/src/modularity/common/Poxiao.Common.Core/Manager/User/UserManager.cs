@@ -2,6 +2,7 @@ using Mapster;
 using Microsoft.AspNetCore.Http;
 using Poxiao.DataEncryption;
 using Poxiao.DependencyInjection;
+using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Extension;
@@ -267,7 +268,7 @@ public class UserManager : IUserManager, IScoped
         if (string.IsNullOrEmpty(UserId))
         {
             Console.WriteLine($"[UserManager.GetUserInfo] ERROR: UserId is null or empty - User not authenticated!");
-            throw new UnauthorizedAccessException("User not authenticated - UserId is null");
+            throw Oops.Oh(600, "登录已过期，请重新登录").StatusCode(600);
         }
 
         UserAgent userAgent = new UserAgent(_httpContext);

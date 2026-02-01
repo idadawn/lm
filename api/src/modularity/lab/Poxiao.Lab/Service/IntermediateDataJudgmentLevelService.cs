@@ -73,23 +73,11 @@ public class IntermediateDataJudgmentLevelService
 
         var result = list.Adapt<List<IntermediateDataJudgmentLevelDto>>();
 
-        // 如果没有默认项，增加系统默认兜底项 (虚拟数据，不存库，方便前端展示和逻辑判定)
-        if (!result.Any(t => t.IsDefault))
-        {
-            result.Add(new IntermediateDataJudgmentLevelDto
-            {
-                Id = "sys_default_virtual_id",
-                FormulaId = input.FormulaId,
-                Code = "SYS_DEF",
-                Name = "(空)",
-                QualityStatus = "其他",
-                Priority = 999,
-                Color = "",
-                IsStatistic = false,
-                IsDefault = true,
-                Description = "系统生成的兜底默认项。当您未配置任何默认等级时显示，用于承接无匹配结果的情况。手动配置默认项后此项将自动隐藏。"
-            });
-        }
+        // 已移除系统自动生成的默认兜底项 - 如果没有匹配等级，判定失败
+        // if (!result.Any(t => t.IsDefault))
+        // {
+        //     result.Add(new IntermediateDataJudgmentLevelDto { ... });
+        // }
 
         await _cacheManager.SetAsync(cacheKey, result, TimeSpan.FromHours(6));
 

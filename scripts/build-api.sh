@@ -1,4 +1,4 @@
-﻿#!/bin/bash
+#!/bin/bash
 # ============================================
 # 瀹為獙瀹ゆ暟鎹垎鏋愮郴缁?- API 鏋勫缓鑴氭湰
 # 浼樺寲鐗堟湰锛氬閲忔瀯寤?+ 骞惰缂栬瘧 + 缂撳瓨浼樺寲
@@ -251,7 +251,7 @@ clean_cache() {
     log_step "娓呯悊鏋勫缓缂撳瓨..."
     if [ -d "$BUILD_CACHE_DIR" ]; then
         rm -rf "$BUILD_CACHE_DIR"
-        log_info "宸叉竻鐞嗘瀯寤虹紦瀛?
+        log_info "宸叉竻鐞嗘瀯寤虹紦瀛?"
     fi
 }
 
@@ -265,10 +265,10 @@ show_help() {
     echo "  --fast, -f       蹇€熸瀯寤猴紙澧為噺缂栬瘧锛岄粯璁わ級"
     echo "  --full, -F       瀹屾暣鏋勫缓锛堝寘鎷緷璧栨仮澶嶏級"
     echo "  --clean-cache    娓呯悊鏋勫缓缂撳瓨"
-    echo "  --help, -h       鏄剧ず姝ゅ府鍔╀俊鎭?
+    echo "  --help, -h       鏄剧ず姝ゅ府鍔╀俊鎭?"
     echo ""
     echo "绀轰緥:"
-    echo "  $0              # 蹇€熸瀯寤猴紙鎺ㄨ崘锛?
+    echo "  $0              # 蹇€熸瀯寤猴紙鎺ㄨ崘锛?"
     echo "  $0 --full       # 瀹屾暣鏋勫缓"
     echo "  $0 --clean-cache # 娓呯悊缂撳瓨"
     echo ""

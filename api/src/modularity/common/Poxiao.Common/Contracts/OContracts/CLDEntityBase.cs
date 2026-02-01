@@ -72,10 +72,8 @@ public abstract class CLDEntityBase : OEntityBase<string>, IOCreatorTime, IODele
         this.CreatorTime = DateTime.Now;
         this.Id = SnowflakeIdHelper.NextId();
         this.EnabledMark = this.EnabledMark == null ? 1 : this.EnabledMark;
-        if (!string.IsNullOrEmpty(userId))
-        {
-            this.CreatorUserId = userId;
-        }
+        // 在没有用户上下文时（如数据库初始化），使用默认系统用户ID
+        this.CreatorUserId = userId ?? "00000000-0000-0000-0000-000000000000";
         if (!string.IsNullOrEmpty(tenantId))
         {
             this.TenantId = tenantId;

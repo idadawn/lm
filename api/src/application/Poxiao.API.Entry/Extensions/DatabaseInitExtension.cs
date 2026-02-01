@@ -20,19 +20,23 @@ public static class DatabaseInitExtension
         >();
 
         // 初始化所有 Lab 模块的表
-        repository
-            .AsSugarClient()
-            .CodeFirst.InitTables();
-            //typeof(ProductSpecEntity),o
-            //typeof(AppearanceFeatureEntity),
-            //typeof(AppearanceFeatureCategoryEntity),
-            //typeof(AppearanceFeatureCorrectionEntity),
-            //typeof(AppearanceFeatureLevelEntity),
-            //typeof(RawDataEntity),
-            //typeof(RawDataImportLogEntity),
-            //typeof(ExcelImportTemplateEntity),
-            //typeof(UnitCategoryEntity),
-            //typeof(UnitDefinitionEntity)
+        // 注意：表已存在时跳过初始化（MySQL lower_case_table_names=1）
+        var db = repository.AsSugarClient();
+        if (!db.DbMaintenance.IsAnyTable("unit_category", false))
+        {
+            db.CodeFirst.InitTables(
+            typeof(ProductSpecEntity),
+            typeof(AppearanceFeatureEntity),
+            typeof(AppearanceFeatureCategoryEntity),
+            typeof(AppearanceFeatureCorrectionEntity),
+            typeof(AppearanceFeatureLevelEntity),
+            typeof(RawDataEntity),
+            typeof(RawDataImportLogEntity),
+            typeof(ExcelImportTemplateEntity),
+            typeof(UnitCategoryEntity),
+            typeof(UnitDefinitionEntity)
+            );
+        }
 
         // 初始化磁性能单位
         SeedMagneticUnits(repository);

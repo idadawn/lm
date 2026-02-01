@@ -9,8 +9,8 @@ namespace Poxiao.Infrastructure.Security;
 /// </summary>
 public class SnowflakeIdHelper
 {
-    // 定义dll路径
-    public const string RegWorkerIdDLLNAME = "lib\\regworkerid_lib_v1.3.1\\yitidgengo";
+    // 定义dll路径（使用正斜杠以支持跨平台）
+    public const string RegWorkerIdDLLNAME = "lib/regworkerid_lib_v1.3.1/yitidgengo";
 
     // 根据文档定义三个接口
 

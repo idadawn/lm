@@ -22,6 +22,7 @@ services:
       - ${DEPLOY_DIR:-./deploy}/api/Configurations:/app/Configurations
     networks:
       - lm-apps-network
+      - lm-infra-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9530/health"]
       interval: 30s
@@ -90,3 +91,6 @@ networks:
   lm-apps-network:
     name: ${NETWORK_NAME:-lm-apps-network}
     driver: bridge
+  lm-infra-network:
+    external: true
+    name: lm-infra-network

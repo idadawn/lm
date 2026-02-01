@@ -41,10 +41,10 @@ check_docker() {
 
 # 检查环境变量文件
 check_env_file() {
-    if [ ! -f ".env.infra" ]; then
-        print_warn ".env.infra 文件不存在，使用默认配置"
+    if [ ! -f ".env" ]; then
+        print_warn ".env 文件不存在，使用默认配置"
     else
-        print_info "使用 .env.infra 配置文件"
+        print_info "使用 .env 配置文件"
     fi
 }
 

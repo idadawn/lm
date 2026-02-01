@@ -9,10 +9,10 @@
 ```
 ├── infra/          # 基础环境服务器
 │   ├── docker-compose.yml
-│   └── .env.infra
+│   └── .env
 └── apps/           # 应用服务器
     ├── docker-compose.yml
-    └── .env.apps
+    └── .env
 ```
 
 ---
@@ -25,7 +25,13 @@ cd infra
 ```
 
 ### 2. 配置环境变量
-编辑 `.env.infra` 文件，重点配置：
+```bash
+# 复制模板文件
+cp .env.example .env
+
+# 编辑 .env 文件，重点配置：
+```
+编辑 `.env` 文件，重点配置：
 - **数据库/Redis 端口**：`MYSQL_PORT`、`REDIS_PORT`
 - **AI 模型路径**：`MODELS_HOST_PATH`（确保主机有该目录）
 - **模型名称**：`TEI_MODEL_NAME`、`VLLM_MODEL_NAME`
@@ -60,7 +66,13 @@ cd apps
 ```
 
 ### 2. 配置环境变量
-编辑 `.env.apps` 文件，**必须配置**：
+```bash
+# 复制模板文件
+cp .env.example .env
+
+# 编辑 .env 文件，必须配置：
+```
+编辑 `.env` 文件，**必须配置**：
 ```bash
 # 基础环境服务器内网地址
 INFRA_HOST=10.0.0.5          # 修改为实际内网 IP
@@ -129,7 +141,7 @@ http://<应用服务器IP>:8923
 ## 三、常见问题
 
 ### Q1: 内网 IP 每台机器不同怎么办？
-只需修改对应服务器的 `.env.apps` 文件中的 `INFRA_HOST`，以及 API 配置文件中的地址。
+只需修改对应服务器的 `apps/.env` 文件中的 `INFRA_HOST`，以及 API 配置文件中的地址。
 
 ### Q2: 不启用 RabbitMQ？
 当前配置未包含 RabbitMQ。如需使用，请在 `infra/docker-compose.yml` 中添加 RabbitMQ 服务。

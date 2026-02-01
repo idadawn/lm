@@ -41,22 +41,22 @@ check_docker() {
 
 # 检查环境变量文件
 check_env_file() {
-    if [ ! -f ".env.apps" ]; then
-        print_error ".env.apps 文件不存在！"
+    if [ ! -f ".env" ]; then
+        print_error ".env 文件不存在！"
         print_error "请先复制并配置环境变量文件"
         exit 1
     fi
 
     # 加载环境变量
-    source .env.apps 2>/dev/null || true
+    source .env 2>/dev/null || true
 
     # 检查关键配置
     if [ -z "$INFRA_HOST" ] || [ "$INFRA_HOST" = "10.0.0.5" ]; then
-        print_warn "INFRA_HOST 未配置或使用默认值，请检查 .env.apps"
+        print_warn "INFRA_HOST 未配置或使用默认值，请检查 .env"
         print_warn "基础环境服务器内网 IP: $INFRA_HOST"
     fi
 
-    print_info "使用 .env.apps 配置文件"
+    print_info "使用 .env 配置文件"
     print_info "基础环境服务器: $INFRA_HOST"
 }
 

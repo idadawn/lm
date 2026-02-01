@@ -1,8 +1,11 @@
-# ������ʩ���� - Docker Compose ����
-# ������MySQL��Redis��Qdrant��TEI��vLLM
+# ============================================
+# 基础设施服务 - Docker Compose 配置
+# 包含：MySQL、Redis、Qdrant、TEI、vLLM
+# 适用场景：基础环境与应用服务部署在不同服务器
+# ============================================
 
 services:
-  # MySQL
+  # MySQL 数据库
   mysql:
     image: mysql:${MYSQL_VERSION:-8.0}
     container_name: ${CONTAINER_PREFIX:-lm}-mysql
@@ -26,8 +29,13 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  # Redis
+  # Redis 缓存
   redis:
     image: redis:${REDIS_VERSION:-8.0-alpine}
     container_name: ${CONTAINER_PREFIX:-lm}-redis
@@ -44,8 +52,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  # Qdrant
+  # Qdrant 向量数据库
   qdrant:
     image: qdrant/qdrant:${QDRANT_VERSION:-v1.12.1}
     container_name: ${CONTAINER_PREFIX:-lm}-qdrant
@@ -57,8 +70,13 @@ services:
       - ${DEPLOY_DIR:-./deploy}/qdrant/storage:/qdrant/storage
     networks:
       - lm-infra-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  # TEI
+  # TEI 文本嵌入服务
   tei:
     image: ghcr.io/huggingface/text-embeddings-inference:cpu-${TEI_VERSION:-1.6.0}
     container_name: ${CONTAINER_PREFIX:-lm}-tei
@@ -72,8 +90,19 @@ services:
       - ${DEPLOY_DIR:-./deploy}/tei/cache:/data
     networks:
       - lm-infra-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  # vLLM
+  # vLLM 大模型推理服务（需要 GPU）
   vllm:
     image: vllm/vllm-openai:${VLLM_VERSION:-latest}
     container_name: ${CONTAINER_PREFIX:-lm}-vllm
@@ -95,6 +124,11 @@ services:
             - driver: nvidia
               count: 1
               capabilities: [gpu]
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 networks:
   lm-infra-network:

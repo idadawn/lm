@@ -1,5 +1,8 @@
-﻿# 应用服务 - Docker Compose 配置
-# 仅包含：API、Web、Nginx（前后端同机）
+# ============================================
+# 应用服务 - Docker Compose 配置
+# 包含：API、Web、Nginx（前后端同机）
+# 适用场景：应用服务器，需要连接基础环境服务器
+# ============================================
 
 services:
   # 后端 API
@@ -25,12 +28,18 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  # 前端 Web
+  # 前端 Web（静态文件服务）
   web:
     image: lm-web
     container_name: ${CONTAINER_PREFIX:-lm}-web
     restart: unless-stopped
+    # 内部端口，不对外暴露
     expose:
       - "80"
     networks:
@@ -41,6 +50,11 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   # Nginx 反向代理
   nginx:
@@ -66,8 +80,13 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 networks:
   lm-apps-network:
-    name: lm-apps-network
+    name: ${NETWORK_NAME:-lm-apps-network}
     driver: bridge

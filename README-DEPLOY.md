@@ -1,48 +1,174 @@
-﻿# 部署使用说明（基础环境与应用分离）
+# 部署使用说明（基础环境与应用分离）
 
-适用场景
+## 适用场景
 - 基础环境与应用服务部署在不同服务器
-- 内网通信，AI 服务必须部署
+- 内网通信，AI 服务必须部署在基础环境服务器
 - 前后端同机（同一应用服务器）
 
-目录结构
-- 基础环境：`infra/`
-- 应用服务：`apps/`
+## 目录结构
+```
+├── infra/          # 基础环境服务器
+│   ├── docker-compose.yml
+│   └── .env.infra
+└── apps/           # 应用服务器
+    ├── docker-compose.yml
+    └── .env.apps
+```
 
-一、基础环境服务器（infra）
-1. 进入目录
-   - `cd infra`
-2. 复制并修改环境变量
-   - `copy .env.infra .env.infra.local`（或直接编辑 .env.infra）
-   - 重点：数据库/Redis/AI 端口、模型路径
-3. 启动基础设施
-   - `docker compose --env-file .env.infra up -d`
+---
 
-包含服务
-- MySQL、Redis、Qdrant、TEI、vLLM
+## 一、基础环境服务器（infra）
 
-二、应用服务器（apps）
-1. 进入目录
-   - `cd apps`
-2. 复制并修改环境变量
-   - `copy .env.apps .env.apps.local`（或直接编辑 .env.apps）
-   - 重点：`INFRA_HOST`（基础环境服务器内网 IP）
-3. 启动应用服务
-   - `docker compose --env-file .env.apps up -d`
+### 1. 进入目录
+```bash
+cd infra
+```
 
-包含服务
-- API、Web、Nginx
+### 2. 配置环境变量
+编辑 `.env.infra` 文件，重点配置：
+- **数据库/Redis 端口**：`MYSQL_PORT`、`REDIS_PORT`
+- **AI 模型路径**：`MODELS_HOST_PATH`（确保主机有该目录）
+- **模型名称**：`TEI_MODEL_NAME`、`VLLM_MODEL_NAME`
 
-三、API 配置（应用服务器）
-以下配置通过卷挂载到容器：
-- `deploy/api/Configurations/ConnectionStrings.json`
-- `deploy/api/Configurations/AI.json`
+### 3. 启动基础设施
+```bash
+docker compose up -d
+```
 
-请将上述配置中的基础环境地址修改为内网地址：
-- 数据库、Redis 使用 `INFRA_HOST` 对应的内网 IP
-- AI（Qdrant/TEI/vLLM）同样使用内网 IP
+### 4. 验证服务状态
+```bash
+docker compose ps
+docker compose logs
+```
 
-四、常见问题
-- 内网 IP 每台机器不同：只需修改该机器的 `apps/.env.apps` 与 API 配置地址
-- 不启用 RabbitMQ：当前 compose 未包含 RabbitMQ，如需请在 `infra/docker-compose.yml` 增加
-- GPU：vLLM 需要 GPU；如无 GPU，请调整为 CPU 或部署到具备 GPU 的基础环境服务器
+### 包含服务
+| 服务 | 说明 | 默认端口 |
+|------|------|----------|
+| MySQL | 数据库 | 3307 |
+| Redis | 缓存 | 6380 |
+| Qdrant | 向量数据库 | 6333 (HTTP), 6334 (gRPC) |
+| TEI | 文本嵌入服务 | 8081 |
+| vLLM | 大模型推理 | 8082 |
+
+---
+
+## 二、应用服务器（apps）
+
+### 1. 进入目录
+```bash
+cd apps
+```
+
+### 2. 配置环境变量
+编辑 `.env.apps` 文件，**必须配置**：
+```bash
+# 基础环境服务器内网地址
+INFRA_HOST=10.0.0.5          # 修改为实际内网 IP
+
+# 基础环境服务端口（默认配置，通常无需修改）
+INFRA_MYSQL_PORT=3307
+INFRA_REDIS_PORT=6380
+INFRA_QDRANT_PORT=6333
+INFRA_TEI_PORT=8081
+INFRA_VLLM_PORT=8082
+```
+
+### 3. 配置 API 连接
+在 `deploy/api/Configurations/` 目录下修改配置文件：
+
+**ConnectionStrings.json**：
+```json
+{
+  "ConnectionStrings": {
+    "Default": "server=<INFRA_HOST>;port=<INFRA_MYSQL_PORT>;database=lumei;user=poxiao;password=<密码>;",
+    "Redis": "<INFRA_HOST>:<INFRA_REDIS_PORT>,password=<密码>"
+  }
+}
+```
+
+**AI.json**：
+```json
+{
+  "Qdrant": {
+    "Host": "http://<INFRA_HOST>:<INFRA_QDRANT_PORT>"
+  },
+  "TEI": {
+    "Url": "http://<INFRA_HOST>:<INFRA_TEI_PORT>"
+  },
+  "vLLM": {
+    "Url": "http://<INFRA_HOST>:<INFRA_VLLM_PORT>"
+  }
+}
+```
+
+### 4. 启动应用服务
+```bash
+docker compose up -d
+```
+
+### 5. 验证服务状态
+```bash
+docker compose ps
+docker compose logs -f api
+```
+
+### 包含服务
+| 服务 | 说明 | 默认端口 |
+|------|------|----------|
+| API | 后端服务 | 9530 |
+| Web | 前端静态资源 | 内部 |
+| Nginx | 反向代理 | 8923 |
+
+### 访问地址
+```
+http://<应用服务器IP>:8923
+```
+
+---
+
+## 三、常见问题
+
+### Q1: 内网 IP 每台机器不同怎么办？
+只需修改对应服务器的 `.env.apps` 文件中的 `INFRA_HOST`，以及 API 配置文件中的地址。
+
+### Q2: 不启用 RabbitMQ？
+当前配置未包含 RabbitMQ。如需使用，请在 `infra/docker-compose.yml` 中添加 RabbitMQ 服务。
+
+### Q3: 基础环境服务器无 GPU？
+vLLM 需要 GPU 支持。选项：
+- 将 vLLM 部署到有 GPU 的基础环境服务器
+- 或使用 CPU 版本（性能较低）
+
+### Q4: 如何查看服务日志？
+```bash
+# 基础环境服务器
+cd infra && docker compose logs -f <服务名>
+
+# 应用服务器
+cd apps && docker compose logs -f <服务名>
+```
+
+### Q5: 如何停止所有服务？
+```bash
+# 基础环境服务器
+cd infra && docker compose down
+
+# 应用服务器
+cd apps && docker compose down
+```
+
+---
+
+## 四、网络说明
+
+- **基础环境网络**：`lm-infra-network`
+- **应用服务网络**：`lm-apps-network`
+
+两个网络位于不同服务器，通过内网 IP 通信。
+
+---
+
+## 五、参考文档
+
+- 单机部署参考：`docs/docker-compose-standalone.yml`
+- 仅基础设施部署：`docs/docker-compose-infra.yml`

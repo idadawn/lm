@@ -1,0 +1,73 @@
+﻿# 应用服务 - Docker Compose 配置
+# 仅包含：API、Web、Nginx（前后端同机）
+
+services:
+  # 后端 API
+  api:
+    image: lm-api
+    container_name: ${CONTAINER_PREFIX:-lm}-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-9530}:9530"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=production
+      - ASPNETCORE_URLS=http://+:9530
+      - DOTNET_PRINT_TELEMETRY_MESSAGE=false
+    volumes:
+      - ${DEPLOY_DIR:-./deploy}/api/logs:/app/logs
+      - ${DEPLOY_DIR:-./deploy}/api/uploads:/app/uploads
+      - ${DEPLOY_DIR:-./deploy}/api/Configurations:/app/Configurations
+    networks:
+      - lm-apps-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9530/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 前端 Web
+  web:
+    image: lm-web
+    container_name: ${CONTAINER_PREFIX:-lm}-web
+    restart: unless-stopped
+    expose:
+      - "80"
+    networks:
+      - lm-apps-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Nginx 反向代理
+  nginx:
+    image: nginx:${NGINX_VERSION:-1.27-alpine}
+    container_name: ${CONTAINER_PREFIX:-lm}-nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-8923}:80"
+    volumes:
+      - ${DEPLOY_DIR:-./deploy}/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${DEPLOY_DIR:-./deploy}/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ${DEPLOY_DIR:-./deploy}/nginx/ssl:/etc/nginx/ssl:ro
+    networks:
+      - lm-apps-network
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  lm-apps-network:
+    name: lm-apps-network
+    driver: bridge

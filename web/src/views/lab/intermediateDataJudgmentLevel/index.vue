@@ -42,55 +42,57 @@
           请先在左侧选择一个判定项目
         </div>
         <a-spin v-else :spinning="loadingLevel">
-          <a-table :columns="columns" :data-source="levelList" :pagination="false" row-key="id"
-            :scroll="{ x: 1200, y: 'calc(100vh - 280px)' }">
-            <template #bodyCell="{ column, record }">
-              <template v-if="column.key === 'conditionCount'">
-                {{ getConditionCount(record.condition) }}
-              </template>
-              <template v-else-if="column.key === 'color'">
-                <div class="flex items-center gap-2" v-if="record.color">
-                  <div class="w-4 h-4 rounded border" :style="{ backgroundColor: record.color }"></div>
-                  <span>{{ record.color }}</span>
-                </div>
-              </template>
-              <template v-else-if="column.key === 'conditionText'">
-                <a-tooltip color="#fff" placement="topLeft" v-if="record.condition">
-                  <template #title>
-                    <ConditionCell :condition="record.condition" />
-                  </template>
-                  <div class="truncate w-full block">
-                    <ConditionCell :condition="record.condition" />
+          <div class="table-container">
+            <a-table :columns="columns" :data-source="levelList" :pagination="false" row-key="id"
+              :scroll="{ x: tableScrollX, y: 'calc(100vh - 300px)' }">
+              <template #bodyCell="{ column, record }">
+                <template v-if="column.key === 'conditionCount'">
+                  {{ getConditionCount(record.condition) }}
+                </template>
+                <template v-else-if="column.key === 'color'">
+                  <div class="flex items-center gap-2" v-if="record.color">
+                    <div class="w-4 h-4 rounded border" :style="{ backgroundColor: record.color }"></div>
+                    <span>{{ record.color }}</span>
                   </div>
-                </a-tooltip>
+                </template>
+                <template v-else-if="column.key === 'conditionText'">
+                  <a-tooltip color="#fff" placement="topLeft" v-if="record.condition">
+                    <template #title>
+                      <ConditionCell :condition="record.condition" />
+                    </template>
+                    <div class="truncate w-full block">
+                      <ConditionCell :condition="record.condition" />
+                    </div>
+                  </a-tooltip>
+                </template>
+                <template v-else-if="column.key === 'isStatistic'">
+                  <a-tag :color="record.isStatistic ? 'green' : 'gray'">
+                    {{ record.isStatistic ? '是' : '否' }}
+                  </a-tag>
+                </template>
+                <template v-else-if="column.key === 'isDefault'">
+                  <a-tag :color="record.isDefault ? 'blue' : 'gray'">
+                    {{ record.isDefault ? '是' : '否' }}
+                  </a-tag>
+                </template>
+                <template v-else-if="column.key === 'action'">
+                  <div v-if="record.isDefault" class="text-gray-400 cursor-not-allowed" title="系统默认生成，不可编辑删除">
+                    系统默认
+                  </div>
+                  <a-space v-else>
+                    <a-button type="link" size="small" @click="handleEditCondition(record)">条件</a-button>
+                    <a-divider type="vertical" />
+                    <a-button type="link" size="small" @click="handleCopy(record)">拷贝</a-button>
+                    <a-divider type="vertical" />
+                    <a-button type="link" size="small" @click="handleEdit(record)">编辑</a-button>
+                    <a-popconfirm title="确认删除？" @confirm="handleDelete(record.id)">
+                      <a-button type="link" size="small" danger>删除</a-button>
+                    </a-popconfirm>
+                  </a-space>
+                </template>
               </template>
-              <template v-else-if="column.key === 'isStatistic'">
-                <a-tag :color="record.isStatistic ? 'green' : 'gray'">
-                  {{ record.isStatistic ? '是' : '否' }}
-                </a-tag>
-              </template>
-              <template v-else-if="column.key === 'isDefault'">
-                <a-tag :color="record.isDefault ? 'blue' : 'gray'">
-                  {{ record.isDefault ? '是' : '否' }}
-                </a-tag>
-              </template>
-              <template v-else-if="column.key === 'action'">
-                <div v-if="record.isDefault" class="text-gray-400 cursor-not-allowed" title="系统默认生成，不可编辑删除">
-                  系统默认
-                </div>
-                <a-space v-else>
-                  <a-button type="link" size="small" @click="handleEditCondition(record)">条件</a-button>
-                  <a-divider type="vertical" />
-                  <a-button type="link" size="small" @click="handleCopy(record)">拷贝</a-button>
-                  <a-divider type="vertical" />
-                  <a-button type="link" size="small" @click="handleEdit(record)">编辑</a-button>
-                  <a-popconfirm title="确认删除？" @confirm="handleDelete(record.id)">
-                    <a-button type="link" size="small" danger>删除</a-button>
-                  </a-popconfirm>
-                </a-space>
-              </template>
-            </template>
-          </a-table>
+            </a-table>
+          </div>
         </a-spin>
       </div>
     </div>
@@ -196,17 +198,25 @@ const getConditionCount = (conditionJson: string) => {
 
 const columns = [
   { title: '等级名称', dataIndex: 'name', width: 120 },
-  { title: '判定条件', key: 'conditionText', width: 200, ellipsis: true },
-  { title: '条件个数', key: 'conditionCount', width: 80 },
+  { title: '条件个数', key: 'conditionCount', width: 100 },
   { title: '质量状态', dataIndex: 'qualityStatus', width: 100 },
-  { title: '颜色', key: 'color', width: 50 },
-  { title: '统计', key: 'isStatistic', width: 50 },
-  { title: '默认', key: 'isDefault', width: 50 },
-  { title: '说明', dataIndex: 'description', width: 150 },
-  { title: '操作', key: 'action', width: 150, fixed: 'right' },
+  { title: '颜色', key: 'color', width: 80 },
+  { title: '统计', key: 'isStatistic', width: 80 },
+  { title: '默认', key: 'isDefault', width: 80 },
+  { title: '判定条件', key: 'conditionText', width: 200, ellipsis: true },
+  // { title: '说明', dataIndex: 'description' },
+  { title: '操作', key: 'action', width: 300, fixed: 'right' },
 ];
 
+// 计算固定宽度列的总宽度（不包括弹性列）
+const fixedColumnsWidth = columns.reduce((total, column) => {
+  const width = Number(column.width) || 0;
+  return total + width;
+}, 0);
 
+// scroll.x 设置为大于列宽总和的值，确保水平滚动条正常显示
+// 非固定列宽度之和不超过 scroll.x
+const tableScrollX = fixedColumnsWidth + 200; // 额外留出弹性空间
 
 // 初始化拖拽
 const initSortable = () => {
@@ -326,4 +336,54 @@ onMounted(() => {
 });
 </script>
 
-<style lang="less" scoped></style>
+<style lang="less" scoped>
+.table-container {
+  width: 100%;
+  height: calc(100vh - 220px);
+  overflow: auto;
+
+  :deep(.ant-table-wrapper) {
+    height: 100%;
+
+    .ant-spin-nested-loading,
+    .ant-spin-container {
+      height: 100%;
+    }
+
+    .ant-table {
+      height: 100%;
+      overflow: visible !important;
+    }
+
+    .ant-table-container {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: visible !important;
+    }
+
+    .ant-table-header {
+      flex-shrink: 0;
+      overflow: visible !important;
+    }
+
+    // 关键：当使用固定列时，需要设置 content 层的水平滚动
+    .ant-table-content {
+      overflow-x: auto !important;
+      overflow-y: hidden !important;
+    }
+
+    .ant-table-body {
+      flex: 1;
+      overflow-x: auto !important;
+      overflow-y: auto !important;
+    }
+
+    // 固定列的阴影效果
+    .ant-table-cell-fix-left-last::after,
+    .ant-table-cell-fix-right-first::after {
+      box-shadow: inset 10px 0 8px -8px rgba(0, 0, 0, 0.1);
+    }
+  }
+}
+</style>

@@ -1,13 +1,13 @@
-#!/bin/bash
+﻿#!/bin/bash
 # ============================================
-# 实验室数据分析系统 - API 构建脚本
-# 优化版本：增量构建 + 并行编译 + 缓存优化
+# 瀹為獙瀹ゆ暟鎹垎鏋愮郴缁?- API 鏋勫缓鑴氭湰
+# 浼樺寲鐗堟湰锛氬閲忔瀯寤?+ 骞惰缂栬瘧 + 缂撳瓨浼樺寲
 # ============================================
 
 set -e
 
 # ============================================
-# 配置区域
+# 閰嶇疆鍖哄煙
 # ============================================
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 API_ENTRY_DIR="${PROJECT_ROOT}/api/src/application/Poxiao.API.Entry"
@@ -15,20 +15,20 @@ PUBLISH_DIR="${PROJECT_ROOT}/publish/api"
 RUNTIME="linux-x64"
 CONFIGURATION="Release"
 
-# 读取版本号
+# 璇诲彇鐗堟湰鍙?
 VERSION_FILE="${PROJECT_ROOT}/VERSION"
 if [ -f "$VERSION_FILE" ]; then
     APP_VERSION=$(cat "$VERSION_FILE" | tr -d '[:space:]')
 else
     APP_VERSION="latest"
-    log_warn "VERSION 文件不存在，使用版本: $APP_VERSION"
+    log_warn "VERSION 鏂囦欢涓嶅瓨鍦紝浣跨敤鐗堟湰: $APP_VERSION"
 fi
 
-# 构建缓存目录
+# 鏋勫缓缂撳瓨鐩綍
 BUILD_CACHE_DIR="${PROJECT_ROOT}/.build-cache"
 NUGET_PACKAGES_DIR="${BUILD_CACHE_DIR}/nuget"
 
-# 颜色输出
+# 棰滆壊杈撳嚭
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -52,18 +52,18 @@ log_step() {
 }
 
 # ============================================
-# 检查并安装 .NET SDK
+# 妫€鏌ュ苟瀹夎 .NET SDK
 # ============================================
 check_and_install_dotnet() {
-    log_step "检查 .NET SDK..."
+    log_step "妫€鏌?.NET SDK..."
 
     if command -v dotnet &> /dev/null; then
         local dotnet_version=$(dotnet --version 2>&1)
-        log_info ".NET SDK 已安装: $dotnet_version"
+        log_info ".NET SDK 宸插畨瑁? $dotnet_version"
         return 0
     fi
 
-    log_warn ".NET SDK 未安装，开始自动安装..."
+    log_warn ".NET SDK 鏈畨瑁咃紝寮€濮嬭嚜鍔ㄥ畨瑁?.."
 
     DOTNET_VERSION="10.0.102"
     DOTNET_INSTALL_DIR="$HOME/dotnet"
@@ -74,14 +74,14 @@ check_and_install_dotnet() {
     mkdir -p "$TEMP_DIR"
     cd "$TEMP_DIR"
 
-    log_info "下载 .NET SDK ${DOTNET_VERSION}..."
+    log_info "涓嬭浇 .NET SDK ${DOTNET_VERSION}..."
     if [ ! -f "$DOTNET_FILE" ]; then
         wget -O "$DOTNET_FILE" "$DOTNET_URL"
     fi
 
     mkdir -p "$DOTNET_INSTALL_DIR"
 
-    log_info "安装 .NET SDK 到 $DOTNET_INSTALL_DIR..."
+    log_info "瀹夎 .NET SDK 鍒?$DOTNET_INSTALL_DIR..."
     tar zxf "$DOTNET_FILE" -C "$DOTNET_INSTALL_DIR"
 
     export DOTNET_ROOT="$DOTNET_INSTALL_DIR"
@@ -92,7 +92,7 @@ check_and_install_dotnet() {
         echo "# .NET SDK" >> ~/.bashrc
         echo "export DOTNET_ROOT=$DOTNET_INSTALL_DIR" >> ~/.bashrc
         echo "export PATH=\$PATH:\$DOTNET_ROOT" >> ~/.bashrc
-        log_info "已将 .NET SDK 添加到 ~/.bashrc"
+        log_info "宸插皢 .NET SDK 娣诲姞鍒?~/.bashrc"
     fi
 
     cd "$PROJECT_ROOT"
@@ -100,64 +100,64 @@ check_and_install_dotnet() {
 
     if command -v dotnet &> /dev/null; then
         local installed_version=$(dotnet --version 2>&1)
-        log_info ".NET SDK 安装成功: $installed_version"
+        log_info ".NET SDK 瀹夎鎴愬姛: $installed_version"
     else
-        log_error ".NET SDK 安装失败"
+        log_error ".NET SDK 瀹夎澶辫触"
         exit 1
     fi
 }
 
 # ============================================
-# 准备构建缓存
+# 鍑嗗鏋勫缓缂撳瓨
 # ============================================
 prepare_build_cache() {
-    log_step "准备构建缓存..."
+    log_step "鍑嗗鏋勫缓缂撳瓨..."
 
     mkdir -p "$BUILD_CACHE_DIR"
     mkdir -p "$NUGET_PACKAGES_DIR"
 
-    # 配置 NuGet 使用本地缓存
+    # 閰嶇疆 NuGet 浣跨敤鏈湴缂撳瓨
     export NUGET_PACKAGES="$NUGET_PACKAGES_DIR"
 
-    log_info "NuGet 缓存目录: $NUGET_PACKAGES_DIR"
+    log_info "NuGet 缂撳瓨鐩綍: $NUGET_PACKAGES_DIR"
 }
 
 # ============================================
-# 检查是否有代码变更
+# 妫€鏌ユ槸鍚︽湁浠ｇ爜鍙樻洿
 # ============================================
 has_code_changes() {
-    # 检查是否有编译输出
+    # 妫€鏌ユ槸鍚︽湁缂栬瘧杈撳嚭
     if [ -d "$PUBLISH_DIR" ] && [ -f "$PUBLISH_DIR/Poxiao.API.Entry.dll" ]; then
-        return 1  # 无变更
+        return 1  # 鏃犲彉鏇?
     fi
-    return 0  # 有变更
+    return 0  # 鏈夊彉鏇?
 }
 
 # ============================================
-# 清理旧发布文件
+# 娓呯悊鏃у彂甯冩枃浠?
 # ============================================
 clean() {
-    log_step "清理旧发布文件..."
+    log_step "娓呯悊鏃у彂甯冩枃浠?.."
     if [ -d "$PUBLISH_DIR" ]; then
         rm -rf "$PUBLISH_DIR"
-        log_info "已清理: $PUBLISH_DIR"
+        log_info "宸叉竻鐞? $PUBLISH_DIR"
     fi
     mkdir -p "$PUBLISH_DIR"
 }
 
 # ============================================
-# 快速发布 API（增量构建）
+# 蹇€熷彂甯?API锛堝閲忔瀯寤猴級
 # ============================================
 publish_fast() {
-    log_step "快速发布 API（增量构建）..."
-    log_info "项目目录: $API_ENTRY_DIR"
-    log_info "输出目录: $PUBLISH_DIR"
-    log_info "运行时: $RUNTIME"
-    log_info "配置: $CONFIGURATION"
+    log_step "蹇€熷彂甯?API锛堝閲忔瀯寤猴級..."
+    log_info "椤圭洰鐩綍: $API_ENTRY_DIR"
+    log_info "杈撳嚭鐩綍: $PUBLISH_DIR"
+    log_info "杩愯鏃? $RUNTIME"
+    log_info "閰嶇疆: $CONFIGURATION"
 
     cd "$API_ENTRY_DIR"
 
-    # 使用优化的构建参数
+    # 浣跨敤浼樺寲鐨勬瀯寤哄弬鏁?
     dotnet publish "Poxiao.API.Entry.csproj" \
         -c "$CONFIGURATION" \
         -r "$RUNTIME" \
@@ -173,18 +173,18 @@ publish_fast() {
         -m:1 \
         -v q || return 1
 
-    log_info "发布完成!"
+    log_info "鍙戝竷瀹屾垚!"
 }
 
 # ============================================
-# 完整发布 API（用于首次构建或重大变更）
+# 瀹屾暣鍙戝竷 API锛堢敤浜庨娆℃瀯寤烘垨閲嶅ぇ鍙樻洿锛?
 # ============================================
 publish_full() {
-    log_step "完整发布 API..."
-    log_info "项目目录: $API_ENTRY_DIR"
-    log_info "输出目录: $PUBLISH_DIR"
-    log_info "运行时: $RUNTIME"
-    log_info "配置: $CONFIGURATION"
+    log_step "瀹屾暣鍙戝竷 API..."
+    log_info "椤圭洰鐩綍: $API_ENTRY_DIR"
+    log_info "杈撳嚭鐩綍: $PUBLISH_DIR"
+    log_info "杩愯鏃? $RUNTIME"
+    log_info "閰嶇疆: $CONFIGURATION"
 
     cd "$API_ENTRY_DIR"
 
@@ -201,81 +201,86 @@ publish_full() {
         -m:1 \
         -v q
 
-    log_info "发布完成!"
+    log_info "鍙戝竷瀹屾垚!"
 }
 
 # ============================================
-# 复制必要文件
+# 澶嶅埗蹇呰鏂囦欢
 # ============================================
 copy_resources() {
-    log_step "复制必要文件..."
+    log_step "Copy resources..."
 
     if [ -d "${PROJECT_ROOT}/api/resources" ]; then
+        rm -rf "$PUBLISH_DIR/resources"
         cp -r "${PROJECT_ROOT}/api/resources" "$PUBLISH_DIR/"
-        log_info "已复制: resources"
+        log_info "Copied: resources"
     else
-        log_warn "resources 目录不存在: ${PROJECT_ROOT}/api/resources"
+        log_warn "resources not found: ${PROJECT_ROOT}/api/resources"
     fi
 
-    if [ ! -d "$PUBLISH_DIR/Configurations" ]; then
+    if [ -d "${API_ENTRY_DIR}/Configurations" ]; then
+        rm -rf "$PUBLISH_DIR/Configurations"
         cp -r "${API_ENTRY_DIR}/Configurations" "$PUBLISH_DIR/"
-        log_info "已复制: Configurations"
+        log_info "Copied: Configurations"
+    else
+        log_warn "Configurations not found: ${API_ENTRY_DIR}/Configurations"
     fi
 
     if [ -d "${API_ENTRY_DIR}/lib" ]; then
+        rm -rf "$PUBLISH_DIR/lib"
         cp -r "${API_ENTRY_DIR}/lib" "$PUBLISH_DIR/"
-        log_info "已复制: lib"
+        log_info "Copied: lib"
     fi
 }
 
 # ============================================
-# 显示发布信息
+# 鏄剧ず鍙戝竷淇℃伅
 # ============================================
 show_info() {
-    log_step "发布信息..."
+    log_step "鍙戝竷淇℃伅..."
     echo ""
-    echo "发布目录: $PUBLISH_DIR"
-    echo "大小: $(du -sh "$PUBLISH_DIR" | cut -f1)"
+    echo "鍙戝竷鐩綍: $PUBLISH_DIR"
+    echo "澶у皬: $(du -sh "$PUBLISH_DIR" | cut -f1)"
     echo ""
 }
 
 # ============================================
-# 清理构建缓存
+# 娓呯悊鏋勫缓缂撳瓨
 # ============================================
 clean_cache() {
-    log_step "清理构建缓存..."
+    log_step "娓呯悊鏋勫缓缂撳瓨..."
     if [ -d "$BUILD_CACHE_DIR" ]; then
         rm -rf "$BUILD_CACHE_DIR"
-        log_info "已清理构建缓存"
+        log_info "宸叉竻鐞嗘瀯寤虹紦瀛?
     fi
 }
 
 # ============================================
-# 显示帮助信息
+# 鏄剧ず甯姪淇℃伅
 # ============================================
 show_help() {
-    echo "用法: $0 [选项]"
+    echo "鐢ㄦ硶: $0 [閫夐」]"
     echo ""
-    echo "选项:"
-    echo "  --fast, -f       快速构建（增量编译，默认）"
-    echo "  --full, -F       完整构建（包括依赖恢复）"
-    echo "  --clean-cache    清理构建缓存"
-    echo "  --help, -h       显示此帮助信息"
+    echo "閫夐」:"
+    echo "  --fast, -f       蹇€熸瀯寤猴紙澧為噺缂栬瘧锛岄粯璁わ級"
+    echo "  --full, -F       瀹屾暣鏋勫缓锛堝寘鎷緷璧栨仮澶嶏級"
+    echo "  --clean-cache    娓呯悊鏋勫缓缂撳瓨"
+    echo "  --help, -h       鏄剧ず姝ゅ府鍔╀俊鎭?
     echo ""
-    echo "示例:"
-    echo "  $0              # 快速构建（推荐）"
-    echo "  $0 --full       # 完整构建"
-    echo "  $0 --clean-cache # 清理缓存"
+    echo "绀轰緥:"
+    echo "  $0              # 蹇€熸瀯寤猴紙鎺ㄨ崘锛?
+    echo "  $0 --full       # 瀹屾暣鏋勫缓"
+    echo "  $0 --clean-cache # 娓呯悊缂撳瓨"
     echo ""
 }
 
 # ============================================
-# 主流程
+# 涓绘祦绋?
 # ============================================
 main() {
-    local BUILD_MODE="fast"  # 默认使用快速构建
+    local BUILD_MODE="fast"  # 榛樿浣跨敤蹇€熸瀯寤?
 
-    # 解析命令行参数
+    # 瑙ｆ瀽鍛戒护琛屽弬鏁?
     while [[ $# -gt 0 ]]; do
         case $1 in
             --fast|-f)
@@ -295,7 +300,7 @@ main() {
                 exit 0
                 ;;
             *)
-                log_error "未知选项: $1"
+                log_error "鏈煡閫夐」: $1"
                 show_help
                 exit 1
                 ;;
@@ -303,7 +308,7 @@ main() {
     done
 
     echo "=========================================="
-    echo "API 构建脚本 (模式: $BUILD_MODE)"
+    echo "API 鏋勫缓鑴氭湰 (妯″紡: $BUILD_MODE)"
     echo "=========================================="
     echo ""
 
@@ -312,7 +317,7 @@ main() {
 
     if [ "$BUILD_MODE" = "fast" ]; then
         if ! publish_fast; then
-            log_warn "快速构建失败（可能是依赖未还原），尝试自动切换到完整构建..."
+            log_warn "蹇€熸瀯寤哄け璐ワ紙鍙兘鏄緷璧栨湭杩樺師锛夛紝灏濊瘯鑷姩鍒囨崲鍒板畬鏁存瀯寤?.."
             publish_full
         fi
     else
@@ -323,8 +328,9 @@ main() {
     show_info
 
     echo "=========================================="
-    log_info "构建完成!"
+    log_info "鏋勫缓瀹屾垚!"
     echo "=========================================="
 }
 
 main "$@"
+

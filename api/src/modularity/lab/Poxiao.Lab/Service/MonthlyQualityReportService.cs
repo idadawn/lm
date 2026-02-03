@@ -21,6 +21,7 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
 {
     private readonly ISqlSugarRepository<IntermediateDataEntity> _intermediateDataRepository;
     private readonly ISqlSugarRepository<IntermediateDataJudgmentLevelEntity> _judgmentLevelRepository;
+    private Dictionary<int, int> _exportColumnWidths;
 
     public MonthlyQualityReportService(
         ISqlSugarRepository<IntermediateDataEntity> intermediateDataRepository,
@@ -615,6 +616,9 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         var unqualifiedLevels = statisticLevels.Where(l => l.QualityStatus == QualityStatusEnum.Unqualified)
             .OrderBy(l => l.Priority).ToList();
 
+        // 初始化列宽追踪器
+        _exportColumnWidths = new Dictionary<int, int>();
+
         var details = await GetDetailsAsync(query);
         var shiftGroups = await GetShiftGroupsAsync(query);
 
@@ -719,15 +723,16 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         sheet.CreateRow(rowIndex++);
 
         // ===== 班组统计 =====
+        int shiftOffset = 2;
         var shiftSectionRow = sheet.CreateRow(rowIndex++);
-        var shiftSectionCell = shiftSectionRow.CreateCell(0);
+        var shiftSectionCell = shiftSectionRow.CreateCell(shiftOffset); // Title starts at offset
         shiftSectionCell.SetCellValue("班组统计");
         shiftSectionCell.CellStyle = titleStyle;
-        sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(rowIndex - 1, rowIndex - 1, 0, qualifiedLevels.Count * 2 + 4));
+        sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(rowIndex - 1, rowIndex - 1, shiftOffset, shiftOffset + qualifiedLevels.Count * 2 + 4));
 
         // 班组列头
         var shiftHeaderRow = sheet.CreateRow(rowIndex++);
-        colIndex = 0;
+        colIndex = shiftOffset; // Header starts at offset
         CreateHeaderCell(shiftHeaderRow, colIndex++, "班次", headerStyle);
         CreateHeaderCell(shiftHeaderRow, colIndex++, "产品规格", headerStyle);
         CreateHeaderCell(shiftHeaderRow, colIndex++, "检验总重", headerStyle);
@@ -745,7 +750,7 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         foreach (var shift in shiftGroups)
         {
             var dataRow = sheet.CreateRow(rowIndex++);
-            colIndex = 0;
+            colIndex = shiftOffset; // Data starts at offset
             CreateCell(dataRow, colIndex++, shift.Shift ?? "", dataStyle);
             CreateCell(dataRow, colIndex++, shift.ProductSpecCode ?? "", dataStyle);
             CreateCell(dataRow, colIndex++, shift.DetectionWeight, dataStyle);
@@ -770,19 +775,17 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
             }
         }
 
-        // 设置列宽 (自适应)
-        for (int i = 0; i < GetColumnCount(qualifiedLevels, unqualifiedLevels); i++)
+        // 设置列宽 (手动计算)
+        foreach (var kvp in _exportColumnWidths)
         {
-            sheet.AutoSizeColumn(i);
-            // 获取当前宽度 (NPOI单位 1/256字符宽度)
-            int width = (int)sheet.GetColumnWidth(i);
-            // 增加 20% 缓冲
-            int newWidth = (int)(width * 1.2);
-            // 限制最大宽度 (例如 50 个字符)
-            int maxWidth = 50 * 256;
-            if (newWidth > maxWidth) newWidth = maxWidth;
+            // 基准宽度: (中文字符数 * 2 + 英文字符数) * 256
+            // 增加缓冲: +2 字符
+            int width = (kvp.Value + 2) * 256;
+            // 限制最大宽度 (例如 60 个字符)
+            int maxWidth = 60 * 256;
+            if (width > maxWidth) width = maxWidth;
             
-            sheet.SetColumnWidth(i, newWidth);
+            sheet.SetColumnWidth(kvp.Key, width);
         }
 
         workbook.Write(memoryStream);
@@ -870,6 +873,8 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         var cell = row.CreateCell(colIndex);
         cell.SetCellValue(value);
         cell.CellStyle = style;
+
+        TrackColumnWidth(colIndex, value);
     }
 
     private void CreateCell(IRow row, int colIndex, string value, ICellStyle style)
@@ -877,6 +882,8 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         var cell = row.CreateCell(colIndex);
         cell.SetCellValue(value);
         cell.CellStyle = style;
+
+        TrackColumnWidth(colIndex, value);
     }
 
     private void CreateCell(IRow row, int colIndex, decimal value, ICellStyle style)
@@ -884,5 +891,31 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         var cell = row.CreateCell(colIndex);
         cell.SetCellValue((double)value);
         cell.CellStyle = style;
+
+        TrackColumnWidth(colIndex, value.ToString());
+    }
+
+    private void TrackColumnWidth(int colIndex, string value)
+    {
+        if (_exportColumnWidths != null)
+        {
+            int len = GetTextWidth(value);
+            if (!_exportColumnWidths.ContainsKey(colIndex) || len > _exportColumnWidths[colIndex])
+            {
+                _exportColumnWidths[colIndex] = len;
+            }
+        }
+    }
+
+    private int GetTextWidth(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return 0;
+        int width = 0;
+        foreach (var c in text)
+        {
+            // 中文/全角字符宽度为2，其他为1
+            width += c > 255 ? 2 : 1;
+        }
+        return width;
     }
 }

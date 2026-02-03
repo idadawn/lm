@@ -4,7 +4,6 @@ node_modules/
 
 # Build outputs
 dist/
-build/
 obj/
 bin/
 publish/
@@ -108,7 +107,6 @@ yarn.lock
 
 # Gatsby files
 .cache/
-public
 
 # Storybook build outputs
 .out

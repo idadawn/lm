@@ -29,12 +29,13 @@
         <div class="report-content">
             <!-- 左侧明细表格 -->
             <div class="content-left">
-                <DetailTable :data="detailData" :loading="loading" :unqualified-columns="unqualifiedColumns" />
+                <DetailTable :data="detailData" :loading="loading" :qualified-columns="qualifiedColumns"
+                    :unqualified-columns="unqualifiedColumns" />
             </div>
 
             <!-- 右侧班组统计和图表 -->
             <div class="content-right">
-                <ShiftGroupPanel :data="shiftGroupData" :loading="loading" />
+                <ShiftGroupPanel :data="shiftGroupData" :loading="loading" :qualified-columns="qualifiedColumns" />
 
                 <div class="charts-section">
                     <QualityTrendChart :data="qualityTrendData" :loading="loading" />
@@ -53,6 +54,8 @@ import { Icon } from '/@/components/Icon';
 import { useMessage } from '/@/hooks/web/useMessage';
 import {
     getMonthlyReport,
+    getMonthlyReportColumns,
+    exportMonthlyReport,
     type MonthlyReportQueryParams,
     type MonthlyReportResponse,
     type SummaryData,
@@ -92,11 +95,10 @@ const filterProductSpecCode = ref<string>('');
 const summaryData = ref<SummaryData>({
     totalWeight: 0,
     qualifiedRate: 0,
-    classAWeight: 0,
-    classARate: 0,
-    classBWeight: 0,
-    classBRate: 0,
+    qualifiedCategories: {},
+    qualifiedWeight: 0,
     unqualifiedWeight: 0,
+    unqualifiedCategories: {},
     unqualifiedRate: 0,
 });
 const detailData = ref<DetailRow[]>([]);
@@ -104,6 +106,7 @@ const shiftGroupData = ref<ShiftGroupRow[]>([]);
 const qualityTrendData = ref<QualityTrend[]>([]);
 const unqualifiedCategoryData = ref<UnqualifiedCategory[]>([]);
 const shiftComparisonData = ref<ShiftComparison[]>([]);
+const qualifiedColumns = ref<JudgmentLevelColumn[]>([]);
 const unqualifiedColumns = ref<JudgmentLevelColumn[]>([]);
 
 // 当前日期范围显示
@@ -111,6 +114,25 @@ const currentDateRange = computed(() => {
     const [start, end] = dateRange.value;
     return `${start.format('YYYY年MM月DD日')} - ${end.format('YYYY年MM月DD日')}`;
 });
+
+// 加载列定义
+async function loadColumns() {
+    try {
+        const response = await getMonthlyReportColumns();
+        // 响应可能被包装在 data 字段中
+        const data = response?.data || response;
+        console.log('列定义响应:', response);
+        console.log('data:', data);
+        console.log('data.qualifiedColumns:', data?.qualifiedColumns);
+        console.log('data.unqualifiedColumns:', data?.unqualifiedColumns);
+        qualifiedColumns.value = data?.qualifiedColumns || [];
+        unqualifiedColumns.value = data?.unqualifiedColumns || [];
+    } catch (error) {
+        console.error('加载列定义失败:', error);
+        qualifiedColumns.value = [];
+        unqualifiedColumns.value = [];
+    }
+}
 
 // 加载数据
 async function loadData() {
@@ -124,24 +146,24 @@ async function loadData() {
             productSpecCode: filterProductSpecCode.value || undefined,
         };
 
-        const response: MonthlyReportResponse = await getMonthlyReport(params);
+        const response: any = await getMonthlyReport(params);
+        // 响应可能被包装在 data 字段中
+        const data = response?.data || response;
 
-        summaryData.value = response.summary || {
+        summaryData.value = data?.summary || {
             totalWeight: 0,
             qualifiedRate: 0,
-            classAWeight: 0,
-            classARate: 0,
-            classBWeight: 0,
-            classBRate: 0,
+            qualifiedCategories: {},
+            qualifiedWeight: 0,
             unqualifiedWeight: 0,
+            unqualifiedCategories: {},
             unqualifiedRate: 0,
         };
-        detailData.value = response.details || [];
-        shiftGroupData.value = response.shiftGroups || [];
-        qualityTrendData.value = response.qualityTrends || [];
-        unqualifiedCategoryData.value = response.unqualifiedCategories || [];
-        shiftComparisonData.value = response.shiftComparisons || [];
-        unqualifiedColumns.value = response.unqualifiedColumns || [];
+        detailData.value = data?.details || [];
+        shiftGroupData.value = data?.shiftGroups || [];
+        qualityTrendData.value = data?.qualityTrends || [];
+        unqualifiedCategoryData.value = data?.unqualifiedCategoryStats || [];
+        shiftComparisonData.value = data?.shiftComparisons || [];
     } catch (error) {
         console.error('加载报表数据失败:', error);
         createMessage.error('加载报表数据失败');
@@ -170,11 +192,27 @@ function handleReset() {
 }
 
 // 导出
-function handleExport() {
-    createMessage.info('导出功能开发中...');
+async function handleExport() {
+    try {
+        const params: MonthlyReportQueryParams = {
+            startDate: dateRange.value[0].format('YYYY-MM-DD'),
+            endDate: dateRange.value[1].format('YYYY-MM-DD'),
+            shift: filterShift.value || undefined,
+            shiftNo: filterShiftNo.value || undefined,
+            productSpecCode: filterProductSpecCode.value || undefined,
+        };
+
+        await exportMonthlyReport(params);
+        createMessage.success('导出成功');
+    } catch (error) {
+        console.error('导出失败:', error);
+        createMessage.error('导出失败');
+    }
 }
 
-onMounted(() => {
+onMounted(async () => {
+    // 先加载列定义，然后加载数据
+    await loadColumns();
     loadData();
 });
 </script>

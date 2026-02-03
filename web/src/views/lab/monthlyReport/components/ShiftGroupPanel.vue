@@ -7,24 +7,21 @@
             </h3>
         </div>
 
-        <a-table :columns="columns" :data-source="data" :loading="loading" :pagination="false" :scroll="{ y: 300 }"
-            size="small" bordered :row-class-name="getRowClassName">
+        <a-table :columns="columns" :data-source="data" :loading="loading" :pagination="false"
+            :scroll="{ y: 'calc(100vh - 320px)' }" size="small" bordered :row-class-name="getRowClassName">
             <template #bodyCell="{ column, text, record }">
                 <template v-if="column.dataIndex === 'shift'">
-                    <span v-if="record.isSummaryRow && record.summaryType === 'MonthlyTotal'"
-                        class="monthly-total-label">
-                        {{ text }}
-                    </span>
-                    <span v-else-if="record.isSummaryRow" class="shift-subtotal-label">
-                        {{ text }}班小计
-                    </span>
-                    <a-tag v-else :color="getShiftColor(text)">{{ text }}班</a-tag>
+                    <span v-if="record.isSummaryRow" class="summary-label">合计</span>
+                    <a-tag v-else :color="getShiftColor(text)">{{ text }}</a-tag>
                 </template>
                 <template v-else-if="column.dataIndex === 'qualifiedRate'">
                     <span :class="getQualifiedRateClass(text)">{{ text }}%</span>
                 </template>
-                <template v-else-if="isRateColumn(column.dataIndex)">
-                    {{ text }}%
+                <template v-else-if="column.key?.startsWith('weight_')">
+                    <span>{{ getLevelWeight(record, column.key) }}</span>
+                </template>
+                <template v-else-if="column.key?.startsWith('rate_')">
+                    <span>{{ getLevelRate(record, column.key) }}%</span>
                 </template>
                 <template v-else-if="isWeightColumn(column.dataIndex)">
                     {{ typeof text === 'number' ? text.toFixed(1) : text }}
@@ -35,69 +32,109 @@
 </template>
 
 <script lang="ts" setup>
+import { computed } from 'vue';
 import { Icon } from '/@/components/Icon';
-import type { ShiftGroupRow } from '/@/api/lab/monthlyQualityReport';
+import type { ShiftGroupRow, JudgmentLevelColumn } from '/@/api/lab/monthlyQualityReport';
 
 interface Props {
     data: ShiftGroupRow[];
     loading?: boolean;
+    qualifiedColumns?: JudgmentLevelColumn[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
     loading: false,
     data: () => [],
+    qualifiedColumns: () => [],
 });
 
-const columns = [
-    {
-        title: '班次',
-        dataIndex: 'shift',
-        key: 'shift',
-        width: 90,
-    },
-    {
-        title: '带宽',
-        dataIndex: 'productSpecCode',
-        key: 'productSpecCode',
-        width: 60,
-    },
-    {
-        title: '检测量',
-        dataIndex: 'detectionWeight',
-        key: 'detectionWeight',
-        width: 80,
-        align: 'right',
-    },
-    {
-        title: 'A',
-        dataIndex: 'classAWeight',
-        key: 'classAWeight',
-        width: 70,
-        align: 'right',
-    },
-    {
-        title: 'A%',
-        dataIndex: 'classARate',
-        key: 'classARate',
-        width: 50,
-        align: 'right',
-    },
-    {
+const columns = computed(() => {
+    // 固定列
+    const fixedCols: any[] = [
+        {
+            title: '班次',
+            dataIndex: 'shift',
+            key: 'shift',
+            width: 80,
+            fixed: 'left',
+        },
+        {
+            title: '带宽',
+            dataIndex: 'productSpecCode',
+            key: 'productSpecCode',
+            width: 60,
+            fixed: 'left',
+        },
+    ];
+
+    // 检测明细（kg）分组
+    const detailChildren: any[] = [
+        {
+            title: '检测量',
+            dataIndex: 'detectionWeight',
+            key: 'detectionWeight',
+            width: 80,
+            align: 'right',
+        },
+    ];
+
+    // 按优先级排序的合格等级
+    const sortedLevels = [...(props.qualifiedColumns || [])]
+        .sort((a, b) => (a.priority || 0) - (b.priority || 0));
+
+    // 添加合格等级列（重量 + 占比）
+    sortedLevels.forEach((level) => {
+        detailChildren.push({
+            title: level.name,
+            key: `weight_${level.name}`,
+            width: 70,
+            align: 'right',
+        });
+        detailChildren.push({
+            title: `${level.name}%`,
+            key: `rate_${level.name}`,
+            width: 50,
+            align: 'right',
+        });
+    });
+
+    // 合格率
+    detailChildren.push({
         title: '合格率',
         dataIndex: 'qualifiedRate',
         key: 'qualifiedRate',
         width: 65,
         align: 'right',
-    },
-];
+    });
+
+    // 返回分组列结构
+    return [
+        ...fixedCols,
+        {
+            title: '检测明细',
+            children: detailChildren,
+        },
+    ];
+});
+
+// 获取等级重量
+function getLevelWeight(record: ShiftGroupRow, key: string) {
+    const levelName = key.replace('weight_', '');
+    const stat = record.qualifiedCategories?.[levelName];
+    return stat?.weight?.toFixed(1) ?? '0.0';
+}
+
+// 获取等级占比
+function getLevelRate(record: ShiftGroupRow, key: string) {
+    const levelName = key.replace('rate_', '');
+    const stat = record.qualifiedCategories?.[levelName];
+    return stat?.rate?.toFixed(0) ?? '0';
+}
 
 // 获取行样式类名
 function getRowClassName(record: ShiftGroupRow) {
     if (record.isSummaryRow) {
-        if (record.summaryType === 'MonthlyTotal') {
-            return 'monthly-total-row';
-        }
-        return 'subtotal-row';
+        return 'monthly-total-row';
     }
     return '';
 }
@@ -118,11 +155,6 @@ function getQualifiedRateClass(rate: number) {
     if (rate >= 90) return 'rate-good';
     if (rate >= 80) return 'rate-warning';
     return 'rate-danger';
-}
-
-// 判断是否为比率列
-function isRateColumn(dataIndex: string) {
-    return dataIndex?.includes('Rate');
 }
 
 // 判断是否为重量列
@@ -156,16 +188,12 @@ function isWeightColumn(dataIndex: string) {
     margin: 0;
 }
 
-// 汇总行样式
-:deep(.subtotal-row) {
-    background: #fafafa !important;
-    font-weight: 500;
-
-    td {
-        background: #fafafa !important;
-    }
+.summary-label {
+    font-weight: 600;
+    color: #1890ff;
 }
 
+// 汇总行样式
 :deep(.monthly-total-row) {
     background: linear-gradient(135deg, #f0f5ff 0%, #e6f7ff 100%) !important;
     font-weight: 600;
@@ -173,17 +201,6 @@ function isWeightColumn(dataIndex: string) {
     td {
         background: transparent !important;
     }
-}
-
-.shift-subtotal-label {
-    font-weight: 600;
-    color: #595959;
-}
-
-.monthly-total-label {
-    font-weight: 700;
-    color: #1890ff;
-    font-size: 13px;
 }
 
 // 合格率样式

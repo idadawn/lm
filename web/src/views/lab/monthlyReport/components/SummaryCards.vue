@@ -1,5 +1,5 @@
 <template>
-    <div class="summary-cards">
+    <div class="summary-cards" :style="{ gridTemplateColumns: `repeat(${Math.min(cards.length, 5)}, 1fr)` }">
         <div v-for="card in cards" :key="card.key" class="summary-card" :class="card.colorClass">
             <div class="card-icon">
                 <Icon :icon="card.icon" :size="28" />
@@ -38,47 +38,65 @@ const props = withDefaults(defineProps<Props>(), {
     loading: false,
 });
 
+function getCategoryStat(name: string) {
+    return props.data?.qualifiedCategories?.[name] || { weight: 0, rate: 0 };
+}
+
+// 颜色主题映射（循环使用）
+const colorClasses = ['blue', 'cyan', 'purple', 'green'];
+const icons = [
+    'ant-design:star-outlined',
+    'ant-design:like-outlined',
+    'ant-design:trophy-outlined',
+    'ant-design:rocket-outlined'
+];
+
 // 卡片配置
-const cards = computed(() => [
-    {
-        key: 'total',
-        label: '检验总重',
-        value: props.data?.totalWeight ?? 0,
-        unit: 'kg',
-        decimals: 1,
-        icon: 'ant-design:experiment-outlined',
-        colorClass: 'purple',
-    },
-    {
-        key: 'qualified',
-        label: '合格率',
-        value: props.data?.qualifiedRate ?? 0,
-        unit: '%',
-        decimals: 2,
-        icon: 'ant-design:check-circle-outlined',
-        colorClass: 'green',
-    },
-    {
-        key: 'classA',
-        label: 'A类总计',
-        value: props.data?.classAWeight ?? 0,
-        unit: 'kg',
-        decimals: 1,
-        subValue: props.data?.classARate ?? 0,
-        icon: 'ant-design:star-outlined',
-        colorClass: 'blue',
-    },
-    {
-        key: 'classB',
-        label: 'B类总计',
-        value: props.data?.classBWeight ?? 0,
-        unit: 'kg',
-        decimals: 1,
-        subValue: props.data?.classBRate ?? 0,
-        icon: 'ant-design:like-outlined',
-        colorClass: 'cyan',
-    },
-    {
+const cards = computed(() => {
+    const baseCards = [
+        {
+            key: 'total',
+            label: '检验总重',
+            value: props.data?.totalWeight ?? 0,
+            unit: 'kg',
+            decimals: 1,
+            icon: 'ant-design:experiment-outlined',
+            colorClass: 'purple',
+        },
+        {
+            key: 'qualified',
+            label: '合格率',
+            value: props.data?.qualifiedRate ?? 0,
+            unit: '%',
+            decimals: 2,
+            icon: 'ant-design:check-circle-outlined',
+            colorClass: 'green',
+        },
+    ];
+
+    // 动态添加合格等级卡片
+    const qualifiedCategories = props.data?.qualifiedCategories || {};
+    const categoryKeys = Object.keys(qualifiedCategories);
+
+    // 按字母排序保证顺序一致
+    categoryKeys.sort();
+
+    categoryKeys.forEach((key, index) => {
+        const stat = getCategoryStat(key);
+        baseCards.push({
+            key: `category-${key}`,
+            label: `${key}类总计`,
+            value: stat.weight,
+            unit: 'kg',
+            decimals: 1,
+            subValue: stat.rate,
+            icon: icons[index % icons.length],
+            colorClass: colorClasses[index % colorClasses.length],
+        });
+    });
+
+    // 不合格总计
+    baseCards.push({
         key: 'unqualified',
         label: '不合格总计',
         value: props.data?.unqualifiedWeight ?? 0,
@@ -87,8 +105,10 @@ const cards = computed(() => [
         subValue: props.data?.unqualifiedRate ?? 0,
         icon: 'ant-design:warning-outlined',
         colorClass: 'orange',
-    },
-]);
+    });
+
+    return baseCards;
+});
 </script>
 
 <style lang="less" scoped>

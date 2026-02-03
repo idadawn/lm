@@ -1,11 +1,12 @@
 <template>
     <div class="filter-panel">
         <div class="filter-content">
-            <!-- 时间范围 -->
+            <!-- 生产日期 -->
             <div class="filter-item">
-                <span class="filter-label">时间范围</span>
-                <a-range-picker v-model:value="dateRangeValue" :presets="rangePresets" format="YYYY-MM-DD"
-                    value-format="YYYY-MM-DD" :allow-clear="false" style="width: 280px" @change="handleDateChange" />
+                <span class="filter-label">生产日期</span>
+                <a-range-picker v-model:value="dateRangeValue" format="YYYY-MM-DD"
+                    :placeholder="['开始日期', '结束日期']" :allow-clear="false" style="width: 280px"
+                    @change="handleDateChange" />
             </div>
 
             <!-- 班次 -->
@@ -13,9 +14,9 @@
                 <span class="filter-label">班次</span>
                 <a-select v-model:value="shiftValue" placeholder="全部班次" allow-clear style="width: 120px"
                     @change="handleShiftChange">
-                    <a-select-option value="甲">甲班</a-select-option>
-                    <a-select-option value="乙">乙班</a-select-option>
-                    <a-select-option value="丙">丙班</a-select-option>
+                    <a-select-option value="甲">甲</a-select-option>
+                    <a-select-option value="乙">乙</a-select-option>
+                    <a-select-option value="丙">丙</a-select-option>
                 </a-select>
             </div>
 
@@ -31,10 +32,8 @@
                 <span class="filter-label">带宽</span>
                 <a-select v-model:value="productSpecCodeValue" placeholder="全部规格" allow-clear style="width: 140px"
                     @change="handleProductSpecChange">
-                    <a-select-option value="120">120mm</a-select-option>
-                    <a-select-option value="142">142mm</a-select-option>
-                    <a-select-option value="170">170mm</a-select-option>
-                    <a-select-option value="213">213mm</a-select-option>
+                    <a-select-option v-for="spec in productSpecOptions" :key="spec.id"
+                        :value="spec.code || spec.name">{{ spec.name }}</a-select-option>
                 </a-select>
             </div>
 
@@ -54,9 +53,10 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import dayjs, { Dayjs } from 'dayjs';
 import { Icon } from '/@/components/Icon';
+import { getProductSpecOptions } from '/@/api/lab/intermediateData';
 
 type RangeValue = [Dayjs, Dayjs];
 
@@ -78,31 +78,47 @@ const emit = defineEmits<{
     'reset': [];
 }>();
 
-// 本地值
-const dateRangeValue = ref<RangeValue>(props.dateRange);
-const shiftValue = ref<string>(props.shift);
-const shiftNoValue = ref<string>(props.shiftNo);
-const productSpecCodeValue = ref<string>(props.productSpecCode);
+// 本地值 - 简化初始化
+const dateRangeValue = ref<RangeValue>([dayjs().startOf('month'), dayjs().endOf('month')]);
+const shiftValue = ref<string>('');
+const shiftNoValue = ref<string>('');
+const productSpecCodeValue = ref<string>('');
+const productSpecOptions = ref<any[]>([]);
 
-// 预设时间范围
-const rangePresets = ref([
-    { label: '本月', value: [dayjs().startOf('month'), dayjs().endOf('month')] },
-    { label: '上月', value: [dayjs().subtract(1, 'month').startOf('month'), dayjs().subtract(1, 'month').endOf('month')] },
-    { label: '本周', value: [dayjs().startOf('week'), dayjs().endOf('week')] },
-    { label: '上周', value: [dayjs().subtract(1, 'week').startOf('week'), dayjs().subtract(1, 'week').endOf('week')] },
-    { label: '本年', value: [dayjs().startOf('year'), dayjs().endOf('year')] },
-    { label: '去年', value: [dayjs().subtract(1, 'year').startOf('year'), dayjs().subtract(1, 'year').endOf('year')] },
-]);
+// 初始化
+onMounted(async () => {
+    // 从 props 初始化
+    if (props.dateRange && props.dateRange.length === 2) {
+        dateRangeValue.value = [dayjs(props.dateRange[0]), dayjs(props.dateRange[1])];
+    }
+    shiftValue.value = props.shift || '';
+    shiftNoValue.value = props.shiftNo || '';
+    productSpecCodeValue.value = props.productSpecCode || '';
+
+    // 加载产品规格选项
+    try {
+        const res = await getProductSpecOptions();
+        productSpecOptions.value = res.data || res || [];
+    } catch (e) {
+        console.error(e);
+    }
+});
 
 // 监听外部值变化
-watch(() => props.dateRange, (val) => { dateRangeValue.value = val; });
-watch(() => props.shift, (val) => { shiftValue.value = val; });
-watch(() => props.shiftNo, (val) => { shiftNoValue.value = val; });
-watch(() => props.productSpecCode, (val) => { productSpecCodeValue.value = val; });
+watch(() => props.dateRange, (val) => {
+    if (val && val.length === 2 && val[0] && val[1]) {
+        dateRangeValue.value = [dayjs(val[0]), dayjs(val[1])];
+    }
+});
+watch(() => props.shift, (val) => { shiftValue.value = val || ''; });
+watch(() => props.shiftNo, (val) => { shiftNoValue.value = val || ''; });
+watch(() => props.productSpecCode, (val) => { productSpecCodeValue.value = val || ''; });
 
 // 事件处理
-function handleDateChange(dates: RangeValue) {
-    emit('update:dateRange', dates);
+function handleDateChange(dates: any) {
+    if (dates && dates.length === 2) {
+        emit('update:dateRange', dates);
+    }
 }
 
 function handleShiftChange(value: string) {
@@ -122,7 +138,8 @@ function handleSearch() {
 }
 
 function handleReset() {
-    dateRangeValue.value = [dayjs().startOf('month'), dayjs().endOf('month')];
+    const newRange: RangeValue = [dayjs().startOf('month'), dayjs().endOf('month')];
+    dateRangeValue.value = newRange;
     shiftValue.value = '';
     shiftNoValue.value = '';
     productSpecCodeValue.value = '';
@@ -180,5 +197,24 @@ function handleReset() {
 
 :deep(.ant-select-selector) {
     height: 32px !important;
+}
+
+// 确保日期选择器可见性 - 覆盖全局样式
+:deep(.ant-picker) {
+    border: 1px solid #d9d9d9 !important;
+    border-radius: 6px !important;
+    transition: all 0.3s;
+
+    &:hover,
+    &:focus,
+    &-focused {
+        border-color: #1890ff !important;
+        box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
+    }
+}
+
+// 确保下拉弹出层可见
+:deep(.ant-picker-dropdown) {
+    z-index: 1050 !important;
 }
 </style>

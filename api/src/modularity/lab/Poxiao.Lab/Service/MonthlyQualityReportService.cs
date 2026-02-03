@@ -1,4 +1,7 @@
+using MiniExcelLibs;
 using Microsoft.AspNetCore.Mvc;
+using NPOI.SS.UserModel;
+using NPOI.XSSF.UserModel;
 using Poxiao.DatabaseAccessor;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
@@ -10,7 +13,7 @@ using SqlSugar;
 namespace Poxiao.Lab.Service;
 
 /// <summary>
-/// 月度质量报表服务实现.
+/// 月度质量报表服务实现
 /// </summary>
 [ApiDescriptionSettings(Tag = "Lab", Name = "monthly-quality-report", Order = 220)]
 [Route("api/lab/monthly-quality-report")]
@@ -31,8 +34,10 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
     [HttpGet("")]
     public async Task<MonthlyQualityReportResponseDto> GetReportAsync([FromQuery] MonthlyQualityReportQueryDto query)
     {
-        // 获取需要统计的不合格分类列
-        var unqualifiedColumns = await GetUnqualifiedColumnsAsync();
+        // 获取需要统计的等级列
+        var statisticLevels = await GetStatisticLevelsAsync();
+        var qualifiedLevels = statisticLevels.Where(l => l.QualityStatus == QualityStatusEnum.Qualified).ToList();
+        var unqualifiedLevels = statisticLevels.Where(l => l.QualityStatus == QualityStatusEnum.Unqualified).ToList();
 
         var response = new MonthlyQualityReportResponseDto
         {
@@ -40,9 +45,26 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
             Details = await GetDetailsAsync(query),
             ShiftGroups = await GetShiftGroupsAsync(query),
             QualityTrends = await GetQualityTrendAsync(query),
-            UnqualifiedCategories = await GetUnqualifiedCategoriesAsync(query),
+            UnqualifiedCategoryStats = await GetUnqualifiedCategoriesAsync(query),
             ShiftComparisons = await GetShiftComparisonAsync(query),
-            UnqualifiedColumns = unqualifiedColumns
+            QualifiedColumns = qualifiedLevels.Select(l => new JudgmentLevelColumnDto
+            {
+                Id = l.Id,
+                Code = l.Code,
+                Name = l.Name,
+                QualityStatus = l.QualityStatus,
+                Color = l.Color,
+                Priority = l.Priority
+            }).ToList(),
+            UnqualifiedColumns = unqualifiedLevels.Select(l => new JudgmentLevelColumnDto
+            {
+                Id = l.Id,
+                Code = l.Code,
+                Name = l.Name,
+                QualityStatus = l.QualityStatus,
+                Color = l.Color,
+                Priority = l.Priority
+            }).ToList()
         };
 
         return response;
@@ -53,32 +75,47 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
     public async Task<MonthlyQualityReportSummaryDto> GetSummaryAsync([FromQuery] MonthlyQualityReportQueryDto query)
     {
         var baseQuery = BuildBaseQuery(query);
-        
-        // 获取判定等级映射
-        var levelMap = await GetJudgmentLevelMapAsync();
+        // var levelMap = await GetJudgmentLevelMapAsync(); // Unused variable
+        var statisticLevels = await GetStatisticLevelsAsync();
+        var qualifiedLevels = statisticLevels.Where(l => l.QualityStatus == QualityStatusEnum.Qualified).ToList();
+        var unqualifiedLevels = statisticLevels.Where(l => l.QualityStatus == QualityStatusEnum.Unqualified).ToList();
 
         var data = await baseQuery.ToListAsync();
-
-        // 汇总计算
         var totalWeight = data.Sum(d => d.SingleCoilWeight ?? 0);
-        
-        // 按Labeling分组计算各类别重量
-        var classAWeight = data.Where(d => IsClassA(d.Labeling, levelMap))
-                               .Sum(d => d.SingleCoilWeight ?? 0);
-        var classBWeight = data.Where(d => IsClassB(d.Labeling, levelMap))
-                               .Sum(d => d.SingleCoilWeight ?? 0);
-        var unqualifiedWeight = data.Where(d => IsUnqualified(d.Labeling, levelMap))
-                                     .Sum(d => d.SingleCoilWeight ?? 0);
-        var qualifiedWeight = classAWeight + classBWeight;
+
+        // 合格分类统计
+        var qualifiedCategories = new Dictionary<string, LevelStatDto>();
+        decimal qualifiedWeight = 0;
+
+        foreach (var level in qualifiedLevels)
+        {
+            var weight = data.Where(d => d.Labeling == level.Name).Sum(d => d.SingleCoilWeight ?? 0);
+            qualifiedWeight += weight;
+            qualifiedCategories[level.Name] = new LevelStatDto
+            {
+                Weight = weight,
+                Rate = totalWeight > 0 ? Math.Round(weight / totalWeight * 100, 2) : 0
+            };
+        }
+
+        // 不合格分类统计
+        var unqualifiedCategories = new Dictionary<string, decimal>();
+        decimal unqualifiedWeight = 0;
+
+        foreach (var level in unqualifiedLevels)
+        {
+            var weight = data.Where(d => d.Labeling == level.Name).Sum(d => d.SingleCoilWeight ?? 0);
+            unqualifiedWeight += weight;
+            unqualifiedCategories[level.Name] = weight;
+        }
 
         return new MonthlyQualityReportSummaryDto
         {
             TotalWeight = totalWeight,
+            QualifiedCategories = qualifiedCategories,
+            QualifiedWeight = qualifiedWeight,
             QualifiedRate = totalWeight > 0 ? Math.Round(qualifiedWeight / totalWeight * 100, 2) : 0,
-            ClassAWeight = classAWeight,
-            ClassARate = totalWeight > 0 ? Math.Round(classAWeight / totalWeight * 100, 2) : 0,
-            ClassBWeight = classBWeight,
-            ClassBRate = totalWeight > 0 ? Math.Round(classBWeight / totalWeight * 100, 2) : 0,
+            UnqualifiedCategories = unqualifiedCategories,
             UnqualifiedWeight = unqualifiedWeight,
             UnqualifiedRate = totalWeight > 0 ? Math.Round(unqualifiedWeight / totalWeight * 100, 2) : 0
         };
@@ -89,43 +126,61 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
     public async Task<List<MonthlyQualityReportDetailDto>> GetDetailsAsync([FromQuery] MonthlyQualityReportQueryDto query)
     {
         var baseQuery = BuildBaseQuery(query);
-        var levelMap = await GetJudgmentLevelMapAsync();
-        var unqualifiedLevels = await GetUnqualifiedLevelsAsync();
+        // var levelMap = await GetJudgmentLevelMapAsync(); // Unused
+        var statisticLevels = await GetStatisticLevelsAsync();
+        var qualifiedLevels = statisticLevels.Where(l => l.QualityStatus == QualityStatusEnum.Qualified).ToList();
+        var unqualifiedLevels = statisticLevels.Where(l => l.QualityStatus == QualityStatusEnum.Unqualified).ToList();
 
-        var data = await baseQuery
-            .OrderBy(d => d.ProdDate)
-            .OrderBy(d => d.ShiftNumeric)
-            .OrderBy(d => d.FurnaceBatchNo)
-            .ToListAsync();
+        // 查出原始数据
+        var rawData = await baseQuery.ToListAsync();
+
+        // 按 生产日期+班次+炉次号+带宽 分组
+        var groupedData = rawData
+            .GroupBy(d => new {
+                ProdDate = d.ProdDate?.Date,
+                d.Shift,
+                FurnaceBatchNo = d.FurnaceBatchNo ?? int.MaxValue,
+                ProductSpecCode = d.ProductSpecCode ?? d.Width?.ToString() ?? "未知"
+            })
+            .Select(g => new {
+                g.Key.ProdDate,
+                g.Key.Shift,
+                g.Key.FurnaceBatchNo,
+                g.Key.ProductSpecCode,
+                Items = g.ToList()
+            })
+            .OrderBy(g => g.ProdDate)
+            .ThenBy(g => g.FurnaceBatchNo)
+            .ThenBy(g => GetShiftOrder(g.Shift))
+            .ToList();
 
         var result = new List<MonthlyQualityReportDetailDto>();
 
-        // 按班次分组
-        var shiftGroups = data.GroupBy(d => d.Shift).OrderBy(g => GetShiftOrder(g.Key));
-
-        foreach (var shiftGroup in shiftGroups)
+        // 直接遍历所有分组数据
+        foreach (var group in groupedData)
         {
-            // 按产品规格分组
-            var specGroups = shiftGroup.GroupBy(d => d.ProductSpecCode ?? d.Width?.ToString() ?? "未知")
-                                        .OrderBy(g => g.Key);
+            // 从分组项中获取第一条记录的ShiftNo用于显示
+            var firstItem = group.Items.FirstOrDefault();
+            var shiftNo = firstItem?.ShiftNo ?? "";
 
-            foreach (var specGroup in specGroups)
-            {
-                // 明细行
-                foreach (var item in specGroup.OrderBy(d => d.ProdDate).ThenBy(d => d.FurnaceBatchNo))
-                {
-                    var detailDto = CreateDetailDto(item, levelMap, unqualifiedLevels);
-                    result.Add(detailDto);
-                }
-            }
-
-            // 班次小计
-            var shiftSubtotal = CreateShiftSubtotalDto(shiftGroup.Key, shiftGroup.ToList(), levelMap, unqualifiedLevels);
-            result.Add(shiftSubtotal);
+            var dto = CreateDetailDto(
+                group.ProdDate,
+                group.Shift,
+                shiftNo,
+                group.ProductSpecCode,
+                group.Items,
+                qualifiedLevels,
+                unqualifiedLevels);
+            result.Add(dto);
         }
 
         // 月度合计
-        var monthlyTotal = CreateMonthlyTotalDto(data, levelMap, unqualifiedLevels);
+        var monthlyTotal = CreateSubtotalDto(
+            "合计",
+            "MonthlyTotal",
+            rawData,
+            qualifiedLevels,
+            unqualifiedLevels);
         result.Add(monthlyTotal);
 
         return result;
@@ -136,89 +191,37 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
     public async Task<List<MonthlyQualityReportShiftGroupDto>> GetShiftGroupsAsync([FromQuery] MonthlyQualityReportQueryDto query)
     {
         var baseQuery = BuildBaseQuery(query);
-        var levelMap = await GetJudgmentLevelMapAsync();
+        var statisticLevels = await GetStatisticLevelsAsync();
+        var qualifiedLevels = statisticLevels.Where(l => l.QualityStatus == QualityStatusEnum.Qualified).ToList();
 
         var data = await baseQuery.ToListAsync();
-
         var result = new List<MonthlyQualityReportShiftGroupDto>();
 
         // 按班次分组
-        var shiftGroups = data.GroupBy(d => d.Shift).OrderBy(g => GetShiftOrder(g.Key));
+        var shiftGroups = data
+            .GroupBy(d => d.Shift)
+            .OrderBy(g => GetShiftOrder(g.Key));
 
         foreach (var shiftGroup in shiftGroups)
         {
             // 按产品规格分组
-            var specGroups = shiftGroup.GroupBy(d => d.ProductSpecCode ?? d.Width?.ToString() ?? "未知")
-                                        .OrderBy(g => g.Key);
+            var specGroups = shiftGroup
+                .GroupBy(d => d.ProductSpecCode ?? d.Width?.ToString() ?? "未知")
+                .OrderBy(g => g.Key);
 
             foreach (var specGroup in specGroups)
             {
                 var items = specGroup.ToList();
-                var totalWeight = items.Sum(d => d.SingleCoilWeight ?? 0);
-                var classAWeight = items.Where(d => IsClassA(d.Labeling, levelMap)).Sum(d => d.SingleCoilWeight ?? 0);
-                var classBWeight = items.Where(d => IsClassB(d.Labeling, levelMap)).Sum(d => d.SingleCoilWeight ?? 0);
-                var unqualifiedWeight = items.Where(d => IsUnqualified(d.Labeling, levelMap)).Sum(d => d.SingleCoilWeight ?? 0);
-                var qualifiedWeight = classAWeight + classBWeight;
-
-                result.Add(new MonthlyQualityReportShiftGroupDto
-                {
-                    Shift = shiftGroup.Key,
-                    ProductSpecCode = specGroup.Key,
-                    DetectionWeight = totalWeight,
-                    ClassAWeight = classAWeight,
-                    ClassARate = totalWeight > 0 ? Math.Round(classAWeight / totalWeight * 100, 2) : 0,
-                    ClassBWeight = classBWeight,
-                    ClassBRate = totalWeight > 0 ? Math.Round(classBWeight / totalWeight * 100, 2) : 0,
-                    UnqualifiedWeight = unqualifiedWeight,
-                    QualifiedRate = totalWeight > 0 ? Math.Round(qualifiedWeight / totalWeight * 100, 2) : 0
-                });
+                result.Add(CreateShiftGroupDto(shiftGroup.Key, specGroup.Key, items, qualifiedLevels, false, null));
             }
 
             // 班次小计
             var shiftItems = shiftGroup.ToList();
-            var shiftTotalWeight = shiftItems.Sum(d => d.SingleCoilWeight ?? 0);
-            var shiftClassAWeight = shiftItems.Where(d => IsClassA(d.Labeling, levelMap)).Sum(d => d.SingleCoilWeight ?? 0);
-            var shiftClassBWeight = shiftItems.Where(d => IsClassB(d.Labeling, levelMap)).Sum(d => d.SingleCoilWeight ?? 0);
-            var shiftUnqualifiedWeight = shiftItems.Where(d => IsUnqualified(d.Labeling, levelMap)).Sum(d => d.SingleCoilWeight ?? 0);
-            var shiftQualifiedWeight = shiftClassAWeight + shiftClassBWeight;
-
-            result.Add(new MonthlyQualityReportShiftGroupDto
-            {
-                Shift = shiftGroup.Key,
-                ProductSpecCode = "小计",
-                DetectionWeight = shiftTotalWeight,
-                ClassAWeight = shiftClassAWeight,
-                ClassARate = shiftTotalWeight > 0 ? Math.Round(shiftClassAWeight / shiftTotalWeight * 100, 2) : 0,
-                ClassBWeight = shiftClassBWeight,
-                ClassBRate = shiftTotalWeight > 0 ? Math.Round(shiftClassBWeight / shiftTotalWeight * 100, 2) : 0,
-                UnqualifiedWeight = shiftUnqualifiedWeight,
-                QualifiedRate = shiftTotalWeight > 0 ? Math.Round(shiftQualifiedWeight / shiftTotalWeight * 100, 2) : 0,
-                IsSummaryRow = true,
-                SummaryType = "ShiftSubtotal"
-            });
+            result.Add(CreateShiftGroupDto(shiftGroup.Key, "小计", shiftItems, qualifiedLevels, true, "ShiftSubtotal"));
         }
 
         // 月度合计
-        var totalWeight2 = data.Sum(d => d.SingleCoilWeight ?? 0);
-        var totalClassAWeight = data.Where(d => IsClassA(d.Labeling, levelMap)).Sum(d => d.SingleCoilWeight ?? 0);
-        var totalClassBWeight = data.Where(d => IsClassB(d.Labeling, levelMap)).Sum(d => d.SingleCoilWeight ?? 0);
-        var totalUnqualifiedWeight = data.Where(d => IsUnqualified(d.Labeling, levelMap)).Sum(d => d.SingleCoilWeight ?? 0);
-        var totalQualifiedWeight = totalClassAWeight + totalClassBWeight;
-
-        result.Add(new MonthlyQualityReportShiftGroupDto
-        {
-            Shift = "本月合计",
-            ProductSpecCode = "",
-            DetectionWeight = totalWeight2,
-            ClassAWeight = totalClassAWeight,
-            ClassARate = totalWeight2 > 0 ? Math.Round(totalClassAWeight / totalWeight2 * 100, 2) : 0,
-            ClassBWeight = totalClassBWeight,
-            ClassBRate = totalWeight2 > 0 ? Math.Round(totalClassBWeight / totalWeight2 * 100, 2) : 0,
-            UnqualifiedWeight = totalUnqualifiedWeight,
-            QualifiedRate = totalWeight2 > 0 ? Math.Round(totalQualifiedWeight / totalWeight2 * 100, 2) : 0,
-            IsSummaryRow = true,
-            SummaryType = "MonthlyTotal"
-        });
+        result.Add(CreateShiftGroupDto("合计", "", data, qualifiedLevels, true, "MonthlyTotal"));
 
         return result;
     }
@@ -228,32 +231,41 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
     public async Task<List<QualityTrendDto>> GetQualityTrendAsync([FromQuery] MonthlyQualityReportQueryDto query)
     {
         var baseQuery = BuildBaseQuery(query);
-        var levelMap = await GetJudgmentLevelMapAsync();
+        var statisticLevels = await GetStatisticLevelsAsync();
+        var qualifiedLevels = statisticLevels.Where(l => l.QualityStatus == QualityStatusEnum.Qualified).ToList();
 
         var data = await baseQuery.ToListAsync();
 
-        // 按日期分组
-        var dateGroups = data.GroupBy(d => d.ProdDate?.Date ?? DateTime.MinValue)
-                              .OrderBy(g => g.Key);
+        var dateGroups = data
+            .GroupBy(d => d.ProdDate?.Date ?? DateTime.MinValue)
+            .Where(g => g.Key != DateTime.MinValue)
+            .OrderBy(g => g.Key);
 
         var result = new List<QualityTrendDto>();
 
         foreach (var dateGroup in dateGroups)
         {
-            if (dateGroup.Key == DateTime.MinValue) continue;
-
             var items = dateGroup.ToList();
             var totalWeight = items.Sum(d => d.SingleCoilWeight ?? 0);
-            var classAWeight = items.Where(d => IsClassA(d.Labeling, levelMap)).Sum(d => d.SingleCoilWeight ?? 0);
-            var classBWeight = items.Where(d => IsClassB(d.Labeling, levelMap)).Sum(d => d.SingleCoilWeight ?? 0);
-            var qualifiedWeight = classAWeight + classBWeight;
+            var qualifiedWeight = items
+                .Where(d => qualifiedLevels.Any(l => l.Name == d.Labeling))
+                .Sum(d => d.SingleCoilWeight ?? 0);
+
+            // 动态计算各合格等级的占比
+            var qualifiedRates = new Dictionary<string, decimal>();
+            foreach (var level in qualifiedLevels)
+            {
+                var weight = items.Where(d => d.Labeling == level.Name).Sum(d => d.SingleCoilWeight ?? 0);
+                qualifiedRates[level.Name] = totalWeight > 0 ? Math.Round(weight / totalWeight * 100, 2) : 0;
+            }
 
             result.Add(new QualityTrendDto
             {
                 Date = dateGroup.Key,
                 QualifiedRate = totalWeight > 0 ? Math.Round(qualifiedWeight / totalWeight * 100, 2) : 0,
-                ClassARate = totalWeight > 0 ? Math.Round(classAWeight / totalWeight * 100, 2) : 0,
-                ClassBRate = totalWeight > 0 ? Math.Round(classBWeight / totalWeight * 100, 2) : 0
+                // 为了兼容现有前端，暂时保留这两个字段
+                ClassARate = qualifiedRates.GetValueOrDefault(qualifiedLevels.FirstOrDefault()?.Name ?? "A", 0),
+                ClassBRate = qualifiedRates.GetValueOrDefault(qualifiedLevels.Skip(1).FirstOrDefault()?.Name ?? "B", 0)
             });
         }
 
@@ -265,20 +277,22 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
     public async Task<List<UnqualifiedCategoryDto>> GetUnqualifiedCategoriesAsync([FromQuery] MonthlyQualityReportQueryDto query)
     {
         var baseQuery = BuildBaseQuery(query);
-        var levelMap = await GetJudgmentLevelMapAsync();
-        var unqualifiedLevels = await GetUnqualifiedLevelsAsync();
+        var statisticLevels = await GetStatisticLevelsAsync();
+        var unqualifiedLevels = statisticLevels.Where(l => l.QualityStatus == QualityStatusEnum.Unqualified).ToList();
 
         var data = await baseQuery.ToListAsync();
 
-        var totalUnqualifiedWeight = data.Where(d => IsUnqualified(d.Labeling, levelMap))
-                                          .Sum(d => d.SingleCoilWeight ?? 0);
+        var totalUnqualifiedWeight = data
+            .Where(d => unqualifiedLevels.Any(l => l.Name == d.Labeling))
+            .Sum(d => d.SingleCoilWeight ?? 0);
 
         var result = new List<UnqualifiedCategoryDto>();
 
         foreach (var level in unqualifiedLevels)
         {
-            var categoryWeight = data.Where(d => d.Labeling == level.Name)
-                                      .Sum(d => d.SingleCoilWeight ?? 0);
+            var categoryWeight = data
+                .Where(d => d.Labeling == level.Name)
+                .Sum(d => d.SingleCoilWeight ?? 0);
 
             if (categoryWeight > 0)
             {
@@ -286,12 +300,13 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
                 {
                     CategoryName = level.Name,
                     Weight = categoryWeight,
-                    Rate = totalUnqualifiedWeight > 0 ? Math.Round(categoryWeight / totalUnqualifiedWeight * 100, 2) : 0
+                    Rate = totalUnqualifiedWeight > 0
+                        ? Math.Round(categoryWeight / totalUnqualifiedWeight * 100, 2)
+                        : 0
                 });
             }
         }
 
-        // 按重量降序排序
         return result.OrderByDescending(c => c.Weight).ToList();
     }
 
@@ -300,11 +315,11 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
     public async Task<List<ShiftComparisonDto>> GetShiftComparisonAsync([FromQuery] MonthlyQualityReportQueryDto query)
     {
         var baseQuery = BuildBaseQuery(query);
-        var levelMap = await GetJudgmentLevelMapAsync();
+        var statisticLevels = await GetStatisticLevelsAsync();
+        var qualifiedLevels = statisticLevels.Where(l => l.QualityStatus == QualityStatusEnum.Qualified).ToList();
 
         var data = await baseQuery.ToListAsync();
 
-        // 按班次分组
         var shiftGroups = data.GroupBy(d => d.Shift).OrderBy(g => GetShiftOrder(g.Key));
 
         var result = new List<ShiftComparisonDto>();
@@ -313,9 +328,15 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         {
             var items = shiftGroup.ToList();
             var totalWeight = items.Sum(d => d.SingleCoilWeight ?? 0);
-            var classAWeight = items.Where(d => IsClassA(d.Labeling, levelMap)).Sum(d => d.SingleCoilWeight ?? 0);
-            var classBWeight = items.Where(d => IsClassB(d.Labeling, levelMap)).Sum(d => d.SingleCoilWeight ?? 0);
-            var qualifiedWeight = classAWeight + classBWeight;
+            var qualifiedWeight = items
+                .Where(d => qualifiedLevels.Any(l => l.Name == d.Labeling))
+                .Sum(d => d.SingleCoilWeight ?? 0);
+
+            // 取第一个合格等级的占比作为 ClassARate（兼容现有前端）
+            var firstQualifiedLevel = qualifiedLevels.FirstOrDefault();
+            var classAWeight = firstQualifiedLevel != null
+                ? items.Where(d => d.Labeling == firstQualifiedLevel.Name).Sum(d => d.SingleCoilWeight ?? 0)
+                : 0;
 
             result.Add(new ShiftComparisonDto
             {
@@ -336,7 +357,6 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         var queryable = _intermediateDataRepository.AsQueryable()
             .Where(d => d.DeleteMark == null);
 
-        // 日期范围筛选
         if (query.StartDate != default)
         {
             queryable = queryable.Where(d => d.ProdDate >= query.StartDate);
@@ -347,25 +367,21 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
             queryable = queryable.Where(d => d.ProdDate < endDate);
         }
 
-        // 班次筛选
         if (!string.IsNullOrWhiteSpace(query.Shift))
         {
             queryable = queryable.Where(d => d.Shift == query.Shift);
         }
 
-        // 炉号筛选
         if (!string.IsNullOrWhiteSpace(query.ShiftNo))
         {
             queryable = queryable.Where(d => d.ShiftNo.Contains(query.ShiftNo));
         }
 
-        // 产品规格筛选
         if (!string.IsNullOrWhiteSpace(query.ProductSpecCode))
         {
             queryable = queryable.Where(d => d.ProductSpecCode == query.ProductSpecCode);
         }
 
-        // 产线筛选
         if (query.LineNo.HasValue)
         {
             queryable = queryable.Where(d => d.LineNo == query.LineNo);
@@ -374,76 +390,33 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         return queryable;
     }
 
-    private async Task<Dictionary<string, IntermediateDataJudgmentLevelEntity>> GetJudgmentLevelMapAsync()
-    {
-        var levels = await _judgmentLevelRepository.AsQueryable()
-            .Where(l => l.DeleteMark == null)
-            .ToListAsync();
-
-        // 存在重复的 Name (如 "B")，按优先级排序取第一个
-        return levels.GroupBy(l => l.Name)
-            .ToDictionary(g => g.Key, g => g.OrderByDescending(l => l.Priority).First());
-    }
-
-    private async Task<List<IntermediateDataJudgmentLevelEntity>> GetUnqualifiedLevelsAsync()
+    /// <summary>
+    /// 获取所有需要统计的等级（FormulaId=Labeling, IsStatistic=true）
+    /// </summary>
+    private async Task<List<IntermediateDataJudgmentLevelEntity>> GetStatisticLevelsAsync()
     {
         return await _judgmentLevelRepository.AsQueryable()
-            .Where(l => l.DeleteMark == null 
-                     && l.QualityStatus == QualityStatusEnum.Unqualified
-                     && l.IsStatistic == true)
+            .Where(l => l.DeleteMark == null)
+            .Where(l => l.FormulaId == "Labeling")
+            .Where(l => l.IsStatistic == true)
             .OrderBy(l => l.Priority)
             .ToListAsync();
     }
 
-    private async Task<List<JudgmentLevelColumnDto>> GetUnqualifiedColumnsAsync()
+    /// <summary>
+    /// 获取判定等级映射（按Name索引）
+    /// </summary>
+    private async Task<Dictionary<string, IntermediateDataJudgmentLevelEntity>> GetJudgmentLevelMapAsync()
     {
-        var levels = await GetUnqualifiedLevelsAsync();
-        return levels.Select(l => new JudgmentLevelColumnDto
-        {
-            Id = l.Id,
-            Code = l.Code,
-            Name = l.Name,
-            QualityStatus = l.QualityStatus,
-            Color = l.Color
-        }).ToList();
+        var levels = await _judgmentLevelRepository.AsQueryable()
+            .Where(l => l.DeleteMark == null)
+            .Where(l => l.FormulaId == "Labeling")
+            .ToListAsync();
+
+        return levels
+            .GroupBy(l => l.Name)
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(l => l.Priority).First());
     }
-
-    private bool IsClassA(string labeling, Dictionary<string, IntermediateDataJudgmentLevelEntity> levelMap)
-    {
-        if (string.IsNullOrWhiteSpace(labeling)) return false;
-        // A级判定：名称包含"A"且是合格的
-        if (levelMap.TryGetValue(labeling, out var level))
-        {
-            return labeling.Contains("A") && level.QualityStatus == QualityStatusEnum.Qualified;
-        }
-        return false;
-    }
-
-    private bool IsClassB(string labeling, Dictionary<string, IntermediateDataJudgmentLevelEntity> levelMap)
-    {
-        if (string.IsNullOrWhiteSpace(labeling)) return false;
-        // B级判定：名称包含"B"且是合格的，或者是合格但不是A级的
-        if (levelMap.TryGetValue(labeling, out var level))
-        {
-            if (level.QualityStatus == QualityStatusEnum.Qualified)
-            {
-                return labeling.Contains("B") || !labeling.Contains("A");
-            }
-        }
-        return false;
-    }
-
-    private bool IsUnqualified(string labeling, Dictionary<string, IntermediateDataJudgmentLevelEntity> levelMap)
-    {
-        if (string.IsNullOrWhiteSpace(labeling)) return false;
-        if (levelMap.TryGetValue(labeling, out var level))
-        {
-            return level.QualityStatus == QualityStatusEnum.Unqualified;
-        }
-        return false;
-    }
-
-
 
     private int GetShiftOrder(string shift)
     {
@@ -456,109 +429,460 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         };
     }
 
+    /// <summary>
+    /// 创建明细行 DTO
+    /// </summary>
     private MonthlyQualityReportDetailDto CreateDetailDto(
-        IntermediateDataEntity item,
-        Dictionary<string, IntermediateDataJudgmentLevelEntity> levelMap,
+        DateTime? prodDate,
+        string shift,
+        string shiftNo,
+        string productSpecCode,
+        List<IntermediateDataEntity> items,
+        List<IntermediateDataJudgmentLevelEntity> qualifiedLevels,
         List<IntermediateDataJudgmentLevelEntity> unqualifiedLevels)
     {
-        var weight = item.SingleCoilWeight ?? 0;
-        var isClassA = IsClassA(item.Labeling, levelMap);
-        var isClassB = IsClassB(item.Labeling, levelMap);
-        var isUnqualified = IsUnqualified(item.Labeling, levelMap);
+        var totalWeight = items.Sum(d => d.SingleCoilWeight ?? 0);
 
+        // 合格分类统计
+        var qualifiedCategories = new Dictionary<string, LevelStatDto>();
+        decimal qualifiedWeight = 0;
+
+        foreach (var level in qualifiedLevels)
+        {
+            var weight = items.Where(d => d.Labeling == level.Name).Sum(d => d.SingleCoilWeight ?? 0);
+            qualifiedWeight += weight;
+            qualifiedCategories[level.Name] = new LevelStatDto
+            {
+                Weight = weight,
+                Rate = totalWeight > 0 ? Math.Round(weight / totalWeight * 100, 2) : 0
+            };
+        }
+
+        // 不合格分类统计
         var unqualifiedCategories = new Dictionary<string, decimal>();
         foreach (var level in unqualifiedLevels)
         {
-            unqualifiedCategories[level.Name] = item.Labeling == level.Name ? weight : 0;
+            var weight = items.Where(d => d.Labeling == level.Name).Sum(d => d.SingleCoilWeight ?? 0);
+            unqualifiedCategories[level.Name] = weight;
         }
 
         return new MonthlyQualityReportDetailDto
         {
-            ProdDate = item.ProdDate,
-            Shift = item.Shift,
-            ShiftNo = item.ShiftNo,
-            ProductSpecCode = item.ProductSpecCode ?? item.Width?.ToString(),
-            DetectionWeight = weight,
-            ClassAWeight = isClassA ? weight : 0,
-            ClassARate = isClassA ? 100 : 0,
-            ClassBWeight = isClassB ? weight : 0,
-            ClassBRate = isClassB ? 100 : 0,
-            UnqualifiedWeight = isUnqualified ? weight : 0,
-            QualifiedRate = (isClassA || isClassB) ? 100 : 0,
+            ProdDate = prodDate,
+            Shift = shift,
+            ShiftNo = shiftNo,
+            ProductSpecCode = productSpecCode,
+            DetectionWeight = totalWeight,
+            QualifiedCategories = qualifiedCategories,
+            QualifiedWeight = qualifiedWeight,
+            QualifiedRate = totalWeight > 0 ? Math.Round(qualifiedWeight / totalWeight * 100, 2) : 0,
             UnqualifiedCategories = unqualifiedCategories
         };
     }
 
-    private MonthlyQualityReportDetailDto CreateShiftSubtotalDto(
+    /// <summary>
+    /// 创建汇总行 DTO（班次小计/月度合计）
+    /// </summary>
+    private MonthlyQualityReportDetailDto CreateSubtotalDto(
         string shift,
+        string summaryType,
         List<IntermediateDataEntity> items,
-        Dictionary<string, IntermediateDataJudgmentLevelEntity> levelMap,
+        List<IntermediateDataJudgmentLevelEntity> qualifiedLevels,
         List<IntermediateDataJudgmentLevelEntity> unqualifiedLevels)
     {
         var totalWeight = items.Sum(d => d.SingleCoilWeight ?? 0);
-        var classAWeight = items.Where(d => IsClassA(d.Labeling, levelMap)).Sum(d => d.SingleCoilWeight ?? 0);
-        var classBWeight = items.Where(d => IsClassB(d.Labeling, levelMap)).Sum(d => d.SingleCoilWeight ?? 0);
-        var unqualifiedWeight = items.Where(d => IsUnqualified(d.Labeling, levelMap)).Sum(d => d.SingleCoilWeight ?? 0);
-        var qualifiedWeight = classAWeight + classBWeight;
 
+        // 合格分类统计
+        var qualifiedCategories = new Dictionary<string, LevelStatDto>();
+        decimal qualifiedWeight = 0;
+
+        foreach (var level in qualifiedLevels)
+        {
+            var weight = items.Where(d => d.Labeling == level.Name).Sum(d => d.SingleCoilWeight ?? 0);
+            qualifiedWeight += weight;
+            qualifiedCategories[level.Name] = new LevelStatDto
+            {
+                Weight = weight,
+                Rate = totalWeight > 0 ? Math.Round(weight / totalWeight * 100, 2) : 0
+            };
+        }
+
+        // 不合格分类统计
         var unqualifiedCategories = new Dictionary<string, decimal>();
         foreach (var level in unqualifiedLevels)
         {
-            unqualifiedCategories[level.Name] = items.Where(d => d.Labeling == level.Name)
-                                                      .Sum(d => d.SingleCoilWeight ?? 0);
+            var weight = items.Where(d => d.Labeling == level.Name).Sum(d => d.SingleCoilWeight ?? 0);
+            unqualifiedCategories[level.Name] = weight;
         }
 
         return new MonthlyQualityReportDetailDto
         {
             Shift = shift,
-            ProductSpecCode = "小计",
+            ProductSpecCode = summaryType == "MonthlyTotal" ? "" : "小计",
             DetectionWeight = totalWeight,
-            ClassAWeight = classAWeight,
-            ClassARate = totalWeight > 0 ? Math.Round(classAWeight / totalWeight * 100, 2) : 0,
-            ClassBWeight = classBWeight,
-            ClassBRate = totalWeight > 0 ? Math.Round(classBWeight / totalWeight * 100, 2) : 0,
-            UnqualifiedWeight = unqualifiedWeight,
+            QualifiedCategories = qualifiedCategories,
+            QualifiedWeight = qualifiedWeight,
             QualifiedRate = totalWeight > 0 ? Math.Round(qualifiedWeight / totalWeight * 100, 2) : 0,
             UnqualifiedCategories = unqualifiedCategories,
             IsSummaryRow = true,
-            SummaryType = "ShiftSubtotal"
+            SummaryType = summaryType
         };
     }
 
-    private MonthlyQualityReportDetailDto CreateMonthlyTotalDto(
-        List<IntermediateDataEntity> data,
-        Dictionary<string, IntermediateDataJudgmentLevelEntity> levelMap,
-        List<IntermediateDataJudgmentLevelEntity> unqualifiedLevels)
+    /// <summary>
+    /// 创建班组统计 DTO
+    /// </summary>
+    private MonthlyQualityReportShiftGroupDto CreateShiftGroupDto(
+        string shift,
+        string productSpecCode,
+        List<IntermediateDataEntity> items,
+        List<IntermediateDataJudgmentLevelEntity> qualifiedLevels,
+        bool isSummaryRow,
+        string summaryType)
     {
-        var totalWeight = data.Sum(d => d.SingleCoilWeight ?? 0);
-        var classAWeight = data.Where(d => IsClassA(d.Labeling, levelMap)).Sum(d => d.SingleCoilWeight ?? 0);
-        var classBWeight = data.Where(d => IsClassB(d.Labeling, levelMap)).Sum(d => d.SingleCoilWeight ?? 0);
-        var unqualifiedWeight = data.Where(d => IsUnqualified(d.Labeling, levelMap)).Sum(d => d.SingleCoilWeight ?? 0);
-        var qualifiedWeight = classAWeight + classBWeight;
+        var totalWeight = items.Sum(d => d.SingleCoilWeight ?? 0);
 
-        var unqualifiedCategories = new Dictionary<string, decimal>();
-        foreach (var level in unqualifiedLevels)
+        // 合格分类统计
+        var qualifiedCategories = new Dictionary<string, LevelStatDto>();
+        decimal qualifiedWeight = 0;
+
+        foreach (var level in qualifiedLevels)
         {
-            unqualifiedCategories[level.Name] = data.Where(d => d.Labeling == level.Name)
-                                                     .Sum(d => d.SingleCoilWeight ?? 0);
+            var weight = items.Where(d => d.Labeling == level.Name).Sum(d => d.SingleCoilWeight ?? 0);
+            qualifiedWeight += weight;
+            qualifiedCategories[level.Name] = new LevelStatDto
+            {
+                Weight = weight,
+                Rate = totalWeight > 0 ? Math.Round(weight / totalWeight * 100, 2) : 0
+            };
         }
 
-        return new MonthlyQualityReportDetailDto
+        return new MonthlyQualityReportShiftGroupDto
         {
-            Shift = "本月合计",
-            ProductSpecCode = "",
+            Shift = shift,
+            ProductSpecCode = productSpecCode,
             DetectionWeight = totalWeight,
-            ClassAWeight = classAWeight,
-            ClassARate = totalWeight > 0 ? Math.Round(classAWeight / totalWeight * 100, 2) : 0,
-            ClassBWeight = classBWeight,
-            ClassBRate = totalWeight > 0 ? Math.Round(classBWeight / totalWeight * 100, 2) : 0,
-            UnqualifiedWeight = unqualifiedWeight,
+            QualifiedCategories = qualifiedCategories,
+            QualifiedWeight = qualifiedWeight,
             QualifiedRate = totalWeight > 0 ? Math.Round(qualifiedWeight / totalWeight * 100, 2) : 0,
-            UnqualifiedCategories = unqualifiedCategories,
-            IsSummaryRow = true,
-            SummaryType = "MonthlyTotal"
+            IsSummaryRow = isSummaryRow,
+            SummaryType = summaryType
         };
     }
 
     #endregion
+
+    /// <inheritdoc/>
+    [HttpGet("columns")]
+    public async Task<MonthlyQualityReportColumnsDto> GetColumnsAsync()
+    {
+        var statisticLevels = await GetStatisticLevelsAsync();
+        var qualifiedLevels = statisticLevels.Where(l => l.QualityStatus == QualityStatusEnum.Qualified).ToList();
+        var unqualifiedLevels = statisticLevels.Where(l => l.QualityStatus == QualityStatusEnum.Unqualified).ToList();
+
+        return new MonthlyQualityReportColumnsDto
+        {
+            QualifiedColumns = qualifiedLevels.Select(l => new JudgmentLevelColumnDto
+            {
+                Id = l.Id,
+                Code = l.Code,
+                Name = l.Name,
+                QualityStatus = l.QualityStatus,
+                Color = l.Color,
+                Priority = l.Priority
+            }).ToList(),
+            UnqualifiedColumns = unqualifiedLevels.Select(l => new JudgmentLevelColumnDto
+            {
+                Id = l.Id,
+                Code = l.Code,
+                Name = l.Name,
+                QualityStatus = l.QualityStatus,
+                Color = l.Color,
+                Priority = l.Priority
+            }).ToList()
+        };
+    }
+
+    /// <summary>
+    /// 导出月度质量报表Excel
+    /// </summary>
+    [HttpGet("export")]
+    public async Task<IActionResult> ExportExcelAsync([FromQuery] MonthlyQualityReportQueryDto query)
+    {
+        var statisticLevels = await GetStatisticLevelsAsync();
+        var qualifiedLevels = statisticLevels.Where(l => l.QualityStatus == QualityStatusEnum.Qualified)
+            .OrderBy(l => l.Priority).ToList();
+        var unqualifiedLevels = statisticLevels.Where(l => l.QualityStatus == QualityStatusEnum.Unqualified)
+            .OrderBy(l => l.Priority).ToList();
+
+        var details = await GetDetailsAsync(query);
+        var shiftGroups = await GetShiftGroupsAsync(query);
+
+        var memoryStream = new MemoryStream();
+        var workbook = new XSSFWorkbook();
+        var sheet = workbook.CreateSheet("月度质量报表");
+
+        var titleStyle = CreateTitleStyle(workbook);
+        var headerStyle = CreateHeaderStyle(workbook);
+        var dataStyle = CreateDataStyle(workbook);
+        var summaryStyle = CreateSummaryStyle(workbook);
+
+        int rowIndex = 0;
+
+        // 标题行
+        var titleRow = sheet.CreateRow(rowIndex++);
+        titleRow.HeightInPoints = 24;
+        var titleCell = titleRow.CreateCell(0);
+        titleCell.SetCellValue("月度质量统计报表");
+        titleCell.CellStyle = titleStyle;
+        sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(0, 0, 0, GetColumnCount(qualifiedLevels, unqualifiedLevels) - 1));
+
+        // 日期范围行
+        var dateRow = sheet.CreateRow(rowIndex++);
+        var dateCell = dateRow.CreateCell(0);
+        dateCell.SetCellValue($"统计时间：{query.StartDate:yyyy年MM月dd日} - {query.EndDate:yyyy年MM月dd日}");
+        dateCell.CellStyle = dataStyle;
+        sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(1, 1, 0, GetColumnCount(qualifiedLevels, unqualifiedLevels) - 1));
+
+        // 空行
+        sheet.CreateRow(rowIndex++);
+
+        // ===== 质量检测明细 =====
+        var sectionHeaderRow = sheet.CreateRow(rowIndex++);
+        var sectionHeaderCell = sectionHeaderRow.CreateCell(0);
+        sectionHeaderCell.SetCellValue("质量检测明细");
+        sectionHeaderCell.CellStyle = titleStyle;
+        sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(rowIndex - 1, rowIndex - 1, 0, GetColumnCount(qualifiedLevels, unqualifiedLevels) - 1));
+
+        // 列头
+        var headerRow = sheet.CreateRow(rowIndex++);
+        headerRow.HeightInPoints = 20;
+        int colIndex = 0;
+        CreateHeaderCell(headerRow, colIndex++, "生产日期", headerStyle);
+        CreateHeaderCell(headerRow, colIndex++, "班次", headerStyle);
+        CreateHeaderCell(headerRow, colIndex++, "班次号", headerStyle);
+        CreateHeaderCell(headerRow, colIndex++, "产品规格", headerStyle);
+        CreateHeaderCell(headerRow, colIndex++, "检验总重", headerStyle);
+
+        foreach (var level in qualifiedLevels)
+        {
+            CreateHeaderCell(headerRow, colIndex++, $"{level.Name}类", headerStyle);
+            CreateHeaderCell(headerRow, colIndex++, "占比(%)", headerStyle);
+        }
+
+        CreateHeaderCell(headerRow, colIndex++, "合格总重", headerStyle);
+        CreateHeaderCell(headerRow, colIndex++, "合格率(%)", headerStyle);
+
+        foreach (var level in unqualifiedLevels)
+        {
+            CreateHeaderCell(headerRow, colIndex++, $"{level.Name}", headerStyle);
+        }
+
+        // 明细数据
+        foreach (var detail in details)
+        {
+            var dataRow = sheet.CreateRow(rowIndex++);
+            colIndex = 0;
+            CreateCell(dataRow, colIndex++, detail.ProdDate?.ToString("yyyyMMdd") ?? "", dataStyle);
+            CreateCell(dataRow, colIndex++, detail.Shift ?? "", dataStyle);
+            CreateCell(dataRow, colIndex++, detail.ShiftNo ?? "", dataStyle);
+            CreateCell(dataRow, colIndex++, detail.ProductSpecCode ?? "", dataStyle);
+            CreateCell(dataRow, colIndex++, detail.DetectionWeight, dataStyle);
+
+            foreach (var level in qualifiedLevels)
+            {
+                var stat = detail.QualifiedCategories?.GetValueOrDefault(level.Name);
+                CreateCell(dataRow, colIndex++, stat?.Weight ?? 0, dataStyle);
+                CreateCell(dataRow, colIndex++, stat?.Rate ?? 0, dataStyle);
+            }
+
+            CreateCell(dataRow, colIndex++, detail.QualifiedWeight, dataStyle);
+            CreateCell(dataRow, colIndex++, detail.QualifiedRate, dataStyle);
+
+            foreach (var level in unqualifiedLevels)
+            {
+                var weight = detail.UnqualifiedCategories?.GetValueOrDefault(level.Name) ?? 0;
+                CreateCell(dataRow, colIndex++, weight, dataStyle);
+            }
+
+            // 合计行样式
+            if (detail.IsSummaryRow)
+            {
+                foreach (var cell in dataRow.Cells)
+                {
+                    cell.CellStyle = summaryStyle;
+                }
+            }
+        }
+
+        // 空行分隔
+        sheet.CreateRow(rowIndex++);
+
+        // ===== 班组统计 =====
+        var shiftSectionRow = sheet.CreateRow(rowIndex++);
+        var shiftSectionCell = shiftSectionRow.CreateCell(0);
+        shiftSectionCell.SetCellValue("班组统计");
+        shiftSectionCell.CellStyle = titleStyle;
+        sheet.AddMergedRegion(new NPOI.SS.Util.CellRangeAddress(rowIndex - 1, rowIndex - 1, 0, qualifiedLevels.Count * 2 + 4));
+
+        // 班组列头
+        var shiftHeaderRow = sheet.CreateRow(rowIndex++);
+        colIndex = 0;
+        CreateHeaderCell(shiftHeaderRow, colIndex++, "班次", headerStyle);
+        CreateHeaderCell(shiftHeaderRow, colIndex++, "产品规格", headerStyle);
+        CreateHeaderCell(shiftHeaderRow, colIndex++, "检验总重", headerStyle);
+
+        foreach (var level in qualifiedLevels)
+        {
+            CreateHeaderCell(shiftHeaderRow, colIndex++, $"{level.Name}类", headerStyle);
+            CreateHeaderCell(shiftHeaderRow, colIndex++, "占比(%)", headerStyle);
+        }
+
+        CreateHeaderCell(shiftHeaderRow, colIndex++, "合格总重", headerStyle);
+        CreateHeaderCell(shiftHeaderRow, colIndex++, "合格率(%)", headerStyle);
+
+        // 班组数据
+        foreach (var shift in shiftGroups)
+        {
+            var dataRow = sheet.CreateRow(rowIndex++);
+            colIndex = 0;
+            CreateCell(dataRow, colIndex++, shift.Shift ?? "", dataStyle);
+            CreateCell(dataRow, colIndex++, shift.ProductSpecCode ?? "", dataStyle);
+            CreateCell(dataRow, colIndex++, shift.DetectionWeight, dataStyle);
+
+            foreach (var level in qualifiedLevels)
+            {
+                var stat = shift.QualifiedCategories?.GetValueOrDefault(level.Name);
+                CreateCell(dataRow, colIndex++, stat?.Weight ?? 0, dataStyle);
+                CreateCell(dataRow, colIndex++, stat?.Rate ?? 0, dataStyle);
+            }
+
+            CreateCell(dataRow, colIndex++, shift.QualifiedWeight, dataStyle);
+            CreateCell(dataRow, colIndex++, shift.QualifiedRate, dataStyle);
+
+            // 合计/小计行样式
+            if (shift.IsSummaryRow)
+            {
+                foreach (var cell in dataRow.Cells)
+                {
+                    cell.CellStyle = summaryStyle;
+                }
+            }
+        }
+
+        // 设置列宽 (自适应)
+        for (int i = 0; i < GetColumnCount(qualifiedLevels, unqualifiedLevels); i++)
+        {
+            sheet.AutoSizeColumn(i);
+            // 获取当前宽度 (NPOI单位 1/256字符宽度)
+            int width = (int)sheet.GetColumnWidth(i);
+            // 增加 20% 缓冲
+            int newWidth = (int)(width * 1.2);
+            // 限制最大宽度 (例如 50 个字符)
+            int maxWidth = 50 * 256;
+            if (newWidth > maxWidth) newWidth = maxWidth;
+            
+            sheet.SetColumnWidth(i, newWidth);
+        }
+
+        workbook.Write(memoryStream);
+        var newStream = new MemoryStream(memoryStream.ToArray());
+
+        var fileName = $"{DateTime.Now:yyyyMMdd}_{Poxiao.Infrastructure.Security.SnowflakeIdHelper.NextId()}.xlsx";
+        return new FileStreamResult(newStream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        {
+            FileDownloadName = fileName
+        };
+    }
+
+    private int GetColumnCount(List<IntermediateDataJudgmentLevelEntity> qualifiedLevels,
+        List<IntermediateDataJudgmentLevelEntity> unqualifiedLevels)
+    {
+        // 基础列: 生产日期, 班次, 班次号, 产品规格, 检验总重, 合格总重, 合格率
+        int baseColumns = 7;
+        return baseColumns + qualifiedLevels.Count * 2 + unqualifiedLevels.Count;
+    }
+
+    private ICellStyle CreateTitleStyle(XSSFWorkbook workbook)
+    {
+        var style = workbook.CreateCellStyle();
+        style.Alignment = HorizontalAlignment.Center;
+        style.VerticalAlignment = VerticalAlignment.Center;
+        style.FillForegroundColor = NPOI.HSSF.Util.HSSFColor.Grey25Percent.Index;
+        style.FillPattern = FillPattern.SolidForeground;
+        style.SetFont(CreateFont(workbook, 14, true));
+        SetBorder(style);
+        return style;
+    }
+
+    private ICellStyle CreateHeaderStyle(XSSFWorkbook workbook)
+    {
+        var style = workbook.CreateCellStyle();
+        style.Alignment = HorizontalAlignment.Center;
+        style.VerticalAlignment = VerticalAlignment.Center;
+        style.FillForegroundColor = NPOI.HSSF.Util.HSSFColor.Grey40Percent.Index;
+        style.FillPattern = FillPattern.SolidForeground;
+        style.SetFont(CreateFont(workbook, 11, true));
+        SetBorder(style);
+        return style;
+    }
+
+    private ICellStyle CreateDataStyle(XSSFWorkbook workbook)
+    {
+        var style = workbook.CreateCellStyle();
+        style.Alignment = HorizontalAlignment.Center;
+        style.VerticalAlignment = VerticalAlignment.Center;
+        style.SetFont(CreateFont(workbook, 10, false));
+        SetBorder(style);
+        return style;
+    }
+
+    private ICellStyle CreateSummaryStyle(XSSFWorkbook workbook)
+    {
+        var style = workbook.CreateCellStyle();
+        style.Alignment = HorizontalAlignment.Center;
+        style.VerticalAlignment = VerticalAlignment.Center;
+        style.FillForegroundColor = NPOI.HSSF.Util.HSSFColor.LightBlue.Index;
+        style.FillPattern = FillPattern.SolidForeground;
+        style.SetFont(CreateFont(workbook, 10, true));
+        SetBorder(style);
+        return style;
+    }
+
+    private IFont CreateFont(XSSFWorkbook workbook, int fontSize, bool bold)
+    {
+        var font = workbook.CreateFont();
+        font.FontHeightInPoints = fontSize;
+        font.IsBold = bold;
+        return font;
+    }
+
+    private void SetBorder(ICellStyle style)
+    {
+        style.BorderTop = BorderStyle.Thin;
+        style.BorderBottom = BorderStyle.Thin;
+        style.BorderLeft = BorderStyle.Thin;
+        style.BorderRight = BorderStyle.Thin;
+    }
+
+    private void CreateHeaderCell(IRow row, int colIndex, string value, ICellStyle style)
+    {
+        var cell = row.CreateCell(colIndex);
+        cell.SetCellValue(value);
+        cell.CellStyle = style;
+    }
+
+    private void CreateCell(IRow row, int colIndex, string value, ICellStyle style)
+    {
+        var cell = row.CreateCell(colIndex);
+        cell.SetCellValue(value);
+        cell.CellStyle = style;
+    }
+
+    private void CreateCell(IRow row, int colIndex, decimal value, ICellStyle style)
+    {
+        var cell = row.CreateCell(colIndex);
+        cell.SetCellValue((double)value);
+        cell.CellStyle = style;
+    }
 }

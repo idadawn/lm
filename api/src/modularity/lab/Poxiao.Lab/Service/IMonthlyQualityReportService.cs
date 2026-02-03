@@ -55,4 +55,10 @@ public interface IMonthlyQualityReportService
     /// <param name="query">查询条件</param>
     /// <returns>班次对比列表</returns>
     Task<List<ShiftComparisonDto>> GetShiftComparisonAsync(MonthlyQualityReportQueryDto query);
+
+    /// <summary>
+    /// 获取表格列定义（合格和不合格等级列）.
+    /// </summary>
+    /// <returns>列定义列表</returns>
+    Task<MonthlyQualityReportColumnsDto> GetColumnsAsync();
 }

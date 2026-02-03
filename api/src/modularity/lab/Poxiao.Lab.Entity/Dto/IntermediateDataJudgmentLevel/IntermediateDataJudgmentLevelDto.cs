@@ -1,4 +1,5 @@
 using Poxiao.Infrastructure.Contracts;
+using Poxiao.Lab.Entity.Enum;
 using System.ComponentModel.DataAnnotations;
 
 namespace Poxiao.Lab.Entity.Dto.IntermediateDataJudgmentLevel;
@@ -36,7 +37,7 @@ public class IntermediateDataJudgmentLevelDto
     /// <summary>
     /// 质量状态.
     /// </summary>
-    public string QualityStatus { get; set; }
+    public QualityStatusEnum QualityStatus { get; set; }
 
     /// <summary>
     /// 判定权重.
@@ -101,7 +102,7 @@ public class IntermediateDataJudgmentLevelAddInput
     /// <summary>
     /// 质量状态.
     /// </summary>
-    public string QualityStatus { get; set; }
+    public QualityStatusEnum QualityStatus { get; set; }
 
     /// <summary>
     /// 判定权重.

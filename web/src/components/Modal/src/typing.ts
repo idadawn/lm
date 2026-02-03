@@ -6,6 +6,7 @@ import type { CSSProperties, VNodeChild, ComputedRef } from 'vue';
 export interface ModalMethods {
   setModalProps: (props: Partial<ModalProps>) => void;
   emitVisible?: (visible: boolean, uid: number) => void;
+  emitOpen?: (visible: boolean, uid: number) => void;
   redoModalHeight?: () => void;
 }
 
@@ -42,6 +43,7 @@ export interface ModalProps {
   canFullscreen?: boolean;
   defaultFullscreen?: boolean;
   visible?: boolean;
+  open?: boolean;
   // 温馨提醒信息
   helpMessage: string | string[];
 

@@ -159,6 +159,17 @@ const [registerTable, { reload }] = useTable({
     }
     return params;
   },
+  // 处理返回数据，转换成分页格式
+  afterFetch: (data) => {
+    // 后端返回格式: { list: [], pagination: { currentPage, pageSize, total } }
+    if (data && data.list) {
+      return {
+        items: data.list,
+        total: data.pagination?.total || data.list.length,
+      };
+    }
+    return data;
+  },
 });
 
 // 快捷导入模态窗

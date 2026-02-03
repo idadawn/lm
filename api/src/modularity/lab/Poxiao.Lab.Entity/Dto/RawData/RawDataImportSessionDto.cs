@@ -165,3 +165,15 @@ public class RawDataReviewDataOutput
     public int ValidDataRows { get; set; }
     public List<RawDataEntity> Items { get; set; }
 }
+
+/// <summary>
+/// 添加到忽略词典输入
+/// </summary>
+public class AddToIgnoreDictionaryInput
+{
+    /// <summary>
+    /// 需要忽略的后缀
+    /// </summary>
+    public string FeatureSuffix { get; set; }
+}
+

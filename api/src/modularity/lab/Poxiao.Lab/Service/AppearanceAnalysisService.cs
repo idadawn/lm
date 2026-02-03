@@ -3,6 +3,7 @@ using Poxiao.DependencyInjection;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.AppearanceFeature;
 using Poxiao.Lab.Interfaces;
+using Poxiao.Logging;
 using SqlSugar;
 
 namespace Poxiao.Lab.Service;
@@ -93,7 +94,7 @@ public class AppearanceAnalysisService : IAppearanceAnalysisService, ITransient
 
             if (!aiResult.Success || aiResult.Features == null || !aiResult.Features.Any())
             {
-                Console.WriteLine($"[AppearanceAnalysis] AI分析失败: {aiResult.ErrorMessage}");
+                Log.Error($"[AppearanceAnalysis] AI分析失败: {aiResult.ErrorMessage}");
                 return null;
             }
 
@@ -118,8 +119,7 @@ public class AppearanceAnalysisService : IAppearanceAnalysisService, ITransient
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[AppearanceAnalysis] Error: {ex.Message}");
-            Console.WriteLine($"[AppearanceAnalysis] StackTrace: {ex.StackTrace}");
+            Log.Error($"[AppearanceAnalysis] 外观特性分析异常: {ex.Message}");
             return null;
         }
     }

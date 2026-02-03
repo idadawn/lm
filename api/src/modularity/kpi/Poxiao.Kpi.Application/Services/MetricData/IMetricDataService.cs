@@ -10,7 +10,7 @@ public interface IMetricDataService
     /// </summary>
     /// <param name="metricId">指标id.</param>
     /// <returns></returns>
-    Task<MetricDataOutput> GetDataAsync(string metricId);
+    Task<MetricDataOutput> GetDataAsync(string metricId, DisplayOption? displayOption = null);
 
     /// <summary>
     /// 获取指标图标数据.

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
+using Poxiao.Logging;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Config;
 using Poxiao.Lab.Entity.Dto.AppearanceFeature;
@@ -232,9 +233,7 @@ public class FeatureLearningService : IDynamicApiController, ITransient
                     })
                     .ExecuteCommandAsync();
 
-                Console.WriteLine(
-                    $"[FeatureLearning] Added keyword '{suggestion.SuggestedKeyword}' to feature '{feature.Name}'"
-                );
+                Log.Information("[FeatureLearning] Added keyword '{Keyword}' to feature '{FeatureName}'", suggestion.SuggestedKeyword, feature.Name);
             }
         }
     }
@@ -644,7 +643,7 @@ public class FeatureLearningService : IDynamicApiController, ITransient
             }
 
             var furnaceNoColumnIndex = furnaceNoMapping.ExcelColumnIndex; // 例如 "A", "B", "C"
-            Console.WriteLine($"[Excel] 使用模板配置，炉号列索引: {furnaceNoColumnIndex}");
+            Log.Debug("[FeatureLearning] 使用模板配置，炉号列索引: {FurnaceNoColumnIndex}", furnaceNoColumnIndex);
 
             // 3. 读取Excel文件
             using var stream = file.OpenReadStream();
@@ -692,9 +691,7 @@ public class FeatureLearningService : IDynamicApiController, ITransient
                 if (!furnaceNo.IsValid)
                 {
                     parseFailCount++;
-                    Console.WriteLine(
-                        $"[Excel] 炉号解析失败: {furnaceNoValue} - {furnaceNo.ErrorMessage}"
-                    );
+                    Log.Warning("[FeatureLearning] 炉号解析失败: {FurnaceNoValue} - {ErrorMessage}", furnaceNoValue, furnaceNo.ErrorMessage);
                     continue;
                 }
 
@@ -730,12 +727,10 @@ public class FeatureLearningService : IDynamicApiController, ITransient
             // 构建详细的统计信息
             var statsMessage =
                 $"总行数: {rows.Count}, 未找到炉号列: {noColumnCount}, 炉号解析失败: {parseFailCount}, 无特性后缀: {noFeatureSuffixCount}, 唯一特性文字: {featureTexts.Count}";
-            Console.WriteLine($"[Excel] {statsMessage}");
+            Log.Information("[FeatureLearning] {StatsMessage}", statsMessage);
             if (featureCounts.Count > 0)
             {
-                Console.WriteLine(
-                    $"[Excel] 特性统计: {string.Join(", ", featureCounts.Select(kv => $"{kv.Key}={kv.Value}次"))}"
-                );
+                Log.Information("[FeatureLearning] 特性统计: {FeatureStats}", string.Join(", ", featureCounts.Select(kv => $"{kv.Key}={kv.Value}次")));
             }
 
             if (featureTexts.Count == 0)
@@ -808,7 +803,7 @@ public class FeatureLearningService : IDynamicApiController, ITransient
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[FeatureLearning] Excel上传处理失败: {ex.Message}");
+            Log.Error("[FeatureLearning] Excel上传处理失败", ex);
             throw Oops.Oh($"处理Excel失败: {ex.Message}");
         }
 

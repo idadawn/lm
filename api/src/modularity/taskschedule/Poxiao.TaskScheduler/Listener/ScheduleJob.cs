@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Manager;
+using Poxiao.Logging;
 using Poxiao.Schedule;
 using Poxiao.Systems.Interfaces.System;
 using SqlSugar;
@@ -56,9 +57,6 @@ public class ScheduleJob : IJob
             }
         }
 
-        var originColor = Console.ForegroundColor;
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine(string.Format("【{0}】服务当天日程推送加载", DateTime.Now));
-        Console.ForegroundColor = originColor;
+        Log.Information("【{Now}】服务当天日程推送加载", DateTime.Now);
     }
 }

@@ -56,6 +56,15 @@ const lab: AppRouteModule = {
                 title: '判定等级',
             },
         },
+        {
+            path: 'monthly-report',
+            name: 'LabMonthlyReport',
+            component: () => import('/@/views/lab/monthlyReport/index.vue'),
+            meta: {
+                title: '月度质量报表',
+                icon: 'ant-design:bar-chart-outlined',
+            },
+        },
     ],
 };
 

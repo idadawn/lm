@@ -113,8 +113,18 @@ enum RawDataApi {
 }
 
 // 获取磁性原始数据列表
-export function getMagneticRawDataList(params: any): Promise<any> {
-  return defHttp.get({ url: RawDataApi.Prefix, params });
+export async function getMagneticRawDataList(params: any): Promise<any> {
+  const response = await defHttp.get({ url: RawDataApi.Prefix, params });
+  // 处理分页返回格式：{ list: [], pagination: { currentPage, pageSize, total } }
+  const data = response.data || response;
+  return {
+    list: data.list || [],
+    pagination: data.pagination || {
+      currentPage: params.currentPage || 1,
+      pageSize: params.pageSize || 50,
+      total: data.list?.length || 0,
+    },
+  };
 }
 
 // 删除磁性原始数据

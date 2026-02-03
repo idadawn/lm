@@ -16,6 +16,7 @@ using Poxiao.Systems.Entitys.Entity.System;
 using Poxiao.Systems.Entitys.Permission;
 using Poxiao.Systems.Entitys.System;
 using Poxiao.VisualDev.Entitys;
+using Poxiao.Logging;
 using SqlSugar;
 using System.Security.Claims;
 
@@ -81,13 +82,7 @@ public class UserManager : IUserManager, IScoped
             var userId = currentUser?.FindFirst(ClaimConst.CLAINMUSERID)?.Value
                 ?? currentUser?.FindFirst("UserId")?.Value;
 
-            Console.WriteLine($"[UserManager.UserId] Attempting to get UserId");
-            Console.WriteLine($"[UserManager.UserId] _httpContext.User is null: {_httpContext?.User == null}");
-            Console.WriteLine($"[UserManager.UserId] _user is null: {_user == null}");
-            Console.WriteLine($"[UserManager.UserId] Using currentUser from: {(_httpContext?.User != null ? "_httpContext.User" : "_user")}");
-            Console.WriteLine($"[UserManager.UserId] ClaimConst.CLAINMUSERID: {ClaimConst.CLAINMUSERID}");
-            Console.WriteLine($"[UserManager.UserId] All claims: {string.Join(", ", currentUser?.Claims?.Select(c => $"{c.Type}={c.Value}") ?? new List<string>())}");
-            Console.WriteLine($"[UserManager.UserId] Result: {userId}");
+
             return userId;
         }
     }
@@ -255,26 +250,16 @@ public class UserManager : IUserManager, IScoped
     /// <returns></returns>
     public async Task<UserInfoModel> GetUserInfo()
     {
-        Console.WriteLine($"[UserManager.GetUserInfo] Start");
-        Console.WriteLine($"[UserManager.GetUserInfo] _httpContext is null: {_httpContext == null}");
-        Console.WriteLine($"[UserManager.GetUserInfo] _httpContext.User is null: {_httpContext?.User == null}");
-        Console.WriteLine($"[UserManager.GetUserInfo] _httpContext.User.Identity is null: {_httpContext?.User?.Identity == null}");
-        Console.WriteLine($"[UserManager.GetUserInfo] _httpContext.User.Identity.IsAuthenticated: {_httpContext?.User?.Identity?.IsAuthenticated}");
-        Console.WriteLine($"[UserManager.GetUserInfo] _user is null: {_user == null}");
-        Console.WriteLine($"[UserManager.GetUserInfo] UserId: {UserId}");
-        Console.WriteLine($"[UserManager.GetUserInfo] TenantId: {TenantId}");
-
         // 如果 UserId 为空，说明用户未认证
         if (string.IsNullOrEmpty(UserId))
         {
-            Console.WriteLine($"[UserManager.GetUserInfo] ERROR: UserId is null or empty - User not authenticated!");
+            Log.Error("获取用户信息失败：UserId 为空，用户未认证");
             throw Oops.Oh(600, "登录已过期，请重新登录").StatusCode(600);
         }
 
         UserAgent userAgent = new UserAgent(_httpContext);
         var data = new UserInfoModel();
         var userCache = string.Format("{0}:{1}:{2}", TenantId, CommonConst.CACHEKEYUSER, UserId);
-        Console.WriteLine($"[UserManager.GetUserInfo] UserCache Key: {userCache}");
 
         var userDataScope = await GetUserDataScopeAsync(UserId);
 
@@ -370,36 +355,19 @@ public class UserManager : IUserManager, IScoped
         data.tenantId = TenantId;
 
         // 根据系统配置过期时间自动过期
-        Console.WriteLine($"[UserManager.GetUserInfo] ========== REDIS WRITE SECTION ==========");
-        Console.WriteLine($"[UserManager.GetUserInfo] Cache Key: {userCache}");
-        Console.WriteLine($"[UserManager.GetUserInfo] Timeout: {sysConfigInfo.Value} minutes");
-        Console.WriteLine($"[UserManager.GetUserInfo] UserId in data: {data.userId}");
-        Console.WriteLine($"[UserManager.GetUserInfo] UserName in data: {data.userName}");
-        Console.WriteLine($"[UserManager.GetUserInfo] TenantId in data: {data.tenantId}");
-
         try
         {
             var setResult = await SetUserInfo(userCache, data, TimeSpan.FromMinutes(sysConfigInfo.Value.ParseToDouble()));
-            Console.WriteLine($"[UserManager.GetUserInfo] SetUserInfo returned: {setResult}");
-
-            if (setResult)
+            if (!setResult)
             {
-                Console.WriteLine($"[UserManager.GetUserInfo] ✅ Session SUCCESSFULLY written to Redis!");
-                Console.WriteLine($"[UserManager.GetUserInfo] Key: {userCache}");
-            }
-            else
-            {
-                Console.WriteLine($"[UserManager.GetUserInfo] ❌ Session write to Redis FAILED - SetUserInfo returned false");
+                Log.Warning($"写入用户会话到 Redis 失败：SetUserInfo 返回 false，Key: {userCache}");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[UserManager.GetUserInfo] ❌ EXCEPTION writing to Redis: {ex.Message}");
-            Console.WriteLine($"[UserManager.GetUserInfo] StackTrace: {ex.StackTrace}");
+            Log.Error($"写入用户会话到 Redis 时发生异常，Key: {userCache}", ex);
             throw;
         }
-
-        Console.WriteLine($"[UserManager.GetUserInfo] ========== END REDIS WRITE SECTION ==========");
 
         return data;
     }
@@ -2167,20 +2135,14 @@ public class UserManager : IUserManager, IScoped
     /// <returns></returns>
     private async Task<bool> SetUserInfo(string cacheKey, UserInfoModel userInfo, TimeSpan timeSpan)
     {
-        Console.WriteLine($"[UserManager.SetUserInfo] Called with key: {cacheKey}");
-        Console.WriteLine($"[UserManager.SetUserInfo] TimeSpan: {timeSpan.TotalMinutes} minutes");
-        Console.WriteLine($"[UserManager.SetUserInfo] _cacheManager is null: {_cacheManager == null}");
-
         try
         {
             var result = await _cacheManager.SetAsync(cacheKey, userInfo, timeSpan);
-            Console.WriteLine($"[UserManager.SetUserInfo] _cacheManager.SetAsync returned: {result}");
             return result;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[UserManager.SetUserInfo] EXCEPTION in _cacheManager.SetAsync: {ex.Message}");
-            Console.WriteLine($"[UserManager.SetUserInfo] StackTrace: {ex.StackTrace}");
+            Log.Error($"设置用户缓存时发生异常，Key: {cacheKey}", ex);
             throw;
         }
     }

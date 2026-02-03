@@ -1659,7 +1659,6 @@ public class CodeGenService : IDynamicApiController, ITransient
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
                 _logger.LogError(ex, $"{msg}:{ex.Message}");
             }
 

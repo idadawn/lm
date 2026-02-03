@@ -9,24 +9,23 @@
   </div>
 </template>
 <script lang="ts" setup>
-  import { reactive } from 'vue';
-  import { usePopup } from '/@/components/Popup';
-  import Form from './Form.vue';
+import { usePopup } from '/@/components/Popup';
+import Form from './Form.vue';
 
-  defineOptions({ name: 'permission-organize' });
+defineOptions({ name: 'permission-organize' });
 
-  const [registerForm, { openPopup: openFormPopup }] = usePopup();
+const [registerForm, { openPopup: openFormPopup }] = usePopup();
 
-  const goChartEdtor = ()=>{
-    const id = 'chartId1';
-    openFormPopup(true, { id });
-  }
+const goChartEdtor = () => {
+  const id = 'chartId1';
+  openFormPopup(true, { id });
+}
 
 </script>
 <style scoped>
-  .page-content-wrapper .page-content-wrapper-center .page-content-wrapper-content {
-    /* flex: 1;
+.page-content-wrapper .page-content-wrapper-center .page-content-wrapper-content {
+  /* flex: 1;
     overflow: hidden; */
-    background: #fff;
-  }
+  background: #fff;
+}
 </style>

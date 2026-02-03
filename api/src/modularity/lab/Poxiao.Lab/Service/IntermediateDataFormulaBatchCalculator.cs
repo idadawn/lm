@@ -14,6 +14,9 @@ using SqlSugar;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using UnitPrecisionInfo = Poxiao.Lab.Entity.Config.UnitPrecisionInfo;
+
+using Microsoft.Extensions.Logging;
 
 namespace Poxiao.Lab.Service;
 
@@ -27,7 +30,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
     private const string ErrorTypeSetValue = "SET_VALUE";
 
     private static readonly Regex JudgeExpressionRegex = new(
-        @"[\[\]\(\)\+\-\*/<>]|RANGE\(|DIFF_FIRST_LAST",
+        @"[\[\]\(\)\+\-\*/<>]|RANGE\s*\(|DIFF_FIRST\s*\(|DIFF_LAST\s*\(|DIFF_FIRST_LAST",
         RegexOptions.IgnoreCase | RegexOptions.Compiled
     );
 
@@ -38,6 +41,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
     private readonly IIntermediateDataFormulaService _formulaService;
     private readonly IFormulaParser _formulaParser;
     private readonly LabOptions _labOptions;
+    private readonly ILogger<IntermediateDataFormulaBatchCalculator> _logger;
 
     public IntermediateDataFormulaBatchCalculator(
         ISqlSugarRepository<IntermediateDataEntity> intermediateRepository,
@@ -46,7 +50,8 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         ISqlSugarRepository<IntermediateDataJudgmentLevelEntity> levelRepository,
         IIntermediateDataFormulaService formulaService,
         IFormulaParser formulaParser,
-        IOptions<LabOptions> labOptions
+        IOptions<LabOptions> labOptions,
+        ILogger<IntermediateDataFormulaBatchCalculator> logger
     )
     {
         _intermediateRepository = intermediateRepository;
@@ -56,6 +61,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         _formulaService = formulaService;
         _formulaParser = formulaParser;
         _labOptions = labOptions?.Value ?? new LabOptions();
+        _logger = logger;
     }
 
     public async Task<FormulaCalculationResult> CalculateByBatchAsync(
@@ -293,6 +299,20 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
             return result;
         }
 
+        // 预加载计算相关配置 (为了在其后重新计算变量)
+        var unitPrecisionMap = NormalizeUnitPrecisions(formulaSet.UnitPrecisions);
+        var calcPlans = BuildFormulaPlans(formulaSet.CalcFormulas, out var cyclicColumns);
+        var unitIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var formula in formulaSet.CalcFormulas)
+        {
+            if (!string.IsNullOrWhiteSpace(formula.UnitId)) unitIds.Add(formula.UnitId);
+        }
+        foreach (var info in unitPrecisionMap.Values)
+        {
+            if (!string.IsNullOrWhiteSpace(info?.UnitId)) unitIds.Add(info.UnitId);
+        }
+        var unitMap = await LoadUnitsAsync(unitIds);
+
         var errorItems = new ConcurrentBag<CalcErrorItem>();
         var resultErrors = new ConcurrentBag<FormulaCalculationError>();
         var successCount = 0;
@@ -309,10 +329,32 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
             (entity, _) =>
             {
                 var entityErrors = new List<CalcErrorItem>();
+                
+                // 1. 初始化上下文
                 var contextData = IntermediateDataFormulaCalcHelper.ExtractContextDataFromEntity(
                     entity
                 );
 
+                // 2. 重新执行计算公式以填充上下文 (关键：解决 VAR_... 等临时变量不持久化导致判定时丢失的问题)
+                // 注意：这里不需要保存到 Entity，因为 CalculateBatch 已经做过持久化了，这里只是为了恢复 ContextData
+                foreach (var plan in calcPlans)
+                {
+                    CalculateSingleFormula(
+                        plan,
+                        entity,
+                        contextData, // 这里的更新对后续判定至关重要
+                        unitPrecisionMap,
+                        unitMap,
+                        cyclicColumns,
+                        entityErrors, // 这里的错误可以忽略或记录，通常 CalculateBatch 已经报过了
+                        batchId
+                    );
+                }
+                // 清除计算过程中产生的错误，避免重复报错 (除非判定过程真的关心计算错误)
+                entityErrors.Clear();
+
+
+                // 3. 执行判定
                 foreach (var judgeFormula in formulaSet.JudgeFormulas)
                 {
                     var levels = formulaSet.Levels.GetValueOrDefault(judgeFormula.Id);
@@ -425,7 +467,8 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         {
             CalcFormulas = calcFormulas,
             JudgeFormulas = judgeFormulas,
-            Levels = levelMap
+            Levels = levelMap,
+            UnitPrecisions = NormalizeUnitPrecisions(_labOptions.Formula?.UnitPrecisions)
         };
     }
 
@@ -684,7 +727,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         JudgeResult judgeResult = null;
         IntermediateDataJudgmentLevelEntity defaultLevel = null;
 
-        Console.WriteLine($"[Judge] Start judging for Column: {formula.ColumnName}, Entity ID: {entity.Id}");
+        _logger.LogInformation($"[Judge] Start judging for Column: {formula.ColumnName}, Entity ID: {entity.Id}");
 
         if (levels != null && levels.Count > 0)
         {
@@ -703,18 +746,18 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
                     {
                         var ruleGroup = JObject.Parse(level.Condition);
                         var matched = EvaluateRuleGroup(ruleGroup, entity, contextData);
-                        Console.WriteLine($"[Judge] Level '{level.Name}' (Priority {level.Priority}): Match = {matched}");
+                        _logger.LogInformation($"[Judge] Level '{level.Name}' (Priority {level.Priority}): Match = {matched}");
                         
                         if (matched)
                         {
-                            judgeResult = new JudgeResult { ResultValue = level.QualityStatus, HasError = false };
-                            Console.WriteLine($"[Judge] Level '{level.Name}' matched! Result: {level.QualityStatus}");
+                            judgeResult = new JudgeResult { ResultValue = level.Name, HasError = false };
+                            _logger.LogInformation($"[Judge] Level '{level.Name}' matched! Result: {level.Name}");
                             break;
                         }
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"[Judge] Level '{level.Name}' error: {ex.Message}");
+                        _logger.LogError(ex, $"[Judge] Level '{level.Name}' error: {ex.Message}");
                         // Log error but continue to next level or fallback?
                         // Current decision: Record error and stop for this formula to avoid incorrect judgment
                         judgeResult = new JudgeResult
@@ -728,12 +771,12 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
                 }
             }
 
-            // 已移除默认等级兜底逻辑 - 如果没有匹配到任何等级，则视为判定失败
-            // if (judgeResult == null && defaultLevel != null)
-            // {
-            //     judgeResult = new JudgeResult { ResultValue = defaultLevel.QualityStatus, HasError = false };
-            //     Console.WriteLine($"[Judge] No level matched. Using Default Level '{defaultLevel.Name}'. Result: {defaultLevel.QualityStatus}");
-            // }
+            // 恢复默认等级兜底逻辑 - 如果没有匹配到任何等级，使用默认等级
+            if (judgeResult == null && defaultLevel != null)
+            {
+                judgeResult = new JudgeResult { ResultValue = defaultLevel.Name, HasError = false };
+                _logger.LogInformation($"[Judge] No level matched. Using Default Level '{defaultLevel.Name}'. Result: {defaultLevel.Name}");
+            }
         }
         else
         {
@@ -745,7 +788,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         if (judgeResult == null)
         {
             // 没有匹配到任何等级，且没有默认等级，标记为判定失败
-            Console.WriteLine($"[Judge] FAILED: No level matched for Column: {formula.ColumnName}, Entity ID: {entity.Id}");
+            _logger.LogWarning($"[Judge] FAILED: No level matched for Column: {formula.ColumnName}, Entity ID: {entity.Id}");
             judgeResult = new JudgeResult 
             { 
                 ResultValue = null, 
@@ -893,6 +936,9 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
             return false;
         }
 
+        // 获取条件组名称（用于日志）
+        var groupName = group["name"]?.ToString() ?? "(未命名组)";
+
         // 处理嵌套的 groups 数组结构（前端保存的条件格式）
         // 结构: { "id": "xxx", "resultValue": "A", "groups": [{ "logic": "AND", "conditions": [...] }] }
         var groups = group["groups"] as JArray;
@@ -903,7 +949,9 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
             {
                 if (groupToken is JObject subGroup)
                 {
+                    var subGroupName = subGroup["name"]?.ToString() ?? "(未命名组)";
                     var matched = EvaluateRuleGroup(subGroup, entity, contextData);
+                    _logger.LogInformation($"[Judge] 条件组 [{subGroupName}]: {(matched ? "通过" : "失败")}");
                     if (!matched)
                     {
                         return false; // AND 逻辑：任一组不满足则失败
@@ -921,14 +969,18 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         if (conditions != null && conditions.Count > 0)
         {
             conditionResult = logic == "OR" ? false : true;
+            var conditionIndex = 0;
             foreach (var condToken in conditions)
             {
                 if (condToken is not JObject condition)
                 {
                     continue;
                 }
+                conditionIndex++;
 
                 var satisfied = EvaluateCondition(condition, entity, contextData);
+                // 不再在这里记录，EvaluateCondition 内部会记录详细信息
+                
                 if (logic == "OR")
                 {
                     if (satisfied)
@@ -960,6 +1012,8 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
                 }
 
                 var satisfied = EvaluateRuleGroup(subGroup, entity, contextData);
+                // 子组的日志已在递归调用中记录
+                
                 if (logic == "OR")
                 {
                     if (satisfied)
@@ -979,24 +1033,33 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
             }
         }
 
+        bool finalResult;
         if (conditionResult == null && subGroupResult == null)
         {
-            return false;
+            finalResult = false;
         }
-
-        if (conditionResult == null)
+        else if (conditionResult == null)
         {
-            return subGroupResult == true;
+            finalResult = subGroupResult == true;
         }
-
-        if (subGroupResult == null)
+        else if (subGroupResult == null)
         {
-            return conditionResult == true;
+            finalResult = conditionResult == true;
+        }
+        else
+        {
+            finalResult = logic == "OR"
+                ? conditionResult == true || subGroupResult == true
+                : conditionResult == true && subGroupResult == true;
         }
 
-        return logic == "OR"
-            ? conditionResult == true || subGroupResult == true
-            : conditionResult == true && subGroupResult == true;
+        // 记录当前组的最终结果（只记录有名称的组，避免日志过多）
+        if (!string.IsNullOrWhiteSpace(group["name"]?.ToString()))
+        {
+            _logger.LogInformation($"[Judge] 条件组 [{groupName}]: {(finalResult ? "通过" : "失败")}");
+        }
+
+        return finalResult;
     }
 
     private bool EvaluateCondition(
@@ -1009,13 +1072,17 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         var leftExpr = condition["leftExpr"]?.ToString() ?? condition["fieldId"]?.ToString();
         var rightValue = condition["rightValue"]?.ToString() ?? condition["value"]?.ToString();
 
+        _logger.LogDebug($"[EvalCond] leftExpr='{leftExpr}', op='{op}', rightValue='{rightValue}'");
+
         if (string.IsNullOrWhiteSpace(leftExpr) || string.IsNullOrWhiteSpace(op))
         {
+            _logger.LogError("[EvalCond] ERROR: 缺少字段或操作符");
             throw new Exception("条件缺少字段或操作符。");
         }
 
         op = NormalizeOperator(op);
         var leftValue = ResolveLeftValue(leftExpr, entity, contextData);
+        _logger.LogInformation($"[EvalCond] 解析后 leftValue={leftValue} (类型: {leftValue?.GetType().Name ?? "null"})");
 
         if (op == "IS_NULL")
         {
@@ -1030,10 +1097,12 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         if (leftValue is IEnumerable<string> listValue)
         {
             var rightList = ParseRightValueAsList(rightValue);
+            _logger.LogInformation($"[EvalCond] List Compare: left=[{string.Join(",", listValue)}], right=[{string.Join(",", rightList)}], op={op}");
 
             if (op == "CONTAINS_ANY")
             {
-                return listValue.Intersect(rightList, StringComparer.OrdinalIgnoreCase).Any();
+                var result = listValue.Intersect(rightList, StringComparer.OrdinalIgnoreCase).Any();
+                return result;
             }
 
             if (op == "CONTAINS_ALL")
@@ -1063,7 +1132,9 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
             && TryParseDecimal(rightValue, out var rightNumber)
         )
         {
-            return CompareNumbers(leftNumber, rightNumber, op);
+            var result = CompareNumbers(leftNumber, rightNumber, op);
+            _logger.LogInformation($"[EvalCond] 条件 [{leftExpr} {op} {rightValue}]: {leftNumber} {op} {rightNumber} => {(result ? "通过" : "失败")}");
+            return result;
         }
 
         if (TryParseBool(leftValue, out var leftBool) && TryParseBool(rightValue, out var rightBool))
@@ -1088,6 +1159,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
 
         if (!IsExpression(expression))
         {
+            // 首先检查 contextData 中是否有预计算的值
             if (contextData.TryGetValue(expression, out var val))
             {
                 return val;
@@ -1099,6 +1171,23 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
                 {
                     return item.Value;
                 }
+            }
+
+            // 检查是否是自定义公式 ID ($VAR_xxx 格式)
+            // 这些是判定条件中引用的自定义公式，需要动态计算
+            // 使用 $ 前缀确保与普通数据列区分（普通列名不会包含 $ 符号）
+            if (expression.StartsWith("$VAR_", StringComparison.OrdinalIgnoreCase) ||
+                expression.StartsWith("$", StringComparison.Ordinal))
+            {
+                var formulaValue = ResolveCustomFormulaValue(expression, entity, contextData);
+                if (formulaValue != null)
+                {
+                    // 缓存计算结果，避免重复计算
+                    contextData[expression] = formulaValue;
+                    return formulaValue;
+                }
+                _logger.LogWarning($"[ResolveLeftValue] 自定义公式 '{expression}' 未找到定义或计算失败");
+                return null;
             }
 
             if (
@@ -1138,6 +1227,51 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         object calcContext = IsRangeFormula(expression) ? entity : contextData;
         var computed = _formulaParser.Calculate(expression, calcContext);
         return computed;
+    }
+
+    /// <summary>
+    /// 解析自定义公式 ($VAR_xxx 或 $xxx) 的值
+    /// </summary>
+    private object ResolveCustomFormulaValue(
+        string formulaId,
+        IntermediateDataEntity entity,
+        Dictionary<string, object> contextData
+    )
+    {
+        try
+        {
+            // 移除 $ 前缀进行查找
+            var lookupId = formulaId.TrimStart('$');
+            
+            // 尝试从公式服务获取公式定义
+            // 公式的 ColumnName 应该与 lookupId 对应（如 VAR_1769806633591）
+            var formula = _formulaService.GetListAsync().Result
+                .FirstOrDefault(f => 
+                    string.Equals(f.ColumnName, lookupId, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(f.ColumnName, formulaId, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(f.Id, lookupId.Replace("VAR_", ""), StringComparison.OrdinalIgnoreCase)
+                );
+
+            if (formula == null || string.IsNullOrWhiteSpace(formula.Formula))
+            {
+                _logger.LogWarning($"[ResolveCustomFormula] 未找到公式定义: {formulaId}");
+                return null;
+            }
+
+            _logger.LogDebug($"[ResolveCustomFormula] 找到公式 '{formulaId}', 表达式: {formula.Formula}");
+
+            // 构建计算上下文（entity 的字段 + 已计算的 contextData）
+            object calcContext = contextData;
+            var computed = _formulaParser.Calculate(formula.Formula, calcContext);
+            
+            _logger.LogInformation($"[ResolveCustomFormula] '{formulaId}' = {formula.Formula} => {computed}");
+            return computed;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"[ResolveCustomFormula] 计算公式 '{formulaId}' 时发生错误");
+            return null;
+        }
     }
 
     private bool TrySetJudgeValueToEntity(
@@ -1406,6 +1540,8 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         }
 
         return formula.Contains("RANGE(", StringComparison.OrdinalIgnoreCase)
+            || formula.Contains("DIFF_FIRST(", StringComparison.OrdinalIgnoreCase)
+            || formula.Contains("DIFF_LAST(", StringComparison.OrdinalIgnoreCase)
             || formula.Contains("DIFF_FIRST_LAST", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -1682,6 +1818,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         public List<IntermediateDataFormulaDto> CalcFormulas { get; init; } = new();
         public List<IntermediateDataFormulaDto> JudgeFormulas { get; init; } = new();
         public Dictionary<string, List<IntermediateDataJudgmentLevelEntity>> Levels { get; init; } = new();
+        public Dictionary<string, UnitPrecisionInfo> UnitPrecisions { get; init; } = new();
     }
 
     private sealed class FormulaPlan
@@ -1722,11 +1859,13 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         {
             try
             {
-                return JsonConvert.DeserializeObject<List<string>>(rightValue) ?? new List<string>();
+                var list = JsonConvert.DeserializeObject<List<string>>(rightValue) ?? new List<string>();
+                // Console.WriteLine($"[ParseRightValueAsList] Parsed JSON: {string.Join(", ", list)}");
+                return list;
             }
             catch
             {
-                // Ignore parsing error
+                // Ignore parsing error, fall back to comma split
             }
         }
 

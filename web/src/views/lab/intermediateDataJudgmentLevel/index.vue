@@ -55,6 +55,11 @@
                     <span>{{ record.color }}</span>
                   </div>
                 </template>
+                <template v-else-if="column.key === 'qualityStatus'">
+                  <a-tag :color="getQualityStatusColor(record.qualityStatus)">
+                    {{ getQualityStatusText(record.qualityStatus) }}
+                  </a-tag>
+                </template>
                 <template v-else-if="column.key === 'conditionText'">
                   <a-tooltip color="#fff" placement="topLeft" v-if="record.condition">
                     <template #title>
@@ -194,10 +199,28 @@ const getConditionCount = (conditionJson: string) => {
   }
 };
 
+const getQualityStatusText = (status: number) => {
+  switch (status) {
+    case 0: return '合格';
+    case 1: return '不合格';
+    case 2: return '其他';
+    default: return '未知';
+  }
+};
+
+const getQualityStatusColor = (status: number) => {
+  switch (status) {
+    case 0: return 'success';
+    case 1: return 'error';
+    case 2: return 'default';
+    default: return 'default';
+  }
+};
+
 const columns = [
   { title: '等级名称', dataIndex: 'name', width: 120 },
   { title: '条件个数', key: 'conditionCount', width: 100 },
-  { title: '质量状态', dataIndex: 'qualityStatus', width: 100 },
+  { title: '质量状态', key: 'qualityStatus', width: 100 },
   { title: '颜色', key: 'color', width: 80 },
   { title: '统计', key: 'isStatistic', width: 80 },
   { title: '默认', key: 'isDefault', width: 80 },

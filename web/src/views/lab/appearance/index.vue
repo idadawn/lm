@@ -623,8 +623,8 @@ const handleAddKeyword = async (query: string, option: ManualCorrectionOption) =
       // 兼容旧逻辑（如果没有 correctionId，例如非AI生成的选项）
       const { addKeywordToFeature } = await import('/@/api/lab/appearance');
       await addKeywordToFeature({
-        featureId: option.featureId,
-        keyword: query,
+        FeatureId: option.featureId,
+        Keyword: query,
       });
     }
 

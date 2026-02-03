@@ -1,6 +1,7 @@
 using Mapster;
 using Poxiao;
 using Poxiao.DatabaseAccessor;
+using Poxiao.Logging;
 using SqlSugar;
 using System.Reflection;
 
@@ -81,25 +82,15 @@ public static class SqlSugarConfigureExtensions
         // 打印SQL语句
         db.Aop.OnLogExecuting = (sql, pars) =>
         {
-            var originColor = Console.ForegroundColor;
-            if (sql.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
-                Console.ForegroundColor = ConsoleColor.Green;
-            if (sql.StartsWith("UPDATE", StringComparison.OrdinalIgnoreCase) || sql.StartsWith("INSERT", StringComparison.OrdinalIgnoreCase))
-                Console.ForegroundColor = ConsoleColor.Yellow;
-            if (sql.StartsWith("DELETE", StringComparison.OrdinalIgnoreCase))
-                Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine("【" + DateTime.Now + "——执行SQL】\r\n" + UtilMethods.GetSqlString(config.DbType, sql, pars) + "\r\n");
-            Console.ForegroundColor = originColor;
+            Log.Debug("【" + DateTime.Now + "——执行SQL】\r\n" + UtilMethods.GetSqlString(config.DbType, sql, pars));
             App.PrintToMiniProfiler("SqlSugar", "Info", sql + "\r\n" + db.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value)));
         };
         db.Aop.OnError = ex =>
         {
             if (ex.Parametres == null) return;
-            var originColor = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.DarkRed;
             var pars = db.Utilities.SerializeObject(((SugarParameter[])ex.Parametres).ToDictionary(it => it.ParameterName, it => it.Value));
-            Console.WriteLine("【" + DateTime.Now + "——错误SQL】\r\n" + UtilMethods.GetSqlString(config.DbType, ex.Sql, (SugarParameter[])ex.Parametres) + "\r\n");
-            Console.ForegroundColor = originColor;
+            var errorSql = UtilMethods.GetSqlString(config.DbType, ex.Sql, (SugarParameter[])ex.Parametres);
+            Log.Error("【" + DateTime.Now + "——错误SQL】\r\n" + errorSql, ex);
             App.PrintToMiniProfiler("SqlSugar", "Error", $"{ex.Message}{Environment.NewLine}{ex.Sql}{pars}{Environment.NewLine}");
         };
     }

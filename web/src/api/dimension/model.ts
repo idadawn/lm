@@ -1,9 +1,8 @@
 import { defHttp } from '/@/utils/http/axios';
-const mock = import.meta.env.VITE_MOCK_SERVER;
 const dev = '';
 const Url = {
   getDimensionList: `${dev}/api/kpi/v1/metric-dimension/list`, //公共维度列表接口
-  deleteDimension: `${dev}/api/kpi/v1/metricgot/`, //公共维度删除接口
+  deleteDimension: `${dev}/api/kpi/v1/metric-dimension/`, //公共维度删除接口
   getDimensionOptionsList: `${dev}/api/kpi/v1/metric-composite/dims`,
   addDimension: `${dev}/api/kpi/v1/metric-dimension`,
   updateDimension: `${dev}/api/kpi/v1/metric-dimension/`,

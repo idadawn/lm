@@ -1,12 +1,8 @@
 <template>
   <div class="step2-container">
     <!-- 步骤说明 -->
-    <a-alert
-      message="第三步：自动匹配产品规格"
-      description="系统已根据检测数据自动匹配产品规格，请检查并修正匹配结果。未匹配的数据需要手动选择产品规格。本步骤只显示有效数据。"
-      type="info"
-      show-icon
-      style="margin-bottom: 20px" />
+    <a-alert message="第三步：自动匹配产品规格" description="系统已根据检测数据自动匹配产品规格，请检查并修正匹配结果。未匹配的数据需要手动选择产品规格。本步骤只显示有效数据。" type="info"
+      show-icon style="margin-bottom: 20px" />
 
     <!-- 统计信息 -->
     <div class="statistics-section">
@@ -28,12 +24,7 @@
 
     <!-- 数据正在处理中提示 -->
     <div v-if="isProcessing && data.length === 0" class="processing-alert" style="margin-bottom: 20px">
-      <a-alert
-        message="数据正在处理中"
-        description="系统正在解析和处理上传的数据，请稍候...（自动重试中）"
-        type="info"
-        show-icon
-      />
+      <a-alert message="数据正在处理中" description="系统正在解析和处理上传的数据，请稍候...（自动重试中）" type="info" show-icon />
     </div>
 
     <!-- 筛选和操作 -->
@@ -45,35 +36,21 @@
         <a-button @click="handleBatchMatch" :disabled="!hasUnmatchedData">
           <ThunderboltOutlined /> 批量匹配
         </a-button>
-        <a-select
-          v-model:value="filterStatus"
-          style="width: 120px"
-          placeholder="筛选状态"
-          allow-clear
+        <a-select v-model:value="filterStatus" style="width: 120px" placeholder="筛选状态" allow-clear
           @change="handleFilterChange">
           <a-select-option value="">全部</a-select-option>
           <a-select-option value="matched">已匹配</a-select-option>
           <a-select-option value="unmatched">未匹配</a-select-option>
         </a-select>
-        <a-input-search
-          v-model:value="searchText"
-          placeholder="搜索炉号或产品规格"
-          style="width: 250px"
-          @search="handleSearch"
+        <a-input-search v-model:value="searchText" placeholder="搜索炉号或产品规格" style="width: 250px" @search="handleSearch"
           allow-clear />
       </a-space>
     </div>
 
     <!-- 数据表格 -->
     <div class="table-section">
-      <a-table
-        :columns="columns"
-        :data-source="displayData"
-        :pagination="paginationConfig"
-        :row-selection="rowSelection"
-        :loading="loading"
-        row-key="id"
-        size="middle"
+      <a-table :columns="columns" :data-source="displayData" :pagination="paginationConfig"
+        :row-selection="rowSelection" :loading="loading" row-key="id" size="middle" @change="handleTableChange"
         :scroll="{ x: 1000 }">
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'prodDate'">
@@ -121,28 +98,15 @@
     </div>
 
     <!-- 产品规格选择弹窗 -->
-    <a-modal
-      v-model:open="specModalVisible"
-      title="选择产品规格"
-      :width="800"
-      :mask-closable="false"
-      @ok="handleSpecModalOk"
+    <a-modal v-model:open="specModalVisible" title="选择产品规格" :width="800" :mask-closable="false" @ok="handleSpecModalOk"
       @cancel="handleSpecModalCancel">
       <div class="spec-selection-content">
         <!-- 搜索和筛选 -->
         <div class="spec-filter">
           <a-space>
-            <a-input-search
-              v-model:value="specSearchText"
-              placeholder="搜索产品规格名称或编码"
-              style="width: 250px"
-              @search="handleSpecSearch"
-              allow-clear />
-            <a-select
-              v-model:value="specFilterEnabled"
-              style="width: 120px"
-              placeholder="状态"
-              allow-clear
+            <a-input-search v-model:value="specSearchText" placeholder="搜索产品规格名称或编码" style="width: 250px"
+              @search="handleSpecSearch" allow-clear />
+            <a-select v-model:value="specFilterEnabled" style="width: 120px" placeholder="状态" allow-clear
               @change="handleSpecFilterChange">
               <a-select-option :value="true">启用</a-select-option>
               <a-select-option :value="false">禁用</a-select-option>
@@ -151,15 +115,8 @@
         </div>
 
         <!-- 规格列表 -->
-        <a-table
-          :columns="specColumns"
-          :data-source="specList"
-          :pagination="specPagination"
-          :loading="specLoading"
-          :row-selection="specRowSelection"
-          row-key="id"
-          size="small"
-          @change="handleSpecTableChange">
+        <a-table :columns="specColumns" :data-source="specList" :pagination="specPagination" :loading="specLoading"
+          :row-selection="specRowSelection" row-key="id" size="small" @change="handleSpecTableChange">
           <template #bodyCell="{ column, record }">
             <template v-if="column.dataIndex === 'enabled'">
               <a-tag :color="record.enabled ? 'green' : 'red'">
@@ -176,30 +133,16 @@
     </a-modal>
 
     <!-- 批量匹配弹窗 -->
-    <a-modal
-      v-model:open="batchMatchModalVisible"
-      title="批量匹配产品规格"
-      :width="600"
-      @ok="handleBatchMatchOk"
+    <a-modal v-model:open="batchMatchModalVisible" title="批量匹配产品规格" :width="600" @ok="handleBatchMatchOk"
       @cancel="handleBatchMatchCancel">
       <p>将为选中的 {{ selectedRowKeys.length }} 行数据批量设置产品规格：</p>
       <a-form :model="batchMatchForm" layout="vertical">
-        <a-form-item
-          label="产品规格"
-          name="productSpecId"
-          :rules="[{ required: true, message: '请选择产品规格' }]">
-          <a-select
-            v-model:value="batchMatchForm.productSpecId"
-            placeholder="请选择产品规格"
-            show-search
+        <a-form-item label="产品规格" name="productSpecId" :rules="[{ required: true, message: '请选择产品规格' }]">
+          <a-select v-model:value="batchMatchForm.productSpecId" placeholder="请选择产品规格" show-search
             :filter-option="filterProductSpecOption">
-              <a-select-option
-                v-for="spec in specList"
-                :key="spec.id"
-                :value="spec.id"
-                :disabled="!spec.enabled">
-                {{ spec.name }} ({{ spec.code }})
-              </a-select-option>
+            <a-select-option v-for="spec in specList" :key="spec.id" :value="spec.id" :disabled="!spec.enabled">
+              {{ spec.name }} ({{ spec.code }})
+            </a-select-option>
           </a-select>
         </a-form-item>
       </a-form>
@@ -439,7 +382,7 @@ const specRowSelection = computed(() => ({
 
 // 方法
 async function loadData(isRetry = false) {
-  
+
   // 如果是重试，更新重试计数
   if (isRetry) {
     retryCount.value++;
@@ -660,6 +603,11 @@ function handleSpecTableChange(pagination: any) {
   loadProductSpecs();
 }
 
+function handleTableChange(pagination: any) {
+  paginationConfig.current = pagination.current;
+  paginationConfig.pageSize = pagination.pageSize;
+}
+
 async function handleSpecModalOk() {
   if (!currentRecord.value?.productSpecId) {
     message.warning('请选择产品规格');
@@ -869,6 +817,7 @@ defineExpose({
         font-weight: 500;
         margin-bottom: 4px;
       }
+
       .spec-code {
         font-size: 12px;
         color: #8c8c8c;

@@ -2,17 +2,19 @@
   <div class="raw-data-container">
     <!-- 页面标题 -->
     <div class="page-header">
-      <a-page-header
-        title="原始数据管理"
-        sub-title="管理和导入实验室原始检测数据">
+      <a-page-header title="原始数据管理" sub-title="管理和导入实验室原始检测数据">
         <template #extra>
           <a-space>
             <a-button @click="handleRefresh">
-              <template #icon><ReloadOutlined /></template>
+              <template #icon>
+                <ReloadOutlined />
+              </template>
               刷新
             </a-button>
             <a-button type="primary" @click="handleNewImport">
-              <template #icon><UploadOutlined /></template>
+              <template #icon>
+                <UploadOutlined />
+              </template>
               新建导入
             </a-button>
           </a-space>
@@ -24,41 +26,33 @@
     <div class="stats-section">
       <a-row :gutter="16">
         <a-col :span="6">
-          <a-statistic-card
-            title="总数据量"
-            :value="stats.totalDataCount"
-            :loading="loading"
-            suffix="条">
-            <template #prefix><DatabaseOutlined /></template>
+          <a-statistic-card title="总数据量" :value="stats.totalDataCount" :loading="loading" suffix="条">
+            <template #prefix>
+              <DatabaseOutlined />
+            </template>
           </a-statistic-card>
         </a-col>
         <a-col :span="6">
-          <a-statistic-card
-            title="本月导入"
-            :value="stats.monthlyImportCount"
-            :loading="loading"
-            suffix="次">
-            <template #prefix><ImportOutlined /></template>
+          <a-statistic-card title="本月导入" :value="stats.monthlyImportCount" :loading="loading" suffix="次">
+            <template #prefix>
+              <ImportOutlined />
+            </template>
           </a-statistic-card>
         </a-col>
         <a-col :span="6">
-          <a-statistic-card
-            title="成功导入"
-            :value="stats.successImportCount"
-            :loading="loading"
-            suffix="次"
+          <a-statistic-card title="成功导入" :value="stats.successImportCount" :loading="loading" suffix="次"
             :value-style="{ color: '#3f8600' }">
-            <template #prefix><CheckCircleOutlined /></template>
+            <template #prefix>
+              <CheckCircleOutlined />
+            </template>
           </a-statistic-card>
         </a-col>
         <a-col :span="6">
-          <a-statistic-card
-            title="失败导入"
-            :value="stats.failedImportCount"
-            :loading="loading"
-            suffix="次"
+          <a-statistic-card title="失败导入" :value="stats.failedImportCount" :loading="loading" suffix="次"
             :value-style="{ color: '#cf1322' }">
-            <template #prefix><CloseCircleOutlined /></template>
+            <template #prefix>
+              <CloseCircleOutlined />
+            </template>
           </a-statistic-card>
         </a-col>
       </a-row>
@@ -74,34 +68,20 @@
             <a-card size="small">
               <a-form layout="inline">
                 <a-form-item label="生产日期">
-                  <a-range-picker
-                    v-model:value="filterDateRange"
-                    format="YYYY-MM-DD"
-                    placeholder="选择日期范围"
+                  <a-range-picker v-model:value="filterDateRange" format="YYYY-MM-DD" placeholder="选择日期范围"
                     @change="handleDataFilterChange" />
                 </a-form-item>
 
                 <a-form-item label="炉号">
-                  <a-input-search
-                    v-model:value="filterFurnaceNo"
-                    placeholder="输入炉号"
-                    style="width: 200px"
-                    @search="handleDataFilterChange"
-                    allow-clear />
+                  <a-input-search v-model:value="filterFurnaceNo" placeholder="输入炉号" style="width: 200px"
+                    @search="handleDataFilterChange" allow-clear />
                 </a-form-item>
 
                 <a-form-item label="产品规格">
-                  <a-select
-                    v-model:value="filterProductSpec"
-                    placeholder="选择产品规格"
-                    style="width: 200px"
-                    allow-clear
+                  <a-select v-model:value="filterProductSpec" placeholder="选择产品规格" style="width: 200px" allow-clear
                     @change="handleDataFilterChange">
                     <a-select-option value="">全部</a-select-option>
-                    <a-select-option
-                      v-for="spec in productSpecOptions"
-                      :key="spec.id"
-                      :value="spec.id">
+                    <a-select-option v-for="spec in productSpecOptions" :key="spec.id" :value="spec.id">
                       {{ spec.name }}
                     </a-select-option>
                   </a-select>
@@ -123,11 +103,15 @@
               <template #extra>
                 <a-space>
                   <a-button @click="handleExportData">
-                    <template #icon><DownloadOutlined /></template>
+                    <template #icon>
+                      <DownloadOutlined />
+                    </template>
                     导出数据
                   </a-button>
                   <a-button @click="handleBatchDeleteData" :disabled="!selectedDataRowKeys.length" danger>
-                    <template #icon><DeleteOutlined /></template>
+                    <template #icon>
+                      <DeleteOutlined />
+                    </template>
                     批量删除
                   </a-button>
                 </a-space>
@@ -135,15 +119,10 @@
 
               <!-- 自定义排序控制 -->
               <div class="table-toolbar">
-                <CustomSortControl
-                  v-model="sortRules"
-                  @change="handleSortChange" />
+                <CustomSortControl v-model="sortRules" @change="handleSortChange" />
               </div>
 
-              <BasicTable
-                @register="registerTable"
-                :loading="loading"
-                :row-selection="dataRowSelection">
+              <BasicTable @register="registerTable" :loading="loading" :row-selection="dataRowSelection">
                 <template #bodyCell="{ column, record }">
                   <template v-if="column.key === 'productSpecName'">
                     <a-button type="link" @click="handleViewProductSpec(record)" v-if="record.productSpecId">
@@ -182,19 +161,11 @@
           <div class="import-wizard-content">
             <!-- 导入方式选择 -->
             <div class="import-method-selector">
-              <a-alert
-                message="选择导入方式"
-                description="请选择适合您的导入方式"
-                type="info"
-                show-icon
-                style="margin-bottom: 24px" />
+              <a-alert message="选择导入方式" description="请选择适合您的导入方式" type="info" show-icon style="margin-bottom: 24px" />
 
               <a-row :gutter="[16, 16]">
                 <a-col :xs="24" :sm="12" :lg="8">
-                  <a-card
-                    :hoverable="true"
-                    class="import-method-card"
-                    @click="handleQuickImport"
+                  <a-card :hoverable="true" class="import-method-card" @click="handleQuickImport"
                     :body-style="{ padding: '24px' }">
                     <template #title>
                       <div class="method-title">
@@ -225,10 +196,7 @@
                 </a-col>
 
                 <a-col :xs="24" :sm="12" :lg="8">
-                  <a-card
-                    :hoverable="true"
-                    class="import-method-card"
-                    @click="handleStepImport"
+                  <a-card :hoverable="true" class="import-method-card" @click="handleStepImport"
                     :body-style="{ padding: '24px' }">
                     <template #title>
                       <div class="method-title">
@@ -259,10 +227,7 @@
                 </a-col>
 
                 <a-col :xs="24" :sm="12" :lg="8">
-                  <a-card
-                    :hoverable="true"
-                    class="import-method-card"
-                    @click="handleImportHistory"
+                  <a-card :hoverable="true" class="import-method-card" @click="handleImportHistory"
                     :body-style="{ padding: '24px' }">
                     <template #title>
                       <div class="method-title">
@@ -300,10 +265,7 @@
                 <template #extra>
                   <a-button type="link" @click="activeTab = 'history'">查看全部</a-button>
                 </template>
-                <BasicTable
-                  @register="registerRecentTable"
-                  :pagination="false"
-                  size="middle" />
+                <BasicTable @register="registerRecentTable" :pagination="false" size="middle" />
               </a-card>
             </div>
           </div>
@@ -313,9 +275,7 @@
 
     <!-- 模态框 -->
     <ProductSpecModal @register="registerProductSpecModal" />
-    <StepImportWizard
-      @register="registerStepImportModal"
-      @success="handleStepImportSuccess"
+    <StepImportWizard @register="registerStepImportModal" @success="handleStepImportSuccess"
       @cancel="handleStepImportCancel" />
 
     <!-- 加载状态 -->
@@ -326,9 +286,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onMounted } from 'vue';
-import { message } from 'ant-design-vue';
-import { useI18n } from '/@/hooks/web/useI18n';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { useMessage } from '/@/hooks/web/useMessage';
 import { useModal } from '/@/components/Modal';
 import { BasicTable, useTable } from '/@/components/Table';
@@ -337,13 +295,12 @@ import {
   getRawDataList,
   getImportHistoryList,
   getProductSpecList,
-  deleteRawData
 } from '/@/api/lab/rawData';
 import ProductSpecModal from './components/ProductSpecModal.vue';
 import StepImportWizard from './components/StepImportWizard.vue';
 import CustomSortControl from './components/CustomSortControl.vue';
 import ImportHistory from './ImportHistory.vue';
-import type { ImportHistory as ImportHistoryType } from '/@/api/lab/types/rawData';
+// import type { ImportHistory as ImportHistoryType } from '/@/api/lab/types/rawData';
 
 // 图标导入
 import {
@@ -356,12 +313,16 @@ import {
   RocketOutlined,
   SolutionOutlined,
   HistoryOutlined,
-  EyeOutlined,
   DownloadOutlined,
   DeleteOutlined
 } from '@ant-design/icons-vue';
 
-const { t } = useI18n();
+// const { t } = useI18n();
+// Wait, t might be used in template? If purely generic, maybe "t" is unused.
+// usage: const { t } = useI18n();
+// If t is unused, remove it.
+// Checking template usage... I don't see $t or t() calls.
+// Removing t.
 const { createMessage } = useMessage();
 
 // 状态
@@ -391,16 +352,16 @@ const stats = reactive({
 
 // 表格列配置
 const dataColumns = [
-  { title: '检测日期', dataIndex: 'prodDate', width: 120, fixed: 'left' },
-  { title: '炉号', dataIndex: 'furnaceNo', width: 150, fixed: 'left' },
-  { title: '产线', dataIndex: 'lineNo', width: 80, align: 'center' },
-  { title: '班次', dataIndex: 'shift', width: 80, align: 'center' },
-  { title: '宽度', dataIndex: 'width', width: 100, align: 'right' },
-  { title: '带材重量', dataIndex: 'coilWeight', width: 120, align: 'right' },
-  { title: '检测列数', dataIndex: 'detectionColumns', width: 100, align: 'center' },
+  { title: '检测日期', dataIndex: 'prodDate', width: 120, fixed: 'left' as const },
+  { title: '炉号', dataIndex: 'furnaceNo', width: 150, fixed: 'left' as const },
+  { title: '产线', dataIndex: 'lineNo', width: 80, align: 'center' as const },
+  { title: '班次', dataIndex: 'shift', width: 80, align: 'center' as const },
+  { title: '宽度', dataIndex: 'width', width: 100, align: 'right' as const },
+  { title: '带材重量', dataIndex: 'coilWeight', width: 120, align: 'right' as const },
+  { title: '检测列数', dataIndex: 'detectionColumns', width: 100, align: 'center' as const },
   { title: '产品规格', dataIndex: 'productSpecName', width: 150 },
   { title: '创建时间', dataIndex: 'createTime', width: 160 },
-  { title: '操作', key: 'actions', width: 120, fixed: 'right' }
+  { title: '操作', key: 'actions', width: 120, fixed: 'right' as const }
 ];
 
 // 模态框注册
@@ -497,7 +458,7 @@ async function loadStatistics() {
       endTime: today.toISOString()
     });
 
-    const history = historyResponse.list || [];
+    const history = Array.isArray(historyResponse) ? historyResponse : (historyResponse as any).list || [];
 
     stats.monthlyImportCount = history.length;
     stats.successImportCount = history.filter(h => h.status === 'completed').length;

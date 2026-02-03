@@ -319,8 +319,8 @@
 
     try {
       await addKeywordToFeature({
-        featureId: feature.id,
-        keyword: keyword,
+        FeatureId: feature.id,
+        Keyword: keyword,
       });
       createMessage.success(`已将"${keyword}"添加到特性"${feature.name}"的关键字列表`);
       

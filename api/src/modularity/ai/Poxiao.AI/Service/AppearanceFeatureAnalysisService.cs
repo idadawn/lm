@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using OpenAI;
 using Poxiao.AI.Interfaces;
 using Poxiao.DependencyInjection;
+using Poxiao.Logging;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -150,8 +151,7 @@ public class AppearanceFeatureAnalysisService : IAppearanceFeatureAnalysisServic
                 errorMessage = $"AI 服务内部错误 ({ex.Status})。请检查 vLLM 服务状态。";
             }
 
-            Console.WriteLine($"Error calling AI service: {errorMessage}");
-            Console.WriteLine($"Exception details: {ex}");
+            Log.Error(errorMessage, ex);
 
             return new AppearanceFeatureAnalysisResult
             {
@@ -161,13 +161,12 @@ public class AppearanceFeatureAnalysisService : IAppearanceFeatureAnalysisServic
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error calling AI service: {ex.Message}");
-            Console.WriteLine($"Exception type: {ex.GetType().Name}");
-            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            var errorMessage = $"AI 服务调用异常: {ex.Message}";
+            Log.Error(errorMessage, ex);
             return new AppearanceFeatureAnalysisResult
             {
                 Success = false,
-                ErrorMessage = $"AI 服务调用异常: {ex.Message}",
+                ErrorMessage = errorMessage,
             };
         }
     }

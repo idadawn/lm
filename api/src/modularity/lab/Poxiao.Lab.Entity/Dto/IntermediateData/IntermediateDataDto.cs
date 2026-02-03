@@ -260,10 +260,79 @@ public class IntermediateDataAppearUpdateInput
     public decimal? CoilWeightKg { get; set; }
 
     /// <summary>
+    /// 单卷重量（别名，兼容前端）.
+    /// </summary>
+    public decimal? SingleCoilWeight { get; set; }
+
+    /// <summary>
     /// 外观检验员.
     /// </summary>
     public string AppearJudgeName { get; set; }
+
+    /// <summary>
+    /// 外观特性ID列表（JSON格式）.
+    /// </summary>
+    public string AppearanceFeatureIds { get; set; }
+
+    #region 中Si、中B检测值
+
+    /// <summary>
+    /// 中Si (左).
+    /// </summary>
+    public string MidSiLeft { get; set; }
+
+    /// <summary>
+    /// 中Si (右).
+    /// </summary>
+    public string MidSiRight { get; set; }
+
+    /// <summary>
+    /// 中B (左).
+    /// </summary>
+    public string MidBLeft { get; set; }
+
+    /// <summary>
+    /// 中B (右).
+    /// </summary>
+    public string MidBRight { get; set; }
+
+    #endregion
+
+    #region 花纹检测值
+
+    /// <summary>
+    /// 左花纹纹宽.
+    /// </summary>
+    public decimal? LeftPatternWidth { get; set; }
+
+    /// <summary>
+    /// 左花纹纹间距.
+    /// </summary>
+    public decimal? LeftPatternSpacing { get; set; }
+
+    /// <summary>
+    /// 中花纹纹宽.
+    /// </summary>
+    public decimal? MidPatternWidth { get; set; }
+
+    /// <summary>
+    /// 中花纹纹间距.
+    /// </summary>
+    public decimal? MidPatternSpacing { get; set; }
+
+    /// <summary>
+    /// 右花纹纹宽.
+    /// </summary>
+    public decimal? RightPatternWidth { get; set; }
+
+    /// <summary>
+    /// 右花纹纹间距.
+    /// </summary>
+    public decimal? RightPatternSpacing { get; set; }
+
+    #endregion
 }
+
 
 /// <summary>
 /// 基础信息更新输入.

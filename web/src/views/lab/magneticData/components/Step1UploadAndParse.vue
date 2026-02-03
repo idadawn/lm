@@ -2,27 +2,16 @@
   <div class="step1-container">
     <!-- 文件上传区域 -->
     <div class="upload-section">
-      <a-alert
-        message="第一步：文件上传与解析"
-        description="请上传Excel文件，系统将自动解析B列(原始炉号)、H列(Ps铁损)、I列(Ss激磁功率)、F列(Hc)、P列(检测时间)。"
-        type="info"
-        show-icon
-        style="margin-bottom: 24px" />
+      <a-alert message="第一步：文件上传与解析" description="请上传Excel文件，系统将自动解析B列(原始炉号)、H列(Ps铁损)、I列(Ss激磁功率)、F列(Hc)、P列(检测时间)。"
+        type="info" show-icon style="margin-bottom: 24px" />
 
       <!-- 文件上传 -->
       <div class="file-upload-section">
         <h3 class="section-title">选择文件</h3>
-        <div class="upload-area" :class="{ 'drag-over': isDragOver }"
-             @drop="handleDrop"
-             @dragover="handleDragOver"
-             @dragleave="handleDragLeave">
-          <a-upload
-            v-model:file-list="fileList"
-            :before-upload="beforeUpload"
-            :show-upload-list="false"
-            accept=".xlsx,.xls"
-            :max-count="1"
-            @change="handleFileChange">
+        <div class="upload-area" :class="{ 'drag-over': isDragOver }" @drop="handleDrop" @dragover="handleDragOver"
+          @dragleave="handleDragLeave">
+          <a-upload v-model:file-list="fileList" :before-upload="beforeUpload" :show-upload-list="false"
+            accept=".xlsx,.xls" :max-count="1" @change="handleFileChange">
             <div class="upload-trigger">
               <div v-if="!fileList.length" class="upload-placeholder">
                 <InboxOutlined style="font-size: 36px; color: #1890ff; margin-bottom: 12px" />
@@ -47,17 +36,10 @@
       <!-- 解析结果预览 -->
       <div v-if="parsedData.length > 0" class="parse-result-section">
         <h3 class="section-title">解析结果</h3>
-        <a-alert
-          :message="`共解析 ${totalRows} 行数据，其中有效数据 ${validDataRows} 行`"
-          :type="validDataRows > 0 ? 'success' : 'warning'"
-          show-icon
-          style="margin-bottom: 16px" />
+        <a-alert :message="`共解析 ${totalRows} 行数据，其中有效数据 ${validDataRows} 行`"
+          :type="validDataRows > 0 ? 'success' : 'warning'" show-icon style="margin-bottom: 16px" />
 
-        <a-table
-          :columns="columns"
-          :data-source="parsedData"
-          :pagination="{ pageSize: 10 }"
-          size="small"
+        <a-table :columns="columns" :data-source="parsedData" :pagination="{ pageSize: 10 }" size="small"
           :scroll="{ y: 300 }">
           <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'isScratched'">
@@ -170,9 +152,9 @@ function beforeUpload(file: File) {
 
 function validateFile(file: File): boolean {
   const isExcel = file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-                  file.type === 'application/vnd.ms-excel' ||
-                  file.name.endsWith('.xlsx') ||
-                  file.name.endsWith('.xls');
+    file.type === 'application/vnd.ms-excel' ||
+    file.name.endsWith('.xlsx') ||
+    file.name.endsWith('.xls');
 
   if (!isExcel) {
     message.error('只能上传Excel文件！');
@@ -207,7 +189,7 @@ async function handleFile(file: File) {
 
     // 如果已有 sessionId（从 prop 传入），直接使用；否则创建新的会话
     let currentSessionId = props.importSessionId || sessionId.value;
-    
+
     if (!currentSessionId) {
       // 创建导入会话（上传文件并保存到后端）
       const result = await createMagneticImportSession({
@@ -220,7 +202,7 @@ async function handleFile(file: File) {
       }
       currentSessionId = result;
       sessionId.value = currentSessionId;
-      
+
       if (!sessionId.value) {
         throw new Error('创建导入会话失败：会话ID为空');
       }
@@ -309,7 +291,7 @@ async function handleNext() {
 
   // 检查 sessionId：优先使用 prop，其次使用内部状态
   const currentSessionId = props.importSessionId || sessionId.value;
-  
+
   if (!currentSessionId || currentSessionId.trim() === '') {
     message.error('导入会话ID缺失，请重新上传文件');
     return;
@@ -332,9 +314,7 @@ async function saveAndNext() {
   await handleNext();
 }
 
-function handleCancel() {
-  emit('cancel');
-}
+
 
 // 暴露给父组件
 defineExpose({

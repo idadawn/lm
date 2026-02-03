@@ -8,6 +8,7 @@ using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
+using Poxiao.Logging;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Lab.Entity;
@@ -1542,8 +1543,7 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
         catch (Exception ex)
         {
             // 匹配失败时返回空列表，不抛出异常，避免影响导入流程
-            // 可以在日志中记录错误
-            Console.WriteLine($"[MatchAppearanceFeatures] 特性匹配失败: {ex.Message}");
+            Log.Error($"[MatchAppearanceFeatures] 特性匹配失败: {ex.Message}");
             return new List<string>();
         }
     }

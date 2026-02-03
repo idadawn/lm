@@ -52,12 +52,10 @@ public class WechatOpenService : IDynamicApiController, ITransient
         var hashCode = CheckSignature.GetSignature(timestamp, nonce, token);
         if (hashCode == signature)
         {
-            Console.WriteLine("验证成功");
             return echostr;
         }
         else
         {
-            Console.WriteLine("验证失败");
             return string.Empty;
         }
     }

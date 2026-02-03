@@ -7,6 +7,7 @@ using Poxiao.DynamicApiController;
 using Poxiao.EventBus;
 using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
+using Poxiao.Logging;
 using Poxiao.Infrastructure.Core.Manager.Files;
 using Poxiao.Infrastructure.Enums;
 using Poxiao.Infrastructure.Manager;
@@ -23,11 +24,14 @@ using Poxiao.Lab.EventBus;
 using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
 using Poxiao.Systems.Interfaces.Common;
+using Poxiao.Systems.Interfaces.System;
+using Poxiao.Systems.Entitys.System;
 using SqlSugar;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
+using UnitPrecisionInfo = Poxiao.Lab.Entity.Config.UnitPrecisionInfo;
 
 namespace Poxiao.Lab.Service;
 
@@ -57,6 +61,10 @@ public class RawDataImportSessionService
     private readonly ISqlSugarRepository<ExcelImportTemplateEntity> _excelTemplateRepository;
     private readonly ICacheManager _cacheManager;
     private readonly IEventPublisher _eventPublisher;
+    private readonly IDictionaryDataService _dictionaryDataService;
+    private readonly IDictionaryTypeService _dictionaryTypeService;
+    private readonly ISqlSugarRepository<DictionaryTypeEntity> _dictionaryTypeRepository;
+    private readonly ISqlSugarRepository<DictionaryDataEntity> _dictionaryDataRepository;
     private readonly ITenant _db;
 
     public RawDataImportSessionService(
@@ -76,7 +84,11 @@ public class RawDataImportSessionService
         ISqlSugarClient context,
         IProductSpecService productSpecService,
         IAppearanceFeatureCategoryService featureCategoryService,
-        IAppearanceFeatureLevelService featureLevelService
+        IAppearanceFeatureLevelService featureLevelService,
+        IDictionaryDataService dictionaryDataService,
+        IDictionaryTypeService dictionaryTypeService,
+        ISqlSugarRepository<DictionaryTypeEntity> dictionaryTypeRepository,
+        ISqlSugarRepository<DictionaryDataEntity> dictionaryDataRepository
     )
     {
         _sessionRepository = sessionRepository;
@@ -95,6 +107,11 @@ public class RawDataImportSessionService
         _excelTemplateRepository = excelTemplateRepository;
         _cacheManager = cacheManager;
         _eventPublisher = eventPublisher;
+        _eventPublisher = eventPublisher;
+        _dictionaryDataService = dictionaryDataService;
+        _dictionaryTypeService = dictionaryTypeService;
+        _dictionaryTypeRepository = dictionaryTypeRepository;
+        _dictionaryDataRepository = dictionaryDataRepository;
         _db = context.AsTenant();
     }
 
@@ -170,7 +187,7 @@ public class RawDataImportSessionService
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Create] File upload failed: {ex.Message}");
+                Log.Error($"[Create] File upload failed: {ex.Message}");
                 // 文件保存失败不影响会话创建
             }
         }
@@ -276,7 +293,7 @@ public class RawDataImportSessionService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[UploadAndParse] File upload failed: {ex.Message}");
+            Log.Error($"[UploadAndParse] File upload failed: {ex.Message}");
             // Optional: 这里文件保存失败不影响后续解析流程
             // throw Oops.Oh($"文件保存失败: {ex.Message}");
         }
@@ -284,7 +301,12 @@ public class RawDataImportSessionService
         var templateConfig = await LoadRawDataTemplateConfigAsync();
         var productSpecList = await _productSpecService.GetList(new ProductSpecListQuery());
         var productSpecs = productSpecList.Cast<ProductSpecEntity>().ToList();
-        var entities = ParseExcel(fileBytes, input.FileName, skipRows, templateConfig, productSpecs);
+
+        // 获取需要忽略的后缀列表（从字典中获取）
+        var ignores = await _dictionaryDataService.GetList("FeatureIgnores");
+        var ignoredSuffixes = ignores.Select(x => x.FullName).ToList();
+
+        var entities = ParseExcel(fileBytes, input.FileName, skipRows, templateConfig, productSpecs, ignoredSuffixes);
 
         var fileHash = ComputeFileHashSha256(fileBytes);
         var fileMd5 = ComputeFileHashMd5(fileBytes);
@@ -350,7 +372,7 @@ public class RawDataImportSessionService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[UploadAndParse] Save parsed data failed: {ex.Message}");
+            Log.Error($"[UploadAndParse] Save parsed data failed: {ex.Message}");
             throw Oops.Oh($"保存解析数据失败: {ex.Message}");
         }
 
@@ -422,11 +444,6 @@ public class RawDataImportSessionService
             .Where(t => t.IsValidData == 1)
             .OrderBy(t => t.SortCode)
             .ToList();
-
-        // 记录日志以便调试
-        Console.WriteLine(
-            $"[GetProductSpecMatches] 总数据: {entities.Count}, 有效数据: {validEntities.Count}"
-        );
 
         return validEntities
             .Select(t => new RawDataProductSpecMatchOutput
@@ -654,7 +671,7 @@ public class RawDataImportSessionService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[ComputeValidDataHashFromFile] Failed: {ex.Message}");
+            Log.Error($"[ComputeValidDataHashFromFile] Failed: {ex.Message}");
             return null;
         }
     }
@@ -674,7 +691,7 @@ public class RawDataImportSessionService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[TryComputeHashesFromSourceFile] Failed: {ex.Message}");
+            Log.Error($"[TryComputeHashesFromSourceFile] Failed: {ex.Message}");
             return (null, null);
         }
     }
@@ -783,11 +800,8 @@ public class RawDataImportSessionService
         if (input?.Items == null || input.Items.Count == 0)
         {
             // 没有更新项，直接返回
-            Console.WriteLine($"[UpdateDuplicateSelections] 没有更新项");
             return;
         }
-
-        Console.WriteLine($"[UpdateDuplicateSelections] 收到 {input.Items.Count} 条更新请求");
 
         bool needSave = false;
         int updatedCount = 0;
@@ -808,9 +822,6 @@ public class RawDataImportSessionService
                 {
                     needSave = true;
                     updatedCount++;
-                    Console.WriteLine(
-                        $"[UpdateDuplicateSelections] 更新数据ID: {item.RawDataId}, IsValidData: {oldIsValidData} -> {entity.IsValidData}"
-                    );
                 }
 
                 // 如果被标记为无效，更新错误信息
@@ -849,9 +860,7 @@ public class RawDataImportSessionService
             }
             else
             {
-                Console.WriteLine(
-                    $"[UpdateDuplicateSelections] 警告：找不到数据ID: {item.RawDataId}"
-                );
+                // 找不到数据ID，跳过
             }
         }
 
@@ -868,16 +877,10 @@ public class RawDataImportSessionService
                 session.ValidDataRows = validCount;
                 await _sessionRepository.UpdateAsync(session);
 
-                // 记录日志以便调试
-                Console.WriteLine(
-                    $"[UpdateDuplicateSelections] 更新了 {input.Items.Count} 条数据，有效数据行数: {validCount}/{entities.Count}"
-                );
+
             }
         }
-        else
-        {
-            Console.WriteLine($"[UpdateDuplicateSelections] 没有需要保存的更新");
-        }
+
     }
 
     /// <inheritdoc />
@@ -888,9 +891,16 @@ public class RawDataImportSessionService
         var allEntities = await LoadParsedDataFromFile(sessionId);
         var validEntities = allEntities.Where(t => t.IsValidData == 1).ToList();
 
+        // 获取忽略列表
+        var ignores = await _dictionaryDataService.GetList("FeatureIgnores");
+        var ignoredSuffixes = new HashSet<string>(ignores.Select(x => x.FullName));
+
         var unMatchedEntities = validEntities
             .Where(t =>
-                t.AppearanceFeatureIds == null && t.FeatureSuffix != null && t.FeatureSuffix != ""
+                t.AppearanceFeatureIds == null &&
+                t.FeatureSuffix != null &&
+                t.FeatureSuffix != "" &&
+                !ignoredSuffixes.Contains(t.FeatureSuffix)
             )
             .ToList();
 
@@ -996,7 +1006,7 @@ public class RawDataImportSessionService
             {
                 RawDataId = t.Id,
                 FurnaceNo = t.FurnaceNo,
-                FeatureSuffix = t.FeatureSuffix,
+                FeatureSuffix = ignoredSuffixes.Contains(t.FeatureSuffix) ? null : t.FeatureSuffix,
             })
             .ToList();
 
@@ -1007,6 +1017,12 @@ public class RawDataImportSessionService
         {
             if (entityDict.TryGetValue(item.RawDataId, out var entity))
             {
+                // 如果是被忽略的后缀，跳过填充特性字段
+                if (!string.IsNullOrEmpty(entity.FeatureSuffix) && ignoredSuffixes.Contains(entity.FeatureSuffix))
+                {
+                    continue;
+                }
+
                 item.MatchConfidence = entity.MatchConfidence;
 
                 if (!string.IsNullOrEmpty(entity.AppearanceFeatureIds))
@@ -1109,6 +1125,76 @@ public class RawDataImportSessionService
 
         // 保存回JSON文件
         await SaveParsedDataToFile(sessionId, entities);
+    }
+
+    /// <summary>
+    /// 添加后缀到忽略词典
+    /// </summary>
+    /// <param name="input">输入参数</param>
+    /// <returns></returns>
+    [HttpPost("add-to-ignore-dictionary")]
+    public async Task AddToIgnoreDictionary([FromBody] AddToIgnoreDictionaryInput input)
+    {
+        if (string.IsNullOrWhiteSpace(input?.FeatureSuffix))
+            throw Oops.Oh("后缀不能为空");
+
+        const string typeCode = "FeatureIgnores";
+        const string typeName = "外观特性忽略词典";
+
+        // 1. 查询字典类型是否存在
+        var dictionaryType = await _dictionaryTypeService.GetInfo(typeCode);
+
+        // 2. 如果不存在则创建字典类型
+        if (dictionaryType == null)
+        {
+            var typeEntity = new DictionaryTypeEntity
+            {
+                Id = SnowflakeIdHelper.NextId(),
+                ParentId = "-1",
+                FullName = typeName,
+                EnCode = typeCode,
+                IsTree = 0,
+                SortCode = 0,
+                Description = "用于存储需要忽略的外观特性后缀"
+            };
+            await _dictionaryTypeRepository.AsInsertable(typeEntity)
+                .IgnoreColumns(ignoreNullColumn: true)
+                .CallEntityMethod(m => m.Creator())
+                .ExecuteCommandAsync();
+
+            dictionaryType = typeEntity;
+        }
+
+        // 3. 检查字典数据是否已存在（按 FullName 和 DictionaryTypeId 检查）
+        var existingData = await _dictionaryDataRepository.GetFirstAsync(x =>
+            x.FullName == input.FeatureSuffix &&
+            x.DictionaryTypeId == dictionaryType.Id &&
+            x.DeleteMark == null);
+
+        if (existingData != null)
+        {
+            throw Oops.Oh("该词语已在忽略词典中");
+        }
+
+        // 4. 创建字典数据
+        var dataEntity = new DictionaryDataEntity
+        {
+            Id = SnowflakeIdHelper.NextId(),
+            DictionaryTypeId = dictionaryType.Id,
+            ParentId = "0",
+            FullName = input.FeatureSuffix,
+            EnCode = SnowflakeIdHelper.NextId(), // 使用雪花算法生成唯一编码
+            SortCode = 0,
+            Description = "从数据导入快捷添加"
+        };
+
+        var result = await _dictionaryDataRepository.AsInsertable(dataEntity)
+            .IgnoreColumns(ignoreNullColumn: true)
+            .CallEntityMethod(m => m.Creator())
+            .ExecuteCommandAsync();
+
+        if (result < 1)
+            throw Oops.Oh("添加失败");
     }
 
     /// <summary>
@@ -1604,7 +1690,7 @@ public class RawDataImportSessionService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[CompleteImport] Failed to cleanup: {ex.Message}");
+            Log.Error($"[CompleteImport] Failed to cleanup: {ex.Message}");
             // 不影响主流程，但尽量更新 session 状态
             try
             {
@@ -1650,7 +1736,7 @@ public class RawDataImportSessionService
         }
         catch (Exception ex)
         {
-            Console.WriteLine(
+            Log.Error(
                 $"[CancelImport] Failed to cleanup session {sessionId}: {ex.Message}"
             );
             // 即使清理失败，也尽量标记为已取消
@@ -1769,7 +1855,8 @@ public class RawDataImportSessionService
         string fileName,
         int skipRows,
         ExcelTemplateConfig templateConfig,
-        List<ProductSpecEntity> productSpecs
+        List<ProductSpecEntity> productSpecs,
+        List<string> ignoredSuffixes = null
     )
     {
         var entities = new List<RawDataEntity>();
@@ -1850,7 +1937,7 @@ public class RawDataImportSessionService
             // 炉号解析
             if (!string.IsNullOrWhiteSpace(entity.FurnaceNo))
             {
-                var furnaceNoObj = FurnaceNo.Parse(entity.FurnaceNo);
+                var furnaceNoObj = FurnaceNo.Parse(entity.FurnaceNo, ignoredSuffixes);
                 if (furnaceNoObj.IsValid)
                 {
                     entity.LineNo = furnaceNoObj.LineNoNumeric;

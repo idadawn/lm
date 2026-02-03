@@ -44,7 +44,7 @@ public class MetricDataService : IMetricDataService, ITransient
     }
 
     /// <inheritdoc />
-    public async Task<MetricDataOutput> GetDataAsync(string metricId)
+    public async Task<MetricDataOutput> GetDataAsync(string metricId, DisplayOption? displayOption = null)
     {
         var result = new MetricDataOutput();
         var info = await _metricInfoService.GetAsync(metricId);
@@ -55,12 +55,12 @@ public class MetricDataService : IMetricDataService, ITransient
                 if (info.MetricDataType.Equals(MetricDataType.RealTime))
                     await GetRealDataAsync(info, result);
                 else
-                    await GetBasicDataAsync(info, result);
+                    await GetBasicDataAsync(info, result, displayOption);
                 break;
             case MetricType.Derive:
                 break;
             case MetricType.Composite:
-                await GetCompositeDataAsync(info, result);
+                await GetCompositeDataAsync(info, result, displayOption);
                 break;
         }
         return result;
@@ -72,7 +72,7 @@ public class MetricDataService : IMetricDataService, ITransient
     /// <param name="info"></param>
     /// <param name="result"></param>
     /// <returns></returns>
-    private async Task GetBasicDataAsync(MetricInfoInfoOutput info, MetricDataOutput result)
+    private async Task GetBasicDataAsync(MetricInfoInfoOutput info, MetricDataOutput result, DisplayOption? displayOption = null)
     {
         var query = new ModelDataAggQueryInput();
         query.TaskId = SnowflakeIdHelper.NextId();
@@ -99,7 +99,7 @@ public class MetricDataService : IMetricDataService, ITransient
                 dataType = info.TimeDimensions.DataType
             };
             query.Granularity = info.TimeDimensions.Granularity;
-            query.DisplayOption = info.TimeDimensions.DisplayOption;
+            query.DisplayOption = displayOption ?? info.TimeDimensions.DisplayOption;
         }
 
         query.Dimensions = dimension;
@@ -131,7 +131,7 @@ public class MetricDataService : IMetricDataService, ITransient
     /// <param name="info"></param>
     /// <param name="result"></param>
     /// <returns></returns>
-    private async Task GetCompositeDataAsync(MetricInfoInfoOutput info, MetricDataOutput result)
+    private async Task GetCompositeDataAsync(MetricInfoInfoOutput info, MetricDataOutput result, DisplayOption? displayOption = null)
     {
         result.Data = new ModelDataOutput();
         // 获取当前指标的父级指标.
@@ -151,7 +151,8 @@ public class MetricDataService : IMetricDataService, ITransient
         // 获取各个指标的数据.
         foreach (var metricId in parent)
         {
-            var metricDataOutput = await GetDataAsync(metricId);
+            var effectiveDisplayOption = displayOption ?? info.TimeDimensions?.DisplayOption;
+            var metricDataOutput = await GetDataAsync(metricId, effectiveDisplayOption);
             var metricValue = metricDataOutput.Data.Data.IsNullOrEmpty() ? "0" : metricDataOutput.Data.Data;
             dic.Add(metricId, metricValue);
             info.Expression = info.Expression.ReplaceMetricValue(metricId, metricValue);

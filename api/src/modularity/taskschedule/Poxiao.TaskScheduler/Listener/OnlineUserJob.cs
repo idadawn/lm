@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Manager;
+using Poxiao.Logging;
 using Poxiao.Schedule;
 
 namespace Poxiao.TaskScheduler.Listener;
@@ -32,9 +33,6 @@ public class OnlineUserJob : IJob
             }
         }
 
-        var originColor = Console.ForegroundColor;
-        Console.ForegroundColor = ConsoleColor.Red;
-        Console.WriteLine("【" + DateTime.Now + "】服务重启清空在线用户");
-        Console.ForegroundColor = originColor;
+        Log.Information("【{Now}】服务重启清空在线用户", DateTime.Now);
     }
 }

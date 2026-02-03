@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace Poxiao.Lab.Service;
 
-internal static class IntermediateDataFormulaCalcHelper
+public static class IntermediateDataFormulaCalcHelper
 {
     public static Dictionary<string, object> ExtractContextDataFromEntity(IntermediateDataEntity entity)
     {
@@ -227,6 +227,8 @@ internal static class IntermediateDataFormulaCalcHelper
         }
 
         return formula.IndexOf("RANGE(", StringComparison.OrdinalIgnoreCase) >= 0
+            || formula.IndexOf("DIFF_FIRST(", StringComparison.OrdinalIgnoreCase) >= 0
+            || formula.IndexOf("DIFF_LAST(", StringComparison.OrdinalIgnoreCase) >= 0
             || formula.IndexOf("DIFF_FIRST_LAST", StringComparison.OrdinalIgnoreCase) >= 0;
     }
 }

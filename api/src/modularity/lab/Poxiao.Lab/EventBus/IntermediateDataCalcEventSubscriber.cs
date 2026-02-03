@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Poxiao.DependencyInjection;
 using Poxiao.EventBus;
+using Poxiao.Logging;
 using Poxiao.Lab.EventBus;
 using Poxiao.Lab.Service;
 
@@ -44,7 +45,7 @@ public class IntermediateDataCalcEventSubscriber : IEventSubscriber, ISingleton
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"中间数据公式计算事件处理失败: {ex.Message}");
+            Log.Error($"中间数据公式计算事件处理失败: {ex.Message}");
         }
     }
 }

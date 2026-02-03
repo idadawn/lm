@@ -3892,8 +3892,6 @@ public class RunService : IRunService, ITransient
                 var querList = par.QueryJson.ToObject<Dictionary<string, string>>();
                 foreach (var item in querList)
                 {
-                    Console.WriteLine(item.Value);
-                    Console.WriteLine(item.Key.Replace("poxiao_searchType_equals_", ""));
                     if (item.Key.Contains("poxiao_searchType_equals_")) resList = resList.Where(x => x[item.Key.Replace("poxiao_searchType_equals_", "")].ToString().Equals(item.Value)).ToList();
                     else resList = resList.Where(x => x[item.Key].ToString().Contains(item.Value)).ToList();
                 }

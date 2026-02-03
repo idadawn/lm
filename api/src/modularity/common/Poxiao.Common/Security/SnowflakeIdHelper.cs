@@ -1,4 +1,5 @@
 using Poxiao.Infrastructure.Cache;
+using Poxiao.Logging;
 using System.Runtime.InteropServices;
 using Yitter.IdGenerator;
 
@@ -74,7 +75,7 @@ public class SnowflakeIdHelper
             }
             catch (Exception ex)
             {
-                Console.WriteLine("RegisterOne failed: " + ex.Message);
+                Log.Error("RegisterOne failed", ex);
             }
 
             // 创建 IdGeneratorOptions 对象，可在构造函数中输入 WorkerId：

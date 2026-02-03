@@ -252,9 +252,6 @@ public class AppearanceFeatureRuleMatcher : ITransient
                         ? categoryIdToName[exactMatch.CategoryId]
                         : null;
                 var severityName = severityLevelIdToName[exactMatch.SeverityLevelId];
-                Console.WriteLine(
-                    $"[RuleMatcher] 精确匹配特性名称和等级: {coreName}+{degreeWord} -> {categoryName}/{exactMatch.Name}/{severityName}"
-                );
                 return new MatchResult
                 {
                     Feature = exactMatch,
@@ -296,9 +293,6 @@ public class AppearanceFeatureRuleMatcher : ITransient
                             ? categoryIdToName[nameMatchWithLevel.CategoryId]
                             : null;
                     var severityName = severityLevelIdToName[nameMatchWithLevel.SeverityLevelId];
-                    Console.WriteLine(
-                        $"[RuleMatcher] 匹配特性名称和等级: {coreName}+{degreeWord} -> {categoryName}/{nameMatchWithLevel.Name}/{severityName}"
-                    );
                     return new MatchResult
                     {
                         Feature = nameMatchWithLevel,
@@ -340,9 +334,6 @@ public class AppearanceFeatureRuleMatcher : ITransient
                     && severityName != null
                     && !severityName.Equals(degreeWord, StringComparison.OrdinalIgnoreCase);
 
-                Console.WriteLine(
-                    $"[RuleMatcher] 匹配特性名称: {coreName} -> {categoryName}/{defaultMatch.Name}/{severityName}"
-                );
                 return new MatchResult
                 {
                     Feature = defaultMatch,
@@ -417,9 +408,6 @@ public class AppearanceFeatureRuleMatcher : ITransient
                         var severityName = severityLevelIdToName[
                             keywordMatchWithLevel.SeverityLevelId
                         ];
-                        Console.WriteLine(
-                            $"[RuleMatcher] 匹配关键词和等级: {coreName}+{degreeWord} -> {categoryName}/{keywordMatchWithLevel.Name}/{severityName}"
-                        );
                         return new MatchResult
                         {
                             Feature = keywordMatchWithLevel,
@@ -460,9 +448,6 @@ public class AppearanceFeatureRuleMatcher : ITransient
                     && matchSeverityName != null
                     && !matchSeverityName.Equals(degreeWord, StringComparison.OrdinalIgnoreCase);
 
-                Console.WriteLine(
-                    $"[RuleMatcher] 匹配关键词: {coreName} -> {matchCategoryName}/{defaultKeywordMatch.Name}/{matchSeverityName}"
-                );
                 return new MatchResult
                 {
                     Feature = defaultKeywordMatch,
@@ -555,9 +540,6 @@ public class AppearanceFeatureRuleMatcher : ITransient
                     severityName == null
                     || !severityName.Equals(detectedDegree, StringComparison.OrdinalIgnoreCase);
 
-                Console.WriteLine(
-                    $"[RuleMatcher] 后缀匹配: {coreName} -> {matchedFeature.Name} (提取程度词: {detectedDegree})"
-                );
 
                 return new MatchResult
                 {
@@ -573,7 +555,6 @@ public class AppearanceFeatureRuleMatcher : ITransient
 
         // ========== 不再进行部分匹配，避免误匹配 ==========
         // "脆" 不应该匹配到 "脆边"
-        Console.WriteLine($"[RuleMatcher] 未找到匹配: {coreName}");
         return null;
     }
 

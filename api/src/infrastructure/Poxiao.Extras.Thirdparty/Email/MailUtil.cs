@@ -5,6 +5,7 @@ using MimeKit.Text;
 using Poxiao.Infrastructure.Configuration;
 using Poxiao.Infrastructure.Extension;
 using Poxiao.Infrastructure.Security;
+using Poxiao.Logging;
 using System.Text;
 using Yitter.IdGenerator;
 
@@ -200,7 +201,7 @@ public class MailUtil
         }
         catch (Exception ex)
         {
-            Console.Write("邮箱验证失败原因:" + ex + ",失败详情:" + ex.StackTrace);
+            Log.Error("邮箱验证失败", ex);
             return false;
         }
     }

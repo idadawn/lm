@@ -84,6 +84,7 @@ export const basicProps = Object.assign({}, modalProps, {
   title: { type: String },
 
   visible: { type: Boolean },
+  open: { type: Boolean },
 
   width: {
     type: [String, Number] as PropType<string | number>,

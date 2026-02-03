@@ -12,7 +12,7 @@ public interface IMagneticRawDataService
     /// </summary>
     /// <param name="input">查询参数.</param>
     /// <returns></returns>
-    Task<List<MagneticRawDataListOutput>> GetList(MagneticRawDataListQuery input);
+    Task<dynamic> GetList(MagneticRawDataListQuery input);
 
     /// <summary>
     /// 删除.

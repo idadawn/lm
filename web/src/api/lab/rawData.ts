@@ -291,6 +291,11 @@ export function updateAppearanceFeatureMatches(
   return defHttp.put({ url: Api.ImportSessionPrefix + '/' + importSessionId + '/features', data: backendData });
 }
 
+// 添加后缀到忽略词典
+export function addToIgnoreDictionary(featureSuffix: string): Promise<void> {
+  return defHttp.post({ url: Api.ImportSessionPrefix + '/add-to-ignore-dictionary', data: { featureSuffix } });
+}
+
 // ========== 第四步：数据核对与完成 ==========
 
 // 获取数据核对结果

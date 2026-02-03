@@ -108,16 +108,19 @@
 
               <!-- 外观特性（汉字） -->
               <template v-else-if="column.key === 'featureSuffix'">
-                <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
-                  @click="handleCellColor(record.id, column.key)">
+                <div class="cell-content feature-list-cell" :class="{ 'editable': hasBtnP(PERM_APPEARANCE) }"
+                  :style="{ backgroundColor: getCellColor(record.id, column.key) }"
+                  @click="handleCellColor(record.id, column.key)" @dblclick="handleOpenFeatureDialog(record)">
                   <a-tag v-if="record.featureSuffix" color="orange">{{ record.featureSuffix }}</a-tag>
                   <span v-else>-</span>
+                  <EditOutlined v-if="hasBtnP(PERM_APPEARANCE)" class="feature-edit-icon" />
                 </div>
               </template>
 
               <!-- 外观特性列表 -->
               <template v-else-if="column.key === 'appearanceFeatureList'">
-                <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
+                <div class="cell-content feature-list-cell" :class="{ 'editable': hasBtnP(PERM_APPEARANCE) }"
+                  :style="{ backgroundColor: getCellColor(record.id, column.key) }"
                   @click="handleCellColor(record.id, column.key)" @dblclick="handleOpenFeatureDialog(record)">
                   <a-space wrap size="small" v-if="getMatchedFeatureLabels(record).length > 0">
                     <a-tag v-for="feature in getMatchedFeatureLabels(record)" :key="feature.id" color="blue">
@@ -125,15 +128,17 @@
                     </a-tag>
                   </a-space>
                   <span v-else>-</span>
+                  <EditOutlined v-if="hasBtnP(PERM_APPEARANCE)" class="feature-edit-icon" />
                 </div>
               </template>
 
-              <!-- 可编辑的测量值（中Si、中B、花纹等） -->
+              <!-- 可编辑的测量值（中Si、中B、花纹、断头数、单卷重量等） -->
               <template v-else-if="isEditableMeasurement(column.key)">
                 <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
                   @click="handleCellColor(record.id, column.key)">
                   <EditableCell v-if="hasBtnP(PERM_APPEARANCE)" :record="record" :field="column.key"
-                    :value="record[column.key]" type="number" @save="val => handleCellSave2(record, column.key, val)" />
+                    :value="record[column.key]" type="number"
+                    @save="val => handleMeasurementSave(record, column.key, val)" />
                   <span v-else>{{ record[column.key] }}</span>
                 </div>
               </template>
@@ -161,22 +166,24 @@
 
               <!-- 判定状态 -->
               <template v-else-if="column.key === 'judgeStatus'">
-                <div class="cell-content flex items-center justify-center" @click.stop>
-                  <a-tooltip v-if="record.judgeStatus === 3" :title="record.judgeErrorMessage || '判定失败'">
-                    <a-tag color="error" class="cursor-pointer">
+                <div class="cell-content flex items-center justify-center">
+                  <a-tooltip v-if="isJudgeFailed(record)" :title="record.judgeErrorMessage">
+                    <a-tag color="error" class="cursor-pointer" @click.stop="handleRejudge(record)">
                       <template #icon>
-                        <CloseCircleOutlined />
+                        <ReloadOutlined :spin="record.rejudging" />
                       </template>
-                      失败
+                      {{ record.rejudging ? '判定中' : '失败' }}
                     </a-tag>
                   </a-tooltip>
-                  <a-tag v-else :color="getCalcStatusInfo(record.judgeStatus).color">
+                  <a-tag v-else :color="getCalcStatusInfo(record.judgeStatus).color" class="cursor-pointer"
+                    @click.stop="handleRejudge(record)">
                     <template #icon>
-                      <CheckCircleOutlined v-if="record.judgeStatus === 2" />
+                      <ReloadOutlined :spin="record.rejudging" v-if="record.rejudging" />
+                      <CheckCircleOutlined v-else-if="record.judgeStatus === 2" />
                       <SyncOutlined v-else-if="record.judgeStatus === 1" spin />
                       <ClockCircleOutlined v-else />
                     </template>
-                    {{ getCalcStatusInfo(record.judgeStatus).text }}
+                    {{ record.rejudging ? '判定中' : getCalcStatusInfo(record.judgeStatus).text }}
                   </a-tag>
                 </div>
               </template>
@@ -288,7 +295,6 @@ import {
 import {
   saveIntermediateDataColors,
   getIntermediateDataColors,
-  saveIntermediateDataCellColor,
 } from '../../../api/lab/intermediateDataColor';
 import type { CellColorInfo } from '/@/api/lab/model/intermediateDataColorModel';
 import { getAllAppearanceFeatureCategories, type AppearanceFeatureCategoryInfo } from '/@/api/lab/appearanceCategory';
@@ -300,8 +306,8 @@ import CustomSortControl from '../rawData/components/CustomSortControl.vue';
 import { useFormulaPrecision } from '/@/composables/useFormulaPrecision';
 
 import { useModal } from '/@/components/Modal';
-import { UploadOutlined, ReloadOutlined, DownloadOutlined, CheckCircleOutlined } from '@ant-design/icons-vue';
-import { Spin as ASpin, DatePicker as ADatePicker } from 'ant-design-vue';
+import { UploadOutlined, ReloadOutlined, DownloadOutlined, CheckCircleOutlined, EditOutlined, SyncOutlined, ClockCircleOutlined } from '@ant-design/icons-vue';
+import { Spin as ASpin } from 'ant-design-vue';
 import MagneticDataImportQuickModal from '../magneticData/MagneticDataImportQuickModal.vue';
 import { createMagneticImportSession, uploadAndParseMagneticData } from '/@/api/lab/magneticData';
 import type { IntermediateDataCalcLogItem } from '/@/api/lab/model/intermediateDataCalcLogModel';
@@ -317,6 +323,9 @@ const { hasBtnP } = usePermission();
 // 权限标识 (对应按钮编码)
 const PERM_MAGNETIC = 'btn_edit_magnetic';
 const PERM_APPEARANCE = 'btn_edit_appearance';
+// const PERM_FILL_COLOR = 'btn_fill_color';
+// const PERM_CALC = 'btn_calc';
+// const PERM_JUDGE = 'btn_judge';
 
 
 // 产品规格选项
@@ -343,7 +352,7 @@ const appearanceCategories = ref<AppearanceFeatureCategoryInfo[]>([]);
 const allFeatures = ref<any[]>([]);
 
 // 公式精度配置
-const { getFieldPrecision, loading: precisionLoading } = useFormulaPrecision();
+const { getFieldPrecision } = useFormulaPrecision();
 
 // 编辑状态
 const editingCell = ref<{ id: string; field: string } | null>(null);
@@ -352,7 +361,7 @@ const editingValue = ref<any>(null);
 // 颜色选择状态
 const selectedColor = ref<string>('');
 const coloredCells = ref<Record<string, string>>({}); // 存储单元格颜色 { 'rowId::field': 'color' }
-const colorLoaded = ref<boolean>(false); // 颜色数据是否已加载
+// const colorLoaded = ref<boolean>(false); // 颜色数据是否已加载
 const savingColors = ref<boolean>(false); // 是否正在保存颜色
 const batchCalculating = ref<boolean>(false); // 是否正在批量计算
 const batchJudging = ref<boolean>(false); // 是否正在批量判定
@@ -431,9 +440,15 @@ function getCalcStatusInfo(status: any) {
   return calcStatusMap[key];
 }
 
+
 function isCalcFailed(record: any) {
   const key = normalizeCalcStatus(record?.calcStatus);
   return key === 'FAILED' && !!record?.calcErrorMessage;
+}
+
+function isJudgeFailed(record: any) {
+  // judgeStatus: 0=未判定, 1=判定中, 2=成功, 3=失败
+  return record?.judgeStatus === 3 && !!record?.judgeErrorMessage;
 }
 
 function formatDateTime(value: any) {
@@ -460,10 +475,10 @@ async function loadFeatures() {
   }
 }
 
-function getFeatureName(featureId: string): string {
-  const feature = allFeatures.value.find(f => f.id === featureId);
-  return feature ? feature.name : featureId;
-}
+// function getFeatureName(featureId: string): string {
+//   const feature = allFeatures.value.find(f => f.id === featureId);
+//   return feature ? feature.name : featureId;
+// }
 
 function getMatchedFeatureLabels(record: any): Array<{ id: string; label: string }> {
   // 优先使用详细信息（如果后端返回了）
@@ -541,6 +556,8 @@ const allColumns = computed(() => {
           key: 'perfSsPower',
           width: 90,
           align: 'right',
+          edit: true,
+          editComponent: 'InputNumber',
         }
       ],
     },
@@ -555,6 +572,8 @@ const allColumns = computed(() => {
           key: 'perfPsLoss',
           width: 90,
           align: 'right',
+          edit: true,
+          editComponent: 'InputNumber',
         },
       ],
     },
@@ -564,6 +583,8 @@ const allColumns = computed(() => {
       key: 'perfHc',
       width: 80,
       align: 'right',
+      edit: true,
+      editComponent: 'InputNumber',
     },
     {
       title: '刻痕后性能',
@@ -576,6 +597,8 @@ const allColumns = computed(() => {
           key: 'perfAfterSsPower',
           width: 90,
           align: 'right',
+          edit: true,
+          editComponent: 'InputNumber',
         },
         {
           title: 'Ps铁损 (W/kg)',
@@ -583,6 +606,8 @@ const allColumns = computed(() => {
           key: 'perfAfterPsLoss',
           width: 90,
           align: 'right',
+          edit: true,
+          editComponent: 'InputNumber',
         },
         {
           title: 'Hc (A/m)',
@@ -590,6 +615,8 @@ const allColumns = computed(() => {
           key: 'perfAfterHc',
           width: 80,
           align: 'right',
+          edit: true,
+          editComponent: 'InputNumber',
         },
       ],
     },
@@ -943,23 +970,23 @@ const [registerTable, { reload, getDataSource }] = useTable({
 });
 
 // 外观特性字段（动态字段 + 固定字段）
-const appearanceFields = computed(() => {
-  const dynamicFields = appearanceCategories.value
-    .filter(category => !category.parentId || category.parentId === '-1') // 只包含顶级分类（大类）
-    .map(category => category.id);
+// const appearanceFields = computed(() => {
+//   const dynamicFields = appearanceCategories.value
+//     .filter(category => !category.parentId || category.parentId === '-1') // 只包含顶级分类（大类）
+//     .map(category => category.id);
+// 
+//   return [
+//     ...dynamicFields,
+//     'fishScale',
+//     'breakCount',
+//     'singleCoilWeight',
+//     'appearEditorName',
+//   ];
+// });
 
-  return [
-    ...dynamicFields,
-    'fishScale',
-    'breakCount',
-    'singleCoilWeight',
-    'appearEditorName',
-  ];
-});
-
-function isAppearanceColumn(key: string) {
-  return appearanceFields.value.includes(key);
-}
+// function isAppearanceColumn(key: string) {
+//   return appearanceFields.value.includes(key);
+// }
 
 function isEditableMeasurement(key: string) {
   const editableKeys = [
@@ -967,16 +994,17 @@ function isEditableMeasurement(key: string) {
     'midBLeft', 'midBRight',
     'leftPatternWidth', 'leftPatternSpacing',
     'midPatternWidth', 'midPatternSpacing',
-    'rightPatternWidth', 'rightPatternSpacing'
+    'rightPatternWidth', 'rightPatternSpacing',
+    'breakCount', 'singleCoilWeight'
   ];
   return editableKeys.includes(key);
 }
 
-function getAppearanceFieldType(key: string) {
-  if (key === 'breakCount') return 'number';
-  if (key === 'singleCoilWeight') return 'number';
-  return 'text';
-}
+// function getAppearanceFieldType(key: string) {
+//   if (key === 'breakCount') return 'number';
+//   if (key === 'singleCoilWeight') return 'number';
+//   return 'text';
+// }
 
 
 
@@ -1106,14 +1134,62 @@ async function handleCellSave() {
 }
 
 // 通用单元格保存
-async function handleCellSave2(record: any, field: string, value: any) {
+// async function handleCellSave2(record: any, field: string, value: any) {
+//   try {
+//     await updateBaseInfo({
+//       id: record.id,
+//       [field]: value,
+//     });
+//     createMessage.success('保存成功');
+//     reload();
+//   } catch (error) {
+//     createMessage.error('保存失败');
+//   }
+// }
+
+// 可编辑测量值保存（根据字段类型选择API，部分字段触发判定）
+async function handleMeasurementSave(record: any, field: string, value: any) {
+  // 需要触发判定的字段（只有断头数和单卷重量需要触发判定）
+  const judgeRequiredFields = ['breakCount', 'singleCoilWeight'];
+  // 所有外观相关字段使用 updateAppearance API
+  const appearanceFields = [
+    'breakCount', 'singleCoilWeight',
+    'midSiLeft', 'midSiRight',
+    'midBLeft', 'midBRight',
+    'leftPatternWidth', 'leftPatternSpacing',
+    'midPatternWidth', 'midPatternSpacing',
+    'rightPatternWidth', 'rightPatternSpacing'
+  ];
+
   try {
-    await updateBaseInfo({
-      id: record.id,
-      [field]: value,
-    });
-    createMessage.success('保存成功');
-    reload();
+    if (appearanceFields.includes(field)) {
+      await updateAppearance({
+        id: record.id,
+        [field]: value,
+      });
+    } else {
+      await updateBaseInfo({
+        id: record.id,
+        [field]: value,
+      });
+    }
+
+    // 断头数、单卷重量修改后触发判定；其他字段只保存不判定
+    if (judgeRequiredFields.includes(field)) {
+      createMessage.success('保存成功，正在判定...');
+      try {
+        await judgeIntermediateData([record.id]);
+        setTimeout(() => {
+          reload();
+        }, 500);
+      } catch (judgeError) {
+        console.error('判定失败:', judgeError);
+        reload();
+      }
+    } else {
+      createMessage.success('保存成功');
+      reload();
+    }
   } catch (error) {
     createMessage.error('保存失败');
   }
@@ -1122,29 +1198,58 @@ async function handleCellSave2(record: any, field: string, value: any) {
 // 性能数据保存
 async function handlePerfSave(record: any, field: string, value: any) {
   try {
-    // 更新性能数据
-    await updatePerformance({
+    // 构造完整的性能数据 payload
+    // 注意：必须发送所有字段，否则后端修改为直接赋值逻辑后，未发送的字段会被清空
+    const perfPayload = {
       id: record.id,
-      [field]: value,
-    });
+      perfSsPower: record.perfSsPower,
+      perfPsLoss: record.perfPsLoss,
+      perfHc: record.perfHc,
+      perfAfterSsPower: record.perfAfterSsPower,
+      perfAfterPsLoss: record.perfAfterPsLoss,
+      perfAfterHc: record.perfAfterHc,
+      [field]: value === '' ? null : value // 覆盖当前修改的字段，空字符串转null
+    };
 
-    // 设置判定中状态
+    // 确保其他字段的空字符串也转为null
+    for (const key in perfPayload) {
+      if (perfPayload[key] === '') {
+        perfPayload[key] = null;
+      }
+    }
+
+    // 更新性能数据
+    await updatePerformance(perfPayload);
+
+    // 设置处理中状态
     record.pendingPerfCalc = true;
-    createMessage.success('保存成功', 1); // 短暂提示
+    createMessage.success('保存成功，正在计算和判定...', 1.5);
 
     try {
-      // 自动触发判定（重新计算）
+      // 第一步：自动触发重新计算
       await recalculateIntermediateData([record.id]);
 
-      // 500ms后刷新数据以显示最新判定结果
-      setTimeout(() => {
-        reload();
-        record.pendingPerfCalc = false;
-      }, 500);
+      // 等待计算完成后触发判定
+      setTimeout(async () => {
+        try {
+          // 第二步：自动触发判定
+          await judgeIntermediateData([record.id]);
+
+          // 判定完成后刷新数据
+          setTimeout(() => {
+            reload();
+            record.pendingPerfCalc = false;
+          }, 500);
+        } catch (judgeError) {
+          console.error('判定失败:', judgeError);
+          record.pendingPerfCalc = false;
+          reload();
+        }
+      }, 800); // 等待计算完成
     } catch (calcError) {
-      console.error('判定失败:', calcError);
+      console.error('计算失败:', calcError);
       record.pendingPerfCalc = false;
-      // 判定失败时不显示错误，避免干扰用户操作，刷新即可显示失败状态
+      // 计算失败时不显示错误，避免干扰用户操作，刷新即可显示失败状态
       reload();
     }
   } catch (error) {
@@ -1153,18 +1258,18 @@ async function handlePerfSave(record: any, field: string, value: any) {
 }
 
 // 外观特性保存
-async function handleAppearanceSave(record: any, field: string, value: any) {
-  try {
-    await updateAppearance({
-      id: record.id,
-      [field]: value,
-    });
-    createMessage.success('保存成功');
-    reload();
-  } catch (error) {
-    createMessage.error('保存失败');
-  }
-}
+// async function handleAppearanceSave(record: any, field: string, value: any) {
+//   try {
+//     await updateAppearance({
+//       id: record.id,
+//       [field]: value,
+//     });
+//     createMessage.success('保存成功');
+//     reload();
+//   } catch (error) {
+//     createMessage.error('保存失败');
+//   }
+// }
 
 // 打开特性选择对话框
 function handleOpenFeatureDialog(record: any) {
@@ -1185,18 +1290,26 @@ async function handleFeatureSelectConfirm(features: any[]) {
 
   try {
     const ids = features.map(f => f.id);
+    const recordId = currentEditRecordId.value;
 
     // 保存到后端
     await updateAppearance({
-      id: currentEditRecordId.value,
+      id: recordId,
       appearanceFeatureIds: JSON.stringify(ids),
-      // 同时也需要传一个空或者其他值给 featureSuffix 吗？
-      // 根据 updateAppearance 的通常逻辑，传什么更什么。
-      // 这里只更新列表。
     });
 
-    createMessage.success('保存成功');
-    reload();
+    createMessage.success('保存成功，正在判定...');
+
+    // 外观特性修改后触发判定（不需要重新计算）
+    try {
+      await judgeIntermediateData([recordId]);
+      setTimeout(() => {
+        reload();
+      }, 500);
+    } catch (judgeError) {
+      console.error('判定失败:', judgeError);
+      reload();
+    }
   } catch (error) {
     console.error('保存特性失败:', error);
     createMessage.error('保存失败');
@@ -1204,6 +1317,7 @@ async function handleFeatureSelectConfirm(features: any[]) {
     currentEditRecordId.value = '';
   }
 }
+
 
 // 重新计算
 async function handleRecalculate(record: any) {
@@ -1220,6 +1334,24 @@ async function handleRecalculate(record: any) {
   } catch (error) {
     createMessage.error('触发计算失败');
     record.recalculating = false;
+  }
+}
+
+// 重新判定
+async function handleRejudge(record: any) {
+  if (record.rejudging) return;
+
+  try {
+    record.rejudging = true;
+    await judgeIntermediateData([record.id]);
+    createMessage.success('已触发重新判定');
+    // 稍后刷新
+    setTimeout(() => {
+      reload();
+    }, 1000);
+  } catch (error) {
+    createMessage.error('触发判定失败');
+    record.rejudging = false;
   }
 }
 
@@ -1556,7 +1688,7 @@ function getCellColor(rowId: string, field: string): string {
   // 调试日志 - 仅在有颜色数据时打印
   if (Object.keys(coloredCells.value).length > 0 && !color) {
     // 只打印前几次查询，避免日志过多
-    const existingKeys = Object.keys(coloredCells.value).slice(0, 3);
+    // const existingKeys = Object.keys(coloredCells.value).slice(0, 3);
   }
   return color;
 }
@@ -1691,33 +1823,33 @@ async function loadColorsByIds(dataIds: string[]) {
 }
 
 // 加载颜色数据
-async function loadColors() {
-  if (!selectedProductSpecId.value) return;
-
-  try {
-    const response = await getIntermediateDataColors({
-      productSpecId: selectedProductSpecId.value,
-    });
-
-    // 处理嵌套的响应结构
-    const result = (response as any)?.data || response;
-    const colors = result?.colors;
-
-    if (colors && colors.length > 0) {
-      // 将颜色数据转换为Map格式
-      const colorMap: Record<string, string> = {};
-      colors.forEach((color: CellColorInfo) => {
-        const key = `${color.intermediateDataId}::${color.fieldName}`;
-        colorMap[key] = color.colorValue;
-      });
-      coloredCells.value = colorMap;
-    }
-    colorLoaded.value = true;
-  } catch (error) {
-    console.error('加载颜色数据失败:', error);
-    colorLoaded.value = false;
-  }
-}
+// async function loadColors() {
+//   if (!selectedProductSpecId.value) return;
+// 
+//   try {
+//     const response = await getIntermediateDataColors({
+//       productSpecId: selectedProductSpecId.value,
+//     });
+// 
+//     // 处理嵌套的响应结构
+//     const result = (response as any)?.data || response;
+//     const colors = result?.colors;
+// 
+//     if (colors && colors.length > 0) {
+//       // 将颜色数据转换为Map格式
+//       const colorMap: Record<string, string> = {};
+//       colors.forEach((color: CellColorInfo) => {
+//         const key = `${color.intermediateDataId}::${color.fieldName}`;
+//         colorMap[key] = color.colorValue;
+//       });
+//       coloredCells.value = colorMap;
+//     }
+//     colorLoaded.value = true;
+//   } catch (error) {
+//     console.error('加载颜色数据失败:', error);
+//     colorLoaded.value = false;
+//   }
+// }
 
 // 保存当前颜色配置（批量保存）
 async function saveColorsBatch() {
@@ -2025,5 +2157,33 @@ async function handleQuickImport(file: File) {
   font-weight: 600;
   border-width: 2px;
   box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+}
+
+/* 外观特性列表编辑样式 */
+.feature-list-cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.feature-list-cell.editable {
+  cursor: pointer;
+}
+
+.feature-list-cell.editable:hover {
+  background-color: #f0f5ff !important;
+}
+
+.feature-edit-icon {
+  font-size: 12px;
+  color: #1890ff;
+  opacity: 0;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+
+.feature-list-cell.editable:hover .feature-edit-icon {
+  opacity: 1;
 }
 </style>

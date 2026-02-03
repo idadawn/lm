@@ -10,6 +10,7 @@ using Poxiao.Infrastructure.Security;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.AppearanceFeature;
 using Poxiao.Lab.Interfaces;
+using Poxiao.Logging;
 using SqlSugar;
 
 namespace Poxiao.Lab.Service;
@@ -255,17 +256,12 @@ public class AppearanceFeatureCategoryService : IAppearanceFeatureCategoryServic
             throw Oops.Oh("分类ID不能为空");
         }
 
-        Console.WriteLine($"[Update] 路由参数ID: {id}, Input.Id: {input.Id}, 最终使用ID: {categoryId}, Name: {input.Name}");
-
         // 查询记录（不限制 DeleteMark，以便获取更详细的错误信息）
         var entity = await _categoryRepository.GetFirstAsync(t => t.Id == categoryId);
         if (entity == null)
         {
-            Console.WriteLine($"[Update] 未找到ID为 {categoryId} 的记录");
             throw Oops.Oh(ErrorCode.COM1005);
         }
-
-        Console.WriteLine($"[Update] 找到记录: Name={entity.Name}, DeleteMark={entity.DeleteMark}");
 
         // 检查记录是否已被删除
         if (entity.DeleteMark != null)

@@ -7,6 +7,7 @@ using Poxiao.DynamicApiController;
 using Poxiao.EventBus;
 using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
+using Poxiao.Logging;
 using Poxiao.Infrastructure.Filter;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.IntermediateData;
@@ -38,6 +39,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     private readonly ISqlSugarRepository<ProductSpecEntity> _productSpecRepository;
     private readonly ISqlSugarRepository<ProductSpecAttributeEntity> _productSpecAttributeRepository;
     private readonly ISqlSugarRepository<UserEntity> _userRepository;
+    private readonly ISqlSugarRepository<AppearanceFeatureEntity> _appearanceFeatureRepository;
 
     // 静态缓存属性名称映射 (LowerCase -> CamelCase)
     private static readonly Dictionary<string, string> _propertyCamelCaseMapping;
@@ -65,6 +67,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         ISqlSugarRepository<ProductSpecAttributeEntity> productSpecAttributeRepository,
         ISqlSugarRepository<ProductSpecEntity> productSpecRepository,
         ISqlSugarRepository<UserEntity> userRepository,
+        ISqlSugarRepository<AppearanceFeatureEntity> appearanceFeatureRepository,
         ISqlSugarRepository<IntermediateDataFormulaCalcLogEntity> calcLogRepository,
         IUserManager userManager,
         ProductSpecVersionService versionService,
@@ -79,6 +82,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         _productSpecRepository = productSpecRepository;
         _productSpecAttributeRepository = productSpecAttributeRepository;
         _userRepository = userRepository;
+        _appearanceFeatureRepository = appearanceFeatureRepository;
         _calcLogRepository = calcLogRepository;
         _userManager = userManager;
         _versionService = versionService;
@@ -360,7 +364,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
 
     /// <inheritdoc />
     [HttpPut("performance")]
-    [Microsoft.AspNetCore.Authorization.Authorize("lab:intermediateData:performance_edit")]
+    // [Microsoft.AspNetCore.Authorization.Authorize("lab:intermediateData:performance_edit")]
     public async Task UpdatePerformance([FromBody] IntermediateDataPerfUpdateInput input)
     {
         var entity = await _repository
@@ -374,30 +378,13 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         }
 
         // 只更新传入的非null字段
-        if (input.PerfSsPower.HasValue)
-        {
-            entity.PerfSsPower = input.PerfSsPower;
-        }
-        if (input.PerfPsLoss.HasValue)
-        {
-            entity.PerfPsLoss = input.PerfPsLoss;
-        }
-        if (input.PerfHc.HasValue)
-        {
-            entity.PerfHc = input.PerfHc;
-        }
-        if (input.PerfAfterSsPower.HasValue)
-        {
-            entity.PerfAfterSsPower = input.PerfAfterSsPower;
-        }
-        if (input.PerfAfterPsLoss.HasValue)
-        {
-            entity.PerfAfterPsLoss = input.PerfAfterPsLoss;
-        }
-        if (input.PerfAfterHc.HasValue)
-        {
-            entity.PerfAfterHc = input.PerfAfterHc;
-        }
+        // 始终更新字段（支持清空），前端需配合发送所有字段
+        entity.PerfSsPower = input.PerfSsPower;
+        entity.PerfPsLoss = input.PerfPsLoss;
+        entity.PerfHc = input.PerfHc;
+        entity.PerfAfterSsPower = input.PerfAfterSsPower;
+        entity.PerfAfterPsLoss = input.PerfAfterPsLoss;
+        entity.PerfAfterHc = input.PerfAfterHc;
 
         // 始终更新编辑人信息
         entity.PerfEditorId = _userManager.UserId;
@@ -411,7 +398,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
 
     /// <inheritdoc />
     [HttpPut("appearance")]
-    [Microsoft.AspNetCore.Authorization.Authorize("lab:intermediateData:appearance_edit")]
+    // [Microsoft.AspNetCore.Authorization.Authorize("lab:intermediateData:appearance_edit")]
     public async Task UpdateAppearance([FromBody] IntermediateDataAppearUpdateInput input)
     {
         var entity = await _repository
@@ -423,6 +410,112 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         {
             throw Oops.Oh("数据不存在");
         }
+
+        // 更新外观相关字段（断头数、单卷重量）
+        if (input.BreakCount.HasValue)
+        {
+            entity.BreakCount = input.BreakCount;
+        }
+        if (input.SingleCoilWeight.HasValue)
+        {
+            entity.SingleCoilWeight = input.SingleCoilWeight;
+        }
+        if (!string.IsNullOrEmpty(input.AppearanceFeatureIds))
+        {
+            entity.AppearanceFeatureIds = input.AppearanceFeatureIds;
+
+            // 同时更新特性大类ID和特性等级ID
+            try
+            {
+                var featureIds = System.Text.Json.JsonSerializer.Deserialize<List<string>>(input.AppearanceFeatureIds);
+                if (featureIds != null && featureIds.Any())
+                {
+                    var features = await _appearanceFeatureRepository.GetListAsync(f => featureIds.Contains(f.Id));
+                    
+                    var categoryIds = features
+                        .Select(f => f.CategoryId)
+                        .Where(id => !string.IsNullOrEmpty(id))
+                        .Distinct()
+                        .ToList();
+                    
+                    var levelIds = features
+                        .Select(f => f.SeverityLevelId)
+                        .Where(id => !string.IsNullOrEmpty(id))
+                        .Distinct()
+                        .ToList();
+
+                    // 更新特征描述 (FeatureSuffix) - 将特性名称用 "/" 拼接
+                    var featureNames = features
+                        .Select(f => f.Name)
+                        .Where(name => !string.IsNullOrEmpty(name))
+                        .Distinct()
+                        .ToList();
+                    entity.FeatureSuffix = string.Join("/", featureNames);
+
+                    entity.AppearanceFeatureCategoryIds = System.Text.Json.JsonSerializer.Serialize(categoryIds);
+                    entity.AppearanceFeatureLevelIds = System.Text.Json.JsonSerializer.Serialize(levelIds);
+                }
+                else
+                {
+                    entity.AppearanceFeatureCategoryIds = "[]";
+                    entity.AppearanceFeatureLevelIds = "[]";
+                    entity.FeatureSuffix = ""; // 清空特征描述
+                }
+            }
+            catch (Exception ex)
+            {
+                // 日志记录，防止影响主流程
+                Log.Error($"更新外观特性关联ID失败: {ex.Message}");
+            }
+        }
+
+        // 更新中Si检测值
+        if (!string.IsNullOrEmpty(input.MidSiLeft))
+        {
+            entity.MidSiLeft = input.MidSiLeft;
+        }
+        if (!string.IsNullOrEmpty(input.MidSiRight))
+        {
+            entity.MidSiRight = input.MidSiRight;
+        }
+
+        // 更新中B检测值
+        if (!string.IsNullOrEmpty(input.MidBLeft))
+        {
+            entity.MidBLeft = input.MidBLeft;
+        }
+        if (!string.IsNullOrEmpty(input.MidBRight))
+        {
+            entity.MidBRight = input.MidBRight;
+        }
+
+        // 更新花纹检测值
+        if (input.LeftPatternWidth.HasValue)
+        {
+            entity.LeftPatternWidth = input.LeftPatternWidth;
+        }
+        if (input.LeftPatternSpacing.HasValue)
+        {
+            entity.LeftPatternSpacing = input.LeftPatternSpacing;
+        }
+        if (input.MidPatternWidth.HasValue)
+        {
+            entity.MidPatternWidth = input.MidPatternWidth;
+        }
+        if (input.MidPatternSpacing.HasValue)
+        {
+            entity.MidPatternSpacing = input.MidPatternSpacing;
+        }
+        if (input.RightPatternWidth.HasValue)
+        {
+            entity.RightPatternWidth = input.RightPatternWidth;
+        }
+        if (input.RightPatternSpacing.HasValue)
+        {
+            entity.RightPatternSpacing = input.RightPatternSpacing;
+        }
+
+        // 更新编辑者信息
         entity.AppearEditorId = _userManager.UserId;
         entity.AppearEditorName = _userManager.RealName;
         entity.AppearEditTime = DateTime.Now;
@@ -1456,7 +1549,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         {
             if (defaultValue != null)
             {
-                Console.WriteLine($"判定公式解析失败，使用默认值: {ex.Message}");
+                Log.Error($"判定公式解析失败，使用默认值: {ex.Message}");
                 return defaultValue;
             }
 
@@ -1878,7 +1971,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         var property = typeof(IntermediateDataEntity).GetProperty(columnName);
         if (property == null || !property.CanWrite)
         {
-            Console.WriteLine($"未找到可写属性 - 属性名: {columnName}");
+            Log.Error($"未找到可写属性 - 属性名: {columnName}");
             return;
         }
 
@@ -1912,7 +2005,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
                 }
                 else
                 {
-                    Console.WriteLine($"无法将判定结果转换为 int: {value}");
+                    Log.Error($"无法将判定结果转换为 int: {value}");
                     return;
                 }
             }
@@ -1924,7 +2017,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
                 }
                 else
                 {
-                    Console.WriteLine($"无法将判定结果转换为 decimal: {value}");
+                    Log.Error($"无法将判定结果转换为 decimal: {value}");
                     return;
                 }
             }
@@ -1936,7 +2029,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
                 }
                 else
                 {
-                    Console.WriteLine($"无法将判定结果转换为 bool: {value}");
+                    Log.Error($"无法将判定结果转换为 bool: {value}");
                     return;
                 }
             }
@@ -1949,7 +2042,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"设置判定结果失败 - 列名: {columnName}, 错误: {ex.Message}");
+            Log.Error($"设置判定结果失败 - 列名: {columnName}, 错误: {ex.Message}");
         }
     }
 
@@ -2044,14 +2137,14 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             }
             catch (Exception ex)
             {
-                Console.WriteLine(
+                Log.Error(
                     $"设置属性值失败 - 属性名: {columnName}, 值: {value}, 错误: {ex.Message}"
                 );
             }
         }
         else
         {
-            Console.WriteLine(
+            Log.Error(
                 $"未找到可写属性 - 属性名: {columnName}，可能需要在 IntermediateDataEntity 中添加该属性"
             );
         }

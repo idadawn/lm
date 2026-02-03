@@ -322,27 +322,12 @@ public class OAuthService : IDynamicApiController, ITransient
     [HttpGet("CurrentUser")]
     public async Task<dynamic> GetCurrentUser(string type)
     {
-        Console.WriteLine($"[CurrentUser] Start - Type: {type}");
-
         var httpContext = App.HttpContext;
 
-        // 检查 Authorization header
-        var authHeader = httpContext.Request.Headers["Authorization"].ToString();
-        Console.WriteLine($"[CurrentUser] Authorization Header: {authHeader}");
-
-        Console.WriteLine($"[CurrentUser] HttpContext.User is null: {httpContext.User == null}");
-        Console.WriteLine($"[CurrentUser] HttpContext.User.Identity.IsAuthenticated: {httpContext.User?.Identity?.IsAuthenticated}");
-        Console.WriteLine($"[CurrentUser] HttpContext.User.Identity.Name: {httpContext.User?.Identity?.Name}");
-        Console.WriteLine($"[CurrentUser] UserId Claim: {httpContext.User?.FindFirst("UserId")?.Value}");
-        Console.WriteLine($"[CurrentUser] Account Claim: {httpContext.User?.FindFirst("Account")?.Value}");
-        Console.WriteLine($"[CurrentUser] UserId from _userManager: {_userManager.UserId}");
-        Console.WriteLine($"[CurrentUser] TenantId from _userManager: {_userManager.TenantId}");
-
         // 如果 HttpContext.User 未认证，但有 Authorization header，手动解析 JWT
+        var authHeader = httpContext.Request.Headers["Authorization"].ToString();
         if (httpContext.User?.Identity?.IsAuthenticated != true && !string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
         {
-            Console.WriteLine($"[CurrentUser] User not authenticated but Authorization header present - Manually parsing JWT");
-
             try
             {
                 var token = authHeader.Substring("Bearer ".Length).Trim();
@@ -350,8 +335,6 @@ public class OAuthService : IDynamicApiController, ITransient
 
                 if (isValid && validationResult != null && validationResult.ClaimsIdentity != null)
                 {
-                    Console.WriteLine($"[CurrentUser] JWT manually validated successfully");
-
                     // 获取 ClaimsIdentity 并设置 NameClaimType
                     var claimsIdentity = validationResult.ClaimsIdentity;
 
@@ -366,23 +349,11 @@ public class OAuthService : IDynamicApiController, ITransient
                     var claimsPrincipal = new System.Security.Claims.ClaimsPrincipal(identity);
 
                     httpContext.User = claimsPrincipal;
-                    Console.WriteLine($"[CurrentUser] Set HttpContext.User from manually validated JWT");
-                    Console.WriteLine($"[CurrentUser] After manual set - IsAuthenticated: {httpContext.User.Identity?.IsAuthenticated}");
-                    Console.WriteLine($"[CurrentUser] After manual set - Name: {httpContext.User.Identity?.Name}");
-                    Console.WriteLine($"[CurrentUser] After manual set - Account Claim: {httpContext.User.FindFirst("Account")?.Value}");
-                    Console.WriteLine($"[CurrentUser] After manual set - UserId Claim: {httpContext.User.FindFirst("UserId")?.Value}");
-                    Console.WriteLine($"[CurrentUser] After manual set - UserId from manager: {_userManager.UserId}");
-                    Console.WriteLine($"[CurrentUser] After manual set - TenantId from manager: {_userManager.TenantId}");
-                }
-                else
-                {
-                    Console.WriteLine($"[CurrentUser] JWT manual validation failed - isValid: {isValid}");
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine($"[CurrentUser] Error manually parsing JWT: {ex.Message}");
-                Console.WriteLine($"[CurrentUser] StackTrace: {ex.StackTrace}");
+                // 忽略 JWT 解析错误
             }
         }
 
@@ -530,9 +501,6 @@ public class OAuthService : IDynamicApiController, ITransient
         // 系统配置信息
         var sysInfo = await _sysConfigService.GetInfo();
         loginOutput.sysConfigInfo = sysInfo.Adapt<SysConfigInfo>();
-
-        Console.WriteLine($"[CurrentUser] End - Returning data with {loginOutput.menuList.Count} menus, {loginOutput.permissionList.Count} permissions");
-        Console.WriteLine($"[CurrentUser] UserInfo: userId={loginOutput.userInfo?.userId}, userName={loginOutput.userInfo?.userName}");
 
         return loginOutput;
     }

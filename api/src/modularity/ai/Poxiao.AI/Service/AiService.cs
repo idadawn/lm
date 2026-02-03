@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using OpenAI;
 using Poxiao.AI.Interfaces;
 using Poxiao.DependencyInjection;
+using Poxiao.Logging;
 
 namespace Poxiao.AI.Service;
 
@@ -65,7 +66,7 @@ public class AiService : IAiService, ITransient
         catch (Exception ex)
         {
             // 记录错误并返回友好提示
-            Console.WriteLine($"AI服务调用错误: {ex.Message}");
+            Log.Error($"AI服务调用错误: {ex.Message}", ex);
             return $"抱歉，处理您的请求时出现错误：{ex.Message}";
         }
     }

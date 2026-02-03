@@ -75,7 +75,7 @@ export const COMMON_ROUTE: AppRouteRecordRaw = {
   path: '/common-route',
   name: 'commonRoute',
   component: LAYOUT,
-  redirect: '/lab/dashboard',
+  redirect: '/lab/sub-table',
   meta: {
     title: 'commonRoute',
     hideBreadcrumb: true,
@@ -102,17 +102,6 @@ export const COMMON_ROUTE: AppRouteRecordRaw = {
         defaultTitle: 'editor',
         icon: 'icon-ym icon-ym-btn-preview',
         affix: false,
-      },
-    },
-    {
-      path: '/lab/dashboard',
-      component: () => import('/@/views/lab/dashboard/index.vue'),
-      name: 'home',
-      meta: {
-        title: 'routes.basic.home',
-        defaultTitle: '首页',
-        icon: 'icon-ym icon-ym-nav-home',
-        affix: true,
       },
     },
     {
@@ -251,17 +240,6 @@ export const COMMON_ROUTE: AppRouteRecordRaw = {
       },
     },
     {
-      path: '/lab/product',
-      component: () => import('/@/views/lab/product/index.vue'),
-      name: 'labProduct',
-      meta: {
-        title: '产品定义',
-        defaultTitle: '产品定义',
-        icon: 'icon-ym icon-ym-webDesign',
-        affix: false,
-      },
-    },
-    {
       path: '/lab/severity-level',
       component: () => import('/@/views/lab/severityLevel/index.vue'),
       name: 'labSeverityLevel',
@@ -325,6 +303,7 @@ export const COMMON_ROUTE: AppRouteRecordRaw = {
         defaultTitle: '中间数据表',
         icon: 'icon-ym icon-ym-webDesign',
         affix: false,
+        modelId: '779743700858175429',
       },
     },
     {

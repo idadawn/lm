@@ -11,6 +11,7 @@ using Poxiao.Infrastructure.Manager;
 using Poxiao.Infrastructure.Models;
 using Poxiao.Infrastructure.Models.VisualDev;
 using Poxiao.Infrastructure.Security;
+using Poxiao.Logging;
 using Poxiao.Systems.Entitys.Dto.Database;
 using Poxiao.Systems.Entitys.Model.DataBase;
 using Poxiao.Systems.Entitys.System;
@@ -97,24 +98,21 @@ public class DataBaseManager : IDataBaseManager, ITransient
 
             _sqlSugarClient.Ado.CommandTimeOut = 30;
 
+            var config = _sqlSugarClient.CurrentConnectionConfig;
+
             _sqlSugarClient.Aop.OnLogExecuting = (sql, pars) =>
             {
-                if (sql.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
-                    Console.ForegroundColor = ConsoleColor.Green;
-                if (sql.StartsWith("UPDATE", StringComparison.OrdinalIgnoreCase) || sql.StartsWith("INSERT", StringComparison.OrdinalIgnoreCase))
-                    Console.ForegroundColor = ConsoleColor.White;
-                if (sql.StartsWith("DELETE", StringComparison.OrdinalIgnoreCase))
-                    Console.ForegroundColor = ConsoleColor.Blue;
-
-                // 在控制台输出sql语句
-                Console.WriteLine("【" + DateTime.Now + "——执行SQL】\r\n" + UtilMethods.GetSqlString(_sqlSugarClient.CurrentConnectionConfig.DbType, sql, pars) + "\r\n");
+                Log.Debug("【" + DateTime.Now + "——执行SQL】\r\n" + UtilMethods.GetSqlString(config.DbType, sql, pars));
+                App.PrintToMiniProfiler("SqlSugar", "Info", sql + "\r\n" + _sqlSugarClient.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value)));
             };
 
             _sqlSugarClient.Aop.OnError = (ex) =>
             {
-                Console.ForegroundColor = ConsoleColor.Red;
+                if (ex.Parametres == null) return;
                 var pars = _sqlSugarClient.Utilities.SerializeObject(((SugarParameter[])ex.Parametres).ToDictionary(it => it.ParameterName, it => it.Value));
-                Console.WriteLine("【" + DateTime.Now + "——错误SQL】\r\n" + UtilMethods.GetSqlString(_sqlSugarClient.CurrentConnectionConfig.DbType, ex.Sql, (SugarParameter[])ex.Parametres) + "\r\n");
+                var errorSql = UtilMethods.GetSqlString(config.DbType, ex.Sql, (SugarParameter[])ex.Parametres);
+                Log.Error("【" + DateTime.Now + "——错误SQL】\r\n" + errorSql, ex);
+                App.PrintToMiniProfiler("SqlSugar", "Error", $"{ex.Message}{Environment.NewLine}{ex.Sql}{pars}{Environment.NewLine}");
             };
 
             if (_sqlSugarClient.CurrentConnectionConfig.DbType == SqlSugar.DbType.Oracle)
@@ -162,27 +160,24 @@ public class DataBaseManager : IDataBaseManager, ITransient
 
             _sqlSugarClient.Ado.CommandTimeOut = 30;
 
+            var config = _sqlSugarClient.CurrentConnectionConfig;
+
             _sqlSugarClient.Aop.OnLogExecuting = (sql, pars) =>
             {
-                if (sql.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
-                    Console.ForegroundColor = ConsoleColor.Green;
-                if (sql.StartsWith("UPDATE", StringComparison.OrdinalIgnoreCase) || sql.StartsWith("INSERT", StringComparison.OrdinalIgnoreCase))
-                    Console.ForegroundColor = ConsoleColor.White;
-                if (sql.StartsWith("DELETE", StringComparison.OrdinalIgnoreCase))
-                    Console.ForegroundColor = ConsoleColor.Blue;
-
-                // 在控制台输出sql语句
-                Console.WriteLine("【" + DateTime.Now + "——执行SQL】\r\n" + UtilMethods.GetSqlString(_sqlSugarClient.CurrentConnectionConfig.DbType, sql, pars) + "\r\n");
+                Log.Debug("【" + DateTime.Now + "——执行SQL】\r\n" + UtilMethods.GetSqlString(config.DbType, sql, pars));
+                App.PrintToMiniProfiler("SqlSugar", "Info", sql + "\r\n" + _sqlSugarClient.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value)));
             };
 
             _sqlSugarClient.Aop.OnError = (ex) =>
             {
-                Console.ForegroundColor = ConsoleColor.Red;
+                if (ex.Parametres == null) return;
                 var pars = _sqlSugarClient.Utilities.SerializeObject(((SugarParameter[])ex.Parametres).ToDictionary(it => it.ParameterName, it => it.Value));
-                Console.WriteLine("【" + DateTime.Now + "——错误SQL】\r\n" + UtilMethods.GetSqlString(_sqlSugarClient.CurrentConnectionConfig.DbType, ex.Sql, (SugarParameter[])ex.Parametres) + "\r\n");
+                var errorSql = UtilMethods.GetSqlString(config.DbType, ex.Sql, (SugarParameter[])ex.Parametres);
+                Log.Error("【" + DateTime.Now + "——错误SQL】\r\n" + errorSql, ex);
+                App.PrintToMiniProfiler("SqlSugar", "Error", $"{ex.Message}{Environment.NewLine}{ex.Sql}{pars}{Environment.NewLine}");
             };
 
-            if (_sqlSugarClient.CurrentConnectionConfig.DbType == SqlSugar.DbType.Oracle)
+            if (config.DbType == SqlSugar.DbType.Oracle)
             {
                 _sqlSugarClient.Aop.OnExecutingChangeSql = (sql, pars) =>
                 {

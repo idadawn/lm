@@ -11,6 +11,7 @@ using Poxiao.Infrastructure.Manager;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.AppearanceFeature;
 using Poxiao.Lab.Interfaces;
+using Poxiao.Logging;
 using SqlSugar;
 
 namespace Poxiao.Lab.Service;
@@ -307,9 +308,6 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
             .ThenBy<AppearanceFeatureEntity, string>(t => t.Name ?? string.Empty)
             .ToList();
 
-        Console.WriteLine(
-            $"[GetList] Found {data.Count} records. Filters: Keyword='{input.Keyword}'"
-        );
 
         var outputs = data.Adapt<List<AppearanceFeatureListOutput>>();
         await FillOutputNamesAsync(outputs);
@@ -377,7 +375,6 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
         // 唯一性检查：特性名称必须全局唯一
         if (await _repository.IsAnyAsync(t => t.Name == input.Name && t.DeleteMark == null))
         {
-            Console.WriteLine($"[Create] Feature '{input.Name}' already exists.");
             throw Oops.Oh($"特性名称 '{input.Name}' 已存在，不能重复");
         }
 
@@ -405,12 +402,7 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Create] Exception: {ex.Message}");
-            Console.WriteLine($"[Create] StackTrace: {ex.StackTrace}");
-            if (ex.InnerException != null)
-            {
-                Console.WriteLine($"[Create] InnerException: {ex.InnerException.Message}");
-            }
+            Log.Error($"[Create] 创建外观特性失败: {ex.Message}");
             throw Oops.Oh("创建失败: " + ex.Message);
         }
 
@@ -710,9 +702,6 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
                 keywordResults.Add(kwResult);
             }
 
-            Console.WriteLine(
-                $"[MatchSingleQuery] 关键词 '{query}' 匹配到 {keywordResults.Count} 个特性，全部返回"
-            );
 
             return keywordResults;
         }
@@ -737,15 +726,11 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
                 && aiClassification.Features.Any()
             )
             {
-                Console.WriteLine($"[BatchMatch] AI返回 {aiClassification.Features.Count} 条结果");
                 var manualCorrections = new List<ManualCorrectionOption>();
 
                 // AI返回几条记录，就创建几条人工修正匹配列表
                 foreach (var aiFeature in aiClassification.Features)
                 {
-                    Console.WriteLine(
-                        $"[BatchMatch] 处理AI结果: Name={aiFeature.Name}, Level={aiFeature.Level}, Category={aiFeature.Category ?? "(空)"}"
-                    );
 
                     // 1. 查找匹配的特性（根据名称和等级）
                     var matchedFeature = FindFeatureByNameAndLevel(
@@ -787,9 +772,6 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
                             actionType = "add_keyword";
                             suggestion =
                                 $"AI识别到特性：{aiFeature.Name}（等级：{aiFeature.Level}），建议将'{query}'添加到关键词列表";
-                            Console.WriteLine(
-                                $"[BatchMatch] 找到名称+等级匹配的特性: {matchedFeature.Name}"
-                            );
                         }
                         else
                         {
@@ -829,7 +811,7 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"[BatchMatch] 插入/获取修正记录失败: {ex.Message}");
+                        Log.Error($"[BatchMatch] 插入/获取修正记录失败: {ex.Message}");
                     }
 
                     // 4. 构建返回给前端的选项
@@ -863,9 +845,6 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
                     }
                 }
 
-                Console.WriteLine(
-                    $"[BatchMatch] AI匹配完成，共生成 {manualCorrections.Count} 个人工修正选项"
-                );
                 result.MatchMethod = "ai";
                 result.IsPerfectMatch = false;
                 result.ManualCorrections = manualCorrections;
@@ -874,7 +853,7 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[BatchMatch] AI匹配失败: {ex.Message}");
+            Log.Error($"[BatchMatch] AI匹配失败: {ex.Message}");
             // AI分析失败，直接返回错误信息，不跳转人工修正
             result.MatchMethod = "ai_error";
             result.IsPerfectMatch = true; // 设置为true以避免前端跳转修正列表
@@ -1056,14 +1035,9 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
             featureLevelIdToName
         );
 
-        Console.WriteLine(
-            $"[Match] 规则引擎匹配结果: {ruleResults.Count} 个结果 (输入: {input.Text})"
-        );
 
         if (ruleResults.Any())
-        {
-            Console.WriteLine($"[Match] 规则引擎匹配成功: {ruleResults.Count} 个结果");
-            var outputs = new List<AppearanceFeatureInfoOutput>();
+        {            var outputs = new List<AppearanceFeatureInfoOutput>();
             foreach (var result in ruleResults)
             {
                 var output = result.Feature.Adapt<AppearanceFeatureInfoOutput>();
@@ -1121,25 +1095,16 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
                         {
                             output.FeatureExists = true;
                             output.ExistingFeatureId = existingFeature.Id;
-                            Console.WriteLine(
-                                $"[Match] 找到已存在的特性: {existingFeature.Name} (ID: {existingFeature.Id})"
-                            );
                         }
                         else
                         {
                             output.FeatureExists = false;
-                            Console.WriteLine(
-                                $"[Match] 特性不存在，建议创建: {output.SuggestedFeatureName}"
-                            );
                         }
                     }
                     else
                     {
                         // 如果找不到等级ID，说明等级不存在，需要先创建等级
                         output.FeatureExists = false;
-                        Console.WriteLine(
-                            $"[Match] 未找到等级 '{result.SuggestedSeverity}'，需要先创建等级"
-                        );
                     }
                 }
 
@@ -1161,28 +1126,18 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
         }
 
         // ========== 优先级 2: AI分析（处理复杂描述和多特性） ==========
-        Console.WriteLine($"[Match] 开始AI分析 (输入: {input.Text})");
         try
         {
             var aiClassification = await _analysisService.DefineAppearanceFeatureAsync(input.Text);
-            Console.WriteLine(
-                $"[Match] AI分析返回: {(aiClassification != null ? "非空" : "null")}, Features数量: { aiClassification?.Features?.Count ?? 0}"
-            );
-
             if (
                 aiClassification != null
                 && aiClassification.Features != null
                 && aiClassification.Features.Any()
             )
-            {
-                Console.WriteLine($"[Match] AI识别成功: {aiClassification.Features.Count} 个特性");
-                var outputs = new List<AppearanceFeatureInfoOutput>();
+            {                var outputs = new List<AppearanceFeatureInfoOutput>();
 
                 foreach (var aiFeature in aiClassification.Features)
                 {
-                    Console.WriteLine(
-                        $"[Match] AI识别到特性: Name={aiFeature.Name}, Category={aiFeature.Category}, Level={aiFeature.Level}"
-                    );
 
                     // 根据 AI 返回的 name、category 和 level 查找特性（使用名称匹配）
                     var matchedFeature = featuresWithNames.FirstOrDefault(f =>
@@ -1270,9 +1225,6 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
 
                     if (matchedFeature != null)
                     {
-                        Console.WriteLine(
-                            $"[Match] AI匹配到现有特性: {matchedFeature.Feature.Name} (ID: {matchedFeature.Feature.Id}) - MatchMethod: AI Fuzzy"
-                        );
                         var output = matchedFeature.Feature.Adapt<AppearanceFeatureInfoOutput>();
                         output.Category = matchedFeature.CategoryName;
                         output.SeverityLevel = matchedFeature.SeverityLevelName;
@@ -1362,10 +1314,6 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
                     else
                     {
                         // AI识别到了特性，但匹配不到现有特性记录，创建一个建议的输出
-                        Console.WriteLine(
-                            $"[Match] AI识别到特性但未匹配到现有记录: Name={aiFeature.Name}, Category={aiFeature.Category}, Level={aiFeature.Level}"
-                        );
-
                         // 查找分类ID
                         var categoryId = categoryIdToName
                             .Where(kvp =>
@@ -1423,32 +1371,19 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
                             }
 
                             outputs.Add(suggestedOutput);
-                            Console.WriteLine(
-                                $"[Match] 创建AI建议输出: {suggestedOutput.SuggestedFeatureName}"
-                            );
                         }
                     }
                 }
 
                 if (outputs.Any())
                 {
-                    Console.WriteLine($"[Match] AI匹配成功: {outputs.Count} 个结果");
                     return outputs;
                 }
-                else
-                {
-                    Console.WriteLine($"[Match] AI返回了特性但无法创建建议输出（可能分类不存在）");
-                }
-            }
-            else
-            {
-                Console.WriteLine($"[Match] AI分析返回空结果或Features为空");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[Match] AI分析失败: {ex.Message}");
-            Console.WriteLine($"[Match] AI分析异常堆栈: {ex.StackTrace}");
+            Log.Error($"[Match] AI分析失败: {ex.Message}");
         }
 
         // ========== 优先级 3: 文本模糊匹配（最后兜底） ==========
@@ -1485,9 +1420,7 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
             .ToList();
 
         if (fallbackFeatures.Any())
-        {
-            Console.WriteLine($"[Match] 文本模糊匹配成功: {fallbackFeatures.Count} 个结果");
-            var fallbackOutputs = fallbackFeatures
+        {            var fallbackOutputs = fallbackFeatures
                 .Select(f =>
                 {
                     var output = f.Feature.Adapt<AppearanceFeatureInfoOutput>();
@@ -1513,7 +1446,6 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
         }
 
         // 未匹配到任何结果
-        Console.WriteLine($"[Match] 未匹配到任何结果: {input.Text}");
         return new List<AppearanceFeatureInfoOutput>();
     }
 
@@ -1587,9 +1519,6 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
         if (isOk < 1)
             throw Oops.Oh(ErrorCode.COM1000);
 
-        Console.WriteLine(
-            $"[AddWithSeverity] Created feature '{entity.Name}' in category '{category.Name}' with severity '{featureLevel.Name}'"
-        );
 
         // 返回创建的特性信息
         var output = entity.Adapt<AppearanceFeatureInfoOutput>();
@@ -1655,11 +1584,6 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
 
         await _correctionRepository.InsertAsync(entity);
 
-        Console.WriteLine(
-            $"[SaveCorrection] Saved correction: InputText='{input.InputText}', "
-                + $"AutoMatched={input.AutoMatchedFeatureId}, Corrected={input.CorrectedFeatureId}, "
-                + $"Mode={input.MatchMode}, Scenario={input.Scenario}"
-        );
     }
 
     /// <summary>
@@ -1729,16 +1653,7 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
                 })
                 .ExecuteCommandAsync();
 
-            Console.WriteLine(
-                $"[AddKeyword] Added keyword '{trimmedKeyword}' to feature '{feature.Name}' (ID: {feature.Id})"
-            );
-        }
-        else
-        {
-            Console.WriteLine(
-                $"[AddKeyword] Keyword '{trimmedKeyword}' already exists in feature '{feature.Name}' (ID: {feature.Id})"
-            );
-        }
+            }
     }
 
     /// <summary>
@@ -1841,9 +1756,6 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
                     })
                     .ExecuteCommandAsync();
 
-                Console.WriteLine(
-                    $"[CreateOrAddKeyword] Added keyword '{trimmedKeyword}' to existing feature '{existingFeature.Name}' (ID: {existingFeature.Id})"
-                );
             }
 
             finalFeatureId = existingFeature.Id;
@@ -1875,9 +1787,6 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
             if (isOk < 1)
                 throw Oops.Oh(ErrorCode.COM1000);
 
-            Console.WriteLine(
-                $"[CreateOrAddKeyword] Created feature '{entity.Name}' in category '{category.Name}' with severity '{featureLevel.Name}'"
-            );
 
             finalFeatureId = entity.Id;
             action = "create";
@@ -1902,9 +1811,6 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
 
         await _correctionRepository.InsertAsync(correctionEntity);
 
-        Console.WriteLine(
-            $"[CreateOrAddKeyword] Saved correction: InputText='{input.InputText}', Action={action}, FeatureId={finalFeatureId}"
-        );
 
         // 返回结果
         var resultFeature = await _repository.GetFirstAsync(f =>
@@ -1992,17 +1898,12 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
                 }
             }
 
-            Console.WriteLine(
-                $"[GetFeatureIdsByKeyword] 数据库查询完成：关键词 '{keyword}' 匹配到 {matchedFeatureIds.Count} 个特征"
-            );
 
             return matchedFeatureIds;
         }
         catch (Exception ex)
         {
-            Console.WriteLine(
-                $"[GetFeatureIdsByKeyword] ❌ 数据库查询异常：关键词 '{keyword}', 错误: {ex.Message}"
-            );
+            Log.Error($"[GetFeatureIdsByKeyword] 数据库查询异常：关键词 '{keyword}', 错误: {ex.Message}");
             // 查询失败时返回空列表，不抛出异常
             return new List<string>();
         }

@@ -5,6 +5,7 @@ using Poxiao;
 using Poxiao.Extras.DatabaseAccessor.SqlSugar.Models;
 using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Manager;
+using Poxiao.Logging;
 
 namespace SqlSugar;
 
@@ -86,22 +87,15 @@ where TEntity : class, new()
 
         base.Context.Aop.OnLogExecuting = (sql, pars) =>
         {
-            if (sql.StartsWith("SELECT", StringComparison.OrdinalIgnoreCase))
-                Console.ForegroundColor = ConsoleColor.Green;
-            if (sql.StartsWith("UPDATE", StringComparison.OrdinalIgnoreCase) || sql.StartsWith("INSERT", StringComparison.OrdinalIgnoreCase))
-                Console.ForegroundColor = ConsoleColor.White;
-            if (sql.StartsWith("DELETE", StringComparison.OrdinalIgnoreCase))
-                Console.ForegroundColor = ConsoleColor.Blue;
             // 在控制台输出sql语句
-            Console.WriteLine("【" + DateTime.Now + "——执行SQL】\r\n" + UtilMethods.GetSqlString(base.Context.CurrentConnectionConfig.DbType, sql, pars) + "\r\n");
+            Log.Information("【" + DateTime.Now + "——执行SQL】\r\n" + UtilMethods.GetSqlString(base.Context.CurrentConnectionConfig.DbType, sql, pars) + "\r\n");
             //App.PrintToMiniProfiler("SqlSugar", "Info", sql + "\r\n" + base.Context.Utilities.SerializeObject(pars.ToDictionary(it => it.ParameterName, it => it.Value)));
         };
 
         base.Context.Aop.OnError = (ex) =>
         {
-            Console.ForegroundColor = ConsoleColor.Red;
             var pars = base.Context.Utilities.SerializeObject(((SugarParameter[])ex.Parametres).ToDictionary(it => it.ParameterName, it => it.Value));
-            Console.WriteLine("【" + DateTime.Now + "——错误SQL】\r\n" + UtilMethods.GetSqlString(base.Context.CurrentConnectionConfig.DbType, ex.Sql, (SugarParameter[])ex.Parametres) + "\r\n");
+            Log.Error("【" + DateTime.Now + "——错误SQL】\r\n" + UtilMethods.GetSqlString(base.Context.CurrentConnectionConfig.DbType, ex.Sql, (SugarParameter[])ex.Parametres) + "\r\n");
             //App.PrintToMiniProfiler("SqlSugar", "Error", $"{ex.Message}{Environment.NewLine}{ex.Sql}{pars}{Environment.NewLine}");
         };
 

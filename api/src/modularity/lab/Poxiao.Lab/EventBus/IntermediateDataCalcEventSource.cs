@@ -1,4 +1,5 @@
 using Poxiao.EventBus;
+using Poxiao.Lab.Entity.Config;
 
 namespace Poxiao.Lab.EventBus;
 
@@ -41,11 +42,4 @@ public class IntermediateDataCalcEventSource : IEventSource
     public CancellationToken CancellationToken { get; }
 
     public DateTime CreatedTime { get; } = DateTime.UtcNow;
-}
-
-public class UnitPrecisionInfo
-{
-    public string UnitId { get; set; }
-
-    public int? DecimalPlaces { get; set; }
 }

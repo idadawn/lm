@@ -10,14 +10,12 @@
   </div>
 </template>
 <script lang="ts" setup>
-  import { reactive } from 'vue';
-  defineOptions({
-    name: 'base',
-  });
-  const state = reactive<any>({
-
-  });
+// import { reactive } from 'vue';
+defineOptions({
+  name: 'base',
+});
+// const state = reactive<any>({
+//
+// });
 </script>
-<style lang="less" scoped>
-
-</style>
+<style lang="less" scoped></style>

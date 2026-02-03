@@ -8,6 +8,7 @@ using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
 using Poxiao.FriendlyException;
 using Poxiao.Infrastructure.Core.Manager;
+using Poxiao.Logging;
 using Poxiao.Infrastructure.Core.Manager.Files;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Config;
@@ -90,7 +91,7 @@ public class MagneticDataImportSessionService
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[Create] File upload failed: {ex.Message}");
+                Log.Error($"[Create] File upload failed: {ex.Message}");
                 // 文件保存失败不影响会话创建
             }
         }
@@ -204,7 +205,7 @@ public class MagneticDataImportSessionService
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[UploadAndParse] 解析模板配置失败: {ex.Message}");
+                Log.Error($"[UploadAndParse] 解析模板配置失败: {ex.Message}");
                 // 继续使用默认配置
             }
         }

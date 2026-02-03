@@ -165,6 +165,14 @@ public class IntermediateDataFormulaService
         [FromBody] IntermediateDataFormulaDto dto
     )
     {
+        // 如果 ColumnName 为空、为 null，或者以 $ 开头（自定义公式占位符），则自动生成
+        // 使用雪花算法保证唯一性，格式: $VAR_{snowflakeId}
+        if (string.IsNullOrWhiteSpace(dto.ColumnName) || dto.ColumnName.StartsWith("$"))
+        {
+            var snowflakeId = Infrastructure.Security.SnowflakeIdHelper.NextId();
+            dto.ColumnName = $"$VAR_{snowflakeId}";
+        }
+
         // 检查列名是否已存在
         var exists = await _repository
             .AsQueryable()

@@ -13,8 +13,8 @@
         <div class="page-content-wrapper-content">
           <BasicTable @register="registerTable" :searchInfo="searchInfo" @row-click="handleRowClick"
             class="jnpf-sub-table">
-            <template #tableTitle>
-              <a-button type="primary" @click="handleCreateFeature">
+            <template #form-submitBefore>
+              <a-button type="primary" @click="handleCreateFeature" style="margin-right: 10px">
                 <template #icon>
                   <PlusOutlined />
                 </template>
@@ -36,11 +36,26 @@
 
     <!-- 新建特性弹窗 -->
     <FeatureModal @register="registerFeatureModal" @success="handleFeatureCreated" />
+
+    <template #footer>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="text-align: left;">
+          <a-button danger @click="handleClear" :disabled="selectedFeatures.length === 0">清空已选</a-button>
+          <span v-if="selectedFeatures.length > 0" style="margin-left: 8px; color: #888">已选 {{ selectedFeatures.length
+          }}
+            项</span>
+        </div>
+        <div>
+          <a-button @click="handleCancel">取消</a-button>
+          <a-button type="primary" :loading="confirmLoading" @click="handleConfirm">确定</a-button>
+        </div>
+      </div>
+    </template>
   </a-modal>
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, unref, nextTick, watch } from 'vue';
+import { ref, reactive, unref, nextTick } from 'vue';
 import { PlusOutlined } from '@ant-design/icons-vue';
 import { BasicLeftTree, TreeItem, TreeActionType } from '/@/components/Tree';
 import { BasicTable, useTable, BasicColumn } from '/@/components/Table';
@@ -85,7 +100,7 @@ const columns: BasicColumn[] = [
 ];
 
 // 表格配置
-const [registerTable, { reload, setSelectedRowKeys, getForm, getDataSource }] = useTable({
+const [registerTable, { reload, setSelectedRowKeys, getForm }] = useTable({
   api: getAppearanceFeatureList,
   columns,
   immediate: false, // 不立即加载
@@ -95,7 +110,7 @@ const [registerTable, { reload, setSelectedRowKeys, getForm, getDataSource }] = 
   resizeHeightOffset: -74,
   rowSelection: {
     type: 'checkbox',
-    onChange: (selectedRowKeys: string[], selectedRows: AppearanceFeatureInfo[]) => {
+    onChange: (_selectedRowKeys: string[], selectedRows: AppearanceFeatureInfo[]) => {
       selectedFeatures.value = selectedRows;
     },
   },
@@ -305,13 +320,15 @@ function close() {
 
 // 确认选择
 function handleConfirm() {
-  if (selectedFeatures.value.length === 0) {
-    createMessage.warning('请选择至少一个特性');
-    return;
-  }
-
+  // 允许空选择（用于清空特性）
   emit('confirm', selectedFeatures.value);
   close();
+}
+
+// 清空选择
+function handleClear() {
+  selectedFeatures.value = [];
+  setSelectedRowKeys([]);
 }
 
 // 取消

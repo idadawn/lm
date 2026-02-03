@@ -2009,9 +2009,6 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
 
                 if (startTime < endTime && DateTime.Now < endTime)
                 {
-                    Console.WriteLine("提醒cron表达式：" + cron);
-                    Console.WriteLine("提醒开始时间：" + startTime.ToString("yyyy-MM-dd HH:mm:ss"));
-                    Console.WriteLine("提醒结束时间：" + endTime.ToString("yyyy-MM-dd HH:mm:ss"));
                     var interval = 1; //第一次执行间隔
                     var runCount = 0; // 已执行次数
                     if (DateTime.Now < startTime)
@@ -2037,9 +2034,6 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                 //var startTime = startingTime.AddHours(nodeProp.overTimeConfig.duringDeal + nodeProp.overTimeConfig.firstOver); // 超时开始时间
                 // 分钟
                 var startTime = startingTime.AddMinutes(nodeProp.timeLimitConfig.duringDeal + nodeProp.overTimeConfig.firstOver); // 超时开始时间
-
-                Console.WriteLine("超时cron表达式：" + cron);
-                Console.WriteLine("超时开始时间：" + startTime.ToString("yyyy-MM-dd HH:mm:ss"));
                 var interval = 1; //第一次执行间隔
                 var runCount = 0; // 已执行次数
                 if (DateTime.Now < startTime)
@@ -2087,7 +2081,6 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
                 var operatorList = await _flowTaskRepository.GetTaskOperatorList(x => x.TaskId == flowTaskParamter.flowTaskEntity.Id && x.TaskNodeId == nodeId && x.Completion == 0 && x.State != "-1");
                 var userList = operatorList.Select(x => x.HandleId).ToList();
                 var remark = string.Format("现在时间：{3},节点{0}：第{1}次{2}通知", nodeId, count, msgReMark, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
-                Console.WriteLine(remark);
                 var bodyDic = _flowTaskMsgUtil.GetMesBodyText(flowTaskParamter, userList, operatorList, 2, remark);
                 if (msgConfig.on > 0)
                 {
@@ -2097,13 +2090,11 @@ public class FlowTaskManager : IFlowTaskManager, ITransient
             // 事件
             if (funcConfig.on && timeOutConfig.overEvent && timeOutConfig.overEventTime == count)
             {
-                Console.WriteLine(string.Format("开始执行{0}事件，现在时间：{1}", msgReMark, DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")));
                 await _flowTaskMsgUtil.RequestEvents(funcConfig, flowTaskParamter);
             }
             //自动审批
             if (isTimeOut && timeOutConfig.overAutoApproveTime == count && timeOutConfig.overAutoApprove)
             {
-                Console.WriteLine("开始自动审批，现在时间：" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
                 await AutoAudit(flowTaskParamter, true);
             }
         }

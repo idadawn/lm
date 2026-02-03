@@ -6,9 +6,9 @@
       </a-form-item>
       <a-form-item label="质量状态">
         <a-radio-group v-model:value="formState.qualityStatus">
-          <a-radio value="合格">合格</a-radio>
-          <a-radio value="不合格">不合格</a-radio>
-          <a-radio value="其他">其他</a-radio>
+          <a-radio :value="0">合格</a-radio>
+          <a-radio :value="1">不合格</a-radio>
+          <a-radio :value="2">其他</a-radio>
         </a-radio-group>
       </a-form-item>
       <a-form-item label="展示颜色">
@@ -50,7 +50,7 @@ const rowId = ref('');
 
 const formState = ref({
   name: '',
-  qualityStatus: '其他',
+  qualityStatus: 2,
   priority: 0,
   color: '',
   isStatistic: false,
@@ -80,7 +80,7 @@ const [registerModal, { setModalProps, closeModal }] = useModalInner(async (data
     rowId.value = '';
     formState.value = {
       name: '',
-      qualityStatus: '其他',
+      qualityStatus: 2,
       priority: 0,
       color: '',
       isStatistic: false,

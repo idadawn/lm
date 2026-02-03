@@ -182,8 +182,8 @@ export function addFeatureWithSeverity(data: AddWithSeverityInput) {
 
 // 添加关键字到特性
 export interface AddKeywordInput {
-    featureId: string;
-    keyword: string;
+    FeatureId: string;
+    Keyword: string;
 }
 
 export function addKeywordToFeature(data: AddKeywordInput) {

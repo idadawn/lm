@@ -96,8 +96,9 @@ public class FurnaceNo
     /// 从字符串解析炉号
     /// </summary>
     /// <param name="furnaceNo">原始炉号字符串</param>
+    /// <param name="ignoredSuffixes">需要忽略的后缀列表（如“复测”）</param>
     /// <returns>炉号实例</returns>
-    public static FurnaceNo Parse(string furnaceNo)
+    public static FurnaceNo Parse(string furnaceNo, IEnumerable<string> ignoredSuffixes = null)
     {
         var result = new FurnaceNo { OriginalFurnaceNo = furnaceNo, IsValid = false };
 
@@ -111,8 +112,9 @@ public class FurnaceNo
         // 例如：1甲20251101-1-4-1脆 或 1乙20251101-1-1-1
         // 卷号和分卷号支持小数：\d+(\.\d+)?
         // 允许炉号、卷号、分卷号前后有空格
+        // 特性描述限制为中文汉字或括号：[\u4e00-\u9fa5\(\)\uff08\uff09]*
         var pattern =
-            @"^\s*(\d+)(.*?)(\d{8})\s*-\s*(\d+)\s*-\s*(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*(.*)\s*$";
+            @"^\s*(\d+)(.*?)(\d{8})\s*-\s*(\d+)\s*-\s*(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*([\u4e00-\u9fa5\(\)\uff08\uff09]*)\s*$";
         var match = Regex.Match(furnaceNo.Trim(), pattern);
 
         if (!match.Success)
@@ -130,6 +132,17 @@ public class FurnaceNo
             result.CoilNo = match.Groups[5].Value; // 卷号
             result.SubcoilNo = match.Groups[6].Value; // 分卷号
             result.FeatureSuffix = match.Groups[7].Value?.Trim(); // 特性描述（可选）
+
+            // 忽略特定的非特性后缀（如复测）
+            if (!string.IsNullOrEmpty(result.FeatureSuffix))
+            {
+                // 如果传入了忽略列表，使用传入的；否则使用默认的
+                var ignores = ignoredSuffixes ?? new[] { "复测", "（复测）", "(复测)" };
+                if (ignores.Any(s => s == result.FeatureSuffix))
+                {
+                    result.FeatureSuffix = null;
+                }
+            }
 
             // 解析日期
             if (
@@ -190,10 +203,11 @@ public class FurnaceNo
     /// 尝试解析炉号，如果失败返回null
     /// </summary>
     /// <param name="furnaceNo">原始炉号字符串</param>
+    /// <param name="ignoredSuffixes">需要忽略的后缀列表</param>
     /// <returns>炉号实例，如果解析失败返回null</returns>
-    public static FurnaceNo TryParse(string furnaceNo)
+    public static FurnaceNo TryParse(string furnaceNo, IEnumerable<string> ignoredSuffixes = null)
     {
-        var result = Parse(furnaceNo);
+        var result = Parse(furnaceNo, ignoredSuffixes);
         return result.IsValid ? result : null;
     }
 

@@ -5,9 +5,13 @@
       <a-empty description="请先完成前面的步骤" />
     </div>
 
-    <!-- 加载中状态 -->
-    <div v-else-if="loading" class="loading-section">
-      <a-spin size="large" tip="正在导入数据..." />
+    <!-- 加载中状态 / 导入进度 -->
+    <div v-else-if="loading || importing" class="loading-section">
+      <a-spin size="large" :tip="importProgressTip" />
+      <div v-if="importing" class="import-progress" style="margin-top: 20px; width: 60%; max-width: 400px;">
+        <a-progress :percent="importProgress" :status="importProgress < 100 ? 'active' : 'success'" />
+        <div style="text-align: center; margin-top: 8px; color: #666;">{{ importProgressMessage }}</div>
+      </div>
     </div>
 
     <!-- 导入结果 -->
@@ -106,26 +110,13 @@
               <span>待导入：{{ pagination.total }} 条</span>
             </div>
           </div>
-          <a-table
-            :columns="previewTableColumns"
-            :data-source="previewTableData"
-            :loading="loadingReview"
-            :pagination="{
-              current: pagination.pageIndex,
-              pageSize: pagination.pageSize,
-              total: pagination.total,
-              showSizeChanger: true,
-            }"
-            :row-key="previewTableRowKey"
-            size="small"
-            bordered
-            @change="handleTableChange"
-          />
-          <a-empty
-            v-if="previewTableData.length === 0"
-            description="暂无可导入数据"
-            class="review-table-empty"
-          />
+          <a-table :columns="previewTableColumns" :data-source="previewTableData" :loading="loadingReview" :pagination="{
+            current: pagination.pageIndex,
+            pageSize: pagination.pageSize,
+            total: pagination.total,
+            showSizeChanger: true,
+          }" :row-key="previewTableRowKey" size="small" bordered @change="handleTableChange" />
+          <a-empty v-if="previewTableData.length === 0" description="暂无可导入数据" class="review-table-empty" />
         </div>
 
         <!-- 操作按钮 -->
@@ -176,6 +167,9 @@ const emit = defineEmits(['complete', 'prev', 'cancel']);
 const loading = ref(true); // 初始加载状态
 const loadingReview = ref(false); // 加载核对数据状态
 const importing = ref(false); // 导入执行状态
+const importProgress = ref(0); // 导入进度 0-100
+const importProgressMessage = ref(''); // 导入进度消息
+const importProgressTip = computed(() => importing.value ? '正在导入数据...' : '正在加载...');
 const importSuccess = ref(false);
 const importError = ref('');
 const reviewData = ref<any>({});
@@ -239,8 +233,8 @@ const previewTableData = computed(() => {
     if (typeof prodDate === 'number' && prodDate > 0) {
       prodDate = formatToDate(prodDate);
     } else if (typeof prodDate === 'string' && /^\d{13}$/.test(prodDate)) {
-       // 字符串类型的毫秒时间戳
-       prodDate = formatToDate(parseInt(prodDate));
+      // 字符串类型的毫秒时间戳
+      prodDate = formatToDate(parseInt(prodDate));
     }
 
     return {
@@ -326,7 +320,7 @@ async function loadReviewData() {
   try {
     // 获取核对数据
     const review = await getImportReview(props.importSessionId);
-     // 调试日志
+    // 调试日志
     reviewData.value = review;
 
     // 检查是否有错误（例如：需要先完成前面的步骤）
@@ -341,7 +335,7 @@ async function loadReviewData() {
     // 检查是否有有效数据
     const validCount = review.validDataRows || 0;
     const totalCount = review.totalRows || 0;
-     // 调试日志
+    // 调试日志
 
     if (validCount === 0) {
       if (totalCount > 0) {
@@ -394,15 +388,48 @@ async function handleStartImport() {
   importing.value = true;
   importError.value = '';
   importSuccess.value = false;
+  importProgress.value = 0;
+  importProgressMessage.value = '准备导入...';
+
+  // 模拟进度更新
+  const progressInterval = setInterval(() => {
+    if (importProgress.value < 95) {
+      // 使用更平滑的进度增长，避免小数
+      const increment = Math.floor(Math.random() * 8) + 3; // 3-10 的随机整数
+      importProgress.value = Math.min(95, importProgress.value + increment);
+
+      if (importProgress.value < 30) {
+        importProgressMessage.value = '正在验证数据...';
+      } else if (importProgress.value < 60) {
+        importProgressMessage.value = '正在保存数据...';
+      } else if (importProgress.value < 90) {
+        importProgressMessage.value = '正在完成导入...';
+      } else {
+        importProgressMessage.value = '即将完成...';
+      }
+    }
+  }, 500);
 
   try {
     // 执行导入
     await completeImport(props.importSessionId);
+
+    clearInterval(progressInterval);
+    importProgress.value = 100;
+    importProgressMessage.value = '导入完成!';
+
+    // 稍微延迟显示成功状态
+    await new Promise(resolve => setTimeout(resolve, 500));
+
     importSuccess.value = true;
     message.success('数据导入成功');
     // 导入成功后自动通知父组件关闭弹窗
     emit('complete');
   } catch (error: any) {
+    clearInterval(progressInterval);
+    importProgress.value = 0;
+    importProgressMessage.value = '';
+
     // 处理后端返回的特定错误消息
     const errorMsg = error.message || error.msg || '';
     if (errorMsg.includes('解析数据文件不存在') || errorMsg.includes('请重新解析')) {

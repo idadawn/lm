@@ -1,5 +1,6 @@
 using Poxiao.Infrastructure.Const;
 using Poxiao.Infrastructure.Contracts;
+using Poxiao.Lab.Entity.Enum;
 using SqlSugar;
 
 namespace Poxiao.Lab.Entity;
@@ -36,10 +37,10 @@ public class IntermediateDataJudgmentLevelEntity : CLDEntityBase
     public string Name { get; set; }
 
     /// <summary>
-    /// 质量状态 (如：合格、不合格).
+    /// 质量状态 (如：合格、不合格、其他).
     /// </summary>
-    [SugarColumn(ColumnName = "F_QUALITY_STATUS", Length = 50, IsNullable = true)]
-    public string QualityStatus { get; set; }
+    [SugarColumn(ColumnName = "F_QUALITY_STATUS")]
+    public QualityStatusEnum QualityStatus { get; set; }
 
     /// <summary>
     /// 判定权重 (优先级).

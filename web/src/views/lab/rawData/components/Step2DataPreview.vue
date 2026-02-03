@@ -1,11 +1,7 @@
 <template>
   <div class="step2-preview-container">
     <!-- 步骤说明 -->
-    <a-alert
-      message="第二步：数据解析与预览"
-      description="系统正在解析Excel文件，解析完成后将显示数据预览。请检查数据是否正确。"
-      type="info"
-      show-icon
+    <a-alert message="第二步：数据解析与预览" description="系统正在解析Excel文件，解析完成后将显示数据预览。请检查数据是否正确。" type="info" show-icon
       style="margin-bottom: 20px" />
 
     <!-- 解析状态 -->
@@ -23,20 +19,17 @@
           </a-col>
           <a-col :span="8">
             <Statistic title="有效数据" :value="previewData.statistics.validDataRows"
-                       :value-style="{ color: previewData.statistics.validDataRows > 0 ? '#52c41a' : '#ff4d4f' }" />
+              :value-style="{ color: previewData.statistics.validDataRows > 0 ? '#52c41a' : '#ff4d4f' }" />
           </a-col>
           <a-col :span="8">
             <Statistic title="无效数据" :value="previewData.statistics.invalidDataRows"
-                       :value-style="{ color: '#ff4d4f' }" />
+              :value-style="{ color: '#ff4d4f' }" />
           </a-col>
         </a-row>
-        
+
         <!-- 无有效数据警告 -->
-        <a-alert
-          v-if="previewData.statistics.validDataRows === 0 && previewData.statistics.totalRows > 0"
-          type="error"
-          show-icon
-          style="margin-top: 16px">
+        <a-alert v-if="previewData.statistics.validDataRows === 0 && previewData.statistics.totalRows > 0" type="error"
+          show-icon style="margin-top: 16px">
           <template #message>
             <span style="font-weight: 600;">没有有效数据可以导入！</span>
           </template>
@@ -48,13 +41,9 @@
             </div>
           </template>
         </a-alert>
-        
+
         <!-- 数据库中已存在炉号提示 -->
-        <a-alert
-          v-if="hasExistingFurnaceNos"
-          type="info"
-          show-icon
-          style="margin-top: 16px">
+        <a-alert v-if="hasExistingFurnaceNos" type="info" show-icon style="margin-top: 16px">
           <template #message>
             <span style="font-weight: 600;">检测到数据库中已存在的炉号</span>
           </template>
@@ -89,49 +78,34 @@
         <!-- 左侧：原始数据 -->
         <div class="preview-left-panel">
           <div class="panel-header">原始数据</div>
-          <a-table
-            ref="leftTableRef"
-            :columns="leftColumns"
-            :data-source="paginatedRows"
-            :pagination="paginationConfig"
-            @change="handleTableChange"
-            size="small"
-            :scroll="{ x: 'max-content' }"
-            class="sync-scroll-table left-table">
+          <a-table ref="leftTableRef" :columns="leftColumns" :data-source="filteredRows" :pagination="paginationConfig"
+            @change="handleTableChange" size="small" :scroll="{ x: 'max-content' }"
+            :rowKey="record => record.id || record.rowIndex" class="sync-scroll-table left-table">
             <template #bodyCell="{ column, record }">
               <template v-if="column.dataIndex === 'prodDate'">
                 {{ formatDate(record.prodDate) }}
               </template>
               <template v-else-if="column.key === 'columnCount'">
-                {{ (() => {
+                {{(() => {
                   let count = 0;
                   for (let i = 1; i <= 22; i++) {
-                    if (record[`detection${i}`] !== null && record[`detection${i}`] !== undefined) {
-                      count++;
-                    }
-                  }
-                  return count;
-                })() }}
+                    if (record[`detection${i}`] !== null && record[`detection${i}`]
+                      !== undefined) { count++; }
+                  } return count;
+                })()}} </template>
+                  <template v-else>
+                    {{ record[column.dataIndex] ?? '-' }}
+                  </template>
               </template>
-              <template v-else>
-                {{ record[column.dataIndex] ?? '-' }}
-              </template>
-            </template>
           </a-table>
         </div>
 
         <!-- 右侧：导入数据 -->
         <div class="preview-right-panel">
           <div class="panel-header">导入数据</div>
-          <a-table
-            ref="rightTableRef"
-            :columns="rightColumns"
-            :data-source="paginatedRows"
-            :pagination="paginationConfig"
-            @change="handleTableChange"
-            size="small"
-            :scroll="{ x: 'max-content' }"
-            class="sync-scroll-table right-table">
+          <a-table ref="rightTableRef" :columns="rightColumns" :data-source="filteredRows"
+            :pagination="paginationConfig" @change="handleTableChange" size="small" :scroll="{ x: 'max-content' }"
+            :rowKey="record => record.id || record.rowIndex" class="sync-scroll-table right-table">
             <template #bodyCell="{ column, record }">
               <template v-if="column.dataIndex === 'prodDate'">
                 {{ formatDate(record.prodDate) }}
@@ -141,10 +115,11 @@
                   <a-tag :color="getStatusColor(record)" style="margin: 0;">
                     {{ getStatusText(record) }}
                   </a-tag>
+                  <a-tag v-if="record.isIdentical" color="cyan" style="margin: 0;">
+                    数据完全一致
+                  </a-tag>
                   <template v-if="record.isDuplicateInFile">
-                    <a-checkbox 
-                      v-model:checked="record.selectedForImport"
-                      @change="handleDuplicateSelection(record)"
+                    <a-checkbox v-model:checked="record.selectedForImport" @change="handleDuplicateSelection(record)"
                       style="font-size: 12px; margin: 0;">
                       保留此条
                     </a-checkbox>
@@ -155,40 +130,37 @@
                 </div>
               </template>
               <template v-else-if="column.key === 'columnCount'">
-                {{ (() => {
+                {{(() => {
                   let count = 0;
                   for (let i = 1; i <= 22; i++) {
-                    if (record[`detection${i}`] !== null && record[`detection${i}`] !== undefined) {
-                      count++;
-                    }
-                  }
-                  return count;
-                })() }}
+                    if (record[`detection${i}`] !== null && record[`detection${i}`]
+                      !== undefined) { count++; }
+                  } return count;
+                })()}} </template>
+                  <template v-else-if="column.dataIndex === 'furnaceNoParsed'">
+                    <template v-if="record.furnaceNo && record.featureSuffix">
+                      {{ record.furnaceNo.replace(new RegExp(record.featureSuffix + '$'), '') }}
+                    </template>
+                    <template v-else-if="record.lineNo !== undefined && record.shift !== undefined &&
+                      record.furnaceNoParsed !== undefined && record.coilNo !== undefined &&
+                      record.subcoilNo !== undefined && record.prodDate">
+                      {{ formatFurnaceNo(record) }}
+                    </template>
+                    <template v-else-if="record.furnaceNo">
+                      {{ record.furnaceNo.replace(/[脆软硬]$/, '') }}
+                    </template>
+                    <template v-else>
+                      -
+                    </template>
+                  </template>
+                  <template v-else>
+                    {{ record[column.dataIndex] ?? '-' }}
+                  </template>
               </template>
-              <template v-else-if="column.dataIndex === 'furnaceNoParsed'">
-                <template v-if="record.furnaceNo && record.featureSuffix">
-                  {{ record.furnaceNo.replace(new RegExp(record.featureSuffix + '$'), '') }}
-                </template>
-                <template v-else-if="record.lineNo !== undefined && record.shift !== undefined && 
-                                     record.furnaceNoParsed !== undefined && record.coilNo !== undefined && 
-                                     record.subcoilNo !== undefined && record.prodDate">
-                  {{ formatFurnaceNo(record) }}
-                </template>
-                <template v-else-if="record.furnaceNo">
-                  {{ record.furnaceNo.replace(/[脆软硬]$/, '') }}
-                </template>
-                <template v-else>
-                  -
-                </template>
-              </template>
-              <template v-else>
-                {{ record[column.dataIndex] ?? '-' }}
-              </template>
-            </template>
           </a-table>
         </div>
       </div>
-      
+
       <!-- 如果有数据但分页后为空（理论不应发生），或者空数据提示 -->
       <div v-if="filteredRows.length === 0" class="preview-empty">
         暂无符合条件的数据
@@ -197,10 +169,7 @@
 
     <!-- 错误状态 -->
     <div v-if="parseError" class="error-status">
-      <a-result
-        status="error"
-        title="数据解析失败"
-        :sub-title="parseError">
+      <a-result status="error" title="数据解析失败" :sub-title="parseError">
         <template #extra>
           <a-button type="primary" @click="handleRetry">重试</a-button>
         </template>
@@ -239,7 +208,8 @@ const emit = defineEmits(['next', 'prev', 'cancel', 'complete']);
 const parsing = ref(false);
 const previewData = ref<DataPreviewResult | null>(null);
 const parseError = ref<string>('');
-const showErrorDetails = ref(false);
+// const showErrorDetails = ref(false);
+const hasParsed = ref(false);
 
 const leftTableRef = ref();
 const rightTableRef = ref();
@@ -264,7 +234,7 @@ const duplicateCount = computed(() => {
 // 过滤后的数据
 const filteredRows = computed(() => {
   if (!previewData.value?.rows) return [];
-  
+
   if (filterType.value === 'valid') {
     return previewData.value.rows.filter(row => row.isValidData);
   } else if (filterType.value === 'invalid') {
@@ -286,29 +256,29 @@ const paginationConfig = computed(() => ({
 }));
 
 // 分页后的当前页数据
-const paginatedRows = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  const end = start + pageSize.value;
-  return filteredRows.value.slice(start, end);
-});
+// const paginatedRows = computed(() => {
+//   const start = (currentPage.value - 1) * pageSize.value;
+//   const end = start + pageSize.value;
+//   return filteredRows.value.slice(start, end);
+// });
 
 // 处理表格分页变化
 function handleTableChange(pagination) {
   currentPage.value = pagination.current;
   pageSize.value = pagination.pageSize;
-  
+
   // 重置滚动条位置
   nextTick(() => {
     const leftTableBody = leftTableRef.value?.$el?.querySelector('.ant-table-body');
     const rightTableBody = rightTableRef.value?.$el?.querySelector('.ant-table-body');
-    
+
     if (leftTableBody) {
       leftTableBody.scrollTop = 0;
     }
     if (rightTableBody) {
       rightTableBody.scrollTop = 0;
     }
-    
+
     // 重新初始化滚动同步（因为表格内容可能已更新）
     initSyncScroll();
   });
@@ -327,9 +297,9 @@ function formatDate(date: string | number | undefined) {
     } else {
       d = new Date(date);
     }
-    
+
     if (isNaN(d.getTime())) return String(date);
-    
+
     const year = d.getFullYear();
     const month = d.getMonth() + 1; // getMonth() returns 0-11
     const day = d.getDate();
@@ -383,12 +353,12 @@ function handleDuplicateSelection(record: any) {
     console.warn('handleDuplicateSelection: previewData.value?.rows 为空');
     return;
   }
-  
+
   // 找到所有相同标准炉号的数据
   const sameFurnaceNoRows = previewData.value.rows.filter(
     (r: any) => r.standardFurnaceNo === record.standardFurnaceNo && r.isDuplicateInFile
   );
-  
+
   // 如果当前行被选中，取消其他行的选中状态，并将其他行标记为无效
   if (record.selectedForImport) {
     sameFurnaceNoRows.forEach((r: any) => {
@@ -410,7 +380,7 @@ function handleDuplicateSelection(record: any) {
         }
       }
     });
-    
+
     // 更新统计信息
     updateStatistics();
   } else {
@@ -445,11 +415,11 @@ function handleDuplicateSelection(record: any) {
 // 更新统计信息
 function updateStatistics() {
   if (!previewData.value?.rows) return;
-  
+
   const totalRows = previewData.value.rows.length;
   const validDataRows = previewData.value.rows.filter((r: any) => r.isValidData === true || r.isValidData === 1).length;
   const invalidDataRows = totalRows - validDataRows;
-  
+
   if (previewData.value.statistics) {
     previewData.value.statistics.totalRows = totalRows;
     previewData.value.statistics.validDataRows = validDataRows;
@@ -463,21 +433,15 @@ function updateStatistics() {
 // 加载产品规格列表 (Removed unused function)
 
 // 左侧列定义（原始数据）
-// 行号、日期、炉号（和Excel一致带特性描述）、宽度、带材重量、检测列1-22
 const leftColumns = computed(() => {
   const columns: any[] = [
     { title: '行号', dataIndex: 'rowIndex', width: 60, fixed: 'left' },
-    { 
-      title: '日期', 
-      dataIndex: 'prodDate', 
-      width: 100,
-      customRender: ({ text }) => formatDate(text)
-    },
+    { title: '日期', dataIndex: 'prodDate', width: 100 },
     { title: '炉号', dataIndex: 'furnaceNo', width: 150 },
     { title: '宽度', dataIndex: 'width', width: 80 },
     { title: '带材重量', dataIndex: 'coilWeight', width: 100 },
   ];
-  
+
   // 添加检测列1-22
   for (let i = 1; i <= 22; i++) {
     columns.push({
@@ -485,77 +449,24 @@ const leftColumns = computed(() => {
       dataIndex: `detection${i}`,
       width: 80,
       align: 'right',
-      customRender: ({ text, record }) => {
-        const value = record[`detection${i}`];
-        return value !== null && value !== undefined ? value : '-';
-      }
     });
   }
-  
+
   return columns;
 });
 
 // 右侧列定义（导入数据）
-// 行号、日期、炉号(不带特性描述)、特性描述、数据列数、炉号解析状态
 const rightColumns = computed(() => {
   const columns: any[] = [
     { title: '行号', dataIndex: 'rowIndex', width: 60, fixed: 'left' },
-    { 
-      title: '日期', 
-      dataIndex: 'prodDate', 
-      width: 100,
-      customRender: ({ text }) => formatDate(text)
-    },
-    { 
-      title: '炉号', 
-      dataIndex: 'furnaceNoParsed', 
-      width: 150,
-      customRender: ({ record }) => {
-        // 从原始炉号中移除特性描述，生成不带特性描述的炉号
-        // 格式：[产线数字][班次汉字][8位日期]-[炉号]-[卷号]-[分卷号]
-        if (record.furnaceNo && record.featureSuffix) {
-          // 移除特性描述后缀
-          return record.furnaceNo.replace(new RegExp(record.featureSuffix + '$'), '');
-        }
-        // 如果有解析后的字段，组合生成炉号
-        if (record.lineNo !== undefined && record.shift !== undefined && 
-            record.furnaceNoParsed !== undefined && record.coilNo !== undefined && 
-            record.subcoilNo !== undefined && record.prodDate) {
-          const date = formatDate(record.prodDate).replace(/\//g, '');
-          const shiftMap: Record<number, string> = { 1: '甲', 2: '乙', 3: '丙' };
-          const shiftStr = shiftMap[record.shift] || String(record.shift);
-          return `${record.lineNo}${shiftStr}${date}-${record.furnaceNoParsed}-${record.coilNo}-${record.subcoilNo}`;
-        }
-        // 如果都没有，尝试从原始炉号中移除特性描述
-        if (record.furnaceNo) {
-          // 尝试移除常见的特性描述（脆、软等）
-          return record.furnaceNo.replace(/[脆软硬]$/, '');
-        }
-        return '-';
-      }
-    },
+    { title: '日期', dataIndex: 'prodDate', width: 100 },
+    { title: '炉号', dataIndex: 'furnaceNoParsed', width: 150 },
     { title: '特性描述', dataIndex: 'featureSuffix', width: 100 },
-    { 
-      title: '数据列数', 
-      key: 'columnCount', 
-      width: 100,
-      align: 'center',
-      customRender: ({ record }) => {
-        // 计算detection1-detection22字段中有值的列数
-        let count = 0;
-        for (let i = 1; i <= 22; i++) {
-          const key = `detection${i}`;
-          if (record[key] !== null && record[key] !== undefined) {
-            count++;
-          }
-        }
-        return count;
-      }
-    },
-    { 
-      title: '炉号解析状态', 
-      dataIndex: 'isValidData', 
-      width: 180, 
+    { title: '数据列数', key: 'columnCount', width: 100, align: 'center' },
+    {
+      title: '炉号解析状态',
+      dataIndex: 'isValidData',
+      width: 250,
       fixed: 'right',
       align: 'center'
     }
@@ -582,7 +493,7 @@ const canGoNext = computed(() => {
   // 必须至少有一条有效数据才能继续
   const validCount = previewData.value.statistics?.validDataRows || 0;
   if (validCount === 0) return false;
-  
+
   // 检查重复的炉号是否都已选择
   if (previewData.value.rows) {
     const duplicateGroups = new Map<string, any[]>();
@@ -594,7 +505,7 @@ const canGoNext = computed(() => {
         duplicateGroups.get(row.standardFurnaceNo)!.push(row);
       }
     });
-    
+
     // 检查每个重复组是否至少有一条被选中
     for (const [_, rows] of duplicateGroups) {
       const hasSelected = rows.some((row: any) => row.selectedForImport === true);
@@ -603,9 +514,57 @@ const canGoNext = computed(() => {
       }
     }
   }
-  
+
   return true;
 });
+
+// 分析重复数据中的差异
+function analyzeDuplicates(rows: any[]) {
+  const duplicateGroups = new Map<string, any[]>();
+  rows.forEach(row => {
+    if (row.isDuplicateInFile && row.standardFurnaceNo) {
+      if (!duplicateGroups.has(row.standardFurnaceNo)) {
+        duplicateGroups.set(row.standardFurnaceNo, []);
+      }
+      duplicateGroups.get(row.standardFurnaceNo)!.push(row);
+    }
+    // Initialize diff flags
+    row.diffFields = {};
+    row.isIdentical = false;
+  });
+
+  const fieldsToCompare = [
+    'prodDate', 'width', 'coilWeight',
+    ...Array.from({ length: 22 }, (_, i) => `detection${i + 1}`)
+  ];
+
+  for (const [_, group] of duplicateGroups) {
+    if (group.length < 2) continue;
+
+    let hasAnyDiff = false;
+
+    fieldsToCompare.forEach(field => {
+      const firstVal = group[0][field];
+      const isFieldDiff = group.some(row => {
+        // Simple equality check
+        return row[field] != firstVal;
+      });
+
+      if (isFieldDiff) {
+        hasAnyDiff = true;
+        group.forEach(row => {
+          row.diffFields[field] = true;
+        });
+      }
+    });
+
+    if (!hasAnyDiff) {
+      group.forEach(row => {
+        row.isIdentical = true;
+      });
+    }
+  }
+}
 
 // 解析数据
 async function parseData() {
@@ -621,7 +580,6 @@ async function parseData() {
     // 调用解析接口（文件数据已在第一步保存到后端，通过 sessionId 获取）
     const result = await uploadAndParse({
       fileName: props.fileName,
-      importStrategy: props.importStrategy,
       importSessionId: props.importSessionId,
     });
 
@@ -630,27 +588,40 @@ async function parseData() {
       message.success(noChangesMessage);
       emit('complete', {
         message: noChangesMessage,
-        totalRows: result.totalRows || 0,
-        validDataRows: result.validDataRows || 0,
+        totalRows: result.preview?.statistics?.totalRows || 0,
+        validDataRows: result.preview?.statistics?.validDataRows || 0,
       });
       return;
     }
 
     // 保存预览数据
-    previewData.value = result.preview;
+    if (result.preview?.rows) {
+      // Sort rows by furnaceNo to group duplicates together
+      result.preview.rows.sort((a: any, b: any) => {
+        const fa = a.furnaceNo || '';
+        const fb = b.furnaceNo || '';
+        if (fa < fb) return -1;
+        if (fa > fb) return 1;
+        return 0;
+      });
 
-    // 为数据添加行号，并初始化重复炉号选择状态
-    if (previewData.value?.rows) {
-      previewData.value.rows.forEach((row, index) => {
+      // Analyze duplicates and add rowIndex BEFORE assigning to reactive boolean
+      // careful: analyzeDuplicates expects rows to be populated ? No, just array
+
+      const rows = result.preview.rows;
+      rows.forEach((row: any, index: number) => {
         row.rowIndex = index + 1;
-        // 对于重复的炉号，默认选中第一条（按行号排序）
+      });
+
+      // Initialize duplicate selection logic
+      rows.forEach((row: any) => {
         if (row.isDuplicateInFile && row.selectedForImport === undefined) {
-          // 找到所有相同标准炉号的数据
-          const sameFurnaceNoRows = previewData.value.rows.filter(
+          const sameFurnaceNoRows = rows.filter(
             (r: any) => r.standardFurnaceNo === row.standardFurnaceNo && r.isDuplicateInFile
           );
-          // 按行号排序，第一条默认选中
+          // Sort by rowIndex (which we just added)
           sameFurnaceNoRows.sort((a: any, b: any) => (a.rowIndex || 0) - (b.rowIndex || 0));
+
           if (sameFurnaceNoRows[0]?.id === row.id) {
             row.selectedForImport = true;
           } else {
@@ -658,15 +629,20 @@ async function parseData() {
           }
         }
       });
+
+      analyzeDuplicates(rows);
     }
+
+    // Assign to reactive variable only after all properties are set
+    previewData.value = result.preview;
 
     // 检查解析结果
     const validCount = previewData.value?.statistics?.validDataRows || 0;
     const totalCount = previewData.value?.statistics?.totalRows || 0;
-    
+
     // 标记为已解析（无论是否有有效数据，只要解析成功就标记）
     hasParsed.value = true;
-    
+
     if (validCount === 0 && totalCount > 0) {
       message.warning(`数据解析完成，但没有有效数据！共 ${totalCount} 行数据，全部因炉号格式不符而标记为无效。请检查炉号格式是否符合：[产线数字][班次汉字][8位日期]-[炉号]-[卷号]-[分卷号]，例如：1甲20251101-1-4-1`);
     } else if (validCount > 0) {
@@ -674,7 +650,7 @@ async function parseData() {
     } else {
       message.warning('未解析到任何数据，请检查Excel文件');
     }
-    
+
     // 初始化同步滚动（延迟以确保表格已完全渲染）
     nextTick(() => {
       setTimeout(() => {
@@ -786,7 +762,7 @@ async function handleNext() {
         duplicateGroups.get(row.standardFurnaceNo)!.push(row);
       }
     });
-    
+
     // 如果有重复数据，检查每个重复组是否至少有一条被选中
     if (duplicateGroups.size > 0) {
       for (const [furnaceNo, rows] of duplicateGroups) {
@@ -796,7 +772,7 @@ async function handleNext() {
           return;
         }
       }
-      
+
       // 保存重复数据的选择结果到后端
       try {
         await saveDuplicateSelections();
@@ -820,12 +796,12 @@ async function saveDuplicateSelections() {
     console.warn('saveDuplicateSelections: 缺少必要的数据或会话ID');
     return;
   }
-  
-  
+
+
   // 找出所有需要更新的重复数据
   const updates: { rawDataId: string; isValidData: boolean }[] = [];
   const duplicateGroups = new Map<string, any[]>();
-  
+
   // 按标准炉号分组
   previewData.value.rows.forEach((row: any) => {
     if (row.isDuplicateInFile && row.standardFurnaceNo) {
@@ -835,44 +811,44 @@ async function saveDuplicateSelections() {
       duplicateGroups.get(row.standardFurnaceNo)!.push(row);
     }
   });
-  
-  
+
+
   if (duplicateGroups.size === 0) {
     return;
   }
-  
+
   // 对于每个重复组，更新所有数据的状态
-  for (const [furnaceNo, rows] of duplicateGroups) {
-    
+  for (const [_, rows] of duplicateGroups) {
+
     // 检查是否有被选中的数据
-    const selectedRows = rows.filter((r: any) => r.selectedForImport === true);
-    
+    // const selectedRows = rows.filter((r: any) => r.selectedForImport === true);
+
     rows.forEach((row: any) => {
       // 根据 selectedForImport 确定是否有效
       // 如果 selectedForImport 为 true，则有效；否则无效
       const isValid = row.selectedForImport === true;
-      
+
       // 同时检查 isValidData 字段，确保一致性
       const currentIsValid = row.isValidData === true || row.isValidData === 1;
-      
+
       if (isValid !== currentIsValid) {
         console.warn(`  - 数据ID: ${row.id}, selectedForImport 和 isValidData 不一致! selectedForImport: ${row.selectedForImport}, isValidData: ${row.isValidData}`);
         // 使用 selectedForImport 的值，因为它更准确
         row.isValidData = isValid;
       }
-      
+
       updates.push({
         rawDataId: row.id,
         isValidData: isValid
       });
     });
   }
-  
+
   if (updates.length === 0) {
     return;
   }
-  
-  
+
+
   try {
     // 调用API保存更新
     await updateDuplicateSelections(props.importSessionId, updates);
@@ -889,7 +865,7 @@ async function saveAndNext() {
 }
 
 // 标记是否已经解析过（避免重复解析）
-const hasParsed = ref(false);
+// const hasParsed = ref(false); // Moved to top
 
 // 组件挂载时自动解析数据（如果有会话ID）
 onMounted(() => {
@@ -983,11 +959,12 @@ defineExpose({
 .preview-split-container {
   display: flex;
   gap: 16px;
-  min-height: 400px; /* 最小高度，允许根据内容扩展 */
+  min-height: 400px;
+  /* 最小高度，允许根据内容扩展 */
   margin-bottom: 16px;
 }
 
-.preview-left-panel, 
+.preview-left-panel,
 .preview-right-panel {
   flex: 1;
   display: flex;
@@ -1010,37 +987,42 @@ defineExpose({
   display: flex;
   flex-direction: column;
   min-height: 0;
-  
+
   :deep(.ant-table) {
     display: flex;
     flex-direction: column;
     flex: 1;
   }
-  
+
   :deep(.ant-table-container) {
     display: flex;
     flex-direction: column;
     flex: 1;
   }
-  
+
   :deep(.ant-table-body) {
     flex: 1;
-    overflow: auto !important; /* 同时支持横向和纵向滚动 */
-    max-height: 500px; /* 限制表格内容区域的最大高度 */
+    overflow: auto !important;
+    /* 同时支持横向和纵向滚动 */
+    max-height: 500px;
+    /* 限制表格内容区域的最大高度 */
   }
-  
+
   :deep(.ant-table-thead > tr > th),
   :deep(.ant-table-tbody > tr > td) {
-    height: 40px; /* 固定行高 */
+    height: 40px;
+    /* 固定行高 */
     line-height: 24px;
     padding: 8px 12px !important;
-    white-space: nowrap; /* 防止内容换行导致行高不一致 */
+    white-space: nowrap;
+    /* 防止内容换行导致行高不一致 */
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  
+
   // 确保右侧表格的状态列内容在一行显示
   :deep(.ant-table-cell-fix-right) {
+
     .ant-tag,
     .ant-checkbox-wrapper {
       white-space: nowrap;
@@ -1048,7 +1030,7 @@ defineExpose({
       align-items: center;
     }
   }
-  
+
   :deep(.ant-pagination) {
     margin-top: 16px;
     flex-shrink: 0;

@@ -91,8 +91,9 @@ public static class FurnaceNoHelper
     /// 注意：炉号格式为 [产线数字][班次汉字][8位日期]-[炉次号]
     /// </summary>
     /// <param name="furnaceNo">原始炉号</param>
+    /// <param name="ignoredSuffixes">需要忽略的后缀列表</param>
     /// <returns>解析结果</returns>
-    public static FurnaceNoParseResult ParseFurnaceNo(string furnaceNo)
+    public static FurnaceNoParseResult ParseFurnaceNo(string furnaceNo, IEnumerable<string> ignoredSuffixes = null)
     {
         var result = new FurnaceNoParseResult();
 
@@ -103,7 +104,7 @@ public static class FurnaceNoHelper
         }
 
         // 使用新的FurnaceNo类进行解析
-        var furnaceNoObj = FurnaceNo.Parse(furnaceNo);
+        var furnaceNoObj = FurnaceNo.Parse(furnaceNo, ignoredSuffixes);
 
         if (!furnaceNoObj.IsValid)
         {
@@ -160,8 +161,9 @@ public static class FurnaceNoHelper
     /// </summary>
     /// <param name="furnaceNo">原始炉号（包含特性汉字）</param>
     /// <param name="featureSuffix">特性汉字（如果已知，可传入以提高性能）</param>
+    /// <param name="ignoredSuffixes">需要忽略的后缀列表</param>
     /// <returns>去掉特性汉字后的炉号</returns>
-    public static string RemoveFeatureSuffix(string furnaceNo, string featureSuffix = null)
+    public static string RemoveFeatureSuffix(string furnaceNo, string featureSuffix = null, IEnumerable<string> ignoredSuffixes = null)
     {
         if (string.IsNullOrWhiteSpace(furnaceNo))
             return furnaceNo;
@@ -173,7 +175,7 @@ public static class FurnaceNoHelper
         }
 
         // 否则，先解析获取特性汉字，再移除
-        var parseResult = ParseFurnaceNo(furnaceNo);
+        var parseResult = ParseFurnaceNo(furnaceNo, ignoredSuffixes);
         if (parseResult.Success && !string.IsNullOrWhiteSpace(parseResult.FeatureSuffix))
         {
             return furnaceNo.Replace(parseResult.FeatureSuffix, "").TrimEnd();
@@ -198,12 +200,12 @@ public static class FurnaceNoHelper
     /// </summary>
     /// <param name="furnaceNo">原始炉号</param>
     /// <returns>是否符合规则</returns>
-    public static bool IsValidFurnaceNo(string furnaceNo)
+    public static bool IsValidFurnaceNo(string furnaceNo, IEnumerable<string> ignoredSuffixes = null)
     {
         if (string.IsNullOrWhiteSpace(furnaceNo))
             return false;
 
-        var parseResult = ParseFurnaceNo(furnaceNo);
+        var parseResult = ParseFurnaceNo(furnaceNo, ignoredSuffixes);
         return parseResult.Success;
     }
 

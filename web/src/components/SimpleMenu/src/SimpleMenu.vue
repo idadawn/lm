@@ -1,151 +1,145 @@
 <template>
-  <Menu
-    v-bind="getBindValues"
-    :activeName="activeName"
-    :openNames="getOpenKeys"
-    :class="prefixCls"
-    :activeSubMenuNames="activeSubMenuNames"
-    @select="handleSelect">
+  <Menu v-bind="getBindValues" :activeName="activeName" :openNames="getOpenKeys" :class="prefixCls"
+    :activeSubMenuNames="activeSubMenuNames" @select="handleSelect">
     <template v-for="item in items" :key="item.path">
       <SimpleSubMenu :item="item" :parent="true" :collapsedShowTitle="collapsedShowTitle" :collapse="collapse" />
     </template>
   </Menu>
 </template>
 <script lang="ts">
-  import type { MenuState } from './types';
-  import type { Menu as MenuType } from '/@/router/types';
-  import type { RouteLocationNormalizedLoaded } from 'vue-router';
-  import { defineComponent, computed, ref, unref, reactive, toRefs, watch } from 'vue';
-  import { useDesign } from '/@/hooks/web/useDesign';
-  import Menu from './components/Menu.vue';
-  import SimpleSubMenu from './SimpleSubMenu.vue';
-  import { listenerRouteChange } from '/@/logics/mitt/routeChange';
-  import { propTypes } from '/@/utils/propTypes';
-  import { REDIRECT_NAME } from '/@/router/constant';
-  import { useRouter } from 'vue-router';
-  import { isFunction, isUrl } from '/@/utils/is';
-  import { openWindow } from '/@/utils';
+import type { MenuState } from './types';
+import type { Menu as MenuType } from '/@/router/types';
+import type { RouteLocationNormalizedLoaded } from 'vue-router';
+import { defineComponent, computed, ref, unref, reactive, toRefs, watch } from 'vue';
+import { useDesign } from '/@/hooks/web/useDesign';
+import Menu from './components/Menu.vue';
+import SimpleSubMenu from './SimpleSubMenu.vue';
+import { listenerRouteChange } from '/@/logics/mitt/routeChange';
+import { propTypes } from '/@/utils/propTypes';
+import { REDIRECT_NAME } from '/@/router/constant';
+import { useRouter } from 'vue-router';
+import { isFunction, isUrl } from '/@/utils/is';
+import { openWindow } from '/@/utils';
 
-  import { useOpenKeys } from './useOpenKeys';
-  export default defineComponent({
-    name: 'SimpleMenu',
-    components: {
-      Menu,
-      SimpleSubMenu,
+import { useOpenKeys } from './useOpenKeys';
+export default defineComponent({
+  name: 'SimpleMenu',
+  components: {
+    Menu,
+    SimpleSubMenu,
+  },
+  inheritAttrs: false,
+  props: {
+    items: {
+      type: Array as PropType<MenuType[]>,
+      default: () => [],
     },
-    inheritAttrs: false,
-    props: {
-      items: {
-        type: Array as PropType<MenuType[]>,
-        default: () => [],
-      },
-      collapse: propTypes.bool.def(false),
-      mixSider: propTypes.bool.def(false),
-      theme: propTypes.string,
-      accordion: propTypes.bool.def(true),
-      collapsedShowTitle: propTypes.bool,
-      beforeClickFn: {
-        type: Function as PropType<(key: string) => Promise<boolean>>,
-      },
-      isSplitMenu: propTypes.bool,
+    collapse: propTypes.bool.def(false),
+    mixSider: propTypes.bool.def(false),
+    theme: propTypes.string,
+    accordion: propTypes.bool.def(true),
+    collapsedShowTitle: propTypes.bool,
+    beforeClickFn: {
+      type: Function as PropType<(key: string) => Promise<boolean>>,
     },
-    emits: ['menuClick'],
-    setup(props, { attrs, emit }) {
-      const currentActiveMenu = ref('');
-      const isClickGo = ref(false);
+    isSplitMenu: propTypes.bool,
+  },
+  emits: ['menuClick'],
+  setup(props, { attrs, emit }) {
+    const currentActiveMenu = ref('');
+    const isClickGo = ref(false);
 
-      const menuState = reactive<MenuState>({
-        activeName: '',
-        openNames: [],
-        activeSubMenuNames: [],
-      });
+    const menuState = reactive<MenuState>({
+      activeName: '',
+      openNames: [],
+      activeSubMenuNames: [],
+    });
 
-      const { currentRoute } = useRouter();
-      const { prefixCls } = useDesign('simple-menu');
-      const { items, accordion, mixSider, collapse } = toRefs(props);
+    const { currentRoute } = useRouter();
+    const { prefixCls } = useDesign('simple-menu');
+    const { items, accordion, mixSider, collapse } = toRefs(props);
 
-      const { setOpenKeys, getOpenKeys } = useOpenKeys(menuState, items, accordion, mixSider, collapse);
+    const { setOpenKeys, getOpenKeys } = useOpenKeys(menuState, items, accordion, mixSider, collapse);
 
-      const getBindValues = computed(() => ({ ...attrs, ...props }));
+    const getBindValues = computed(() => ({ ...attrs, ...props }));
 
-      watch(
-        () => props.collapse,
-        collapse => {
-          if (collapse) {
-            menuState.openNames = [];
-          } else {
-            setOpenKeys(currentRoute.value.path);
-          }
-        },
-        { immediate: true },
-      );
-
-      watch(
-        () => props.items,
-        () => {
-          if (!props.isSplitMenu) {
-            return;
-          }
+    watch(
+      () => props.collapse,
+      collapse => {
+        if (collapse) {
+          menuState.openNames = [];
+        } else {
           setOpenKeys(currentRoute.value.path);
-        },
-        { flush: 'post' },
-      );
-
-      listenerRouteChange(route => {
-        if (route.name === REDIRECT_NAME) return;
-
-        currentActiveMenu.value = route.meta?.currentActiveMenu as string;
-
-        handleMenuChange(route);
-
-        if (unref(currentActiveMenu)) {
-          menuState.activeName = unref(currentActiveMenu);
-          setOpenKeys(unref(currentActiveMenu));
         }
-      });
+      },
+      { immediate: true },
+    );
 
-      async function handleMenuChange(route?: RouteLocationNormalizedLoaded) {
-        if (unref(isClickGo)) {
-          isClickGo.value = false;
+    watch(
+      () => props.items,
+      () => {
+        if (!props.isSplitMenu) {
           return;
         }
-        const path = (route || unref(currentRoute)).path;
+        setOpenKeys(currentRoute.value.path);
+      },
+      { flush: 'post' },
+    );
 
-        menuState.activeName = path;
+    listenerRouteChange(route => {
+      if (route.name === REDIRECT_NAME) return;
 
-        setOpenKeys(path);
+      currentActiveMenu.value = route.meta?.currentActiveMenu as string;
+
+      handleMenuChange(route);
+
+      if (unref(currentActiveMenu)) {
+        menuState.activeName = unref(currentActiveMenu);
+        setOpenKeys(unref(currentActiveMenu));
       }
+    });
 
-      async function handleSelect(key: string) {
-        // 带token的url需要把空格转义一下
-        key = key.replace('bearer ', 'bearer%20');
-
-        if (isUrl(key)) {
-          openWindow(key);
-          return;
-        }
-        const { beforeClickFn } = props;
-        if (beforeClickFn && isFunction(beforeClickFn)) {
-          const flag = await beforeClickFn(key);
-          if (!flag) return;
-        }
-        emit('menuClick', key);
-
-        isClickGo.value = true;
-        setOpenKeys(key);
-        menuState.activeName = key;
+    async function handleMenuChange(route?: RouteLocationNormalizedLoaded) {
+      if (unref(isClickGo)) {
+        isClickGo.value = false;
+        return;
       }
+      const path = (route || unref(currentRoute)).path;
 
-      return {
-        prefixCls,
-        getBindValues,
-        handleSelect,
-        getOpenKeys,
-        ...toRefs(menuState),
-      };
-    },
-  });
+      menuState.activeName = path;
+
+      setOpenKeys(path);
+    }
+
+    async function handleSelect(key: string) {
+      // 带token的url需要把空格转义一下
+      key = key.replace('bearer ', 'bearer%20');
+
+      if (isUrl(key)) {
+        openWindow(key);
+        return;
+      }
+      const { beforeClickFn } = props;
+      if (beforeClickFn && isFunction(beforeClickFn)) {
+        const flag = await beforeClickFn(key);
+        if (!flag) return;
+      }
+      isClickGo.value = true;
+      setOpenKeys(key);
+      menuState.activeName = key;
+      emit('menuClick', key);
+    }
+
+    return {
+      prefixCls,
+      getBindValues,
+      handleSelect,
+      getOpenKeys,
+      ...toRefs(menuState),
+    };
+  },
+});
 </script>
 <style lang="less">
-  @import url('./index.less');
+@import url('./index.less');
 </style>

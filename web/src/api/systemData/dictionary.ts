@@ -6,8 +6,8 @@ enum Api {
 }
 
 // 获取数据字典分类
-export function getDictionaryType() {
-  return defHttp.get({ url: Api.TypePrefix });
+export function getDictionaryType(params?: any) {
+  return defHttp.get({ url: Api.TypePrefix, params });
 }
 // 获取字典分类下拉框列表
 export function getDictionaryTypeSelector(id = '0') {

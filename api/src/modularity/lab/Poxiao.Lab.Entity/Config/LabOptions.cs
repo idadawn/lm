@@ -40,5 +40,31 @@ public class FormulaOptions
     /// <summary>
     /// 最大计算精度（小数位数）
     /// </summary>
+    /// <summary>
+    /// 最大计算精度（小数位数）
+    /// </summary>
     public int MaxPrecision { get; set; } = 6;
+
+    /// <summary>
+    /// 各字段默认使用的单位及精度
+    /// Key: 字段名 (ColumnName)
+    /// Value: 单位信息
+    /// </summary>
+    public Dictionary<string, UnitPrecisionInfo> UnitPrecisions { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+}
+
+/// <summary>
+/// 单位精度配置信息
+/// </summary>
+public class UnitPrecisionInfo
+{
+    /// <summary>
+    /// 单位ID
+    /// </summary>
+    public string UnitId { get; set; }
+
+    /// <summary>
+    /// 小数位数
+    /// </summary>
+    public int? DecimalPlaces { get; set; }
 }

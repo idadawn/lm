@@ -27,9 +27,7 @@ public class MagneticRawDataService : IMagneticRawDataService, IDynamicApiContro
 
     /// <inheritdoc />
     [HttpGet("")]
-    public async Task<List<MagneticRawDataListOutput>> GetList(
-        [FromQuery] MagneticRawDataListQuery input
-    )
+    public async Task<dynamic> GetList([FromQuery] MagneticRawDataListQuery input)
     {
         var data = await _repository
             .AsQueryable()
@@ -63,7 +61,7 @@ public class MagneticRawDataService : IMagneticRawDataService, IDynamicApiContro
             })
             .ToPagedListAsync(input.CurrentPage, input.PageSize);
 
-        return data.list.ToList();
+        return PageResult<MagneticRawDataListOutput>.SqlSugarPageResult(data);
     }
 
     /// <inheritdoc />

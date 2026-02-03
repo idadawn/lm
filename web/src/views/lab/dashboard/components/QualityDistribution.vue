@@ -54,12 +54,6 @@
         textStyle: {
           fontSize: 13,
           color: '#666',
-        },
-        formatter: (name: string) => {
-          const item = qualityData.find(d => d.name === name);
-          return `{name|${name}} {percent|${item?.percentage}%}`;
-        },
-        textStyle: {
           rich: {
             name: {
               fontSize: 13,
@@ -71,6 +65,10 @@
               color: '#999',
             },
           },
+        },
+        formatter: (name: string) => {
+          const item = qualityData.find(d => d.name === name);
+          return `{name|${name}} {percent|${item?.percentage}%}`;
         },
       },
       series: [

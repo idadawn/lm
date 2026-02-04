@@ -1,0 +1,91 @@
+
+#set($modelPath = "model."+${context.modelPathName})
+
+#set($pKeyName =${context.pKeyName})
+#set($peimaryKeyName = "${pKeyName.substring(0,1).toUpperCase()}${pKeyName.substring(1)}")
+#set($peimaryKeyname = "${pKeyName.substring(0,1).toLowerCase()}${pKeyName.substring(1)}")
+package ${context.package}.${modelPath};
+
+#foreach($html in ${context.children})
+import ${context.package}.${modelPath}.${html.className}Model;
+#end
+import lombok.Data;
+import java.util.List;
+import java.math.BigDecimal;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.alibaba.fastjson.annotation.JSONField;
+import jnpf.annotation.JnpfField;
+
+/**
+ *
+ * ${context.genInfo.description}
+ * @版本： ${context.genInfo.version}
+ * @版权： ${context.genInfo.copyright}
+ * @作者： ${context.genInfo.createUser}
+ * @日期： ${context.genInfo.createDate}
+ */
+@Data
+public class $!{context.className}Form  {
+	/** 主键 */
+	private String $!{peimaryKeyname};
+#foreach($fieLdsModel in ${context.fields})
+    #set($html = $fieLdsModel.formColumnModel.fieLdsModel)
+    #set($vModel = "${html.vModel}")
+    #if($vModel!='')
+    #set($config = $html.config)
+    #set($jnpfkey = "${config.jnpfKey}")
+    #set($fieldName=${config.label})
+    #if(${jnpfkey}!='JNPFText' && ${jnpfkey}!='divider')
+    #if(${jnpfkey}=='numInput' || ${jnpfkey}=='calculate')
+    /** ${fieldName} **/
+    @JsonProperty("${vModel}")
+#if(${fieLdsModel.formColumnModel.fieLdsModel.precision})
+    private BigDecimal ${vModel};
+#else
+    private Integer ${vModel};
+#end
+
+        #elseif(${jnpfkey}=='slider' || ${jnpfkey} == 'rate')
+    /** ${fieldName} **/
+    @JsonProperty("${vModel}")
+    private Integer ${vModel};
+
+##        #elseif(${jnpfkey}=='date')
+##    /** ${fieldName} **/
+##    @JsonProperty("${vModel}")
+##    private Long  ${vModel};
+
+        #else
+    /** ${fieldName} **/
+    @JsonProperty("${vModel}")
+    #if(${jnpfkey}=='date')
+    @JnpfField(
+        #if(${fieldName}) label = "${fieldName}", #end
+        #if(${jnpfkey}) jnpfKey = "${jnpfkey}", #end
+        #if($html.format) format = "${html.format}",#end
+            vModel = "#if(${vModel})${vModel}#end")
+    #end
+    private String ${vModel};
+
+        #end
+    #end
+    #end
+#end
+#foreach($html in ${context.children})
+    #set($className = "${html.className.toLowerCase()}")
+	/** 子表数据 **/
+	@JsonProperty("${className}List")
+	private List<${html.className}Model> ${className}List;
+#end
+
+#foreach($html in ${context.columnChildren})
+    #set($className = "${html.tableName.toLowerCase()}")
+    /** 列表子表数据 **/
+    @JsonProperty("${className}")
+    private ${html.modelName}Model ${className};
+#end
+#if(${context.version})
+	@JsonProperty("version")
+	private int version;
+#end
+}

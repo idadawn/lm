@@ -1,0 +1,1752 @@
+#set($pKeyName = "${context.pKeyName}")
+#set($mastTableList = $context.mastTable)
+#set($setPermission = "$setPermission")
+#set($menuId = "menuId")
+#set($useBtnPermission=${context.useBtnPermission})
+#set($useFormPermission=${context.useFormPermission})
+#macro(code8 $key $html $formModel $showModel $tableFieldModel)
+	#set($model = "${html.vModel}")
+	#set($slot = ${html.slot})
+	#set($prop="${html.vModel}")
+	#set($config = $html.config)
+	#set($placeholder = "${html.placeholder}")
+	#set($show = ${config.noShow})
+	#set($vmodel="${formModel}.${model}")
+	#set($modelProps="")
+	#set($modelOptions="")
+	#set($modelUpload="")
+	#set($modelColumnOptions="")
+	#set($jnpfkey="${config.jnpfKey}")
+	#set($tag="")
+	#set($list="${model}")
+	#set($type=${html.type})
+	#set($placeholder = ${html.placeholder})
+	#set($showJudge= "")
+	#set($showWrite="")
+	#set($inputalign="")
+	#if(${html.disabled})
+		#set($showWrite="disabled")
+	#end
+	#set($hasFormP="#if($tableFieldModel)${tableFieldModel}-#end${model}")
+	#set($relationField="")
+	#set($relationModel = "")
+	#set($roleOrgroup = "")
+	#set($permission = "${useFormPermission}")
+	#set($childoptions="")
+	#set($ableRelationIds="")
+	#set($rowIndex="")
+	#set($formData="")
+	#set($templateJson="")
+	#set($startTime="")
+	#set($endTime="")
+	#set($dataType="${config.dataType}")
+	#if($jnpfkey=='userSelect' && ${html.relationField})
+		#set($ableRelationIds="${context.formModel}.${html.relationField}")
+		#if($html.relationChild)
+			#set($ableRelationIds="${context.formModel}.${showModel}List[i].${html.relationField}")
+		#end
+	#end
+	#if($jnpfkey=='date' || $jnpfkey=='time')
+		#set($startRelationField="''")
+		#if($config.startRelationField)
+			#set($startRelationField="${context.formModel}.${config.startRelationField}")
+			#if($config.startChild)
+				#set($startRelationField="${context.formModel}.${showModel}List[i].${config.startRelationField}")
+			#end
+		#end
+		#set($startTimeValue="#if(${config.startTimeValue})'${config.startTimeValue}'#else''#end")
+		#set($startTimeType="#if(${config.startTimeType})${config.startTimeType}#else''#end")
+		#set($startTimeTarget="#if(${config.startTimeTarget})${config.startTimeTarget}#else''#end")
+		#set($endRelationField="''")
+		#if($config.endRelationField)
+			#set($endRelationField="${context.formModel}.${config.endRelationField}")
+			#if($config.endChild)
+				#set($endRelationField="${context.formModel}.${showModel}List[i].${config.endRelationField}")
+			#end
+		#end
+		#set($endTimeValue="#if(${config.endTimeValue})'${config.endTimeValue}'#else''#end")
+		#set($endTimeType="#if(${config.endTimeType})${config.endTimeType}#else''#end")
+		#set($endTimeTarget="#if(${config.endTimeTarget})${config.endTimeTarget}#else''#end")
+
+		#set($startTime="dateTime(${config.startTimeRule},${startTimeType},${startTimeTarget},${startTimeValue},${startRelationField})")
+		#set($endTime="dateTime(${config.endTimeRule},${endTimeType},${endTimeTarget},${endTimeValue},${endRelationField})")
+		#if($jnpfkey=='time')
+			#set($startTime="time(${config.startTimeRule},${startTimeType},${startTimeTarget},${startTimeValue},'${html.format}',${startRelationField})")
+			#set($endTime="time(${config.endTimeRule},${endTimeType},${endTimeTarget},${endTimeValue},'${html.format}',${endRelationField})")
+		#end
+	#end
+	#set($configLabel="${config.label}")
+	#if($jnpfkey=='roleSelect' || $jnpfkey=='groupSelect')
+		#set($roleOrgroup = "vModel='"+${prop}+"'")
+	#end
+	#if($jnpfkey=='relationForm' || $jnpfkey=='popupSelect'|| $jnpfkey=='popupTableSelect'|| $jnpfkey=='autoComplete')
+		#set($relationField = "relationField='"+${html.relationField}+"'")
+		#set($relationModel = "vModel='"+${prop}+"'")
+		#set($rowIndex="null")
+		#set($formData="${context.formModel}")
+		#set($templateJson="interfaceRes.${model}")
+	#end
+	#if($jnpfkey=='popupAttr' || $jnpfkey=='relationFormAttr')
+		#set($relationField = "relationField='"+${html.relationField}+"'")
+		#set($showList = "")
+		#set($showJudge = "")
+		#set($permission = "${useFormPermission}")
+		#set($hasFormP="#if($tableFieldModel)${tableFieldModel}-#end${html.relationField}")
+	#end
+	#if($key=='table')
+		#set($prop="")
+		#set($childoptions="${showModel}")
+		#if($jnpfkey=='relationForm' || $jnpfkey=='popupSelect'|| $jnpfkey=='popupTableSelect'|| $jnpfkey=='autoComplete')
+			#set($relationModel = ":vModel=""'"+${model}+"'+i""")
+			#set($rowIndex="i")
+			#set($formData="${context.formModel}")
+			#set($templateJson="interfaceRes.${showModel}${model}")
+		#end
+		#if($jnpfkey=='popupAttr' || $jnpfkey=='relationFormAttr')
+			#set($relationField = ":relationField=""'"+${html.relationField}+"'+i""")
+			#set($showList = "")
+			#set($permission = "${useFormPermission}")
+			#set($hasFormP="#if($tableFieldModel)${tableFieldModel}-#end${html.relationField}")
+		#end
+	#end
+	#if($jnpfkey=='createUser' || $jnpfkey=='createTime' || $jnpfkey=='modifyUser' || $jnpfkey=='modifyTime' || $jnpfkey=='currOrganize' || $jnpfkey=='currDept' || $jnpfkey=='currPosition' || $jnpfkey=='billRule')
+		#set($placeholder = "系统自动生成")
+		#set($showWrite="disabled")
+	#end
+	#if($jnpfkey=='comInput' || $jnpfkey=='textarea' || $jnpfkey=='modifyUser' || $jnpfkey=='modifyTime' || $jnpfkey=='billRule')
+		#set($tag = "u-input")
+		#if($jnpfkey=='textarea')
+			#set($type = "textarea")
+		#end
+		#set($inputalign="right")
+	#elseif($jnpfkey=='createUser' || $jnpfkey=='createTime' || $jnpfkey=='currOrganize' || $jnpfkey=='currDept' || $jnpfkey=='currPosition' )
+		#set($tag = "jnpf-open-data")
+	#elseif($jnpfkey=='numInput')
+		#set($tag = "jnpf-number-box")
+	#elseif($jnpfkey=='slider')
+		#set($tag = "u-"+$jnpfkey)
+	#elseif($jnpfkey=='switch' || $jnpfkey=='radio' || $jnpfkey=='checkbox' || $jnpfkey=='select' || $jnpfkey=='cascader' || $jnpfkey=='rate')
+		#set($tag = "jnpf-"+$jnpfkey)
+	#elseif($jnpfkey=='address')
+		#set($tag = "jnpf-city-select")
+	#elseif($jnpfkey=='treeSelect')
+		#set($tag = "jnpf-tree-select")
+	#elseif($jnpfkey=='colorPicker')
+		#set($tag = "")
+	#elseif($jnpfkey=='editor')
+		#set($configLabel="")
+		#set($tag = "jnpf-editor")
+	#elseif($jnpfkey=='popupTableSelect')
+		#set($tag = "jnpf-table-select")
+	#elseif($jnpfkey=='groupSelect')
+		#set($tag = "jnpf-group-select")
+	#elseif($jnpfkey=='roleSelect')
+		#set($tag = "jnpf-role-select")
+	#elseif($jnpfkey=='uploadImg')
+		#set($tag = "jnpf-upload")
+		#set($modelUpload="${vmodel}")
+	#elseif($jnpfkey=='uploadFz')
+		#set($tag = "jnpf-file")
+	#elseif($jnpfkey=='popupSelect')
+		#set($tag = "jnpf-popup-select")
+		#set($type = "popup")
+	#elseif($jnpfkey=='relationForm')
+		#set($tag = "jnpf-relation-select")
+		#set($type = "relation")
+	#elseif($jnpfkey=='date' || $jnpfkey=='time')
+		#set($tag = "jnpf-date-time")
+	#elseif($jnpfkey=='userSelect')
+		#set($tag = "jnpf-user-select")
+	#elseif($jnpfkey=='usersSelect')
+		#set($tag = "jnpf-user-choice")
+	#elseif($jnpfkey=='comSelect' || $jnpfkey=='depSelect' || $jnpfkey=='posSelect' )
+		#set($tag = "jnpf-postordep-select")
+		#if($jnpfkey=='comSelect')
+			#set($type = "organize")
+			#set($tag = "jnpf-com-select")
+		#elseif($jnpfkey=='depSelect')
+			#set($type = "department")
+		#elseif($jnpfkey=='posSelect')
+			#set($type = "position")
+		#end
+	#elseif($jnpfkey=='popupAttr')
+		#set($tag = "jnpf-relation-attr")
+		#set($type = "popupAttr")
+	#elseif($jnpfkey=='relationFormAttr')
+		#set($tag = "jnpf-relation-attr")
+		#set($type = "relationFormAttr")
+	#elseif($jnpfkey=='autoComplete')
+		#set($tag = "jnpf-auto-complete")
+	#end
+	#if($jnpfkey=='checkbox' || $jnpfkey=='select' || $jnpfkey=='cascader' || $jnpfkey=='radio' || $jnpfkey=='treeSelect')
+		#set($modelProps="${childoptions}${list}Props")
+		#set($modelOptions="${childoptions}${list}Options")
+		#if(${childoptions} && ${dataType}=='dynamic')
+			#set($modelOptions="${context.formModel}.${childoptions}List[i].${list}Options")
+		#end
+	#end
+	#if($jnpfkey=='relationForm' || $jnpfkey=='popupSelect' || $jnpfkey=='popupTableSelect')
+		#set($modelColumnOptions="${childoptions}${list}ColumnOptions")
+	#end
+	#set($end ="/"+ ${tag})
+	#if($show == false && ${config.app}==true)
+		#if($tag)
+			<view class="u-p-l-20 u-p-r-20 form-item-box">
+			<u-form-item #if($permission) #if($useFormPermission==true) v-if="${setPermission}.hasFormP('${hasFormP}',menuId)"#end#end
+				#if($config.showLabel && $config.showLabel == true)
+				#if($configLabel) label="${configLabel}"#end
+				#if($config.tipLabel && $jnpfkey!='editor') left-icon="question-circle-fill" @clickIcon="clickIcon('${configLabel}','${config.tipLabel}')" :left-icon-style="{'color':'#a0acb7'}" #end
+				#if($showJudge) ${showJudge}#end
+                #if($config.labelWidth) label-width="${config.labelWidth}"#end #else label-width="0"#end
+                #if($prop) prop="${prop}" #end#if($config.required==true) required#end>
+				<${tag} #if($model)v-model="${vmodel}"#if(${showWrite}) ${showWrite} #end#end
+				#if($model)
+					#if($key=='table')
+				@change="changeData('${showModel}-${model}',i)"
+					#else
+				@change="changeData('${model}',-1)"
+					#end
+				#end
+				#if($jnpfkey=='uploadFz') :list="${vmodel}" #end
+				#if($slot.prepend) prepend="${slot.prepend}" #end
+				#if($slot.append) append="${slot.append}" #end
+				#if($rowIndex) :rowIndex="${rowIndex}" #end
+				#if($formData) :formData="${formData}" #end
+				#if($templateJson) :templateJson="${templateJson}" #end
+				#if($html.allowhalf) allow-half #end
+				#if($ableRelationIds) :ableRelationIds = "${ableRelationIds}" #end
+				#if($startTime) :startTime="${startTime}" #end
+				#if($endTime) :endTime="${endTime}" #end
+				#if($config.isStorage) isStorage="${config.isStorage}" #end
+				#if($inputalign) input-align='right' #end
+				#if($html.prefixicon) prefix-icon="${html.prefixicon}" #end
+				#if($html.suffixicon) suffix-icon="${html.suffixicon}" #end
+				#if($html.selectType) selectType="${html.selectType}" #end
+				#if($html.ableIds) :ableIds="ableAll.${showModel}${model}ableIds" #end
+				#if($html.ableDepIds) :ableDepIds="ableAll.${showModel}${model}ableDepIds" #end
+				#if($html.ablePosIds) :ablePosIds="ableAll.${showModel}${model}ablePosIds" #end
+				#if($html.ableUserIds) :ableUserIds="ableAll.${showModel}${model}ableUserIds" #end
+				#if($html.ableRoleIds) :ableRoleIds="ableAll.${showModel}${model}ableRoleIds" #end
+				#if($html.ableGroupIds) :ableGroupIds="ableAll.${showModel}${model}ableGroupIds" #end
+				#if($html.format) format="${html.format}" #end
+				#if($html.optionType) optionType="${html.optionType}" #end
+				#if($html.tipText) tipText="${html.tipText}" #end
+				#if($html.total) :total="${html.total}" #end
+				#if($html.precision) :precision="${html.precision}" #end
+				#if($html.direction) direction="${html.direction}" #end
+				#if($html.isAmountChinese) isAmountChinese #end
+				#if($html.thousands) thousands #end
+				#if($html.addonAfter) addonAfter="${html.addonAfter}" #end
+				#if($html.addonBefore) addonBefore="${html.addonBefore}" #end
+				#if($html.controlsPosition) controlsPosition="${html.controlsPosition}" #end
+				#if($html.hasPage) hasPage #end
+				#if($html.clearable) clearable #end
+				#if($html.filterable) filterable #end
+				#if($html.propsValue) propsValue="${html.propsValue}" #end
+				#if($html.popupWidth) popupWidth="${html.popupWidth}" #end
+				#if($html.popupTitle) popupTitle="${html.popupTitle}" #end
+				#if($html.popupType) popupType="${html.popupType}" #end
+				#if($relationField) ${relationField} #end
+				#if($relationModel) ${relationModel} #end
+				#if($roleOrgroup) ${roleOrgroup} #end
+				#if($html.showField) showField="${html.showField}" #end
+				#if($modelColumnOptions)  :columnOptions="${modelColumnOptions}"#end
+				#if($html.modelId) modelId="${html.modelId}" #end
+				#if($html.interfaceId) interfaceId="${html.interfaceId}" #end
+				#if($html.pageSize) :pageSize="${html.pageSize}" #end
+				#if($html.sizeUnit) sizeUnit="${html.sizeUnit}" #end
+				#if($html.accept) accept="${html.accept}" #end
+				#if($html.fileSize) :fileSize="${html.fileSize}" #end
+				#if($html.limit) :limit="${html.limit}" #end
+				#if($html.pathType) pathType="${html.pathType}" #end
+                #if($html.isAccount) :isAccount="${html.isAccount}" #end
+                #if($html.folder) folder="${html.folder}" #end
+				#if($placeholder) placeholder="${placeholder}"#end
+                #if($modelProps)  :props="${modelProps}"#end
+                #if($modelOptions) :options="${modelOptions}"#end
+				#if($modelUpload) :value="${modelUpload}"#end
+                #if($html.multiple) :multiple="${html.multiple}"#end
+                #if($html.maxlength) :maxlength="${html.maxlength}"#end
+                #if($html.min) :min="${html.min}"#end
+				#if($html.level) :level="${html.level}" #elseif(${html.level}==0) :level="${html.level}" #end
+                #if($control=='rate')#if($html.max) :count="${html.max}"#else size="40"#end#else#if($html.max) :max="${html.max}"#end#end
+                #if($type) type="${type}"#end
+                #if($html.step) :step="${html.step}"#end
+                #if($html.textStyle) :textStyle='${html.textStyle}'#end
+                #if($html.style) :style='${html.style}'#end
+                #if($html.readonly) readonly#end
+                #if($jnpfkey == 'slider' ) style="width: 100%;"#end
+                #if($html.contentposition) content-position="${html.contentposition}"#end>
+				</${tag}>
+			</u-form-item>
+			</view>
+		#end
+	#end
+#end
+<template>
+    <view class="jnpf-wrap jnpf-wrap-form" v-if="!loading">
+        <u-form :model="${context.formModel}" :rules="${context.formRules}" ref="${context.formModel}" :errorType="['toast']"
+				#set($position='left')
+				#if(${context.labelPosition}=='top')
+					#set($position='top')
+				#end
+				#set($align='left')
+				#if(${context.labelPosition}=='right')
+					#set($align='right')
+				#end
+                label-position="${position}" label-align="${align}" :label-width="labelwidth" class="jnpf-form">
+            #foreach($fieLdsModel in ${context.form})
+                #set($jnpfkey = "${fieLdsModel.jnpfKey}")
+                #set($isEnd = "${fieLdsModel.isEnd}")
+				#set($formModel = ${fieLdsModel.formModel})
+				#set($config=$formModel.config)
+				#set($span=$config.span)
+				#set($outermost = ${formModel.outermost})
+				#set($header = ${formModel.header})
+                #if($jnpfkey=='card' || $jnpfkey=='row')
+					#if(${config.app}==true)
+                    #if(${isEnd}=='0')
+            <view class="jnpf-card">
+						#if($header)
+			<view class="jnpf-card-cap u-line-1">${header}#if(${config.tipLabel})<u-icon name="question-circle-fill" class="u-m-l-10" color="#a0acb7" @click="clickIcon('${header}','${config.tipLabel}')"/>#end</view>
+						#end
+					#else
+			</view>
+					#end
+					#end
+				#elseif($jnpfkey=='collapse')
+					#set($collapse = "u-collapse")
+					#if(${outermost}=='1')
+						#set($collapse = "u-collapse-item")
+					#end
+					#if(${config.app}==true)
+						#if(${isEnd}=='0')
+							#if(${outermost}=='0')
+								<${collapse} ref="${formModel.model}Current" :accordion="${formModel.accordion}" v-model="${formModel.model}Current">
+							#else
+								<${collapse} title="${formModel.title}" name="${formModel.name}" class="collapse-item">
+							#end
+						#else
+						</${collapse}>
+						#end
+					#end
+				#elseif($jnpfkey=='tab')
+					#set($tabModel = ${formModel.model})
+					#set($tabNum = ${formModel.childNum})
+					#if(${config.app}==true)
+					#if(${isEnd}=='0')
+						#if(${outermost}=='0')
+			<view prop="${formModel.model}">
+			<u-tabs :is-scroll="false" :list="${tabModel}Data" name="title" :current="${tabModel}Current" @change="${tabModel}"/>
+			<view>
+						#else
+			<view v-show="${tabNum} == ${tabModel}Current">
+						#end
+					#else
+						#if(${outermost}=='0')
+			</view>
+			</view>
+						#else
+			</view>
+						#end
+					#end
+					#end
+				#elseif($jnpfkey=="groupTitle" || $jnpfkey=="divider" || $jnpfkey=="JNPFText" || $jnpfkey=='button' || $jnpfkey=='link' || $jnpfkey=='alert')
+					#set($defaultName=${formModel.slot.defaultName})
+					#set($tag="")
+					#set($divider ="")
+					#set($itemBox = "form-item-box")
+					#if($jnpfkey=="groupTitle")
+						#set($tag = "jnpf-group")
+						#set($itemBox="")
+					#elseif($jnpfkey=="divider")
+						#set($divider ="half-width=""200"" height=""80""")
+						#set($tag = "u-"+$jnpfkey)
+					#elseif($jnpfkey=="JNPFText")
+						#set($tag= "jnpf-text")
+					#elseif($jnpfkey=="button")
+						#set($tag= "jnpf-button")
+					#elseif($jnpfkey=="link")
+						#set($tag= "jnpf-link")
+					#elseif($jnpfkey=="alert")
+						#set($tag= "jnpf-alert-tips")
+					#end
+					#if(${config.app}==true)
+			<view class="u-p-l-20 u-p-r-20 ${itemBox}">
+			<u-form-item>
+				<${tag} #if($formModel.style) :style='${formModel.style}'#end
+				#if($formModel.title) title='${formModel.title}'#end
+				#if($formModel.description) description="${formModel.description}" #end
+				#if($formModel.closeText) closeText="${formModel.closeText}" #end
+				#if($formModel.tagIcon) tagIcon='${formModel.tagIcon}'#end
+				#if($formModel.showIcon) showIcon #end
+				#if($formModel.closable) closable #end
+				#if($formModel.target) target='${formModel.target}'#end
+				#if($formModel.href) href='${formModel.href}'#end
+				#if($formModel.buttonText) buttonText='${formModel.buttonText}'#end
+				#if($formModel.align) align='${formModel.align}'#end
+				#if($formModel.type) type='${formModel.type}'#end
+				#if($formModel.textStyle) :textStyle='${formModel.textStyle}'#end
+				#if($config.defaultValue) value="${config.defaultValue}"#end
+				#if($formModel.tipLabel) tipLabel="${formModel.tipLabel}" @groupIcon="clickIcon('${formModel.content}','${formModel.tipLabel}')"#end
+				#if($divider) ${divider}#end
+				#if($formModel.content) content="${formModel.content}"#end
+				#if($formModel.contentposition) content-position="${formModel.contentposition}" #end>
+					#if(${defaultName})
+					$!{defaultName}
+					#end
+				</${tag}>
+			</u-form-item>
+			</view>
+					#end
+				#elseif($jnpfkey=='mastTable')
+					#set($mastTableModel = $fieLdsModel.formMastTableModel)
+					#set($html = $mastTableModel.mastTable.fieLdsModel)
+					#set($formModel="${context.formModel}")
+					#set($showModel="")
+					#set($tableFieldModel="")
+					#code8('mastTable' $html $formModel $showModel $tableFieldModel)
+				#elseif($jnpfkey=='mast')
+                    #set($html = $fieLdsModel.formColumnModel.fieLdsModel)
+					#set($formModel = "${context.formModel}")
+					#set($showModel="")
+					#set($tableFieldModel="")
+					#code8('mast' $html $formModel $showModel $tableFieldModel)
+			    #elseif($jnpfkey=='table')
+                    #set($child = $fieLdsModel.childList)
+					#set($tipLabel = $child.tipLabel)
+					#set($tableModel = ${child.tableModel})
+					#set($tableFieldModel="${tableModel}")
+					#set($childApp=$child.app)
+                    #set($className = "")
+                    #foreach($children in ${context.children})
+                        #if(${children.tableModel}==${child.tableModel})
+                            #set($className = "${children.className.toLowerCase()}")
+                        #end
+                    #end
+					#set($showJudge= "")
+					#set($showTableWrite="")
+					#if($childApp == true)
+            <view class="jnpf-table"#if(${showJudge}) $showJudge#end #if($useFormPermission==true) v-if="${setPermission}.hasFormP('${tableModel}',menuId)"#end>
+			<view class="jnpf-table-item" v-for="(item,i) in ${context.formModel}.${className}List" :key="i">
+			<view class="jnpf-table-item-title u-flex u-row-between">
+                        #if($child.showTitle== true)
+			<text class="jnpf-table-item-title-num">${child.label}({{i+1}})#if(${child.tipLabel})<u-icon name="question-circle-fill" class="u-m-l-10" color="#a0acb7" @click="clickIcon('${child.label}','${child.tipLabel}')"/>#end</text>
+                        #end
+						#if($child.addType==0)
+						#set($num="1")
+						#else
+						#set($num="0")
+						#end
+			<view class="jnpf-table-item-title-action" v-if="#if($showTableWrite) ${showTableWrite} && #end${context.formModel}.${className}List.length>${num}" @click="del${className}List(i)">删除</view>
+			</view>
+						#foreach($childListAll in ${child.childList})
+							#set($html = $childListAll.fieLdsModel)
+							#set($formModel="${context.formModel}.${className}List[i]")
+							#set($showModel="${className}")
+							#code8('table' $html $formModel $showModel $tableFieldModel)
+						#end
+			</view>
+			<view class="jnpf-table-addBtn" @click="add${className}List" #if(${showTableWrite}) v-if="$showTableWrite"#end>
+			<u-icon name="plus" color="#2979ff"></u-icon>$!{child.actionText}<span v-if="${context.formModel}.${className}List.length==0">${child.label}</span>
+			</view>
+			#set($showSummary = $child.showSummary)
+			#if($showSummary)
+			<view class="jnpf-table-item">
+				<view class="jnpf-table-item-title u-flex u-row-between">
+					<text class="jnpf-table-item-title-num">${child.label}合计</text>
+				</view>
+				<view class="u-p-l-20 u-p-r-20 form-item-box">
+				<u-form-item v-for="(item,i) in ${className}()" :key="i" :label="item.name">
+					<p>{{item.val}}</p>
+				</u-form-item>
+				</view>
+			</view>
+			#end
+            </view>
+                	#end
+                #end
+            #end
+        </u-form>
+        <view class="buttom-actions" v-if="jurisdictionType != 'btn_detail'" >
+			<u-button class="buttom-btn" :loading="btnLoading" @click="showAction = true">
+				更多<u-icon name="arrow-down" size="24"></u-icon>
+			</u-button>
+			<u-button class="buttom-btn" type="primary" @click="submitForm" :loading="btnLoading">确定</u-button>
+			<u-button class="buttom-btn" @click="resetForm">取消</u-button>
+        </view>
+		<u-action-sheet @click="handleAction" :list="actionList" :tips="{ text: '更多操作' , color: '#000' , fontSize: 30 }" v-model="showAction">
+		</u-action-sheet>
+    </view>
+</template>
+#macro(appableAll $fieLdsModel,$childList)
+	#set($html = $fieLdsModel)
+	#set($vModel = "${childList}${html.vModel}")
+	#set($config = $html.config)
+	#set($dataType = "${config.dataType}")
+	#if(${html.ableIds})
+		${vModel}ableIds:${html.ableIds},
+	#end
+	#if(${html.ableDepIds})
+		${vModel}ableDepIds:${html.ableDepIds},
+	#end
+	#if(${html.ablePosIds})
+		${vModel}ablePosIds:${html.ablePosIds},
+	#end
+	#if(${html.ableUserIds})
+		${vModel}ableUserIds:${html.ableUserIds},
+	#end
+	#if(${html.ableRoleIds})
+		${vModel}ableRoleIds:${html.ableRoleIds},
+	#end
+	#if(${html.ableGroupIds})
+		${vModel}ableGroupIds:${html.ableGroupIds},
+	#end
+#end
+#macro(rule $fieLdsModel)
+	#set($html = $fieLdsModel)
+	#set($vModel = "${html.vModel}")
+	#set($config = $html.config)
+	#set($label = "${config.label}")
+	#set($jnpfkey = "${config.jnpfKey}")
+	#set($listSize=$!{config.regList})
+	#set($defaultValue=${config.defaultValue})
+	#set($defaultValueSize=$!{config.defaultValue})
+	#set($trigger = ${config.trigger})
+	#if(${trigger.substring(0,1)}!='[')
+		#set($trigger = "'"+ ${config.trigger}+ "'")
+	#end
+	#if($vModel)
+		#if(!$config.defaultValue && $config.defaultValue==[])
+			#set($messages='请至少选择一个')
+		#elseif(${config.defaultValue} && (${defaultValueSize} || $defaultValueSize.size()>0))
+			#set($messages='请至少选择一个')
+		#elseif($html.placeholder)
+			#set($messages=${html.placeholder})
+		#else
+			#set($messages='不能为空')
+		#end
+		#if($config.required==true|| (${listSize} && $listSize.size()>0))
+					${vModel}: [
+			#if($config.required==true)
+						{
+							required: true,
+							message: '${label}$!{messages}',
+							#if($jnpfkey=='checkbox' || $jnpfkey=='timeRange' || $jnpfkey=='dateRange' || $jnpfkey=='address' || $jnpfkey=='cascader')
+							type:'array',
+							#elseif($jnpfkey=='comSelect' || $jnpfkey=="uploadFz" || $jnpfkey=="uploadImg")
+							type:'array',
+							#elseif($jnpfkey=='userSelect' || $jnpfkey=='select' || $jnpfkey=='depSelect' || $jnpfkey=='posSelect' || $jnpfkey=='popupTableSelect'|| $jnpfkey=='groupSelect'|| $jnpfkey=='roleSelect' || $jnpfkey=='treeSelect')
+								#if(${html.multiple}=='true')
+							type:'array',
+								#end
+							#end
+						},
+			#end
+			#if($listSize.size()>0)
+				#foreach($regList in ${config.regList})
+						{
+							pattern: ${regList.pattern},
+							message: '${label}${regList.message}',
+							#if($jnpfkey=='checkbox' || $jnpfkey=='timeRange' || $jnpfkey=='dateRange' || $jnpfkey=='address' || $jnpfkey=='cascader')
+							type:'array',
+							#elseif($jnpfkey=='comSelect' || $jnpfkey=="uploadFz" || $jnpfkey=="uploadImg")
+							type:'array',
+							#elseif($jnpfkey=='userSelect' || $jnpfkey=='select' || $jnpfkey=='depSelect' || $jnpfkey=='posSelect' || $jnpfkey=='popupTableSelect'|| $jnpfkey=='groupSelect'|| $jnpfkey=='roleSelect' || $jnpfkey=='treeSelect')
+								#if(${html.multiple}=='true')
+								type:'array',
+								#end
+							#end
+						},
+				#end
+			#end
+					],
+		#end
+	#end
+#end
+#macro(list $fieLdsModel,$childList)
+	#set($html = $fieLdsModel)
+	#set($vModel = "${childList}${html.vModel}")
+	#set($config = $html.config)
+	#set($jnpfkey = "$config.jnpfKey")
+	#if(${config.dataType}=='dictionary'||${config.dataType}=='dynamic')
+				${vModel}Options:[],
+	#elseif(${config.dataType} == "static")
+		#if($html.slot.options)
+                ${vModel}Options:${html.slot.options},
+		#elseif($html.options)
+                ${vModel}Options:${html.options},
+		#end
+	#end
+	#if($html.props)
+				#set($propsModel = ${html.props.props})
+				${vModel}Props:{"label":"${propsModel.label}","value":"${propsModel.value}","multiple":${propsModel.multiple},"children":"${propsModel.children}"},
+	#end
+	#if($config.props)
+				${vModel}Props:{"label":"${config.props.label}","value":"${config.props.value}"},
+	#end
+	#if($jnpfkey=='relationForm' || $jnpfkey=='popupSelect' || $jnpfkey=='popupTableSelect')
+				${vModel}ColumnOptions:[
+		#foreach($columnOptions in  ${html.columnOptions})
+					{
+						"label":"${columnOptions.label}",
+						"value":"${columnOptions.value}"
+					},
+		#end
+				],
+	#end
+#end
+#macro(options $fieLdsModel,$childList)
+	#set($html = $fieLdsModel)
+	#set($vModel = "${childList}${html.vModel}")
+	#set($config = $html.config)
+	#set($dataType = "${config.dataType}")
+	#if(${dataType}=='dictionary' || ${dataType}=='dynamic')
+			    this.get${vModel}Options()
+	#end
+#end
+#macro(optionsData $fieLdsModel,$childList)
+	#set($html = $fieLdsModel)
+	#set($vModel = "${childList}${html.vModel}")
+	#set($config = $html.config)
+	#set($dataType = "${config.dataType}")
+	#set($jnpfkey="${config.jnpfKey}")
+	#set($changeDataFormType = "1")
+	#set($changeDataFormData = "${html.vModel}")
+	#if($childList)
+		#set($changeDataFormData = "${childList}"+"List")
+		#set($changeDataFormType = "2")
+	#end
+	#set($defaultValue='""')
+	#if($!config.valueType=='String')
+		#set($defaultValue="'$!{config.defaultValue}'")
+	#elseif($!config.valueType=='undefined')
+		#set($defaultValue='""')
+	#else
+		#set($defaultValue=$!{config.defaultValue})
+	#end
+	#if(${dataType}=='dictionary')
+            get${vModel}Options() {
+                getDictionaryDataSelector('${config.dictionaryType}').then(res => {
+                    this.${vModel}Options = res.data.list
+                })
+            },
+	#elseif(${dataType}=='dynamic')
+            get${vModel}Options() {
+				const index = this.childIndex
+				let templateJsonList = JSON.parse(JSON.stringify(this.interfaceRes.${vModel}))
+				for (let i = 0; i < templateJsonList.length; i++) {
+					let json = templateJsonList[i];
+					if(json.relationField){
+						let relationFieldAll = json.relationField.split("-");
+						let val = json.defaultValue;
+						if(relationFieldAll.length>1 && index>-1){
+							val = this.${context.formModel}[relationFieldAll[0]+'List']&&this.${context.formModel}[relationFieldAll[0]+'List'].length?this.${context.formModel}[relationFieldAll[0]+'List'][index][relationFieldAll[1]]:''
+						}else {
+							val = this.${context.formModel}[relationFieldAll]
+						}
+						json.defaultValue = val
+					}
+				}
+				let template ={
+					paramList:templateJsonList
+				}
+				getDataInterfaceRes('${config.propsUrl}',template).then(res => {
+					let data = res.data
+                    this.${vModel}Options = data
+					#if($childList)
+					if(index==-1) return
+					this.${context.formModel}.${childList}List[index].${html.vModel}Options =data
+					#end
+					this.changeDataFormData(${changeDataFormType},'${changeDataFormData}','${html.vModel}',index,${defaultValue})
+                })
+            },
+	#elseif(${html.vModel})
+			get${vModel}Options() {
+				const index = this.childIndex
+				this.changeDataFormData(${changeDataFormType},'${changeDataFormData}','${html.vModel}',index,${defaultValue})
+			},
+	#end
+#end
+#macro(faceRes $fieLdsModel,$childList)
+	#set($html = $fieLdsModel)
+	#set($vModel = "${childList}${html.vModel}")
+	#set($config = $html.config)
+	#set($dataType = "${config.dataType}")
+	#if(${vModel})
+			${vModel}:[
+				#foreach($templateJson in ${config.templateJson})
+				{
+					fieldName:"${templateJson.fieldName}",
+					field:"${templateJson.field}",
+					defaultValue:"${templateJson.defaultValue}",
+					jnpfKey:"$!{templateJson.jnpfKey}",
+					dataType:"${templateJson.dataType}",
+					id:"${templateJson.id}",
+					required:"${templateJson.required}",
+					relationField:"${templateJson.relationField}",
+				},
+				#end
+			],
+	#end
+#end
+#macro(dataList $key $fieLdsModel $formModel $tableModel $fieldModel $vModel)
+	#set($model="${formModel}.${vModel}")
+	#set($field="${formModel}.${fieldModel}")
+	#if($key=='mastTable')
+		#set($field="${formModel}.${tableModel}.${fieldModel}")
+	#end
+	#set($html = $fieLdsModel)
+	#set($config = $html.config)
+	#set($jnpfkey = "${config.jnpfKey}")
+	#if($jnpfkey=='checkbox' || $jnpfkey=='timeRange' || $jnpfkey=='dateRange' || $jnpfkey=='address' || $jnpfkey=='cascader')
+				${field} = Array.isArray(${model})? JSON.stringify(${model}):'[]'
+	#elseif($jnpfkey=='comSelect' || $jnpfkey=="uploadFz" || $jnpfkey=="uploadImg")
+				${field} = Array.isArray(${model})? JSON.stringify(${model}):'[]'
+	#elseif($jnpfkey=='userSelect' ||  $jnpfkey=='usersSelect' ||$jnpfkey=='select' || $jnpfkey=='depSelect' || $jnpfkey=='posSelect' || $jnpfkey=='popupTableSelect'|| $jnpfkey=='groupSelect'|| $jnpfkey=='roleSelect' || $jnpfkey=='treeSelect')
+		#if(${html.multiple}=='true')
+				${field} = Array.isArray(${model})? JSON.stringify(${model}):'[]'
+		#else
+				${field} = ${model}
+		#end
+	#else
+		#if($key=='mastTable')
+				${field} = ${model}
+		#end
+	#end
+#end
+#macro(dataInfo $key $fieLdsModel $formModel $tableModel $fieldModel $vModel)
+	#set($model="${formModel}.${vModel}")
+	#set($field="${formModel}.${fieldModel}")
+	#if($key=='mastTable')
+		#set($field="${formModel}.${tableModel}.${fieldModel}")
+	#end
+	#set($html = $fieLdsModel)
+	#set($config = $html.config)
+	#set($jnpfkey = "${config.jnpfKey}")
+	#if($jnpfkey=='checkbox' || $jnpfkey=='timeRange' || $jnpfkey=='dateRange' || $jnpfkey=='address' || $jnpfkey=='cascader')
+				${model} = ${field}? JSON.parse(${field}):[]
+	#elseif($jnpfkey=='comSelect' || $jnpfkey=="uploadFz" || $jnpfkey=="uploadImg")
+				${model} = ${field}? JSON.parse(${field}):[]
+	#elseif($jnpfkey=='userSelect' ||  $jnpfkey=='usersSelect' ||$jnpfkey=='select' || $jnpfkey=='depSelect' || $jnpfkey=='posSelect' || $jnpfkey=='popupTableSelect'|| $jnpfkey=='groupSelect'|| $jnpfkey=='roleSelect' || $jnpfkey=='treeSelect')
+		#if(${html.multiple}=='true')
+				${model} = ${field}? JSON.parse(${field}):[]
+		#else
+				${model} = ${field}
+		#end
+	#elseif($jnpfkey=="switch" || $jnpfkey=="slider")
+				${model} = ${field}? Number(${field}):0
+	#elseif($jnpfkey=="date")
+				${model} = ${field}? Number(${field}):${field}
+	#else
+		#if($key=='mastTable')
+				${model} = ${field}
+		#end
+	#end
+#end
+#macro(initDefaultData $key $fieLdsModel $formModel)
+	#set($html = $fieLdsModel)
+	#set($eachFiled = "${html.vModel}")
+	#set($config = $html.config)
+	#set($jnpfkey = "${config.jnpfKey}")
+	#set($defaultCurrent=${config.defaultCurrent})
+	#set($multiple=${html.multiple})
+	#set($selectType = ${config.jnpfKey})
+	#set($ableDepIds = ${html.ableDepIds})
+	#set($ableUserIds = ${html.ableUserIds})
+	#set($ableGroupIds = ${html.ableGroupIds})
+	#set($ableRoleIds = ${html.ableRoleIds})
+	#set($ablePosIds = ${html.ablePosIds})
+	#set($format=${html.format})
+	#set($timeFormat = "this."+'$'+"u.timeFormat")
+	#if($defaultCurrent)
+		#if($jnpfkey=='date')
+			${formModel}.${eachFiled} = new Date().getTime()
+		#elseif($jnpfkey=='time')
+			${formModel}.${eachFiled} = ${timeFormat}(new Date().getTime(),this.formatType['${format}'])
+		#elseif($jnpfkey=='depSelect')
+			if(this.userInfo.departmentId != null && this.userInfo.departmentId != '') {
+				#if($selectType=='all')
+					#if($multiple == true)
+				${formModel}.${eachFiled} = [this.userInfo.departmentId]
+					#else
+				${formModel}.${eachFiled} = this.userInfo.departmentId
+					#end
+				#else
+				let ableDepIds = ${ableDepIds}
+				if (ableDepIds instanceof Array && ableDepIds.length > 0 && ableDepIds.includes(this.userInfo.departmentId)) {
+					#if($multiple == true)
+					${formModel}.${eachFiled} = [this.userInfo.departmentId]
+					#else
+					${formModel}.${eachFiled} = this.userInfo.departmentId
+					#end
+				} else if(ableDepIds instanceof Array && ableDepIds.length > 0) {
+					getDefaultCurrentValueDepartmentId({departIds:ableDepIds}).then(res => {
+						if (res.data.departmentId != null && res.data.departmentId != '') {
+					#if($multiple == true)
+							${formModel}.${eachFiled} = [this.userInfo.departmentId]
+					#else
+							${formModel}.${eachFiled} = this.userInfo.departmentId
+					#end
+						}
+					})
+				}
+				#end
+			}
+		#elseif($jnpfkey=='comSelect')
+			if(this.userInfo.organizeIdList instanceof Array && this.userInfo.organizeIdList.length > 0) {
+				#if($multiple == true)
+				${formModel}.${eachFiled} = [this.userInfo.organizeIdList]
+				#else
+				${formModel}.${eachFiled} = this.userInfo.organizeIdList
+				#end
+			}
+		#elseif($jnpfkey=='userSelect')
+			#if($selectType=='all')
+				#if($multiple == true)
+			${formModel}.${eachFiled} = [this.userInfo.userId]
+				#else
+			${formModel}.${eachFiled} = this.userInfo.userId
+				#end
+			#elseif($selectType=='custom')
+			if(this.userInfo.userId != null && this.userInfo.userId != '') {
+				let ableUserIds = ${ableUserIds}
+				let ableDepIds = ${ableDepIds}
+				let ableGroupIds = ${ableGroupIds}
+				let ableRoleIds = ${ableRoleIds}
+				let ablePosIds = ${ablePosIds}
+				if (ableUserIds instanceof Array && ableUserIds.length > 0 && ableUserIds.includes(this.userInfo.userId)) {
+					#if($multiple == true)
+					${formModel}.${eachFiled} = [this.userInfo.userId]
+					#else
+					${formModel}.${eachFiled} = this.userInfo.userId
+					#end
+				}else if((ableUserIds instanceof Array && ableUserIds.length > 0)
+					|| (ableDepIds instanceof Array && ableDepIds.length > 0)
+					|| (ableGroupIds instanceof Array && ableGroupIds.length > 0)
+					|| (ableRoleIds instanceof Array && ableRoleIds.length > 0)
+					|| (ablePosIds instanceof Array && ablePosIds.length > 0)) {
+					getDefaultCurrentValueUserId({
+						departIds:ableDepIds,
+						groupIds:ableGroupIds,
+						roleIds:ableRoleIds,
+						userIds:ableUserIds,
+						positionIds:ablePosIds
+					}).then(res => {
+						if (res.data.userId != null && res.data.userId != '') {
+							#if($multiple == true)
+							${formModel}.${eachFiled} = [this.userInfo.userId]
+							#else
+							${formModel}.${eachFiled} = this.userInfo.userId
+							#end
+						}
+					})
+				}
+			}
+			#end
+		#end
+	#end
+#end
+
+<script>
+    import {
+        getDictionaryDataSelector,
+		getDataInterfaceRes,
+		getDefaultCurrentValueUserId,
+		getDefaultCurrentValueDepartmentId
+    } from '@/api/common'
+	import {
+		getDateDay,
+		getLaterData,
+		getBeforeData,
+		getBeforeTime,
+		getLaterTime
+	} from '@/components/index.js'
+    import request from '@/utils/request'
+    export default {
+        data(){
+            return{
+				idList: [],
+				index:0,
+				actionList: [],
+				actionListLength: false,
+				showAction: false,
+                btnLoading: false,
+				loading: false,
+                text: '提示：测试文本',
+                tableKey:'',
+				${context.formModel}:{
+					${pKeyName}:"",
+					#foreach($fieLdsModel in ${context.fields})
+						#set($html = $fieLdsModel.formColumnModel.fieLdsModel)
+						#set($vModel = "${html.vModel}")
+						#set($config = $html.config)
+						#set($jnpfkey = "${config.jnpfKey}")
+						#if($vModel)
+							#if($!config.valueType=='String')
+					$!{vModel} : "$!{config.defaultValue}",
+							#elseif($!config.valueType=='undefined')
+					$!{vModel} : '',
+							#else
+					$!{vModel} : $!{config.defaultValue},
+							#end
+						#end
+					#end
+					#foreach($masetkey in $mastTableList.entrySet())
+						#set($tableModel = $masetkey.key)
+					$tableModel:{
+						#set($fieldsAll = $masetkey.value)
+						#foreach($fieLdsModel in ${fieldsAll})
+							#set($mastTableModel = $fieLdsModel.formMastTableModel)
+							#set($html = $fieLdsModel.formMastTableModel.mastTable.fieLdsModel)
+							#set($vModel = "${mastTableModel.field}")
+							#set($config = $html.config)
+							#set($jnpfkey = "${config.jnpfKey}")
+							#if($vModel)
+								#if($!config.valueType=='String')
+						$!{vModel} : "$!{config.defaultValue}",
+								#elseif($!config.valueType=='undefined')
+						$!{vModel} : '',
+								#else
+						$!{vModel} : $!{config.defaultValue},
+								#end
+							#end
+						#end
+					},
+					#set($fieldsAll = $masetkey.value)
+						#foreach($fieLdsModel in ${fieldsAll})
+							#set($mastTableModel = $fieLdsModel.formMastTableModel)
+							#set($html = $fieLdsModel.formMastTableModel.mastTable.fieLdsModel)
+							#set($vModel = "${mastTableModel.vModel}")
+							#set($config = $html.config)
+							#set($jnpfkey = "${config.jnpfKey}")
+							#if($vModel)
+								#if($!config.valueType=='String')
+					$!{vModel} : "$!{config.defaultValue}",
+								#elseif($!config.valueType=='undefined')
+					$!{vModel} : '',
+								#else
+					$!{vModel} : $!{config.defaultValue},
+								#end
+							#end
+						#end
+					#end
+					#foreach($child in ${context.children})
+						#set($className = "${child.className.toLowerCase()}")
+					${className}List:[],
+					#end
+				},
+				${context.formRules}:{
+					#foreach($fields in ${context.fields})
+						#set($fieLdsModel = $fields.formColumnModel.fieLdsModel)
+						#rule($fieLdsModel)
+					#end
+					#foreach($masetkey in $mastTableList.entrySet())
+						#set($fieldsAll = $masetkey.value)
+						#foreach($fields in ${fieldsAll})
+							#set($fieLdsModel = $fields.formMastTableModel.mastTable.fieLdsModel)
+							#rule($fieLdsModel)
+						#end
+					#end
+				},
+				#foreach($fields in ${context.fields})
+					#set($fieLdsModel = $fields.formColumnModel.fieLdsModel)
+					#list($fieLdsModel,'')
+				#end
+				#foreach($masetkey in $mastTableList.entrySet())
+					#set($fieldsAll = $masetkey.value)
+					#foreach($fields in ${fieldsAll})
+						#set($fieLdsModel = $fields.formMastTableModel.mastTable.fieLdsModel)
+						#list($fieLdsModel,'')
+					#end
+				#end
+				#foreach($child in ${context.children})
+					#set($className = "${child.className.toLowerCase()}")
+					#foreach($childList in ${child.childList})
+						#set($fieLdsModel = $childList.fieLdsModel)
+						#list($fieLdsModel,$className)
+					#end
+				#end
+				#foreach($fieLdsModel in ${context.form})
+					#set($jnpfkey = "${fieLdsModel.jnpfKey}")
+					#set($isEnd = "${fieLdsModel.isEnd}")
+					#set($formModel = ${fieLdsModel.formModel})
+					#set($model = "${formModel.model}")
+					#set($outermost = ${formModel.outermost})
+					#set($children = ${formModel.children})
+					#if($jnpfkey=='tab' || $jnpfkey=='collapse')
+						#if(${isEnd}=='0')
+							#if(${outermost}=='0')
+				${model}Current:${formModel.active},
+				${model}Data:[
+								#foreach($childrenList in $children)
+					{
+						title: "${childrenList.title}"
+					},
+								#end
+				],
+							#end
+						#end
+					#end
+				#end
+                labelwidth:${context.labelWidth}*1.5,
+                menuId:'',
+				jurisdictionType:'',
+                ruleList:{
+				#foreach($child in ${context.children})
+					#set($className = "${child.className.toLowerCase()}")
+					${className}List:{
+						#foreach($html in ${child.childList})
+							#set($fieLdsModel = ${html.fieLdsModel})
+							#set($vModel = "${fieLdsModel.vModel}")
+							#set($config = ${fieLdsModel.config})
+							#set($jnpfkey = "${config.jnpfKey}")
+							#set($label = "${config.label}")
+							#if($config.required==true)
+								#if($jnpfkey!='switch' && $jnpfkey!='numInput')
+						'${vModel}' : '${label}不能为空',
+								#end
+							#end
+						#end
+					},
+				#end
+                },
+				interfaceRes:{
+					#foreach($html in ${context.fields})
+						#set($fieLdsModel = $html.formColumnModel.fieLdsModel)
+						#faceRes($fieLdsModel,'')
+					#end
+					#foreach($masetkey in $mastTableList.entrySet())
+						#set($fieldsAll = $masetkey.value)
+						#foreach($html in ${fieldsAll})
+							#set($fieLdsModel = $html.formMastTableModel.mastTable.fieLdsModel)
+							#faceRes($fieLdsModel,'')
+						#end
+					#end
+					#foreach($child in ${context.children})
+						#set($className = "${child.className.toLowerCase()}")
+						#foreach($childList in ${child.childList})
+							#set($fieLdsModel = $childList.fieLdsModel)
+							#faceRes($fieLdsModel,$className)
+						#end
+					#end
+				},
+				regList:{
+					#foreach($child in ${context.children})
+						#set($className = "${child.className.toLowerCase()}")
+					${className}List:{
+							#foreach($html in ${child.childList})
+								#set($fieLdsModel = ${html.fieLdsModel})
+								#set($vModel = "${fieLdsModel.vModel}")
+								#set($config = ${fieLdsModel.config})
+								#set($listSize=$!{config.regList})
+								#set($jnpfkey = "${config.jnpfKey}")
+								#set($label = "${config.label}")
+								#if($vModel)
+						${vModel}: [
+							#if($listSize && $listSize.size()>0)
+								#foreach($regList in ${config.regList})
+							{
+								pattern: ${regList.pattern},
+								message: '${label}${regList.message}',
+							},
+								#end
+							#end
+						],
+							#end
+						#end
+					},
+					#end
+				},
+				ableAll:{
+					#foreach($html in ${context.fields})
+						#set($fieLdsModel = $html.formColumnModel.fieLdsModel)
+						#appableAll($fieLdsModel,'')
+					#end
+					#foreach($masetkey in $mastTableList.entrySet())
+						#set($fieldsAll = $masetkey.value)
+						#foreach($html in ${fieldsAll})
+							#set($fieLdsModel = $html.formMastTableModel.mastTable.fieLdsModel)
+							#appableAll($fieLdsModel,'')
+						#end
+					#end
+					#foreach($child in ${context.children})
+						#set($className = "${child.className.toLowerCase()}")
+						#foreach($childList in ${child.childList})
+							#set($fieLdsModel = $childList.fieLdsModel)
+							#appableAll($fieLdsModel,$className)
+						#end
+					#end
+				},
+				childIndex:-1,
+				dataValue:{},
+				isEdit:false,
+				userInfo:{},
+				formatType:{"yyyy":"yyyy","yyyy-MM":"yyyy-mm","yyyy-MM-dd":"yyyy-mm-dd","yyyy-MM-dd HH:mm":"yyyy-mm-dd hh:MM","yyyy-MM-dd HH:mm:ss":"yyyy-mm-dd hh:MM:ss","HH:mm:ss":"hh:MM:ss","HH:mm":"hh:MM"},
+            }
+        },
+        onLoad(option) {
+        	uni.$on('linkPageConfirm', (subVal) => {
+        		if(this.tableKey){
+					subVal.forEach(t => this.${context.formModel}[this.tableKey].push(t))
+				}
+			})
+			this.jurisdictionType = option.jurisdictionType
+        	this.menuId=option.menuId
+			this.userInfo = uni.getStorageSync('userInfo') || {}
+            this.${context.formModel}.${pKeyName} = option.id || 0
+			#set($detail = "详情")
+			#set($add = "新增")
+			#set($edit = "编辑")
+			#foreach($btns in ${context.columnBtnsList})
+				#if(${btns.value}=='detail')
+					#set($detail = "${btns.label}")
+				#end
+				#if(${btns.value}=='add')
+					#set($add = "${btns.label}")
+				#end
+				#if(${btns.value}=='edit')
+					#set($edit = "${btns.label}")
+				#end
+			#end
+			let _title = ""
+			if(option.jurisdictionType =='btn_edit'){
+				_title = "${edit}"
+			}
+			if(option.jurisdictionType =='btn_detail'){
+				_title = "${detail}"
+			}
+			if(option.jurisdictionType =='btn_add'){
+				_title = "${add}"
+			}
+            uni.setNavigationBarTitle({
+                title: _title
+            })
+            this.selfInit()
+			this.initDefaultData()
+            this.dataAll()
+            this.initData()
+			this.dataValue = JSON.parse(JSON.stringify(this.${context.formModel}))
+			this.idList = option.idList?option.idList.split(","):[]
+			for(let i=0;i<this.idList.length;i++){
+				if(this.idList[i]==option.id){
+					this.index = i;
+				}
+			}
+			if (!option.id) {
+				this.actionList.push({
+					text: '确定并新增',
+					id: 'save_add'
+				})
+			} else {
+				let upper={
+					text: '上一条',
+					id: 'upper',
+					disabled: this.index==0?true:false
+				}
+				this.actionList.push(upper)
+				let lower={
+					text: '下一条',
+					id: 'lower',
+					disabled: this.index==this.idList.length-1?true:false
+				}
+				this.actionList.push(lower)
+				this.actionList.push( {
+					text: '确定并继续',
+					id: 'save_proceed'
+				})
+			}
+        },
+        onReady() {
+            #set($rulesAll = "this."+${context.formRules})
+			this.$nextTick(()=>{
+				setTimeout(()=>{
+					this.$refs.${context.formModel}.setRules(${rulesAll});
+				},100)
+			})
+        },
+        watch:{
+        	dataForm: {
+				handler(val, oldVal) {
+				#foreach($child in ${context.children})
+					#set($className = "${child.className.toLowerCase()}")
+					this.${className}()
+				#end
+				},
+				deep: true
+			}
+        },
+        methods:{
+			handleAction(index) {
+				if (this.actionList[index].id === 'save_add' || this.actionList[index].id === 'save_proceed') {
+					this.submitForm(1)
+				} else {
+					this.calculation(this.actionList[index].id, index)
+				}
+			},
+			calculation(type, index) {
+				if (type === 'upper') {
+					this.index--
+					this.actionList[index + 1].disabled = false
+					if (this.index == 0) this.actionList[index].disabled = true
+				} else {
+					this.index++
+					this.actionList[index - 1].disabled = false
+					if (this.index == this.idList.length - 1) this.actionList[index].disabled = true
+				}
+				this.${context.formModel}.${pKeyName} = this.idList[this.index]
+				this.initData()
+			},
+			 changeData(model, index) {
+				this.isEdit = false
+				this.childIndex = index
+				let modelAll = model.split("-");
+				let faceMode = "";
+				for (let i = 0; i < modelAll.length; i++) {
+					faceMode += modelAll[i];
+				}
+				for (let key in this.interfaceRes) {
+					if (key != faceMode) {
+						let faceReList = this.interfaceRes[key]
+						for (let i = 0; i < faceReList.length; i++) {
+							if (faceReList[i].relationField == model) {
+								let options = 'get' + key + 'Options';
+								if(this[options]){
+									this[options]()
+								}
+								this.changeData(key, index)
+							}
+						}
+					}
+				}
+			},
+			changeDataFormData(type, data, model,index,defaultValue) {
+				if(!this.isEdit) {
+					if (type == 2) {
+						for (let i = 0; i < this.${context.formModel}[data].length; i++) {
+							if (index == -1) {
+								this.${context.formModel}[data][i][model] = defaultValue
+							} else if (index == i) {
+								this.${context.formModel}[data][i][model] = defaultValue
+							}
+						}
+					} else {
+						this.${context.formModel}[data] = defaultValue
+					}
+				}
+			},
+			clickIcon(label,tipLabel) {
+				uni.showModal({
+					title: label || '',
+					content: tipLabel || '',
+					showCancel: false,
+				});
+			},
+        	checkChildRule() {
+				let title = [];
+				let _ruleList = this.ruleList
+				for (let k in _ruleList) {
+					let childData = this.${context.formModel}[k]
+					childData.forEach((item, index) => {
+						for (let model in _ruleList[k]) {
+							if (item[model] instanceof Array) {
+								if (item[model].length == 0) {
+									title.push(_ruleList[k][model])
+								}
+							} else if (!item[model]) {
+								title.push(_ruleList[k][model])
+							}
+						}
+					})
+				}
+				let _regList = this.regList
+				for (let k in _regList) {
+					let childData = this.${context.formModel}[k]
+					for(let n in _regList[k]){
+						for(let i=0;i<_regList[k][n].length;i++){
+							const element = _regList[k][n][i]
+							if (element.pattern) {
+								element.pattern = element.pattern.toString()
+								let start = element.pattern.indexOf('/')
+								let stop = element.pattern.lastIndexOf('/')
+								let str = element.pattern.substring(start + 1, stop)
+								let reg = new RegExp(str)
+								element.pattern = reg
+							}
+							childData.forEach((item, index) => {
+								if(item[n] && !element.pattern.test(item[n])){
+									title.push(element.message)
+								}
+							})
+						}
+					}
+				}
+				if (title.length > 0) {
+					return title[0]
+				}
+			},
+			resetForm(){
+				uni.navigateBack()
+			},
+			dataAll(){
+			    #foreach($html in ${context.fields})
+			        #set($fieLdsModel = $html.formColumnModel.fieLdsModel)
+			        #options($fieLdsModel,'')
+			    #end
+				#foreach($masetkey in $mastTableList.entrySet())
+					#set($fieldsAll = $masetkey.value)
+					#foreach($html in ${fieldsAll})
+						#set($fieLdsModel = $html.formMastTableModel.mastTable.fieLdsModel)
+						#options($fieLdsModel,'')
+					#end
+				#end
+			    #foreach($child in ${context.children})
+					#set($className = "${child.className.toLowerCase()}")
+			        #foreach($childList in ${child.childList})
+			            #set($fieLdsModel = $childList.fieLdsModel)
+						#options($fieLdsModel,$className)
+			        #end
+			    #end
+			},
+			dateTime(timeRule, timeType, timeTarget, timeValueData, dataValue) {
+			  let timeDataValue = null;
+			  let timeValue = Number(timeValueData)
+			  if (timeRule) {
+				if (timeType == 1) {
+				  timeDataValue = timeValue
+				} else if (timeType == 2) {
+				  timeDataValue = dataValue
+				} else if (timeType == 3) {
+				  timeDataValue = new Date().getTime()
+				} else if (timeType == 4) {
+				  let previousDate = '';
+				  if (timeTarget == 1 || timeTarget == 2) {
+					previousDate = getDateDay(timeTarget, timeType, timeValue)
+					timeDataValue = new Date(previousDate).getTime()
+				  } else if (timeTarget == 3) {
+					previousDate = getBeforeData(timeValue)
+					timeDataValue = new Date(previousDate).getTime()
+				  } else {
+					timeDataValue = getBeforeTime(timeTarget, timeValue).getTime()
+				  }
+				} else if (timeType == 5) {
+				  let previousDate = '';
+				  if (timeTarget == 1 || timeTarget == 2) {
+					previousDate = getDateDay(timeTarget, timeType, timeValue)
+					timeDataValue = new Date(previousDate).getTime()
+				  } else if (timeTarget == 3) {
+					previousDate = getLaterData(timeValue)
+					timeDataValue = new Date(previousDate).getTime()
+				  } else {
+					timeDataValue = getLaterTime(timeTarget, timeValue).getTime()
+				  }
+				}
+			  }
+			  return timeDataValue;
+			},
+			time(timeRule, timeType, timeTarget, timeValue, formatType, dataValue) {
+			  let format = formatType == 'HH:mm' ? 'HH:mm:00' : formatType
+			  let timeDataValue = null
+			  if (timeRule) {
+				if (timeType == 1) {
+				  timeDataValue = timeValue || '00:00:00'
+				  if (timeDataValue.split(':').length == 3) {
+					timeDataValue = timeDataValue
+				  } else {
+					timeDataValue = timeDataValue + ':00'
+				  }
+				} else if (timeType == 2) {
+				  timeDataValue = dataValue
+				} else if (timeType == 3) {
+				  timeDataValue = this.jnpf.toDate(new Date(), format)
+				} else if (timeType == 4) {
+				  let previousDate = '';
+				  previousDate = getBeforeTime(timeTarget, timeValue)
+				  timeDataValue = this.jnpf.toDate(previousDate, format)
+				} else if (timeType == 5) {
+				  let previousDate = '';
+				  previousDate = getLaterTime(timeTarget, timeValue)
+				  timeDataValue = this.jnpf.toDate(previousDate, format)
+				}
+			  }
+			  return timeDataValue;
+			},
+            #foreach($fields in ${context.fields})
+                #set($fieLdsModel = $fields.formColumnModel.fieLdsModel)
+				#optionsData($fieLdsModel,'')
+            #end
+			#foreach($masetkey in $mastTableList.entrySet())
+				#set($fieldsAll = $masetkey.value)
+				#foreach($fields in ${fieldsAll})
+					#set($fieLdsModel = $fields.formMastTableModel.mastTable.fieLdsModel)
+					#optionsData($fieLdsModel,'')
+				#end
+			#end
+            #foreach($child in ${context.children})
+				#set($className = "${child.className.toLowerCase()}")
+			${className}(){
+				let table = this.${context.formModel}.${className}List
+				let summaryField =${child.summaryField}
+				let summaryFieldName =${child.summaryFieldName}
+				let data ={}
+				let thousandsField = ${child.thousandsField}
+				for (let i in summaryField) {
+					let map = {}
+					let val = 0
+					for (let j = 0; j < table.length; j++) {
+						let summary = table[j][summaryField[i]];
+						if (summary) {
+							let data = isNaN(summary) ? 0 :	Number(summary)
+							val += data
+						}
+					}
+					map.id = summaryField[i];
+					map.name = summaryFieldName[summaryField[i]];
+					map.val = thousandsField.includes(summaryField[i])? Number(val).toLocaleString('zh', {maximumFractionDigits: '2',minimumFractionDigits: '2'}):  Number(val).toFixed(2);
+					data[summaryField[i]]=map;
+				}
+				return data;
+			},
+                #foreach($childList in ${child.childList})
+					#set($className = "${child.className.toLowerCase()}")
+                    #set($fieLdsModel = $childList.fieLdsModel)
+					#optionsData($fieLdsModel,$className)
+                #end
+            #end
+			#foreach($fieLdsModel in ${context.form})
+				#set($jnpfkey = "${fieLdsModel.jnpfKey}")
+				#set($isEnd = "${fieLdsModel.isEnd}")
+				#set($formModel = ${fieLdsModel.formModel})
+				#set($outermost = ${formModel.outermost})
+				#if($jnpfkey=='tab')
+					#if(${isEnd}=='0')
+						#if(${outermost}=='0')
+			${formModel.model}(index) {
+				this.${formModel.model}Current = index;
+			},
+						#end
+					#end
+				#end
+			#end
+            initData(){
+            	#set($nextTick='$'+"nextTick")
+				this.$nextTick(function(){
+					if (this.${context.formModel}.${pKeyName}) {
+						this.loading = true
+						request({
+							url: '/api/${context.module}/${context.className}/'+this.${context.formModel}.${pKeyName},
+							method: 'get',
+						}).then(res => {
+							this.dataInfo(res.data)
+							this.loading = false
+						})
+					}else {
+						this.initDefaultData()
+					}
+				})
+            },
+            submitForm(type){
+                var _data = this.dataList()
+                #set($refs = '$'+"refs")
+                this.${refs}.${context.formModel}.validate(valid => {
+                    if (!valid) return
+                    #set($ruls='$'+"u")
+                    if (!!this.checkChildRule()) return this.${ruls}.toast(
+						this.checkChildRule()
+					)
+                    this.btnLoading = true
+                    if (this.${context.formModel}.${pKeyName}) {
+                        request({
+                            url: '/api/${context.module}/${context.className}/' + this.${context.formModel}.${pKeyName},
+                            method: 'put',
+                            data: _data,
+                        }).then(res => {
+                            uni.showToast({
+                                title: res.msg,
+                                complete: () => {
+                                    setTimeout(() => {
+										if(type!=1){
+											uni.$emit('refresh')
+											uni.navigateBack()
+										}
+                                        this.btnLoading = false
+                                    }, 1500)
+                                }
+                            })
+                        }).catch(() => {
+							this.btnLoading = false
+						})
+                    }else {
+                        request({
+                            url: '/api/${context.module}/${context.className}',
+                            method: 'post',
+                            data: _data,
+                        }).then(res => {
+                            uni.showToast({
+                                title: res.msg,
+                                complete: () => {
+                                    setTimeout(() => {
+										if(type==1){
+											this.${context.formModel} = JSON.parse(JSON.stringify(this.dataValue))
+											this.initDefaultData()
+										}else{
+											uni.$emit('refresh')
+											uni.navigateBack()
+										}
+										this.btnLoading = false
+                                    }, 1500)
+                                }
+                            })
+                        }).catch(() => {
+							this.btnLoading = false
+						})
+                    }
+                });
+            },
+			initDefaultData() {
+				#foreach($html in ${context.fields})
+					#set($fieLdsModel = $html.formColumnModel.fieLdsModel)
+					#set($formModel='this.'+${context.formModel})
+					#initDefaultData('mast',$fieLdsModel,${formModel})
+				#end
+				#foreach($masetkey in $mastTableList.entrySet())
+					#set($fieldsAll = $masetkey.value)
+					#foreach($html in ${fieldsAll})
+						#set($fieLdsModel = $html.formMastTableModel.mastTable.fieLdsModel)
+						#set($formModel='this.'+${context.formModel})
+						#initDefaultData('mastTable',$fieLdsModel,${formModel})
+					#end
+				#end
+			},
+            selfInit() {
+                #foreach($child in ${context.children})
+					#set($className = "${child.className.toLowerCase()}")
+					#if($child.addType==0)
+				this.add${className}List()
+                	#end
+                #end
+                this.$store.commit('base/UPDATE_RELATION_DATA', {})
+            },
+            #foreach($child in ${context.children})
+				#set($className = "${child.className.toLowerCase()}")
+            add${className}List(){
+            	this.tableKey = '${className}List';
+            	#if($child.addType==1)
+            	let _addTableConf =${child.addTableConf}
+            	let data = {
+					addTableConf: _addTableConf,
+					formData: this.${context.formModel}
+				}
+				uni.navigateTo({
+					url: '/pages/apply/tableLinkage/index?data=' + encodeURIComponent(JSON.stringify(data))
+				})
+				return
+            	#end
+				let item = {
+					#foreach($childData in ${child.childList})
+						#set($fieLdsModel = ${childData.fieLdsModel})
+						#set($vModel = "${fieLdsModel.vModel}")
+						#set($config = ${fieLdsModel.config})
+						#set($dataType = "${config.dataType}")
+						#if($vModel)
+							#if($!config.valueType=='String')
+					$!{vModel} : "$!{config.defaultValue}",
+							#elseif($!config.valueType=='undefined')
+					$!{vModel} : '',
+							#else
+					$!{vModel} : $!{config.defaultValue},
+							#end
+							#if(${dataType}=='dictionary' || ${dataType}=='dynamic')
+					${vModel}Options:[],
+							#end
+						#end
+					#end
+				}
+				this.${context.formModel}.${className}List.push(item)
+				#foreach($childData in ${child.childList})
+					#set($fieLdsModel = ${childData.fieLdsModel})
+					#set($formModel='this.'+${context.formModel}+"."+${className}+"List[this."+${context.formModel}+"."+${className}+"List.length - 1]")
+					#initDefaultData('table',$fieLdsModel,${formModel})
+				#end
+				this.childIndex=this.${context.formModel}.${className}List.length-1
+					#foreach($childList in ${child.childList})
+						#set($fieLdsModel = $childList.fieLdsModel)
+						#set($vModel = "${fieLdsModel.vModel}")
+						#set($field = "${fieLdsModel.vModel}")
+						#set($config = ${fieLdsModel.config})
+						#set($dataType = "${config.dataType}")
+						#if(${dataType}=='dynamic')
+				this.get${className}${vModel}Options()
+						#end
+					#end
+				this.childIndex = -1
+				this.collapse()
+            },
+            del${className}List(index) {
+                var that = this
+                uni.showModal({
+                    title: '提示',
+                    content: '确认删除该条信息吗？',
+                    success: function(res) {
+                    if (res.confirm) {
+                        that.${context.formModel}.${className}List.splice(index, 1);
+                        that.collapse()
+                    }
+                  }
+                })
+            },
+            #end
+			dataList(){
+				var _data = JSON.parse(JSON.stringify(this.${context.formModel}));
+				#foreach($html in ${context.fields})
+					#set($fieLdsModel = $html.formColumnModel.fieLdsModel)
+					#set($vModel = "${fieLdsModel.vModel}")
+					#set($field = "${fieLdsModel.vModel}")
+					#set($formModel = "_data")
+					#set($tableModel = "")
+					#if($vModel)
+						#dataList('mast' ${fieLdsModel} ${formModel} ${tableModel} ${field} ${vModel})
+					#end
+				#end
+				#foreach($masetkey in $mastTableList.entrySet())
+					#set($tableModel = $masetkey.key)
+					#set($fieldsAll = $masetkey.value)
+					#foreach($html in ${fieldsAll})
+						#set($mastTableModel = $html.formMastTableModel)
+						#set($fieLdsModel = $mastTableModel.mastTable.fieLdsModel)
+						#set($vModel = "${mastTableModel.vModel}")
+						#set($field = "${mastTableModel.field}")
+						#set($formModel = "_data")
+						#if($vModel)
+							#dataList('mastTable' ${fieLdsModel} ${formModel} ${tableModel} ${field} ${vModel})
+						#end
+					#end
+				#end
+				#foreach($child in ${context.children})
+					#set($className = "${child.className.toLowerCase()}")
+				for(let i=0;i<_data.${className}List.length;i++){
+				var _list = _data.${className}List[i];
+					#foreach($childList in ${child.childList})
+						#set($fieLdsModel = $childList.fieLdsModel)
+						#set($vModel = "${fieLdsModel.vModel}")
+						#set($field = "${fieLdsModel.vModel}")
+						#set($formModel = "_list")
+						#set($tableModel = "")
+						#if($vModel)
+							#dataList('table' ${fieLdsModel} ${formModel} ${tableModel} ${field} ${vModel})
+						#end
+					#end
+				}
+				#end
+				return _data;
+			},
+			dataInfo(dataAll){
+				let _dataAll =dataAll
+				#foreach($html in ${context.fields})
+					#set($fieLdsModel = $html.formColumnModel.fieLdsModel)
+					#set($vModel = "${fieLdsModel.vModel}")
+					#set($field = "${fieLdsModel.vModel}")
+					#set($formModel = "_dataAll")
+					#set($tableModel = "")
+					#if($vModel)
+						#dataInfo('mast' $fieLdsModel $formModel $tableModel $field $vModel)
+					#end
+				#end
+				#foreach($masetkey in $mastTableList.entrySet())
+					#set($tableModel = $masetkey.key)
+					#set($fieldsAll = $masetkey.value)
+					#foreach($html in ${fieldsAll})
+						#set($mastTableModel = $html.formMastTableModel)
+						#set($fieLdsModel = $html.formMastTableModel.mastTable.fieLdsModel)
+						#set($vModel = "${mastTableModel.vModel}")
+						#set($field = "${mastTableModel.field}")
+						#set($formModel = "_dataAll")
+						#if($vModel)
+							#dataInfo('mastTable' $fieLdsModel $formModel $tableModel $field $vModel)
+						#end
+					#end
+				#end
+				#foreach($child in ${context.children})
+					#set($className = "${child.className.toLowerCase()}")
+				for(let i=0;i<_dataAll.${className}List.length;i++){
+				var _list = _dataAll.${className}List[i];
+					#foreach($childList in ${child.childList})
+						#set($fieLdsModel = $childList.fieLdsModel)
+						#set($vModel = "${fieLdsModel.vModel}")
+						#set($field = "${fieLdsModel.vModel}")
+						#set($config = ${fieLdsModel.config})
+						#set($dataType = "${config.dataType}")
+						#set($jnpfkey = "${config.jnpfKey}")
+						#set($formModel = "_list")
+						#set($tableModel = "")
+						#if($vModel)
+							#dataInfo('table' $fieLdsModel $formModel $tableModel $field $vModel)
+						#end
+						#if(${dataType}=='dictionary' || ${dataType}=='dynamic')
+				_list.${vModel}Options=[]
+						#end
+						#if($jnpfkey=='date')
+				_list.${vModel} =  _list.${vModel}?  Number(_list.${vModel}) : ''
+						#end
+					#end
+				}
+				#end
+				this.${context.formModel}=_dataAll
+				#if($child.addType==0)
+					#foreach($child in ${context.children})
+					#set($className = "${child.className.toLowerCase()}")
+				if(this.${context.formModel}.${className}List.length==0){
+					this.add${className}List()
+				}
+					#end
+				#end
+				this.isEdit = true
+				this.dataAll()
+				#foreach($child in ${context.children})
+					#set($className = "${child.className.toLowerCase()}")
+				for(let i=0;i<_dataAll.${className}List.length;i++){
+					this.childIndex = i
+						#foreach($childList in ${child.childList})
+							#set($fieLdsModel = $childList.fieLdsModel)
+							#set($vModel = "${fieLdsModel.vModel}")
+							#set($field = "${fieLdsModel.vModel}")
+							#set($config = ${fieLdsModel.config})
+							#set($dataType = "${config.dataType}")
+							#if(${dataType}=='dynamic')
+					this.get${className}${vModel}Options()
+							#end
+						#end
+				}
+				#end
+				this.childIndex=-1
+				this.collapse()
+			},
+			collapse(){
+				setTimeout(()=> {
+					#foreach($fieLdsModel in ${context.form})
+						#set($jnpfkey = "${fieLdsModel.jnpfKey}")
+						#set($isEnd = "${fieLdsModel.isEnd}")
+						#set($formModel = ${fieLdsModel.formModel})
+						#set($outermost = ${formModel.outermost})
+						#set($config=$formModel.config)
+						#if($jnpfkey=='collapse')
+							#if(${config.app}==true)
+								#if(${isEnd}=='0')
+									#if(${outermost}=='0')
+					this.$refs.${formModel.model}Current && this.$refs.${formModel.model}Current.init()
+									#end
+								#end
+							#end
+						#end
+					#end
+				}, 100);
+			},
+        },
+    }
+
+</script>
+<style>
+	page{
+		background-color: #f0f2f6;
+	}
+</style>

@@ -1,0 +1,1772 @@
+#foreach($btn in ${btnsList})
+    #if(${btn.value}=='download')
+        #set($configValueUtil=1)
+    #end
+#end
+#set($peimaryKeyName = "${pKeyName.substring(0,1).toUpperCase()}${pKeyName.substring(1)}")
+#set($peimaryKeyname = "${pKeyName.substring(0,1).toLowerCase()}${pKeyName.substring(1)}")
+#set($needDynamic=["treeSelect","cascader"])
+#set($needToJsonStatic = ["cascader","checkbox"])
+#set($needToJsonMultiple = ["select","treeSelect"])
+#macro(List)
+    #set($index=0)
+        //处理id字段转名称，若无需转或者为空可删除
+
+    List<${Name}ListVO> listVO=JsonUtil.getJsonToList(list,${Name}ListVO.class);
+    #set($nameVO = "${name}VO")
+    for(${Name}ListVO $nameVO:listVO){
+        ActionResult info = info(${nameVO}.get${peimaryKeyName}());
+        Map<String, Object> dataMap = JsonUtil.entityToMap(info.getData());
+        #DataChange($nameVO,$system,'','edit')
+        #foreach($child in ${columnChildren})
+            #if($snowflake)
+                ${child.modelUpName}Entity  ${child.modelLowName}Entity = ${name}Service.get${child.modelUpName}(${name}VO.get${peimaryKeyName}());
+            #else
+                ${child.modelUpName}Entity  ${child.modelLowName}Entity = ${name}Service.get${child.modelUpName}(${name}VO.getFlowtaskid());
+            #end
+	if(ObjectUtil.isNotEmpty(${child.modelLowName}Entity)){
+            #set($childListVOName = "${child.modelLowName}ListVO")
+            ${child.modelUpName}ListVO  $childListVOName = JsonUtil.getJsonToBean(${child.modelLowName}Entity,${child.modelUpName}ListVO.class);
+            #set($childSystem = ${child.fieLdsModels})
+            #DataChange($childListVOName ,$childSystem,'mast','edit')
+            #set($ListVoUpName = "${child.TableName.substring(0,1).toUpperCase()}${child.TableName.substring(1).toLowerCase()}")
+            ${name}VO.set${ListVoUpName}($childListVOName);
+			}
+        #end
+		//子表数据转换
+    #foreach($grid in ${childtable})
+        #set($childTableName = "${grid.childList.aliasClassName.substring(0,1).toUpperCase()}${grid.childList.aliasClassName.substring(1)}")
+        #set($childTableLowName = "${grid.childList.aliasClassName.substring(0,1).toLowerCase()}${grid.childList.aliasClassName.substring(1)}")
+        #if($snowflake)
+			List<${childTableName}Entity> ${childTableLowName}List = ${table.serviceName.substring(0,1).toLowerCase()}${table.serviceName.substring(1)}.get${childTableName}List(${name}VO.get${peimaryKeyName}(),${name}Pagination);
+		#else
+            List<${childTableName}Entity> ${childTableLowName}List = ${table.serviceName.substring(0,1).toLowerCase()}${table.serviceName.substring(1)}.get${childTableName}List(${name}VO.getFlowtaskid(),${name}Pagination);
+        #end
+				List<${childTableName}Model> ${childTableLowName}ModelList = JsonUtil.getJsonToList(${childTableLowName}List,${childTableName}Model.class);
+            int ${childTableLowName}Num = 0;
+				for(${childTableName}Model ${childTableLowName}Model : ${childTableLowName}ModelList){
+        #set($entity = "${childTableLowName}Model")
+        #foreach($child in  ${grid.childList.childList})
+            #set($field = ${child.fieLdsModel})
+            #if($field.vModel!= '')
+                #set($key = ${field.config.jnpfKey})
+                #set($model = "${field.vModel.substring(0,1).toUpperCase()}${field.vModel.substring(1)}")
+                #set($fieldName=${field.vModel})
+                #set($isMutiple = ${field.multiple})
+                #set($FieldName="${field.vModel.substring(0,1).toUpperCase()}${field.vModel.substring(1)}")
+                #if(${field.config.dataType}=='dictionary' && ${field.config.dictionaryType})
+                    ${entity}.set${FieldName}(generaterSwapUtil.getDicName(${entity}.get${FieldName}(),"${field.config.dictionaryType}","${field.props.props.value}",$isMutiple,"$!{field.separator}"));
+                #elseif(${field.config.dataType}=='dynamic' && ${field.config.propsUrl})
+                    #set($label=${field.props.propsModel.label})
+                    #set($value=${field.props.propsModel.value})
+                    #set($children = ${field.props.propsModel.children})
+                    #if($!{field.config.props})
+                        #set($label= ${field.config.props.label})
+                        #set($value= ${field.config.props.value})
+                    #end
+                    #if(${key}=='cascader')
+                        ${entity}.set${FieldName}(generaterSwapUtil.getDynName("${field.config.propsUrl}" ,"${label}" ,"${value}","$!{children}" ,${entity}.get${FieldName}(),${isMutiple},${field.showAllLevels},${field.templateJson},${childTableLowName}Num,dataMap));
+                    #else
+                        #if(${key}=='checkbox')
+                            #set($isMutiple=true)
+                        #end
+                        ${entity}.set${FieldName}(generaterSwapUtil.getDynName("${field.config.propsUrl}" ,"${label}" ,"${value}","$!{children}" ,${entity}.get${FieldName}(),${isMutiple},true,${field.templateJson},${childTableLowName}Num,dataMap));
+                    #end
+                #end
+                #if(${key}=='createUser'||${key}=='modifyUser')
+                    ${entity}.set${model}(generaterSwapUtil.userSelectValue(${entity}.get${model}()));
+                #elseif(${key}=='currOrganize')
+                    ${entity}.set${model}(generaterSwapUtil.comSelectValue(${entity}.get${model}(), "${field.showLevel}"));
+                #elseif(${key}=='currPosition')
+                    ${entity}.set${model}(generaterSwapUtil.posSelectValue(${entity}.get${model}()));
+                #elseif(${key}=='address')
+                    ${entity}.set${model}(generaterSwapUtil.provinceData(${entity}.get${model}()));
+                #elseif(${key}=='comSelect'||${key}=='depSelect')
+                    ${entity}.set${model}(generaterSwapUtil.comSelectValues(${entity}.get${FieldName}(),$isMutiple));
+                    #set($comSelectCount=${comSelectCount}+1)
+                #elseif(${key}=='posSelect')
+                    ${entity}.set${model}(generaterSwapUtil.posSelectValues(${entity}.get${FieldName}()));
+                #elseif(${key}=='userSelect')
+                    ${entity}.set${model}(generaterSwapUtil.userSelectValues(${entity}.get${FieldName}()));
+                #elseif(${key}=='usersSelect')
+                    ${entity}.set${model}(generaterSwapUtil.usersSelectValues(${entity}.get${FieldName}()));
+                #elseif(${key}=='groupSelect')
+                    ${entity}.set${model}(generaterSwapUtil.getGroupSelect(${entity}.get${FieldName}()));
+                #elseif(${key}=='roleSelect')
+                    ${entity}.set${model}(generaterSwapUtil.getRoleSelect(${entity}.get${FieldName}()));
+                #elseif(${key}=='numInput')
+                    ${entity}.set${FieldName}_name(generaterSwapUtil.getDecimalStr(${entity}.get${FieldName}()));
+                #elseif(${key}=='switch')
+                    #set($activeTxt = ${field.activeTxt})
+                    #set($inactiveTxt = ${field.inactiveTxt})
+                    ${entity}.set${model}(generaterSwapUtil.switchSelectValue(${entity}.get${FieldName}() ,"$activeTxt" ,"$inactiveTxt"));
+                #elseif(${key}=='relationForm')
+                    ${entity}.set${model}_id(${entity}.get${FieldName}());
+										Map<String,Object> ${childTableLowName}${fieldName}Map = new HashMap<>();
+                    ${entity}.set${model}(generaterSwapUtil.swapRelationFormValue("${field.relationField}",${entity}.get${FieldName}(),"${field.modelId}",${childTableLowName}${fieldName}Map));
+                #elseif(${key}=='popupSelect' || ${key}=='popupTableSelect')
+										Map<String,Object> ${childTableLowName}${fieldName}Map = new HashMap<>();
+                    ${entity}.set${model}(generaterSwapUtil.getPopupSelectValue("${field.interfaceId}","${field.propsValue}","${field.relationField}",${entity}.get${FieldName}(),${childTableLowName}${fieldName}Map,${field.templateJson},${childTableLowName}Num,dataMap));
+                #elseif(${key}=='uploadFz' || ${key}=='uploadImg')
+                    ${entity}.set${model}(generaterSwapUtil.getFileNameInJson(${entity}.get${FieldName}()));
+                #end
+            #end
+        #end
+        #foreach($child in  ${grid.childList.childList})
+            #set($field = ${child.fieLdsModel})
+            #set($key = ${field.config.jnpfKey})
+            #if($key == "relationFormAttr" || $key == "popupAttr")
+                #if(${field.config.isStorage}==1)
+                #set($atrributeName = "${field.relationField}_${field.showField}")
+                #set($model = "${atrributeName.substring(0,1).toUpperCase()}${atrributeName.substring(1)}")
+                    ${entity}.set${model}(${childTableLowName}${field.relationField}Map.get("${field.showField}") !=null
+                    ? ${childTableLowName}${field.relationField}Map.get("${field.showField}").toString() : "");
+                #end
+            #end
+        #end
+        ${childTableLowName}Num++;
+				}
+            ${name}VO.set${childTableName}List(${childTableLowName}ModelList);
+    #end
+     }
+
+#end
+
+#macro(DataChange $entity $systemList,$isMast,$isEdit)
+    #set($currtCountList=1)
+    #set($userCountList=1)
+    #set($dateRangeCount=1)
+    #set($comSelectCount=1)
+    #set($jnpf='jnpf')
+    #set($editNeedName = "")
+    #if($isEdit)
+        #set($editNeedName = "_name")
+    #end
+#foreach($field in ${systemList})
+    #set($fieldName=${field.vModel})
+    #if($fieldName != '')
+        #set($isMutiple = ${field.multiple})
+        #set($key = ${field.config.jnpfKey})
+        #set($FieldName="${field.vModel.substring(0,1).toUpperCase()}${field.vModel.substring(1)}")
+        #set($model = "${field.vModel.substring(0,1).toUpperCase()}${field.vModel.substring(1)}$editNeedName")
+        #if(${field.config.dataType}=='dictionary' && ${field.config.dictionaryType})
+            ${entity}.set${model}(generaterSwapUtil.getDicName(${entity}.get${FieldName}(),"${field.config.dictionaryType}","${field.props.props.value}",$isMutiple,"$!{field.separator}"));
+        #elseif(${field.config.dataType}=='dynamic' && ${field.config.propsUrl})
+            #set($label=${field.props.propsModel.label})
+            #set($value=${field.props.propsModel.value})
+            #set($children = ${field.props.propsModel.children})
+            #if($!{field.config.props})
+                #set($label= ${field.config.props.label})
+                #set($value= ${field.config.props.value})
+            #end
+            #if(${key}=='cascader')
+                ${entity}.set${model}(generaterSwapUtil.getDynName("${field.config.propsUrl}" ,"${label}" ,"${value}","$!{children}" ,${entity}.get${FieldName}(),${isMutiple},${field.showAllLevels},${field.templateJson},-1,dataMap));
+            #else
+                #if(${key}=='checkbox')
+                    #set($isMutiple=true)
+                #end
+                ${entity}.set${model}(generaterSwapUtil.getDynName("${field.config.propsUrl}" ,"${label}" ,"${value}","$!{children}" ,${entity}.get${FieldName}(),${isMutiple},true,${field.templateJson},-1,dataMap));
+            #end
+        #else
+            #if(${key}=='createUser'||${key}=='modifyUser')
+                ${entity}.set${model}(generaterSwapUtil.userSelectValue(${entity}.get${FieldName}()));
+            #elseif(${key}=='currOrganize')
+                ${entity}.set${model}(generaterSwapUtil.comSelectValue(${entity}.get${FieldName}(), "${field.showLevel}"));
+            #elseif(${key}=='currPosition')
+                ${entity}.set${model}(generaterSwapUtil.posSelectValue(${entity}.get${FieldName}()));
+            #elseif(${key}=='address')
+                ${entity}.set${model}(generaterSwapUtil.provinceData(${entity}.get${FieldName}()));
+            #elseif(${key}=='comSelect'||${key}=='depSelect')
+                ${entity}.set${model}(generaterSwapUtil.comSelectValues(${entity}.get${FieldName}(),$isMutiple));
+                #set($comSelectCount=${comSelectCount}+1)
+            #elseif(${key}=='posSelect')
+                ${entity}.set${model}(generaterSwapUtil.posSelectValues(${entity}.get${FieldName}()));
+            #elseif(${key}=='userSelect')
+                ${entity}.set${model}(generaterSwapUtil.userSelectValues(${entity}.get${FieldName}()));
+            #elseif(${key}=='usersSelect')
+                ${entity}.set${model}(generaterSwapUtil.usersSelectValues(${entity}.get${FieldName}()));
+             #elseif(${key}=='groupSelect')
+                ${entity}.set${model}(generaterSwapUtil.getGroupSelect(${entity}.get${FieldName}()));
+            #elseif(${key}=='roleSelect')
+                ${entity}.set${model}(generaterSwapUtil.getRoleSelect(${entity}.get${FieldName}()));
+            #elseif(${key}=='numInput')
+                ${entity}.set${FieldName}_name(generaterSwapUtil.getDecimalStr(${entity}.get${FieldName}()));
+            #elseif(${key}=='switch')
+                #set($activeTxt = ${field.activeTxt})
+                #set($inactiveTxt = ${field.inactiveTxt})
+                ${entity}.set${model}(generaterSwapUtil.switchSelectValue(${entity}.get${FieldName}() ,"$activeTxt" ,"$inactiveTxt"));
+            #elseif(${key}=='relationForm')
+                #set($MapName =${fieldName})
+                #if($isMast == 'mast')
+                    #set($MapName = "jnpf_${field.config.tableName}_jnpf_${fieldName}")
+                #end
+
+                ${entity}.set${field.vModel.substring(0,1).toUpperCase()}${field.vModel.substring(1)}_id(${entity}.get${model}());
+
+								Map<String,Object> ${MapName}Map = new HashMap<>();
+                ${entity}.set${model}(generaterSwapUtil.swapRelationFormValue("${field.relationField}",${entity}.get${FieldName}(),"${field.modelId}",${MapName}Map));
+            #elseif(${key}=='popupSelect' || ${key}=='popupTableSelect')
+                #set($MapName =${fieldName})
+                #if($isMast == 'mast')
+                    #set($MapName = "jnpf_${field.config.tableName}_jnpf_${fieldName}")
+                #end
+								Map<String,Object> ${MapName}Map = new HashMap<>();
+                ${entity}.set${model}(generaterSwapUtil.getPopupSelectValue("${field.interfaceId}","${field.propsValue}","${field.relationField}",${entity}.get${FieldName}(),${MapName}Map,${field.templateJson},-1,dataMap));
+            #elseif(${key}=='uploadFz' || ${key}=='uploadImg')
+                ${entity}.set${model}(generaterSwapUtil.getFileNameInJson(${entity}.get${FieldName}()));
+            #elseif(${key}=='date' && $editNeedName == "_name")
+                ${entity}.set${model}(${entity}.get${FieldName}()!=null?
+                    new Date(${entity}.get${FieldName}()):null);
+            #else
+                ${entity}.set${model}(${entity}.get${FieldName}());
+            #end
+        #end
+
+    #end
+#end
+    #foreach($field in ${systemList})
+        #set($key = ${field.config.jnpfKey})
+        #if($key == "relationFormAttr" || $key == "popupAttr")
+            #set($attributeName = "${field.relationField}_${field.showField}")
+            #set($model = "${attributeName.substring(0,1).toUpperCase()}${attributeName.substring(1)}")
+            #set($relationName = "${field.relationField.substring(0,1).toUpperCase()}${field.relationField.substring(1)}")
+            #if(${field.config.isStorage}==1)
+                ${entity}.set${model}(${field.relationField}Map.get("${field.showField}") !=null ? ${field.relationField}Map.get("${field.showField}").toString() : "");
+            #end
+
+        #end
+    #end
+#end
+
+#macro(CreateField $List $MapKey $groupField)
+    #foreach($fieLdsModel in $List)
+        #set($html = $fieLdsModel.fieLdsModel)
+        #if($isMast)
+            #set($html = $fieLdsModel.formColumnModel.fieLdsModel)
+        #end
+        #set($vModel = "${html.vModel}")
+        #set($config = $html.config)
+        #set($jnpfkey = "${config.jnpfKey}")
+        #if($vModel != '')
+            #if($vModel == $groupField)
+                #if(${jnpfkey}!='JNPFText' && ${jnpfkey}!='divider')
+                    #if(${jnpfkey}=='numInput' || ${jnpfkey}=='calculate' )
+                        #if($!{fieLdsModel.formColumnModel.fieLdsModel.precision})
+                               #set($MapKey = "BigDecimal")
+                        #else
+                            #set($MapKey = "Integer")
+                        #end
+                    #elseif(${jnpfkey}=='slider'|| ${jnpfkey}=='rate')
+                        #set($MapKey = "Integer")
+                    #elseif(${jnpfkey}=='modifyTime' || ${jnpfkey}=='createTime')
+                        #set($MapKey = "Date")
+                    #elseif(${jnpfkey}=='date')
+                        #set($MapKey = "Date")
+                    #else
+                        #set($MapKey = "String")
+                    #end
+                #end
+            #end
+        #end
+    #end
+#end
+
+#macro(StaticDataSwap $tableType,$mapName,$lowName,$parentVModel)
+    #foreach($cf in ${listOptions})
+        #set($flag = true)
+        #set($prexName = "_name")
+        #if($!{parentVModel})
+            #set($flag = "${parentVModel}"=="${cf.config.parentVModel}")
+            #set($prexName = "")
+        #end
+        #if(${cf.tableType} == ${tableType} && $flag && ${cf.config.dataType} == 'static')
+                if (${mapName}.get("$!{lowName}${cf.vModel}") != null && StringUtil.isNotEmpty(${mapName}.get("$!{lowName}${cf.vModel}").toString())){
+            ${mapName}.put("$!{lowName}${cf.vModel}$!{prexName}" ,GeneraterSwapUtil.selectStaitcSwap(${mapName}.get("$!{lowName}${cf.vModel}" ).toString(),
+            ${cf.config.options},
+                "${cf.props.props.value}" ,"${cf.props.props.label}" ,${cf.multiple}));
+                }
+        #end
+        #if(${cf.tableType} == ${tableType} && $flag && ${cf.jnpfKey} == 'date')
+                if( ${mapName}.get("$!{lowName}${cf.vModel}") != null && StringUtil.isNotEmpty(${mapName}.get("$!{lowName}${cf.vModel}").toString())){
+            ${mapName}.put("$!{lowName}${cf.vModel}$!{prexName}",DateUtil.dateToString(
+                new Date(Long.parseLong(${mapName}.get("$!{lowName}${cf.vModel}").toString())),"${cf.format}"));
+                }
+        #end
+    #end
+#end
+
+package ${package.Controller};
+#set($serviceName = "${table.serviceName.substring(0,1).toLowerCase()}${table.serviceName.substring(1)}")
+#set($Name = "${genInfo.className.substring(0,1).toUpperCase()}${genInfo.className.substring(1)}")
+#set($name = "${genInfo.className.substring(0,1).toLowerCase()}${genInfo.className.substring(1)}")
+#set($packName = "${genInfo.className.toLowerCase()}")
+#set($searchListSize =$!{searchList})
+#set($columnListSize=$!{columnList})
+import cn.afterturn.easypoi.excel.ExcelExportUtil;
+import cn.afterturn.easypoi.excel.ExcelImportUtil;
+import cn.afterturn.easypoi.excel.entity.ExportParams;
+import cn.afterturn.easypoi.excel.entity.ImportParams;
+import cn.afterturn.easypoi.excel.entity.params.ExcelExportEntity;
+import cn.afterturn.easypoi.excel.entity.enmus.ExcelType;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
+import jnpf.annotation.JnpfField;
+import jnpf.base.ActionResult;
+import jnpf.base.vo.PageListVO;
+import jnpf.base.vo.PaginationVO;
+import jnpf.base.UserInfo;
+import jnpf.base.vo.DownloadVO;
+import jnpf.config.ConfigValueUtil;
+import jnpf.exception.DataException;
+import jnpf.onlinedev.model.ExcelImFieldModel;
+import jnpf.onlinedev.model.OnlineImport.ExcelImportModel;
+import jnpf.onlinedev.model.OnlineImport.VisualImportModel;
+import jnpf.permission.entity.UserEntity;
+#if(${DS})
+import com.baomidou.dynamic.datasource.annotation.DSTransactional;
+#else
+import org.springframework.transaction.annotation.Transactional;
+#end
+import jnpf.base.entity.ProvinceEntity;
+import ${modulePackageName}.model.${packName}.*;
+import ${modulePackageName}.model.${packName}.${Name}Pagination;
+import ${package.Entity}.*;
+#foreach($subfield in ${child})
+import ${package.Entity}.${subfield.className}Entity;
+#end
+import jnpf.util.*;
+import jnpf.base.util.*;
+import jnpf.base.vo.ListVO;
+import jnpf.util.context.SpringContext;
+import cn.hutool.core.util.ObjectUtil;
+import lombok.extern.slf4j.Slf4j;
+import lombok.Cleanup;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import ${package.Entity}.${Name}Entity;
+import ${package.Service}.${table.serviceName};
+#foreach($tableModel in ${child})
+#set($ChildName="${tableModel.className.substring(0,1).toUpperCase()}${tableModel.className.substring(1)}")
+#set($childName="${tableModel.className.substring(0,1).toLowerCase()}${tableModel.classNames.substring(1)}")
+import ${package.Entity}.${ChildName}Entity;
+import ${package.Service}.${ChildName}Service;
+#end
+#foreach($cl in ${columnChildren})
+import ${package.Service}.${cl.modelUpName}Service;
+#end
+import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.multipart.MultipartFile;
+import javax.validation.Valid;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import jnpf.util.GeneraterSwapUtil;
+import java.util.stream.Collectors;
+import java.util.*;
+
+#if(${isCloud}=="cloud")
+import jnpf.model.upload.UploadFileModel;
+import jnpf.file.FileApi;
+import jnpf.constant.FileTypeConstant;
+import jnpf.model.upload.UploadFileModel;
+import java.io.ByteArrayOutputStream;
+import jnpf.file.FileUploadApi;
+import org.apache.dubbo.config.annotation.DubboReference;
+#else
+#end
+import cn.xuyanwu.spring.file.storage.FileInfo;
+
+
+/**
+ *
+ * ${genInfo.description}
+ * @版本： ${genInfo.version}
+ * @版权： ${genInfo.copyright}
+ * @作者： ${genInfo.createUser}
+ * @日期： ${genInfo.createDate}
+ */
+@Slf4j
+@RestController
+@Tag(name = "${genInfo.description}" , description = "${module}")
+#if(${isCloud}=="cloud")
+@RequestMapping("/${genInfo.className}")
+#else
+@RequestMapping("/api/${module}/${genInfo.className}")
+#end
+public class ${table.controllerName} {
+
+    @Autowired
+    private GeneraterSwapUtil generaterSwapUtil;
+
+#if(${configValueUtil}==1)
+    @Autowired
+    private ConfigValueUtil configValueUtil;
+    #if(${isCloud}=="cloud")
+    @Autowired
+    private FileUploadApi fileUploadApi;
+
+    @Autowired
+	private FileApi fileApi;
+    #end
+#end
+
+    @Autowired
+    private UserProvider userProvider;
+
+
+    @Autowired
+    private ${table.serviceName} ${serviceName};
+
+    #foreach($tableModel in ${child})
+            #set($ChildName="${tableModel.className.substring(0,1).toUpperCase()}${tableModel.className.substring(1)}")
+            #set($childName="${tableModel.className.substring(0,1).toLowerCase()}${tableModel.className.substring(1)}")
+    @Autowired
+    private ${ChildName}Service ${childName}Service;
+    #end
+
+    #foreach($cl in  ${columnChildren})
+    @Autowired
+    private ${cl.modelUpName}Service ${cl.modelLowName}Service;
+    #end
+
+    /**
+     * 列表
+     *
+     * @param ${name}Pagination
+     * @return
+     */
+    @Operation(summary = "获取列表")
+	@PostMapping("/getList")
+    public ActionResult list(@RequestBody ${Name}Pagination ${name}Pagination)throws IOException{
+    //树形判断是否有参数，有参数不造树
+#if($treeTable == true)
+    #set($searchTypeList=$searchTypeModelList)
+    #foreach($search in ${searchTypeList})
+        #set($searchType = ${search.searchType})
+        #set($jnpfKey= ${search.jnpfKey})
+        #set($vModel =${search.vModel})
+        #set($lowModel = "${vModel.substring(0,1).toUpperCase()}${vModel.substring(1)}")
+        #set($label = ${search.label})
+            if(${name}Pagination.get${lowModel}()!=null && ${name}Pagination.get${lowModel}()!=""){
+                ${name}Pagination.setHasParam(true);
+            }
+    #end
+        if(StringUtil.isNotEmpty(${name}Pagination.getSuperQueryJson())){
+            ${name}Pagination.setHasParam(true);
+        }
+#end
+        List<${table.entityName}> list= ${serviceName}.getList(${name}Pagination);
+#List()
+        #if($groupTable == true)
+            #set($groupName="${groupField.substring(0,1).toUpperCase()}${groupField.substring(1)}")
+            List<Map<String, Object>> dataList = new ArrayList<>();
+            List<Map<String, Object>> dataListRes = new ArrayList<>();
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                String json = mapper.writeValueAsString(listVO);
+                dataList.addAll(JsonUtil.getJsonToListMap(json));
+                for (Map<String, Object> objectMap : dataList) {
+                    Map<String, Object> objectMapNew =new HashMap<>(objectMap);
+                    for (String key : objectMap.keySet()) {
+                        if (objectMap.get(key) instanceof Map) {
+                            Map<String, Object> childMap =(Map<String, Object>)objectMap.get(key);
+                            for (String childKey : childMap.keySet()) {
+                                objectMapNew.put("jnpf_"+key+"_jnpf_"+childKey,childMap.get(childKey));
+                            }
+                        }
+                    }
+                    dataListRes.add(objectMapNew);
+                }
+            }catch (Exception e){
+            }
+            PageListVO vo=new PageListVO();
+            List<${genInfo.className}GroupVO> result = new ArrayList<>();
+            Map<String, List<Map<String, Object>>> map = dataListRes.stream().collect(Collectors.groupingBy(t -> ObjectUtil.isNotEmpty(t.get("${groupField}_name"))?String.valueOf(t.get("${groupField}_name")):"") );
+            for(String key:map.keySet()){
+                ${genInfo.className}GroupVO groupVO = new ${genInfo.className}GroupVO();
+                groupVO.set${peimaryKeyName}(RandomUtil.uuId());
+                groupVO.setChildren(map.get(key));
+                groupVO.set${groupName}_name(key);
+                result.add(groupVO);
+                vo.setList(result);
+            }
+            return ActionResult.success(vo);
+
+         #elseif($treeTable == true && $treeLazyType==true)
+                 if (!${name}Pagination.isHasParam()) {
+                 for (int i = 0; i < listVO.size(); i++) {
+             ${Name}ListVO item = listVO.get(i);
+                 if (!StringUtil.isEmpty(item.get${parentField}())) {
+                 if (addChild(item, listVO) && listVO.size() > 0) {
+                 listVO.remove(item);
+                 i--;
+                 }
+                 }
+                 }
+                 }
+                 PageListVO vo=new PageListVO();
+                 vo.setList(listVO);
+                 return ActionResult.success(vo);
+         #else
+         PageListVO vo=new PageListVO();
+         vo.setList(listVO);
+         PaginationVO page=JsonUtil.getJsonToBean(${name}Pagination,PaginationVO.class);
+         vo.setPagination(page);
+         return ActionResult.success(vo);
+        #end
+
+    }
+#if($treeTable == true )
+//树形递归
+private static boolean addChild(${Name}ListVO node, List<${Name}ListVO> list) {
+        for (int i = 0; i < list.size(); i++) {
+    ${Name}ListVO n = list.get(i);
+        if (n.getId().equals(node.get${parentField}())) {
+        if (n.getChildren() == null) {
+        n.setChildren(new ArrayList<>());
+        }
+        List<${Name}ListVO> children = n.getChildren();
+        children.add(node);
+        n.setChildren(children);
+        return true;
+        }
+        if (n.getChildren() != null) {
+        List<${Name}ListVO> children = n.getChildren();
+        if (addChild(node, children)) {
+        return true;
+        }
+        }
+
+        }
+        return false;
+        }
+#end
+
+#foreach($btn in ${btnsList})
+    #if(${btn.value}=='add')
+    /**
+     * 创建
+     *
+     * @param ${name}Form
+     * @return
+     */
+    @PostMapping
+    #if(${DS})
+    @DSTransactional
+    #else
+    @Transactional
+    #end
+    @Operation(summary = "创建")
+    public ActionResult create(@RequestBody @Valid ${Name}Form ${name}Form) throws DataException {
+        String b = ${serviceName}.checkForm(${name}Form,0);
+        if (StringUtil.isNotEmpty(b)){
+         return ActionResult.fail(b + "不能重复");
+        }
+        String mainId =RandomUtil.uuId();
+
+        UserInfo userInfo=userProvider.get();
+		UserEntity userEntity = generaterSwapUtil.getUser(userInfo.getUserId());
+        GeneraterSwapUtil.swapDatetime(${name}Form);
+        #set($peimaryKeyName="${pKeyName.substring(0,1).toUpperCase()}${pKeyName.substring(1)}")
+    #foreach($field in ${system})
+        #set($model = "${field.vModel.substring(0,1).toUpperCase()}${field.vModel.substring(1)}")
+        #set($key = ${field.config.jnpfKey})
+        #if(${key}=='createUser')
+        ${name}Form.set${model}(userInfo.getUserId());
+        #elseif(${key}=='createTime')
+        ${name}Form.set${model}(DateUtil.getNow());
+        #elseif(${key}=='currOrganize')
+        ${name}Form.set${model}(StringUtil.isEmpty(userInfo.getDepartmentId()) ? userInfo.getOrganizeId() : userInfo.getDepartmentId());
+        #elseif(${key}=='currPosition')
+         ${name}Form.set${model}(userEntity.getPositionId());
+        #elseif(${key}=='billRule')
+        ${name}Form.set${model}(generaterSwapUtil.getBillNumber("${field.config.rule}", false));
+        #end
+    #end
+        ${Name}Entity entity = JsonUtil.getJsonToBean(${name}Form, ${Name}Entity.class);
+        #if($snowflake)
+            entity.set${peimaryKeyName}(mainId);
+        #else
+            entity.set${peimaryKeyName}(0);
+            entity.setFlowtaskid(mainId);
+        #end
+                ${name}Service.save(entity);
+        #foreach($grid in ${child})
+            #set($list = "${grid.className.substring(0,1).toUpperCase()}${grid.className.substring(1).toLowerCase()}")
+            #set($gridserviceName = "${grid.className.substring(0,1).toLowerCase()}${grid.className.substring(1)}")
+	 if (${name}Form.get${list}List()!=null){
+                List<${grid.className}Entity> ${grid.className}List = JsonUtil.getJsonToList(${name}Form.get${list}List(),${grid.className}Entity.class);
+                for(${grid.className}Entity entitys : ${grid.className}List){
+            #set($tableField = "${grid.tableField.substring(0,1).toUpperCase()}${grid.tableField.substring(1)}")
+            #set($relationField = "${grid.relationField.substring(0,1).toUpperCase()}${grid.relationField.substring(1)}")
+            #set($chidKeyName = "${grid.chidKeyName.substring(0,1).toUpperCase()}${grid.chidKeyName.substring(1)}")
+            #if($snowflake)
+                entitys.set${chidKeyName}(RandomUtil.uuId());
+                entitys.set${tableField}(entity.get${relationField}());
+            #else
+                entitys.set${chidKeyName}(0);
+                entitys.set${tableField}(entity.getFlowtaskid());
+            #end
+
+            #foreach($jnpfkey in ${grid.childList})
+               #if(${jnpfkey.fieLdsModel.vModel} != '')
+                #set($key = ${jnpfkey.fieLdsModel.config.jnpfKey})
+                #set($rule = ${jnpfkey.fieLdsModel.config.rule})
+                #set($model = "${jnpfkey.fieLdsModel.vModel.substring(0,1).toUpperCase()}${jnpfkey.fieLdsModel.vModel.substring(1)}")
+                #if(${key}=='createUser')
+					entitys.set${model}(userInfo.getUserId());
+                #elseif(${key}=='createTime')
+					entitys.set${model}(DateUtil.getNowDate());
+                #elseif(${key}=='currOrganize')
+					entitys.set${model}(StringUtil.isEmpty(userInfo.getDepartmentId()) ? userInfo.getOrganizeId() : userInfo.getDepartmentId());
+                #elseif(${key}=='currPosition')
+						entitys.set${model}(userEntity.getPositionId());
+                #elseif(${key}=='billRule')
+				entitys.set${model}(generaterSwapUtil.getBillNumber("${rule}",false));
+                #end
+               #end
+            #end
+                ${gridserviceName}Service.save(entitys);
+            }
+         }
+        #end
+
+        #if(${columnChildren.size()}>0)
+            //子表数据
+           #foreach($cl in  ${columnChildren})
+               #set($mainField = $cl.mainField)
+               #set($mainUpId = "${mainField.substring(0,1).toUpperCase()}${mainField.substring(1)}")
+               #set($oracleName = "${cl.TableName.substring(0,1).toUpperCase()}${cl.TableName.substring(1).toLowerCase()}")
+               if(ObjectUtil.isNotEmpty(${name}Form.get${oracleName}())){
+               ${cl.modelName}Entity  ${cl.tableName}entity = JsonUtil.getJsonToBean(${name}Form.get${oracleName}(), ${cl.modelName}Entity.class);
+
+				//自动生成的字段
+               #foreach($clModel in ${cl.fieLdsModelList})
+                   #set($model = "${clModel.field.substring(0,1).toUpperCase()}${clModel.field.substring(1)}")
+                   #set($jnpfkey =  ${clModel.mastTable.fieLdsModel.config.jnpfKey})
+                   #if(${jnpfkey}=='createUser')
+                       ${cl.tableName}entity.set${model}(userInfo.getUserId());
+                   #elseif(${jnpfkey}=='createTime')
+                       ${cl.tableName}entity.set${model}(DateUtil.getNowDate());
+                   #elseif(${jnpfkey}=='currOrganize')
+                       ${cl.tableName}entity.set${model}(StringUtil.isEmpty(userInfo.getDepartmentId()) ? userInfo.getOrganizeId() : userInfo.getDepartmentId());
+                   #elseif(${jnpfkey}=='currPosition')
+                       ${cl.tableName}entity.set${model}(userEntity.getPositionId());
+                   #elseif(${jnpfkey}=='billRule')
+                       #set($rule = ${clModel.mastTable.fieLdsModel.config.rule})
+                       ${cl.tableName}entity.set${model}(generaterSwapUtil.getBillNumber("$!{rule}",false));
+                   #end
+               #end
+               #if($snowflake)
+                   ${cl.tableName}entity.set${cl.relationUpField}(entity.get${cl.mainUpKey}());
+                   ${cl.tableName}entity.set${mainUpId}(mainId);
+               #else
+                   ${cl.tableName}entity.set${cl.relationUpField}(entity.getFlowtaskid());
+                   ${cl.tableName}entity.set${mainUpId}(0);
+               #end
+               ${cl.modelLowName}Service.save(${cl.tableName}entity);
+               }
+           #end
+        #end
+
+        return ActionResult.success("创建成功");
+}
+#end
+#macro(TemlateDownloadDemo $MapName $Field)
+    #set($key = $Field.config.jnpfKey)
+    #set($mul = $Field.multiple)
+    #set($level = $Field.level)
+    #set($vModel = $Field.vModel)
+    #if($Field.beforeVmodel)
+        #set($vModel = $Field.beforeVmodel)
+    #end
+    #if($key == "createUser" || $key == "modifyUser" || $key == "createTime" || $key == "modifyTime" || $key == "currOrganize" || $key == "currPosition" || $key == "currDept" || $key == "billRule")
+        ${MapName}.put("${vModel}", "系统自动生成");
+     #elseif($key == "comSelect")
+         #if($mul)
+             ${MapName}.put("${vModel}", "例:引迈信息/产品部,引迈信息/技术部");
+          #else
+              ${MapName}.put("${vModel}", "例:引迈信息/技术部");
+         #end
+    #elseif($key == "depSelect")
+        #if($mul)
+            ${MapName}.put("${vModel}", "例:产品部/部门编码,技术部/部门编码");
+        #else
+            ${MapName}.put("${vModel}", "例:技术部/部门编码");
+        #end
+    #elseif($key == "posSelect")
+        #if($mul)
+            ${MapName}.put("${vModel}", "例:技术经理/岗位编码,技术员/岗位编码");
+        #else
+            ${MapName}.put("${vModel}", "例:技术员/岗位编码");
+        #end
+    #elseif($key == "userSelect")
+        #if($mul)
+            ${MapName}.put("${vModel}", "例:张三/账号,李四/账号");
+        #else
+            ${MapName}.put("${vModel}", "例:张三/账号");
+        #end
+    #elseif($key == "usersSelect")
+        #if($mul)
+            ${MapName}.put("${vModel}", "例:方方/账号,技术部/部门编码");
+        #else
+            ${MapName}.put("${vModel}", "例:方方/账号");
+        #end
+    #elseif($key == "roleSelect")
+        #if($mul)
+            ${MapName}.put("${vModel}", "例:研发人员/角色编码,测试人员/角色编码");
+        #else
+            ${MapName}.put("${vModel}", "例:研发人员/角色编码");
+        #end
+    #elseif($key == "groupSelect")
+        #if($mul)
+            ${MapName}.put("${vModel}", "例:A分组/分组编码,B分组/分组编码");
+        #else
+            ${MapName}.put("${vModel}", "例:A分组/分组编码");
+        #end
+    #elseif($key == "date")
+            ${MapName}.put("${vModel}", "例: ${Field.format}");
+    #elseif($key == "time")
+            ${MapName}.put("${vModel}", "例: ${Field.format}");
+    #elseif($key == "address")
+        #if($level==0)
+            #if($mul)
+                ${MapName}.put("${vModel}", "例:福建省,广东省");
+             #else
+                 ${MapName}.put("${vModel}", "例:福建省");
+            #end
+        #elseif($level==1)
+            #if($mul)
+                ${MapName}.put("${vModel}", "例:福建省/莆田市,广东省/广州市");
+            #else
+                ${MapName}.put("${vModel}", "例:福建省/莆田市");
+            #end
+        #elseif($level==2)
+            #if($mul)
+                ${MapName}.put("${vModel}", "例:福建省/莆田市/城厢区,广东省/广州市/荔湾区");
+            #else
+                ${MapName}.put("${vModel}", "例:福建省/莆田市/城厢区");
+            #end
+        #elseif($level==3)
+            #if($mul)
+                ${MapName}.put("${vModel}", "例:福建省/莆田市/城厢区/霞林街道,广东省/广州市/荔湾区/沙面街道");
+            #else
+                ${MapName}.put("${vModel}", "例:福建省/莆田市/城厢区/霞林街道");
+            #end
+        #end
+    #end
+#end
+#if(${btn.value}=='upload')
+
+        @Operation(summary = "上传文件")
+        @PostMapping("/Uploader")
+        public ActionResult<Object> Uploader() {
+		List<MultipartFile> list = UpUtil.getFileAll();
+		MultipartFile file = list.get(0);
+		if (file.getOriginalFilename().endsWith(".xlsx") || file.getOriginalFilename().endsWith(".xls")) {
+		String filePath = XSSEscape.escape(configValueUtil.getTemporaryFilePath());
+		String fileName = XSSEscape.escape(RandomUtil.uuId() + "." + UpUtil.getFileType(file));
+		//上传文件
+        #if(${isCloud}=="cloud")
+			FileInfo fileInfo = fileUploadApi.uploadFile(file, filePath, fileName);
+        #else
+            FileInfo fileInfo = FileUploadUtils.uploadFile(file, filePath, fileName);
+        #end
+		DownloadVO vo = DownloadVO.builder().build();
+		vo.setName(fileInfo.getFilename());
+		return ActionResult.success(vo);
+		} else {
+		    return ActionResult.fail("选择文件不符合导入");
+		    }
+		}
+
+    /**
+    * 模板下载
+    *
+    * @return
+    */
+    @Operation(summary = "模板下载")
+    @GetMapping("/TemplateDownload")
+    public ActionResult<DownloadVO>  TemplateDownload(){
+		DownloadVO vo = DownloadVO.builder().build();
+		UserInfo userInfo = userProvider.get();
+		Map<String, Object> dataMap = new HashMap<>();
+
+		List<ExcelExportEntity> entitys = new ArrayList<>();
+
+    #foreach($fieldModel in $importFields)
+        #set($config = $fieldModel.config)
+        #set($vModel = ${fieldModel.vModel})
+        #if($config.jnpfKey == "table")
+            #set($childTableField = ${fieldModel.vModel})
+            ExcelExportEntity ${childTableField}ExcelEntity = new ExcelExportEntity("${config.label}","${childTableField}");
+            List<ExcelExportEntity> ${childTableField}ExcelEntityList = new ArrayList<>();
+            Map<String, Object> ${childTableField}ChildData = new HashMap<>();
+			List<Map<String, Object>> ${childTableField}ChildDataList = new ArrayList<>();
+            #foreach($childField in $config.children)
+                ${childTableField}ExcelEntityList.add(new ExcelExportEntity("${childField.config.label}" ,"${childField.vModel}"));
+                #TemlateDownloadDemo("${childTableField}ChildData",$childField)
+            #end
+            ${childTableField}ChildDataList.add(${childTableField}ChildData);
+			dataMap.put("${childTableField}",${childTableField}ChildDataList);
+            ${childTableField}ExcelEntity.setList(${childTableField}ExcelEntityList);
+            entitys.add(${childTableField}ExcelEntity);
+	    #else
+            #if($fieldModel.beforeVmodel)
+            entitys.add(new ExcelExportEntity("${config.label}" ,"$fieldModel.beforeVmodel"));
+            #else
+            entitys.add(new ExcelExportEntity("${config.label}" ,"${vModel}"));
+            #end
+            #TemlateDownloadDemo("dataMap",$fieldModel)
+        #end
+    #end
+        List<Map<String,Object>> list = new ArrayList<>();
+		list.add(dataMap);
+
+		ExportParams exportParams = new ExportParams(null, "${formModelName}模板");
+		exportParams.setType(ExcelType.XSSF);
+		try{
+            @Cleanup Workbook workbook = new HSSFWorkbook();
+		if (entitys.size()>0){
+		    if (list.size()==0){
+		        list.add(new HashMap<>());
+		    }
+		    workbook = ExcelExportUtil.exportExcel(exportParams, entitys, list);
+		}
+		String fileName = "${formModelName}模板" + DateUtil.dateNow("yyyyMMddHHmmss") + ".xlsx";
+		MultipartFile multipartFile = ExcelUtil.workbookToCommonsMultipartFile(workbook, fileName);
+    #if(${isCloud}=="cloud")
+        String temporaryFilePath = fileApi.getPath(FileTypeConstant.TEMPORARY);
+        FileInfo fileInfo = fileUploadApi.uploadFile(multipartFile, temporaryFilePath, fileName);
+    #else
+        String temporaryFilePath = configValueUtil.getTemporaryFilePath();
+        FileInfo fileInfo = FileUploadUtils.uploadFile(multipartFile, temporaryFilePath, fileName);
+    #end
+		vo.setName(fileInfo.getFilename());
+		vo.setUrl(UploaderUtil.uploaderFile(fileInfo.getFilename() + "#" + "Temporary") + "&name=" + fileName);
+		} catch (Exception e) {
+		    log.error("模板信息导出Excel错误:{}", e.getMessage());
+		    e.printStackTrace();
+		}
+		return ActionResult.success(vo);
+    }
+
+    /**
+     * 导入预览
+     *
+     * @return
+     */
+    @Operation(summary = "导入预览" )
+    @GetMapping("/ImportPreview")
+    public ActionResult<Map<String, Object>> ImportPreview(String fileName) throws Exception {
+		Map<String, Object> headAndDataMap = new HashMap<>(2);
+		#if(${isCloud}=="cloud")
+        String filePath = fileApi.getLocalBasePath() + configValueUtil.getTemporaryFilePath();
+        UploadFileModel uploadFileModel =new UploadFileModel();
+        uploadFileModel.setFolderName(filePath);
+        uploadFileModel.setObjectName(fileName);
+        fileUploadApi.downToLocal(uploadFileModel);
+        #else
+         String filePath = FileUploadUtils.getLocalBasePath() + configValueUtil.getTemporaryFilePath();
+         FileUploadUtils.downLocal(configValueUtil.getTemporaryFilePath(), filePath, fileName);
+        #end
+		File temporary = new File(XSSEscape.escapePath(filePath + fileName));
+		#if($importHasChildren)
+        int headerRowIndex = 2;
+        #else
+        int headerRowIndex = 1;
+        #end
+		ImportParams params = new ImportParams();
+		params.setTitleRows(0);
+		params.setHeadRows(headerRowIndex);
+		params.setNeedVerify(true);
+		try {
+		List<${Name}ExcelVO> excelDataList = ExcelImportUtil.importExcel(temporary, ${Name}ExcelVO.class, params);
+		// 导入字段
+        List<ExcelImFieldModel> columns = new ArrayList<>();
+        #foreach($fieldModel in $importFields)
+			#if($fieldModel.config.children)
+                List<ExcelImFieldModel> ${fieldModel.vModel}columns = new ArrayList<>();
+                #foreach($childField in $fieldModel.config.children)
+                    ${fieldModel.vModel}columns.add(new ExcelImFieldModel("${childField.vModel}","${childField.config.label}"));
+                #end
+                columns.add(new ExcelImFieldModel("${fieldModel.vModel}","${fieldModel.config.label}",${fieldModel.vModel}columns));
+            #else
+                #if($fieldModel.beforeVmodel)
+                columns.add(new ExcelImFieldModel("${fieldModel.beforeVmodel}","${fieldModel.config.label}"));
+                #else
+                columns.add(new ExcelImFieldModel("${fieldModel.vModel}","${fieldModel.config.label}"));
+                #end
+            #end
+        #end
+		headAndDataMap.put("dataRow" , excelDataList);
+		headAndDataMap.put("headerRow" , columns);
+		} catch (Exception e){
+		e.printStackTrace();
+		return ActionResult.fail("表头名称不可更改,表头行不能删除");
+		}
+		return ActionResult.success(headAndDataMap);
+		}
+
+        /**
+        * 导入数据
+        *
+        * @return
+        */
+        @Operation(summary = "导入数据" )
+        @PostMapping("/ImportData")
+        public ActionResult<ExcelImportModel> ImportData(@RequestBody VisualImportModel visualImportModel) throws Exception {
+		List<${Name}ExcelVO> ${name}VOList = JsonUtil.getJsonToList(visualImportModel.getList(), ${Name}ExcelVO.class);
+		ExcelImportModel excelImportModel = new ExcelImportModel();
+		List<Map<String, Object>> errorList = new ArrayList<>();
+		for (${Name}ExcelVO vo : ${name}VOList) {
+		Map<String, Object> map = JsonUtil.entityToMap(vo);
+		Map<String, Object> erroMap = JsonUtil.entityToMap(vo);
+		StringJoiner error = new StringJoiner(",");
+		//缓存
+		Map<String,Object> localcheMap = new HashMap<>();
+		String mainID = RandomUtil.uuId();
+		localcheMap = generaterSwapUtil.putCache(localcheMap);
+        #foreach($cl in  ${columnChildren})
+            String ${cl.TableName}id = null;
+        #end
+            String ${genInfo.tableName}id = null;
+    #foreach($im in ${importFields})
+            #set($vModel = $im.vModel)
+            #set($fieldName="${im.vModel.substring(0,1).toUpperCase()}${im.vModel.substring(1)}")
+
+        #if($im.config.jnpfKey =="table")
+            #set($relationkey = "${im.childMainKey.substring(0,1).toUpperCase()}${im.childMainKey.substring(1)}")
+            #set($tableName = "${im.config.aliasClassName.substring(0,1).toUpperCase()}${im.config.aliasClassName.substring(1)}")
+            List<${tableName}Entity> ${im.config.aliasClassName}EntityList = new ArrayList<>();
+            for (${tableName}Model ${im.config.aliasClassName}Model:vo.get${tableName}List()){
+             Map<String, Object> ${im.config.aliasClassName}Map = JsonUtil.entityToMap(${im.config.aliasClassName}Model);
+             StringJoiner ${im.config.aliasClassName}Error = new StringJoiner(",");
+             #foreach($childF in ${im.config.children})
+                 #set($childvModel = $childF.vModel)
+                 #set($childfieldName="${childF.vModel.substring(0,1).toUpperCase()}${childF.vModel.substring(1)}")
+                #if($childF.config.dataType)
+                    generaterSwapUtil.excelCheckForm(${im.config.aliasClassName}Model.getClass().getDeclaredField("${childvModel}").getAnnotation(JnpfField.class),
+					String.valueOf(${im.config.aliasClassName}Model.get${childfieldName}()),${im.config.aliasClassName}Map,localcheMap,${im.config.aliasClassName}Error);
+                #else
+                    generaterSwapUtil.excelCheckForm(${im.config.aliasClassName}Model.getClass().getDeclaredField("${childvModel}").getAnnotation(JnpfField.class),
+					String.valueOf(${im.config.aliasClassName}Model.get${childfieldName}()),${im.config.aliasClassName}Map,"",localcheMap, ${im.config.aliasClassName}Error);
+                #end
+             #end
+
+            if (${im.config.aliasClassName}Error.length()>0){
+             error.add(${im.config.aliasClassName}Error.toString());
+            } else {
+            ${tableName}Entity ${im.config.aliasClassName}Entity = JsonUtil.getJsonToBean(${im.config.aliasClassName}Map, ${tableName}Entity.class);
+            #if($snowflake)
+                ${im.config.aliasClassName}Entity.set${relationkey}(RandomUtil.uuId());
+            #else
+                ${im.config.aliasClassName}Entity.set${relationkey}(0);
+            #end
+            ${im.config.aliasClassName}EntityList.add(${im.config.aliasClassName}Entity);
+            }
+            }
+        #else
+            #if($im.tableType == 1)
+                #set($vModel = $im.beforeVmodel)
+                #set($fieldName="${im.beforeVmodel.substring(0,1).toUpperCase()}${im.beforeVmodel.substring(1)}")
+            #else
+                #set($vModel = $im.vModel)
+                #set($fieldName="${im.vModel.substring(0,1).toUpperCase()}${im.vModel.substring(1)}")
+            #end
+            #set($NeddId = "")
+            #if(${im.config.jnpfKey} == 'comInput')
+                #if($im.tableType == 1)
+                    #set($NeddId = "${im.config.tableName}id = ")
+                #else
+                    #set($NeddId = "${genInfo.tableName}id = ")
+                #end
+            #end
+            #if($im.config.dataType)
+            ${NeddId}generaterSwapUtil.excelCheckForm(vo.getClass().getDeclaredField("${vModel}").getAnnotation(JnpfField.class),String.valueOf(vo.get${fieldName}()),map,localcheMap,error);
+            #else
+            ${NeddId}generaterSwapUtil.excelCheckForm(vo.getClass().getDeclaredField("${vModel}").getAnnotation(JnpfField.class),String.valueOf(vo.get${fieldName}()),map,"",localcheMap,error);
+            #end
+        #end
+        #end
+
+		if (error.length() > 0) {
+		erroMap.put("errorsInfo",error.toString());
+		errorList.add(erroMap);
+		}else {
+        #foreach($cl in  ${columnChildren})
+            #set($mainField = $cl.mainField)
+            #set($mainUpId = "${mainField.substring(0,1).toUpperCase()}${mainField.substring(1)}")
+            if(${cl.TableName}id != null){
+            QueryWrapper<${cl.modelUpName}Entity> ${cl.modelLowName}QueryWrapper = new QueryWrapper<>();
+            ${cl.modelLowName}QueryWrapper.lambda().eq(${cl.modelUpName}Entity::get${mainUpId},${cl.TableName}id);
+            ${cl.modelUpName}Entity ${cl.modelLowName}Entity = ${cl.modelLowName}Service.getOne(${cl.modelLowName}QueryWrapper);
+            ${genInfo.tableName}id= ${cl.modelLowName}Entity.get${cl.relationUpField}();
+            }
+        #end
+		if(${genInfo.tableName}id != null){
+			this.delete(${genInfo.tableName}id);
+		}
+            ${Name}Entity ${name}Entity = JsonUtil.getJsonToBean(map, ${Name}Entity.class);
+        #if($snowflake)
+            ${name}Entity.set${peimaryKeyName}(mainID);
+        #else
+            ${name}Entity.set${peimaryKeyName}(0);
+            ${name}Entity.setFlowtaskid(mainID);
+        #end
+            ${name}Service.save(${name}Entity);
+             #foreach($im in ${importFields})
+                 #set($tableName = "${im.config.aliasClassName.substring(0,1).toUpperCase()}${im.config.aliasClassName.substring(1)}")
+                 #set($Foreign = "${im.relationTableForeign.substring(0,1).toUpperCase()}${im.relationTableForeign.substring(1)}")
+                 #set($TableId = "${im.mainTableId.substring(0,1).toUpperCase()}${im.mainTableId.substring(1)}")
+                 #if($im.config.jnpfKey == "table")
+                     for (${tableName}Entity entity : ${im.config.aliasClassName}EntityList){
+                         entity.set${Foreign}(mainID);
+                        #set($humpserviceName = "${im.config.aliasClassName.substring(0,1).toLowerCase()}${im.config.aliasClassName.substring(1)}")
+                        ${humpserviceName}Service.save(entity);
+                     }
+                 #end
+            #end
+    #if(${columnChildren.size()}>0)
+				//副表excelCheckForm
+        #foreach($cl in  ${columnChildren})
+            #set($mainField = $cl.mainField)
+            #set($mainUpId = "${mainField.substring(0,1).toUpperCase()}${mainField.substring(1)}")
+            #set($oracleName = "${cl.TableName.substring(0,1).toUpperCase()}${cl.TableName.substring(1).toLowerCase()}")
+                Map<String, Object> ${cl.tableName}Map = new HashMap<>();
+                for(String key:map.keySet()){
+                    if(key.contains("${cl.tableName}") && map.get(key)!=null){
+                        String[] jnpf_s=key.split("_jnpf_" );
+                        ${cl.tableName}Map.put(jnpf_s[1],map.get(key));
+                    }
+                }
+            ${cl.modelName}Entity  ${cl.tableName}entity = JsonUtil.getJsonToBean(${cl.tableName}Map, ${cl.modelName}Entity.class);
+            #if($snowflake)
+                ${cl.tableName}entity.set${mainUpId}(RandomUtil.uuId());
+                ${cl.tableName}entity.set${cl.relationUpField}(mainID);
+            #else
+                ${cl.tableName}entity.set${mainUpId}(0);
+                ${cl.tableName}entity.set${cl.relationUpField}(mainID);
+            #end
+            ${cl.modelLowName}Service.save(${cl.tableName}entity);
+        #end
+    #end
+		 }
+		}
+		excelImportModel.setSnum(${name}VOList.size()-errorList.size());
+		excelImportModel.setFnum(errorList.size());
+		excelImportModel.setResultType(errorList.size() > 0 ? 1 : 0);
+		excelImportModel.setFailResult(errorList);
+		return ActionResult.success(excelImportModel);
+		}
+
+        /**
+        * 导出异常报告
+        *
+        * @return
+        */
+        @Operation(summary = "导出异常报告")
+        @PostMapping("/ImportExceptionData")
+        public ActionResult<DownloadVO> ImportExceptionData(@RequestBody VisualImportModel visualImportModel) {
+		DownloadVO vo=DownloadVO.builder().build();
+		List<${Name}ExcelErrorVO> ${name}VOList = JsonUtil.getJsonToList(visualImportModel.getList(), ${Name}ExcelErrorVO.class);
+		UserInfo userInfo = userProvider.get();
+
+		try{
+        @Cleanup Workbook workbook = new HSSFWorkbook();
+        ExportParams exportParams = new ExportParams(null, "错误报告");
+        exportParams.setType(ExcelType.XSSF);
+        workbook = ExcelExportUtil.exportExcel(exportParams,
+        ${Name}ExcelErrorVO.class, ${name}VOList);
+
+		String fileName = "错误报告" + DateUtil.dateNow("yyyyMMdd") + "_" + RandomUtil.uuId() + ".xlsx";
+		MultipartFile multipartFile = ExcelUtil.workbookToCommonsMultipartFile(workbook, fileName);
+    #if(${isCloud}=="cloud")
+        String temporaryFilePath = fileApi.getPath(FileTypeConstant.TEMPORARY);
+        FileInfo fileInfo = fileUploadApi.uploadFile(multipartFile, temporaryFilePath, fileName);
+    #else
+        String temporaryFilePath = configValueUtil.getTemporaryFilePath();
+        FileInfo fileInfo = FileUploadUtils.uploadFile(multipartFile, temporaryFilePath, fileName);
+    #end
+		vo.setName(fileInfo.getFilename());
+		vo.setUrl(UploaderUtil.uploaderFile(fileInfo.getFilename() + "#" + "Temporary") + "&name=" + fileName);
+		} catch (Exception e) {
+		    e.printStackTrace();
+		}
+		return ActionResult.success(vo);
+		}
+
+#end
+    #if(${btn.value}=='download')
+    /**
+    * 导出Excel
+    *
+    * @return
+    */
+    @Operation(summary = "导出Excel")
+    @PostMapping("/Actions/Export")
+    public ActionResult Export(@RequestBody ${Name}Pagination ${name}Pagination) throws IOException {
+        if (StringUtil.isEmpty(${name}Pagination.getSelectKey())){
+            return ActionResult.fail("请选择导出字段");
+        }
+        List<${table.entityName}> list = ${name}Service.getTypeList(${name}Pagination,${name}Pagination.getDataType());
+        #List()
+        //转换为map输出
+        List<Map<String, Object>>mapList=JsonUtil.getJsonToListMap(JsonUtil.getObjectToStringDateFormat(listVO,"yyyy-MM-dd HH:mm:ss"));
+            mapList.stream().forEach(map -> {
+            #StaticDataSwap("0","map")
+            Map<String,Object> map2 =new HashMap<>();
+        #foreach($Clid in ${columnChildren})
+            #set($lowName="${Clid.modelName.toLowerCase()}")
+            Map<String, Object> ${lowName}map1 = JsonUtil.entityToMap(map.get("${lowName}"));
+            for (Map.Entry entry : ${lowName}map1.entrySet()){
+            String key = "${lowName}." +entry.getKey();
+            map2.put(key,entry.getValue());
+			}
+            #StaticDataSwap("1","map2","${lowName}.")
+        #end
+            map.putAll(map2);
+        #foreach($cl in $childtable)
+            #set($clForm = $cl.childList.childList)
+			List<Map<String, Object>> ${cl.childList.tableModel}Map = JsonUtil.getJsonToListMap(String.valueOf(map.get("${cl.childList.tableModel}")));
+            for (Map<String, Object> mp : ${cl.childList.tableModel}Map){
+            #StaticDataSwap("2","mp","","${cl.childList.tableModel}")
+            }
+            map.put("${cl.childList.tableModel}",${cl.childList.tableModel}Map);
+        #end
+            });
+        String[]keys=!StringUtil.isEmpty(${name}Pagination.getSelectKey())?${name}Pagination.getSelectKey().split(","):new String[0];
+        UserInfo userInfo=userProvider.get();
+        #if(${isCloud}=="cloud")
+        DownloadVO vo=this.creatModelExcel(fileApi.getPath(FileTypeConstant.TEMPORARY),mapList,keys,userInfo);
+        #else
+        DownloadVO vo=this.creatModelExcel(configValueUtil.getTemporaryFilePath(),mapList,keys,userInfo);
+        #end
+        return ActionResult.success(vo);
+    }
+    //导出表格
+    public DownloadVO creatModelExcel(String path,List<Map<String, Object>>list,String[]keys,UserInfo userInfo){
+        DownloadVO vo=DownloadVO.builder().build();
+            List<ExcelExportEntity> entitys=new ArrayList<>();
+            if(keys.length>0){
+                #foreach($cl in $childtable)
+                    ExcelExportEntity ${cl.childList.tableModel}ExcelEntity = new ExcelExportEntity("${cl.childList.label}","${cl.childList.tableModel}");
+                    List<ExcelExportEntity> ${cl.childList.tableModel}List = new ArrayList<>();
+                #end
+                for(String key:keys){
+                    switch(key){
+            #if($columnListSize.size()>0)
+                #foreach($clid in $columnChildren)
+                    #set($fieLdsModelList = $clid.fieLdsModelList)
+                    #foreach($cf in $fieLdsModelList)
+                        #set($field = ${cf.field})
+                        #if($field)
+                        #set($label = $cf.mastTable.fieLdsModel.config.label)
+                        #set($lowName= ${cf.table.toLowerCase()})
+##                            ${lowName}.${field}
+                    case "${cf.vModel}" :
+                    entitys.add(new ExcelExportEntity("${label}" ,"${lowName}.${field}_name"));
+                    break;
+                        #end
+                    #end
+                #end
+                #foreach($ma in $mast)
+                    #set($fieldModel =  ${ma.formColumnModel.fieLdsModel})
+                    #set($config = $fieldModel.config)
+                    #set($vModel = ${fieldModel.vModel})
+                    #if($vModel)
+                    case "${vModel}" :
+                    entitys.add(new ExcelExportEntity("${config.label}" ,"${vModel}_name"));
+                    break;
+                    #end
+                #end
+                #foreach($cl in $childtable)
+                    #set($clForm = $cl.childList.childList)
+                    #foreach($clField in $clForm)
+                        #set($clForm =  $clField.fieLdsModel)
+                     #if($!{clField.fieLdsModel.vModel})
+                         case "${cl.childList.tableModel}-${clField.fieLdsModel.vModel}":
+                         ${cl.childList.tableModel}List.add(new ExcelExportEntity("${clField.fieLdsModel.config.label}" ,"${clField.fieLdsModel.vModel}"));
+                         break;
+                     #end
+                    #end
+                #end
+            default:
+                    break;
+            #end
+
+                    }
+                }
+				List<String> keylist = new ArrayList<>();
+				for (String key:keys){
+				    keylist.add(key);
+				}
+        #foreach($cl in $childtable)
+            if(${cl.childList.tableModel}List.size() > 0){
+		String ${cl.childList.tableModel} = keylist.stream().filter(k -> k.startsWith("${cl.childList.tableModel}")).findFirst().orElse("");
+        List<String> ${cl.childList.tableModel}st = keylist.stream().filter(k -> k.startsWith("${cl.childList.tableModel}")).collect(Collectors.toList());
+                ${cl.childList.tableModel}ExcelEntity.setList(${cl.childList.tableModel}List);
+		        entitys.add(keylist.indexOf(${cl.childList.tableModel}), ${cl.childList.tableModel}ExcelEntity);
+                keylist.removeAll(${cl.childList.tableModel}st);
+            }
+        #end
+            }
+
+        ExportParams exportParams = new ExportParams(null, "表单信息");
+        exportParams.setType(ExcelType.XSSF);
+        try{
+		@Cleanup Workbook workbook = new HSSFWorkbook();
+        if (entitys.size()>0){
+            if (list.size()==0){
+				list.add(new HashMap<>());
+            }
+            workbook = ExcelExportUtil.exportExcel(exportParams, entitys, list);
+        }
+        String fileName = "表单信息" + DateUtil.dateNow("yyyyMMdd") + "_" + RandomUtil.uuId() + ".xlsx";
+        MultipartFile multipartFile = ExcelUtil.workbookToCommonsMultipartFile(workbook, fileName);
+        #if(${isCloud}=="cloud")
+        String temporaryFilePath = fileApi.getPath(FileTypeConstant.TEMPORARY);
+        FileInfo fileInfo = fileUploadApi.uploadFile(multipartFile, temporaryFilePath, fileName);
+        #else
+        String temporaryFilePath = configValueUtil.getTemporaryFilePath();
+        FileInfo fileInfo = FileUploadUtils.uploadFile(multipartFile, temporaryFilePath, fileName);
+        #end
+        vo.setName(fileInfo.getFilename());
+        vo.setUrl(UploaderUtil.uploaderFile(fileInfo.getFilename() + "#" + "Temporary") + "&name=" + fileName);
+        } catch (Exception e) {
+            log.error("信息导出Excel错误:{}", e.getMessage());
+            e.printStackTrace();
+        }
+        return vo;
+    }
+
+    #end
+    #if(${btn.value}=='batchRemove')
+    /**
+     * 批量删除
+     *
+     * @param ids
+     * @return
+     */
+    @DeleteMapping("/batchRemove")
+#if(${DS})
+    @DSTransactional
+#else
+    @Transactional
+#end
+    @Operation(summary = "批量删除")
+    public ActionResult batchRemove(@RequestBody String ids){
+        String[] idList = ids.split(",");
+		int i =0;
+        for (String allId : idList){
+            this.delete(allId);
+            i++;
+        }
+        if (i == 0 ){
+            return ActionResult.fail("删除失败");
+        }
+            return ActionResult.success("删除成功");
+    }
+    #end
+
+    #end
+
+#macro(SystemDataChange $system $vo)
+    #foreach($field in ${system})
+        #set($jnpfKey="${field.config.jnpfKey}")
+        #set($EntityName =${field.vModel})
+        #set($fieldName="${field.vModel.substring(0,1).toUpperCase()}${field.vModel.substring(1)}")
+        #if(${jnpfKey}=='createTime'||${jnpfKey}=='modifyTime')
+        if(${vo}.get${fieldName}()!=null){
+            ${vo}.set${fieldName}(${vo}.get${fieldName}());
+        }
+        #elseif(${jnpfKey}=='createUser'||${jnpfKey}=='modifyUser')
+         ${vo}.set${fieldName}(generaterSwapUtil.userSelectValue(${vo}.get${fieldName}()));
+        #elseif(${jnpfKey}=='currOrganize')
+            #set($showLevel = ${field.showLevel})
+             ${vo}.set${fieldName}(generaterSwapUtil.comSelectValue(${vo}.get${fieldName}(), "${showLevel}"));
+        #elseif(${jnpfKey}=='currPosition')
+             ${vo}.set${fieldName}(generaterSwapUtil.posSelectValue(${vo}.get${fieldName}()));
+        #end
+    #end
+#end
+    /**
+    * 信息
+    *
+    * @param id
+    * @return
+    */
+    @Operation(summary = "信息")
+    @GetMapping("/{id}")
+    public ActionResult<${Name}InfoVO> info(@PathVariable("id") String id){
+        ${Name}Entity entity= ${name}Service.getInfo(id);
+        ${Name}InfoVO vo=JsonUtil.getJsonToBean(entity, ${Name}InfoVO.class);
+#set($currtCount=1)
+#set($userCount=1)
+    #set($vo = 'vo')
+    #SystemDataChange($system,$vo)
+
+    //子表
+#foreach($grid in ${child})
+        #set($gridname = "$grid.className.toLowerCase()" +"Entity")
+    #if($snowflake)
+		List<${grid.className}Entity> ${grid.className}List = ${table.serviceName.substring(0,1).toLowerCase()}${table.serviceName.substring(1)}.get${grid.className}List(id);
+    #else
+        List<${grid.className}Entity> ${grid.className}List = ${table.serviceName.substring(0,1).toLowerCase()}${table.serviceName.substring(1)}.get${grid.className}List(entity.getFlowtaskid());
+    #end
+    #set($vo =$gridname)
+		for(${grid.className}Entity ${vo} : ${grid.className}List){
+            #foreach($field in ${grid.childList})
+               #if(${field.fieLdsModel.vModel} != '')
+                #set($jnpfKey = ${field.fieLdsModel.config.jnpfKey})
+                #set($rule = ${field.fieLdsModel.config.rule})
+                #set($EntityName =${field.fieLdsModel.vModel})
+                #set($fieldName = "${field.fieLdsModel.vModel.substring(0,1).toUpperCase()}${field.fieLdsModel.vModel.substring(1)}")
+                #if(${jnpfKey}=='createTime'||${jnpfKey}=='modifyTime')
+                    if(${vo}.get${fieldName}()!=null){
+                        ${vo}.set${fieldName}(${vo}.get${fieldName}());
+                    }
+                #elseif(${jnpfKey}=='createUser'||${jnpfKey}=='modifyUser')
+                    ${vo}.set${fieldName}(generaterSwapUtil.userSelectValue(${vo}.get${fieldName}()));
+                #elseif(${jnpfKey}=='currOrganize')
+                    #set($showLevel = ${field.showLevel})
+                    ${vo}.set${fieldName}(generaterSwapUtil.comSelectValue(${vo}.get${fieldName}(), "${showLevel}"));
+                #elseif(${jnpfKey}=='currPosition')
+                    ${vo}.set${fieldName}(generaterSwapUtil.posSelectValue(${vo}.get${fieldName}()));
+                #end
+             #end
+            #end
+		}
+        #set($list = "${grid.className.substring(0,1).toUpperCase()}${grid.className.substring(1)}")
+		vo.set${list}List(JsonUtil.getJsonToList(${grid.className}List,${grid.className}Model.class ));
+#end
+    //副表
+#foreach($cl in  ${columnChildren})
+		QueryWrapper<${cl.modelUpName}Entity> queryWrapper${cl.modelUpName} = new QueryWrapper<>();
+    #if($snowflake)
+        queryWrapper${cl.modelUpName}.lambda().eq(${cl.modelUpName}Entity::get${cl.relationUpField},entity.get${cl.mainUpKey}());
+    #else
+        queryWrapper${cl.modelUpName}.lambda().eq(${cl.modelUpName}Entity::get${cl.relationUpField},entity.getFlowtaskid());
+    #end
+        ${cl.modelUpName}Entity ${cl.tableName}Entity = ${cl.modelLowName}Service.getOne(queryWrapper${cl.modelUpName});
+        #foreach($mastModel in  ${cl.fieLdsModelList})
+            #set($field = ${mastModel.mastTable.fieLdsModel})
+            #set($jnpfKey = ${field.config.jnpfKey})
+            #set($EntityName=${field.vModel})
+            #set($fieldName = "${field.vModel.substring(0,1).toUpperCase()}${field.vModel.substring(1)}")
+            #if(${jnpfKey}=='createTime'||${jnpfKey}=='modifyTime')
+                if(${cl.tableName}Entity.get${fieldName}()!=null){
+                    ${cl.tableName}Entity.set${fieldName}(${cl.tableName}Entity.get${fieldName}());
+                }
+            #elseif(${jnpfKey}=='createUser'||${jnpfKey}=='modifyUser')
+                ${cl.tableName}Entity.set${fieldName}(generaterSwapUtil.userSelectValue(${cl.tableName}Entity.get${fieldName}()));
+            #elseif(${jnpfKey}=='currOrganize')
+                #set($showLevel = ${field.showLevel})
+                ${cl.tableName}Entity.set${fieldName}(generaterSwapUtil.comSelectValue(${cl.tableName}Entity.get${fieldName}(), "${showLevel}"));
+            #elseif(${jnpfKey}=='currPosition')
+                ${cl.tableName}Entity.set${fieldName}(generaterSwapUtil.posSelectValue(${cl.tableName}Entity.get${fieldName}()));
+            #end
+        #end
+        #set($oracleName = "${cl.TableName.substring(0,1).toUpperCase()}${cl.TableName.substring(1).toLowerCase()}")
+        ${cl.modelUpName}Model ${cl.modelLowName}Model = JsonUtil.getJsonToBean(${cl.tableName}Entity, ${cl.modelUpName}Model.class);
+    #foreach($mastModel in  ${cl.fieLdsModelList})
+        #set($field = ${mastModel.mastTable.fieLdsModel})
+        #set($jnpfKey = ${field.config.jnpfKey})
+        #set($EntityName=${field.vModel})
+        #set($fieldName = "${field.vModel.substring(0,1).toUpperCase()}${field.vModel.substring(1)}")
+        #if(${jnpfKey}=='createTime'||${jnpfKey}=='modifyTime')
+        if(${cl.tableName}Entity.get${fieldName}()!=null){
+            ${cl.modelLowName}Model.set${fieldName}(DateUtil.dateFormat(${cl.tableName}Entity.get${fieldName}()));
+        }
+        #end
+    #end
+		vo.set${oracleName}(${cl.modelLowName}Model);
+#end
+        return ActionResult.success(vo);
+    }
+
+    /**
+    * 表单信息(详情页)
+    *
+    * @param id
+    * @return
+    */
+    @Operation(summary = "表单信息(详情页)")
+    @GetMapping("/detail/{id}")
+    public ActionResult<${Name}InfoVO> detailInfo(@PathVariable("id") String id){
+        ActionResult info = info(id);
+        Map<String,Object> dataMap = JsonUtil.entityToMap(info.getData());
+        ${Name}Entity entity= ${name}Service.getInfo(id);
+        ${Name}InfoVO vo=JsonUtil.getJsonToBean(entity, ${Name}InfoVO.class);
+#set($currtCount=1)
+#set($userCount=1)
+
+ //子表数据转换
+#foreach($grid in ${childtable})
+    #set($childTableName = "${grid.childList.aliasClassName.substring(0,1).toUpperCase()}${grid.childList.aliasClassName.substring(1)}")
+    #set($childTableLowName = "${grid.childList.aliasClassName.substring(0,1).toLowerCase()}${grid.childList.aliasClassName.substring(1)}")
+    #if($snowflake)
+		List<${childTableName}Entity> ${childTableLowName}List = ${table.serviceName.substring(0,1).toLowerCase()}${table.serviceName.substring(1)}.get${childTableName}List(id);
+    #else
+		List<${childTableName}Entity> ${childTableLowName}List = ${table.serviceName.substring(0,1).toLowerCase()}${table.serviceName.substring(1)}.get${childTableName}List(entity.getFlowtaskid());
+    #end
+		List<${childTableName}Model> ${childTableLowName}ModelList = JsonUtil.getJsonToList(${childTableLowName}List,${childTableName}Model.class);
+		int ${childTableLowName}Num = 0;
+		for(${childTableName}Model ${childTableLowName}Model : ${childTableLowName}ModelList){
+			#set($entity = "${childTableLowName}Model")
+    #foreach($child in  ${grid.childList.childList})
+        #set($field = ${child.fieLdsModel})
+        #if($field.vModel!= '')
+            #set($key = ${field.config.jnpfKey})
+            #set($model = "${field.vModel.substring(0,1).toUpperCase()}${field.vModel.substring(1)}")
+            #set($fieldName=${field.vModel})
+            #set($isMutiple = ${field.multiple})
+            #set($FieldName="${field.vModel.substring(0,1).toUpperCase()}${field.vModel.substring(1)}")
+            #if(${field.config.dataType}=='dictionary' && ${field.config.dictionaryType})
+                ${entity}.set${FieldName}(generaterSwapUtil.getDicName(${entity}.get${FieldName}(),"${field.config.dictionaryType}","${field.props.props.value}",$isMutiple,"$!{field.separator}"));
+            #elseif(${field.config.dataType}=='dynamic' && ${field.config.propsUrl})
+                #set($label=${field.props.propsModel.label})
+                #set($value=${field.props.propsModel.value})
+                #set($children = ${field.props.propsModel.children})
+                #if($!{field.config.props})
+                    #set($label= ${field.config.props.label})
+                    #set($value= ${field.config.props.value})
+                #end
+                #if(${key}=='cascader')
+                    ${entity}.set${FieldName}(generaterSwapUtil.getDynName("${field.config.propsUrl}" ,"${label}" ,"${value}","$!{children}" ,${entity}.get${FieldName}(),${isMutiple},${field.showAllLevels},${field.templateJson},${childTableLowName}Num,dataMap));
+                #else
+                    #if(${key}=='checkbox')
+                        #set($isMutiple=true)
+                    #end
+                    ${entity}.set${FieldName}(generaterSwapUtil.getDynName("${field.config.propsUrl}" ,"${label}" ,"${value}","$!{children}" ,${entity}.get${FieldName}(),${isMutiple},true,${field.templateJson},${childTableLowName}Num,dataMap));
+                #end
+            #end
+            #if(${key}=='createUser'||${key}=='modifyUser')
+                ${entity}.set${model}(generaterSwapUtil.userSelectValue(${entity}.get${model}()));
+            #elseif(${key}=='currOrganize')
+                ${entity}.set${model}(generaterSwapUtil.comSelectValue(${entity}.get${model}(), "${field.showLevel}"));
+            #elseif(${key}=='currPosition')
+                ${entity}.set${model}(generaterSwapUtil.posSelectValue(${entity}.get${model}()));
+            #elseif(${key}=='address')
+                ${entity}.set${model}(generaterSwapUtil.provinceData(${entity}.get${model}()));
+            #elseif(${key}=='comSelect'||${key}=='depSelect')
+                ${entity}.set${model}(generaterSwapUtil.comSelectValues(${entity}.get${FieldName}(),$isMutiple));
+                #set($comSelectCount=${comSelectCount}+1)
+            #elseif(${key}=='posSelect')
+                ${entity}.set${model}(generaterSwapUtil.posSelectValues(${entity}.get${FieldName}()));
+            #elseif(${key}=='userSelect')
+                ${entity}.set${model}(generaterSwapUtil.userSelectValues(${entity}.get${FieldName}()));
+            #elseif(${key}=='usersSelect')
+                ${entity}.set${model}(generaterSwapUtil.usersSelectValues(${entity}.get${FieldName}()));
+            #elseif(${key}=='groupSelect')
+                ${entity}.set${model}(generaterSwapUtil.getGroupSelect(${entity}.get${FieldName}()));
+            #elseif(${key}=='roleSelect')
+                ${entity}.set${model}(generaterSwapUtil.getRoleSelect(${entity}.get${FieldName}()));
+            #elseif(${key}=='numInput')
+                ${entity}.set${FieldName}_name(generaterSwapUtil.getDecimalStr(${entity}.get${FieldName}()));
+            #elseif(${key}=='switch')
+                #set($activeTxt = ${field.activeTxt})
+                #set($inactiveTxt = ${field.inactiveTxt})
+                ${entity}.set${model}(generaterSwapUtil.switchSelectValue(${entity}.get${FieldName}() ,"$activeTxt" ,"$inactiveTxt"));
+            #elseif(${key}=='relationForm')
+                ${entity}.set${model}_id(${entity}.get${model}());
+								Map<String,Object> ${childTableLowName}${fieldName}Map = new HashMap<>();
+                ${entity}.set${model}(generaterSwapUtil.swapRelationFormValue("${field.relationField}",${entity}.get${FieldName}(),"${field.modelId}",${childTableLowName}${fieldName}Map));
+            #elseif(${key}=='popupSelect' || ${key}=='popupTableSelect')
+								Map<String,Object> ${childTableLowName}${fieldName}Map = new HashMap<>();
+                ${entity}.set${model}(generaterSwapUtil.getPopupSelectValue("${field.interfaceId}","${field.propsValue}","${field.relationField}",${entity}.get${FieldName}(),${childTableLowName}${fieldName}Map,${field.templateJson},${childTableLowName}Num,dataMap));
+            #elseif(${key}=='uploadFz' || ${key}=='uploadImg')
+                ${entity}.set${model}(generaterSwapUtil.getFileNameInJson(${entity}.get${FieldName}()));
+            #end
+        #end
+      #end
+    #foreach($child in  ${grid.childList.childList})
+        #set($field = ${child.fieLdsModel})
+        #set($key = ${field.config.jnpfKey})
+        #if($key == "relationFormAttr" || $key == "popupAttr")
+            #if(${field.config.isStorage}==1)
+            #set($atrributeName = "${field.relationField}_${field.showField}")
+            #set($model = "${atrributeName.substring(0,1).toUpperCase()}${atrributeName.substring(1)}")
+                ${entity}.set${model}(${childTableLowName}${field.relationField}Map.get("${field.showField}") !=null ?
+                ${childTableLowName}${field.relationField}Map.get("${field.showField}").toString() : "");
+            #end
+        #end
+        #end
+    ${childTableLowName}Num++;
+    }
+		vo.set${childTableName}List(${childTableLowName}ModelList);
+#end
+
+ //附表数据转换
+#foreach($cl in  ${columnChildren})
+        QueryWrapper<${cl.modelUpName}Entity> queryWrapper${cl.modelUpName} = new QueryWrapper<>();
+        #if($snowflake)
+            queryWrapper${cl.modelUpName}.lambda().eq(${cl.modelUpName}Entity::get${cl.relationUpField},entity.get${cl.mainUpKey}());
+        #else
+            queryWrapper${cl.modelUpName}.lambda().eq(${cl.modelUpName}Entity::get${cl.relationUpField},entity.getFlowtaskid());
+        #end
+        ${cl.modelUpName}Entity ${cl.tableName}Entity = ${cl.modelLowName}Service.getOne(queryWrapper${cl.modelUpName});
+    #set($oracleName = "${cl.TableName.substring(0,1).toUpperCase()}${cl.TableName.substring(1).toLowerCase()}")
+		if(ObjectUtil.isEmpty(${cl.tableName}Entity)){
+            ${cl.tableName}Entity = new ${cl.modelUpName}Entity();
+		}
+
+            ${cl.modelUpName}Model ${cl.modelLowName}Model = JsonUtil.getJsonToBean(${cl.tableName}Entity, ${cl.modelUpName}Model.class);
+            #set($childEniityName = "${cl.modelLowName}Model")
+            #set($childSystem = ${cl.fieLdsModels})
+            #DataChange($childEniityName,$childSystem,'mast','')
+
+            #foreach($mastModel in  ${cl.fieLdsModelList})
+                #set($field = ${mastModel.mastTable.fieLdsModel})
+                #set($jnpfKey = ${field.config.jnpfKey})
+                #set($EntityName=${field.vModel})
+                #set($fieldName = "${field.vModel.substring(0,1).toUpperCase()}${field.vModel.substring(1)}")
+                #if(${jnpfKey}=='createTime'||${jnpfKey}=='modifyTime')
+                                if(${cl.tableName}Entity.get${fieldName}()!=null){
+                    ${cl.modelLowName}Model.set${fieldName}(DateUtil.dateFormat(${cl.tableName}Entity.get${fieldName}()));
+                                }
+                #end
+            #end
+		    vo.set${oracleName}(${cl.modelLowName}Model);
+#end
+
+//添加到详情表单对象中
+#set($InfoName = "vo")
+#DataChange($InfoName,${mainDeatail},'','')
+
+        return ActionResult.success(vo);
+		}
+
+#foreach($column in ${columnBtnsList})
+
+    #if(${column.value}=='remove')
+   /**
+    * 删除
+    *
+    * @param id
+    * @return
+    */
+    @Operation(summary = "删除")
+    @DeleteMapping("/{id}")
+#if(${DS})
+    @DSTransactional
+#else
+    @Transactional
+#end
+    public ActionResult delete(@PathVariable("id") String id){
+        ${Name}Entity entity= ${name}Service.getInfo(id);
+        if(entity!=null){
+        #if($treeTable == true )
+            //递归删除
+            List<${Name}Entity> list = ${name}Service.getList(new ${Name}Pagination());
+            for(${Name}Entity item: list) {
+                if (StringUtil.isNotEmpty(item.get${parentField}()) && entity.getId().equals(item.get${parentField}())) {
+                    this.delete(item.getId());
+                }
+            }
+        #end
+        #if($logicalDelete)
+            //假删除
+            entity.setDeletemark(1);
+            ${name}Service.update(id,entity);
+        #else
+            ${name}Service.delete(entity);
+#foreach($tableModel in ${child})
+    #set($ChildName="${tableModel.className.substring(0,1).toUpperCase()}${tableModel.className.substring(1)}")
+    #set($childName="${tableModel.className.substring(0,1).toLowerCase()}${tableModel.className.substring(1)}")
+    #set($mainFeild="${tableModel.relationField}")
+    #set($MainFeild="${tableModel.relationField.substring(0,1).toUpperCase()}${tableModel.relationField.substring(1)}")
+    #set($childFeild="${tableModel.tableField}")
+    #set($ChildFeild="${tableModel.tableField.substring(0,1).toUpperCase()}${tableModel.tableField.substring(1)}")
+            QueryWrapper<${ChildName}Entity> queryWrapper${ChildName}=new QueryWrapper<>();
+    #if($snowflake)
+            queryWrapper${ChildName}.lambda().eq(${ChildName}Entity::get${ChildFeild},entity.get${MainFeild}());
+    #else
+            queryWrapper${ChildName}.lambda().eq(${ChildName}Entity::get${ChildFeild},entity.getFlowtaskid());
+    #end
+
+            ${childName}Service.remove(queryWrapper${ChildName});
+#end
+        #if(${columnChildren.size()}>0)
+						//子表数据
+            #foreach($cl in ${columnChildren})
+				QueryWrapper<${cl.modelUpName}Entity> queryWrapper${cl.modelUpName}=new QueryWrapper<>();
+                #if($snowflake)
+                    queryWrapper${cl.modelUpName}.lambda().eq(${cl.modelUpName}Entity::get${cl.relationUpField},entity.get${cl.mainUpKey}());
+                #else
+                    queryWrapper${cl.modelUpName}.lambda().eq(${cl.modelUpName}Entity::get${cl.relationUpField}, entity.getFlowtaskid());
+                #end
+                ${cl.modelLowName}Service.remove(queryWrapper${cl.modelUpName});
+            #end
+        #end
+#end
+        }
+        return ActionResult.success("删除成功");
+    }
+#end
+
+
+    #if(${column.value}=='edit')
+   /**
+    * 更新
+    *
+    * @param id
+    * @param ${name}Form
+    * @return
+    */
+    @PutMapping("/{id}")
+#if(${DS})
+    @DSTransactional
+#else
+    @Transactional
+#end
+    @Operation(summary = "更新")
+    public ActionResult update(@PathVariable("id") String id,@RequestBody @Valid ${Name}Form ${name}Form) throws DataException {
+        String b =  ${name}Service.checkForm(${name}Form,1);
+        if (StringUtil.isNotEmpty(b)){
+            return ActionResult.fail(b + "不能重复");
+        }
+        UserInfo userInfo=userProvider.get();
+        ${Name}Entity entity= ${name}Service.getInfo(id);
+        if(entity!=null){
+            GeneraterSwapUtil.swapDatetime(${name}Form);
+ #foreach($jnpfkey in ${system})
+            #set($model = "${jnpfkey.vModel.substring(0,1).toUpperCase()}${jnpfkey.vModel.substring(1)}")
+            #set($key = ${jnpfkey.config.jnpfKey})
+            #set($rule = ${jnpfkey.config.rule})
+            #if(${key}=='modifyUser')
+                ${name}Form.set${model}(userInfo.getUserId());
+            #elseif(${key}=='modifyTime')
+                ${name}Form.set${model}(DateUtil.getNow());
+            #elseif(${key}=='currOrganize')
+                ${name}Form.set${model}(entity.get${model}());
+            #elseif(${key}=='currPosition')
+                ${name}Form.set${model}(entity.get${model}());
+            #end
+        #end
+            ${Name}Entity subentity=JsonUtil.getJsonToBean(${name}Form, ${Name}Entity.class);
+            #foreach($jnpfkey in ${system})
+                #set($model = "${jnpfkey.vModel.substring(0,1).toUpperCase()}${jnpfkey.vModel.substring(1)}")
+                #set($key = ${jnpfkey.config.jnpfKey})
+                #if(${key}=='createUser')
+					subentity.set${model}(entity.get${model}());
+                #elseif(${key}=='createTime')
+					subentity.set${model}(entity.get${model}());
+                #end
+            #end
+				boolean b1 = ${name}Service.updateById(subentity);
+				if (!b1){
+				return ActionResult.fail("当前表单原数据已被调整，请重新进入该页面编辑并提交数据");
+				}
+				#if(${lineEdit})
+                    boolean	isPc = ServletUtil.getHeader("jnpf-origin").equals("pc");
+                    if (!isPc){
+                #end
+        #foreach($grid in ${child})
+            #set($tableField = "${grid.tableField.substring(0,1).toUpperCase()}${grid.tableField.substring(1)}")
+            #set($relationField = "${grid.relationField.substring(0,1).toUpperCase()}${grid.relationField.substring(1)}")
+            #set($chidKeyName = "${grid.chidKeyName.substring(0,1).toUpperCase()}${grid.chidKeyName.substring(1)}")
+            #set($serviceName = "${grid.className.substring(0,1).toLowerCase()}${grid.className.substring(1)}")
+
+            QueryWrapper<${grid.className}Entity> ${grid.className}queryWrapper = new QueryWrapper<>();
+            #if($snowflake)
+                ${grid.className}queryWrapper.lambda().eq(${grid.className}Entity::get${tableField}, entity.get${relationField}());
+            #else
+                ${grid.className}queryWrapper.lambda().eq(${grid.className}Entity::get${tableField}, entity.getFlowtaskid());
+            #end
+            ${serviceName}Service.remove(${grid.className}queryWrapper);
+            #set($list = "${grid.className.substring(0,1).toUpperCase()}${grid.className.substring(1).toLowerCase()}")
+            if (${name}Form.get${list}List()!=null){
+            List<${grid.className}Entity> ${grid.className}List = JsonUtil.getJsonToList(${name}Form.get${list}List(),${grid.className}Entity.class);
+            for(${grid.className}Entity entitys : ${grid.className}List){
+            #foreach($jnpfkey in ${grid.childList})
+              #if(${jnpfkey.fieLdsModel.vModel} !='')
+
+                #set($key = ${jnpfkey.fieLdsModel.config.jnpfKey})
+                #set($rule = ${jnpfkey.fieLdsModel.config.rule})
+                #set($model = "${jnpfkey.fieLdsModel.vModel.substring(0,1).toUpperCase()}${jnpfkey.fieLdsModel.vModel.substring(1)}")
+                #if(${key}=='modifyUser')
+                    entitys.set${model}(userInfo.getUserId());
+                #elseif(${key}=='modifyTime')
+                    entitys.set${model}(DateUtil.getNowDate());
+                #elseif(${jnpfkey}=='currOrganize' || ${jnpfkey}=='currPosition')
+                    entity.set${model}(null);
+                #elseif(${key}=='billRule')
+					entitys.set${model}(StringUtil.isEmpty(entitys.get${model}())?generaterSwapUtil.getBillNumber("${rule}",false):entitys.get${model}());
+                #end
+              #end
+            #end
+            #if($snowflake)
+                entitys.set${chidKeyName}(RandomUtil.uuId());
+                entitys.set${tableField}(entity.get${relationField}());
+            #else
+                entitys.set${tableField}(entity.getFlowtaskid());
+            #end
+                ${serviceName}Service.save(entitys);
+            }
+        }
+        #end
+        #if(${lineEdit})
+			}
+        #end
+        #if(${columnChildren.size()}>0)
+						//子表数据
+            #foreach($cl in  ${columnChildren})
+                #set($oracleName ="${cl.TableName.substring(0,1).toUpperCase()}${cl.TableName.substring(1).toLowerCase()}")
+				if(ObjectUtil.isNotEmpty(${name}Form.get${oracleName}())){
+                    QueryWrapper<${cl.modelUpName}Entity> queryWrapper${cl.modelUpName} =new QueryWrapper<>();
+                #if($snowflake)
+                    queryWrapper${cl.modelUpName}.lambda().eq(${cl.modelUpName}Entity::get${cl.relationUpField},entity.get${cl.mainUpKey}());
+                #else
+                    queryWrapper${cl.modelUpName}.lambda().eq(${cl.modelUpName}Entity::get${cl.relationUpField},entity.getFlowtaskid());
+                #end
+                ${cl.modelUpName}Entity ${cl.tableName}OneEntity= ${cl.modelLowName}Service.getOne(queryWrapper${cl.modelUpName});
+                ${cl.modelUpName}Entity  ${cl.tableName}entity=JsonUtil.getJsonToBean(${name}Form.get${oracleName}(), ${cl.modelName}Entity.class);
+                ${cl.tableName}entity.set${cl.mainField}(${cl.tableName}OneEntity.get${cl.mainField}());
+                #if($snowflake)
+                    ${cl.tableName}entity.set${cl.relationUpField}(entity.get${cl.mainUpKey}());
+                 #else
+                     ${cl.tableName}entity.set${cl.relationUpField}(entity.getFlowtaskid());
+                #end
+                #foreach($clModel in ${cl.fieLdsModelList})
+                    #set($model ="${clModel.field.substring(0,1).toUpperCase()}${clModel.field.substring(1)}")
+                    #set($jnpfkey =  ${clModel.mastTable.fieLdsModel.config.jnpfKey})
+                    #if(${jnpfkey}=='modifyUser')
+                        ${cl.tableName}entity.set${model}(userInfo.getUserId());
+                    #elseif(${jnpfkey}=='modifyTime')
+                        ${cl.tableName}entity.set${model}(DateUtil.getNowDate());
+                    #elseif(${jnpfkey}=='currOrganize' || ${jnpfkey}=='currPosition' || ${jnpfkey}=='createUser' || ${jnpfkey}=='createTime')
+                        ${cl.tableName}entity.set${model}(null);
+##                    #elseif(${jnpfkey}=='currOrganize')
+##                        ${cl.tableName}entity.set${model}(StringUtil.isEmpty(userInfo.getDepartmentId()) ? userInfo.getOrganizeId() : userInfo.getDepartmentId());
+##                    #elseif(${jnpfkey}=='currPosition')
+##												if(userInfo.getPositionIds()!=null&&userInfo.getPositionIds().length>0){
+##                        ${cl.tableName}entity.set${model}(userInfo.getPositionIds()[0]);
+##												}
+                    #elseif(${jnpfkey}=='billRule')
+                        #set($rule = ${clModel.mastTable.fieLdsModel.config.rule})
+                        ${cl.tableName}entity.set${model}(generaterSwapUtil.getBillNumber("$!{rule}",false));
+                    #end
+                #end
+                ${cl.modelLowName}Service.updateById(${cl.tableName}entity);
+				}
+            #end
+        #end
+        return ActionResult.success("更新成功");
+        }else{
+            return ActionResult.fail("更新失败，数据不存在");
+        }
+    }
+    #end
+
+
+#end
+
+
+}

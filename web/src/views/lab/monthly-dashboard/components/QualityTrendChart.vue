@@ -13,6 +13,7 @@
 import { ref, watch, onMounted, onUnmounted } from 'vue';
 import { useECharts } from '/@/hooks/web/useECharts';
 import type { QualityTrend } from '/@/api/lab/monthlyQualityReport';
+import dayjs from 'dayjs';
 
 interface Props {
   data?: QualityTrend[] | null;
@@ -40,7 +41,13 @@ function initChart() {
 function updateChart() {
   if (!setChartOptions || !props.data) return;
 
-  const dates = props.data.map((item) => item.date);
+  // Format dates for display
+  const dates = props.data.map((item) => {
+    // Handle timestamp numbers or date strings
+    const date = typeof item.date === 'number' ? dayjs(item.date) : dayjs(String(item.date));
+    return date.format('MM-DD');
+  });
+
   const qualifiedRates = props.data.map((item) => Number(item.qualifiedRate) || 0);
   const classARates = props.data.map((item) => Number(item.classARate) || 0);
   const classBRates = props.data.map((item) => Number(item.classBRate) || 0);
@@ -195,12 +202,12 @@ onUnmounted(() => {
 
 .chart-body {
   flex: 1;
-  min-height: 250px;
+  min-height: 320px;
 }
 
 .chart-container {
   width: 100%;
   height: 100%;
-  min-height: 250px;
+  min-height: 320px;
 }
 </style>

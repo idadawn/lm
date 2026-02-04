@@ -165,12 +165,12 @@ onUnmounted(() => {
 
 .chart-body {
   flex: 1;
-  min-height: 250px;
+  min-height: 320px;
 }
 
 .chart-container {
   width: 100%;
   height: 100%;
-  min-height: 250px;
+  min-height: 320px;
 }
 </style>

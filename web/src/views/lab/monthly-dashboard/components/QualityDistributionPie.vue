@@ -72,6 +72,11 @@ function updateChart() {
 
   const totalWeight = s.totalWeight || 0;
 
+  // Format total weight for display
+  const totalWeightText = totalWeight > 0
+    ? `${(totalWeight / 1000).toFixed(1)}吨`
+    : '0吨';
+
   const option = {
     tooltip: {
       trigger: 'item',
@@ -87,7 +92,7 @@ function updateChart() {
       {
         type: 'pie',
         radius: ['40%', '65%'],
-        center: ['40%', '50%'],
+        center: ['38%', '50%'],
         avoidLabelOverlap: false,
         label: {
           show: false,
@@ -105,31 +110,23 @@ function updateChart() {
         data: pieData,
       },
     ],
-    graphic: [
-      {
-        type: 'text',
-        left: '40%',
-        top: '48%',
-        style: {
-          text: '总重量',
-          textAlign: 'center',
-          fill: '#8c8c8c',
-          fontSize: 12,
-        },
+    title: {
+      show: true,
+      text: totalWeightText,
+      subtext: '总重量',
+      left: '38%',
+      top: '44%',
+      textAlign: 'center',
+      textStyle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#262626',
       },
-      {
-        type: 'text',
-        left: '40%',
-        top: '54%',
-        style: {
-          text: `${(totalWeight / 1000).toFixed(1)}吨`,
-          textAlign: 'center',
-          fill: '#262626',
-          fontSize: 18,
-          fontWeight: 'bold',
-        },
+      subtextStyle: {
+        fontSize: 13,
+        color: '#8c8c8c',
       },
-    ],
+    },
   };
 
   setChartOptions(option);
@@ -180,12 +177,12 @@ onUnmounted(() => {
 
 .chart-body {
   flex: 1;
-  min-height: 250px;
+  min-height: 320px;
 }
 
 .chart-container {
   width: 100%;
   height: 100%;
-  min-height: 250px;
+  min-height: 320px;
 }
 </style>

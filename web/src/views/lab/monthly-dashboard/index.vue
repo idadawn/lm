@@ -98,8 +98,9 @@ async function fetchData() {
       startDate: dateRange.value[0].format(dateFormat),
       endDate: dateRange.value[1].format(dateFormat),
     });
-    data.value = response;
-    console.log('API响应数据:', response);
+    // defHttp 可能返回完整响应对象，需要手动提取 data 字段
+    const actualData = (response as any)?.data || response;
+    data.value = actualData;
   } catch (error) {
     console.error('获取月度报表数据失败:', error);
     message.error('获取数据失败，请稍后重试');
@@ -170,14 +171,17 @@ onMounted(() => {
 }
 
 .chart-row-2 {
-  grid-template-columns: 3fr 2fr;
+  grid-template-columns: 2.5fr 1.5fr;
 }
 
 .chart-row-3 {
-  grid-template-columns: 1.8fr 1.8fr 1.4fr;
+  grid-template-columns: 1.5fr 1.5fr 2fr;
 }
 
 @media (max-width: 1600px) {
+  .chart-row-2 {
+    grid-template-columns: 1fr 1fr;
+  }
   .chart-row-3 {
     grid-template-columns: repeat(2, 1fr);
   }

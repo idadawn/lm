@@ -151,7 +151,6 @@ function updateGauge(rate?: number) {
 watch(
   () => props.summary,
   (newSummary) => {
-    console.log('KpiCards: summary changed', newSummary);
     if (newSummary) {
       nextTick(() => {
         updateGauge(newSummary.qualifiedRate);
@@ -257,16 +256,17 @@ onUnmounted(() => {
 .kpi-card:nth-child(2) {
   flex-direction: column;
   text-align: center;
-  padding: 16px;
+  padding: 20px 16px 16px;
 }
 
 .kpi-gauge-container {
   position: relative;
   width: 100%;
-  height: 100px;
+  height: 110px;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
+  margin-bottom: 4px;
 }
 
 .kpi-gauge {
@@ -276,14 +276,16 @@ onUnmounted(() => {
 
 .kpi-gauge-value {
   position: absolute;
-  bottom: 0;
+  bottom: 5px;
   left: 50%;
   transform: translateX(-50%);
   text-align: center;
+  z-index: 1;
 
   > span:first-child {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 700;
+    line-height: 1;
 
     &.success {
       color: #52c41a;
@@ -299,7 +301,7 @@ onUnmounted(() => {
   }
 
   .percent {
-    font-size: 18px;
+    font-size: 16px;
     color: #8c8c8c;
     margin-left: 2px;
   }

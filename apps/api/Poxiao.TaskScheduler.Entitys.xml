@@ -1,0 +1,649 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Poxiao.TaskScheduler.Entitys</name>
+    </assembly>
+    <members>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TaskLogInput.runResult">
+            <summary>
+            执行结果.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TaskLogInput.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TaskLogInput.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskCrInput.fullName">
+            <summary>
+            任务名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskCrInput.executeType">
+            <summary>
+            执行类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskCrInput.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskCrInput.executeContent">
+            <summary>
+            执行内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskCrInput.sortCode">
+            <summary>
+            排序.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskCrInput.enCode">
+            <summary>
+            编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskCrInput.enabledMark">
+            <summary>
+            启用标识.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskInfoOutput.fullName">
+            <summary>
+            任务名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskInfoOutput.executeType">
+            <summary>
+            任务类型(1-请求接口，2-存储过程).
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskInfoOutput.description">
+            <summary>
+            功能描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskInfoOutput.executeContent">
+            <summary>
+            执行内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskInfoOutput.sortCode">
+            <summary>
+            排序.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskInfoOutput.enCode">
+            <summary>
+            编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskInfoOutput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskInfoOutput.enabledMark">
+            <summary>
+            执行状态(1-正常,0-异常).
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskListOutput.fullName">
+            <summary>
+            任务标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskListOutput.enCode">
+            <summary>
+            任务编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskListOutput.runCount">
+            <summary>
+            执行次数.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskListOutput.description">
+            <summary>
+            执行说明.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskListOutput.nextRunTime">
+            <summary>
+            下次运行时间（时间戳）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskListOutput.lastRunTime">
+            <summary>
+            最后执行时间（时间戳）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskListOutput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskListOutput.enabledMark">
+            <summary>
+            执行状态(1-正常,0-异常).
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskListOutput.sortCode">
+            <summary>
+            排序.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskListOutput.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskListOutput.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskTaskLogListOutput.description">
+            <summary>
+            执行说明.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskTaskLogListOutput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskTaskLogListOutput.runResult">
+            <summary>
+            执行结果.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskTaskLogListOutput.runTime">
+            <summary>
+            执行时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskUpInput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.TaskScheduler.Entitys.JobDetails">
+            <summary>
+            作业信息表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobDetails.Id">
+            <summary>
+            Id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobDetails.JobId">
+            <summary>
+            作业 Id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobDetails.GroupName">
+            <summary>
+            组名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobDetails.JobType">
+            <summary>
+            作业类型 FullName.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobDetails.AssemblyName">
+            <summary>
+            程序集 Name.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobDetails.Description">
+            <summary>
+            描述信息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobDetails.Concurrent">
+            <summary>
+            是否并行执行.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobDetails.IncludeAnnotations">
+            <summary>
+            是否扫描特性触发器.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobDetails.Properties">
+            <summary>
+            额外数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobDetails.UpdatedTime">
+            <summary>
+            更新时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobDetails.CreateType">
+            <summary>
+            作业创建类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobDetails.ScriptCode">
+            <summary>
+            脚本代码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobDetails.TenantId">
+            <summary>
+            租户id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.Id">
+            <summary>
+            Id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.TriggerId">
+            <summary>
+            触发器 Id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.JobId">
+            <summary>
+            作业 Id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.TriggerType">
+            <summary>
+            触发器类型 FullName.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.AssemblyName">
+            <summary>
+            程序集 Name.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.Args">
+            <summary>
+            参数.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.Description">
+            <summary>
+            描述信息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.Status">
+            <summary>
+            状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.StartTime">
+            <summary>
+            起始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.EndTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.LastRunTime">
+            <summary>
+            最近运行时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.NextRunTime">
+            <summary>
+            下一次运行时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.NumberOfRuns">
+            <summary>
+            触发次数.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.MaxNumberOfRuns">
+            <summary>
+            最大触发次数（0:不限制，n:N次.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.NumberOfErrors">
+            <summary>
+            出错次数.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.MaxNumberOfErrors">
+            <summary>
+            最大出错次数（0:不限制，n:N次）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.NumRetries">
+            <summary>
+            重试次数.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.RetryTimeout">
+            <summary>
+            重试间隔时间（ms）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.StartNow">
+            <summary>
+            是否立即启动.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.RunOnStart">
+            <summary>
+            是否启动时执行一次.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.ResetOnlyOnce">
+            <summary>
+            是否在启动时重置最大触发次数等于一次的作业.
+            </summary>
+            <remarks>解决因持久化数据已完成一次触发但启动时不再执行的问题</remarks>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.JobTriggers.UpdatedTime">
+            <summary>
+            更新时间.
+            </summary>
+        </member>
+        <member name="T:Poxiao.TaskScheduler.Entitys.TimeTaskEntity">
+            <summary>
+            定时任务
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01 .
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.TimeTaskEntity.EnCode">
+            <summary>
+            任务编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.TimeTaskEntity.FullName">
+            <summary>
+            任务名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.TimeTaskEntity.ExecuteType">
+            <summary>
+            执行类型
+            1:数据接口 3:本地方法.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.TimeTaskEntity.ExecuteContent">
+            <summary>
+            执行内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.TimeTaskEntity.ExecuteCycleJson">
+            <summary>
+            执行周期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.TimeTaskEntity.LastRunTime">
+            <summary>
+            最后运行时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.TimeTaskEntity.NextRunTime">
+            <summary>
+            下次运行时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.TimeTaskEntity.RunCount">
+            <summary>
+            运行次数.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.TimeTaskEntity.Description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.TimeTaskEntity.SortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="T:Poxiao.TaskScheduler.Entitys.TimeTaskLogEntity">
+            <summary>
+            定时任务日志
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01 .
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.TimeTaskLogEntity.TaskId">
+            <summary>
+            定时任务主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.TimeTaskLogEntity.RunTime">
+            <summary>
+            执行时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.TimeTaskLogEntity.RunResult">
+            <summary>
+            执行结果.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.TimeTaskLogEntity.Description">
+            <summary>
+            执行说明.
+            </summary>
+        </member>
+        <member name="T:Poxiao.TaskScheduler.Entitys.Enum.RequestTypeEnum">
+            <summary>
+            http请求类型.
+            </summary>
+        </member>
+        <member name="F:Poxiao.TaskScheduler.Entitys.Enum.RequestTypeEnum.BuiltIn">
+            <summary>
+            内置.
+            </summary>
+        </member>
+        <member name="F:Poxiao.TaskScheduler.Entitys.Enum.RequestTypeEnum.Script">
+            <summary>
+            脚本.
+            </summary>
+        </member>
+        <member name="F:Poxiao.TaskScheduler.Entitys.Enum.RequestTypeEnum.Http">
+            <summary>
+            HTTP请求.
+            </summary>
+        </member>
+        <member name="T:Poxiao.TaskScheduler.Entitys.Enum.TaskAdjustmentEnum">
+            <summary>
+            任务调整.
+            </summary>
+        </member>
+        <member name="F:Poxiao.TaskScheduler.Entitys.Enum.TaskAdjustmentEnum.Update">
+            <summary>
+            纯更新.
+            </summary>
+        </member>
+        <member name="F:Poxiao.TaskScheduler.Entitys.Enum.TaskAdjustmentEnum.Suspend">
+            <summary>
+            纯暂停.
+            </summary>
+        </member>
+        <member name="F:Poxiao.TaskScheduler.Entitys.Enum.TaskAdjustmentEnum.ChangeBuiltInAndPause">
+            <summary>
+            改内置且暂停.
+            </summary>
+        </member>
+        <member name="F:Poxiao.TaskScheduler.Entitys.Enum.TaskAdjustmentEnum.ChangeHttpAndPause">
+            <summary>
+            改HTTP且暂停.
+            </summary>
+        </member>
+        <member name="F:Poxiao.TaskScheduler.Entitys.Enum.TaskAdjustmentEnum.Open">
+            <summary>
+            纯开启.
+            </summary>
+        </member>
+        <member name="F:Poxiao.TaskScheduler.Entitys.Enum.TaskAdjustmentEnum.OpenAndAdd">
+            <summary>
+            开启且新增.
+            </summary>
+        </member>
+        <member name="F:Poxiao.TaskScheduler.Entitys.Enum.TaskAdjustmentEnum.ChangeBuiltInAndOpen">
+            <summary>
+            改内置且开启.
+            </summary>
+        </member>
+        <member name="F:Poxiao.TaskScheduler.Entitys.Enum.TaskAdjustmentEnum.ChangeHttpAndOpen">
+            <summary>
+            改HTTP且开启.
+            </summary>
+        </member>
+        <member name="F:Poxiao.TaskScheduler.Entitys.Enum.TaskAdjustmentEnum.ChangeBuiltIn">
+            <summary>
+            改内置.
+            </summary>
+        </member>
+        <member name="F:Poxiao.TaskScheduler.Entitys.Enum.TaskAdjustmentEnum.ChangeHttp">
+            <summary>
+            改HTTP.
+            </summary>
+        </member>
+        <member name="T:Poxiao.TaskScheduler.Entitys.Model.ContentModel">
+            <summary>
+            .
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.ContentModel.cron">
+            <summary>
+            表达式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.ContentModel.interfaceId">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.ContentModel.interfaceName">
+            <summary>
+            接口名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.ContentModel.parameter">
+            <summary>
+            请求参数.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.ContentModel.localHostTaskId">
+            <summary>
+            本地任务id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.ContentModel.TenantId">
+            <summary>
+            租户ID.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.ContentModel.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.ContentModel.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.InterfaceParameter.field">
+            <summary>
+            字段.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.InterfaceParameter.defaultValue">
+            <summary>
+            默认值.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.InterfaceParameter.value">
+            <summary>
+            值.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.TaskMethodInfo.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.TaskMethodInfo.MethodName">
+            <summary>
+            方法名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.TaskMethodInfo.DeclaringType">
+            <summary>
+            方法所属类的Type对象.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.TaskMethodInfo.fullName">
+            <summary>
+            任务名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.TaskMethodInfo.DoOnce">
+            <summary>
+            只执行一次.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.TaskMethodInfo.StartNow">
+            <summary>
+            立即执行（默认等待启动）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.TaskMethodInfo.ExecuteType">
+            <summary>
+            执行类型(并行、列队).
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.TaskMethodInfo.Interval">
+            <summary>
+            执行间隔时间（单位秒）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.TaskMethodInfo.cron">
+            <summary>
+            Cron表达式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.TaskMethodInfo.TimerType">
+            <summary>
+            定时器类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.TaskMethodInfo.RequestUrl">
+            <summary>
+            请求url.
+            </summary>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.TaskMethodInfo.RequestType">
+            <summary>
+            请求类型.
+            </summary>
+            <example>2.</example>
+        </member>
+        <member name="P:Poxiao.TaskScheduler.Entitys.Model.TaskMethodInfo.Remark">
+            <summary>
+            备注.
+            </summary>
+        </member>
+    </members>
+</doc>

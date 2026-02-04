@@ -1,0 +1,619 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Poxiao.Message</name>
+    </assembly>
+    <members>
+        <member name="T:Poxiao.Message.ImReplyService">
+            <summary>
+            业务实现：消息会话.
+            </summary>
+        </member>
+        <member name="F:Poxiao.Message.ImReplyService._repository">
+            <summary>
+            服务基础仓储.
+            </summary>
+        </member>
+        <member name="F:Poxiao.Message.ImReplyService._userManager">
+            <summary>
+            用户管理.
+            </summary>
+        </member>
+        <member name="F:Poxiao.Message.ImReplyService._imHandler">
+            <summary>
+            IM中心处理程序.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Message.ImReplyService.#ctor(SqlSugar.ISqlSugarRepository{Poxiao.Message.Entitys.ImReplyEntity},Poxiao.Infrastructure.Core.Manager.IUserManager,Poxiao.Infrastructure.Core.Handlers.IMHandler)">
+            <summary>
+            初始化一个<see cref="T:Poxiao.Message.ImReplyService"/>类型的新实例.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Message.ImReplyService.GetList">
+            <summary>
+            获取消息会话列表.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.ImReplyService.DelMsgSession(System.String)">
+            <summary>
+            删除聊天会话.
+            </summary>
+            <param name="id">聊天人员UserId</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.ImReplyService.DelMsgContent(System.String)">
+            <summary>
+            删除聊天记录.
+            </summary>
+            <param name="id">聊天人员UserId</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.ImReplyService.ForcedOffline(System.String)">
+            <summary>
+            强制下线.
+            </summary>
+            <param name="connectionId"></param>
+        </member>
+        <member name="T:Poxiao.Message.Service.MessageAccountService">
+            <summary>
+            消息账号
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageAccountService.GetList(Poxiao.Message.Entitys.Dto.MessageAccount.MessageAccountQuery)">
+            <summary>
+            列表.
+            </summary>
+            <param name="input">请求参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageAccountService.GetInfo(System.String)">
+            <summary>
+            详情.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageAccountService.Create(Poxiao.Message.Entitys.Dto.MessageAccount.MessageAccountListOutput)">
+            <summary>
+            新建.
+            </summary>
+            <param name="input">实体对象.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageAccountService.Update(System.String,Poxiao.Message.Entitys.Dto.MessageAccount.MessageAccountListOutput)">
+            <summary>
+            修改.
+            </summary>
+            <param name="id">主键值.</param>
+            <param name="input">实体对象.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageAccountService.Delete(System.String)">
+            <summary>
+            删除.
+            </summary>
+            <param name="id">主键.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageAccountService.ActionsCopy(System.String)">
+            <summary>
+            复制.
+            </summary>
+            <param name="id">主键值.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageAccountService.testDingTalkConnect(Poxiao.Message.Entitys.Dto.MessageAccount.MessageAccountListOutput)">
+            <summary>
+            钉钉链接测试.
+            </summary>
+            <param name="input"></param>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageAccountService.EmailTest(Poxiao.Message.Entitys.Dto.MessageAccount.EmailSendTestQuery)">
+            <summary>
+            邮箱链接测试.
+            </summary>
+            <param name="input"></param>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageAccountService.testQyWebChatConnect(Poxiao.Message.Entitys.Dto.MessageAccount.MessageAccountListOutput)">
+            <summary>
+            企业微信链接测试.
+            </summary>
+            <param name="type"></param>
+            <param name="input"></param>
+        </member>
+        <member name="T:Poxiao.Message.Service.MessageDataTypeService">
+            <summary>
+            消息账号
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageDataTypeService.GetTypeList(System.String)">
+            <summary>
+            下拉列表.
+            </summary>
+            <param name="type"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Message.Service.MessageManager">
+            <summary>
+            消息中心处理类.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageManager.SendDefaultMsg(System.Collections.Generic.List{System.String},Poxiao.Message.Entitys.MessageEntity,System.Collections.Generic.List{Poxiao.Message.Entitys.MessageReceiveEntity})">
+            <summary>
+            默认消息发送.
+            </summary>
+            <param name="toUserIds"></param>
+            <param name="messageEntity"></param>
+            <param name="receiveEntityList"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageManager.SendDefinedMsg(Poxiao.Infrastructure.Dtos.Message.MessageSendModel,System.Collections.Generic.Dictionary{System.String,System.Object})">
+            <summary>
+            自定义消息发送.
+            </summary>
+            <param name="messageSendModel"></param>
+            <param name="bodyDic">跳转页面参数,参数格式 key:用户id，value:跳转json.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageManager.GetMessageSendModels(System.String)">
+            <summary>
+            获取自定义消息发送配置.
+            </summary>
+            <param name="sendConfigId"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageManager.GetMessageEntity(System.String,System.Collections.Generic.Dictionary{System.String,System.String},System.Int32,System.Int32)">
+            <summary>
+            获取消息实例.
+            </summary>
+            <param name="enCode">消息编码.</param>
+            <param name="paramDic">标题或内容替换参数.</param>
+            <param name="type">消息类型 1-公告 2-流程 3-系统 4-日程.</param>
+            <param name="flowType">流程类型 1-审批 2-委托.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageManager.GetMessageReceiveList(System.Collections.Generic.List{System.String},Poxiao.Message.Entitys.MessageEntity,System.Collections.Generic.Dictionary{System.String,System.Object})">
+            <summary>
+            获取消息接收数据.
+            </summary>
+            <param name="toUserIds">发送人员.</param>
+            <param name="messageEntity">消息实例.</param>
+            <param name="bodyDic">跳转页面参数,参数格式 key:用户id，value:跳转json.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageManager.ForcedOffline(System.String)">
+            <summary>
+            强制下线.
+            </summary>
+            <param name="connectionId"></param>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageManager.SaveMessage(Poxiao.Message.Entitys.MessageEntity,System.Collections.Generic.List{Poxiao.Message.Entitys.MessageReceiveEntity})">
+            <summary>
+            保存数据.
+            </summary>
+            <param name="entity">实体对象.</param>
+            <param name="receiveEntityList">收件用户.</param>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageManager.MessageTemplateManage(System.String,System.Collections.Generic.Dictionary{System.String,System.String},System.Boolean)">
+            <summary>
+            消息模板参数替换.
+            </summary>
+            <param name="text"></param>
+            <param name="paramDic"></param>
+            <param name="isGzh"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageManager.EmailSend(System.Collections.Generic.List{System.String},Poxiao.Message.Entitys.Entity.MessageTemplateEntity,Poxiao.Message.Entitys.Entity.MessageAccountEntity)">
+            <summary>
+            邮箱.
+            </summary>
+            <param name="userList"></param>
+            <param name="messageTemplateEntity"></param>
+            <param name="messageAccountEntity"></param>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageManager.SmsSend(System.Collections.Generic.List{System.String},Poxiao.Message.Entitys.Entity.MessageTemplateEntity,Poxiao.Message.Entitys.Entity.MessageAccountEntity,System.Collections.Generic.Dictionary{System.String,System.String})">
+            <summary>
+            短信.
+            </summary>
+            <param name="userList"></param>
+            <param name="messageTemplateEntity"></param>
+            <param name="messageAccountEntity"></param>
+            <param name="smsParams"></param>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageManager.WebHookSend(Poxiao.Message.Entitys.Entity.MessageTemplateEntity,Poxiao.Message.Entitys.Entity.MessageAccountEntity)">
+            <summary>
+            webhook.
+            </summary>
+            <param name="messageTemplateEntity"></param>
+            <param name="messageAccountEntity"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageManager.SignWebhook(Poxiao.Message.Entitys.Entity.MessageAccountEntity)">
+            <summary>
+            webhook签名.
+            </summary>
+            <param name="messageAccountEntity"></param>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageManager.WeChatMpSend(System.String,Poxiao.Message.Entitys.Entity.MessageTemplateEntity,Poxiao.Message.Entitys.Entity.MessageAccountEntity,System.Collections.Generic.Dictionary{System.String,System.String},System.String)">
+            <summary>
+            公众号.
+            </summary>
+            <param name="userId"></param>
+            <param name="messageTemplateEntity"></param>
+            <param name="messageAccountEntity"></param>
+            <param name="paramDic"></param>
+            <param name="bodyDic"></param>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageManager.WebSocketSend(System.Collections.Generic.List{System.String},Poxiao.Message.Entitys.MessageEntity,System.Collections.Generic.List{Poxiao.Message.Entitys.MessageReceiveEntity})">
+            <summary>
+            站内信.
+            </summary>
+            <param name="toUserIds"></param>
+            <param name="messageEntity"></param>
+            <param name="receiveEntityList"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Message.Service.MessageMonitorService">
+            <summary>
+            消息监控
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageMonitorService.GetList(Poxiao.Message.Entitys.Dto.MessageMonitor.MessageMonitorQuery)">
+            <summary>
+            列表.
+            </summary>
+            <param name="input">请求参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageMonitorService.GetInfo(System.String)">
+            <summary>
+            详情.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageMonitorService.Delete(Poxiao.Message.Entitys.Dto.MessageMonitor.MessageMonitorDelInput)">
+            <summary>
+            批量删除.
+            </summary>
+            <param name="input">请求参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageMonitorService.Delete">
+            <summary>
+            一键删除.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Message.Service.MessageTemplateService">
+            <summary>
+            消息监控
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageTemplateService.GetList(Poxiao.Message.Entitys.Dto.MessageTemplate.MessageTemplateQuery)">
+            <summary>
+            列表.
+            </summary>
+            <param name="input">请求参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageTemplateService.GetInfo(System.String)">
+            <summary>
+            详情.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageTemplateService.Create(Poxiao.Message.Entitys.Dto.MessageTemplate.MessageTemplateListOutput)">
+            <summary>
+            新建.
+            </summary>
+            <param name="input">实体对象.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageTemplateService.Update(System.String,Poxiao.Message.Entitys.Dto.MessageTemplate.MessageTemplateListOutput)">
+            <summary>
+            修改.
+            </summary>
+            <param name="id">主键值.</param>
+            <param name="input">实体对象.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageTemplateService.Delete(System.String)">
+            <summary>
+            删除.
+            </summary>
+            <param name="id">主键.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.MessageTemplateService.ActionsCopy(System.String)">
+            <summary>
+            复制.
+            </summary>
+            <param name="id">主键值.</param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Message.Service.SendMessageService">
+            <summary>
+            发送配置
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Message.Service.SendMessageService.GetList(Poxiao.Message.Entitys.Dto.MessageTemplate.MessageTemplateQuery)">
+            <summary>
+            列表.
+            </summary>
+            <param name="input">请求参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.SendMessageService.GetInfo(System.String)">
+            <summary>
+            详情.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.SendMessageService.Create(Poxiao.Message.Entitys.Dto.SendMessage.SendMessageInfoOutput)">
+            <summary>
+            新建.
+            </summary>
+            <param name="input">实体对象.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.SendMessageService.Update(System.String,Poxiao.Message.Entitys.Dto.SendMessage.SendMessageInfoOutput)">
+            <summary>
+            修改.
+            </summary>
+            <param name="id">主键值.</param>
+            <param name="input">实体对象.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.SendMessageService.Delete(System.String)">
+            <summary>
+            删除.
+            </summary>
+            <param name="id">主键.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.SendMessageService.ActionsCopy(System.String)">
+            <summary>
+            复制.
+            </summary>
+            <param name="id">主键值.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.SendMessageService.SendTest(System.String)">
+            <summary>
+            测试发送.
+            </summary>
+            <param name="id">主键值.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.SendMessageService.SendTest(System.Collections.Generic.List{Poxiao.Infrastructure.Dtos.Message.MessageSendModel})">
+            <summary>
+            测试发送.
+            </summary>
+            <param name="input">主键值.</param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Message.Service.ShortLinkService">
+            <summary>
+            公众号.
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Message.Service.ShortLinkService.GetInfo(System.String,System.String)">
+            <summary>
+            新建.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.ShortLinkService.Create(System.String,System.String)">
+            <summary>
+            新建.
+            </summary>
+            <param name="userId">用户ID.</param>
+            <param name="bodyText"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Message.Service.WechatOpenService">
+            <summary>
+            公众号.
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Message.Service.WechatOpenService.CheckToken(System.String,System.String,System.String,System.String)">
+            <summary>
+            验证.
+            </summary>
+            <param name="input">实体对象.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.WechatOpenService.Create(System.String,System.String,System.String,System.String)">
+            <summary>
+            新建.
+            </summary>
+            <param name="input">实体对象.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.Service.WechatOpenService.GetWechatMPEvent">
+            <summary>
+            获取xml参数.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Message.MessageService">
+            <summary>
+            系统消息
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="F:Poxiao.Message.MessageService._usersService">
+            <summary>
+            用户服务.
+            </summary>
+        </member>
+        <member name="F:Poxiao.Message.MessageService._userRelationService">
+            <summary>
+            用户服务.
+            </summary>
+        </member>
+        <member name="F:Poxiao.Message.MessageService._userManager">
+            <summary>
+            用户管理.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Message.MessageService.#ctor(SqlSugar.ISqlSugarRepository{Poxiao.Message.Entitys.MessageEntity},Poxiao.Systems.Interfaces.Permission.IUsersService,Poxiao.Systems.Interfaces.Permission.IUserRelationService,Poxiao.Message.Interfaces.IMessageManager,Poxiao.Infrastructure.Core.Manager.IUserManager,Poxiao.Infrastructure.Core.Handlers.IMHandler)">
+            <summary>
+            初始化一个<see cref="T:Poxiao.Message.MessageService"/>类型的新实例.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Message.MessageService.GetMessageList(Poxiao.Message.Entitys.Dto.Message.MessageListQueryInput)">
+            <summary>
+            列表（通知公告/系统消息/私信消息）.
+            </summary>
+            <param name="input">请求参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.MessageService.GetInfoApi(System.String)">
+            <summary>
+            信息.
+            </summary>
+            <param name="id">主键值.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.MessageService.ReadInfo(System.String)">
+            <summary>
+            读取消息.
+            </summary>
+            <param name="id">主键值.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.MessageService.GetUnReadMsgNum">
+            <summary>
+            读取消息.
+            </summary>
+            <param name="id">主键值.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.MessageService.GetNoticeList(Poxiao.Message.Entitys.Dto.Message.MessageNoticeQueryInput)">
+            <summary>
+            列表（通知公告）.
+            </summary>
+            <param name="input">请求参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.MessageService.Delete(System.String)">
+            <summary>
+            删除.
+            </summary>
+            <param name="id">主键值.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.MessageService.Create(Poxiao.Message.Entitys.Dto.Message.MessageCrInput)">
+            <summary>
+            新建.
+            </summary>
+            <param name="input">实体对象.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.MessageService.Update(System.String,Poxiao.Message.Entitys.Dto.Message.MessageUpInput)">
+            <summary>
+            更新.
+            </summary>
+            <param name="id">主键值</param>
+            <param name="input">实体对象</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.MessageService.Release(System.String)">
+            <summary>
+            发布公告.
+            </summary>
+            <param name="id">主键值.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.MessageService.AllRead(System.String,System.String,System.String)">
+            <summary>
+            全部已读.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.MessageService.DeleteRecordApi(System.Object)">
+            <summary>
+            删除记录.
+            </summary>
+            <param name="postParam">请求参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Message.MessageService.Create(Poxiao.Message.Entitys.MessageEntity,System.Collections.Generic.List{Poxiao.Message.Entitys.MessageReceiveEntity})">
+            <summary>
+            创建.
+            </summary>
+            <param name="entity">实体对象.</param>
+            <param name="receiveEntityList">收件用户.</param>
+        </member>
+        <member name="M:Poxiao.Message.MessageService.Update(Poxiao.Message.Entitys.MessageEntity,System.Collections.Generic.List{Poxiao.Message.Entitys.MessageReceiveEntity})">
+            <summary>
+            更新.
+            </summary>
+            <param name="entity">实体对象.</param>
+            <param name="receiveEntityList">收件用户.</param>
+        </member>
+        <member name="M:Poxiao.Message.MessageService.MessageRead(System.String,System.String,System.String,System.String)">
+            <summary>
+            消息已读（全部）.
+            </summary>
+            <param name="id">id.</param>
+        </member>
+        <member name="M:Poxiao.Message.MessageService.SentNotice(Poxiao.Message.Entitys.MessageEntity)">
+            <summary>
+            发送公告.
+            </summary>
+            <param name="entity">消息信息.</param>
+        </member>
+        <member name="M:Poxiao.Message.MessageService.SentMessage(System.Collections.Generic.List{System.String},System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Int32,System.String)">
+            <summary>
+            发送站内消息.
+            </summary>
+            <param name="toUserIds">发送用户.</param>
+            <param name="title">标题.</param>
+            <param name="bodyText">内容.</param>
+        </member>
+        <member name="M:Poxiao.Message.MessageService.GeTuiMessage(System.Collections.Generic.List{System.String},System.String,System.String,System.String,System.String)">
+            <summary>
+            发送个推.
+            </summary>
+            <param name="toUserIds">推送用户.</param>
+            <param name="title">标题.</param>
+            <param name="content">内容.</param>
+            <param name="msgId">消息id.</param>
+            <param name="type">1:公告消息、2:流程消息、3:聊天消息.</param>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

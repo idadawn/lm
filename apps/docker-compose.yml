@@ -7,7 +7,7 @@
 services:
   # 后端 API
   api:
-    image: lm-api
+    image: ${API_IMAGE:-lm-api}
     container_name: ${CONTAINER_PREFIX:-lm}-api
     restart: unless-stopped
     ports:
@@ -25,9 +25,8 @@ services:
       - ${DEPLOY_DIR:-./deploy}/api/lib/:/app/lib/
     networks:
       - lm-apps-network
-      - lm-infra-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9530/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:9530/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -40,7 +39,7 @@ services:
 
   # 前端 Web（静态文件服务）
   web:
-    image: lm-web
+    image: ${WEB_IMAGE:-lm-web}
     container_name: ${CONTAINER_PREFIX:-lm}-web
     restart: unless-stopped
     # 内部端口，不对外暴露
@@ -49,7 +48,7 @@ services:
     networks:
       - lm-apps-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -79,7 +78,7 @@ services:
       web:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -94,6 +93,3 @@ networks:
   lm-apps-network:
     name: ${NETWORK_NAME:-lm-apps-network}
     driver: bridge
-  lm-infra-network:
-    external: true
-    name: lm-infra-network

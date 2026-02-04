@@ -1,0 +1,978 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Poxiao.VisualData.Entitys</name>
+    </assembly>
+    <members>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.ScreenCategory.ScreenCategoryCrInput">
+            <summary>
+            大屏分类创建输入.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenCategory.ScreenCategoryCrInput.categoryKey">
+            <summary>
+            分类键值.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenCategory.ScreenCategoryCrInput.categoryValue">
+            <summary>
+            分类名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenCategory.ScreenCategoryCrInput.isDeleted">
+            <summary>
+            是否已删除.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.ScreenCategory.ScreenCategoryInfoOutput">
+            <summary>
+            大屏分类详情输出.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenCategory.ScreenCategoryInfoOutput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenCategory.ScreenCategoryInfoOutput.categoryKey">
+            <summary>
+            分类键值.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenCategory.ScreenCategoryInfoOutput.categoryValue">
+            <summary>
+            分类名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenCategory.ScreenCategoryInfoOutput.isDeleted">
+            <summary>
+            是否删除.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.ScreenCategory.ScreenCategoryListOutput">
+            <summary>
+            大屏分类列表输出.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenCategory.ScreenCategoryListOutput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenCategory.ScreenCategoryListOutput.categoryKey">
+            <summary>
+            分类键值.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenCategory.ScreenCategoryListOutput.categoryValue">
+            <summary>
+            分类名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenCategory.ScreenCategoryListOutput.isDeleted">
+            <summary>
+            是否删除.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.ScreenCategory.ScreenCategoryListQueryInput">
+            <summary>
+            大屏分类列表查询输入.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenCategory.ScreenCategoryListQueryInput.category">
+            <summary>
+            分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenCategory.ScreenCategoryListQueryInput.current">
+            <summary>
+            当前页码:pageIndex.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenCategory.ScreenCategoryListQueryInput.size">
+            <summary>
+            每页行数.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.ScreenCategory.ScreenCategoryUpInput">
+            <summary>
+            大屏分类修改输入.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenCategory.ScreenCategoryUpInput.Id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.ScreenConfig.ScreenConfigCrInput">
+            <summary>
+            大屏配置创建输入.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenConfig.ScreenConfigCrInput.component">
+            <summary>
+            组件json.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenConfig.ScreenConfigCrInput.detail">
+            <summary>
+            配置json.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.ScreenConfig.ScreenConfigInfoOutput">
+            <summary>
+            大屏配置详情输出.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenConfig.ScreenConfigInfoOutput.component">
+            <summary>
+            组件json.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenConfig.ScreenConfigInfoOutput.detail">
+            <summary>
+            配置json.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenConfig.ScreenConfigInfoOutput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenConfig.ScreenConfigInfoOutput.visualId">
+            <summary>
+            可视化表主键.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.ScreenConfig.ScreenConfigUpInput">
+            <summary>
+            大屏配置创建输入.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenConfig.ScreenConfigUpInput.Id">
+            <summary>
+            主键ID.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceCrInput.driverClass">
+            <summary>
+            驱动类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceCrInput.name">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceCrInput.username">
+            <summary>
+            用户名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceCrInput.url">
+            <summary>
+            连接地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceCrInput.remark">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceCrInput.password">
+            <summary>
+            密码.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceDynamicQueryInput">
+            <summary>
+            大屏数据源动态查询.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceDynamicQueryInput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceDynamicQueryInput.sql">
+            <summary>
+            sql.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceInfoOutput">
+            <summary>
+            大屏数据源详情输出.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceInfoOutput.driverClass">
+            <summary>
+            驱动类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceInfoOutput.name">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceInfoOutput.username">
+            <summary>
+            用户名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceInfoOutput.url">
+            <summary>
+            连接地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceInfoOutput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceInfoOutput.remark">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceInfoOutput.password">
+            <summary>
+            密码.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceListOutput">
+            <summary>
+            大屏数据源列表输出.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceListOutput.driverClass">
+            <summary>
+            驱动类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceListOutput.name">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceListOutput.username">
+            <summary>
+            用户名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceListOutput.url">
+            <summary>
+            连接地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceListOutput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceListOutput.remark">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceListOutput.password">
+            <summary>
+            密码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceListOutput.isDeleted">
+            <summary>
+            是否删除.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceListQueryInput">
+            <summary>
+            大屏数据源.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceListQueryInput.current">
+            <summary>
+            当前页码:pageIndex.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceListQueryInput.size">
+            <summary>
+            每页行数.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceSeleectOutput">
+            <summary>
+            大屏数据源下拉输出.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceSeleectOutput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceSeleectOutput.driverClass">
+            <summary>
+            驱动类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceSeleectOutput.name">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceUpInput">
+            <summary>
+             大屏数据源修改输入.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenDataSource.ScreenDataSourceUpInput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.ScreenMap.ScreenMapCrInput">
+            <summary>
+            大屏地图创建输入.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenMap.ScreenMapCrInput.name">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenMap.ScreenMapCrInput.data">
+            <summary>
+            数据.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.ScreenMap.ScreenMapInfoOutput">
+            <summary>
+            大屏数据详情输出.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenMap.ScreenMapInfoOutput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenMap.ScreenMapInfoOutput.name">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenMap.ScreenMapInfoOutput.data">
+            <summary>
+            数据.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.ScreenMap.ScreenMapListOutput">
+            <summary>
+            大屏地图列表输出.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenMap.ScreenMapListOutput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenMap.ScreenMapListOutput.name">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.ScreenMap.ScreenMapListQueryInput">
+            <summary>
+            大屏数据列表查询输入.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenMap.ScreenMapListQueryInput.current">
+            <summary>
+            当前页码:pageIndex.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenMap.ScreenMapListQueryInput.size">
+            <summary>
+            每页行数.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.ScreenMap.ScreenMapUpInput">
+            <summary>
+            大屏地图修改输入.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.ScreenMap.ScreenMapUpInput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenCrInput.config">
+            <summary>
+            大屏配置创建输入.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenCrInput.visual">
+            <summary>
+            大屏实体创建输入.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.Screen.ScreenEntityCrInput">
+            <summary>
+            大屏实体创建输入.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenEntityCrInput.category">
+            <summary>
+            大屏类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenEntityCrInput.createDept">
+            <summary>
+            创建部门.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenEntityCrInput.password">
+            <summary>
+            发布密码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenEntityCrInput.title">
+            <summary>
+            大屏标题.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.Screen.ScreenImgFileOutput">
+            <summary>
+            大屏图片文件输出.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenImgFileOutput.domain">
+            <summary>
+            域名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenImgFileOutput.link">
+            <summary>
+            请求连接.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenImgFileOutput.name">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenImgFileOutput.originalName">
+            <summary>
+            原名字.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.Screen.ScreenInfoOutput">
+            <summary>
+            大屏信息输出.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenInfoOutput.backgroundUrl">
+            <summary>
+            大屏背景.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenInfoOutput.category">
+            <summary>
+            大屏类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenInfoOutput.createDept">
+            <summary>
+            创建部门.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenInfoOutput.createTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenInfoOutput.createUser">
+            <summary>
+            创建人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenInfoOutput.id">
+            <summary>
+            主键ID.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenInfoOutput.isDeleted">
+            <summary>
+            是否已删除.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenInfoOutput.password">
+            <summary>
+            发布密码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenInfoOutput.status">
+            <summary>
+            业务状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenInfoOutput.title">
+            <summary>
+            大屏标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenInfoOutput.updateTime">
+            <summary>
+            更新时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenInfoOutput.updateUser">
+            <summary>
+            更新人.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.Screen.ScreenListOutput">
+            <summary>
+            大屏列表输出.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenListOutput.backgroundUrl">
+            <summary>
+            大屏背景.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenListOutput.category">
+            <summary>
+            大屏分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenListOutput.createDept">
+            <summary>
+            创建部门.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenListOutput.createTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenListOutput.createUser">
+            <summary>
+            创建人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenListOutput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenListOutput.isDeleted">
+            <summary>
+            是否删除.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenListOutput.password">
+            <summary>
+            发布密码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenListOutput.status">
+            <summary>
+            业务状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenListOutput.title">
+            <summary>
+            大屏标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenListOutput.updateTime">
+            <summary>
+            更新时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenListOutput.updateUser">
+            <summary>
+            更新人.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.Screen.ScreenListQueryInput">
+            <summary>
+            大屏列表查询输入.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenListQueryInput.category">
+            <summary>
+            大屏类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenListQueryInput.current">
+            <summary>
+            当前页.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenListQueryInput.size">
+            <summary>
+            每页的数量.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.Screen.ScreenSelectorOuput">
+            <summary>
+            大屏下拉框输出.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenSelectorOuput.fullName">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenSelectorOuput.isDeleted">
+            <summary>
+            是否删除.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.Screen.ScreenUpInput">
+            <summary>
+            大屏修改输入
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenUpInput.config">
+             <summary>
+            
+             </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenUpInput.visual">
+             <summary>
+            
+             </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Dto.Screen.ScreenEntityUpInput">
+            <summary>
+            大屏实体修改输入
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenEntityUpInput.id">
+            <summary>
+            主键
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenEntityUpInput.status">
+            <summary>
+            业务状态
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entitys.Dto.Screen.ScreenEntityUpInput.backgroundUrl">
+            <summary>
+            背景图片
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entitys.Enum.ScreenImgEnum">
+            <summary>
+            大屏图片枚举.
+            </summary>
+        </member>
+        <member name="F:Poxiao.VisualData.Entitys.Enum.ScreenImgEnum.BG">
+            <summary>
+            背景图片.
+            </summary>
+        </member>
+        <member name="F:Poxiao.VisualData.Entitys.Enum.ScreenImgEnum.BORDER">
+            <summary>
+            图片框.
+            </summary>
+        </member>
+        <member name="F:Poxiao.VisualData.Entitys.Enum.ScreenImgEnum.SOURCE">
+            <summary>
+            图片.
+            </summary>
+        </member>
+        <member name="F:Poxiao.VisualData.Entitys.Enum.ScreenImgEnum.BANNER">
+            <summary>
+            banner.
+            </summary>
+        </member>
+        <member name="F:Poxiao.VisualData.Entitys.Enum.ScreenImgEnum.SCREENSHOT">
+            <summary>
+            大屏截图.
+            </summary>
+        </member>
+        <member name="F:Poxiao.VisualData.Entitys.Enum.ScreenImgEnum.BACKGROUND">
+            <summary>
+            大屏截图.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entity.VisualCategoryEntity">
+            <summary>
+            可视化分类表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualCategoryEntity.Id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualCategoryEntity.CategoryKey">
+            <summary>
+            分类键值.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualCategoryEntity.CategoryValue">
+            <summary>
+            分类名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualCategoryEntity.IsDeleted">
+            <summary>
+            是否已删除.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualCategoryEntity.TenantId">
+            <summary>
+            租户id.
+            </summary>
+        </member>
+        <member name="M:Poxiao.VisualData.Entity.VisualCategoryEntity.Delete">
+            <summary>
+            删除.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entity.VisualConfigEntity">
+            <summary>
+            可视化配置表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualConfigEntity.Id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualConfigEntity.VisualId">
+            <summary>
+            可视化表主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualConfigEntity.Detail">
+            <summary>
+            配置json.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualConfigEntity.Component">
+            <summary>
+            组件json.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualConfigEntity.TenantId">
+            <summary>
+            租户id.
+            </summary>
+        </member>
+        <member name="M:Poxiao.VisualData.Entity.VisualConfigEntity.Create">
+            <summary>
+            创建.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entity.VisualDBEntity">
+            <summary>
+            可视化数据源配置表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualDBEntity.Id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualDBEntity.Name">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualDBEntity.DriverClass">
+            <summary>
+            驱动类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualDBEntity.Url">
+            <summary>
+            连接地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualDBEntity.UserName">
+            <summary>
+            用户名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualDBEntity.Password">
+            <summary>
+            密码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualDBEntity.Remark">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualDBEntity.CreateUser">
+            <summary>
+            创建人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualDBEntity.CreateDept">
+            <summary>
+            创建部门.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualDBEntity.CreateTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualDBEntity.UpdateUser">
+            <summary>
+            修改人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualDBEntity.UpdateTime">
+            <summary>
+            修改时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualDBEntity.Status">
+            <summary>
+            修改时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualDBEntity.IsDeleted">
+            <summary>
+            是否已删除.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualDBEntity.TenantId">
+            <summary>
+            租户id.
+            </summary>
+        </member>
+        <member name="M:Poxiao.VisualData.Entity.VisualDBEntity.Create">
+            <summary>
+            创建.
+            </summary>
+        </member>
+        <member name="M:Poxiao.VisualData.Entity.VisualDBEntity.LastModify">
+            <summary>
+            修改.
+            </summary>
+        </member>
+        <member name="M:Poxiao.VisualData.Entity.VisualDBEntity.Delete">
+            <summary>
+            删除.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entity.VisualEntity">
+            <summary>
+            大屏基本信息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualEntity.Id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualEntity.Title">
+            <summary>
+            大屏标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualEntity.BackgroundUrl">
+            <summary>
+            大屏背景.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualEntity.Category">
+            <summary>
+            大屏类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualEntity.Password">
+            <summary>
+            发布密码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualEntity.CreateUser">
+            <summary>
+            创建人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualEntity.CreateDept">
+            <summary>
+            创建部门.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualEntity.CreateTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualEntity.UpdateUser">
+            <summary>
+            修改人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualEntity.UpdateTime">
+            <summary>
+            修改时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualEntity.Status">
+            <summary>
+            业务状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualEntity.IsDeleted">
+            <summary>
+            是否已删除.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualEntity.TenantId">
+            <summary>
+            租户id.
+            </summary>
+        </member>
+        <member name="M:Poxiao.VisualData.Entity.VisualEntity.Create">
+            <summary>
+            创建.
+            </summary>
+        </member>
+        <member name="M:Poxiao.VisualData.Entity.VisualEntity.LastModify">
+            <summary>
+            修改.
+            </summary>
+        </member>
+        <member name="M:Poxiao.VisualData.Entity.VisualEntity.Delete">
+            <summary>
+            删除.
+            </summary>
+        </member>
+        <member name="T:Poxiao.VisualData.Entity.VisualMapEntity">
+            <summary>
+            可视化地图配置表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualMapEntity.Id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualMapEntity.Name">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualMapEntity.data">
+            <summary>
+            地图数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.VisualData.Entity.VisualMapEntity.TenantId">
+            <summary>
+            租户id.
+            </summary>
+        </member>
+    </members>
+</doc>

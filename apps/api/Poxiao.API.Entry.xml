@@ -1,0 +1,89 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Poxiao.API.Entry</name>
+    </assembly>
+    <members>
+        <member name="T:Poxiao.API.Entry.Extensions.DatabaseInitExtension">
+            <summary>
+            数据库初始化扩展.
+            </summary>
+        </member>
+        <member name="M:Poxiao.API.Entry.Extensions.DatabaseInitExtension.InitializeLabDatabase(System.IServiceProvider)">
+            <summary>
+            初始化 Lab 模块数据库表.
+            </summary>
+        </member>
+        <member name="M:Poxiao.API.Entry.Extensions.DatabaseInitExtension.SeedQuantityUnits(SqlSugar.ISqlSugarRepository{Poxiao.Lab.Entity.ProductSpecEntity})">
+            <summary>
+            初始化数量单位.
+            </summary>
+        </member>
+        <member name="M:Poxiao.API.Entry.Extensions.DatabaseInitExtension.SeedMagneticUnits(SqlSugar.ISqlSugarRepository{Poxiao.Lab.Entity.ProductSpecEntity})">
+            <summary>
+            初始化磁性能单位.
+            </summary>
+        </member>
+        <member name="T:Poxiao.API.Entry.Handlers.JwtHandler">
+            <summary>
+            jwt处理程序.
+            </summary>
+        </member>
+        <member name="M:Poxiao.API.Entry.Handlers.JwtHandler.HandleAsync(Microsoft.AspNetCore.Authorization.AuthorizationHandlerContext)">
+            <summary>
+            重写 Handler 添加自动刷新.
+            </summary>
+            <param name="context"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.API.Entry.Handlers.JwtHandler.PipelineAsync(Microsoft.AspNetCore.Authorization.AuthorizationHandlerContext,Microsoft.AspNetCore.Http.DefaultHttpContext)">
+            <summary>
+            授权判断逻辑，授权通过返回 true，否则返回 false.
+            </summary>
+            <param name="context"></param>
+            <param name="httpContext"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.API.Entry.Handlers.JwtHandler.CheckAuthorzieAsync(Microsoft.AspNetCore.Http.DefaultHttpContext)">
+            <summary>
+            检查权限.
+            </summary>
+            <param name="httpContext"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Microsoft.Extensions.DependencyInjection.OSSServiceConfigureExtensions">
+            <summary>
+            OSS服务配置拓展.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Extensions.DependencyInjection.OSSServiceConfigureExtensions.OSSServiceConfigure(Microsoft.Extensions.DependencyInjection.IServiceCollection)">
+            <summary>
+            OSS服务配置.
+            </summary>
+            <param name="services"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Microsoft.Extensions.DependencyInjection.SqlSugarConfigureExtensions">
+            <summary>
+            SqlSugar配置拓展.
+            </summary>
+        </member>
+        <member name="M:Microsoft.Extensions.DependencyInjection.SqlSugarConfigureExtensions.SetDbConfig(SqlSugar.DbConnectionConfig)">
+            <summary>
+            配置连接属性.
+            </summary>
+            <param name="config"></param>
+        </member>
+        <member name="M:Microsoft.Extensions.DependencyInjection.SqlSugarConfigureExtensions.SetDbAop(SqlSugar.SqlSugarScopeProvider)">
+            <summary>
+            配置Aop.
+            </summary>
+            <param name="db"></param>
+        </member>
+        <member name="T:Program">
+            <summary>
+            Auto-generated public partial Program class for top-level statement apps.
+            </summary>
+        </member>
+    </members>
+</doc>

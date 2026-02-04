@@ -1,0 +1,5426 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Poxiao.WorkFlow.Entitys</name>
+    </assembly>
+    <members>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeInfoOutput.formData">
+            <summary>
+            表单数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeInfoOutput.flowFormInfo">
+            <summary>
+            表单详情.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeInfoOutput.flowTemplateInfo">
+            <summary>
+            流程详情.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeInfoOutput.flowTaskInfo">
+            <summary>
+            流程任务.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeInfoOutput.flowTaskNodeList">
+            <summary>
+            流程任务节点.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeInfoOutput.flowTaskOperatorList">
+            <summary>
+            流程任务经办.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeInfoOutput.flowTaskOperatorRecordList">
+            <summary>
+            流程任务经办记录.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeInfoOutput.formOperates">
+            <summary>
+            当前节点权限.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeInfoOutput.approversProperties">
+            <summary>
+            当前节点属性.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeInfoOutput.draftData">
+            <summary>
+            审核保存数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.enCode">
+            <summary>
+            编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.creatorUserId">
+            <summary>
+            创建人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.thisStep">
+            <summary>
+            当前节点名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.flowCategory">
+            <summary>
+            流程分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.fullName">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.flowName">
+            <summary>
+            引擎名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.status">
+            <summary>
+            状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.startTime">
+            <summary>
+            发起时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.userName">
+            <summary>
+            发起人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.description">
+            <summary>
+            说明.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.flowCode">
+            <summary>
+            引擎编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.flowId">
+            <summary>
+            引擎id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.processId">
+            <summary>
+            实例id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.formType">
+            <summary>
+            表单类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.formData">
+            <summary>
+            表单Json.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.flowUrgent">
+            <summary>
+            紧急程度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.thisStepId">
+            <summary>
+            当前节点id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.completion">
+            <summary>
+            流程进度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.nodeName">
+            <summary>
+            所属节点.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.approversProperties">
+            <summary>
+            节点属性.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.nodeCode">
+            <summary>
+            所属节点.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.flowVersion">
+            <summary>
+            流程版本.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.templateId">
+            <summary>
+            流程主表id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.delegateUser">
+            <summary>
+            委托发起人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.suspend">
+            <summary>
+            挂起（0：否，1：是）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.isBatch">
+            <summary>
+            紧急程度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListOutput.tenantId">
+            <summary>
+            租户id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListQuery.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListQuery.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListQuery.templateId">
+            <summary>
+            所属流程.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListQuery.flowId">
+            <summary>
+            所属流程.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListQuery.flowCategory">
+            <summary>
+            引擎分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListQuery.creatorUserId">
+            <summary>
+            创建人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListQuery.nodeCode">
+            <summary>
+            节点id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListQuery.flowUrgent">
+            <summary>
+            紧急程度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeRecordListOutput.fullName">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeRecordListOutput.list">
+            <summary>
+            经办记录.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentCrInput.file">
+            <summary>
+            附件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentCrInput.image">
+            <summary>
+            图片.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentCrInput.taskId">
+            <summary>
+            任务id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentCrInput.text">
+            <summary>
+            评论内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentInfoOutput.description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentInfoOutput.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentInfoOutput.flowCategory">
+            <summary>
+            流程分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentInfoOutput.flowId">
+            <summary>
+            流程id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentInfoOutput.flowName">
+            <summary>
+            流程名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentInfoOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentInfoOutput.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentInfoOutput.toUserName">
+            <summary>
+            评论人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentInfoOutput.toUserId">
+            <summary>
+            评论人id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentListOutput.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentListOutput.creatorUserId">
+            <summary>
+            创建用户.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentListOutput.creatorUser">
+            <summary>
+            创建用户名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentListOutput.creatorUserHeadIcon">
+            <summary>
+            创建用户头像.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentListOutput.text">
+            <summary>
+            文本.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentListOutput.image">
+            <summary>
+            图片.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentListOutput.file">
+            <summary>
+            附件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentListOutput.taskId">
+            <summary>
+            任务id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentListOutput.id">
+            <summary>
+            自然主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentListOutput.isDel">
+            <summary>
+            是否删除.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentListOutput.lastModifyTime">
+            <summary>
+            修改时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentListQuery.taskId">
+            <summary>
+            任务id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowComment.FlowCommentUpInput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegateQuery.myOrDelagateToMe">
+            <summary>
+            1:委托设置,2:委托给我的.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteCrInput.description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteCrInput.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteCrInput.flowCategory">
+            <summary>
+            流程分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteCrInput.flowId">
+            <summary>
+            委托流程.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteCrInput.flowName">
+            <summary>
+            委托流程名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteCrInput.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteCrInput.toUserName">
+            <summary>
+            被委托人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteCrInput.toUserId">
+            <summary>
+            被委托人id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteCrInput.type">
+            <summary>
+            委托类型(0:发起,1:审批).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteCrInput.userName">
+            <summary>
+            委托人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteCrInput.userId">
+            <summary>
+            委托人id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteInfoOutput.description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteInfoOutput.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteInfoOutput.flowCategory">
+            <summary>
+            流程分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteInfoOutput.flowId">
+            <summary>
+            委托流程.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteInfoOutput.flowName">
+            <summary>
+            委托名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteInfoOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteInfoOutput.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteInfoOutput.toUserName">
+            <summary>
+            被委托人名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteInfoOutput.toUserId">
+            <summary>
+            被委托人id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteInfoOutput.type">
+            <summary>
+            委托类型(0:发起,1:审批).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteInfoOutput.userName">
+            <summary>
+            委托人名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteInfoOutput.userId">
+            <summary>
+            委托人id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteListOutput.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteListOutput.creatorUserId">
+            <summary>
+            创建用户.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteListOutput.deleteMark">
+            <summary>
+            删除标志.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteListOutput.deleteTime">
+            <summary>
+            删除时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteListOutput.deleteUserId">
+            <summary>
+            删除用户.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteListOutput.description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteListOutput.enabledMark">
+            <summary>
+            有效标志.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteListOutput.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteListOutput.flowCategory">
+            <summary>
+            流程分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteListOutput.flowId">
+            <summary>
+            委托流程.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteListOutput.flowName">
+            <summary>
+            委托流程名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteListOutput.id">
+            <summary>
+            自然主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteListOutput.lastModifyTime">
+            <summary>
+            修改时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteListOutput.lastModifyUserId">
+            <summary>
+            修改用户.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteListOutput.sortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteListOutput.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteListOutput.toUserName">
+            <summary>
+            被委托人名字.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteListOutput.toUserId">
+            <summary>
+            被委托人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteListOutput.type">
+            <summary>
+            委托类型(0:发起,1:审批).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteListOutput.userName">
+            <summary>
+            委托人名字.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteListOutput.userId">
+            <summary>
+            委托人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowDelegete.FlowDelegeteUpInput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.fullName">
+            <summary>
+            流程名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.enCode">
+            <summary>
+            流程编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.sortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.formType">
+            <summary>
+            表单类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.category">
+            <summary>
+            流程分类(数据字典-工作流-流程分类).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.type">
+            <summary>
+            流程类型（0：发起流程，1：功能流程）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.icon">
+            <summary>
+            图标.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.iconBackground">
+            <summary>
+            图标背景.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.description">
+            <summary>
+            说明.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.enabledMark">
+            <summary>
+            状态(0-未发布，1-已发布).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.formData">
+            <summary>
+            表单JSON包.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.flowTemplateJson">
+            <summary>
+            流程JOSN包.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.tables">
+            <summary>
+            表信息数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.dbLinkId">
+            <summary>
+            数据库连接id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.appFormUrl">
+            <summary>
+            app地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.formUrl">
+            <summary>
+            表单地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.draftJson">
+            <summary>
+            表单json草稿.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.flowType">
+            <summary>
+            流程类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.interfaceUrl">
+            <summary>
+            接口路径.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.tableJson">
+            <summary>
+            关联的表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.propertyJson">
+            <summary>
+            表单模型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.urlAddress">
+            <summary>
+            Web地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineCrInput.appUrlAddress">
+            <summary>
+            APP地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineFieldOutput.vmodel">
+            <summary>
+            字段.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineFieldOutput.label">
+            <summary>
+            字段说明.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineImportInput.flowEngine">
+            <summary>
+            导入流程.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineImportInput.visibleList">
+            <summary>
+            导入流程权限.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineImportOutput.flowEngine">
+            <summary>
+            流程实例.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineImportOutput.visibleList">
+            <summary>
+            流程可见范围.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineInfoOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineInfoOutput.fullName">
+            <summary>
+            流程名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineInfoOutput.enCode">
+            <summary>
+            流程编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineInfoOutput.sortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineInfoOutput.formType">
+            <summary>
+            表单类型(数据字典-流程表单类型).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineInfoOutput.category">
+            <summary>
+            流程分类(数据字典-工作流-流程分类).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineInfoOutput.type">
+            <summary>
+            流程类型(数据字典-工作流-流程类型).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineInfoOutput.icon">
+            <summary>
+            图标.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineInfoOutput.iconBackground">
+            <summary>
+            图标背景.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineInfoOutput.description">
+            <summary>
+            说明.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineInfoOutput.enabledMark">
+            <summary>
+            状态(0-关闭，1-开启).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineInfoOutput.formData">
+            <summary>
+            表单JSON包.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineInfoOutput.flowTemplateJson">
+            <summary>
+            流程JOSN包.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineInfoOutput.tables">
+            <summary>
+            关联表信息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineInfoOutput.version">
+            <summary>
+            版本.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineInfoOutput.visibleType">
+            <summary>
+            版本类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineInfoOutput.dbLinkId">
+            <summary>
+            数据库连接id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineInfoOutput.appFormUrl">
+            <summary>
+            app链接.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineInfoOutput.formUrl">
+            <summary>
+            pc链接.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListAllOutput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListAllOutput.enCode">
+            <summary>
+            流程编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListAllOutput.fullName">
+            <summary>
+            流程名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListAllOutput.type">
+            <summary>
+            流程类型(数据字典-工作流-流程类型).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListAllOutput.category">
+            <summary>
+            流程分类(数据字典-工作流-流程分类).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListAllOutput.formType">
+            <summary>
+            表单类型(数据字典-流程表单类型).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListAllOutput.formData">
+            <summary>
+            表单JSON包.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListAllOutput.visibleType">
+            <summary>
+            版本类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListAllOutput.icon">
+            <summary>
+            图标.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListAllOutput.iconBackground">
+            <summary>
+            图标背景.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListAllOutput.flowTemplateJson">
+            <summary>
+            流程JOSN包.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListAllOutput.creatorUser">
+            <summary>
+            创建人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListAllOutput.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListAllOutput.lastModifyUser">
+            <summary>
+            修改人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListAllOutput.lastModifyTime">
+            <summary>
+            修改时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListAllOutput.description">
+            <summary>
+            说明.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListAllOutput.enabledMark">
+            <summary>
+            标识.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListAllOutput.sortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListInput.category">
+            <summary>
+            分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListInput.flowType">
+            <summary>
+            流程类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListOutput.fullName">
+            <summary>
+            流程名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListOutput.enCode">
+            <summary>
+            流程编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListOutput.sortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListOutput.formType">
+            <summary>
+            表单类型(数据字典-流程表单类型).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListOutput.creatorUser">
+            <summary>
+            创建人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListOutput.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListOutput.lastModifyUser">
+            <summary>
+            修改人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListOutput.lastModifyTime">
+            <summary>
+            修改时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListOutput.description">
+            <summary>
+            说明.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListOutput.enabledMark">
+            <summary>
+            状态(0-关闭，1-开启).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListOutput.category">
+            <summary>
+            流程分类(数据字典-工作流-流程分类).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListOutput.flowTemplateJson">
+            <summary>
+            流程JOSN包.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListOutput.formData">
+            <summary>
+            表单JSON包.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListOutput.icon">
+            <summary>
+            图标.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListOutput.iconBackground">
+            <summary>
+            图标背景.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListOutput.type">
+            <summary>
+            流程类型(数据字典-工作流-流程类型).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListOutput.visibleType">
+            <summary>
+            版本类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListSelectOutput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineListSelectOutput.fullName">
+            <summary>
+            流程名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowEngine.FlowEngineUpInput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.fullName">
+            <summary>
+            流程名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.enCode">
+            <summary>
+            流程编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.sortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.formType">
+            <summary>
+            表单类型(数据字典-流程表单类型).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.category">
+            <summary>
+            流程分类(数据字典-工作流-流程分类).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.type">
+            <summary>
+            流程类型（0：发起流程，1：功能流程）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.icon">
+            <summary>
+            图标.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.iconBackground">
+            <summary>
+            图标背景.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.description">
+            <summary>
+            说明.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.enabledMark">
+            <summary>
+            状态(0-关闭，1-开启).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.formData">
+            <summary>
+            表单JSON包.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.flowTemplateJson">
+            <summary>
+            流程JOSN包.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.tables">
+            <summary>
+            表信息数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.dbLinkId">
+            <summary>
+            数据库连接id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.appFormUrl">
+            <summary>
+            app地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.formUrl">
+            <summary>
+            表单地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.creatorUser">
+            <summary>
+            创建人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.lastModifyTime">
+            <summary>
+            修改时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.lastModifyUser">
+            <summary>
+            修改人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.draftJson">
+            <summary>
+            表单json草稿.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.interfaceUrl">
+            <summary>
+            接口路径.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.tableJson">
+            <summary>
+            关联表单.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.flowType">
+            <summary>
+            流程类型（0：发起流程，1：功能流程）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.propertyJson">
+            <summary>
+            表单模型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.urlAddress">
+            <summary>
+            Web地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowForm.FlowFormListOutput.appUrlAddress">
+            <summary>
+            APP地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchActionWithdrawInput.handleOpinion">
+            <summary>
+            撤回意见.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.enCode">
+            <summary>
+            编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.creatorUserId">
+            <summary>
+            创建人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.thisStep">
+            <summary>
+            当前节点.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.flowUrgent">
+            <summary>
+            紧急程度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.flowCategory">
+            <summary>
+            流程分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.fullName">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.flowName">
+            <summary>
+            流程名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.status">
+            <summary>
+            状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.completion">
+            <summary>
+            完成度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.flowCode">
+            <summary>
+            流程编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.flowId">
+            <summary>
+            流程id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.formType">
+            <summary>
+            表单分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.templateId">
+            <summary>
+            流程主表id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.delegateId">
+            <summary>
+            委托节点id(待审页面使用，其他默认为0).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.sortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.delegateUser">
+            <summary>
+            委托发起人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListOutput.suspend">
+            <summary>
+            挂起（0：否，1：是）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListQuery.flowCategory">
+            <summary>
+            所属分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListQuery.templateId">
+            <summary>
+            所属流程.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListQuery.flowId">
+            <summary>
+            所属名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListQuery.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListQuery.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListQuery.status">
+            <summary>
+            流程状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListQuery.flowUrgent">
+            <summary>
+            紧急程度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListQuery.delegateType">
+            <summary>
+            是否委托发起.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorDeleteInput.ids">
+            <summary>
+            流程任务id集合.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.enCode">
+            <summary>
+            流程编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.creatorUserId">
+            <summary>
+            发起人员id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.thisStep">
+            <summary>
+            当前节点.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.flowCategory">
+            <summary>
+            所属分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.fullName">
+            <summary>
+            流程标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.flowName">
+            <summary>
+            所属流程.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.status">
+            <summary>
+            流程状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.flowId">
+            <summary>
+            流程主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.flowCode">
+            <summary>
+            流程编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.processId">
+            <summary>
+            实例进程.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.completion">
+            <summary>
+            完成情况.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.userName">
+            <summary>
+            用户名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.formType">
+            <summary>
+            表单类型 1-系统表单、2-动态表单.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.formData">
+            <summary>
+            表单数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.flowUrgent">
+            <summary>
+            紧急程度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.delegateId">
+            <summary>
+            委托节点id(待审页面使用，其他默认为0).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.sortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.templateId">
+            <summary>
+            流程主表id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.suspend">
+            <summary>
+            挂起（0：否，1：是）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListOutput.flowVersion">
+            <summary>
+            版本.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListQuery.creatorUserId">
+            <summary>
+            发起人员id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListQuery.flowCategory">
+            <summary>
+            所属分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListQuery.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListQuery.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListQuery.templateId">
+            <summary>
+            所属流程.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListQuery.status">
+            <summary>
+            流程状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListQuery.flowUrgent">
+            <summary>
+            紧急程度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListQuery.flowId">
+            <summary>
+            所属名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTask.FlowTaskCrInput.flowId">
+            <summary>
+            引擎id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTask.FlowTaskCrInput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTask.FlowTaskCrInput.formData">
+            <summary>
+            表单数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTask.FlowTaskCrInput.status">
+            <summary>
+            提交/保存 0-1.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTask.FlowTaskCrInput.flowUrgent">
+            <summary>
+            紧急程度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTask.FlowTaskInfoOutput.flowId">
+            <summary>
+            引擎id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTask.FlowTaskInfoOutput.flowUrgent">
+            <summary>
+            紧急程度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTask.FlowTaskInfoOutput.data">
+            <summary>
+            表单数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTask.FlowTaskInfoOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowJsonInfo.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowJsonInfo.flowId">
+            <summary>
+            流程编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowJsonInfo.fullName">
+            <summary>
+            流程名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowJsonInfo.flowTemplateJson">
+            <summary>
+            流程JOSN包.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowJsonInfo.isDelete">
+            <summary>
+            是否删除.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateAssistQuery.list">
+            <summary>
+            协管人员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateAssistQuery.templateId">
+            <summary>
+            流程主表id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateImportOutput.flowTemplate">
+            <summary>
+            流程实例.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateImportOutput.flowTemplateJson">
+            <summary>
+            流程实例.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateImportOutput.visibleList">
+            <summary>
+            流程可见范围.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateImportOutput.formRelationList">
+            <summary>
+            流程关联表单.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateInfoOutput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateInfoOutput.enCode">
+            <summary>
+            流程编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateInfoOutput.fullName">
+            <summary>
+            流程名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateInfoOutput.type">
+            <summary>
+            流程类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateInfoOutput.category">
+            <summary>
+            流程分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateInfoOutput.icon">
+            <summary>
+            图标.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateInfoOutput.iconBackground">
+            <summary>
+            图标背景.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateInfoOutput.description">
+            <summary>
+            说明.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateInfoOutput.sortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateInfoOutput.flowTemplateJson">
+            <summary>
+            流程设计信息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateInfoOutput.onlineDev">
+            <summary>
+            是否在线开发.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateInfoOutput.enabledMark">
+            <summary>
+            启用标识.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateInfoOutput.onlineFormId">
+            <summary>
+            在线开发流程表单id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateJsonInfoOutput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateJsonInfoOutput.templateId">
+            <summary>
+            流程id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateJsonInfoOutput.fullName">
+            <summary>
+            流程名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateJsonInfoOutput.visibleType">
+            <summary>
+            可见范围.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateJsonInfoOutput.version">
+            <summary>
+            版本.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateJsonInfoOutput.flowTemplateJson">
+            <summary>
+            流程JOSN包.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateJsonInfoOutput.creatorUser">
+            <summary>
+            创建人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateJsonInfoOutput.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateJsonInfoOutput.lastModifyUser">
+            <summary>
+            修改人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateJsonInfoOutput.lastModifyTime">
+            <summary>
+            修改时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateJsonInfoOutput.enabledMark">
+            <summary>
+            标识.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateJsonInfoOutput.sortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListOutput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListOutput.enCode">
+            <summary>
+            流程编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListOutput.fullName">
+            <summary>
+            流程名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListOutput.type">
+            <summary>
+            流程类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListOutput.category">
+            <summary>
+            流程分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListOutput.formType">
+            <summary>
+            表单类型(数据字典-流程表单类型).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListOutput.visibleType">
+            <summary>
+            可见范围.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListOutput.version">
+            <summary>
+            版本.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListOutput.flowTemplateJson">
+            <summary>
+            流程JOSN包.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListOutput.icon">
+            <summary>
+            图标.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListOutput.iconBackground">
+            <summary>
+            图标背景.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListOutput.creatorUser">
+            <summary>
+            创建人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListOutput.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListOutput.lastModifyUser">
+            <summary>
+            修改人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListOutput.lastModifyTime">
+            <summary>
+            修改时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListOutput.description">
+            <summary>
+            说明.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListOutput.enabledMark">
+            <summary>
+            标识.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListOutput.sortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListOutput.hasAssistBtn">
+            <summary>
+            是否协管（0 否，1是）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListQuery.category">
+            <summary>
+            流程分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListQuery.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListQuery.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListQuery.flowType">
+            <summary>
+            0:发起流程 1:功能流程.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateListQuery.flowId">
+            <summary>
+            所属流程.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateTreeOutput.enCode">
+            <summary>
+            流程编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateTreeOutput.fullName">
+            <summary>
+            流程名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateTreeOutput.type">
+            <summary>
+            流程类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateTreeOutput.category">
+            <summary>
+            流程分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateTreeOutput.formType">
+            <summary>
+            表单类型(数据字典-流程表单类型).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateTreeOutput.visibleType">
+            <summary>
+            可见范围.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateTreeOutput.version">
+            <summary>
+            版本.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateTreeOutput.flowTemplateJson">
+            <summary>
+            流程JOSN包.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateTreeOutput.icon">
+            <summary>
+            图标.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateTreeOutput.iconBackground">
+            <summary>
+            图标背景.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateTreeOutput.creatorUser">
+            <summary>
+            创建人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateTreeOutput.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateTreeOutput.lastModifyUser">
+            <summary>
+            修改人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateTreeOutput.lastModifyTime">
+            <summary>
+            修改时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateTreeOutput.description">
+            <summary>
+            说明.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateTreeOutput.enabledMark">
+            <summary>
+            标识.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateTreeOutput.sortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.FlowTemplate.FlowTemplateTreeOutput.templateId">
+            <summary>
+            流程主表id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInfoOutput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInfoOutput.status">
+            <summary>
+            状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInfoOutput.billNo">
+            <summary>
+            单据号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInfoOutput.flowTitle">
+            <summary>
+            标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInfoOutput.flowUrgent">
+            <summary>
+            重要等级.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInfoOutput.leaveType">
+            <summary>
+            请假类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInfoOutput.leaveReason">
+            <summary>
+            请假原因.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInfoOutput.leaveEndTime">
+            <summary>
+            假期结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInfoOutput.leaveStartTime">
+            <summary>
+            假期开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInfoOutput.leaveDayCount">
+            <summary>
+            请假天数.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInfoOutput.flowId">
+            <summary>
+            流程id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInfoOutput.applyDate">
+            <summary>
+            申请日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInfoOutput.applyDept">
+            <summary>
+            申请部门.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInfoOutput.applyPost">
+            <summary>
+            申请职位.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInfoOutput.applyUser">
+            <summary>
+            申请人员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInfoOutput.fileJson">
+            <summary>
+            相关附件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInfoOutput.leaveHour">
+            <summary>
+            请假小时.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInput.status">
+            <summary>
+            状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInput.billNo">
+            <summary>
+            单据号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInput.flowTitle">
+            <summary>
+            标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInput.flowUrgent">
+            <summary>
+            重要等级.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInput.leaveType">
+            <summary>
+            请假类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInput.leaveReason">
+            <summary>
+            请假原因.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInput.leaveEndTime">
+            <summary>
+            假期结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInput.leaveStartTime">
+            <summary>
+            假期开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInput.leaveDayCount">
+            <summary>
+            请假天数.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInput.flowId">
+            <summary>
+            流程id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInput.applyDate">
+            <summary>
+            申请日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInput.applyDept">
+            <summary>
+            申请部门.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInput.applyPost">
+            <summary>
+            申请职位.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInput.applyUser">
+            <summary>
+            申请人员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInput.fileJson">
+            <summary>
+            相关附件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.LeaveApply.LeaveApplyInput.leaveHour">
+            <summary>
+            请假小时.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInfoOutput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInfoOutput.flowTitle">
+            <summary>
+            流程标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInfoOutput.flowId">
+            <summary>
+            流程主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInfoOutput.flowUrgent">
+            <summary>
+            紧急程度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInfoOutput.billNo">
+            <summary>
+            流程单据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInfoOutput.customerName">
+            <summary>
+            客户名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInfoOutput.ticketDate">
+            <summary>
+            发票日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInfoOutput.contactPhone">
+            <summary>
+            联系电话.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInfoOutput.contacts">
+            <summary>
+            联系人员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInfoOutput.customerAddres">
+            <summary>
+            客户地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInfoOutput.description">
+            <summary>
+            开单备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInfoOutput.fileJson">
+            <summary>
+            相关附件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInfoOutput.invoiceType">
+            <summary>
+            发票类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInfoOutput.paymentMethod">
+            <summary>
+            付款方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInfoOutput.paymentMoney">
+            <summary>
+            付款金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInfoOutput.salesDate">
+            <summary>
+            业务日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInfoOutput.salesman">
+            <summary>
+            业务人员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInfoOutput.status">
+            <summary>
+            状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInfoOutput.ticketNum">
+            <summary>
+            发票编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInfoOutput.entryList">
+            <summary>
+            销售明细-商品名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInput.flowTitle">
+            <summary>
+            流程标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInput.flowId">
+            <summary>
+            流程主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInput.flowUrgent">
+            <summary>
+            紧急程度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInput.billNo">
+            <summary>
+            流程单据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInput.customerName">
+            <summary>
+            客户名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInput.ticketDate">
+            <summary>
+            发票日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInput.contactPhone">
+            <summary>
+            联系电话.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInput.contacts">
+            <summary>
+            联系人员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInput.customerAddres">
+            <summary>
+            客户地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInput.description">
+            <summary>
+            开单备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInput.fileJson">
+            <summary>
+            相关附件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInput.invoiceType">
+            <summary>
+            发票类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInput.paymentMethod">
+            <summary>
+            付款方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInput.paymentMoney">
+            <summary>
+            付款金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInput.salesDate">
+            <summary>
+            业务日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInput.salesman">
+            <summary>
+            业务人员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInput.status">
+            <summary>
+            状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInput.ticketNum">
+            <summary>
+            发票编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Dto.WorkFlowForm.SalesOrder.SalesOrderInput.entryList">
+            <summary>
+            销售明细-商品名称.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.Entity.FlowCandidatesEntity">
+            <summary>
+            流程候选人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowCandidatesEntity.TaskId">
+            <summary>
+            任务id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowCandidatesEntity.TaskNodeId">
+            <summary>
+            节点id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowCandidatesEntity.HandleId">
+            <summary>
+            审批人id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowCandidatesEntity.Account">
+            <summary>
+            审批人账号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowCandidatesEntity.Candidates">
+            <summary>
+            候选人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowCandidatesEntity.TaskOperatorId">
+            <summary>
+            经办id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.Entity.FlowCommentEntity">
+            <summary>
+            流程评论.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowCommentEntity.TaskId">
+            <summary>
+            任务id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowCommentEntity.Text">
+            <summary>
+            文本.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowCommentEntity.Image">
+            <summary>
+            图片.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowCommentEntity.File">
+            <summary>
+            附件.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.Entity.FlowDelegateEntity">
+            <summary>
+            流程委托.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowDelegateEntity.ToUserId">
+            <summary>
+            被委托人id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowDelegateEntity.ToUserName">
+            <summary>
+            被委托人名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowDelegateEntity.FlowId">
+            <summary>
+            委托流程id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowDelegateEntity.FlowName">
+            <summary>
+            委托流程名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowDelegateEntity.FlowCategory">
+            <summary>
+            流程分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowDelegateEntity.StartTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowDelegateEntity.EndTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowDelegateEntity.Description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowDelegateEntity.SortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowDelegateEntity.Type">
+            <summary>
+            委托类型(0:发起,1:审批).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowDelegateEntity.UserId">
+            <summary>
+            委托人id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowDelegateEntity.UserName">
+            <summary>
+            委托人名称.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.Entity.FlowEngineEntity">
+            <summary>
+            流程引擎.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineEntity.EnCode">
+            <summary>
+            流程编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineEntity.FullName">
+            <summary>
+            流程名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineEntity.Type">
+            <summary>
+            流程类型（0：发起流程，1：功能流程）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineEntity.Category">
+            <summary>
+            流程分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineEntity.Form">
+            <summary>
+            流程表单.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineEntity.VisibleType">
+            <summary>
+            可见类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineEntity.Icon">
+            <summary>
+            图标.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineEntity.IconBackground">
+            <summary>
+            图标背景色.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineEntity.Version">
+            <summary>
+            流程版本.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineEntity.FlowTemplateJson">
+            <summary>
+            流程模板.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineEntity.Description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineEntity.SortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineEntity.FormTemplateJson">
+            <summary>
+            表单模板.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineEntity.FormType">
+            <summary>
+            表单分类（2：自定义表单，1：系统表单）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineEntity.Tables">
+            <summary>
+            关联表单.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineEntity.DbLinkId">
+            <summary>
+            数据源id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineEntity.AppFormUrl">
+            <summary>
+            app表单页面Url.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineEntity.FormUrl">
+            <summary>
+            表单页面Url.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.Entity.FlowEngineVisibleEntity">
+            <summary>
+            流程可见.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineVisibleEntity.FlowId">
+            <summary>
+            流程主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineVisibleEntity.OperatorType">
+            <summary>
+            经办类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineVisibleEntity.OperatorId">
+            <summary>
+            经办主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineVisibleEntity.SortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowEngineVisibleEntity.Type">
+            <summary>
+            可见类型（1：发起 2：协管）.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.Entity.FlowFormEntity">
+            <summary>
+            流程表单.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowFormEntity.EnCode">
+            <summary>
+            编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowFormEntity.FullName">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowFormEntity.Category">
+            <summary>
+            分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowFormEntity.UrlAddress">
+            <summary>
+            Web地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowFormEntity.AppUrlAddress">
+            <summary>
+            APP地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowFormEntity.PropertyJson">
+            <summary>
+            表单json.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowFormEntity.Description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowFormEntity.SortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowFormEntity.FlowType">
+            <summary>
+            流程类型（0：发起流程，1：功能流程）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowFormEntity.FormType">
+            <summary>
+            表单类型（1：系统表单 2：自定义表单）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowFormEntity.TableJson">
+            <summary>
+            关联表单.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowFormEntity.DbLinkId">
+            <summary>
+            数据源id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowFormEntity.InterfaceUrl">
+            <summary>
+            接口路径.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowFormEntity.DraftJson">
+            <summary>
+            表单json草稿.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowFormEntity.FlowId">
+            <summary>
+            流程id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.Entity.FlowFormRelationEntity">
+            <summary>
+            流程表单关系表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowFormRelationEntity.FormId">
+            <summary>
+            表单id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowFormRelationEntity.FlowId">
+            <summary>
+            流程id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.Entity.FlowRejectDataEntity">
+            <summary>
+            流程驳回数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowRejectDataEntity.TaskJson">
+            <summary>
+            任务数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowRejectDataEntity.TaskNodeJson">
+            <summary>
+            节点数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowRejectDataEntity.TaskOperatorJson">
+            <summary>
+            经办数据.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.Entity.FlowTaskCirculateEntity">
+            <summary>
+            流程传阅.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskCirculateEntity.ObjectType">
+            <summary>
+            对象类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskCirculateEntity.ObjectId">
+            <summary>
+            对象主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskCirculateEntity.NodeCode">
+            <summary>
+            节点编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskCirculateEntity.NodeName">
+            <summary>
+            节点名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskCirculateEntity.TaskNodeId">
+            <summary>
+            节点主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskCirculateEntity.TaskId">
+            <summary>
+            任务主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskCirculateEntity.CreatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity">
+            <summary>
+            流程任务.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.ParentId">
+            <summary>
+            父级id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.ProcessId">
+            <summary>
+            实例进程id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.EnCode">
+            <summary>
+            任务编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.FullName">
+            <summary>
+            任务标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.FlowUrgent">
+            <summary>
+            紧急程度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.FlowId">
+            <summary>
+            流程主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.FlowCode">
+            <summary>
+            流程编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.FlowName">
+            <summary>
+            流程名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.FlowType">
+            <summary>
+            流程类型（0：发起流程，1：功能流程）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.FlowCategory">
+            <summary>
+            流程分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.FlowForm">
+            <summary>
+            流程表单.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.FlowFormContentJson">
+            <summary>
+            表单内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.FlowTemplateJson">
+            <summary>
+            流程模板.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.FlowVersion">
+            <summary>
+            流程版本.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.StartTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.EndTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.ThisStep">
+            <summary>
+            当前节点.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.ThisStepId">
+            <summary>
+            当前节点编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.Grade">
+            <summary>
+            重要等级(是否有恢复按钮 有值代表没有 无值代表有).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.Status">
+            <summary>
+            任务状态：【0-草稿、1-处理、2-通过、3-驳回、4-撤销、5-终止】.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.Completion">
+            <summary>
+            完成情况(0:未完成，1:完成).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.Description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.SortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.IsAsync">
+            <summary>
+            同步异步（0：同步，1：异步）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.IsBatch">
+            <summary>
+            是否批量（0：否，1：是）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.TaskNodeId">
+            <summary>
+            复活节点主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.TemplateId">
+            <summary>
+            流程主表主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.RejectDataId">
+            <summary>
+            拒绝节点id(当前节点审批).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.DelegateUser">
+            <summary>
+            委托发起人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity.Suspend">
+            <summary>
+            挂起（0：否，1：是）.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity">
+            <summary>
+            流程节点.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity.NodeCode">
+            <summary>
+            节点编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity.NodeName">
+            <summary>
+            节点名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity.NodeType">
+            <summary>
+            节点类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity.NodePropertyJson">
+            <summary>
+            节点属性Json.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity.NodeUp">
+            <summary>
+            驳回节点(0:驳回发起，1：驳回指定或上一节点).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity.NodeNext">
+            <summary>
+            下一节点.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity.Completion">
+            <summary>
+            是否完成：【0-未处理、1-已审核、-1-被驳回】.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity.Description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity.SortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity.CreatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity.TaskId">
+            <summary>
+            任务主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity.State">
+            <summary>
+            节点状态（0：正常，1：禁用 -2：作废）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity.Candidates">
+            <summary>
+            临时候选人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity.DraftData">
+            <summary>
+            保存数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity.FormId">
+            <summary>
+            表单id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity">
+            <summary>
+            流程经办.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity.HandleType">
+            <summary>
+            经办对象.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity.HandleId">
+            <summary>
+            经办主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity.HandleStatus">
+            <summary>
+            处理状态：【0-拒绝、1-同意】.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity.HandleTime">
+            <summary>
+            处理时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity.NodeCode">
+            <summary>
+            节点编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity.NodeName">
+            <summary>
+            节点名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity.Completion">
+            <summary>
+            是否完成【0-未处理、1-已审核】.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity.Description">
+            <summary>
+            描述(超时时间).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity.CreatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity.TaskNodeId">
+            <summary>
+            节点主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity.TaskId">
+            <summary>
+            任务主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity.Type">
+            <summary>
+            类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity.State">
+            <summary>
+            审批状态(0:正常、1:加签、-1:作废).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity.ParentId">
+            <summary>
+            加签人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity.DraftData">
+            <summary>
+            保存数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity.SortCode">
+            <summary>
+            排序.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity.RollbackId">
+            <summary>
+            回退id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorRecordEntity">
+            <summary>
+            流程经办记录.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorRecordEntity.NodeCode">
+            <summary>
+            节点编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorRecordEntity.NodeName">
+            <summary>
+            节点名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorRecordEntity.HandleStatus">
+            <summary>
+            经办状态：【0-拒绝、1-同意、2-提交、3-撤回、4-终止、5-指派、6-加签、7-转办、8-变更、9-复活、10-前加签】.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorRecordEntity.HandleId">
+            <summary>
+            经办人员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorRecordEntity.HandleTime">
+            <summary>
+            经办时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorRecordEntity.HandleOpinion">
+            <summary>
+            经办理由.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorRecordEntity.TaskOperatorId">
+            <summary>
+            经办主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorRecordEntity.TaskNodeId">
+            <summary>
+            节点主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorRecordEntity.TaskId">
+            <summary>
+            任务主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorRecordEntity.SignImg">
+            <summary>
+            电子签名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorRecordEntity.Status">
+            <summary>
+            审批标识(1:加签人).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorRecordEntity.OperatorId">
+            <summary>
+            流转操作人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorRecordEntity.FileList">
+            <summary>
+            附件.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorUserEntity">
+            <summary>
+            流程依次审批人表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorUserEntity.HandleType">
+            <summary>
+            经办对象.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorUserEntity.HandleId">
+            <summary>
+            经办主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorUserEntity.NodeCode">
+            <summary>
+            节点编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorUserEntity.NodeName">
+            <summary>
+            节点名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorUserEntity.Completion">
+            <summary>
+            是否完成【0-未处理、1-已审核】.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorUserEntity.Description">
+            <summary>
+            描述(超时时间).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorUserEntity.CreatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorUserEntity.TaskNodeId">
+            <summary>
+            节点主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorUserEntity.TaskId">
+            <summary>
+            任务主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorUserEntity.Type">
+            <summary>
+            类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorUserEntity.State">
+            <summary>
+            审批状态(0:正常、1:加签、-1:作废).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorUserEntity.ParentId">
+            <summary>
+            加签人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorUserEntity.SortCode">
+            <summary>
+            排序.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.Entity.FlowTemplateEntity">
+            <summary>
+            流程引擎.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTemplateEntity.EnCode">
+            <summary>
+            流程编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTemplateEntity.FullName">
+            <summary>
+            流程名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTemplateEntity.Type">
+            <summary>
+            流程类型（0：发起流程，1：功能流程）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTemplateEntity.Category">
+            <summary>
+            流程分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTemplateEntity.Icon">
+            <summary>
+            图标.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTemplateEntity.IconBackground">
+            <summary>
+            图标背景色.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTemplateEntity.Description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTemplateEntity.SortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.Entity.FlowTemplateJsonEntity">
+            <summary>
+            流程引擎.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTemplateJsonEntity.TemplateId">
+            <summary>
+            流程编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTemplateJsonEntity.VisibleType">
+            <summary>
+            可见类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTemplateJsonEntity.Version">
+            <summary>
+            流程版本.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTemplateJsonEntity.FlowTemplateJson">
+            <summary>
+            流程模板.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTemplateJsonEntity.FullName">
+            <summary>
+            流程名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTemplateJsonEntity.SortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowTemplateJsonEntity.GroupId">
+            <summary>
+            分组id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.Entity.FlowUserEntity">
+            <summary>
+            流程任务发起人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowUserEntity.TaskId">
+            <summary>
+            任务id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowUserEntity.OrganizeId">
+            <summary>
+            组织主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowUserEntity.PositionId">
+            <summary>
+            岗位主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowUserEntity.ManagerId">
+            <summary>
+            主管主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowUserEntity.Superior">
+            <summary>
+            上级用户.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Entity.FlowUserEntity.Subordinate">
+            <summary>
+            下属用户.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.LeaveApplyEntity">
+            <summary>
+            请假申请
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2023-10-23 .
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.LeaveApplyEntity.FlowId">
+            <summary>
+            流程主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.LeaveApplyEntity.FlowTitle">
+            <summary>
+            流程标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.LeaveApplyEntity.FlowUrgent">
+            <summary>
+            紧急程度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.LeaveApplyEntity.BillNo">
+            <summary>
+            单据编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.LeaveApplyEntity.ApplyUser">
+            <summary>
+            申请人员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.LeaveApplyEntity.ApplyDate">
+            <summary>
+            申请日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.LeaveApplyEntity.ApplyDept">
+            <summary>
+            申请部门.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.LeaveApplyEntity.ApplyPost">
+            <summary>
+            申请职位.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.LeaveApplyEntity.LeaveType">
+            <summary>
+            请假类别.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.LeaveApplyEntity.LeaveReason">
+            <summary>
+            请假原因.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.LeaveApplyEntity.LeaveStartTime">
+            <summary>
+            请假时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.LeaveApplyEntity.LeaveEndTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.LeaveApplyEntity.LeaveDayCount">
+            <summary>
+            请假天数.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.LeaveApplyEntity.LeaveHour">
+            <summary>
+            请假小时.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.LeaveApplyEntity.FileJson">
+            <summary>
+            相关附件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.LeaveApplyEntity.Description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.SalesOrderEntity">
+            <summary>
+            销售订单
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2018-07-11 .
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntity.FlowId">
+            <summary>
+            流程主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntity.FlowTitle">
+            <summary>
+            流程标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntity.FlowUrgent">
+            <summary>
+            流程等级.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntity.BillNo">
+            <summary>
+            流程单据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntity.Salesman">
+            <summary>
+            业务人员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntity.CustomerName">
+            <summary>
+            客户名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntity.Contacts">
+            <summary>
+            联系人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntity.ContactPhone">
+            <summary>
+            联系电话.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntity.CustomerAddres">
+            <summary>
+            客户地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntity.TicketNum">
+            <summary>
+            发票编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntity.TicketDate">
+            <summary>
+            开票日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntity.InvoiceType">
+            <summary>
+            发票类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntity.PaymentMethod">
+            <summary>
+            付款方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntity.PaymentMoney">
+            <summary>
+            付款金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntity.SalesDate">
+            <summary>
+            销售日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntity.FileJson">
+            <summary>
+            相关附件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntity.Description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.SalesOrderEntryEntity">
+            <summary>
+            订单明细
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2018-07-23 .
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntryEntity.SalesOrderId">
+            <summary>
+            订单主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntryEntity.GoodsName">
+            <summary>
+            商品名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntryEntity.Specifications">
+            <summary>
+            规格型号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntryEntity.Unit">
+            <summary>
+            单位.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntryEntity.Qty">
+            <summary>
+            数量.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntryEntity.Price">
+            <summary>
+            单价.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntryEntity.Amount">
+            <summary>
+            金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntryEntity.Description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.SalesOrderEntryEntity.SortCode">
+            <summary>
+            SortCode.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.Enum.FlowTaskNodeTypeEnum">
+            <summary>
+            任务节点类型枚举.
+            </summary>
+        </member>
+        <member name="F:Poxiao.WorkFlow.Entitys.Enum.FlowTaskNodeTypeEnum.start">
+            <summary>
+            开始.
+            </summary>
+        </member>
+        <member name="F:Poxiao.WorkFlow.Entitys.Enum.FlowTaskNodeTypeEnum.approver">
+            <summary>
+            审批.
+            </summary>
+        </member>
+        <member name="F:Poxiao.WorkFlow.Entitys.Enum.FlowTaskNodeTypeEnum.subFlow">
+            <summary>
+            子流程.
+            </summary>
+        </member>
+        <member name="F:Poxiao.WorkFlow.Entitys.Enum.FlowTaskNodeTypeEnum.condition">
+            <summary>
+            条件.
+            </summary>
+        </member>
+        <member name="F:Poxiao.WorkFlow.Entitys.Enum.FlowTaskNodeTypeEnum.timer">
+            <summary>
+            定时器.
+            </summary>
+        </member>
+        <member name="F:Poxiao.WorkFlow.Entitys.Enum.FlowTaskNodeTypeEnum.end">
+            <summary>
+            结束.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.Enum.FlowTaskOperatorEnum">
+            <summary>
+            审批人类型枚举.
+            </summary>
+        </member>
+        <member name="F:Poxiao.WorkFlow.Entitys.Enum.FlowTaskOperatorEnum.LaunchCharge">
+            <summary>
+            发起者主管.
+            </summary>
+        </member>
+        <member name="F:Poxiao.WorkFlow.Entitys.Enum.FlowTaskOperatorEnum.DepartmentCharge">
+            <summary>
+            发起者部门主管.
+            </summary>
+        </member>
+        <member name="F:Poxiao.WorkFlow.Entitys.Enum.FlowTaskOperatorEnum.InitiatorMe">
+            <summary>
+            发起者本人.
+            </summary>
+        </member>
+        <member name="F:Poxiao.WorkFlow.Entitys.Enum.FlowTaskOperatorEnum.VariableApprover">
+            <summary>
+            获取表单某个值为审批人.
+            </summary>
+        </member>
+        <member name="F:Poxiao.WorkFlow.Entitys.Enum.FlowTaskOperatorEnum.LinkApprover">
+            <summary>
+            之前节点的审批人.
+            </summary>
+        </member>
+        <member name="F:Poxiao.WorkFlow.Entitys.Enum.FlowTaskOperatorEnum.CandidateApprover">
+            <summary>
+            候选审批人.
+            </summary>
+        </member>
+        <member name="F:Poxiao.WorkFlow.Entitys.Enum.FlowTaskOperatorEnum.ServiceApprover">
+            <summary>
+            服务（调用指定接口获取数据）.
+            </summary>
+        </member>
+        <member name="F:Poxiao.WorkFlow.Entitys.Enum.FlowTaskOperatorEnum.SubProcesses">
+            <summary>
+            子流程.
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Entitys.Enum.FlowTaskStatusEnum">
+            <summary>
+            任务状态枚举.
+            </summary>
+        </member>
+        <member name="F:Poxiao.WorkFlow.Entitys.Enum.FlowTaskStatusEnum.Draft">
+            <summary>
+            等待提交.
+            </summary>
+        </member>
+        <member name="F:Poxiao.WorkFlow.Entitys.Enum.FlowTaskStatusEnum.Handle">
+            <summary>
+            等待审核.
+            </summary>
+        </member>
+        <member name="F:Poxiao.WorkFlow.Entitys.Enum.FlowTaskStatusEnum.Adopt">
+            <summary>
+            审核通过.
+            </summary>
+        </member>
+        <member name="F:Poxiao.WorkFlow.Entitys.Enum.FlowTaskStatusEnum.Reject">
+            <summary>
+            审核驳回.
+            </summary>
+        </member>
+        <member name="F:Poxiao.WorkFlow.Entitys.Enum.FlowTaskStatusEnum.Revoke">
+            <summary>
+            审核撤销.
+            </summary>
+        </member>
+        <member name="F:Poxiao.WorkFlow.Entitys.Enum.FlowTaskStatusEnum.Cancel">
+            <summary>
+            审核作废.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Conifg.FuncConfig.on">
+            <summary>
+            是否开启.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Conifg.FuncConfig.interfaceId">
+            <summary>
+            消息id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Conifg.FuncConfig.interfaceName">
+            <summary>
+            消息名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Conifg.FuncConfig.templateJson">
+            <summary>
+            模板配置json.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Conifg.MsgConfig.on">
+            <summary>
+            关闭 0  自定义 1 同步发起配置 2.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Conifg.MsgConfig.msgId">
+            <summary>
+            消息id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Conifg.MsgConfig.msgName">
+            <summary>
+            消息名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Conifg.MsgConfig.templateJson">
+            <summary>
+            模板配置json.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Conifg.TimeOutConfig.on">
+            <summary>
+            0：关闭 1：自定义  2：同步发起配置.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Conifg.TimeOutConfig.nodeLimit">
+            <summary>
+            起始时间类型（0：接收时间 1：发起时间  2：表单变量）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Conifg.TimeOutConfig.formField">
+            <summary>
+            表单字段.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Conifg.TimeOutConfig.duringDeal">
+            <summary>
+            处理限定时长默认24小时.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Conifg.TimeOutConfig.firstOver">
+            <summary>
+            第一次触发时长.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Conifg.TimeOutConfig.overTimeDuring">
+            <summary>
+            间隔.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Conifg.TimeOutConfig.overNotice">
+            <summary>
+            通知.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Conifg.TimeOutConfig.overEvent">
+            <summary>
+            事件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Conifg.TimeOutConfig.overEventTime">
+            <summary>
+            事件触发次数.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Conifg.TimeOutConfig.overAutoApprove">
+            <summary>
+            自动审批.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Conifg.TimeOutConfig.overAutoApproveTime">
+            <summary>
+            自动审批触发次数.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowBeforeRecordListModel.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowBeforeRecordListModel.handleId">
+            <summary>
+            审批人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowBeforeRecordListModel.handleTime">
+            <summary>
+            审批时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowBeforeRecordListModel.handleOpinion">
+            <summary>
+            审批意见.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowBeforeRecordListModel.handleStatus">
+            <summary>
+            审批状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowBeforeRecordListModel.userName">
+            <summary>
+            审批人名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowBeforeRecordListModel.category">
+            <summary>
+            分类id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowBeforeRecordListModel.categoryName">
+            <summary>
+            分类名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowBeforeRecordListModel.operatorId">
+            <summary>
+            流转操作人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowBeforeRecordListModel.fileList">
+            <summary>
+            审批附件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowBeforeRecordListModel.signImg">
+            <summary>
+            签名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowBeforeRecordListModel.headIcon">
+            <summary>
+            头像.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.handleOpinion">
+            <summary>
+            意见.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.freeApproverUserId">
+            <summary>
+            加签人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.freeApproverType">
+            <summary>
+            加签类型 1.前 2 后.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.copyIds">
+            <summary>
+            自定义抄送人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.enCode">
+            <summary>
+            流程编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.formData">
+            <summary>
+            表单数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.flowId">
+            <summary>
+            流程id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.nodeCode">
+            <summary>
+            流程监控指派节点.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.signImg">
+            <summary>
+            电子签名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.candidateList">
+            <summary>
+            候选人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.errorRuleUserList">
+            <summary>
+            异常处理人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.ids">
+            <summary>
+            批量id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.batchType">
+            <summary>
+            批量类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.branchList">
+            <summary>
+            选择分支.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.taskNodeId">
+            <summary>
+            变更节点.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.taskId">
+            <summary>
+            任务id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.id">
+            <summary>
+            任务id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.resurgence">
+            <summary>
+            false 变更 true 复活.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.fileList">
+            <summary>
+            附件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.rejectStep">
+            <summary>
+            驳回节点.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.suspend">
+            <summary>
+            true 全部 flase 主流程.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowHandleModel.rejectType">
+            <summary>
+            驳回类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskCandidateModel.nodeId">
+            <summary>
+            节点编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskCandidateModel.nodeName">
+            <summary>
+            节点名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskCandidateModel.isCandidates">
+            <summary>
+            是否候选人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskCandidateModel.isBranchFlow">
+            <summary>
+            是否条件分支.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskCandidateModel.hasCandidates">
+            <summary>
+            是否有候选人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.processId">
+            <summary>
+            实例id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.enCode">
+            <summary>
+            任务编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.fullName">
+            <summary>
+            任务名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.flowUrgent">
+            <summary>
+            紧急程度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.flowId">
+            <summary>
+            流程id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.flowCode">
+            <summary>
+            流程编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.flowName">
+            <summary>
+            流程名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.flowType">
+            <summary>
+            流程类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.flowCategory">
+            <summary>
+            流程分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.flowForm">
+            <summary>
+            表单json.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.flowFormContentJson">
+            <summary>
+            表单数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.flowTemplateJson">
+            <summary>
+            流程json.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.flowVersion">
+            <summary>
+            流程版本.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.thisStep">
+            <summary>
+            当前节点.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.thisStepId">
+            <summary>
+            当前节点id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.grade">
+            <summary>
+            重要等级.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.status">
+            <summary>
+            状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.completion">
+            <summary>
+            完成情况.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.sortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.enabledMark">
+            <summary>
+            标识.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskModel.suspend">
+            <summary>
+            是否挂起.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskNodeModel.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskNodeModel.nodeCode">
+            <summary>
+            节点编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskNodeModel.nodeName">
+            <summary>
+            节点名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskNodeModel.nodeType">
+            <summary>
+            节点类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskNodeModel.nodePropertyJson">
+            <summary>
+            节点属性.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskNodeModel.nodeUp">
+            <summary>
+            驳回节点.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskNodeModel.nodeNext">
+            <summary>
+            下一节点.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskNodeModel.completion">
+            <summary>
+            完成情况.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskNodeModel.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskNodeModel.sortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskNodeModel.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskNodeModel.taskId">
+            <summary>
+            任务id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskNodeModel.userName">
+            <summary>
+            经办人集合.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskNodeModel.assigneeName">
+            <summary>
+            节点标识.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskNodeModel.type">
+            <summary>
+            流程图节点颜色类型(0:绿色，1：蓝色，其他：灰色).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskNodeModel.candidates">
+            <summary>
+            临时候选人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorModel.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorModel.handleType">
+            <summary>
+            经办类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorModel.handleId">
+            <summary>
+            经办人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorModel.handleStatus">
+            <summary>
+            经办状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorModel.handleTime">
+            <summary>
+            经办时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorModel.nodeCode">
+            <summary>
+            节点编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorModel.nodeName">
+            <summary>
+            节点名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorModel.completion">
+            <summary>
+            完成情况.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorModel.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorModel.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorModel.taskNodeId">
+            <summary>
+            节点id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorModel.taskId">
+            <summary>
+            任务id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorModel.signImg">
+            <summary>
+            签名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorModel.draftData">
+            <summary>
+            草稿数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorRecordModel.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorRecordModel.nodeCode">
+            <summary>
+            节点编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorRecordModel.nodeName">
+            <summary>
+            节点名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorRecordModel.handleStatus">
+            <summary>
+            经办状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorRecordModel.handleId">
+            <summary>
+            经办人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorRecordModel.handleTime">
+            <summary>
+            经办时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorRecordModel.handleOpinion">
+            <summary>
+            经办意见.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorRecordModel.taskOperatorId">
+            <summary>
+            经办id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorRecordModel.taskNodeId">
+            <summary>
+            节点id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorRecordModel.taskId">
+            <summary>
+            任务id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorRecordModel.userName">
+            <summary>
+            经办人名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorRecordModel.signImg">
+            <summary>
+            签名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorRecordModel.status">
+            <summary>
+            状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorRecordModel.operatorId">
+            <summary>
+            流转操作人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorRecordModel.creatorTime">
+            <summary>
+            接收时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskOperatorRecordModel.fileList">
+            <summary>
+            流转操作人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter.flowTaskEntity">
+            <summary>
+            当前任务.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter.startProperties">
+            <summary>
+            开始节点属性.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter.flowTaskNodeEntityList">
+            <summary>
+            所有节点(可用).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter.flowTaskNodeEntity">
+            <summary>
+            当前节点.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter.approversProperties">
+            <summary>
+            当前节点属性.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter.flowTaskOperatorEntity">
+            <summary>
+            当前经办.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter.thisFlowTaskOperatorEntityList">
+            <summary>
+            当前节点所有经办.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter.flowTaskOperatorEntityList">
+            <summary>
+            下一节点所有经办.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter.flowTaskCirculateEntityList">
+            <summary>
+            当前节点抄送.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter.errorNodeList">
+            <summary>
+            异常节点.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTemplateJsonModel.type">
+            <summary>
+            节点类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTemplateJsonModel.content">
+            <summary>
+            节点内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTemplateJsonModel.properties">
+            <summary>
+            节点属性.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTemplateJsonModel.nodeId">
+            <summary>
+            当前节点标识.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTemplateJsonModel.prevId">
+            <summary>
+            上级节点标识.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTemplateJsonModel.childNode">
+            <summary>
+            子节点.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTemplateJsonModel.conditionNodes">
+            <summary>
+            节点条件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTemplateJsonModel.conditionType">
+            <summary>
+            条件类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTemplateJsonModel.isInterflow">
+            <summary>
+            是否分流.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FlowTemplateJsonModel.isBranchFlow">
+            <summary>
+            是否条件分支.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FormOperatesModel.read">
+            <summary>
+            可读.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FormOperatesModel.name">
+            <summary>
+            控件名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FormOperatesModel.id">
+            <summary>
+            控件id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FormOperatesModel.write">
+            <summary>
+            可写.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FormOperatesModel.required">
+            <summary>
+            必填.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.FormOperatesModel.poxiaoKey">
+            <summary>
+            控件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.AssignItem.nodeId">
+            <summary>
+            上一节点编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.AssignItem.title">
+            <summary>
+            上一节点名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.AssignItem.ruleList">
+            <summary>
+            父流程字段.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.RuleItem.parentField">
+            <summary>
+            父流程字段.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.RuleItem.childField">
+            <summary>
+            子流程字段.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.CandidateItem.userId">
+            <summary>
+            用户id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.CandidateItem.userName">
+            <summary>
+            用户名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.ConditionsItem.fieldName">
+            <summary>
+            字段名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.ConditionsItem.symbolName">
+            <summary>
+            比较名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.ConditionsItem.fieldValue">
+            <summary>
+            字段值.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.ConditionsItem.logicName">
+            <summary>
+            逻辑名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.ConditionsItem.field">
+            <summary>
+            字段.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.ConditionsItem.logic">
+            <summary>
+            逻辑符号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.ConditionsItem.symbol">
+            <summary>
+            比较符号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.ConditionsItem.poxiaoKey">
+            <summary>
+            控件类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.ConditionsItem.fieldValuePoxiaoKey">
+            <summary>
+            控件类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.ConditionsItem.fieldType">
+            <summary>
+            条件类型 1：字段 3:聚合函数匹配.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.ConditionsItem.fieldValueType">
+            <summary>
+            1.字段 2.自定义.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.EntryListItem.amount">
+            <summary>
+            金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.EntryListItem.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.EntryListItem.goodsName">
+            <summary>
+            商品名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.EntryListItem.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.EntryListItem.invoiceId">
+            <summary>
+            关联id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.EntryListItem.price">
+            <summary>
+            单价.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.EntryListItem.qty">
+            <summary>
+            数量.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.EntryListItem.sortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.EntryListItem.specifications">
+            <summary>
+            规格型号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.EntryListItem.unit">
+            <summary>
+            单位.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.TemplateJsonItem.field">
+            <summary>
+            字段.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.TemplateJsonItem.fieldName">
+            <summary>
+            字段名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.TemplateJsonItem.relationField">
+            <summary>
+            关联字段.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Item.TemplateJsonItem.isSubTable">
+            <summary>
+            是否字表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.PortalWaitListModel.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.PortalWaitListModel.fullName">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.PortalWaitListModel.enCode">
+            <summary>
+            编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.PortalWaitListModel.flowId">
+            <summary>
+            流程id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.PortalWaitListModel.formType">
+            <summary>
+            表单类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.PortalWaitListModel.status">
+            <summary>
+            状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.PortalWaitListModel.processId">
+            <summary>
+            实例.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.PortalWaitListModel.taskNodeId">
+            <summary>
+            节点id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.PortalWaitListModel.taskOperatorId">
+            <summary>
+            进程id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.PortalWaitListModel.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.PortalWaitListModel.type">
+            <summary>
+            类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.PortalWaitListModel.delegateUser">
+            <summary>
+            委托发起人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.title">
+            <summary>
+            标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.assigneeType">
+            <summary>
+            审批类型（类型参考FlowTaskOperatorEnum类）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.progress">
+            <summary>
+            进度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.rejectType">
+            <summary>
+            驳回类型(1:重新审批 2:从当前节点审批).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.rejectStep">
+            <summary>
+            驳回节点.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.isCustomCopy">
+            <summary>
+            自定义抄送人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.managerLevel">
+            <summary>
+            发起人主管级别.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.departmentLevel">
+            <summary>
+            发起人主管级别.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.countersignRatio">
+            <summary>
+            会签比例.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.counterSign">
+            <summary>
+            审批类型（0：或签 1：会签） .
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.formField">
+            <summary>
+            表单字段.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.nodeId">
+            <summary>
+            指定复审审批节点.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.getUserUrl">
+            <summary>
+            服务 请求路径.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.hasSign">
+            <summary>
+            是否有签名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.hasOpinion">
+            <summary>
+            是否有审批意见.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.hasFreeApprover">
+            <summary>
+            是否可以加签.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.printId">
+            <summary>
+            打印id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.formFieldType">
+            <summary>
+            表单字段审核方式的类型(1-用户 2-部门).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.isBranchFlow">
+            <summary>
+            是否条件分支.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.hasAgreeRule">
+            <summary>
+            开启自动同意.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.agreeRules">
+            <summary>
+            自动同意规则,默认不启用.
+            1:不启用、2:审批人为发起人、3:审批人与上一审批节点处理人相同、4:审批人审批过.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.extraRule">
+            <summary>
+            附加条件,默认无附加条件.
+            1:无附加条件、2:同一部门、3:同一岗位、4:发起人上级、5:发起人下属、6:同一公司.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.extraCopyRule">
+            <summary>
+            抄送附加条件,默认无附加条件.
+            1:无附加条件、2:同一部门、3:同一岗位、4:发起人上级、5:发起人下属、6:同一公司.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.formOperates">
+            <summary>
+            表单权限数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.timerList">
+            <summary>
+            定时器到时时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.formId">
+            <summary>
+            表单id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.assignList">
+            <summary>
+            继承父流程字段数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.isInitiatorCopy">
+            <summary>
+            是否抄送发起人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.approvers">
+            <summary>
+            指定审批人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.approverPos">
+            <summary>
+            指定审批岗位.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.circulatePosition">
+            <summary>
+            指定抄送岗位.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.circulateUser">
+            <summary>
+            指定抄送人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.approverRole">
+            <summary>
+            指定审批角色.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.circulateRole">
+            <summary>
+            抄送角色.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.approverOrg">
+            <summary>
+            指定审批部门.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.circulateOrg">
+            <summary>
+            指定抄送部门.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.approverGroup">
+            <summary>
+            指定审批分组.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.circulateGroup">
+            <summary>
+            指定抄送分组.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.approveMsgConfig">
+            <summary>
+            审核通过.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.rejectMsgConfig">
+            <summary>
+            审核驳回.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.copyMsgConfig">
+            <summary>
+            审核抄送.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.overTimeMsgConfig">
+            <summary>
+            审核超时.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.noticeMsgConfig">
+            <summary>
+            审核提醒.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.approveFuncConfig">
+            <summary>
+            审核通过事件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.rejectFuncConfig">
+            <summary>
+            审核驳回事件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.recallFuncConfig">
+            <summary>
+            审核撤回事件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.overTimeFuncConfig">
+            <summary>
+            审核超时事件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.noticeFuncConfig">
+            <summary>
+            审核提醒事件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.hasSaveBtn">
+            <summary>
+            是否保存.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.saveBtnText">
+            <summary>
+            保存按钮.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.hasPrintBtn">
+            <summary>
+            是否打印.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.printBtnText">
+            <summary>
+            打印.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.hasAuditBtn">
+            <summary>
+            是否通过.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.auditBtnText">
+            <summary>
+            通过按钮.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.hasRejectBtn">
+            <summary>
+            是否拒绝.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.rejectBtnText">
+            <summary>
+            拒绝按钮.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.hasRevokeBtn">
+            <summary>
+            是否撤回.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.revokeBtnText">
+            <summary>
+            撤回按钮.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.hasTransferBtn">
+            <summary>
+            是否转办.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.transferBtnText">
+            <summary>
+            转办按钮.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.hasFreeApproverBtn">
+            <summary>
+            是否加签.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.hasFreeApproverBtnText">
+            <summary>
+            加签按钮.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.timeLimitConfig">
+            <summary>
+            限时.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.overTimeConfig">
+            <summary>
+            超时.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties.noticeConfig">
+            <summary>
+            提醒.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ChildTaskProperties.title">
+            <summary>
+            子流程标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ChildTaskProperties.initiateType">
+            <summary>
+            子流程发起人（类型参考FlowTaskOperatorEnum类）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ChildTaskProperties.managerLevel">
+            <summary>
+            主管级别.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ChildTaskProperties.departmentLevel">
+            <summary>
+            主管级别.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ChildTaskProperties.initiator">
+            <summary>
+            自定义人员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ChildTaskProperties.initiatePos">
+            <summary>
+            自定义岗位.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ChildTaskProperties.initiateRole">
+            <summary>
+            自定义角色.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ChildTaskProperties.initiateOrg">
+            <summary>
+            指定发起部门（为空则是所有人）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ChildTaskProperties.initiateGroup">
+            <summary>
+            指定发起分组.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ChildTaskProperties.flowId">
+            <summary>
+            子流程引擎.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ChildTaskProperties.assignList">
+            <summary>
+            继承父流程字段数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ChildTaskProperties.childTaskId">
+            <summary>
+            子流程节点下子流程任务id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ChildTaskProperties.formData">
+            <summary>
+            子流程数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ChildTaskProperties.isAsync">
+            <summary>
+            同步异步(异步:true).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ChildTaskProperties.formField">
+            <summary>
+            表单字段.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ChildTaskProperties.nodeId">
+            <summary>
+            指定复审审批节点.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ChildTaskProperties.getUserUrl">
+            <summary>
+            服务 请求路径.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ChildTaskProperties.launchMsgConfig">
+            <summary>
+            发起通知.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ChildTaskProperties.formFieldType">
+            <summary>
+            // 表单字段审核方式的类型(1-用户 2-部门).
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ChildTaskProperties.errorRule">
+            <summary>
+            异常处理规则
+            1:超级管理员处理、2:指定人员处理、3:上一节点审批人指定处理人、4:默认审批通过、5:无法提交、6：流程发起人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ChildTaskProperties.errorRuleUser">
+            <summary>
+            异常处理人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ConditionProperties.title">
+            <summary>
+            标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ConditionProperties.conditions">
+            <summary>
+            条件明细.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.ConditionProperties.isDefault">
+            <summary>
+            是否默认.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.title">
+            <summary>
+            发起节点标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.initiator">
+            <summary>
+            指定发起人（为空则是所有人）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.initiatePos">
+            <summary>
+            指定发起岗位（为空则是所有人）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.initiateRole">
+            <summary>
+            指定发起角色.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.initiateOrg">
+            <summary>
+            指定发起部门（为空则是所有人）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.initiateGroup">
+            <summary>
+            指定发起分组.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.circulatePosition">
+            <summary>
+            指定抄送岗位.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.circulateUser">
+            <summary>
+            指定抄送人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.circulateRole">
+            <summary>
+            抄送角色.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.circulateOrg">
+            <summary>
+            指定抄送部门.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.circulateGroup">
+            <summary>
+            指定抄送分组.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.formOperates">
+            <summary>
+            表单权限.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.printId">
+            <summary>
+            打印id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.isComment">
+            <summary>
+            是否评论.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.isBatchApproval">
+            <summary>
+            是否批量.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.isCustomCopy">
+            <summary>
+            自定义抄送人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.hasSign">
+            <summary>
+            是否有签名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.hasOpinion">
+            <summary>
+            是否有审批意见.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.extraCopyRule">
+            <summary>
+            抄送附加条件,默认无附加条件.
+            1:无附加条件、2:同一部门、3:同一岗位、4:发起人上级、5:发起人下属、6:同一公司.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.errorRule">
+            <summary>
+            异常处理规则
+            1:超级管理员处理、2:指定人员处理、3:上一节点审批人指定处理人、4:默认审批通过、5:无法提交.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.errorRuleUser">
+            <summary>
+            异常处理人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.titleType">
+            <summary>
+            任务名类型 0：默认 1：自定义.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.titleContent">
+            <summary>
+            任务名格式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.formId">
+            <summary>
+            表单id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.revokeBtnText">
+            <summary>
+            撤回按钮.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.hasRevokeBtn">
+            <summary>
+            是否撤回.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.submitBtnText">
+            <summary>
+            提交按钮.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.hasSubmitBtn">
+            <summary>
+            是否提交.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.saveBtnText">
+            <summary>
+            保存按钮.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.hasSaveBtn">
+            <summary>
+            是否保存.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.pressBtnText">
+            <summary>
+            催办按钮.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.hasPressBtn">
+            <summary>
+            是否催办.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.printBtnText">
+            <summary>
+            打印按钮.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.hasPrintBtn">
+            <summary>
+            是否打印.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.initFuncConfig">
+            <summary>
+            流程发起事件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.endFuncConfig">
+            <summary>
+            流程结束事件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.flowRecallFuncConfig">
+            <summary>
+            流程撤回事件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.waitMsgConfig">
+            <summary>
+            审核.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.endMsgConfig">
+            <summary>
+            结束.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.approveMsgConfig">
+            <summary>
+            同意.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.rejectMsgConfig">
+            <summary>
+            拒绝.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.copyMsgConfig">
+            <summary>
+            抄送.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.overTimeMsgConfig">
+            <summary>
+            超时.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.noticeMsgConfig">
+            <summary>
+            提醒.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.timeLimitConfig">
+            <summary>
+            限时.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.overTimeConfig">
+            <summary>
+            超时.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.StartProperties.noticeConfig">
+            <summary>
+            提醒.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.TimerProperties.title">
+            <summary>
+            标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.TimerProperties.day">
+            <summary>
+            日.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.TimerProperties.hour">
+            <summary>
+            小时.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.TimerProperties.minute">
+            <summary>
+            分钟.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.TimerProperties.second">
+            <summary>
+            秒.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.Properties.TimerProperties.upNodeCode">
+            <summary>
+            定时器节点的上一节点编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.TaskNodeModel.taskId">
+            <summary>
+            任务id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.TaskNodeModel.nodeId">
+            <summary>
+            节点编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.TaskNodeModel.upNodeId">
+            <summary>
+            上节点编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.TaskNodeModel.nextNodeId">
+            <summary>
+            下节点编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.TaskNodeModel.propertyJson">
+            <summary>
+            属性json.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.TaskNodeModel.type">
+            <summary>
+            节点类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.TaskNodeModel.status">
+            <summary>
+            状态（0：正常，-2：作废）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.TaskNodeModel.isInterflow">
+            <summary>
+            是否分流.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.TaskNodeModel.isBranchFlow">
+            <summary>
+            是否条件分支.
+            </summary>
+        </member>
+        <member name="P:Poxiao.WorkFlow.Entitys.Model.TaskNodeModel.childNodeId">
+            <summary>
+            子节点编码.
+            </summary>
+        </member>
+    </members>
+</doc>

@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Poxiao.Apps.Interfaces</name>
+    </assembly>
+    <members>
+        <member name="T:Poxiao.Apps.Interfaces.IAppDataService">
+            <summary>
+            App常用数据
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01 .
+            </summary>
+        </member>
+        <member name="M:Poxiao.Apps.Interfaces.IAppDataService.GetAppMenuList(System.String)">
+            <summary>
+            菜单列表.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Apps.Interfaces.IAppDataService.Delete(System.String)">
+            <summary>
+            删除.
+            </summary>
+            <param name="objectId"></param>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

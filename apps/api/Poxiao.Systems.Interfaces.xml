@@ -1,0 +1,890 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Poxiao.Systems.Interfaces</name>
+    </assembly>
+    <members>
+        <member name="T:Poxiao.Systems.Interfaces.Common.IFileService">
+            <summary>
+            通用控制器.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Common.IFileService.GetPathByType(System.String)">
+            <summary>
+            根据类型获取文件存储路径.
+            </summary>
+            <param name="type"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Common.IFileService.UploadFileByType(System.String,System.String,System.String)">
+            <summary>
+            根据存储类型上传文件.
+            </summary>
+            <param name="uploadFilePath">上传文件地址.</param>
+            <param name="directoryPath">保存文件夹.</param>
+            <param name="fileName">新文件名.</param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.Permission.IAuthorizeService">
+            <summary>
+            业务契约：操作权限.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IAuthorizeService.GetCurrentUserModuleAuthorize(System.String,System.Boolean,System.String[],System.String[])">
+            <summary>
+            当前用户模块权限.
+            </summary>
+            <param name="userId">用户ID.</param>
+            <param name="isAdmin">是否超管.</param>
+            <param name="roleIds">用户角色Ids.</param>
+            <param name="systemIds">当前系统Ids .</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IAuthorizeService.GetCurrentUserButtonAuthorize(System.String,System.Boolean,System.String[])">
+            <summary>
+            当前用户模块按钮权限.
+            </summary>
+            <param name="userId">用户ID.</param>
+            <param name="isAdmin">是否超管.</param>
+            <param name="roleIds">用户角色Ids.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IAuthorizeService.GetCurrentUserColumnAuthorize(System.String,System.Boolean,System.String[])">
+            <summary>
+            当前用户模块列权限.
+            </summary>
+            <param name="userId">用户ID.</param>
+            <param name="isAdmin">是否超管.</param>
+            <param name="roleIds">用户角色Ids.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IAuthorizeService.GetCurrentUserResourceAuthorize(System.String,System.Boolean,System.String[])">
+            <summary>
+            当前用户模块权限资源.
+            </summary>
+            <param name="userId">用户ID.</param>
+            <param name="isAdmin">是否超管.</param>
+            <param name="roleIds">用户角色Ids.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IAuthorizeService.GetCurrentUserFormAuthorize(System.String,System.Boolean,System.String[])">
+            <summary>
+            当前用户模块表单权限.
+            </summary>
+            <param name="userId">用户ID.</param>
+            <param name="isAdmin">是否超管.</param>
+            <param name="roleIds">用户角色Ids.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IAuthorizeService.GetAuthorizeItemIds(System.String,System.String)">
+            <summary>
+            获取权限项ids.
+            </summary>
+            <param name="roleId">角色id.</param>
+            <param name="itemType">项类型.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IAuthorizeService.GetIsExistModuleDataAuthorizeScheme(System.String[])">
+            <summary>
+            是否存在权限资源.
+            </summary>
+            <param name="ids"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IAuthorizeService.GetAuthorizeListByObjectId(System.String)">
+            <summary>
+            获取权限列表.
+            </summary>
+            <param name="objectId">对象主键.</param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.Permission.IDepartmentService">
+            <summary>
+            业务契约：部门管理.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IDepartmentService.GetListAsync">
+            <summary>
+            获取部门列表.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IDepartmentService.GetDepName(System.String)">
+            <summary>
+            部门名称.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IDepartmentService.GetComName(System.String)">
+            <summary>
+            公司名称.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IDepartmentService.GetOrganizeNameTree(System.String)">
+            <summary>
+            公司结构树.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IDepartmentService.GetCompanyId(System.String)">
+            <summary>
+            公司id.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IDepartmentService.GetCompanyAllDep(System.String)">
+            <summary>
+            获取公司下所有部门.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.Permission.IOrganizeAdministratorService">
+            <summary>
+            分级管理
+            版 本：V1.0.0.5
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021.09.27.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IOrganizeAdministratorService.GetUserDataScopeModel(System.String)">
+            <summary>
+            获取用户数据范围.
+            </summary>
+            <param name="userId"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.Permission.IOrganizeService">
+            <summary>
+            机构管理
+            组织架构：公司》部门》岗位》用户
+            版 本：V3.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021.06.07.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IOrganizeService.GetIsManagerByUserId(System.String)">
+            <summary>
+            是否机构主管.
+            </summary>
+            <param name="userId">用户ID.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IOrganizeService.GetListAsync">
+            <summary>
+            获取机构列表
+            提供给其他服务使用.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IOrganizeService.GetCompanyListAsync">
+            <summary>
+            获取公司列表
+            提供给其他服务使用.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IOrganizeService.GetSubsidiary(System.String,System.Boolean)">
+            <summary>
+            下属机构.
+            </summary>
+            <param name="organizeId">机构ID.</param>
+            <param name="isAdmin">是否管理员.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IOrganizeService.GetSubsidiary(System.String)">
+            <summary>
+            下属机构.
+            </summary>
+            <param name="organizeId">组织ID.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IOrganizeService.GetChildIdListWithSelfById(System.String)">
+            <summary>
+            根据节点Id获取所有子节点Id集合，包含自己.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IOrganizeService.GetOrganizeMemberList(System.String)">
+            <summary>
+            获取机构成员列表.
+            </summary>
+            <param name="organizeId">机构ID</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IOrganizeService.GetInfoById(System.String)">
+            <summary>
+            部门信息.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IOrganizeService.GetOrgListTreeName">
+            <summary>
+            处理组织树 名称.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IOrganizeService.GetChildOrgId(System.String)">
+            <summary>
+            获取组织下所有子组织.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.Permission.IPositionService">
+            <summary>
+            业务契约：岗位管理.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IPositionService.GetInfoById(System.String)">
+            <summary>
+            获取信息.
+            </summary>
+            <param name="id">主键值.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IPositionService.GetListAsync">
+            <summary>
+            获取岗位列表.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IPositionService.GetName(System.String)">
+            <summary>
+            获取名称.
+            </summary>
+            <param name="ids"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.Permission.IRoleService">
+            <summary>
+            业务契约：角色信息.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.Permission.ISocialsUserService">
+            <summary>
+            业务契约：第三方登录.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.Permission.IUserGroupService">
+            <summary>
+            业务契约：用户分组管理.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.Permission.IUserRelationService">
+            <summary>
+            业务契约：用户关系.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IUserRelationService.Delete(System.String)">
+            <summary>
+            删除.
+            </summary>
+            <param name="id">用户ID.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IUserRelationService.CreateUserRelation(System.String,System.String,System.String)">
+            <summary>
+            创建用户关系.
+            </summary>
+            <param name="userId">用户ID.</param>
+            <param name="ids">对象ID组.</param>
+            <param name="relationType">关系类型(岗位-Position;角色-Role;组织-Organize;分组-Group;).</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IUserRelationService.Create(System.Collections.Generic.List{Poxiao.Systems.Entitys.Permission.UserRelationEntity})">
+            <summary>
+            创建用户关系.
+            </summary>
+            <param name="input">新增数据.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IUserRelationService.GetListByUserId(System.String)">
+            <summary>
+            根据用户主键获取列表.
+            </summary>
+            <param name="userId">用户主键.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IUserRelationService.GetUserId(System.String,System.String)">
+            <summary>
+            获取用户.
+            </summary>
+            <param name="type">关系类型.</param>
+            <param name="objId">对象ID.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IUserRelationService.GetUserId(System.Collections.Generic.List{System.String},System.String)">
+            <summary>
+            获取用户.
+            </summary>
+            <param name="type">关系类型.</param>
+            <param name="objId">对象ID.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IUserRelationService.GetUserPage(Poxiao.Systems.Entitys.Dto.User.UserConditionInput,System.Boolean@)">
+            <summary>
+            获取用户(分页).
+            </summary>
+            <param name="userIds">用户ID组.</param>
+            <param name="objIds">对象ID组.</param>
+            <param name="pageInputBase">分页参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IUserRelationService.GetUserId(System.Collections.Generic.List{System.String})">
+            <summary>
+            新用户组件获取人员.
+            </summary>
+            <param name="Ids"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.Permission.IUsersCurrentService">
+            <summary>
+            业务契约：个人资料管理.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.Permission.IUsersService">
+            <summary>
+            业务契约：用户信息.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IUsersService.GetInfoByUserId(System.String)">
+            <summary>
+            获取用户信息 根据用户ID.
+            </summary>
+            <param name="userId">用户ID.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IUsersService.GetInfoByUserIdAsync(System.String)">
+            <summary>
+            获取用户信息 根据用户ID.
+            </summary>
+            <param name="userId">用户ID.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IUsersService.GetInfoByAccount(System.String)">
+            <summary>
+            根据用户账户.
+            </summary>
+            <param name="account">用户账户.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IUsersService.GetInfoByLogin(System.String,System.String)">
+            <summary>
+            获取用户信息 根据登录信息.
+            </summary>
+            <param name="account">用户账户.</param>
+            <param name="password">用户密码.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IUsersService.GetUserIdByRealName(System.String)">
+            <summary>
+            根据用户姓名获取用户ID.
+            </summary>
+            <param name="realName">用户姓名.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IUsersService.GetUserName(System.String,System.Boolean)">
+            <summary>
+            获取用户名.
+            </summary>
+            <param name="userId">用户id.</param>
+            <param name="isAccount">是否显示账号.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IUsersService.GetList">
+            <summary>
+            获取用户列表.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IUsersService.GetPosition(System.String)">
+            <summary>
+            用户岗位.
+            </summary>
+            <param name="PositionIds"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IUsersService.GetUserByExp(System.Linq.Expressions.Expression{System.Func{Poxiao.Systems.Entitys.Permission.UserEntity,System.Boolean}})">
+            <summary>
+            表达式获取用户.
+            </summary>
+            <param name="expression">where 条件表达式.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IUsersService.GetUserListByExp(System.Linq.Expressions.Expression{System.Func{Poxiao.Systems.Entitys.Permission.UserEntity,System.Boolean}})">
+            <summary>
+            表达式获取用户列表.
+            </summary>
+            <param name="expression">where 条件表达式.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.Permission.IUsersService.GetUserListByExp(System.Linq.Expressions.Expression{System.Func{Poxiao.Systems.Entitys.Permission.UserEntity,System.Boolean}},System.Linq.Expressions.Expression{System.Func{Poxiao.Systems.Entitys.Permission.UserEntity,Poxiao.Systems.Entitys.Permission.UserEntity}})">
+            <summary>
+            表达式获取指定字段的用户列表.
+            </summary>
+            <param name="expression">where 条件表达式.</param>
+            <param name="select">select 选择字段表达式.</param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.System.IBillRullService">
+            <summary>
+            单据规则
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IBillRullService.GetBillNumber(System.String,System.Boolean)">
+            <summary>
+            获取流水号.
+            </summary>
+            <param name="enCode">流水编码.</param>
+            <param name="isCache">是否缓存：每个用户会自动占用一个流水号，这个刷新页面也不会跳号.</param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.System.IDataInterfaceService">
+            <summary>
+            数据接口
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IDataInterfaceService.GetInfo(System.String)">
+            <summary>
+            信息.
+            </summary>
+            <param name="id">主键id.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IDataInterfaceService.GetData(Poxiao.Systems.Entitys.System.DataInterfaceEntity)">
+            <summary>
+            sql接口查询.
+            </summary>
+            <param name="entity"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IDataInterfaceService.GetResponseByType(System.String,System.Int32,System.String,Poxiao.Infrastructure.Dtos.VisualDev.VisualDevDataFieldDataListInput,System.Collections.Generic.Dictionary{System.String,System.String})">
+            <summary>
+            根据不同类型请求接口.
+            </summary>
+            <param name="id"></param>
+            <param name="type">0 ： 分页 1 ：详情 ，其他 原始.</param>
+            <param name="tenantId"></param>
+            <param name="input"></param>
+            <param name="dicParameters">字典参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IDataInterfaceService.ReplaceParameterValue(Poxiao.Systems.Entitys.System.DataInterfaceEntity,System.Collections.Generic.Dictionary{System.String,System.String})">
+            <summary>
+            替换参数默认值.
+            </summary>
+            <param name="entity"></param>
+            <param name="dic"></param>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IDataInterfaceService.GetDynamicList(System.String,System.String,System.String,System.String,System.Collections.Generic.List{Poxiao.Infrastructure.Models.ControlLinkageParameterModel})">
+            <summary>
+            处理远端数据.
+            </summary>
+            <param name="propsUrl">远端数据ID.</param>
+            <param name="value">指定选项标签为选项对象的某个属性值.</param>
+            <param name="label">指定选项的值为选项对象的某个属性值.</param>
+            <param name="children">指定选项的子选项为选项对象的某个属性值.</param>
+            <param name="linkageParameters">联动参数.</param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.System.IDbLinkService">
+            <summary>
+            数据连接
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IDbLinkService.GetList">
+            <summary>
+            列表.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IDbLinkService.GetInfo(System.String)">
+            <summary>
+            信息.
+            </summary>
+            <param name="id">主键值.</param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.System.IDictionaryDataService">
+            <summary>
+            字典数据
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IDictionaryDataService.GetList(System.String,System.Boolean)">
+            <summary>
+            获取数据字典列表.
+            </summary>
+            <param name="dictionaryTypeId">分类id或编码.</param>
+            <param name="enabledMark">是否过滤启用状态.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IDictionaryDataService.GetInfo(System.String)">
+            <summary>
+            获取按钮信息.
+            </summary>
+            <param name="id">主键id.</param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.System.IDictionaryTypeService">
+            <summary>
+            字典分类
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IDictionaryTypeService.GetList">
+            <summary>
+            列表.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IDictionaryTypeService.GetInfo(System.String)">
+            <summary>
+            信息.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IDictionaryTypeService.GetListAllById(System.String,System.Collections.Generic.List{Poxiao.Systems.Entitys.System.DictionaryTypeEntity})">
+            <summary>
+            递归获取所有分类.
+            </summary>
+            <param name="id"></param>
+            <param name="typeList"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IDictionaryTypeService.IsExistParent(System.Collections.Generic.List{Poxiao.Systems.Entitys.System.DictionaryTypeEntity})">
+            <summary>
+            是否存在上级.
+            </summary>
+            <param name="entities"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.System.IMessageTemplateService">
+            <summary>
+            业务契约：消息模板.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IMessageTemplateService.GetInfo(System.String)">
+            <summary>
+            获取信息.
+            </summary>
+            <param name="id">主键值.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IMessageTemplateService.SendNodeMessage(System.Collections.Generic.List{System.String},Poxiao.Systems.Entitys.System.MessageTemplateEntity,System.Collections.Generic.List{System.String},System.Collections.Generic.Dictionary{System.String,System.String},System.Collections.Generic.Dictionary{System.String,System.Object})">
+            <summary>
+            发送通知.
+            </summary>
+            <param name="typeList">推送方式</param>
+            <param name="messageTemplateEntity">标题</param>
+            <param name="userList">接收用户</param>
+            <param name="parameters"></param>
+            <param name="bodyDic"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.System.IModuleButtonService">
+            <summary>
+            功能按钮
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IModuleButtonService.GetList(System.String)">
+            <summary>
+            列表.
+            </summary>
+            <param name="moduleId">功能id.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IModuleButtonService.Create(Poxiao.Systems.Entitys.System.ModuleButtonEntity)">
+            <summary>
+            添加按钮.
+            </summary>
+            <param name="entity"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IModuleButtonService.GetUserModuleButtonList">
+            <summary>
+            获取用户功能按钮.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.System.IModuleColumnService">
+            <summary>
+            功能列表
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IModuleColumnService.GetList(System.String)">
+            <summary>
+            列表.
+            </summary>
+            <param name="moduleId">功能id.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IModuleColumnService.GetUserModuleColumnList">
+            <summary>
+            获取用户功能列表.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.System.IModuleDataAuthorizeSchemeService">
+            <summary>
+            数据权限方案
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IModuleDataAuthorizeSchemeService.GetList(System.String)">
+            <summary>
+            列表.
+            </summary>
+            <param name="moduleId">功能id.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IModuleDataAuthorizeSchemeService.GetResourceList">
+            <summary>
+            获取用户数据权限方案.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.System.IModuleDataAuthorizeService">
+            <summary>
+            数据权限
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IModuleDataAuthorizeService.GetList(System.String)">
+            <summary>
+            列表.
+            </summary>
+            <param name="moduleId">功能id.</param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.System.IModuleFormService">
+            <summary>
+            表单权限
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IModuleFormService.GetList(System.String)">
+            <summary>
+            表单权限列表.
+            </summary>
+            <param name="moduleId">功能id.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IModuleFormService.GetUserModuleFormList">
+            <summary>
+            获取用户功能表单.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.System.IModuleService">
+            <summary>
+            菜单管理
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IModuleService.GetList(System.String)">
+            <summary>
+            列表.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IModuleService.GetInfo(System.String)">
+            <summary>
+            信息.
+            </summary>
+            <param name="id">主键值.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IModuleService.GetUserTreeModuleList(System.String)">
+            <summary>
+            获取用户菜单树.
+            </summary>
+            <param name="type">登录类型.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IModuleService.GetUserTreeModuleListBySystemId(System.String,System.String)">
+            <summary>
+            获取用户树形模块功能列表根据 SystemId.
+            </summary>
+            <param name="type">登录类型.</param>
+            <param name="systemId">SystemId.</param>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IModuleService.GetUserModueList(System.String)">
+            <summary>
+            获取用户菜单列表.
+            </summary>
+            <param name="type">登录类型.</param>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.System.IScheduleService">
+            <summary>
+            业务契约：门户日程
+            版 本：V3.4.6
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2023-04-24.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IScheduleService.GetCalendarDayPushList(System.String)">
+            <summary>
+            日程当天推送列表.
+            </summary>
+            <param name="tenantId"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IScheduleService.AddPushTaskQueue(Poxiao.Systems.Entitys.Entity.System.ScheduleEntity,System.String,System.String,System.String)">
+            <summary>
+            添加推送任务队列.
+            </summary>
+            <param name="entity"></param>
+            <param name="enCode"></param>
+            <param name="type"></param>
+            <param name="tenantId"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.IScheduleService.SendScheduleMsg(Poxiao.Systems.Entitys.Entity.System.ScheduleEntity,System.Collections.Generic.List{System.String},System.String,System.String)">
+            <summary>
+            发送日程消息.
+            </summary>
+            <param name="entity"></param>
+            <param name="userList"></param>
+            <param name="type"></param>
+            <param name="enCode"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.System.ISmsTemplateService">
+            <summary>
+            业务契约：短信模板.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.ISmsTemplateService.GetSmsTemplateFields(System.String)">
+            <summary>
+            获取短信模板字段.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.ISmsTemplateService.FlowTaskSend(System.String,Poxiao.Systems.Entitys.Dto.SysConfig.SysConfigOutput,System.Collections.Generic.List{System.String},System.Collections.Generic.Dictionary{System.String,System.String})">
+            <summary>
+            工作流发送短信.
+            </summary>
+            <param name="id"></param>
+            <param name="sysconfig"></param>
+            <param name="phoneNumbers"></param>
+            <param name="parameters"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.System.ISynThirdInfoService">
+            <summary>
+            第三方同步
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.ISynThirdInfoService.SynDep(System.Int32,System.Int32,Poxiao.Systems.Entitys.Dto.SysConfig.SysConfigOutput,System.Collections.Generic.List{Poxiao.Systems.Entitys.Dto.Organize.OrganizeListOutput})">
+            <summary>
+            组织同步.
+            </summary>
+            <param name="thirdType"></param>
+            <param name="dataType"></param>
+            <param name="sysConfig"></param>
+            <param name="orgList"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.ISynThirdInfoService.SynUser(System.Int32,System.Int32,Poxiao.Systems.Entitys.Dto.SysConfig.SysConfigOutput,System.Collections.Generic.List{Poxiao.Systems.Entitys.Permission.UserEntity})">
+            <summary>
+            用户同步.
+            </summary>
+            <param name="thirdType"></param>
+            <param name="dataType"></param>
+            <param name="sysConfig"></param>
+            <param name="userList"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.ISynThirdInfoService.DelSynData(System.Int32,System.Int32,Poxiao.Systems.Entitys.Dto.SysConfig.SysConfigOutput,System.String)">
+            <summary>
+            删除同步数据.
+            </summary>
+            <param name="thirdType"></param>
+            <param name="dataType"></param>
+            <param name="sysConfig"></param>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.ISynThirdInfoService.GetThirdIdList(System.Collections.Generic.List{System.String},System.Int32,System.Int32)">
+            <summary>
+            根据系统主键获取第三方主键.
+            </summary>
+            <param name="ids">系统主键.</param>
+            <param name="thirdType">第三方类型.</param>
+            <param name="dataType">数据类型.</param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Systems.Interfaces.System.ISysConfigService">
+            <summary>
+            系统配置
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.ISysConfigService.GetInfo(System.String,System.String)">
+            <summary>
+            系统配置信息.
+            </summary>
+            <param name="category">分类</param>
+            <param name="key">键</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Systems.Interfaces.System.ISysConfigService.GetInfo">
+            <summary>
+            获取系统配置.
+            </summary>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

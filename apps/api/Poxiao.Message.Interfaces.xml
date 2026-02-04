@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Poxiao.Message.Interfaces</name>
+    </assembly>
+    <members>
+        <member name="T:Poxiao.Message.Interfaces.IImReplyService">
+            <summary>
+            业务抽象：消息会话.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Message.Interfaces.IImReplyService.ForcedOffline(System.String)">
+            <summary>
+            强制下线.
+            </summary>
+            <param name="connectionId"></param>
+        </member>
+        <member name="T:Poxiao.Message.Interfaces.IMessageManager">
+            <summary>
+            消息中心处理接口类.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Message.Interfaces.Message.IMessageService">
+            <summary>
+            系统消息
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Message.Interfaces.Message.IMessageService.SentMessage(System.Collections.Generic.List{System.String},System.String,System.String,System.Collections.Generic.Dictionary{System.String,System.Object},System.Int32,System.String)">
+            <summary>
+            消息发送.
+            </summary>
+            <param name="toUserIds"></param>
+            <param name="title"></param>
+            <param name="bodyText"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Message.Interfaces.Message.IShortLinkService">
+            <summary>
+            系统消息
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+    </members>
+</doc>

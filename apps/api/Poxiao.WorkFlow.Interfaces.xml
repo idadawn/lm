@@ -1,0 +1,796 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Poxiao.WorkFlow.Interfaces</name>
+    </assembly>
+    <members>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.GetFlowBeforeInfo(System.String,System.String,System.String,System.String)">
+            <summary>
+            获取任务详情.
+            </summary>
+            <param name="id">任务id.</param>
+            <param name="flowId">流程id.</param>
+            <param name="taskNodeId">节点id.</param>
+            <param name="taskOperatorId">经办id.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.Save(Poxiao.Infrastructure.Models.WorkFlow.FlowTaskSubmitModel)">
+            <summary>
+            保存.
+            </summary>
+            <param name="flowTaskSubmitModel">提交参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.Submit(Poxiao.Infrastructure.Models.WorkFlow.FlowTaskSubmitModel)">
+            <summary>
+            提交.
+            </summary>
+            <param name="flowTaskSubmitModel">提交参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.Audit(Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter,System.Boolean)">
+            <summary>
+            审批(同意).
+            </summary>
+            <param name="flowTaskParamter">任务参数.</param>
+            <param name="isAuto">是否自动审批.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.Reject(Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter)">
+            <summary>
+            审批(拒绝).
+            </summary>
+            <param name="flowTaskParamter">任务参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.Recall(Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter,Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorRecordEntity)">
+            <summary>
+            审批(撤回).
+            </summary>
+            <param name="flowTaskParamter">任务参数.</param>
+            <param name="flowTaskOperatorRecordEntity">经办记录.</param>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.Revoke(Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter)">
+            <summary>
+            流程撤回.
+            </summary>
+            <param name="flowTaskParamter">任务参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.Cancel(Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter)">
+            <summary>
+            终止.
+            </summary>
+            <param name="flowTaskParamter">任务参数.</param>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.Assigned(Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter)">
+            <summary>
+            指派.
+            </summary>
+            <param name="flowTaskParamter">任务参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.Transfer(Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter)">
+            <summary>
+            转办.
+            </summary>
+            <param name="flowTaskParamter">任务参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.Press(Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter)">
+            <summary>
+            催办.
+            </summary>
+            <param name="flowTaskParamter">任务参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.GetCandidateModelList(System.String,Poxiao.WorkFlow.Entitys.Model.FlowHandleModel,System.Int32)">
+            <summary>
+            获取候选人.
+            </summary>
+            <param name="id">经办id.</param>
+            <param name="flowHandleModel">审批参数.</param>
+            <param name="type">0:候选节点编码，1：候选人.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.NodeSelector(System.String)">
+            <summary>
+            批量审批节点列表.
+            </summary>
+            <param name="flowId">流程id.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.GetBatchCandidate(System.String,System.String)">
+            <summary>
+            获取批量审批候选人.
+            </summary>
+            <param name="flowId">流程id.</param>
+            <param name="flowTaskOperatorId">经办id.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.AdjustNodeByCon(Poxiao.Infrastructure.Models.WorkFlow.FlowJsonModel,System.Object,Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity,System.Boolean)">
+            <summary>
+            审批根据条件变更节点.
+            </summary>
+            <param name="flowEngineEntity">流程实例.</param>
+            <param name="formData">表单数据.</param>
+            <param name="flowTaskOperatorEntity">经办实例.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.IsSubFlowUpNode(Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter)">
+            <summary>
+            判断驳回节点是否存在子流程.
+            </summary>
+            <param name="flowTaskParamter">任务参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.GetBatchOperationData(Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter)">
+            <summary>
+            获取批量任务的表单数据.
+            </summary>
+            <param name="flowTaskParamter">任务参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.Validation(System.String,Poxiao.WorkFlow.Entitys.Model.FlowHandleModel)">
+            <summary>
+            详情操作验证.
+            </summary>
+            <param name="taskOperatorId">经办id.</param>
+            <param name="flowHandleModel">审批参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.Change(Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter)">
+            <summary>
+            变更/复活.
+            </summary>
+            <param name="flowTaskParamter">任务参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.RejectNodeList(System.String)">
+            <summary>
+            驳回审批节点列表.
+            </summary>
+            <param name="taskOperatorId">经办id.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.Suspend(Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter)">
+            <summary>
+            挂起.
+            </summary>
+            <param name="flowTaskParamter">任务参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.Restore(Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter)">
+            <summary>
+            恢复.
+            </summary>
+            <param name="flowTaskParamter">任务参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Manager.IFlowTaskManager.NotifyEvent(Poxiao.WorkFlow.Entitys.Model.Properties.ApproversProperties,Poxiao.WorkFlow.Entitys.Model.FlowTaskParamter,System.String,System.Int32,System.Boolean)">
+            <summary>
+            执行超时提醒配置.
+            </summary>
+            <param name="approPro"></param>
+            <param name="flowTaskParamter"></param>
+            <param name="nodeId"></param>
+            <param name="count"></param>
+            <param name="isTimeOut"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetMonitorList(Poxiao.WorkFlow.Entitys.Dto.FlowMonitor.FlowMonitorListQuery)">
+            <summary>
+            列表（流程监控）.
+            </summary>
+            <param name="input">请求参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetLaunchList(Poxiao.WorkFlow.Entitys.Dto.FlowLaunch.FlowLaunchListQuery)">
+            <summary>
+            列表（我发起的）.
+            </summary>
+            <param name="input">请求参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetWaitList(Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListQuery)">
+            <summary>
+            列表（待我审批）.
+            </summary>
+            <param name="input">请求参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetBatchWaitList(Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListQuery)">
+            <summary>
+            列表（批量审批）.
+            </summary>
+            <param name="input">请求参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTrialList(Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListQuery)">
+            <summary>
+            列表（我已审批）.
+            </summary>
+            <param name="input">请求参数</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetCirculateList(Poxiao.WorkFlow.Entitys.Dto.FlowBefore.FlowBeforeListQuery)">
+            <summary>
+            列表（抄送我的）.
+            </summary>
+            <param name="input">请求参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.BatchFlowSelector">
+            <summary>
+            批量流程列表.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetRecordListByCategory(System.String,System.String,System.String)">
+            <summary>
+            根据分类获取审批意见.
+            </summary>
+            <param name="taskId"></param>
+            <param name="category"></param>
+            <param name="type"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetWaitList">
+            <summary>
+            门户列表（待我审批）.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetPortalWaitList">
+            <summary>
+            门户列表（待我审批）.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTrialList">
+            <summary>
+            列表（我已审批）.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetFlowTemplateInfo(System.String)">
+            <summary>
+            流程信息.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetFlowTemplateJsonInfo(System.Linq.Expressions.Expression{System.Func{Poxiao.WorkFlow.Entitys.Entity.FlowTemplateJsonEntity,System.Boolean}})">
+            <summary>
+            流程json信息.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetFlowFromModel(System.String)">
+            <summary>
+            表单信息.
+            </summary>
+            <param name="formId"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetFlowFromEntity(System.String)">
+            <summary>
+            表单信息.
+            </summary>
+            <param name="formId"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetEngineInfo(System.String)">
+            <summary>
+            流程信息.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetEngineFirstOrDefault(System.String)">
+            <summary>
+            任务信息.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetDelegateUserIds(System.Collections.Generic.List{System.String},System.String)">
+            <summary>
+            获取指定用户被委托人.
+            </summary>
+            <param name="userIds">指定用户.</param>
+            <param name="flowId">流程id.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetToUserId(System.String,System.String)">
+            <summary>
+            获取指定用户被委托人.
+            </summary>
+            <param name="userId">指定用户.</param>
+            <param name="flowId">流程id.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetVisualDevInfo(System.String)">
+            <summary>
+            获取功能开发.
+            </summary>
+            <param name="flowId">流程id.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetLinkInfo(System.String)">
+            <summary>
+            获取数据连接.
+            </summary>
+            <param name="id">id.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetFlowUserEntity(System.String)">
+            <summary>
+            获取任务发起人信息.
+            </summary>
+            <param name="id">id.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.CreateFlowUser(System.String,System.String)">
+            <summary>
+            新增任务发起人信息.
+            </summary>
+            <param name="userId">用户id.</param>
+            <param name="taskId">任务id.</param>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetCurrentUserObjId">
+            <summary>
+            获取当前用户关系id.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.IsDevFlow(System.String)">
+            <summary>
+            是否为功能流程.
+            </summary>
+            <param name="flowId"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskList">
+            <summary>
+            任务列表.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskList(System.String)">
+            <summary>
+            任务列表.
+            </summary>
+            <param name="flowId">引擎id.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskList(System.Linq.Expressions.Expression{System.Func{Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity,System.Boolean}})">
+            <summary>
+            任务列表.
+            </summary>
+            <param name="expression">条件.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskInfo(System.String)">
+            <summary>
+            任务信息.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskFirstOrDefault(System.String)">
+            <summary>
+            任务信息.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.AnyFlowTask(System.Linq.Expressions.Expression{System.Func{Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity,System.Boolean}})">
+            <summary>
+            是否存在任务.
+            </summary>
+            <param name="expression">id</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.DeleteTask(Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity)">
+            <summary>
+            任务删除.
+            </summary>
+            <param name="entity"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.DeleteTaskNoAwait(Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity,System.Boolean)">
+            <summary>
+            任务删除, 非异步.
+            </summary>
+            <param name="entity"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.CreateTask(Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity)">
+            <summary>
+            任务创建.
+            </summary>
+            <param name="entity"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.UpdateTask(Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity)">
+            <summary>
+            任务更新.
+            </summary>
+            <param name="entity"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.UpdateTask(Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity,System.Linq.Expressions.Expression{System.Func{Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity,System.Object}})">
+            <summary>
+            任务更新.
+            </summary>
+            <param name="entity"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.DeleteFlowTaskAllData(System.String,System.Boolean,System.Boolean)">
+            <summary>
+            打回流程删除所有相关数据.
+            </summary>
+            <param name="taskId"></param>
+            <param name="isClearRecord">是否清除记录.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.DeleteFlowTaskAllData(System.Collections.Generic.List{System.String},System.Boolean)">
+            <summary>
+            打回流程删除所有相关数据.
+            </summary>
+            <param name="taskIds">任务di数组.</param>
+            <param name="isClearRecord">是否清除记录.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.DeleteSubTask(Poxiao.WorkFlow.Entitys.Entity.FlowTaskEntity)">
+            <summary>
+            删除子流程.
+            </summary>
+            <param name="flowTaskEntity"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskNodeList(System.String)">
+            <summary>
+            节点列表.
+            </summary>
+            <param name="taskId"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskNodeList(System.Linq.Expressions.Expression{System.Func{Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity,System.Boolean}},System.Linq.Expressions.Expression{System.Func{Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity,System.Object}},SqlSugar.OrderByType)">
+            <summary>
+            节点列表.
+            </summary>
+            <param name="expression"></param>
+            <param name="orderByExpression"></param>
+            <param name="orderByType"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskNodeInfo(System.String)">
+            <summary>
+            节点信息.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskNodeInfo(System.Linq.Expressions.Expression{System.Func{Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity,System.Boolean}})">
+            <summary>
+            节点信息.
+            </summary>
+            <param name="expression"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.CreateTaskNode(System.Collections.Generic.List{Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity})">
+            <summary>
+            节点创建.
+            </summary>
+            <param name="entitys"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.UpdateTaskNode(Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity)">
+            <summary>
+            节点更新.
+            </summary>
+            <param name="entity"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.UpdateTaskNode(System.Collections.Generic.List{Poxiao.WorkFlow.Entitys.Entity.FlowTaskNodeEntity})">
+            <summary>
+            节点更新.
+            </summary>
+            <param name="entitys"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskOperatorList(System.String)">
+            <summary>
+            经办列表.
+            </summary>
+            <param name="taskId"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskOperatorList(System.Linq.Expressions.Expression{System.Func{Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity,System.Boolean}},System.Linq.Expressions.Expression{System.Func{Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity,System.Object}},SqlSugar.OrderByType)">
+            <summary>
+            经办列表.
+            </summary>
+            <param name="expression"></param>
+            <param name="orderByExpression"></param>
+            <param name="orderByType"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskOperatorUserList(System.Linq.Expressions.Expression{System.Func{Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorUserEntity,System.Boolean}},System.Linq.Expressions.Expression{System.Func{Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorUserEntity,System.Object}},SqlSugar.OrderByType)">
+            <summary>
+            依次审批经办列表.
+            </summary>
+            <param name="expression"></param>
+            <param name="orderByExpression"></param>
+            <param name="orderByType"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskOperatorInfo(System.String)">
+            <summary>
+            经办信息.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskOperatorInfo(System.Linq.Expressions.Expression{System.Func{Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity,System.Boolean}})">
+            <summary>
+            经办信息.
+            </summary>
+            <param name="expression"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.DeleteTaskOperator(System.Collections.Generic.List{System.String})">
+            <summary>
+            经办删除.
+            </summary>
+            <param name="ids"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.DeleteTaskOperatorUser(System.Collections.Generic.List{System.String})">
+            <summary>
+            经办删除.
+            </summary>
+            <param name="ids"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.DeleteTaskOperatorUser(System.String)">
+            <summary>
+            依次经办删除.
+            </summary>
+            <param name="taskId"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.CreateTaskOperator(System.Collections.Generic.List{Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity})">
+            <summary>
+            经办创建.
+            </summary>
+            <param name="entitys"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.CreateTaskOperatorUser(System.Collections.Generic.List{Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorUserEntity})">
+            <summary>
+            依次经办创建.
+            </summary>
+            <param name="entitys"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.CreateTaskOperator(Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity)">
+            <summary>
+            经办创建.
+            </summary>
+            <param name="entity"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.UpdateTaskOperator(Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity)">
+            <summary>
+            经办更新.
+            </summary>
+            <param name="entity"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.UpdateTaskOperator(System.Collections.Generic.List{Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorEntity})">
+            <summary>
+            经办更新.
+            </summary>
+            <param name="entitys"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.AnyTaskOperatorUser(System.Linq.Expressions.Expression{System.Func{Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorUserEntity,System.Boolean}})">
+            <summary>
+            是否存在依次审批经办.
+            </summary>
+            <param name="expression"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.UpdateTaskOperatorUser(System.Collections.Generic.List{Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorUserEntity})">
+            <summary>
+            经办更新.
+            </summary>
+            <param name="entitys"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskOperatorRecordList(System.String)">
+            <summary>
+            经办记录列表.
+            </summary>
+            <param name="taskId"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskOperatorRecordList(System.Linq.Expressions.Expression{System.Func{Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorRecordEntity,System.Boolean}},System.Linq.Expressions.Expression{System.Func{Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorRecordEntity,System.Object}},SqlSugar.OrderByType)">
+            <summary>
+            经办记录列表.
+            </summary>
+            <param name="expression"></param>
+            <param name="orderByExpression"></param>
+            <param name="orderByType"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskOperatorRecordModelList(System.String)">
+            <summary>
+            经办记录列表.
+            </summary>
+            <param name="taskId"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskOperatorRecordInfo(System.String)">
+            <summary>
+            经办记录信息.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskOperatorRecordInfo(System.Linq.Expressions.Expression{System.Func{Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorRecordEntity,System.Boolean}})">
+            <summary>
+            经办记录信息.
+            </summary>
+            <param name="expression">条件.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.CreateTaskOperatorRecord(Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorRecordEntity)">
+            <summary>
+            经办记录创建.
+            </summary>
+            <param name="entity"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.DeleteTaskOperatorRecord(System.Collections.Generic.List{System.String})">
+            <summary>
+            经办记录作废.
+            </summary>
+            <param name="ids"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.DeleteTaskOperatorRecord(System.Linq.Expressions.Expression{System.Func{Poxiao.WorkFlow.Entitys.Entity.FlowTaskOperatorRecordEntity,System.Boolean}})">
+            <summary>
+            经办记录作废.
+            </summary>
+            <param name="expression"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.CreateTaskCirculate(System.Collections.Generic.List{Poxiao.WorkFlow.Entitys.Entity.FlowTaskCirculateEntity})">
+            <summary>
+            传阅创建.
+            </summary>
+            <param name="entitys"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.CreateFlowCandidates(System.Collections.Generic.List{Poxiao.WorkFlow.Entitys.Entity.FlowCandidatesEntity})">
+            <summary>
+            候选人创建.
+            </summary>
+            <param name="entitys"></param>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.DeleteFlowCandidates(System.Linq.Expressions.Expression{System.Func{Poxiao.WorkFlow.Entitys.Entity.FlowCandidatesEntity,System.Boolean}})">
+            <summary>
+            候选人删除.
+            </summary>
+            <param name="expression"></param>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetFlowCandidates(System.String)">
+            <summary>
+            候选人获取.
+            </summary>
+            <param name="nodeId"></param>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskParamterByTaskId(System.String,Poxiao.WorkFlow.Entitys.Model.FlowHandleModel)">
+            <summary>
+            根据任务id获取任务引擎参数.
+            </summary>
+            <param name="taskId"></param>
+            <param name="flowHandleModel"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskParamterByNodeId(System.String,Poxiao.WorkFlow.Entitys.Model.FlowHandleModel)">
+            <summary>
+            根据节点id获取任务引擎参数.
+            </summary>
+            <param name="taskId"></param>
+            <param name="flowHandleModel"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetTaskParamterByOperatorId(System.String,Poxiao.WorkFlow.Entitys.Model.FlowHandleModel)">
+            <summary>
+            根据经办id获取任务引擎参数.
+            </summary>
+            <param name="taskId"></param>
+            <param name="flowHandleModel"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.GetRejectDataInfo(System.String)">
+            <summary>
+            驳回数据信息.
+            </summary>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.CreateRejectData(System.String,System.String)">
+            <summary>
+            驳回数据创建.
+            </summary>
+            <param name="taskId"></param>
+            <param name="taskNodeId"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Repository.IFlowTaskRepository.UpdateRejectData(Poxiao.WorkFlow.Entitys.Entity.FlowRejectDataEntity)">
+            <summary>
+            驳回数据重启.
+            </summary>
+            <param name="entity"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Interfaces.Service.IFlowEngineService">
+            <summary>
+            流程设计.
+            </summary>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Service.IFlowEngineService.GetFlowFormList">
+            <summary>
+            发起列表.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Interfaces.Service.IFlowTaskService">
+            <summary>
+            流程任务.
+            </summary>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Service.IFlowTaskService.Create(Poxiao.Infrastructure.Models.WorkFlow.FlowTaskSubmitModel)">
+            <summary>
+            新建.
+            </summary>
+            <param name="flowTaskSubmit">请求参数.</param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Interfaces.Service.IFlowTemplateService">
+            <summary>
+            流程设计.
+            </summary>
+        </member>
+        <member name="M:Poxiao.WorkFlow.Interfaces.Service.IFlowTemplateService.GetFlowFormList(System.Int32,System.String)">
+            <summary>
+            发起列表.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Interfaces.Service.ILeaveApplyService">
+            <summary>
+            请假申请
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01 .
+            </summary>
+        </member>
+        <member name="T:Poxiao.WorkFlow.Interfaces.Service.ISalesOrderService">
+            <summary>
+            销售订单
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01 .
+            </summary>
+        </member>
+    </members>
+</doc>

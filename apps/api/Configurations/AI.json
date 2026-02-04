@@ -1,0 +1,19 @@
+{
+  "AI": {
+    "Chat": {
+      "Endpoint": "http://lm-vllm:8082/v1",
+      "ModelId": "/data/qwen2.5-7b",
+      "Key": "dummy-key"
+    },
+    "Embedding": {
+      "Endpoint": "http://lm-tei:80",
+      "Model": "bge-m3"
+    }
+  },
+  "VectorDB": {
+    "Qdrant": {
+      "Endpoint": "http://lm-qdrant:6333",
+      "CollectionName": "appearance_features"
+    }
+  }
+}

@@ -1,0 +1,4980 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Poxiao.Extend.Entitys</name>
+    </assembly>
+    <members>
+        <member name="T:Poxiao.Extend.Entitys.Dto.BigData.BigDataListOutput">
+            <summary>
+            大数据列表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.BigData.BigDataListOutput.enCode">
+            <summary>
+            编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.BigData.BigDataListOutput.fullName">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.BigData.BigDataListOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.BigData.BigDataListOutput.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.DocumentPreview.DocumentPreviewListOutput">
+            <summary>
+            获取文档列表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.DocumentPreview.DocumentPreviewListOutput.fileName">
+            <summary>
+            文件名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.DocumentPreview.DocumentPreviewListOutput.fileSize">
+            <summary>
+            文件大小.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.DocumentPreview.DocumentPreviewListOutput.fileId">
+            <summary>
+            主键id    .
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.DocumentPreview.DocumentPreviewListOutput.fileTime">
+            <summary>
+            修改时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.DocumentPreview.DocumentPreviewListOutput.fileType">
+            <summary>
+            文件类型.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.DocumentPreview.DocumentPreviewPreviewInput">
+            <summary>
+            预览文档.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.DocumentPreview.DocumentPreviewPreviewInput.fileId">
+            <summary>
+            文件id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.DocumentPreview.DocumentPreviewPreviewInput.noCache">
+            <summary>
+            是否强制重新转换（忽略缓存）,true为强制重新转换，false为不强制重新转换.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.DocumentPreview.DocumentPreviewPreviewInput.watermark">
+            <summary>
+             针对单文档设置水印内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.DocumentPreview.DocumentPreviewPreviewInput.isCopy">
+            <summary>
+            0否1是，默认为0。针对单文档设置是否防复制.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.DocumentPreview.DocumentPreviewPreviewInput.pageStart">
+            <summary>
+            开始位置.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.DocumentPreview.DocumentPreviewPreviewInput.pageEnd">
+            <summary>
+            结束位置.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.DocumentPreview.DocumentPreviewPreviewInput.type">
+            <summary>
+            类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.DocumentPreview.DocumentPreviewPreviewInput.previewType">
+            <summary>
+            预览方式（localPreview：本地，yozoOnlinePreview：在线）.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.DocumentPreview.DocumentPreviewPreviewOutput">
+            <summary>
+            预览文档.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.DocumentPreview.DocumentPreviewPreviewOutput.fileName">
+            <summary>
+            文件名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.DocumentPreview.DocumentPreviewPreviewOutput.filePath">
+            <summary>
+            文件路径.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Document.DocumentActionsShareInput">
+            <summary>
+            共享文件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentActionsShareInput.userId">
+            <summary>
+            共享用户.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Document.DocumentCrInput">
+            <summary>
+            添加文件夹.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentCrInput.fullName">
+            <summary>
+            文件夹名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentCrInput.parentId">
+            <summary>
+            文档父级.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentCrInput.type">
+            <summary>
+            文档分类.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Document.DocumentFolderTreeOutput">
+            <summary>
+            获取知识管理列表（文件夹树）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentFolderTreeOutput.icon">
+            <summary>
+            图标.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentFolderTreeOutput.fullName">
+            <summary>
+            文件名.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Document.DocumentInfoOutput">
+            <summary>
+            获取文件/文件夹信息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentInfoOutput.parentId">
+            <summary>
+            父级id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentInfoOutput.type">
+            <summary>
+            文件类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentInfoOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentInfoOutput.fullName">
+            <summary>
+            文件名/文件夹名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentInfoOutput.fileExtension">
+            <summary>
+            后缀名.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Document.DocumentListOutput">
+            <summary>
+            获取知识管理列表（全部文档）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentListOutput.creatorTime">
+            <summary>
+            创建日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentListOutput.isShare">
+            <summary>
+            是否分享.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentListOutput.type">
+            <summary>
+            类型(0-文件夹，1-文件).
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentListOutput.fileSize">
+            <summary>
+            大小.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentListOutput.fullName">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentListOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentListOutput.fileExtension">
+            <summary>
+            后缀名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentListOutput.parentId">
+            <summary>
+            父级Id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentListOutput.uploaderUrl">
+            <summary>
+            文档下载地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentListOutput.filePath">
+            <summary>
+            文件路径.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentListOutput.isPreview">
+            <summary>
+            是否支持预览.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Document.DocumentShareOutput">
+            <summary>
+            知识管理（我的共享列表）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentShareOutput.shareTime">
+            <summary>
+            共享日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentShareOutput.fileSize">
+            <summary>
+            大小.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentShareOutput.fullName">
+            <summary>
+            文件名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentShareOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentShareOutput.type">
+            <summary>
+            文件类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentShareOutput.fileExtension">
+            <summary>
+            后缀名.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Document.DocumentShareTomeOutput">
+            <summary>
+            获取知识管理列表（共享给我）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentShareTomeOutput.shareTime">
+            <summary>
+            共享日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentShareTomeOutput.fileSize">
+            <summary>
+            大小.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentShareTomeOutput.fullName">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentShareTomeOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentShareTomeOutput.creatorUserId">
+            <summary>
+            共享人员Id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentShareTomeOutput.fileExtension">
+            <summary>
+            后缀名.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Document.DocumentShareUserOutput">
+            <summary>
+            获取知识管理列表（共享人员）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentShareUserOutput.shareTime">
+            <summary>
+            共享时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentShareUserOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentShareUserOutput.shareUserId">
+            <summary>
+            共享人员id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentShareUserOutput.documentId">
+            <summary>
+            文档id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Document.DocumentTrashOutput">
+            <summary>
+            回收站（彻底删除）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentTrashOutput.deleteTime">
+            <summary>
+            删除日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentTrashOutput.fileSize">
+            <summary>
+            大小.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentTrashOutput.fullName">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentTrashOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentTrashOutput.fileExtension">
+            <summary>
+            后缀名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentTrashOutput.type">
+            <summary>
+            类型.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Document.DocumentUpInput">
+            <summary>
+            修改文件名/文件夹名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentUpInput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentUploaderInput.parentId">
+            <summary>
+            上级文件id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Document.DocumentUploaderInput.file">
+            <summary>
+            上级文件id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Email.EmailActionsSaveDraftInput">
+            <summary>
+            存草稿.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Email.EmailConfigActionsCheckMailInput">
+            <summary>
+            邮箱配置-测试连接.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Email.EmailConfigInfoOutput">
+            <summary>
+            获取邮箱配置.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailConfigInfoOutput.pop3Host">
+            <summary>
+            POP3服务地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailConfigInfoOutput.pop3Port">
+            <summary>
+            POP3端口.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailConfigInfoOutput.smtpHost">
+            <summary>
+            SMTP服务器地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailConfigInfoOutput.smtpPort">
+            <summary>
+            SMTP端口.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailConfigInfoOutput.senderName">
+            <summary>
+            显示名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailConfigInfoOutput.emailSsl">
+            <summary>
+            是否开户SSL登录(1-是,0否).
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailConfigInfoOutput.password">
+            <summary>
+            密码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailConfigInfoOutput.account">
+            <summary>
+            邮箱地址.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Email.EmailConfigUpInput">
+            <summary>
+            更新邮件配置.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailConfigUpInput.pop3Host">
+            <summary>
+            POP3服务地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailConfigUpInput.pop3Port">
+            <summary>
+            POP3端口.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailConfigUpInput.smtpHost">
+            <summary>
+            SMTP服务器地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailConfigUpInput.smtpPort">
+            <summary>
+            SMTP端口.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailConfigUpInput.senderName">
+            <summary>
+            显示名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailConfigUpInput.emailSsl">
+            <summary>
+            是否开户SSL登录(1-是,0否).
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailConfigUpInput.password">
+            <summary>
+            密码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailConfigUpInput.account">
+            <summary>
+            邮箱地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailHomeOutput.id">
+            <summary>
+            ID.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailHomeOutput.fullName">
+            <summary>
+            标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailHomeOutput.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Email.EmailInfoOutput">
+            <summary>
+            获取邮件信息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailInfoOutput.subject">
+            <summary>
+            邮件主题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailInfoOutput.senderName">
+            <summary>
+            发件人姓名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailInfoOutput.sender">
+            <summary>
+            发件人邮箱.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailInfoOutput.fdate">
+            <summary>
+            时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailInfoOutput.mAccount">
+            <summary>
+            收件人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailInfoOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailInfoOutput.attachment">
+            <summary>
+            附件对象.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailInfoOutput.bodyText">
+            <summary>
+            邮件内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailInfoOutput.cC">
+            <summary>
+            抄送人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailInfoOutput.bCC">
+            <summary>
+            密送人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailInfoOutput.recipient">
+            <summary>
+            收件人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailInfoOutput.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Email.EmailListOutput">
+            <summary>
+            (带分页)获取邮件列表(收件箱、标星件、草稿箱、已发送).
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailListOutput.isRead">
+            <summary>
+            是否已读(1-已读，0-未) inBox,star.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailListOutput.fdate">
+            <summary>
+            时间  inBox,star.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailListOutput.id">
+            <summary>
+            主键ID.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailListOutput.subject">
+            <summary>
+            主题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailListOutput.starred">
+            <summary>
+            是否标星(1-是,0-否)inBox,star.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailListOutput.attachment">
+            <summary>
+            附件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailListOutput.sender">
+            <summary>
+            发件人 inBox,star.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailListOutput.recipient">
+            <summary>
+            收件人 draft，sent.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailListOutput.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Email.EmailListQuery">
+            <summary>
+            (带分页)获取邮件列表入参(收件箱、标星件、草稿箱、已发送).
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailListQuery.startTime">
+            <summary>
+            开始时间，时间戳.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailListQuery.endTime">
+            <summary>
+            结束时间，时间戳.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailListQuery.type">
+            <summary>
+            类型.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Email.EmailSendInput">
+            <summary>
+            发邮件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailSendInput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailSendInput.subject">
+            <summary>
+            主题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailSendInput.recipient">
+            <summary>
+            收件人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailSendInput.bodyText">
+            <summary>
+            正文.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailSendInput.attachment">
+            <summary>
+            附件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailSendInput.cc">
+            <summary>
+            抄送人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Email.EmailSendInput.bcc">
+            <summary>
+            密送人.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Employee.EmployeeListOutput">
+            <summary>
+            获取职员列表(分页).
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.EmployeeListOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.EmployeeListOutput.enCode">
+            <summary>
+            工号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.EmployeeListOutput.fullName">
+            <summary>
+            姓名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.EmployeeListOutput.gender">
+            <summary>
+            性别ID.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.EmployeeListOutput.departmentName">
+            <summary>
+            部门.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.EmployeeListOutput.positionName">
+            <summary>
+            岗位.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.EmployeeListOutput.workingNature">
+            <summary>
+            用工性质.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.EmployeeListOutput.idNumber">
+            <summary>
+            身份证.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.EmployeeListOutput.telephone">
+            <summary>
+            联系电话.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.EmployeeListOutput.birthday">
+            <summary>
+            生日.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.EmployeeListOutput.attendWorkTime">
+            <summary>
+            参加工作时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.EmployeeListOutput.education">
+            <summary>
+            学历.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.EmployeeListOutput.major">
+            <summary>
+            所学专业.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.EmployeeListOutput.graduationAcademy">
+            <summary>
+            毕业院校.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.EmployeeListOutput.graduationTime">
+            <summary>
+            毕业时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.EmployeeListOutput.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Employee.EmployeeListQuery">
+            <summary>
+            获取职员列表(分页).
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.EmployeeListQuery.condition">
+            <summary>
+            查询内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.EmployeeListQuery.selectKey">
+            <summary>
+            查询字段.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.EmployeeListQuery.dataType">
+            <summary>
+            是否分页（0：分页）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.ImportDataInput.list">
+            <summary>
+            导入数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.ImportDataOutput.failResult">
+            <summary>
+            导入失败信息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.ImportDataOutput.fnum">
+            <summary>
+            失败条数.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.ImportDataOutput.resultType">
+            <summary>
+            导入是否成功（0：成功）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Employee.ImportDataOutput.snum">
+            <summary>
+            成功条数.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Order.OrderActionsNextOutput">
+            <summary>
+            获取订单信息(下一个订单).
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Order.OrderActionsPrevOutput">
+            <summary>
+            获取订单信息(上一个订单).
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Order.OrderCollectionPlanOutput">
+            <summary>
+            获取订单列表-收款计划.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCollectionPlanOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCollectionPlanOutput.receivableDate">
+            <summary>
+            收款日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCollectionPlanOutput.receivableRate">
+            <summary>
+            收款比率.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCollectionPlanOutput.receivableMoney">
+            <summary>
+            收款金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCollectionPlanOutput.receivableMode">
+            <summary>
+            收款方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCollectionPlanOutput.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCollectionPlanOutput.fabstract">
+            <summary>
+            收款摘要.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput">
+            <summary>
+            新建订单.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput.customerName">
+            <summary>
+            客户名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput.salesmanId">
+            <summary>
+            业务人员id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput.orderDate">
+            <summary>
+            订单日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput.orderCode">
+            <summary>
+            订单编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput.paymentMode">
+            <summary>
+            付款方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput.receivableMoney">
+            <summary>
+            付款金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput.earnestRate">
+            <summary>
+            定金比率.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput.prepayEarnest">
+            <summary>
+            预付定金.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput.transportMode">
+            <summary>
+            运输方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput.deliveryDate">
+            <summary>
+            发货日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput.deliveryAddress">
+            <summary>
+            发货地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput.fileJson">
+            <summary>
+            相关附近.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput.customerId">
+            <summary>
+            客户ID.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput.salesmanName">
+            <summary>
+            业务人员名字.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput.flowId">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput.status">
+            <summary>
+            状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput.flowUrgent">
+            <summary>
+            紧急程度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput.goodsList">
+            <summary>
+            商品列表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCrInput.collectionPlanList">
+            <summary>
+            收款计划列表.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Order.OrderInfo">
+            <summary>
+            订单明细.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfo.customerName">
+            <summary>
+            客户名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfo.salesmanId">
+            <summary>
+            业务人员id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfo.orderDate">
+            <summary>
+            订单日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfo.orderCode">
+            <summary>
+            订单编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfo.paymentMode">
+            <summary>
+            付款方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfo.receivableMoney">
+            <summary>
+            付款金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfo.earnestRate">
+            <summary>
+            定金比率.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfo.prepayEarnest">
+            <summary>
+            预付定金.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfo.transportMode">
+            <summary>
+            运输方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfo.deliveryDate">
+            <summary>
+            发货日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfo.deliveryAddress">
+            <summary>
+            发货地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfo.fileJson">
+            <summary>
+            相关附近.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfo.customerId">
+            <summary>
+            客户ID.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfo.salesmanName">
+            <summary>
+            业务人员名字.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfo.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfo.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfo.candidateList">
+            <summary>
+            候选人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfo.branchList">
+            <summary>
+            选择分支.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfo.errorRuleUserList">
+            <summary>
+            异常审批人.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Order.GoodsList">
+            <summary>
+            商品明细.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.GoodsList.goodsId">
+            <summary>
+            商品id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.GoodsList.goodsName">
+            <summary>
+            商品名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.GoodsList.specifications">
+            <summary>
+            规格型号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.GoodsList.unit">
+            <summary>
+            单位.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.GoodsList.qty">
+            <summary>
+            数量.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.GoodsList.price">
+            <summary>
+            单价.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.GoodsList.amount">
+            <summary>
+            金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.GoodsList.discount">
+            <summary>
+            折扣.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.GoodsList.cess">
+            <summary>
+            税率.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.GoodsList.actualPrice">
+            <summary>
+            实际单价.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.GoodsList.actualAmount">
+            <summary>
+            实际金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.GoodsList.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Order.CollectionPlanList">
+            <summary>
+            收款明细.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.CollectionPlanList.receivableDate">
+            <summary>
+            收款日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.CollectionPlanList.receivableRate">
+            <summary>
+            收款比率.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.CollectionPlanList.receivableMoney">
+            <summary>
+            收款金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.CollectionPlanList.receivableMode">
+            <summary>
+            收款方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.CollectionPlanList.abstracts">
+            <summary>
+            收款摘要.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Order.OrderCustomerOutput">
+            <summary>
+            获取客户列表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCustomerOutput.id">
+            <summary>
+            主键ID.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCustomerOutput.text">
+            <summary>
+            企业名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderCustomerOutput.code">
+            <summary>
+            编码.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Order.OrderGoodsOutput">
+            <summary>
+            获取商品列表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderGoodsOutput.id">
+            <summary>
+            主键ID.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderGoodsOutput.text">
+            <summary>
+            商品名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderGoodsOutput.code">
+            <summary>
+            商品编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderGoodsOutput.specifications">
+            <summary>
+            规格型号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderGoodsOutput.unit">
+            <summary>
+            单位.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderGoodsOutput.price">
+            <summary>
+            售价.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput">
+            <summary>
+            获取/查看订单信息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.creatorUserId">
+            <summary>
+            创建人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.customerId">
+            <summary>
+            客户id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.customerName">
+            <summary>
+            客户名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.deliveryAddress">
+            <summary>
+            交易地点.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.deliveryDate">
+            <summary>
+            交易时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.earnestRate">
+            <summary>
+            定金比率.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.enabledMark">
+            <summary>
+            状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.fileJson">
+            <summary>
+            相关附件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.lastModifyTime">
+            <summary>
+            修改时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.lastModifyUserId">
+            <summary>
+            修改人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.orderCode">
+            <summary>
+            订单编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.orderDate">
+            <summary>
+            订单日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.paymentMode">
+            <summary>
+            付款方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.prepayEarnest">
+            <summary>
+            预付定金.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.receivableMoney">
+            <summary>
+            付款金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.salesmanId">
+            <summary>
+            业务人id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.salesmanName">
+            <summary>
+            业务人名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.transportMode">
+            <summary>
+            运输方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.goodsList">
+            <summary>
+            订单商品.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.collectionPlanList">
+            <summary>
+            收款计划.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderInfoOutput.flowId">
+            <summary>
+            流程id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Order.OrderItemsOutput">
+            <summary>
+            获取订单列表-订单商品.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderItemsOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderItemsOutput.goodsName">
+            <summary>
+            商品名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderItemsOutput.specifications">
+            <summary>
+            规格型号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderItemsOutput.unit">
+            <summary>
+            单位.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderItemsOutput.qty">
+            <summary>
+            数量.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderItemsOutput.price">
+            <summary>
+            单价.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderItemsOutput.amount">
+            <summary>
+            金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderItemsOutput.discount">
+            <summary>
+            折扣.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderItemsOutput.cess">
+            <summary>
+            税率.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderItemsOutput.actualPrice">
+            <summary>
+            实际单价.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderItemsOutput.actualAmount">
+            <summary>
+            实际金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderItemsOutput.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Order.OrderListOutput">
+            <summary>
+            获取订单列表(带分页).
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderListOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderListOutput.orderCode">
+            <summary>
+            订单编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderListOutput.orderDate">
+            <summary>
+            订单日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderListOutput.customerName">
+            <summary>
+            客户名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderListOutput.salesmanName">
+            <summary>
+            业务人员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderListOutput.receivableMoney">
+            <summary>
+            付款金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderListOutput.creatorUser">
+            <summary>
+            制单人员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderListOutput.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderListOutput.currentState">
+            <summary>
+            状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderListOutput.creatorUserId">
+            <summary>
+            创建人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderListOutput.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderListOutput.lastModifyTime">
+            <summary>
+            修改时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderListOutput.sortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderListOutput.flowId">
+            <summary>
+            流程id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Order.OrderListQuery">
+            <summary>
+            获取订单列表入参(带分页).
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderListQuery.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderListQuery.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderListQuery.enabledMark">
+            <summary>
+            状态.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Order.OrderUpInput">
+            <summary>
+            修改订单.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderUpInput.customerName">
+            <summary>
+            客户名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderUpInput.salesmanId">
+            <summary>
+            业务人员id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderUpInput.orderDate">
+            <summary>
+            订单日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderUpInput.orderCode">
+            <summary>
+            订单编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderUpInput.paymentMode">
+            <summary>
+            付款方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderUpInput.receivableMoney">
+            <summary>
+            付款金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderUpInput.earnestRate">
+            <summary>
+            定金比率.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderUpInput.prepayEarnest">
+            <summary>
+            预付定金.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderUpInput.transportMode">
+            <summary>
+            运输方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderUpInput.deliveryDate">
+            <summary>
+            发货日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderUpInput.deliveryAddress">
+            <summary>
+            发货地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderUpInput.fileJson">
+            <summary>
+            相关附近.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderUpInput.customerId">
+            <summary>
+            客户ID.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderUpInput.salesmanName">
+            <summary>
+            业务人员名字.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderUpInput.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderUpInput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderUpInput.status">
+            <summary>
+            状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderUpInput.flowUrgent">
+            <summary>
+            紧急程度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderUpInput.goodsList">
+            <summary>
+            商品列表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.OrderUpInput.collectionPlanList">
+            <summary>
+            收款计划列表.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Order.GoodsListUp">
+            <summary>
+            商品列表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.GoodsListUp.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.GoodsListUp.orderId">
+            <summary>
+            商品id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Order.CollectionPlanListUp">
+            <summary>
+            收款计划列表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.CollectionPlanListUp.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Order.CollectionPlanListUp.orderId">
+            <summary>
+            商品id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.ProductClassify.ProductClassifyCrInput">
+            <summary>
+            产品分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductClassify.ProductClassifyCrInput.fullName">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductClassify.ProductClassifyCrInput.parentId">
+            <summary>
+            上级.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.ProductClassify.ProductClassifyInfoOutput">
+            <summary>
+            产品分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductClassify.ProductClassifyInfoOutput.id">
+            <summary>
+            自然主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductClassify.ProductClassifyInfoOutput.fullName">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductClassify.ProductClassifyInfoOutput.parentId">
+            <summary>
+            上级.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.ProductClassify.ProductClassifyTreeOutput">
+            <summary>
+            产品分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductClassify.ProductClassifyTreeOutput.fullName">
+            <summary>
+            名称.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.ProductClassify.ProductClassifyUpInput">
+            <summary>
+            产品分类.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Customer.ProductCustomerListOutput">
+            <summary>
+            客户信息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Customer.ProductCustomerListOutput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Customer.ProductCustomerListOutput.code">
+            <summary>
+            客户编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Customer.ProductCustomerListOutput.customerName">
+            <summary>
+            客户名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Customer.ProductCustomerListOutput.address">
+            <summary>
+            地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Customer.ProductCustomerListOutput.name">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Customer.ProductCustomerListOutput.contactTel">
+            <summary>
+            联系方式.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryCrInput">
+            <summary>
+            新建产品明细.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryCrInput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryCrInput.productCode">
+            <summary>
+            产品编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryCrInput.productName">
+            <summary>
+            产品名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryCrInput.productSpecification">
+            <summary>
+            产品规格.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryCrInput.qty">
+            <summary>
+            数量.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryCrInput.type">
+            <summary>
+            订货类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryCrInput.money">
+            <summary>
+            单价.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryCrInput.price">
+            <summary>
+            折后单价.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryCrInput.amount">
+            <summary>
+            金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryCrInput.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryInfoOutput">
+            <summary>
+            销售订单信息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryInfoOutput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryInfoOutput.productCode">
+            <summary>
+            产品编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryInfoOutput.productName">
+            <summary>
+            产品名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryInfoOutput.productSpecification">
+            <summary>
+            产品规格.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryInfoOutput.qty">
+            <summary>
+            数量.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryInfoOutput.type">
+            <summary>
+            订货类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryInfoOutput.money">
+            <summary>
+            单价.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryInfoOutput.price">
+            <summary>
+            折后单价.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryInfoOutput.amount">
+            <summary>
+            金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryInfoOutput.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryListOutput">
+            <summary>
+            产品明细.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryListOutput.productCode">
+            <summary>
+            产品编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryListOutput.productName">
+            <summary>
+            产品名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryListOutput.qty">
+            <summary>
+            数量.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryListOutput.type">
+            <summary>
+            订货类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryListOutput.activity">
+            <summary>
+            活动.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductEntry.ProductEntryListOutput.dataList">
+            <summary>
+            数据.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.ProductGoods.ProductGoodsListOutput">
+            <summary>
+            产品列表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductGoods.ProductGoodsListOutput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductGoods.ProductGoodsListOutput.classifyId">
+            <summary>
+            分类主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductGoods.ProductGoodsListOutput.code">
+            <summary>
+            订单编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductGoods.ProductGoodsListOutput.fullName">
+            <summary>
+            订单名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductGoods.ProductGoodsListOutput.qty">
+            <summary>
+            订单名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductGoods.ProductGoodsListOutput.type">
+            <summary>
+            订货类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductGoods.ProductGoodsListOutput.amount">
+            <summary>
+            金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductGoods.ProductGoodsListOutput.money">
+            <summary>
+            单价.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.ProductGoods.ProductGoodsListQueryInput">
+            <summary>
+            产品列表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductGoods.ProductGoodsListQueryInput.code">
+            <summary>
+            订单编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductGoods.ProductGoodsListQueryInput.fullName">
+            <summary>
+            产品名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProductGoods.ProductGoodsListQueryInput.classifyId">
+            <summary>
+            分类ID.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Product.ProductCrInput">
+            <summary>
+            新建销售订单.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductCrInput.code">
+            <summary>
+            订单编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductCrInput.customerId">
+            <summary>
+            客户id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductCrInput.customerName">
+            <summary>
+            客户名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductCrInput.auditName">
+            <summary>
+            审核人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductCrInput.auditDate">
+            <summary>
+            审核日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductCrInput.goodsWarehouse">
+            <summary>
+            发货仓库.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductCrInput.goodsDate">
+            <summary>
+            发货通知时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductCrInput.goodsName">
+            <summary>
+            发货通知人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductCrInput.gatheringType">
+            <summary>
+            收款方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductCrInput.business">
+            <summary>
+            业务员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductCrInput.address">
+            <summary>
+            送货地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductCrInput.contactTel">
+            <summary>
+            联系方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductCrInput.harvestMsg">
+            <summary>
+            收货消息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductCrInput.harvestWarehouse">
+            <summary>
+            收货仓库.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductCrInput.issuingName">
+            <summary>
+            代发客户.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductCrInput.partPrice">
+            <summary>
+            让利金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductCrInput.reducedPrice">
+            <summary>
+            优惠金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductCrInput.discountPrice">
+            <summary>
+            折后金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductCrInput.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductCrInput.productEntryList">
+            <summary>
+            子表数据.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput">
+            <summary>
+            销售订单信息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput.code">
+            <summary>
+            订单编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput.customerId">
+            <summary>
+            客户id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput.customerName">
+            <summary>
+            客户名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput.auditName">
+            <summary>
+            审核人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput.auditDate">
+            <summary>
+            审核日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput.goodsWarehouse">
+            <summary>
+            发货仓库.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput.goodsDate">
+            <summary>
+            发货通知时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput.goodsName">
+            <summary>
+            发货通知人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput.gatheringType">
+            <summary>
+            收款方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput.business">
+            <summary>
+            业务员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput.address">
+            <summary>
+            送货地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput.contactTel">
+            <summary>
+            联系方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput.harvestMsg">
+            <summary>
+            收货消息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput.harvestWarehouse">
+            <summary>
+            收货仓库.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput.issuingName">
+            <summary>
+            代发客户.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput.partPrice">
+            <summary>
+            让利金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput.reducedPrice">
+            <summary>
+            优惠金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput.discountPrice">
+            <summary>
+            折后金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="F:Poxiao.Extend.Entitys.Dto.Product.ProductInfoOutput.ProductEntryList">
+            <summary>
+            子表数据.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Product.ProductListOutput">
+            <summary>
+            销售订单列表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductListOutput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductListOutput.code">
+            <summary>
+            订单编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductListOutput.customerName">
+            <summary>
+            客户名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductListOutput.business">
+            <summary>
+            业务员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductListOutput.address">
+            <summary>
+            送货地址
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductListOutput.contactTel">
+            <summary>
+            联系方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductListOutput.salesmanName">
+            <summary>
+            制单人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductListOutput.auditState">
+            <summary>
+            审核状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductListOutput.goodsState">
+            <summary>
+            发货状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductListOutput.closeState">
+            <summary>
+            关闭状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductListOutput.closeDate">
+            <summary>
+            关闭日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductListOutput.contactName">
+            <summary>
+            联系人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductListOutput.productEntryList">
+            <summary>
+            子表数据.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Product.ProductListQueryInput">
+            <summary>
+            销售订单列表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductListQueryInput.code">
+            <summary>
+            订单编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductListQueryInput.customerName">
+            <summary>
+            客户名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductListQueryInput.contactTel">
+            <summary>
+            联系方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductListQueryInput.auditState">
+            <summary>
+            审核状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductListQueryInput.closeState">
+            <summary>
+            关闭状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductListQueryInput.creatorUser">
+            <summary>
+            制单人.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Product.ProductUpInput">
+            <summary>
+            订单示例更新输入.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Product.ProductUpInput.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttCrInput">
+            <summary>
+            添加项目.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttCrInput.enCode">
+            <summary>
+            项目编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttCrInput.state">
+            <summary>
+            项目状态(1-进行中，2-已暂停).
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttCrInput.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttCrInput.schedule">
+            <summary>
+            完成进度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttCrInput.timeLimit">
+            <summary>
+            项目工期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttCrInput.fullName">
+            <summary>
+            项目名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttCrInput.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttCrInput.managerIds">
+            <summary>
+            参与人员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttCrInput.description">
+            <summary>
+            项目描述.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttInfoOutput">
+            <summary>
+            获取项目信息.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttListOutput">
+            <summary>
+            获取项目管理列表(带分页).
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttListOutput.enCode">
+            <summary>
+            项目编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttListOutput.state">
+            <summary>
+            项目状态(1-进行中，2-已暂停).
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttListOutput.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttListOutput.schedule">
+            <summary>
+            完成进度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttListOutput.timeLimit">
+            <summary>
+            项目工期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttListOutput.fullName">
+            <summary>
+            项目名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttListOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttListOutput.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttListOutput.managerIds">
+            <summary>
+            参加人员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttListOutput.managersInfo">
+            <summary>
+            参加人员信息.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.ProjectGantt.ManagersInfo">
+            <summary>
+            参加人员信息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ManagersInfo.account">
+            <summary>
+            账号+名字.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ManagersInfo.headIcon">
+            <summary>
+            用户头像.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskCrInput">
+            <summary>
+            添加项目任务.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskCrInput.parentId">
+            <summary>
+            上级id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskCrInput.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskCrInput.schedule">
+            <summary>
+            完成进度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskCrInput.timeLimit">
+            <summary>
+            完成进度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskCrInput.fullName">
+            <summary>
+            任务名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskCrInput.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskCrInput.managerIds">
+            <summary>
+            参与人员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskCrInput.signColor">
+            <summary>
+            标记颜色.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskCrInput.sign">
+            <summary>
+            标记.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskCrInput.projectId">
+            <summary>
+            项目id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskCrInput.description">
+            <summary>
+            任务描述.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskInfoOutput">
+            <summary>
+            获取项目任务信息.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskListOutput">
+            <summary>
+            获取项目任务列表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskListOutput.fullName">
+            <summary>
+            任务名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskListOutput.sign">
+            <summary>
+            标记.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskListOutput.signColor">
+            <summary>
+            标记颜色.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskListOutput.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskListOutput.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskListOutput.schedule">
+            <summary>
+            完成进度.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskTreeViewOutput">
+            <summary>
+            获取项目任务树形.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskTreeViewOutput.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskTreeViewOutput.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskTreeViewOutput.fullName">
+            <summary>
+            项目名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskTreeViewOutput.schedule">
+            <summary>
+            完成度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskTreeViewOutput.projectId">
+            <summary>
+            项目id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskTreeViewOutput.signColor">
+            <summary>
+            标记颜色.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskTreeViewOutput.sign">
+            <summary>
+            标记.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskUpInput">
+            <summary>
+            修改项目任务.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttTaskUpInput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttUpInput">
+            <summary>
+            修改项目.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.ProjectGantt.ProjectGanttUpInput.id">
+            <summary>
+            项目id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleCrInput">
+            <summary>
+            新建日程安排.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleCrInput.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleCrInput.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleCrInput.content">
+            <summary>
+            日程内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleCrInput.weChatAlert">
+            <summary>
+            微信提醒(1-提醒，0-不提醒).
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleCrInput.mailAlert">
+            <summary>
+            邮件提醒(1-提醒，0-不提醒).
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleCrInput.mobileAlert">
+            <summary>
+            短信提醒(1-提醒，0-不提醒).
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleCrInput.appAlert">
+            <summary>
+            APP提醒(1-提醒，0-不提醒).
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleCrInput.early">
+            <summary>
+            提醒设置.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleCrInput.colour">
+            <summary>
+            日程颜色.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleCrInput.colourCss">
+            <summary>
+            颜色样式.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleInfoOutput">
+            <summary>
+            获取日程安排信息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleInfoOutput.appAlert">
+            <summary>
+            APP提醒.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleInfoOutput.colour">
+            <summary>
+            日程颜色.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleInfoOutput.colourCss">
+            <summary>
+            颜色样式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleInfoOutput.content">
+            <summary>
+            日程内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleInfoOutput.early">
+            <summary>
+            提醒设置.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleInfoOutput.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleInfoOutput.id">
+            <summary>
+            日程主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleInfoOutput.mailAlert">
+            <summary>
+            邮件提醒.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleInfoOutput.mobileAlert">
+            <summary>
+            短信提醒.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleInfoOutput.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleInfoOutput.weChatAlert">
+            <summary>
+            微信提醒.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleListOutput">
+            <summary>
+            获取日程安排列表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleListOutput.content">
+            <summary>
+            日程内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleListOutput.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleListOutput.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleListOutput.colour">
+            <summary>
+            颜色.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleListOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleListQuery">
+            <summary>
+            获取日程安排列表入参.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleListQuery.startTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleListQuery.endTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleListQuery.dateTime">
+            <summary>
+            时间.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleUpInput">
+            <summary>
+            更新日程安排.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.Schedule.ScheduleUpInput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleAllOutput">
+            <summary>
+            获取表格分组列表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleAllOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleAllOutput.projectName">
+            <summary>
+            项目名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleAllOutput.projectCode">
+            <summary>
+            项目编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleAllOutput.projectType">
+            <summary>
+            项目类型名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleAllOutput.projectPhase">
+            <summary>
+            项目阶段.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleAllOutput.customerName">
+            <summary>
+            客户名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleAllOutput.principal">
+            <summary>
+            负责人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleAllOutput.jackStands">
+            <summary>
+            立项人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleAllOutput.interactionDate">
+            <summary>
+            交付时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleAllOutput.costAmount">
+            <summary>
+            费用金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleAllOutput.tunesAmount">
+            <summary>
+            已用金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleAllOutput.projectedIncome">
+            <summary>
+            预计收入.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleAllOutput.registrant">
+            <summary>
+            登记人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleAllOutput.registerDate">
+            <summary>
+            登记时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleAllOutput.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleCityListOutput">
+            <summary>
+            获取城市信息列表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleCityListOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleCityListOutput.parentId">
+            <summary>
+            上级id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleCityListOutput.fullName">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleCityListOutput.enCode">
+            <summary>
+            编码.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleCrInput">
+            <summary>
+            新建项目.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleCrInput.projectName">
+            <summary>
+            项目名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleCrInput.projectCode">
+            <summary>
+            项目编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleCrInput.projectType">
+            <summary>
+            项目类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleCrInput.projectPhase">
+            <summary>
+            项目阶段.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleCrInput.customerName">
+            <summary>
+            客户名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleCrInput.principal">
+            <summary>
+            负责人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleCrInput.jackStands">
+            <summary>
+            立项人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleCrInput.interactionDate">
+            <summary>
+            交付日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleCrInput.costAmount">
+            <summary>
+            费用金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleCrInput.tunesAmount">
+            <summary>
+            已用金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleCrInput.projectedIncome">
+            <summary>
+            预计收入.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleCrInput.description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleIndustryListOutput">
+            <summary>
+            获取延伸扩展列表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleIndustryListOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleIndustryListOutput.parentId">
+            <summary>
+            上级id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleIndustryListOutput.fullName">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleIndustryListOutput.enCode">
+            <summary>
+            编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleIndustryListOutput.isLeaf">
+            <summary>
+            是否为子集.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleInfoOutput">
+            <summary>
+            获取普通表格示例信息.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleListOutput">
+            <summary>
+            获取表格数据列表(带分页).
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleListOutput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleListOutput.projectName">
+            <summary>
+            项目名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleListOutput.projectCode">
+            <summary>
+            项目编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleListOutput.projectType">
+            <summary>
+            项目类型名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleListOutput.projectPhase">
+            <summary>
+            项目阶段.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleListOutput.customerName">
+            <summary>
+            客户名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleListOutput.principal">
+            <summary>
+            负责人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleListOutput.jackStands">
+            <summary>
+            立项人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleListOutput.interactionDate">
+            <summary>
+            交付时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleListOutput.costAmount">
+            <summary>
+            费用金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleListOutput.tunesAmount">
+            <summary>
+            已用金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleListOutput.projectedIncome">
+            <summary>
+            预计收入.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleListOutput.registrant">
+            <summary>
+            登记人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleListOutput.registerDate">
+            <summary>
+            登记时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleListOutput.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleListOutput.postilJson">
+            <summary>
+            批注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleListOutput.sign">
+            <summary>
+            标志.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleListOutput.postilCount">
+            <summary>
+            批注条数.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExamplePostilSendInput.text">
+            <summary>
+            批注内容.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleRowUpInput">
+            <summary>
+            新建项目.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleRowUpInput.projectName">
+            <summary>
+            项目名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleRowUpInput.projectCode">
+            <summary>
+            项目编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleRowUpInput.projectType">
+            <summary>
+            项目类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleRowUpInput.projectPhase">
+            <summary>
+            项目阶段.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleRowUpInput.customerName">
+            <summary>
+            客户名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleRowUpInput.principal">
+            <summary>
+            负责人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleRowUpInput.jackStands">
+            <summary>
+            立项人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleRowUpInput.interactionDate">
+            <summary>
+            交付日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleRowUpInput.costAmount">
+            <summary>
+            费用金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleRowUpInput.tunesAmount">
+            <summary>
+            已用金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleRowUpInput.projectedIncome">
+            <summary>
+            预计收入.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleRowUpInput.description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleRowUpInput.oper">
+             <summary>
+            
+             </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleSignUpInput">
+            <summary>
+            更新项目.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleSignUpInput.sign">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleTreeListOutput">
+            <summary>
+            表格树形.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleTreeListOutput.loaded">
+             <summary>
+            
+             </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleTreeListOutput.expanded">
+             <summary>
+            
+             </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleTreeListOutput.ht">
+             <summary>
+            
+             </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleTreeListOutput.text">
+             <summary>
+            
+             </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleUpInput">
+            <summary>
+            更新项目.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.TableExample.TableExampleUpInput.id">
+            <summary>
+            主键id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogCrInput">
+             <summary>
+            
+             </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogCrInput.title">
+            <summary>
+            标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogCrInput.question">
+            <summary>
+            问题内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogCrInput.todayContent">
+            <summary>
+            今日内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogCrInput.tomorrowContent">
+            <summary>
+            明日内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogCrInput.toUserId">
+            <summary>
+            接收人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogCrInput.userIds">
+            <summary>
+            用户id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogInfoOutput">
+             <summary>
+            
+             </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogInfoOutput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogInfoOutput.title">
+            <summary>
+            标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogInfoOutput.question">
+            <summary>
+            问题内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogInfoOutput.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogInfoOutput.todayContent">
+            <summary>
+            今日内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogInfoOutput.tomorrowContent">
+            <summary>
+            明日内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogInfoOutput.toUserId">
+            <summary>
+            接收人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogInfoOutput.userIds">
+            <summary>
+            用户id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogListOutput">
+             <summary>
+            
+             </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogListOutput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogListOutput.title">
+            <summary>
+            标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogListOutput.question">
+            <summary>
+            问题内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogListOutput.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogListOutput.todayContent">
+            <summary>
+            今日内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogListOutput.tomorrowContent">
+            <summary>
+            明日内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogListOutput.toUserId">
+            <summary>
+            接收人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogListOutput.lastModifyTime">
+            <summary>
+            修改时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WorkLog.WorkLogListOutput.sortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Dto.WoekLog.WorkLogUpInput">
+             <summary>
+            
+             </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Dto.WoekLog.WorkLogUpInput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.BigDataEntity">
+            <summary>
+            大数据测试
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.BigDataEntity.EnCode">
+            <summary>
+            编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.BigDataEntity.FullName">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.BigDataEntity.Description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.BigDataEntity.CreatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.DocumentEntity">
+            <summary>
+            知识文档
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.DocumentEntity.ParentId">
+            <summary>
+            文档父级.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.DocumentEntity.Type">
+            <summary>
+            文档分类:【0-文件夹、1-文件】.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.DocumentEntity.FullName">
+            <summary>
+            文件名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.DocumentEntity.FilePath">
+            <summary>
+            文件路径.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.DocumentEntity.FileSize">
+            <summary>
+            文件大小.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.DocumentEntity.FileExtension">
+            <summary>
+            文件后缀.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.DocumentEntity.ReadcCount">
+            <summary>
+            阅读数量.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.DocumentEntity.IsShare">
+            <summary>
+            是否共享.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.DocumentEntity.ShareTime">
+            <summary>
+            共享时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.DocumentEntity.Description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.DocumentEntity.SortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.DocumentEntity.UploaderUrl">
+            <summary>
+            下载地址.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.DocumentShareEntity">
+            <summary>
+            知识文档共享
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01 .
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.DocumentShareEntity.DocumentId">
+            <summary>
+            文档主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.DocumentShareEntity.ShareUserId">
+            <summary>
+            共享人员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.DocumentShareEntity.ShareTime">
+            <summary>
+            共享时间.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.EmailConfigEntity">
+            <summary>
+            邮件配置
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailConfigEntity.POP3Host">
+            <summary>
+            POP3服务.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailConfigEntity.POP3Port">
+            <summary>
+            POP3端口.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailConfigEntity.SMTPHost">
+            <summary>
+            SMTP服务.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailConfigEntity.SMTPPort">
+            <summary>
+            SMTP端口.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailConfigEntity.Account">
+            <summary>
+            账户.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailConfigEntity.Password">
+            <summary>
+            密码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailConfigEntity.Ssl">
+            <summary>
+            SSL登录.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailConfigEntity.SenderName">
+            <summary>
+            发件人名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailConfigEntity.FolderJson">
+            <summary>
+            我的文件夹.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailConfigEntity.Description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailConfigEntity.SortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailConfigEntity.EnabledMark">
+            <summary>
+            有效标志.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.EmailReceiveEntity">
+            <summary>
+            邮件接收
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailReceiveEntity.Type">
+            <summary>
+            类型：【1-外部、0-内部】.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailReceiveEntity.MAccount">
+            <summary>
+            邮箱账户.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailReceiveEntity.MID">
+            <summary>
+            MID.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailReceiveEntity.Sender">
+            <summary>
+            发件人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailReceiveEntity.SenderName">
+            <summary>
+            发件人名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailReceiveEntity.Subject">
+            <summary>
+            主题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailReceiveEntity.BodyText">
+            <summary>
+            正文.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailReceiveEntity.Attachment">
+            <summary>
+            附件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailReceiveEntity.Read">
+            <summary>
+            阅读.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailReceiveEntity.Date">
+            <summary>
+            Date.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailReceiveEntity.Starred">
+            <summary>
+            星标.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailReceiveEntity.Description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailReceiveEntity.SortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.EmailSendEntity">
+            <summary>
+            邮件发送
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01 .
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailSendEntity.Type">
+            <summary>
+            类型：【1-外部、0-内部】.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailSendEntity.Sender">
+            <summary>
+            发件人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailSendEntity.To">
+            <summary>
+            收件人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailSendEntity.CC">
+            <summary>
+            抄送人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailSendEntity.BCC">
+            <summary>
+            密送人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailSendEntity.Colour">
+            <summary>
+            颜色.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailSendEntity.Subject">
+            <summary>
+            主题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailSendEntity.BodyText">
+            <summary>
+            正文.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailSendEntity.Attachment">
+            <summary>
+            附件.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailSendEntity.State">
+            <summary>
+            状态:【-1-草稿、0-正在投递、1-投递成功】.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailSendEntity.Description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmailSendEntity.SortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.EmployeeEntity">
+            <summary>
+            职员信息
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01 .
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmployeeEntity.EnCode">
+            <summary>
+            工号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmployeeEntity.FullName">
+            <summary>
+            姓名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmployeeEntity.Gender">
+            <summary>
+            性别.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmployeeEntity.DepartmentName">
+            <summary>
+            部门.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmployeeEntity.PositionName">
+            <summary>
+            职位.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmployeeEntity.WorkingNature">
+            <summary>
+            用工性质.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmployeeEntity.IdNumber">
+            <summary>
+            身份证号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmployeeEntity.Telephone">
+            <summary>
+            联系电话.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmployeeEntity.AttendWorkTime">
+            <summary>
+            参加工作.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmployeeEntity.Birthday">
+            <summary>
+            出生年月.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmployeeEntity.Education">
+            <summary>
+            最高学历.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmployeeEntity.Major">
+            <summary>
+            所学专业.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmployeeEntity.GraduationAcademy">
+            <summary>
+            毕业院校.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmployeeEntity.GraduationTime">
+            <summary>
+            毕业时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmployeeEntity.Description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.EmployeeEntity.SortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.OrderEntity">
+            <summary>
+            订单信息
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01 .
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntity.CustomerId">
+            <summary>
+            客户Id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntity.CustomerName">
+            <summary>
+            客户名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntity.SalesmanId">
+            <summary>
+            业务员Id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntity.SalesmanName">
+            <summary>
+            业务员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntity.OrderDate">
+            <summary>
+            订单日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntity.OrderCode">
+            <summary>
+            订单编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntity.TransportMode">
+            <summary>
+            运输方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntity.DeliveryDate">
+            <summary>
+            发货日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntity.DeliveryAddress">
+            <summary>
+            发货地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntity.PaymentMode">
+            <summary>
+            付款方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntity.ReceivableMoney">
+            <summary>
+            应收金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntity.EarnestRate">
+            <summary>
+            定金比率.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntity.PrepayEarnest">
+            <summary>
+            预付定金.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntity.CurrentState">
+            <summary>
+            当前状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntity.FileJson">
+            <summary>
+            附件信息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntity.Description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntity.SortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntity.FlowId">
+            <summary>
+            流程id.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.OrderEntryEntity">
+            <summary>
+            订单明细
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01 .
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntryEntity.OrderId">
+            <summary>
+            订单主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntryEntity.GoodsId">
+            <summary>
+            商品Id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntryEntity.GoodsCode">
+            <summary>
+            商品编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntryEntity.GoodsName">
+            <summary>
+            商品名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntryEntity.Specifications">
+            <summary>
+            规格型号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntryEntity.Unit">
+            <summary>
+            单位.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntryEntity.Qty">
+            <summary>
+            数量.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntryEntity.Price">
+            <summary>
+            单价.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntryEntity.Amount">
+            <summary>
+            金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntryEntity.Discount">
+            <summary>
+            折扣%.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntryEntity.Cess">
+            <summary>
+            税率%.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntryEntity.ActualPrice">
+            <summary>
+            实际单价.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntryEntity.ActualAmount">
+            <summary>
+            实际金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntryEntity.Description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderEntryEntity.SortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.OrderReceivableEntity">
+            <summary>
+            订单收款
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01 .
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderReceivableEntity.OrderId">
+            <summary>
+            订单主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderReceivableEntity.Abstract">
+            <summary>
+            收款摘要.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderReceivableEntity.ReceivableDate">
+            <summary>
+            收款日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderReceivableEntity.ReceivableRate">
+            <summary>
+            收款比率.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderReceivableEntity.ReceivableMoney">
+            <summary>
+            收款金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderReceivableEntity.ReceivableMode">
+            <summary>
+            收款方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderReceivableEntity.ReceivableState">
+            <summary>
+            收款状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderReceivableEntity.Description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.OrderReceivableEntity.SortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.ProductClassifyEntity">
+            <summary>
+            产品分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductClassifyEntity.ParentId">
+            <summary>
+            上级.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductClassifyEntity.FullName">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductClassifyEntity.DeleteMark">
+            <summary>
+            获取或设置 删除标志.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductClassifyEntity.DeleteTime">
+            <summary>
+            获取或设置 删除时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductClassifyEntity.DeleteUserId">
+            <summary>
+            获取或设置 删除用户.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Entity.ProductCustomerEntity">
+            <summary>
+            客户信息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Entity.ProductCustomerEntity.Code">
+            <summary>
+            编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Entity.ProductCustomerEntity.Customername">
+            <summary>
+            客户名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Entity.ProductCustomerEntity.Address">
+            <summary>
+            地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Entity.ProductCustomerEntity.Name">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Entity.ProductCustomerEntity.ContactTel">
+            <summary>
+            联系方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Entity.ProductCustomerEntity.Deletemark">
+            <summary>
+            删除标志.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Entity.ProductCustomerEntity.Deletetime">
+            <summary>
+            删除时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Entity.ProductCustomerEntity.Deleteuserid">
+            <summary>
+            删除用户.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.ProductEntity">
+            <summary>
+            销售订单.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.Code">
+            <summary>
+            订单编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.Type">
+            <summary>
+            客户类别.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.CustomerId">
+            <summary>
+            客户id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.CustomerName">
+            <summary>
+            客户名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.SalesmanId">
+            <summary>
+            制单人id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.SalesmanName">
+            <summary>
+            制单人名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.SalesmanDate">
+            <summary>
+            制单日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.AuditName">
+            <summary>
+            审核人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.AuditDate">
+            <summary>
+            审核日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.AuditState">
+            <summary>
+            审核状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.GoodsWarehouse">
+            <summary>
+            发货仓库.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.GoodsDate">
+            <summary>
+            发货通知时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.Consignor">
+            <summary>
+            发货通知人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.GoodsState">
+            <summary>
+            发货状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.CloseState">
+            <summary>
+            关闭状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.CloseDate">
+            <summary>
+            关闭日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.GatheringType">
+            <summary>
+            收款方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.Business">
+            <summary>
+            业务员.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.Address">
+            <summary>
+            送货地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.ContactTel">
+            <summary>
+            联系方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.ContactName">
+            <summary>
+            联系人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.HarvestMsg">
+            <summary>
+            收货消息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.HarvestWarehouse">
+            <summary>
+            收货仓库.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.IssuingName">
+            <summary>
+            代发客户.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.PartPrice">
+            <summary>
+            让利金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.ReducedPrice">
+            <summary>
+            优惠金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.DiscountPrice">
+            <summary>
+            折后金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.Description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.CreatorTime">
+            <summary>
+            获取或设置 创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.CreatorUserId">
+            <summary>
+            获取或设置 创建用户.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.LastModifyTime">
+            <summary>
+            获取或设置 修改时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.LastModifyUserId">
+            <summary>
+            获取或设置 修改用户.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.DeleteMark">
+            <summary>
+            获取或设置 删除标志.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.DeleteTime">
+            <summary>
+            获取或设置 删除时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.DeleteUserId">
+            <summary>
+            获取或设置 删除用户.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntity.productEntryList">
+            <summary>
+            订单明细.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.ProductEntryEntity">
+            <summary>
+            产品明细.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntryEntity.Id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntryEntity.ProductId">
+            <summary>
+            订单主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntryEntity.ProductCode">
+            <summary>
+            产品编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntryEntity.ProductName">
+            <summary>
+            产品名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntryEntity.ProductSpecification">
+            <summary>
+            产品规格.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntryEntity.Qty">
+            <summary>
+            数量.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntryEntity.CommandType">
+            <summary>
+            控制方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntryEntity.Type">
+            <summary>
+            订货类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntryEntity.Money">
+            <summary>
+            单价.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntryEntity.Util">
+            <summary>
+            单位.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntryEntity.Price">
+            <summary>
+            折后单价.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntryEntity.Amount">
+            <summary>
+            金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntryEntity.Activity">
+            <summary>
+            活动.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntryEntity.Description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntryEntity.CreatorTime">
+            <summary>
+            获取或设置 创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntryEntity.CreatorUserId">
+            <summary>
+            获取或设置 创建用户.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntryEntity.LastModifyTime">
+            <summary>
+            获取或设置 修改时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntryEntity.LastModifyUserId">
+            <summary>
+            获取或设置 修改用户.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntryEntity.DeleteMark">
+            <summary>
+            获取或设置 删除标志.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntryEntity.DeleteTime">
+            <summary>
+            获取或设置 删除时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductEntryEntity.DeleteUserId">
+            <summary>
+            获取或设置 删除用户.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.ProductGoodsEntity">
+            <summary>
+            产品商品.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductGoodsEntity.Id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductGoodsEntity.ClassifyId">
+            <summary>
+            分类主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductGoodsEntity.Code">
+            <summary>
+            产品编号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductGoodsEntity.FullName">
+            <summary>
+            产品名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductGoodsEntity.Type">
+            <summary>
+            订货类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductGoodsEntity.ProductSpecification">
+            <summary>
+            产品规格.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductGoodsEntity.Money">
+            <summary>
+            单价.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductGoodsEntity.Qty">
+            <summary>
+            库存数.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductGoodsEntity.Amount">
+            <summary>
+            金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductGoodsEntity.CreatorTime">
+            <summary>
+            获取或设置 创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductGoodsEntity.CreatorUserId">
+            <summary>
+            获取或设置 创建用户.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductGoodsEntity.LastModifyTime">
+            <summary>
+            获取或设置 修改时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductGoodsEntity.LastModifyUserId">
+            <summary>
+            获取或设置 修改用户.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductGoodsEntity.DeleteMark">
+            <summary>
+            获取或设置 删除标志.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductGoodsEntity.DeleteTime">
+            <summary>
+            获取或设置 删除时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProductGoodsEntity.DeleteUserId">
+            <summary>
+            获取或设置 删除用户.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.ProjectGanttEntity">
+            <summary>
+            项目计划
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProjectGanttEntity.ParentId">
+            <summary>
+            项目上级.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProjectGanttEntity.ProjectId">
+            <summary>
+            项目主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProjectGanttEntity.Type">
+            <summary>
+            项目类型：【1-项目、2-任务】.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProjectGanttEntity.EnCode">
+            <summary>
+            项目编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProjectGanttEntity.FullName">
+            <summary>
+            项目名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProjectGanttEntity.TimeLimit">
+            <summary>
+            项目工期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProjectGanttEntity.Sign">
+            <summary>
+            项目标记.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProjectGanttEntity.SignColor">
+            <summary>
+            标记颜色.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProjectGanttEntity.StartTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProjectGanttEntity.EndTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProjectGanttEntity.Schedule">
+            <summary>
+            当前进度.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProjectGanttEntity.ManagerIds">
+            <summary>
+            负责人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProjectGanttEntity.Description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProjectGanttEntity.SortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ProjectGanttEntity.State">
+            <summary>
+            项目状态.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.ScheduleEntity">
+            <summary>
+            日程安排
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ScheduleEntity.Title">
+            <summary>
+            日程标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ScheduleEntity.Content">
+            <summary>
+            日程内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ScheduleEntity.Colour">
+            <summary>
+            日程颜色.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ScheduleEntity.ColourCss">
+            <summary>
+            颜色样式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ScheduleEntity.StartTime">
+            <summary>
+            开始时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ScheduleEntity.EndTime">
+            <summary>
+            结束时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ScheduleEntity.Early">
+            <summary>
+            提醒设置.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ScheduleEntity.MailAlert">
+            <summary>
+            APP提醒.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ScheduleEntity.AppAlert">
+            <summary>
+            邮件提醒.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ScheduleEntity.WeChatAlert">
+            <summary>
+            微信提醒.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ScheduleEntity.MobileAlert">
+            <summary>
+            短信提醒.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ScheduleEntity.SystemAlert">
+            <summary>
+            系统提醒.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ScheduleEntity.Description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.ScheduleEntity.SortCode">
+            <summary>
+            排序码.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.TableExampleEntity">
+            <summary>
+            表格示例数据
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01 .
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.TableExampleEntity.InteractionDate">
+            <summary>
+            交互日期.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.TableExampleEntity.ProjectCode">
+            <summary>
+            项目编码.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.TableExampleEntity.ProjectName">
+            <summary>
+            项目名称.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.TableExampleEntity.Principal">
+            <summary>
+            负责人.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.TableExampleEntity.JackStands">
+            <summary>
+            立顶人.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.TableExampleEntity.ProjectType">
+            <summary>
+            项目类型.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.TableExampleEntity.ProjectPhase">
+            <summary>
+            项目阶段.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.TableExampleEntity.CustomerName">
+            <summary>
+            客户名称.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.TableExampleEntity.CostAmount">
+            <summary>
+            费用金额.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.TableExampleEntity.TunesAmount">
+            <summary>
+            已用金额.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.TableExampleEntity.ProjectedIncome">
+            <summary>
+            预计收入.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.TableExampleEntity.Registrant">
+            <summary>
+            登记人.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.TableExampleEntity.RegisterDate">
+            <summary>
+            登记时间.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.TableExampleEntity.Description">
+            <summary>
+            备注.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.TableExampleEntity.Sign">
+            <summary>
+            标记.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.TableExampleEntity.PostilJson">
+            <summary>
+            批注列表Json.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.TableExampleEntity.PostilCount">
+            <summary>
+            批注总数.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.TableExampleEntity.EnabledMark">
+            <summary>
+            有效标志.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.TableExampleEntity.SortCode">
+            <summary>
+            排序码.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.TableExampleEntity.LastModifyTime">
+            <summary>
+            编辑时间.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.TableExampleEntity.LastModifyUserId">
+            <summary>
+            编辑用户.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.WorkLogEntity">
+            <summary>
+            工作日志
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01 .
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.WorkLogEntity.Title">
+            <summary>
+            日志标题.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.WorkLogEntity.TodayContent">
+            <summary>
+            今天内容.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.WorkLogEntity.TomorrowContent">
+            <summary>
+            明天内容.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.WorkLogEntity.Question">
+            <summary>
+            遇到问题.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.WorkLogEntity.ToUserId">
+            <summary>
+            发送给谁.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.WorkLogEntity.Description">
+            <summary>
+            描述.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.WorkLogEntity.SortCode">
+            <summary>
+            排序.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.WorkLogShareEntity">
+            <summary>
+            工作日志分享
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01 .
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.WorkLogShareEntity.WorkLogId">
+            <summary>
+            日志主键.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.WorkLogShareEntity.ShareUserId">
+            <summary>
+            共享人员.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.WorkLogShareEntity.ShareTime">
+            <summary>
+            共享时间.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Model.CollectionPlanModel">
+             <summary>
+            
+             </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.CollectionPlanModel.receivableDate">
+            <summary>
+            收款日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.CollectionPlanModel.receivableRate">
+            <summary>
+            收款比率.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.CollectionPlanModel.receivableMoney">
+            <summary>
+            收款金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.CollectionPlanModel.receivableMode">
+            <summary>
+            收款方式.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.CollectionPlanModel.fabstract">
+            <summary>
+            收款摘要.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.CollectionPlanModel.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.CollectionPlanModel.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.CollectionPlanModel.orderId">
+            <summary>
+            订单id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.CollectionPlanModel.receivableState">
+            <summary>
+            接收状态.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.CollectionPlanModel.sortCode">
+            <summary>
+            排序.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.GoodsModel.goodsId">
+            <summary>
+            商品id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.GoodsModel.goodsName">
+            <summary>
+            商品名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.GoodsModel.specifications">
+            <summary>
+            规格型号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.GoodsModel.unit">
+            <summary>
+            单位.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.GoodsModel.qty">
+            <summary>
+            数量.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.GoodsModel.price">
+            <summary>
+            单价.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.GoodsModel.amount">
+            <summary>
+            金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.GoodsModel.discount">
+            <summary>
+            折扣.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.GoodsModel.cess">
+            <summary>
+            税率.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.GoodsModel.actualPrice">
+            <summary>
+            实际单价.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.GoodsModel.actualAmount">
+            <summary>
+            实际金额.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.GoodsModel.description">
+            <summary>
+            备注.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.GoodsModel.goodsCode">
+            <summary>
+            商品编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.GoodsModel.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.GoodsModel.remove">
+            <summary>
+            距离.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.GoodsModel.sortCode">
+            <summary>
+            排序.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.PostilModel.userId">
+            <summary>
+            用户id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.PostilModel.text">
+            <summary>
+            内容.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.PostilModel.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Extend.Entitys.Model.ProductEntryMdoel">
+            <summary>
+            产品明细.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.ProductEntryMdoel.productSpecification">
+            <summary>
+            产品规格.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.ProductEntryMdoel.qty">
+            <summary>
+            数量.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.ProductEntryMdoel.money">
+            <summary>
+            单价.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.ProductEntryMdoel.price">
+            <summary>
+            折后单价.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.ProductEntryMdoel.util">
+            <summary>
+            单位.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Extend.Entitys.Model.ProductEntryMdoel.commandType">
+            <summary>
+            控制方式.
+            </summary>
+        </member>
+    </members>
+</doc>

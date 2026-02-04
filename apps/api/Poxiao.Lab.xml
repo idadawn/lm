@@ -1,0 +1,2361 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Poxiao.Lab</name>
+    </assembly>
+    <members>
+        <member name="T:Poxiao.Lab.EventBus.IntermediateDataCalcEventSource">
+            <summary>
+            中间数据批次公式计算事件
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Extensions.ProductSpecServiceExtensions">
+            <summary>
+            产品规格服务扩展方法
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Extensions.ProductSpecServiceExtensions.EnsureDefaultCalculationProperties(SqlSugar.ISqlSugarRepository{Poxiao.Lab.Entity.ProductSpecEntity},Poxiao.Lab.Entity.ProductSpecEntity)">
+            <summary>
+            确保产品规格具有默认的计算属性（已废弃，请使用属性表）
+            </summary>
+            <param name="repository">仓储</param>
+            <param name="entity">产品规格实体</param>
+        </member>
+        <member name="M:Poxiao.Lab.Extensions.ProductSpecServiceExtensions.BatchUpdateCalculationPropertiesAsync(SqlSugar.ISqlSugarRepository{Poxiao.Lab.Entity.ProductSpecEntity},Poxiao.Lab.Entity.ProductSpecEntity[])">
+            <summary>
+            批量更新产品规格的计算属性（已废弃，请使用属性表）
+            </summary>
+            <param name="repository">仓储</param>
+            <param name="specs">产品规格列表</param>
+        </member>
+        <member name="M:Poxiao.Lab.Extensions.ProductSpecServiceExtensions.ValidateCalculationProperties(Poxiao.Lab.Entity.ProductSpecEntity)">
+            <summary>
+            验证计算属性（已废弃，请使用属性表验证）
+            </summary>
+            <param name="entity">产品规格实体</param>
+            <returns>验证结果</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Extensions.ProductSpecServiceExtensions.AddCalculationProperty(Poxiao.Lab.Entity.ProductSpecEntity,System.String,System.Object,System.Type)">
+            <summary>
+            添加新的计算属性（已废弃，请使用属性表）
+            </summary>
+            <param name="entity">产品规格实体</param>
+            <param name="propertyName">属性名称</param>
+            <param name="propertyValue">属性值</param>
+            <param name="propertyType">属性类型</param>
+        </member>
+        <member name="M:Poxiao.Lab.Extensions.ProductSpecServiceExtensions.GetCalculationPropertiesHash(Poxiao.Lab.Entity.ProductSpecEntity)">
+            <summary>
+            获取计算属性的哈希值（已废弃，请使用属性表）
+            </summary>
+            <param name="entity">产品规格实体</param>
+            <returns>哈希值</returns>
+        </member>
+        <member name="T:Poxiao.Lab.Extensions.ValidationResult">
+            <summary>
+            验证结果
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Helpers.DetectionDataConverter">
+            <summary>
+            检测数据转换辅助类（JSON格式处理）.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Helpers.DetectionDataConverter.ToJson(System.Collections.Generic.Dictionary{System.Int32,System.Nullable{System.Decimal}})">
+            <summary>
+            将检测数据字典转换为JSON字符串.
+            </summary>
+            <param name="detectionValues">检测数据字典，键为列序号（从1开始），值为检测数据</param>
+            <returns>JSON字符串，如果字典为空则返回null</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Helpers.DetectionDataConverter.FromJson(System.String)">
+            <summary>
+            将JSON字符串转换为检测数据字典.
+            </summary>
+            <param name="json">JSON字符串</param>
+            <returns>检测数据字典，如果JSON为空或格式错误则返回空字典</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Helpers.DetectionDataConverter.FromFixedColumns(System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal},System.Nullable{System.Decimal})">
+            <summary>
+            从Detection1-22字段转换为JSON格式（用于数据迁移）.
+            </summary>
+            <param name="detection1">检测数据列1</param>
+            <param name="detection2">检测数据列2</param>
+            <param name="detection3">检测数据列3</param>
+            <param name="detection4">检测数据列4</param>
+            <param name="detection5">检测数据列5</param>
+            <param name="detection6">检测数据列6</param>
+            <param name="detection7">检测数据列7</param>
+            <param name="detection8">检测数据列8</param>
+            <param name="detection9">检测数据列9</param>
+            <param name="detection10">检测数据列10</param>
+            <param name="detection11">检测数据列11</param>
+            <param name="detection12">检测数据列12</param>
+            <param name="detection13">检测数据列13</param>
+            <param name="detection14">检测数据列14</param>
+            <param name="detection15">检测数据列15</param>
+            <param name="detection16">检测数据列16</param>
+            <param name="detection17">检测数据列17</param>
+            <param name="detection18">检测数据列18</param>
+            <param name="detection19">检测数据列19</param>
+            <param name="detection20">检测数据列20</param>
+            <param name="detection21">检测数据列21</param>
+            <param name="detection22">检测数据列22</param>
+            <returns>JSON字符串</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Helpers.DetectionDataConverter.GetValues(System.String)">
+            <summary>
+            获取检测数据的值列表（按列序号排序）.
+            </summary>
+            <param name="json">JSON字符串</param>
+            <returns>检测数据值列表（已过滤空值，按列序号排序）</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Helpers.DetectionDataConverter.GetValuesWithNull(System.String)">
+            <summary>
+            获取检测数据的值列表（按列序号排序，包含空值）.
+            </summary>
+            <param name="json">JSON字符串</param>
+            <returns>检测数据值列表（包含空值，按列序号排序）</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Helpers.DetectionDataConverter.GetContinuousColumnCount(System.String)">
+            <summary>
+            获取连续的有效检测列范围（从1开始连续到最后一个有效列）.
+            </summary>
+            <param name="json">JSON字符串</param>
+            <returns>连续的有效检测列范围，例如：如果1-13有值，14开始为空，则返回13</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Helpers.DetectionDataConverter.GetAverage(System.String)">
+            <summary>
+            计算平均值.
+            </summary>
+            <param name="json">JSON字符串</param>
+            <returns>平均值，如果没有有效值则返回null</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Helpers.DetectionDataConverter.GetMax(System.String)">
+            <summary>
+            计算最大值.
+            </summary>
+            <param name="json">JSON字符串</param>
+            <returns>最大值，如果没有有效值则返回null</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Helpers.DetectionDataConverter.GetMin(System.String)">
+            <summary>
+            计算最小值.
+            </summary>
+            <param name="json">JSON字符串</param>
+            <returns>最小值，如果没有有效值则返回null</returns>
+        </member>
+        <member name="T:Poxiao.Lab.Helpers.FurnaceNoHelper">
+            <summary>
+            炉号处理辅助类.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Helpers.FurnaceNoHelper.FurnaceNoParseResult">
+            <summary>
+            炉号解析结果.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Helpers.FurnaceNoHelper.FurnaceNoParseResult.Success">
+            <summary>
+            是否解析成功.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Helpers.FurnaceNoHelper.FurnaceNoParseResult.ErrorMessage">
+            <summary>
+            错误信息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Helpers.FurnaceNoHelper.FurnaceNoParseResult.LineNo">
+            <summary>
+            产线.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Helpers.FurnaceNoHelper.FurnaceNoParseResult.Shift">
+            <summary>
+            班次.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Helpers.FurnaceNoHelper.FurnaceNoParseResult.ProdDate">
+            <summary>
+            生产日期.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Helpers.FurnaceNoHelper.FurnaceNoParseResult.FurnaceNo">
+            <summary>
+            炉次号（解析后的炉次号数字部分）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Helpers.FurnaceNoHelper.FurnaceNoParseResult.CoilNo">
+            <summary>
+            卷号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Helpers.FurnaceNoHelper.FurnaceNoParseResult.SubcoilNo">
+            <summary>
+            分卷号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Helpers.FurnaceNoHelper.FurnaceNoParseResult.FeatureSuffix">
+            <summary>
+            特性描述（特性汉字）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Helpers.FurnaceNoHelper.FurnaceNoParseResult.LineNoNumeric">
+            <summary>
+            产线数字（用于排序）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Helpers.FurnaceNoHelper.FurnaceNoParseResult.ShiftNumeric">
+            <summary>
+            班次数字（用于排序：甲=1, 乙=2, 丙=3）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Helpers.FurnaceNoHelper.FurnaceNoParseResult.FurnaceNoNumeric">
+            <summary>
+            炉号数字（用于排序）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Helpers.FurnaceNoHelper.FurnaceNoParseResult.CoilNoNumeric">
+            <summary>
+            卷号数字（用于排序，支持小数）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Helpers.FurnaceNoHelper.FurnaceNoParseResult.SubcoilNoNumeric">
+            <summary>
+            分卷号数字（用于排序，支持小数）.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Helpers.FurnaceNoHelper.ParseFurnaceNo(System.String,System.Collections.Generic.IEnumerable{System.String})">
+            <summary>
+            解析炉号.
+            格式：[产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号][可选特性汉字]
+            示例：1甲20251101-1-4-1脆
+            注意：炉号格式为 [产线数字][班次汉字][8位日期]-[炉次号]
+            </summary>
+            <param name="furnaceNo">原始炉号</param>
+            <param name="ignoredSuffixes">需要忽略的后缀列表</param>
+            <returns>解析结果</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Helpers.FurnaceNoHelper.ConvertShiftToNumeric(System.String)">
+            <summary>
+            将班次汉字转换为数字（用于排序）.
+            甲=1, 乙=2, 丙=3
+            </summary>
+            <param name="shift">班次汉字</param>
+            <returns>班次数字，如果无法识别则返回null</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Helpers.FurnaceNoHelper.RemoveFeatureSuffix(System.String,System.String,System.Collections.Generic.IEnumerable{System.String})">
+            <summary>
+            从炉号中移除特性汉字.
+            例如：1甲20251101-1-4-1脆 -> 1甲20251101-1-4-1
+            </summary>
+            <param name="furnaceNo">原始炉号（包含特性汉字）</param>
+            <param name="featureSuffix">特性汉字（如果已知，可传入以提高性能）</param>
+            <param name="ignoredSuffixes">需要忽略的后缀列表</param>
+            <returns>去掉特性汉字后的炉号</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Helpers.FurnaceNoHelper.RemoveFeatureSuffixAuto(System.String)">
+            <summary>
+            从炉号中自动移除特性汉字（自动解析）.
+            </summary>
+            <param name="furnaceNo">原始炉号</param>
+            <returns>去掉特性汉字后的炉号</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Helpers.FurnaceNoHelper.IsValidFurnaceNo(System.String,System.Collections.Generic.IEnumerable{System.String})">
+            <summary>
+            判断炉号是否符合解析规则（用于判断是否为有效数据）.
+            </summary>
+            <param name="furnaceNo">原始炉号</param>
+            <returns>是否符合规则</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Helpers.FurnaceNoHelper.BuildFurnaceNo(System.String,System.String,System.Nullable{System.DateTime},System.String,System.String,System.String)">
+            <summary>
+            构建炉号（去掉特性汉字后的标准格式）.
+            格式：[产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号]
+            注意：用于重复检查的炉号格式为 [产线数字][班次汉字][8位日期]-[炉次号]
+            </summary>
+            <param name="lineNo">产线</param>
+            <param name="shift">班次</param>
+            <param name="prodDate">生产日期</param>
+            <param name="furnaceNo">炉次号</param>
+            <param name="coilNo">卷号</param>
+            <param name="subcoilNo">分卷号</param>
+            <returns>炉号</returns>
+        </member>
+        <member name="T:Poxiao.Lab.Helpers.RangeFormulaCalculator">
+            <summary>
+            范围公式计算器
+            支持格式: AVG(RANGE(Thickness, 1, $DetectionColumns))
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Helpers.RangeFormulaCalculator.Calculate(System.String,System.Object)">
+            <summary>
+            计算范围公式
+            </summary>
+            <param name="formula">公式字符串</param>
+            <param name="dataRow">数据行对象</param>
+            <returns>计算结果</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Helpers.RangeFormulaCalculator.ParseFormula(System.String)">
+            <summary>
+            解析公式字符串
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Helpers.RangeFormulaCalculator.ResolveEndIndex(System.String,System.Object)">
+            <summary>
+            解析结束位置
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Helpers.RangeFormulaCalculator.GetRangeValues(System.Object,System.String,System.Int32,System.Int32)">
+            <summary>
+            获取范围内的值
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Helpers.RangeFormulaCalculator.ExecuteOperation(Poxiao.Lab.Helpers.ParsedFormula,System.Collections.Generic.List{System.Decimal})">
+            <summary>
+            执行运算
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Helpers.RangeFormulaCalculator.CalculateDiffFirstLast(System.Collections.Generic.List{System.Decimal},System.Int32,System.Int32)">
+            <summary>
+            计算前后差值
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Helpers.ParsedFormula">
+            <summary>
+            解析后的公式结构
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Helpers.ParsedFormula.Operation">
+            <summary>
+            操作类型: AVG, MAX, MIN, SUM, COUNT, DIFF_FIRST_LAST
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Helpers.ParsedFormula.Prefix">
+            <summary>
+            列前缀: Detection, Thickness
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Helpers.ParsedFormula.Start">
+            <summary>
+            起始索引
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Helpers.ParsedFormula.End">
+            <summary>
+            结束索引 (数字字符串或 $字段名)
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Helpers.ParsedFormula.FirstN">
+            <summary>
+            前N个 (用于DIFF_FIRST_LAST)
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Helpers.ParsedFormula.LastN">
+            <summary>
+            后N个 (用于DIFF_FIRST_LAST)
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.ExtractVariables(System.String)">
+            <summary>
+            提取公式中的变量名（返回不带方括号/美元符号的名称）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.ValidateExpression(System.String)">
+            <summary>
+            验证表达式语法
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.Calculate(System.String,System.Object)">
+            <summary>
+            计算公式
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.BuildContextDictionary(System.Object)">
+            <summary>
+            构建上下文字典（忽略大小写）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.PreprocessFormula(System.String,System.Collections.Generic.Dictionary{System.String,System.Object},Poxiao.Lab.Entity.IntermediateDataEntity)">
+            <summary>
+            预处理公式：处理特殊语法并替换变量
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.ReplaceDollarVariables(System.String,System.Collections.Generic.Dictionary{System.String,System.Object},Poxiao.Lab.Entity.IntermediateDataEntity)">
+            <summary>
+            替换 $Variable 格式的动态变量
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.ProcessRangeThreeArg(System.String,System.Collections.Generic.Dictionary{System.String,System.Object},Poxiao.Lab.Entity.IntermediateDataEntity)">
+            <summary>
+            处理三参数 RANGE 函数
+            RANGE(Thickness, 1, 22) 或 RANGE(Thickness, 1, $DetectionColumns)
+            返回指定范围内字段值的极差（最大值 - 最小值）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.ProcessRangeSingleArg(System.String,System.Collections.Generic.Dictionary{System.String,System.Object},Poxiao.Lab.Entity.IntermediateDataEntity)">
+            <summary>
+            处理单参数 RANGE 函数
+            RANGE(Detection) - 自动检测 Detection1 ~ DetectionN 的范围
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.ProcessDiffFirst(System.String,System.Collections.Generic.Dictionary{System.String,System.Object},Poxiao.Lab.Entity.IntermediateDataEntity)">
+            <summary>
+            处理 DIFF_FIRST 函数
+            DIFF_FIRST(Detection, 2) 或 DIFF_FIRST(Detection, 2, $DetectionColumns)
+            返回前N列的差值（第1列值 - 第N列值）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.ProcessDiffLast(System.String,System.Collections.Generic.Dictionary{System.String,System.Object},Poxiao.Lab.Entity.IntermediateDataEntity)">
+            <summary>
+            处理 DIFF_LAST 函数
+            DIFF_LAST(Detection, 2) 或 DIFF_LAST(Detection, 2, $DetectionColumns)
+            返回后N列的差值（倒数第N列值 - 倒数第1列值）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.GetRangeValues(System.String,System.Int32,System.Int32,System.Collections.Generic.Dictionary{System.String,System.Object},Poxiao.Lab.Entity.IntermediateDataEntity,System.Int32)">
+            <summary>
+            获取指定范围内的字段值列表
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.GetDecimalFromEntity(Poxiao.Lab.Entity.IntermediateDataEntity,System.String)">
+            <summary>
+            从实体获取 decimal 值
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.ExpandToRange(System.String,System.Collections.Generic.Dictionary{System.String,System.Object})">
+            <summary>
+            展开 TO 范围语法
+            例如: SUM([Detection1] TO [Detection5]) -> SUM([Detection1], [Detection2], ...)
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.ProcessStatFunctions(System.String,System.Collections.Generic.Dictionary{System.String,System.Object},Poxiao.Lab.Entity.IntermediateDataEntity)">
+            <summary>
+            处理统计函数（递归处理嵌套）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.TryAppendRangeValues(System.String,System.Collections.Generic.Dictionary{System.String,System.Object},Poxiao.Lab.Entity.IntermediateDataEntity,System.Collections.Generic.List{System.Decimal})">
+            <summary>
+            处理 RANGE/DIFF_FIRST/DIFF_LAST 参数并写入列表
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.ResolveRangePrefix(System.String)">
+            <summary>
+            通过列属性获取 RangePrefix
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.SplitArguments(System.String)">
+            <summary>
+            分割参数（支持嵌套括号）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.TryGetValueFromContext(System.Collections.Generic.Dictionary{System.String,System.Object},System.String,System.Object@)">
+            <summary>
+            从上下文获取值（支持大小写不敏感）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.TryGetDecimalFromContext(System.Collections.Generic.Dictionary{System.String,System.Object},System.String,System.Decimal@)">
+            <summary>
+            从上下文获取 decimal 值
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.GetDetectionColumns(System.Collections.Generic.Dictionary{System.String,System.Object},Poxiao.Lab.Entity.IntermediateDataEntity)">
+            <summary>
+            获取检测列数（优先上下文，其次实体，最后默认值）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.GetIntFromContext(System.Collections.Generic.Dictionary{System.String,System.Object},System.String,System.Int32)">
+            <summary>
+            从上下文获取 int 值
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.EvaluateExpression(System.String)">
+            <summary>
+            计算数学表达式
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.GetCalculationPrecision(System.Nullable{System.Int32})">
+            <summary>
+            获取计算精度（小数点位数）
+            根据配置决定是否启用精度调整：
+            - EnablePrecisionAdjustment = true: 在原始精度基础上加1位，但不超过MaxPrecision
+            - EnablePrecisionAdjustment = false: 使用原始精度，但不超过MaxPrecision（默认行为）
+            </summary>
+            <param name="originalPrecision">原始精度（小数点位数）</param>
+            <returns>调整后的精度（小数点位数）</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FormulaParser.RoundForPrecision(System.Nullable{System.Decimal},System.Nullable{System.Int32})">
+            <summary>
+            对计算结果进行精度调整（用于保证计算精度）
+            </summary>
+            <param name="value">计算结果值</param>
+            <param name="targetPrecision">目标精度（小数点位数）</param>
+            <returns>调整后的值</returns>
+        </member>
+        <member name="T:Poxiao.Lab.Service.AppearanceAnalysisService">
+            <summary>
+            外观特性分析服务 - 业务逻辑层
+            负责从数据库获取动态数据，并调用AI模块进行分析
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceAnalysisService.DefineAppearanceFeatureAsync(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="T:Poxiao.Lab.Service.AppearanceFeatureCategoryService">
+            <summary>
+            外观特性大类服务.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureCategoryService.GetList(Poxiao.Lab.Entity.Dto.AppearanceFeature.AppearanceFeatureCategoryListQuery)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureCategoryService.GetAllCategories">
+            <inheritdoc />
+            注意：此路由必须在 [HttpGet("{id}")] 之前，否则 "all" 会被当作 id 参数
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureCategoryService.GetInfo(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureCategoryService.Create(Poxiao.Lab.Entity.Dto.AppearanceFeature.AppearanceFeatureCategoryCrInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureCategoryService.Update(System.String,Poxiao.Lab.Entity.Dto.AppearanceFeature.AppearanceFeatureCategoryUpInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureCategoryService.Delete(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureCategoryService.GetChildCategoryIdsAsync(System.String)">
+            <summary>
+            获取所有子分类ID（递归）
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.AppearanceFeatureLevelService">
+            <summary>
+            外观特性等级服务.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureLevelService.GetList(Poxiao.Lab.Entity.Dto.AppearanceFeatureLevel.AppearanceFeatureLevelListQuery)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureLevelService.GetInfo(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureLevelService.Create(Poxiao.Lab.Entity.Dto.AppearanceFeatureLevel.AppearanceFeatureLevelCrInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureLevelService.Update(System.String,Poxiao.Lab.Entity.Dto.AppearanceFeatureLevel.AppearanceFeatureLevelUpInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureLevelService.Delete(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureLevelService.GetEnabledLevels">
+            <inheritdoc />
+        </member>
+        <member name="T:Poxiao.Lab.Service.AppearanceFeatureRuleMatcher">
+            <summary>
+            外观特性规则匹配器 - 基于关键词和规则引擎的精确匹配
+            匹配逻辑：
+            1. 用户输入格式：特性名称 或 程度词+特性名称（如 "脆"、"微脆"）
+            2. 通过特性名称和程度词匹配特性记录（特征大类+特性名称+特性等级）
+            3. 如果没有明确程度，优先匹配默认等级
+            </summary>
+        </member>
+        <member name="F:Poxiao.Lab.Service.AppearanceFeatureRuleMatcher.FeatureSeparators">
+            <summary>
+            特性分隔符（用于组合特性，包含标点符号）
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.AppearanceFeatureRuleMatcher.MatchResult">
+            <summary>
+            匹配结果
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.AppearanceFeatureRuleMatcher.MatchResult.Feature">
+            <summary>
+            匹配到的特性
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.AppearanceFeatureRuleMatcher.MatchResult.DegreeWord">
+            <summary>
+            识别到的程度词（如 "微"、"轻"、"重"）
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.AppearanceFeatureRuleMatcher.MatchResult.Confidence">
+            <summary>
+            置信度 0-1
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.AppearanceFeatureRuleMatcher.MatchResult.MatchMethod">
+            <summary>
+            匹配方式：name/keyword
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.AppearanceFeatureRuleMatcher.MatchResult.RequiresSeverityConfirmation">
+            <summary>
+            是否需要确认等级（当程度词匹配不到对应记录时，需要用户确认是否创建新记录）
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.AppearanceFeatureRuleMatcher.MatchResult.SuggestedSeverity">
+            <summary>
+            建议的等级名称（当需要确认时，显示给用户）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureRuleMatcher.Match(System.String,System.Collections.Generic.List{Poxiao.Lab.Entity.AppearanceFeatureEntity},System.Collections.Generic.List{System.String},System.Collections.Generic.Dictionary{System.String,System.String},System.Collections.Generic.Dictionary{System.String,System.String})">
+            <summary>
+            匹配输入文本到特征列表
+            </summary>
+            <param name="inputText">输入文本</param>
+            <param name="features">特性列表</param>
+            <param name="degreeWords">程度词列表（从特征等级接口获取，按长度降序排列）</param>
+            <param name="categoryIdToName">大类ID到名称的映射（用于匹配时使用名称）</param>
+            <param name="severityLevelIdToName">等级ID到名称的映射（用于匹配时使用名称）</param>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureRuleMatcher.SplitFeatures(System.String)">
+            <summary>
+            分解组合特性
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureRuleMatcher.ExtractDegree(System.String,System.Collections.Generic.List{System.String})">
+            <summary>
+            提取程度词
+            </summary>
+            <param name="text">输入文本</param>
+            <param name="degreeWords">程度词列表（按长度降序排列）</param>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureRuleMatcher.MatchFeature(System.String,System.String,System.Collections.Generic.List{Poxiao.Lab.Entity.AppearanceFeatureEntity},System.String,System.Collections.Generic.Dictionary{System.String,System.String},System.Collections.Generic.Dictionary{System.String,System.String})">
+            <summary>
+            匹配特征
+            </summary>
+            <param name="coreName">核心特性名称（去掉程度词后的部分）</param>
+            <param name="originalInput">原始输入（包含程度词）</param>
+            <param name="features">特性列表</param>
+            <param name="degreeWord">程度词</param>
+            <param name="categoryIdToName">大类ID到名称的映射</param>
+            <param name="severityLevelIdToName">等级ID到名称的映射</param>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureRuleMatcher.GetKeywords(Poxiao.Lab.Entity.AppearanceFeatureEntity)">
+            <summary>
+            获取特性的关键词列表
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.AppearanceFeatureService">
+            <summary>
+            外观特性服务 - 规则引擎 + AI补位的混合识别系统.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.FillOutputNamesAsync(System.Collections.Generic.List{Poxiao.Lab.Entity.Dto.AppearanceFeature.AppearanceFeatureListOutput})">
+            <summary>
+            填充输出DTO的名称字段（从ID关联查询）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.BuildCategoryPath(System.String,System.Collections.Generic.Dictionary{System.String,Poxiao.Lab.Entity.AppearanceFeatureCategoryEntity})">
+            <summary>
+            构建分类路径（从顶级分类到当前分类，不包含特性名称，用➡️分隔）
+            </summary>
+            <returns>返回分类路径和顶级分类名称的元组</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.FillOutputNamesAsync(Poxiao.Lab.Entity.Dto.AppearanceFeature.AppearanceFeatureInfoOutput)">
+            <summary>
+            填充单个输出DTO的名称字段
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.GetList(Poxiao.Lab.Entity.Dto.AppearanceFeature.AppearanceFeatureListQuery)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.GetInfo(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.Create(Poxiao.Lab.Entity.Dto.AppearanceFeature.AppearanceFeatureCrInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.Update(System.String,Poxiao.Lab.Entity.Dto.AppearanceFeature.AppearanceFeatureUpInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.Delete(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.BatchMatch(Poxiao.Lab.Entity.Dto.AppearanceFeature.BatchMatchInput)">
+            <summary>
+            批量匹配（新版本，简化规则）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.RemovePunctuation(System.String)">
+            <summary>
+            移除标点符号
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.MatchSingleQueryAsync(System.String,System.Collections.Generic.List{Poxiao.Lab.Entity.AppearanceFeatureEntity},System.Collections.Generic.Dictionary{System.String,Poxiao.Lab.Entity.AppearanceFeatureCategoryEntity},System.Collections.Generic.Dictionary{System.String,System.String},System.Collections.Generic.Dictionary{System.String,System.String})">
+            <summary>
+            匹配单个查询（简化规则）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.FillMatchResult(Poxiao.Lab.Entity.Dto.AppearanceFeature.MatchItemOutput,Poxiao.Lab.Entity.AppearanceFeatureEntity,System.Collections.Generic.Dictionary{System.String,Poxiao.Lab.Entity.AppearanceFeatureCategoryEntity},System.Collections.Generic.Dictionary{System.String,System.String},System.Collections.Generic.Dictionary{System.String,System.String})">
+            <summary>
+            填充匹配结果
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.CreateManualCorrectionOption(Poxiao.Lab.Entity.AppearanceFeatureEntity,System.Collections.Generic.Dictionary{System.String,Poxiao.Lab.Entity.AppearanceFeatureCategoryEntity},System.Collections.Generic.Dictionary{System.String,System.String},System.Collections.Generic.Dictionary{System.String,System.String},System.String,System.String)">
+            <summary>
+            创建人工修正选项
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.FindFeatureByNameAndLevel(System.String,System.String,System.Collections.Generic.List{Poxiao.Lab.Entity.AppearanceFeatureEntity},System.Collections.Generic.Dictionary{System.String,System.String})">
+            <summary>
+            根据名称和等级查找特性
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.AddWithSeverity(Poxiao.Lab.Service.AddWithSeverityInput)">
+            <summary>
+            添加特性记录（当用户确认创建新等级时）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.SaveCorrection(Poxiao.Lab.Entity.Dto.AppearanceFeature.AppearanceFeatureCorrectionInput)">
+            <summary>
+            保存人工修正记录
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.AddKeyword(Poxiao.Lab.Service.AddKeywordInput)">
+            <summary>
+            将关键字添加到特性记录
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.CreateOrAddKeyword(Poxiao.Lab.Service.CreateOrAddKeywordInput)">
+            <summary>
+            创建或添加关键词（智能处理：如果特性存在则添加关键词，不存在则创建特性）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.GetFeatureIdsByKeywordAsync(System.String)">
+            <summary>
+            根据关键词获取特征ID列表（从数据库查询）
+            </summary>
+            <param name="keyword">关键词</param>
+            <returns>特征ID列表</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.ParseKeywords(System.String)">
+            <summary>
+            解析关键词字符串为关键词列表
+            </summary>
+            <param name="keywordsJson">关键词JSON字符串</param>
+            <returns>关键词列表</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.TestDuplicateCreation">
+            <summary>
+            测试重复创建逻辑 (验证: 多次输入相同文本是否创建多条AI建议记录)
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.AppearanceFeatureService.TestMismatchLogic">
+            <summary>
+            测试不匹配逻辑 (验证: 无效输入不应匹配到任何特性)
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.AddKeywordInput">
+            <summary>
+            添加关键字输入
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.AddKeywordInput.FeatureId">
+            <summary>
+            特性ID（必填）
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.AddKeywordInput.Keyword">
+            <summary>
+            要添加的关键字（必填）
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.CreateOrAddKeywordInput">
+            <summary>
+            创建或添加关键词输入
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.CreateOrAddKeywordInput.InputText">
+            <summary>
+            输入文本（如"严重脆"）
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.CreateOrAddKeywordInput.AutoMatchedFeatureId">
+            <summary>
+            自动匹配的特征ID（如果有）
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.CreateOrAddKeywordInput.CategoryId">
+            <summary>
+            特性大类ID（必填）
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.CreateOrAddKeywordInput.FeatureName">
+            <summary>
+            特性名称（必填，如"脆"）
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.CreateOrAddKeywordInput.SeverityLevelName">
+            <summary>
+            特性等级名称（必填，如"严重"）
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.CreateOrAddKeywordInput.Description">
+            <summary>
+            描述（可选）
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.CreateOrAddKeywordInput.SortCode">
+            <summary>
+            排序码（可选）
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.CreateOrAddKeywordInput.Scenario">
+            <summary>
+            使用场景（test/import）
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.CreateOrAddKeywordOutput">
+            <summary>
+            创建或添加关键词输出
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.CreateOrAddKeywordOutput.Feature">
+            <summary>
+            创建或更新的特性信息
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.CreateOrAddKeywordOutput.Action">
+            <summary>
+            执行的操作（create/add_keyword）
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.CreateOrAddKeywordOutput.Message">
+            <summary>
+            操作结果消息
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.AddWithSeverityInput">
+            <summary>
+            添加带等级的特性输入
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.AddWithSeverityInput.CategoryId">
+            <summary>
+            特性大类ID（必填）
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.AddWithSeverityInput.Name">
+            <summary>
+            特性名称（必填）
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.AddWithSeverityInput.SeverityLevelId">
+            <summary>
+            特性等级ID（必填）
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.AddWithSeverityInput.Description">
+            <summary>
+            描述（可选）
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.AddWithSeverityInput.Keywords">
+            <summary>
+            关键字列表（可选）
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.AddWithSeverityInput.SortCode">
+            <summary>
+            排序码（可选）
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.DashboardService">
+            <summary>
+            驾驶舱服务实现.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.DashboardService.GetKpiAsync(Poxiao.Lab.Entity.Dto.Dashboard.DashboardQueryDto)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Poxiao.Lab.Service.DashboardService.GetQualityDistributionAsync(Poxiao.Lab.Entity.Dto.Dashboard.DashboardQueryDto)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Poxiao.Lab.Service.DashboardService.GetLaminationTrendAsync(Poxiao.Lab.Entity.Dto.Dashboard.DashboardQueryDto)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Poxiao.Lab.Service.DashboardService.GetDefectTop5Async(Poxiao.Lab.Entity.Dto.Dashboard.DashboardQueryDto)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Poxiao.Lab.Service.DashboardService.GetProductionHeatmapAsync(Poxiao.Lab.Entity.Dto.Dashboard.DashboardQueryDto)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Poxiao.Lab.Service.DashboardService.GetThicknessCorrelationAsync(Poxiao.Lab.Entity.Dto.Dashboard.DashboardQueryDto)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Poxiao.Lab.Service.DashboardService.BuildBaseQuery(Poxiao.Lab.Entity.Dto.Dashboard.DashboardQueryDto)">
+            <summary>
+            构建基础查询.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.DashboardService.GetJudgmentLevelMapAsync">
+            <summary>
+            获取判定等级映射.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.DashboardService.IsQualified(System.String,System.Collections.Generic.Dictionary{System.String,Poxiao.Lab.Entity.IntermediateDataJudgmentLevelEntity})">
+            <summary>
+            判断是否合格（A级或B级）.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.DashboardService.IsClassA(System.String,System.Collections.Generic.Dictionary{System.String,Poxiao.Lab.Entity.IntermediateDataJudgmentLevelEntity})">
+            <summary>
+            判断是否A级.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.DashboardService.IsClassB(System.String,System.Collections.Generic.Dictionary{System.String,Poxiao.Lab.Entity.IntermediateDataJudgmentLevelEntity})">
+            <summary>
+            判断是否B级.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.DashboardService.IsUnqualified(System.String,System.Collections.Generic.Dictionary{System.String,Poxiao.Lab.Entity.IntermediateDataJudgmentLevelEntity})">
+            <summary>
+            判断是否不合格.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.ExcelImportTemplateService">
+            <summary>
+            Excel导入模板服务.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.ExcelImportTemplateService.GetList">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.ExcelImportTemplateService.GetDefaultTemplate">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.ExcelImportTemplateService.GetInfo(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.ExcelImportTemplateService.Update(System.String,Poxiao.Lab.Entity.Dto.ExcelImportTemplateInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.ExcelImportTemplateService.EnsureDefaultTemplates">
+            <summary>
+            确保默认模板存在.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.ExcelImportTemplateService.ValidateTemplateConfig(Poxiao.Lab.Entity.Dto.ExcelImportTemplateInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.ExcelImportTemplateService.ParseHeaders(Poxiao.Lab.Entity.Dto.ExcelParseHeadersInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.ExcelImportTemplateService.GetSystemFields(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.ExcelImportTemplateService.ValidateExcelAgainstTemplate(Poxiao.Lab.Entity.Dto.ExcelTemplateValidationInput)">
+            <inheritdoc />
+        </member>
+        <member name="T:Poxiao.Lab.Service.FeatureLearningService">
+            <summary>
+            特性学习服务 - 闭环学习机制
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FeatureLearningService.GetSuggestedKeywords">
+            <summary>
+            分析修正记录，提取潜在的新关键词
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FeatureLearningService.ApplyKeywordSuggestions(Poxiao.Lab.Service.ApplyKeywordsInput)">
+            <summary>
+            批量应用关键词建议
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FeatureLearningService.GetLearningStats">
+            <summary>
+            获取学习统计信息
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FeatureLearningService.GetCorrectionList">
+            <summary>
+            获取人工修正列表
+            </summary>
+            <summary>
+            获取人工修正列表
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FeatureLearningService.DeleteCorrection(System.String)">
+            <summary>
+            删除修正记录
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FeatureLearningService.ConfirmCorrection(System.String)">
+            <summary>
+            确认修正记录（添加为关键词）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FeatureLearningService.UpdateCorrection(System.String,Poxiao.Lab.Service.UpdateCorrectionInput)">
+            <summary>
+            更新修正记录（关联特性）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FeatureLearningService.RemoveDegreeWords(System.String)">
+            <summary>
+            移除程度词
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FeatureLearningService.ConvertColumnLetterToIndex(System.String)">
+            <summary>
+            将Excel列字母转换为数字索引 (A=0, B=1, C=2, ..., Z=25, AA=26, AB=27, ...)
+            </summary>
+        </member>
+        <member name="F:Poxiao.Lab.Service.FeatureLearningService.IgnoredKeywords">
+            <summary>
+            忽略的关键字列表（这些文字不是特性）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FeatureLearningService.IsIgnoredKeyword(System.String)">
+            <summary>
+            检查关键字是否应该被忽略
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.FeatureLearningService.UploadExcelForCorrection(Microsoft.AspNetCore.Http.IFormFile)">
+            <summary>
+            上传Excel生成人工修正列表
+            </summary>
+            <param name="file">Excel文件</param>
+            <returns>生成的修正记录数量</returns>
+        </member>
+        <member name="T:Poxiao.Lab.Service.UploadExcelResult">
+            <summary>
+            Excel上传结果
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.KeywordSuggestion">
+            <summary>
+            关键词建议
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.KeywordSuggestion.FeatureId">
+            <summary>
+            特性ID
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.KeywordSuggestion.FeatureName">
+            <summary>
+            特性名称
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.KeywordSuggestion.FeatureCategory">
+            <summary>
+            特性大类
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.KeywordSuggestion.SuggestedKeyword">
+            <summary>
+            建议的关键词
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.KeywordSuggestion.Frequency">
+            <summary>
+            出现频率
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.KeywordSuggestion.Status">
+            <summary>
+            状态（pending=待处理, applied=已应用, rejected=已拒绝）
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.ApplyKeywordsInput">
+            <summary>
+            应用关键词输入
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.LearningStats">
+            <summary>
+            学习统计信息
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.LearningStats.TotalCorrections">
+            <summary>
+            总修正次数
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.LearningStats.RecentCorrections">
+            <summary>
+            最近30天修正次数
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.LearningStats.ManualCorrections">
+            <summary>
+            手动修正次数
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.LearningStats.AutoCorrections">
+            <summary>
+            自动匹配次数
+            </summary>
+        </member>
+        <member name="P:Poxiao.Lab.Service.LearningStats.AccuracyRate">
+            <summary>
+            准确率（自动匹配占比）
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.IDashboardService">
+            <summary>
+            驾驶舱服务接口.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IDashboardService.GetKpiAsync(Poxiao.Lab.Entity.Dto.Dashboard.DashboardQueryDto)">
+            <summary>
+            获取KPI数据.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IDashboardService.GetQualityDistributionAsync(Poxiao.Lab.Entity.Dto.Dashboard.DashboardQueryDto)">
+            <summary>
+            获取质量分布数据.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IDashboardService.GetLaminationTrendAsync(Poxiao.Lab.Entity.Dto.Dashboard.DashboardQueryDto)">
+            <summary>
+            获取叠片系数趋势数据.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IDashboardService.GetDefectTop5Async(Poxiao.Lab.Entity.Dto.Dashboard.DashboardQueryDto)">
+            <summary>
+            获取缺陷Top5数据.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IDashboardService.GetProductionHeatmapAsync(Poxiao.Lab.Entity.Dto.Dashboard.DashboardQueryDto)">
+            <summary>
+            获取生产热力图数据.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IDashboardService.GetThicknessCorrelationAsync(Poxiao.Lab.Entity.Dto.Dashboard.DashboardQueryDto)">
+            <summary>
+            获取厚度-叠片系数关联数据.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.IMonthlyQualityReportService">
+            <summary>
+            月度质量报表服务接口.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IMonthlyQualityReportService.GetReportAsync(Poxiao.Lab.Entity.Dto.MonthlyQualityReport.MonthlyQualityReportQueryDto)">
+            <summary>
+            获取完整的月度质量报表数据.
+            </summary>
+            <param name="query">查询条件</param>
+            <returns>完整报表数据</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IMonthlyQualityReportService.GetSummaryAsync(Poxiao.Lab.Entity.Dto.MonthlyQualityReport.MonthlyQualityReportQueryDto)">
+            <summary>
+            获取顶部汇总指标.
+            </summary>
+            <param name="query">查询条件</param>
+            <returns>汇总指标</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IMonthlyQualityReportService.GetDetailsAsync(Poxiao.Lab.Entity.Dto.MonthlyQualityReport.MonthlyQualityReportQueryDto)">
+            <summary>
+            获取明细表格数据.
+            </summary>
+            <param name="query">查询条件</param>
+            <returns>明细列表</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IMonthlyQualityReportService.GetShiftGroupsAsync(Poxiao.Lab.Entity.Dto.MonthlyQualityReport.MonthlyQualityReportQueryDto)">
+            <summary>
+            获取班组统计数据.
+            </summary>
+            <param name="query">查询条件</param>
+            <returns>班组统计列表</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IMonthlyQualityReportService.GetQualityTrendAsync(Poxiao.Lab.Entity.Dto.MonthlyQualityReport.MonthlyQualityReportQueryDto)">
+            <summary>
+            获取质量趋势图表数据.
+            </summary>
+            <param name="query">查询条件</param>
+            <returns>趋势数据列表</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IMonthlyQualityReportService.GetUnqualifiedCategoriesAsync(Poxiao.Lab.Entity.Dto.MonthlyQualityReport.MonthlyQualityReportQueryDto)">
+            <summary>
+            获取不合格分类统计.
+            </summary>
+            <param name="query">查询条件</param>
+            <returns>不合格分类列表</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IMonthlyQualityReportService.GetShiftComparisonAsync(Poxiao.Lab.Entity.Dto.MonthlyQualityReport.MonthlyQualityReportQueryDto)">
+            <summary>
+            获取班次对比数据.
+            </summary>
+            <param name="query">查询条件</param>
+            <returns>班次对比列表</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IMonthlyQualityReportService.GetColumnsAsync">
+            <summary>
+            获取表格列定义（合格和不合格等级列）.
+            </summary>
+            <returns>列定义列表</returns>
+        </member>
+        <member name="T:Poxiao.Lab.Service.IntermediateDataColorService">
+            <summary>
+            中间数据颜色配置服务
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataColorService.SaveColors(Poxiao.Lab.Entity.Dto.IntermediateData.SaveIntermediateDataColorInput)">
+            <summary>
+            保存颜色配置
+            </summary>
+            <param name="input">颜色配置信息</param>
+            <returns>保存结果</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataColorService.GetColors(Poxiao.Lab.Entity.Dto.IntermediateData.GetIntermediateDataColorInput)">
+            <summary>
+            获取颜色配置
+            </summary>
+            <param name="input">查询条件</param>
+            <returns>颜色配置列表</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataColorService.DeleteColors(Poxiao.Lab.Entity.Dto.IntermediateData.DeleteIntermediateDataColorInput)">
+            <summary>
+            删除颜色配置
+            </summary>
+            <param name="input">删除条件</param>
+            <returns>删除结果</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataColorService.GetColorsByDataIds(System.Collections.Generic.List{System.String},System.String)">
+            <summary>
+            获取指定中间数据的颜色配置（用于批量查询）
+            </summary>
+            <param name="intermediateDataIds">中间数据ID列表</param>
+            <param name="productSpecId">产品规格ID</param>
+            <returns>颜色配置字典</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataColorService.SaveCellColor(System.String,System.String,System.String,System.String)">
+            <summary>
+            保存单个单元格颜色（接口要求的签名）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataColorService.SaveCellColor(Poxiao.Lab.Entity.Dto.IntermediateData.SaveCellColorInput)">
+            <summary>
+            保存单个单元格颜色（用于实时保存）
+            </summary>
+            <param name="input">保存单元格颜色请求</param>
+        </member>
+        <member name="T:Poxiao.Lab.Service.IntermediateDataExportService">
+            <summary>
+            中间数据导出服务.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataExportService.ExportIntermediateData(Poxiao.Lab.Entity.Dto.IntermediateData.IntermediateDataExportInput)">
+            <summary>
+            导出中间数据Excel（按月+产品规格分组）.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataExportService.PostProcessExcel(System.IO.MemoryStream)">
+            <summary>
+            使用 NPOI 后处理 Excel，应用合并单元格和样式.
+            </summary>
+            <summary>
+            使用 NPOI 后处理 Excel，应用合并单元格和样式.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataExportService.BuildDataTableFromDict(System.Collections.Generic.List{System.Collections.Generic.Dictionary{System.String,System.Object}},System.Int32,System.Collections.Generic.Dictionary{System.String,System.String})">
+            <summary>
+            构建 DataTable (从字典列表).
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataExportService.GetCalcStatusText(Poxiao.Lab.Entity.Enums.IntermediateDataCalcStatus)">
+            <summary>
+            获取计算状态文本.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataFormulaBatchCalculator.JudgeByIdsAsync(System.Collections.Generic.List{System.String})">
+            <summary>
+            批量执行判定逻辑（仅判定，不计算）。
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataFormulaBatchCalculator.JudgeInternalAsync(System.Collections.Generic.List{Poxiao.Lab.Entity.IntermediateDataEntity},System.String)">
+            <summary>
+            仅执行判定逻辑（不执行计算公式）。
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataFormulaBatchCalculator.ResolveCustomFormulaValue(System.String,Poxiao.Lab.Entity.IntermediateDataEntity,System.Collections.Generic.Dictionary{System.String,System.Object})">
+            <summary>
+            解析自定义公式 ($VAR_xxx 或 $xxx) 的值
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataFormulaBatchCalculator.GetPrecision(Poxiao.Lab.Entity.Dto.IntermediateDataFormula.IntermediateDataFormulaDto,System.Collections.Generic.Dictionary{System.String,Poxiao.Lab.Entity.Config.UnitPrecisionInfo},System.Collections.Generic.Dictionary{System.String,Poxiao.Lab.Entity.UnitDefinitionEntity})">
+            <summary>
+            Calculates the effective precision to use for a formula based on configuration settings, formula properties, and
+            unit definitions.
+            </summary>
+            <remarks>If precision adjustment is not enabled in the configuration, the method returns the maximum allowed
+            precision. The method checks for precision in the following order: the formula's own precision, the precision
+            associated with the formula's unit name, the precision defined in the global unit map, and finally the default
+            precision from configuration if specified.</remarks>
+            <param name="formula">The formula for which to determine the precision. May specify its own precision or reference a unit whose precision
+            should be used.</param>
+            <param name="unitPrecisions">A dictionary that maps unit names to their associated precision information. Used to look up precision when not
+            specified directly by the formula.</param>
+            <param name="unitMap">A dictionary that maps unit identifiers to their definitions, which may include precision information if not
+            available elsewhere.</param>
+            <returns>The effective precision as an integer, limited by the maximum allowed precision, or null if no precision can be
+            determined.</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataFormulaBatchCalculator.NormalizeUnitPrecisions(System.Collections.Generic.Dictionary{System.String,Poxiao.Lab.Entity.Config.UnitPrecisionInfo})">
+            <summary>
+            Normalizes the unit precision dictionary to use case-insensitive string comparison for unit keys.
+            </summary>
+            <param name="unitPrecisions">A dictionary that maps unit names to their associated precision information. The dictionary's key comparison may
+            be case-sensitive or case-insensitive.</param>
+            <returns>A dictionary containing the same unit precision information as the input, but with case-insensitive string
+            comparison for the keys. If the input is null or empty, returns an empty dictionary with case-insensitive
+            comparison. If the input already uses case-insensitive comparison, returns the original dictionary.</returns>
+        </member>
+        <member name="T:Poxiao.Lab.Service.IntermediateDataFormulaService">
+            <summary>
+            中间数据表公式维护服务实现.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataFormulaService.ToDto(Poxiao.Lab.Entity.IntermediateDataFormulaEntity)">
+            <summary>
+            将实体转换为 DTO，处理枚举到字符串的转换.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataFormulaService.GetColumnDisplayName(System.String)">
+            <summary>
+            根据列名获取显示名称.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataFormulaService.GetListAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataFormulaService.GetByIdAsync(System.String)">
+            <inheritdoc />
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataFormulaService.CreateAsync(Poxiao.Lab.Entity.Dto.IntermediateDataFormula.IntermediateDataFormulaDto)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataFormulaService.UpdateAsync(System.String,Poxiao.Lab.Entity.Dto.IntermediateDataFormula.IntermediateDataFormulaDto)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataFormulaService.UpdateFormulaAsync(System.String,Poxiao.Lab.Interfaces.FormulaUpdateInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataFormulaService.DeleteAsync(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataFormulaService.GenerateJudgmentRuleAsync(System.String)">
+            <summary>
+            生成判定规则.
+            </summary>
+            <param name="id">公式ID</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataFormulaService.InitializeAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataFormulaService.GetAvailableColumnsAsync(System.Boolean)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataFormulaService.GetVariableSourcesAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataFormulaService.ValidateFormulaAsync(Poxiao.Lab.Interfaces.FormulaValidationRequest)">
+            <inheritdoc />
+        </member>
+        <member name="T:Poxiao.Lab.Service.IntermediateDataJudgmentLevelService">
+            <summary>
+            中间数据判定等级服务.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataJudgmentLevelService.GetListAsync(Poxiao.Lab.Entity.Dto.IntermediateDataJudgmentLevel.IntermediateDataJudgmentLevelListInput)">
+            <summary>
+            获取判定等级列表.
+            </summary>
+            <param name="input">查询参数</param>
+            <returns>列表</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataJudgmentLevelService.GetByIdAsync(System.String)">
+            <summary>
+            获取单个判定等级.
+            </summary>
+            <param name="id">主键ID</param>
+            <returns>详情</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataJudgmentLevelService.CreateAsync(Poxiao.Lab.Entity.Dto.IntermediateDataJudgmentLevel.IntermediateDataJudgmentLevelAddInput)">
+            <summary>
+            创建判定等级.
+            </summary>
+            <param name="input">输入参数</param>
+            <returns>结果</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataJudgmentLevelService.UpdateSortAsync(System.Collections.Generic.List{System.String})">
+            <summary>
+            更新排序.
+            </summary>
+            <param name="ids">ID列表（按顺序）</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataJudgmentLevelService.UpdateAsync(Poxiao.Lab.Entity.Dto.IntermediateDataJudgmentLevel.IntermediateDataJudgmentLevelUpdateInput)">
+            <summary>
+            更新判定等级.
+            </summary>
+            <param name="input">输入参数</param>
+            <returns>结果</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataJudgmentLevelService.DeleteAsync(System.String)">
+            <summary>
+            删除判定等级.
+            </summary>
+            <param name="id">主键ID</param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.Lab.Service.IntermediateDataService">
+            <summary>
+            中间数据服务.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.GetList(Poxiao.Lab.Entity.Dto.IntermediateData.IntermediateDataListQuery)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.GetInfo(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.GetCalcLogs(Poxiao.Lab.Entity.Dto.IntermediateData.IntermediateDataCalcLogQuery)">
+            <summary>
+            计算日志分页列表.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.UpdatePerformance(Poxiao.Lab.Entity.Dto.IntermediateData.IntermediateDataPerfUpdateInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.UpdateAppearance(Poxiao.Lab.Entity.Dto.IntermediateData.IntermediateDataAppearUpdateInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.UpdateBaseInfo(Poxiao.Lab.Entity.Dto.IntermediateData.IntermediateDataBaseUpdateInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.Delete(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.BatchDelete(System.Collections.Generic.List{System.String})">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.Recalculate(System.Collections.Generic.List{System.String})">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.Judge(System.Collections.Generic.List{System.String})">
+            <summary>
+            批量执行判定逻辑（仅判定，不重新计算）。
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.GetProductSpecOptions">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.ApplyPrecisionFormatting(System.Collections.Generic.Dictionary{System.String,System.Object},System.Collections.Generic.Dictionary{System.String,System.Int32})">
+            <summary>
+            应用精度格式化到输出数据.
+            </summary>
+            <param name="output">输出对象</param>
+            <param name="precisionMap">精度映射（columnName -> precision）</param>
+            <summary>
+            应用精度格式化到输出数据 (转为字符串).
+            </summary>
+            <param name="output">输出字典</param>
+            <param name="precisionMap">精度映射（columnName -> precision）</param>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.ParseDetectionColumns(System.Nullable{System.Int32})">
+            <summary>
+            解析检测列配置 (生成 1 到 N 的列表).
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.GenerateIntermediateDataAsync(Poxiao.Lab.Entity.RawDataEntity,Poxiao.Lab.Entity.ProductSpecEntity,System.Collections.Generic.List{System.Int32},System.Int32,System.Decimal,System.Decimal,System.Nullable{System.Int32},System.String)">
+            <summary>
+            从原始数据生成中间数据.
+            </summary>
+            <param name="rawData">原始数据</param>
+            <param name="productSpec">产品规格</param>
+            <param name="detectionColumns">检测列</param>
+            <param name="layers">层数</param>
+            <param name="length">长度</param>
+            <param name="density">密度</param>
+            <param name="specVersion">规格版本</param>
+            <param name="batchId">批次ID，用于后续异步公式计算</param>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.CalculateIndicatorsAsync(Poxiao.Lab.Entity.IntermediateDataEntity,System.String)">
+            <summary>
+            计算所有启用的指标（使用新的 Metric 系统）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.BatchCalculateFormulasAsync(System.Collections.Generic.List{System.String})">
+            <summary>
+            批量计算公式（用于后台任务）.
+            对指定的中间数据ID列表进行公式计算，支持错误记录和用户提示.
+            </summary>
+            <param name="intermediateDataIds">中间数据ID列表</param>
+            <returns>计算结果统计</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.BatchCalculateFormulasByBatchIdAsync(System.String)">
+            <summary>
+            根据批次ID批量计算公式.
+            </summary>
+            <param name="batchId">批次ID</param>
+            <returns>计算结果统计</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.ApplyCalcFormulasForEntitiesAsync(System.Collections.Generic.List{Poxiao.Lab.Entity.IntermediateDataEntity})">
+            <summary>
+            同步计算CALC公式（不持久化）.
+            </summary>
+            <param name="entities">中间数据实体列表</param>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.GetBatchCalculationStatusAsync(System.String)">
+            <summary>
+            获取批次计算状态.
+            </summary>
+            <param name="batchId">批次ID</param>
+            <returns>批次计算状态统计</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.BatchCalculateFormulasByBatchIdInternalAsync(System.String)">
+            <summary>
+            根据批次ID批量计算公式（内部方法，用于后台任务）.
+            </summary>
+            <param name="batchId">批次ID</param>
+            <returns>计算结果统计</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.BatchCalculateFormulasInternalAsync(System.Collections.Generic.List{System.String})">
+            <summary>
+            批量计算公式内部实现（可被后台任务调用）.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.CalculateFormulasForEntityAsync(Poxiao.Lab.Entity.IntermediateDataEntity,System.Collections.Generic.List{Poxiao.Lab.Entity.Dto.IntermediateDataFormula.IntermediateDataFormulaDto},System.Collections.Generic.List{Poxiao.Lab.Entity.Dto.IntermediateDataFormula.IntermediateDataFormulaDto})">
+            <summary>
+            对单个中间数据实体进行公式计算.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.SetFormulaValueToEntity(Poxiao.Lab.Entity.IntermediateDataEntity,System.String,System.Nullable{System.Decimal})">
+            <summary>
+            将公式计算结果设置到中间数据实体的对应属性.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.ExtractContextDataFromEntity(Poxiao.Lab.Entity.IntermediateDataEntity)">
+            <summary>
+            从中间数据实体提取上下文数据（用于公式计算）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.AddValueIfNotNull(System.Collections.Generic.Dictionary{System.String,System.Object},System.String,System.Object)">
+            <summary>
+            如果值不为null，添加到字典
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.SetIndicatorValue(Poxiao.Lab.Entity.IntermediateDataEntity,System.String,System.Object)">
+            <summary>
+            设置指标值到中间数据实体（使用反射）.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.GetDetectionValues(Poxiao.Lab.Entity.RawDataEntity,System.Collections.Generic.List{System.Int32})">
+            <summary>
+            获取原始数据中指定检测列的值（从detection1-detection22字段读取）.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.SetThicknessValue(Poxiao.Lab.Entity.IntermediateDataEntity,System.Int32,System.Nullable{System.Decimal})">
+            <summary>
+            设置带厚值.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.SetLaminationDistValue(Poxiao.Lab.Entity.IntermediateDataEntity,System.Int32,System.Nullable{System.Decimal})">
+            <summary>
+            设置叠片系数分布值.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.BuildThicknessDistList(Poxiao.Lab.Entity.IntermediateDataEntity)">
+            <summary>
+            构建带厚分布列表.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.BuildLaminationDistList(Poxiao.Lab.Entity.IntermediateDataEntity)">
+            <summary>
+            构建叠片系数分布列表.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.ApplySortRules(System.Collections.Generic.List{Poxiao.Lab.Entity.IntermediateDataEntity},System.Collections.Generic.List{Poxiao.Lab.Entity.Dto.RawData.SortRule})">
+            <summary>
+            应用排序规则.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.ApplySingleFieldSort(System.Collections.Generic.IEnumerable{Poxiao.Lab.Entity.IntermediateDataEntity},System.String,System.Boolean)">
+            <summary>
+            应用单字段排序（首次排序）.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.ApplyThenBy(System.Linq.IOrderedEnumerable{Poxiao.Lab.Entity.IntermediateDataEntity},System.String,System.Boolean)">
+            <summary>
+            应用ThenBy排序.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.IntermediateDataService.ApplyDefaultSort(System.Collections.Generic.List{Poxiao.Lab.Entity.IntermediateDataEntity})">
+            <summary>
+            应用默认排序.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.MagneticDataImportSessionService">
+            <summary>
+            磁性数据导入会话服务
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MagneticDataImportSessionService.Create(Poxiao.Lab.Entity.Dto.MagneticData.MagneticDataImportSessionInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.MagneticDataImportSessionService.Get(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.MagneticDataImportSessionService.UpdateStatus(System.String,System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.MagneticDataImportSessionService.UpdateStep(System.String,System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.MagneticDataImportSessionService.UploadAndParse(System.String,Poxiao.Lab.Entity.Dto.MagneticData.MagneticDataImportSessionInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.MagneticDataImportSessionService.GetReviewData(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.MagneticDataImportSessionService.CompleteImport(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.MagneticDataImportSessionService.CancelImport(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.MagneticDataImportSessionService.ParseExcel(System.Byte[],System.String,Poxiao.Lab.Entity.Config.ExcelTemplateConfig)">
+            <summary>
+            解析Excel文件，根据模板配置读取列
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MagneticDataImportSessionService.GetColumnIndex(Poxiao.Lab.Entity.Config.ExcelTemplateConfig,System.String,System.Collections.Generic.Dictionary{System.String,System.Int32},System.String,System.Int32)">
+            <summary>
+            根据模板配置获取列索引
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MagneticDataImportSessionService.ConvertColumnLetterToIndex(System.String)">
+            <summary>
+            将Excel列字母（如 "A", "B", "H", "AA"）转换为列索引（从0开始）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MagneticDataImportSessionService.ParseMagneticFurnaceNo(System.String,System.Boolean@)">
+            <summary>
+            解析磁性数据炉号
+            格式：(产线数字)(班次汉字)(8位日期)-(炉号)(是否刻痕K)
+            例如：1甲20251101-1, 1甲20251101-1K
+            也支持包含卷号和分卷号的格式，但只提取前面的部分：1丙20260110-1-1-1 -> 1丙20260110-1
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MagneticDataImportSessionService.SelectBestData(System.Collections.Generic.List{Poxiao.Lab.Entity.Dto.MagneticData.MagneticDataImportItem})">
+            <summary>
+            选择最优数据（多条数据时，取值最小优先级H、I、F，最后按检测时间）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MagneticDataImportSessionService.GetCellValue``1(NPOI.SS.UserModel.IRow,System.Int32)">
+            <summary>
+            按列索引获取单元格值
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MagneticDataImportSessionService.SaveParsedDataToFile(System.String,System.Collections.Generic.List{Poxiao.Lab.Entity.Dto.MagneticData.MagneticDataImportItem})">
+            <summary>
+            保存解析后的数据到临时文件
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MagneticDataImportSessionService.LoadParsedDataFromFile(System.String)">
+            <summary>
+            从临时文件加载解析后的数据
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MagneticDataImportSessionService.ConvertShiftToNumeric(System.String)">
+            <summary>
+            将班次汉字转换为数字（用于排序）.
+            甲=1, 乙=2, 丙=3
+            </summary>
+            <param name="shift">班次汉字</param>
+            <returns>班次数字，如果无法识别则返回null</returns>
+        </member>
+        <member name="T:Poxiao.Lab.Service.MagneticRawDataService">
+            <summary>
+            磁性原始数据服务.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MagneticRawDataService.GetList(Poxiao.Lab.Entity.Dto.MagneticData.MagneticRawDataListQuery)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.MagneticRawDataService.Delete(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="T:Poxiao.Lab.Service.MonthlyQualityReportService">
+            <summary>
+            月度质量报表服务实现
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MonthlyQualityReportService.GetReportAsync(Poxiao.Lab.Entity.Dto.MonthlyQualityReport.MonthlyQualityReportQueryDto)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MonthlyQualityReportService.GetSummaryAsync(Poxiao.Lab.Entity.Dto.MonthlyQualityReport.MonthlyQualityReportQueryDto)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MonthlyQualityReportService.GetDetailsAsync(Poxiao.Lab.Entity.Dto.MonthlyQualityReport.MonthlyQualityReportQueryDto)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MonthlyQualityReportService.GetShiftGroupsAsync(Poxiao.Lab.Entity.Dto.MonthlyQualityReport.MonthlyQualityReportQueryDto)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MonthlyQualityReportService.GetQualityTrendAsync(Poxiao.Lab.Entity.Dto.MonthlyQualityReport.MonthlyQualityReportQueryDto)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MonthlyQualityReportService.GetUnqualifiedCategoriesAsync(Poxiao.Lab.Entity.Dto.MonthlyQualityReport.MonthlyQualityReportQueryDto)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MonthlyQualityReportService.GetShiftComparisonAsync(Poxiao.Lab.Entity.Dto.MonthlyQualityReport.MonthlyQualityReportQueryDto)">
+            <inheritdoc/>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MonthlyQualityReportService.GetStatisticLevelsAsync">
+            <summary>
+            获取所有需要统计的等级（FormulaId=Labeling, IsStatistic=true）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MonthlyQualityReportService.GetJudgmentLevelMapAsync">
+            <summary>
+            获取判定等级映射（按Name索引）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MonthlyQualityReportService.CreateDetailDto(System.Nullable{System.DateTime},System.String,System.String,System.String,System.Collections.Generic.List{Poxiao.Lab.Entity.IntermediateDataEntity},System.Collections.Generic.List{Poxiao.Lab.Entity.IntermediateDataJudgmentLevelEntity},System.Collections.Generic.List{Poxiao.Lab.Entity.IntermediateDataJudgmentLevelEntity})">
+            <summary>
+            创建明细行 DTO
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MonthlyQualityReportService.CreateSubtotalDto(System.String,System.String,System.Collections.Generic.List{Poxiao.Lab.Entity.IntermediateDataEntity},System.Collections.Generic.List{Poxiao.Lab.Entity.IntermediateDataJudgmentLevelEntity},System.Collections.Generic.List{Poxiao.Lab.Entity.IntermediateDataJudgmentLevelEntity})">
+            <summary>
+            创建汇总行 DTO（班次小计/月度合计）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MonthlyQualityReportService.CreateShiftGroupDto(System.String,System.String,System.Collections.Generic.List{Poxiao.Lab.Entity.IntermediateDataEntity},System.Collections.Generic.List{Poxiao.Lab.Entity.IntermediateDataJudgmentLevelEntity},System.Boolean,System.String)">
+            <summary>
+            创建班组统计 DTO
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MonthlyQualityReportService.GetColumnsAsync">
+            <inheritdoc/>
+        </member>
+        <member name="M:Poxiao.Lab.Service.MonthlyQualityReportService.ExportExcelAsync(Poxiao.Lab.Entity.Dto.MonthlyQualityReport.MonthlyQualityReportQueryDto)">
+            <summary>
+            导出月度质量报表Excel
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.ProductSpecAttributeService">
+            <summary>
+            产品规格扩展属性服务.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecAttributeService.GetAttributesByProductSpecId(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecAttributeService.SaveAttributes(System.String,System.Collections.Generic.List{Poxiao.Lab.Entity.ProductSpecAttributeEntity})">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecAttributeService.DeleteAttributesByProductSpecId(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="T:Poxiao.Lab.Service.ProductSpecPublicAttributeService">
+            <summary>
+            产品规格公共属性服务.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecPublicAttributeService.GetPublicAttributes">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecPublicAttributeService.Create(Poxiao.Lab.Entity.ProductSpecPublicAttributeEntity)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecPublicAttributeService.Update(System.String,Poxiao.Lab.Entity.ProductSpecPublicAttributeEntity)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecPublicAttributeService.Delete(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecPublicAttributeService.ApplyToAllProducts(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecPublicAttributeService.GetNextSortCodeAsync">
+            <summary>
+            获取下一个可用的排序码
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.ProductSpecService">
+            <summary>
+            产品规格服务.
+            </summary>
+        </member>
+        <member name="F:Poxiao.Lab.Service.ProductSpecService.CachePrefix">
+            <summary>
+            缓存键前缀
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecService.GetCacheKey(System.String)">
+            <summary>
+            获取缓存键（带租户隔离）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecService.GetList(Poxiao.Lab.Entity.Dto.ProductSpec.ProductSpecListQuery)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecService.GetInfo(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecService.Create(Poxiao.Lab.Entity.Dto.ProductSpec.ProductSpecCrInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecService.Update(System.String,Poxiao.Lab.Entity.Dto.ProductSpec.ProductSpecUpInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecService.Delete(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecService.EnsureCoreAttributes(System.Collections.Generic.List{Poxiao.Lab.Entity.ProductSpecAttributeEntity})">
+            <summary>
+            确保核心属性存在
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecService.AddPublicAttributes(System.Collections.Generic.List{Poxiao.Lab.Entity.ProductSpecAttributeEntity})">
+            <summary>
+            添加公共属性到属性列表
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecService.ValidateAttributes(System.Collections.Generic.List{Poxiao.Lab.Entity.ProductSpecAttributeEntity})">
+            <summary>
+            验证扩展属性
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.ProductSpecService.AttributeChangeInfo">
+            <summary>
+            属性变更信息（已废弃，现在由用户手动决定是否创建新版本）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecService.CheckAttributeChanges(System.String,System.Collections.Generic.List{Poxiao.Lab.Entity.ProductSpecAttributeEntity})">
+             <summary>
+             检查扩展属性是否有真正的变更（已废弃，现在由用户手动决定是否创建新版本）
+             版本变更触发条件：
+             1. 属性值（AttributeValue）发生变化 - 影响计算
+             2. 属性单位（Unit）发生变化 - 影响计算
+             3. 属性精度（Precision）发生变化 - 影响计算
+             4. 新增或删除属性 - 影响计算
+            
+             不触发版本变更的情况：
+             1. 只修改属性名称（AttributeName）- 不影响计算
+             2. 只修改排序码（SortCode）- 不影响计算
+             3. 属性值、单位、精度完全相同 - 无实际变更
+             </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecService.ClearCacheAsync(System.String)">
+            <summary>
+            清除产品规格相关缓存
+            </summary>
+            <param name="id">可选的产品规格ID，用于清除特定记录的缓存</param>
+        </member>
+        <member name="T:Poxiao.Lab.Service.ValidationResult">
+            <summary>
+            验证结果
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.ProductSpecVersionService">
+            <summary>
+            产品规格版本管理服务.
+            </summary>
+        </member>
+        <member name="F:Poxiao.Lab.Service.ProductSpecVersionService.CachePrefix">
+            <summary>
+            缓存键前缀
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecVersionService.GetCacheKey(System.String)">
+            <summary>
+            获取缓存键（带租户隔离）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecVersionService.GetCurrentVersionAsync(System.String)">
+            <summary>
+            获取产品规格的当前版本号.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecVersionService.CreateInitialVersionAsync(System.String,System.String)">
+            <summary>
+            创建初始版本（第一次创建产品规格时调用）.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecVersionService.CreateNewVersionAsync(System.String,System.String)">
+            <summary>
+            创建新版本（当扩展信息修改时调用）.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecVersionService.CopyAttributesToNewVersionAsync(System.String,System.Int32,System.Int32)">
+            <summary>
+            复制属性到新版本.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecVersionService.GetAttributesByVersionAsync(System.String,System.Nullable{System.Int32})">
+            <summary>
+            获取指定版本的扩展属性.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecVersionService.GetVersionListAsync(System.String)">
+            <summary>
+            获取所有版本列表.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecVersionService.CompareVersions(System.String,System.Int32,System.Int32)">
+            <summary>
+            对比两个版本的差异.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.ProductSpecVersionService.ClearCacheAsync(System.String)">
+            <summary>
+            清除产品规格版本相关缓存
+            </summary>
+            <param name="productSpecId">产品规格ID</param>
+        </member>
+        <member name="T:Poxiao.Lab.Service.PublicDimensionService">
+            <summary>
+            公共维度服务.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.PublicDimensionService.GetPublicDimensions">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.PublicDimensionService.GetById(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.PublicDimensionService.Create(Poxiao.Lab.Entity.PublicDimensionEntity)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.PublicDimensionService.Update(System.String,Poxiao.Lab.Entity.PublicDimensionEntity)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.PublicDimensionService.Delete(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.PublicDimensionService.GetCurrentVersionAsync(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.PublicDimensionService.CreateNewVersionAsync(System.String,System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.PublicDimensionService.GetVersionListAsync(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.PublicDimensionService.CreateInitialVersionAsync(System.String,System.String)">
+            <summary>
+            创建初始版本（第一次创建维度时调用）.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.PublicDimensionService.GetNextSortCodeAsync">
+            <summary>
+            获取下一个可用的排序码
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.RawDataImportSessionService">
+            <summary>
+            原始数据导入会话服务
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.Create(Poxiao.Lab.Entity.Dto.RawData.RawDataImportSessionInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.Get(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.UpdateStatus(System.String,System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.UpdateStep(System.String,System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.UploadAndParse(Poxiao.Lab.Entity.Dto.RawData.RawDataImportStep1Input)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.GetProductSpecMatches(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.LoadParsedDataFromFile(System.String)">
+            <summary>
+            从JSON文件加载解析后的数据
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.GetStatusText(System.String)">
+            <summary>
+            获取状态文本
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.SaveParsedDataToFile(System.String,System.Collections.Generic.List{Poxiao.Lab.Entity.RawDataEntity})">
+            <summary>
+            保存解析后的数据到JSON文件
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.UpdateProductSpecs(System.String,Poxiao.Lab.Entity.Dto.RawData.RawDataUpdateProductSpecsInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.UpdateDuplicateSelections(System.String,Poxiao.Lab.Entity.Dto.RawData.RawDataUpdateDuplicateSelectionsInput)">
+            <summary>
+            更新重复数据的选择结果（将未选择的数据标记为无效）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.GetFeatureMatches(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.UpdateFeatures(System.String,Poxiao.Lab.Entity.Dto.RawData.RawDataUpdateFeaturesInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.AddToIgnoreDictionary(Poxiao.Lab.Entity.Dto.RawData.AddToIgnoreDictionaryInput)">
+            <summary>
+            添加后缀到忽略词典
+            </summary>
+            <param name="input">输入参数</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.UpdateFeatureCategoryAndLevelFields(Poxiao.Lab.Entity.RawDataEntity,System.Collections.Generic.Dictionary{System.String,Poxiao.Lab.Entity.AppearanceFeatureEntity})">
+            <summary>
+            根据匹配到的特性ID，填充特性大类和等级ID列表
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.ResolveFeatureId(Poxiao.Lab.Entity.Dto.AppearanceFeature.MatchItemOutput,System.Collections.Generic.List{Poxiao.Lab.Entity.AppearanceFeatureEntity},System.Collections.Generic.Dictionary{System.String,System.String},System.Collections.Generic.Dictionary{System.String,System.String})">
+            <summary>
+            根据匹配结果名称解析特性ID
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.GetReviewData(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.GetReviewDataPage(System.String,System.Int32,System.Int32)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.CompleteImport(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.CancelImport(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.GetFurnaceNo(Poxiao.Lab.Entity.RawDataEntity)">
+            <summary>
+            从 RawDataEntity 构建标准炉号。
+            格式：[产线编号][班次字母][8 位日期]-[炉次号]-[卷号]-[子卷号]
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.GetFurnaceNo(Poxiao.Lab.Entity.Dto.RawData.RawDataPreviewItem)">
+            <summary>
+            从 RawDataPreviewItem 构建标准炉号。
+            格式：[产线编号][班次字母][8 位日期]-[炉次号]-[卷号]-[子卷号]
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.CheckDuplicateFurnaceNo(System.Collections.Generic.List{Poxiao.Lab.Entity.RawDataEntity})">
+            <summary>
+            检查炉号在本次导入数据中的重复情况。
+            炉号格式：[产线编号][班次字母][8 位日期]-[炉次号]-[卷号]-[子卷号]
+            只检查符合规则的有效数据，标记为重复但不直接视为失败。
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.CheckDuplicateFurnaceNoForPreview(System.Collections.Generic.List{Poxiao.Lab.Entity.Dto.RawData.RawDataPreviewItem})">
+            <summary>
+            检查炉号在本次导入数据中的重复情况（用于预览界面）。
+            炉号格式：[产线编号][班次字母][8 位日期]-[炉次号]-[卷号]-[子卷号]
+            只检查符合规则的有效数据，标记为重复但不直接视为失败。
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.CheckExistingFurnaceNoInDatabaseForPreview(System.Collections.Generic.List{Poxiao.Lab.Entity.Dto.RawData.RawDataPreviewItem})">
+            <summary>
+            检查数据库中已经存在的炉号（用于预览界面）。
+            如果本次 Excel 导入的炉号在数据库中已经存在，则标记为将被忽略。
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.GenerateLastRowHash(Poxiao.Lab.Entity.RawDataEntity)">
+            <summary>
+            生成单行数据的哈希值（用于增量导入一致性校验）.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.IdentifyProductSpec(Poxiao.Lab.Entity.RawDataEntity,System.Collections.Generic.List{Poxiao.Lab.Entity.ProductSpecEntity})">
+            <summary>
+            识别产品规格。
+            根据原始数据中实际存在的有效检测列，与产品规格配置进行匹配。
+            例如：如果产品规格配置的检测列为 20，实际存在的检测列为 3，那么数据的有效列应为 1-13（第 1-13 列有值，第 14 列开始为空）。
+            判断规则：根据产品规格配置的检测列，检查数据的有效列是否连续匹配（从 1 到检测列都必须有值，检测列 + 1 开始为空）。
+            使用 detection1-detection22 字段进行匹配（默认最多 22 列）。
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.SimpleImport(Poxiao.Lab.Entity.Dto.RawData.SimpleImportInput)">
+            <summary>
+            简化导入：一次性上传、解析并保存，根据炉号去重。
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataImportSessionService.GenerateIntermediateDataForEntities(System.Collections.Generic.List{Poxiao.Lab.Entity.RawDataEntity},System.Collections.Generic.List{Poxiao.Lab.Entity.ProductSpecEntity})">
+            <summary>
+            为原始数据生成中间数据
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.RawDataService">
+            <summary>
+            原始数据服务.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.Preview(Poxiao.Lab.Entity.Dto.RawData.RawDataImportInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.ImportExcel(Poxiao.Lab.Entity.Dto.RawData.RawDataImportInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.GetImportLogList(Poxiao.Infrastructure.Filter.PageInputBase)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.GetList(Poxiao.Lab.Entity.Dto.RawData.RawDataListQuery)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.GetInfo(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.Delete(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.GetHeaderIndexes(NPOI.SS.UserModel.IRow)">
+            <summary>
+            获取表头索引.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.GetCellValue``1(NPOI.SS.UserModel.IRow,System.Collections.Generic.Dictionary{System.String,System.Int32},System.String)">
+            <summary>
+            获取单元格值.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.GetCellValueByIndex``1(NPOI.SS.UserModel.IRow,System.Int32)">
+            <summary>
+            按列索引获取单元格值.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.CheckDuplicateFurnaceNo(System.Collections.Generic.List{Poxiao.Lab.Entity.Dto.RawData.RawDataPreviewItem})">
+            <summary>
+            检查炉号重复（用于预览）.
+            炉号格式：[产线数字][班次汉字][8位日期]-[炉次号]
+            只检查符合规则的有效数据，标记为重复但不直接设为失败，让用户选择保留哪条
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.CheckExistingFurnaceNoInDatabase(System.Collections.Generic.List{Poxiao.Lab.Entity.Dto.RawData.RawDataPreviewItem})">
+            <summary>
+            检查数据库中已存在的炉号（用于预览）.
+            如果本次Excel导入的炉号在数据库中已经存在，标记为将被忽略
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.CheckDuplicateFurnaceNoForImport(System.Collections.Generic.List{Poxiao.Lab.Entity.RawDataEntity},System.Collections.Generic.List{Poxiao.Lab.Entity.Dto.RawData.RawDataImportErrorDetail},System.Collections.Generic.Dictionary{System.String,System.Int32},NPOI.SS.UserModel.ISheet,System.Collections.Generic.Dictionary{Poxiao.Lab.Entity.RawDataEntity,System.Int32})">
+            <summary>
+            检查炉号重复（用于导入）.
+            炉号格式：[产线数字][班次汉字][8位日期]-[炉次号]
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.GetRowData(NPOI.SS.UserModel.IRow,System.Collections.Generic.Dictionary{System.String,System.Int32})">
+            <summary>
+            获取行数据.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.MatchAppearanceFeatures(System.String)">
+            <summary>
+            匹配外观特性（特性汉字匹配）.
+            调用外观特性规则匹配器进行1:n匹配.
+            </summary>
+            <param name="featureSuffix">特性汉字（从炉号解析）</param>
+            <returns>匹配到的特性ID列表</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.SerializeFeatureIds(System.Collections.Generic.List{System.String})">
+            <summary>
+            序列化特性ID列表为JSON字符串.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.DeserializeFeatureIds(System.String)">
+            <summary>
+            反序列化JSON字符串为特性ID列表.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.IdentifyProductSpec(Poxiao.Lab.Entity.RawDataEntity,System.Collections.Generic.List{Poxiao.Lab.Entity.ProductSpecEntity})">
+            <summary>
+            识别产品规格.
+            根据原始数据中实际存在的有效数据列去匹配产品规格配置。
+            例如：如果产品规格120配置的检测列是13，那么数据的有效列应该是1-13（第1-13列有值，第14列开始为空）。
+            判断逻辑：根据产品规格配置的检测列，检查数据的有效列是否正好匹配（从1到检测列都有值，检测列+1开始为空）。
+            使用JSON字段进行匹配（支持动态列数）.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.GenerateErrorReport(System.Collections.Generic.List{Poxiao.Lab.Entity.Dto.RawData.RawDataImportErrorDetail},System.String)">
+            <summary>
+            生成错误报告Excel.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.ApplyMultiFieldSort(System.Collections.Generic.List{Poxiao.Lab.Entity.Dto.RawData.RawDataListOutput},System.Collections.Generic.List{Poxiao.Lab.Entity.Dto.RawData.SortRule})">
+            <summary>
+            应用多字段排序.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.ApplySingleFieldSort(System.Collections.Generic.IEnumerable{Poxiao.Lab.Entity.Dto.RawData.RawDataListOutput},System.String,System.Boolean)">
+            <summary>
+            应用单字段排序（首次排序）.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.ApplyThenBy(System.Linq.IOrderedEnumerable{Poxiao.Lab.Entity.Dto.RawData.RawDataListOutput},System.String,System.Boolean)">
+            <summary>
+            应用ThenBy排序.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.RawDataService.ApplyDefaultSort(System.Collections.Generic.List{Poxiao.Lab.Entity.Dto.RawData.RawDataListOutput})">
+            <summary>
+            应用默认排序.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.RawDataValidationService">
+            <summary>
+            原始数据校验服务
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.ColumnDefinition">
+            <summary>
+            Helper class for defining Excel column properties from JSON configuration.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Lab.Service.UnitCategoryService">
+            <summary>
+            单位维度服务.
+            </summary>
+        </member>
+        <member name="F:Poxiao.Lab.Service.UnitCategoryService.CachePrefix">
+            <summary>
+            缓存键前缀
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.UnitCategoryService.GetCacheKey(System.String)">
+            <summary>
+            获取缓存键（带租户隔离）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.UnitCategoryService.GetList">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.UnitCategoryService.GetInfo(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.UnitCategoryService.Create(Poxiao.Lab.Entity.Dto.Unit.UnitCategoryInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.UnitCategoryService.Update(System.String,Poxiao.Lab.Entity.Dto.Unit.UnitCategoryInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.UnitCategoryService.Delete(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.UnitCategoryService.ClearCacheAsync(System.String)">
+            <summary>
+            清除缓存
+            </summary>
+            <param name="id">可选的ID，用于清除特定记录的缓存</param>
+        </member>
+        <member name="T:Poxiao.Lab.Service.UnitConversionService">
+            <summary>
+            单位换算服务.
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.UnitConversionService.ConvertAsync(Poxiao.Lab.Entity.Dto.Unit.UnitConversionRequestDto)">
+            <summary>
+            单位换算（API 端点）.
+            </summary>
+            <param name="request">换算请求.</param>
+            <returns>换算结果.</returns>
+        </member>
+        <member name="M:Poxiao.Lab.Service.UnitConversionService.ConvertAsync(System.Decimal,System.String,System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.UnitConversionService.GetCategoriesAsync">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.UnitConversionService.GetUnitsByCategoryAsync(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.UnitConversionService.GetAllUnitsGroupedByCategoryAsync">
+            <inheritdoc />
+        </member>
+        <member name="T:Poxiao.Lab.Service.UnitDefinitionService">
+            <summary>
+            单位定义服务.
+            </summary>
+        </member>
+        <member name="F:Poxiao.Lab.Service.UnitDefinitionService.CachePrefix">
+            <summary>
+            缓存键前缀
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.UnitDefinitionService.GetCacheKey(System.String)">
+            <summary>
+            获取缓存键（带租户隔离）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Service.UnitDefinitionService.GetList(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.UnitDefinitionService.GetInfo(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.UnitDefinitionService.Create(Poxiao.Lab.Entity.Dto.Unit.UnitDefinitionInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.UnitDefinitionService.Update(System.String,Poxiao.Lab.Entity.Dto.Unit.UnitDefinitionInput)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.UnitDefinitionService.Delete(System.String)">
+            <inheritdoc />
+        </member>
+        <member name="M:Poxiao.Lab.Service.UnitDefinitionService.RecalculateScaleToBaseForCategoryAsync(System.String,System.String,System.String,System.Decimal)">
+            <summary>
+            当基准单位更换时，重新计算该维度下所有其他单位的换算比例.
+            </summary>
+            <param name="categoryId">维度ID.</param>
+            <param name="newBaseUnitId">新的基准单位ID.</param>
+            <param name="oldBaseUnitId">旧的基准单位ID.</param>
+            <param name="newBaseUnitOldScale">新基准单位原来的换算比例（相对于旧基准单位）.</param>
+        </member>
+        <member name="M:Poxiao.Lab.Service.UnitDefinitionService.ClearCacheAsync(System.String,System.String)">
+            <summary>
+            清除缓存
+            </summary>
+            <param name="categoryId">维度ID，用于清除按维度过滤的列表缓存</param>
+            <param name="id">可选的ID，用于清除特定记录的缓存</param>
+        </member>
+        <member name="T:Poxiao.Lab.Interfaces.IIntermediateDataColorService">
+            <summary>
+            中间数据颜色配置服务接口
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Interfaces.IIntermediateDataColorService.SaveColors(Poxiao.Lab.Entity.Dto.IntermediateData.SaveIntermediateDataColorInput)">
+            <summary>
+            保存颜色配置
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Interfaces.IIntermediateDataColorService.GetColors(Poxiao.Lab.Entity.Dto.IntermediateData.GetIntermediateDataColorInput)">
+            <summary>
+            获取颜色配置
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Interfaces.IIntermediateDataColorService.DeleteColors(Poxiao.Lab.Entity.Dto.IntermediateData.DeleteIntermediateDataColorInput)">
+            <summary>
+            删除颜色配置
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Interfaces.IIntermediateDataColorService.GetColorsByDataIds(System.Collections.Generic.List{System.String},System.String)">
+            <summary>
+            获取指定中间数据的颜色配置（用于批量查询）
+            </summary>
+        </member>
+        <member name="M:Poxiao.Lab.Interfaces.IIntermediateDataColorService.SaveCellColor(System.String,System.String,System.String,System.String)">
+            <summary>
+            保存单个单元格颜色（用于实时保存）
+            </summary>
+        </member>
+        <member name="T:Poxiao.EventHandler.IntermediateDataCalcEventSubscriber">
+            <summary>
+            中间数据公式计算事件订阅
+            </summary>
+        </member>
+    </members>
+</doc>

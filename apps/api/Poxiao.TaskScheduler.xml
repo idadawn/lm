@@ -1,0 +1,150 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Poxiao.TaskScheduler</name>
+    </assembly>
+    <members>
+        <member name="F:Poxiao.TaskScheduler.Listener.ScheduleJob._serviceProvider">
+            <summary>
+            服务提供器.
+            </summary>
+        </member>
+        <member name="M:Poxiao.TaskScheduler.Listener.ScheduleJob.#ctor(System.IServiceProvider)">
+            <summary>
+            构造函数.
+            </summary>
+            <param name="serviceProvider">服务提供器.</param>
+        </member>
+        <member name="M:Poxiao.TaskScheduler.Listener.ScheduleJob.ExecuteAsync(Poxiao.Schedule.JobExecutingContext,System.Threading.CancellationToken)">
+            <summary>
+            程序启动日程推送.
+            </summary>
+            <param name="context"></param>
+            <param name="stoppingToken"></param>
+            <returns></returns>
+        </member>
+        <member name="T:Poxiao.TaskScheduler.Listener.SpareTimeDemo">
+            <summary>
+            本地任务Demo.
+            </summary>
+        </member>
+        <member name="F:Poxiao.TaskScheduler.Listener.SpareTimeDemo._serviceProvider">
+            <summary>
+            服务提供器.
+            </summary>
+        </member>
+        <member name="M:Poxiao.TaskScheduler.Listener.SpareTimeDemo.#ctor(System.IServiceProvider,Microsoft.Extensions.Logging.ILogger{Poxiao.TaskScheduler.Listener.SpareTimeDemo})">
+            <summary>
+            构造函数.
+            </summary>
+            <param name="serviceProvider">服务提供器.</param>
+            <param name="logger">日记</param>
+        </member>
+        <member name="T:Poxiao.TaskScheduler.TimeTaskService">
+            <summary>
+            定时任务
+            版 本：V3.4.7
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2023-07-14
+            数据接口 会手动创建一条持久化任务JobDetails数据
+            本地任务 程序加载时会自动创建一条持久化任务JobDetails数据
+            两者均会根据系统调度设计创建持久化触发器Trigger 数据.
+            </summary>
+        </member>
+        <member name="F:Poxiao.TaskScheduler.TimeTaskService._serviceProvider">
+            <summary>
+            服务提供器.
+            </summary>
+        </member>
+        <member name="M:Poxiao.TaskScheduler.TimeTaskService.#ctor(System.IServiceProvider,SqlSugar.ISqlSugarRepository{Poxiao.TaskScheduler.Entitys.TimeTaskEntity},Poxiao.Infrastructure.Core.Manager.IUserManager,Poxiao.Systems.Interfaces.System.IDataInterfaceService,Poxiao.Infrastructure.Manager.ICacheManager,Poxiao.Schedule.ISchedulerFactory,Poxiao.Infrastructure.Core.Manager.IDataBaseManager,Microsoft.Extensions.Logging.ILogger{Poxiao.TaskScheduler.TimeTaskService})">
+            <summary>
+            初始化一个<see cref="T:Poxiao.TaskScheduler.TimeTaskService"/>类型的新实例.
+            </summary>
+        </member>
+        <member name="M:Poxiao.TaskScheduler.TimeTaskService.GetList(Poxiao.Infrastructure.Filter.PageInputBase)">
+            <summary>
+            列表.
+            </summary>
+            <param name="input">请求参数</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.TaskScheduler.TimeTaskService.GetTaskLogList(Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TaskLogInput,System.String)">
+            <summary>
+            列表（执行记录）.
+            </summary>
+            <param name="input">请求参数.</param>
+            <param name="id">任务Id.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.TaskScheduler.TimeTaskService.GetInfoApi(System.String)">
+            <summary>
+            信息.
+            </summary>
+            <param name="id">主键值.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.TaskScheduler.TimeTaskService.GetTaskMethodSelector">
+            <summary>
+            本地方法.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.TaskScheduler.TimeTaskService.Create(Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskCrInput)">
+            <summary>
+            新建.
+            </summary>
+            <param name="input">实体对象.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.TaskScheduler.TimeTaskService.Update(System.String,Poxiao.TaskScheduler.Entitys.Dto.TaskScheduler.TimeTaskUpInput)">
+            <summary>
+            更新.
+            </summary>
+            <param name="id">主键值</param>
+            <param name="input">实体对象</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.TaskScheduler.TimeTaskService.Delete(System.String)">
+            <summary>
+            删除.
+            </summary>
+            <param name="id">主键值.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.TaskScheduler.TimeTaskService.PerformJob(Poxiao.TaskScheduler.Entitys.TimeTaskEntity)">
+            <summary>
+            根据类型执行任务.
+            </summary>
+            <param name="entity">任务实体.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.TaskScheduler.TimeTaskService.GetInfo(System.String)">
+            <summary>
+            详情.
+            </summary>
+            <param name="id">主键.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.TaskScheduler.TimeTaskService.GetTaskMethods">
+            <summary>
+            获取所有本地任务.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.TaskScheduler.TimeTaskService.ObtainTriggerBuilder(Poxiao.TaskScheduler.Entitys.Model.ContentModel,System.String,System.String,System.Nullable{System.Int32})">
+            <summary>
+            获取作业触发器构建器.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.TaskScheduler.TimeTaskService.ObtainJobDetails(Poxiao.TaskScheduler.Entitys.TimeTaskEntity,System.String)">
+            <summary>
+            获取作业信息.
+            </summary>
+            <param name="entity"></param>
+            <param name="id"></param>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

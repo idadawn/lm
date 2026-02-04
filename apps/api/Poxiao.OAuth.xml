@@ -1,0 +1,653 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Poxiao.OAuth</name>
+    </assembly>
+    <members>
+        <member name="T:Poxiao.OAuth.Dto.CurrentUserModelOutput">
+            <summary>
+            当前用户模型输出.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.CurrentUserModelOutput.moduleList">
+            <summary>
+            菜单权限.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.CurrentUserModelOutput.buttonList">
+            <summary>
+            按钮权限.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.CurrentUserModelOutput.columnList">
+            <summary>
+            列表权限.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.CurrentUserModelOutput.resourceList">
+            <summary>
+            数据权限.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.CurrentUserModelOutput.formList">
+            <summary>
+            表单权限.
+            </summary>
+        </member>
+        <member name="T:Poxiao.OAuth.Dto.CurrentUserOutput">
+            <summary>
+            当前客户信息输出.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.CurrentUserOutput.userInfo">
+            <summary>
+            用户信息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.CurrentUserOutput.menuList">
+            <summary>
+            菜单列表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.CurrentUserOutput.permissionList">
+            <summary>
+            权限列表.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.CurrentUserOutput.sysConfigInfo">
+            <summary>
+            系统配置信息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.CurrentUserOutput.routerList">
+            <summary>
+            系统菜单树.
+            </summary>
+        </member>
+        <member name="T:Poxiao.OAuth.Dto.PermissionModel">
+            <summary>
+            权限.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.PermissionModel.modelId">
+            <summary>
+            模块ID.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.PermissionModel.moduleName">
+            <summary>
+            模块名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.PermissionModel.column">
+            <summary>
+            列.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.PermissionModel.button">
+            <summary>
+            按钮.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.PermissionModel.form">
+            <summary>
+            表单.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.PermissionModel.resource">
+            <summary>
+            资源.
+            </summary>
+        </member>
+        <member name="T:Poxiao.OAuth.Dto.FunctionalAuthorizeBase">
+            <summary>
+            功能权限基类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.FunctionalAuthorizeBase.id">
+            <summary>
+            主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.FunctionalAuthorizeBase.fullName">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.FunctionalAuthorizeBase.enCode">
+            <summary>
+            编码.
+            </summary>
+        </member>
+        <member name="T:Poxiao.OAuth.Dto.FunctionalColumnAuthorizeModel">
+            <summary>
+            功能权限列.
+            </summary>
+        </member>
+        <member name="T:Poxiao.OAuth.Dto.FunctionalButtonAuthorizeModel">
+            <summary>
+            功能权限按钮.
+            </summary>
+        </member>
+        <member name="T:Poxiao.OAuth.Dto.FunctionalFormAuthorizeModel">
+            <summary>
+            功能权限表单.
+            </summary>
+        </member>
+        <member name="T:Poxiao.OAuth.Dto.FunctionalResourceAuthorizeModel">
+            <summary>
+            授权模块资源.
+            </summary>
+        </member>
+        <member name="T:Poxiao.OAuth.Dto.SysConfigInfo">
+            <summary>
+            系统配置信息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.SysConfigInfo.title">
+            <summary>
+            窗口标题.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.SysConfigInfo.sysName">
+            <summary>
+            系统名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.SysConfigInfo.sysVersion">
+            <summary>
+            系统版本.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.SysConfigInfo.loginIcon">
+            <summary>
+            登录图标.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.SysConfigInfo.copyright">
+            <summary>
+            版权信息.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.SysConfigInfo.companyName">
+            <summary>
+            公司名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.SysConfigInfo.navigationIcon">
+            <summary>
+            导航图标.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.SysConfigInfo.logoIcon">
+            <summary>
+            logo图标.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.SysConfigInfo.appIcon">
+            <summary>
+            App图标.
+            </summary>
+        </member>
+        <member name="T:Poxiao.OAuth.Dto.UserAllMenu">
+            <summary>
+            获取登录用户信息返回值.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.UserAllMenu.id">
+            <summary>
+            获取节点id.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.UserAllMenu.parentId">
+            <summary>
+            获取节点父id.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.UserAllMenu.hasChildren">
+            <summary>
+            是否有子级.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.UserAllMenu.fullName">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.UserAllMenu.enCode">
+            <summary>
+            编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.UserAllMenu.icon">
+            <summary>
+            图标.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.UserAllMenu.urlAddress">
+            <summary>
+            菜单地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.UserAllMenu.linkTarget">
+            <summary>
+            链接目标.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.UserAllMenu.children">
+            <summary>
+            子集.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.UserAllMenu.type">
+            <summary>
+            菜单分类【1-类别、2-页面】.
+            </summary>
+        </member>
+        <member name="T:Poxiao.OAuth.Dto.LockScreenInput">
+            <summary>
+            锁屏解锁输入参数.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.LockScreenInput.account">
+            <summary>
+            用户名.
+            </summary>
+            <example>admin</example>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.LockScreenInput.password">
+            <summary>
+            密码.
+            </summary>
+            <example>e10adc3949ba59abbe56e057f20f883e</example>
+        </member>
+        <member name="T:Poxiao.OAuth.Dto.LoginInput">
+            <summary>
+            登录输入参数.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.LoginInput.account">
+            <summary>
+            用户名.
+            </summary>
+            <example>13459475357</example>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.LoginInput.password">
+            <summary>
+            密码.
+            </summary>
+            <example>e10adc3949ba59abbe56e057f20f883e</example>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.LoginInput.code">
+            <summary>
+            验证码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.LoginInput.timestamp">
+            <summary>
+            验证码时间戳.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.LoginInput.origin">
+            <summary>
+            判断是否需要验证码.
+            </summary>
+            <example>password</example>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.LoginInput.socialsOptions">
+            <summary>
+             租户库信息 第三方登录回调.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.LoginInput.isSocialsLoginCallBack">
+            <summary>
+            是否第三方登录回调.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.LoginInput.poxiaoTicket">
+            <summary>
+            未绑定 成功登录后 自动绑定 缓存 Key.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Dto.LoginInput.onlineTicket">
+            <summary>
+            单点登录票据.
+            </summary>
+        </member>
+        <member name="T:Poxiao.OAuth.Model.SysConfigByOAuthModel">
+            <summary>
+            登录时需要的系统配置.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Model.SysConfigByOAuthModel.enableVerificationCode">
+            <summary>
+            是否开启验证码（0：不启用，1：启用）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Model.SysConfigByOAuthModel.lockType">
+            <summary>
+            错误策略（1：账号锁定，2：延时登录）.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Model.SysConfigByOAuthModel.passwordErrorsNumber">
+            <summary>
+            错误密码次数.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Model.SysConfigByOAuthModel.lockTime">
+            <summary>
+            延时登录时间(分钟).
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Model.SysConfigByOAuthModel.whitelistSwitch">
+            <summary>
+            是否开启白名单验证.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Model.SysConfigByOAuthModel.whiteListIp">
+            <summary>
+            白名单.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Model.SysConfigByOAuthModel.tokenTimeout">
+            <summary>
+            超时登出.
+            </summary>
+        </member>
+        <member name="P:Poxiao.OAuth.Model.SysConfigByOAuthModel.singleLogin">
+            <summary>
+            单一登录方式（1：后登录踢出先登录 2：同时登录）.
+            </summary>
+        </member>
+        <member name="T:Poxiao.OAuth.OAuthService">
+            <summary>
+            业务实现：身份认证模块 .
+            </summary>
+        </member>
+        <member name="F:Poxiao.OAuth.OAuthService._oauthOptions">
+            <summary>
+            配置文档.
+            </summary>
+        </member>
+        <member name="F:Poxiao.OAuth.OAuthService._userRepository">
+            <summary>
+            用户仓储.
+            </summary>
+        </member>
+        <member name="F:Poxiao.OAuth.OAuthService._moduleService">
+            <summary>
+            功能模块.
+            </summary>
+        </member>
+        <member name="F:Poxiao.OAuth.OAuthService._moduleButtonService">
+            <summary>
+            功能按钮.
+            </summary>
+        </member>
+        <member name="F:Poxiao.OAuth.OAuthService._columnService">
+            <summary>
+            功能列.
+            </summary>
+        </member>
+        <member name="F:Poxiao.OAuth.OAuthService._moduleDataAuthorizeSchemeService">
+            <summary>
+            功能数据权限计划.
+            </summary>
+        </member>
+        <member name="F:Poxiao.OAuth.OAuthService._formService">
+            <summary>
+            功能表单.
+            </summary>
+        </member>
+        <member name="F:Poxiao.OAuth.OAuthService._sysConfigService">
+            <summary>
+            系统配置.
+            </summary>
+        </member>
+        <member name="F:Poxiao.OAuth.OAuthService._captchaHandler">
+            <summary>
+            验证码处理程序.
+            </summary>
+        </member>
+        <member name="F:Poxiao.OAuth.OAuthService._socialsUserService">
+            <summary>
+            第三方登录.
+            </summary>
+        </member>
+        <member name="F:Poxiao.OAuth.OAuthService._connectionStrings">
+            <summary>
+            数据库配置选项.
+            </summary>
+        </member>
+        <member name="F:Poxiao.OAuth.OAuthService._tenant">
+            <summary>
+            多租户配置选项.
+            </summary>
+        </member>
+        <member name="F:Poxiao.OAuth.OAuthService._httpContextAccessor">
+            <summary>
+            Http上下文.
+            </summary>
+        </member>
+        <member name="F:Poxiao.OAuth.OAuthService._cacheManager">
+            <summary>
+            缓存管理.
+            </summary>
+        </member>
+        <member name="F:Poxiao.OAuth.OAuthService._userManager">
+            <summary>
+            用户管理.
+            </summary>
+        </member>
+        <member name="F:Poxiao.OAuth.OAuthService._eventPublisher">
+            <summary>
+            事件总线.
+            </summary>
+        </member>
+        <member name="F:Poxiao.OAuth.OAuthService._sqlSugarClient">
+            <summary>
+            SqlSugarClient客户端.
+            </summary>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.#ctor(Poxiao.Infrastructure.Captcha.General.IGeneralCaptcha,SqlSugar.ISqlSugarRepository{Poxiao.Systems.Entitys.Permission.UserEntity},Poxiao.Systems.Interfaces.System.IModuleService,Poxiao.Systems.Interfaces.System.IModuleButtonService,Poxiao.Systems.Interfaces.System.IModuleColumnService,Poxiao.Systems.Interfaces.System.IModuleDataAuthorizeSchemeService,Poxiao.Systems.Interfaces.System.IModuleFormService,Poxiao.Systems.Interfaces.System.ISysConfigService,Poxiao.Systems.Interfaces.Permission.ISocialsUserService,Poxiao.Message.Interfaces.IMessageManager,Microsoft.Extensions.Options.IOptions{SqlSugar.ConnectionStringsOptions},Microsoft.Extensions.Options.IOptions{SqlSugar.TenantOptions},SqlSugar.ISqlSugarClient,Microsoft.AspNetCore.Http.IHttpContextAccessor,Poxiao.Infrastructure.Manager.ICacheManager,Poxiao.Infrastructure.Core.Manager.IUserManager,Poxiao.EventBus.IEventPublisher)">
+            <summary>
+            初始化一个<see cref="T:Poxiao.OAuth.OAuthService"/>类型的新实例.
+            </summary>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.GetDefaultConnection">
+            <summary>
+            获取默认数据库连接配置
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.GetCode(System.Int32,System.String)">
+            <summary>
+            获取图形验证码.
+            </summary>
+            <param name="codeLength">验证码长度.</param>
+            <param name="timestamp">时间戳.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.GetConfigCode(System.String)">
+            <summary>
+            首次登录 根据账号获取数据库配置.
+            </summary>
+            <param name="account">账号.</param>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.GetCurrentUser(System.String)">
+            <summary>
+            获取当前登录用户信息.
+            </summary>
+            <param name="type">Web和App</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.Logout(System.String)">
+            <summary>
+            退出.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.Login(Poxiao.OAuth.Dto.LoginInput)">
+            <summary>
+            用户登录.
+            </summary>
+            <param name="input">登录输入参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.LockScreen(Poxiao.OAuth.Dto.LockScreenInput)">
+            <summary>
+            锁屏解锁登录.
+            </summary>
+            <param name="input">登录输入参数.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.LogoutCurrentUser">
+            <summary>
+            注销用户.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.OnlineLogout">
+            <summary>
+            单点登录退出.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.PwdMessage">
+            <summary>
+            密码过期提醒.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.GetCode(System.String)">
+            <summary>
+            获取验证码.
+            </summary>
+            <param name="timestamp">时间戳.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.ExistRoleByApp(System.String)">
+            <summary>
+            判断app用户角色是否存在且有效.
+            </summary>
+            <param name="roleIds"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.UpdateErrorLog(Poxiao.Systems.Entitys.Permission.UserEntity,Poxiao.OAuth.Model.SysConfigByOAuthModel)">
+            <summary>
+            记录密码错误次数.
+            </summary>
+            <param name="entity">用户实体.</param>
+            <param name="sysConfigOutput">系统配置输出.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.GetOnlineUserList(System.String)">
+            <summary>
+            获取在线用户列表.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.SetOnlineUserList(System.Collections.Generic.List{Poxiao.Infrastructure.Models.User.UserOnlineModel},System.String)">
+            <summary>
+            保存在线用户列表.
+            </summary>
+            <param name="onlineList">在线用户列表.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.DelUserInfo(System.String,System.String)">
+            <summary>
+            删除用户登录信息缓存.
+            </summary>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.IsAnyByTenantIdAsync(System.String)">
+            <summary>
+            是否存在租户缓存.
+            </summary>
+            <param name="tenantId">租户id.</param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.GetGlobalTenantCache">
+            <summary>
+            获取全局租户缓存.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.SetGlobalTenantCache(System.Collections.Generic.List{SqlSugar.GlobalTenantCacheModel})">
+            <summary>
+            保存全局租户缓存.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.GetUserAllMenu(System.Collections.Generic.List{Poxiao.Systems.Entitys.Dto.Module.ModuleNodeOutput})">
+            <summary>
+            组装用户所有菜单.
+            </summary>
+            <param name="menuList"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.SocialsLoginCallBack(Poxiao.Systems.Entitys.Model.Permission.SocialsUser.SocialsUserInputModel)">
+            <summary>
+            第三方登录回调.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.SocialsLogin(Poxiao.Systems.Entitys.Model.Permission.SocialsUser.SocialsUserCallBackModel)">
+            <summary>
+            多租户第三方登录回调.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.GetSocialsLoginConfig">
+            <summary>
+            获取登录配置, 是否需要跳转、第三方登录信息.
+            </summary>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.GetTicket">
+            <summary>
+            获取登录票据.
+            </summary>
+            <returns>return {msg:有效期, data:票据}.</returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.GetTicketStatus(System.String)">
+            <summary>
+            检测票据登录状态.
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.LoginByType(System.String,System.Collections.Generic.Dictionary{System.String,System.String})">
+            <summary>
+            单点登录接口.
+            </summary>
+            <param name="input"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.redirectLogin(System.String)">
+            <summary>
+            跳转单点登录页面.
+            </summary>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.loginByCode(System.String,System.String)">
+            <summary>
+            Oauth2登录.
+            </summary>
+            <param name="code"></param>
+            <param name="ticket"></param>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.getAccessToken(System.String)">
+            <summary>
+            获取OAUTH2 AccessToken.
+            </summary>
+            <param name="code"></param>
+            <returns></returns>
+        </member>
+        <member name="M:Poxiao.OAuth.OAuthService.getRemoteInfo(System.String)">
+            <summary>
+            获取用户信息.
+            </summary>
+            <param name="access_token"></param>
+            <returns></returns>
+        </member>
+    </members>
+</doc>

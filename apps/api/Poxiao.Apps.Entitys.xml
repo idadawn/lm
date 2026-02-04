@@ -1,0 +1,352 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Poxiao.Apps.Entitys</name>
+    </assembly>
+    <members>
+        <member name="T:Poxiao.Apps.Entitys.Dto.AppDataCrInput">
+            <summary>
+            App常用数据创建输入.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppDataCrInput.objectType">
+            <summary>
+            应用类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppDataCrInput.objectId">
+            <summary>
+            应用主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppDataCrInput.objectData">
+            <summary>
+            数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppDataListAllOutput.fullName">
+            <summary>
+            菜单名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppDataListAllOutput.icon">
+            <summary>
+            图标.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppDataListAllOutput.urlAddress">
+            <summary>
+            链接地址.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppDataListAllOutput.type">
+            <summary>
+            菜单类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppDataListAllOutput.propertyJson">
+            <summary>
+            扩展字段.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppDataListAllOutput.isData">
+            <summary>
+            是否常用.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Apps.Entitys.Dto.AppDataListOutput">
+             <summary>
+            
+             </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppDataListOutput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppDataListOutput.objectId">
+            <summary>
+            对象id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppDataListOutput.objectData">
+            <summary>
+            数据.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppFlowListAllOutput.fullName">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppFlowListAllOutput.icon">
+            <summary>
+            图标.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppFlowListAllOutput.iconBackground">
+            <summary>
+            图标背景色.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppFlowListAllOutput.formType">
+            <summary>
+            表单类型 1-系统表单、2-动态表单.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppFlowListAllOutput.enCode">
+            <summary>
+            编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppFlowListAllOutput.isData">
+            <summary>
+            是否常用.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Apps.Entitys.Dto.AppMenuListOutput">
+             <summary>
+            
+             </summary>
+        </member>
+        <member name="T:Poxiao.Apps.Entitys.Dto.AppTreeOutput">
+             <summary>
+            
+             </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppTreeOutput.enCode">
+            <summary>
+            编码.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppTreeOutput.fullName">
+            <summary>
+            名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppTreeOutput.formType">
+            <summary>
+            表单类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppTreeOutput.type">
+            <summary>
+            类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppTreeOutput.icon">
+            <summary>
+            图标.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppTreeOutput.category">
+            <summary>
+            分类.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppTreeOutput.iconBackground">
+            <summary>
+            背景色.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppTreeOutput.visibleType">
+            <summary>
+            可见类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppTreeOutput.creatorUser">
+            <summary>
+            创建人.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppTreeOutput.creatorTime">
+            <summary>
+            创建时间.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppTreeOutput.sortCode">
+            <summary>
+            排序.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppTreeOutput.enabledMark">
+            <summary>
+            状态标识.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppTreeOutput.isData">
+            <summary>
+            是否常用.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Apps.Entitys.Dto.AppUserInfoOutput">
+             <summary>
+            
+             </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserInfoOutput.id">
+            <summary>
+            id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserInfoOutput.realName">
+            <summary>
+            用户名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserInfoOutput.organizeName">
+            <summary>
+            部门名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserInfoOutput.account">
+            <summary>
+            账号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserInfoOutput.positionName">
+            <summary>
+            岗位名.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserInfoOutput.telePhone">
+            <summary>
+            电话.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserInfoOutput.landline">
+            <summary>
+            座机号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserInfoOutput.mobilePhone">
+            <summary>
+            手机号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserInfoOutput.headIcon">
+            <summary>
+            头像.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserInfoOutput.email">
+            <summary>
+            邮箱.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Apps.Entitys.Dto.AppUserOutput">
+             <summary>
+            
+             </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserOutput.userId">
+            <summary>
+            用户id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserOutput.userAccount">
+            <summary>
+            用户账号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserOutput.userName">
+            <summary>
+            用户名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserOutput.headIcon">
+            <summary>
+            头像.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserOutput.departmentId">
+            <summary>
+            部门id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserOutput.departmentName">
+            <summary>
+            部门名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserOutput.organizeId">
+            <summary>
+            组织id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserOutput.organizeName">
+            <summary>
+            组织名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserOutput.roleId">
+            <summary>
+            角色id.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserOutput.roleName">
+            <summary>
+            角色名称.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserOutput.positionIds">
+            <summary>
+            岗位.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserOutput.telePhone">
+            <summary>
+            电话.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserOutput.landline">
+            <summary>
+            座机号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserOutput.mobilePhone">
+            <summary>
+            手机号.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserOutput.email">
+            <summary>
+            邮箱.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.Dto.AppUserOutput.manager">
+            <summary>
+            直属主管.
+            </summary>
+        </member>
+        <member name="T:Poxiao.Apps.Entitys.AppDataEntity">
+            <summary>
+            App常用数据
+            版 本：V1.0.0
+            版 权：Poxiao
+            作 者：Poxiao
+            日 期：2021-06-01.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.AppDataEntity.ObjectType">
+            <summary>
+            对象类型.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.AppDataEntity.ObjectId">
+            <summary>
+            对象主键.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.AppDataEntity.ObjectData">
+            <summary>
+            对象json.
+            </summary>
+        </member>
+        <member name="P:Poxiao.Apps.Entitys.AppDataEntity.Description">
+            <summary>
+            描述.
+            </summary>
+        </member>
+    </members>
+</doc>

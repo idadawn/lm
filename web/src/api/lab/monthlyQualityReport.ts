@@ -25,6 +25,10 @@ export interface SummaryData {
     unqualifiedCategories: Record<string, number>;   // { "性能不合": 50 }
     unqualifiedWeight: number;
     unqualifiedRate: number;
+    classAWeight: number;
+    classARate: number;
+    classBWeight: number;
+    classBRate: number;
 }
 
 // 明细行
@@ -38,6 +42,11 @@ export interface DetailRow {
     qualifiedWeight: number;
     qualifiedRate: number;
     unqualifiedCategories: Record<string, number>;   // 不合格分类
+    unqualifiedWeight: number;
+    classAWeight: number;
+    classARate: number;
+    classBWeight: number;
+    classBRate: number;
     isSummaryRow?: boolean;
     summaryType?: string;
 }
@@ -50,6 +59,11 @@ export interface ShiftGroupRow {
     qualifiedCategories: Record<string, LevelStat>;
     qualifiedWeight: number;
     qualifiedRate: number;
+    unqualifiedWeight: number;
+    classAWeight: number;
+    classARate: number;
+    classBWeight: number;
+    classBRate: number;
     isSummaryRow?: boolean;
     summaryType?: string;
 }

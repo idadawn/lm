@@ -17,5 +17,9 @@ public class JudgmentLevelColumnDto
     public QualityStatusEnum QualityStatus { get; set; }
     
     public string Color { get; set; }
-    public int? Priority { get; set; }
+
+    /// <summary>
+    /// 判定权重（优先级）
+    /// </summary>
+    public int Priority { get; set; }
 }

@@ -55,6 +55,31 @@ public class MonthlyQualityReportDetailDto
     public Dictionary<string, decimal> UnqualifiedCategories { get; set; } = new();
 
     /// <summary>
+    /// 不合格重量（kg）
+    /// </summary>
+    public decimal UnqualifiedWeight { get; set; }
+
+    /// <summary>
+    /// A类重量（kg）
+    /// </summary>
+    public decimal ClassAWeight { get; set; }
+
+    /// <summary>
+    /// A类占比（%）
+    /// </summary>
+    public decimal ClassARate { get; set; }
+
+    /// <summary>
+    /// B类重量（kg）
+    /// </summary>
+    public decimal ClassBWeight { get; set; }
+
+    /// <summary>
+    /// B类占比（%）
+    /// </summary>
+    public decimal ClassBRate { get; set; }
+
+    /// <summary>
     /// 是否为汇总行
     /// </summary>
     public bool IsSummaryRow { get; set; }

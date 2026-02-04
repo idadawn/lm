@@ -31,6 +31,11 @@ public class MonthlyQualityReportResponseDto
     public List<UnqualifiedCategoryDto> UnqualifiedCategoryStats { get; set; }
 
     /// <summary>
+    /// 不合格分类统计（别名，与UnqualifiedCategoryStats相同）
+    /// </summary>
+    public List<UnqualifiedCategoryDto> UnqualifiedCategories { get; set; }
+
+    /// <summary>
     /// 班次对比
     /// </summary>
     public List<ShiftComparisonDto> ShiftComparisons { get; set; }

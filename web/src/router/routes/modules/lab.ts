@@ -17,7 +17,7 @@ const lab: AppRouteModule = {
         {
             path: 'dashboard',
             name: 'LabDashboard',
-            component: () => import('/@/views/lab/dashboard/index.vue'),
+            component: () => import('/@/views/lab/monthly-dashboard/index.vue'),
             meta: {
                 title: '生产驾驶舱',
                 affix: true,
@@ -63,6 +63,15 @@ const lab: AppRouteModule = {
             meta: {
                 title: '月度质量报表',
                 icon: 'ant-design:bar-chart-outlined',
+            },
+        },
+        {
+            path: 'monthly-dashboard',
+            name: 'LabMonthlyDashboard',
+            component: () => import('/@/views/lab/monthly-dashboard/index.vue'),
+            meta: {
+                title: '生产驾驶舱',
+                icon: 'ion:grid-outline',
             },
         },
     ],

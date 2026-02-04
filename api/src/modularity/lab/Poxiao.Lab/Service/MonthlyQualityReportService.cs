@@ -110,6 +110,23 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
             unqualifiedCategories[level.Name] = weight;
         }
 
+        // 提取A类和B类数据
+        decimal classAWeight = 0;
+        decimal classBWeight = 0;
+
+        if (qualifiedCategories.ContainsKey("A"))
+        {
+            classAWeight = qualifiedCategories["A"].Weight;
+        }
+
+        if (qualifiedCategories.ContainsKey("B"))
+        {
+            classBWeight = qualifiedCategories["B"].Weight;
+        }
+
+        decimal classARate = totalWeight > 0 ? Math.Round(classAWeight / totalWeight * 100, 2) : 0;
+        decimal classBRate = totalWeight > 0 ? Math.Round(classBWeight / totalWeight * 100, 2) : 0;
+
         return new MonthlyQualityReportSummaryDto
         {
             TotalWeight = totalWeight,
@@ -118,7 +135,11 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
             QualifiedRate = totalWeight > 0 ? Math.Round(qualifiedWeight / totalWeight * 100, 2) : 0,
             UnqualifiedCategories = unqualifiedCategories,
             UnqualifiedWeight = unqualifiedWeight,
-            UnqualifiedRate = totalWeight > 0 ? Math.Round(unqualifiedWeight / totalWeight * 100, 2) : 0
+            UnqualifiedRate = totalWeight > 0 ? Math.Round(unqualifiedWeight / totalWeight * 100, 2) : 0,
+            ClassAWeight = classAWeight,
+            ClassARate = classARate,
+            ClassBWeight = classBWeight,
+            ClassBRate = classBRate
         };
     }
 
@@ -265,8 +286,8 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
                 Date = dateGroup.Key,
                 QualifiedRate = totalWeight > 0 ? Math.Round(qualifiedWeight / totalWeight * 100, 2) : 0,
                 // 为了兼容现有前端，暂时保留这两个字段
-                ClassARate = qualifiedRates.GetValueOrDefault(qualifiedLevels.FirstOrDefault()?.Name ?? "A", 0),
-                ClassBRate = qualifiedRates.GetValueOrDefault(qualifiedLevels.Skip(1).FirstOrDefault()?.Name ?? "B", 0)
+                ClassARate = qualifiedRates.GetValueOrDefault("A", 0),
+                ClassBRate = qualifiedRates.GetValueOrDefault("B", 0)
             });
         }
 
@@ -333,11 +354,10 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
                 .Where(d => qualifiedLevels.Any(l => l.Name == d.Labeling))
                 .Sum(d => d.SingleCoilWeight ?? 0);
 
-            // 取第一个合格等级的占比作为 ClassARate（兼容现有前端）
-            var firstQualifiedLevel = qualifiedLevels.FirstOrDefault();
-            var classAWeight = firstQualifiedLevel != null
-                ? items.Where(d => d.Labeling == firstQualifiedLevel.Name).Sum(d => d.SingleCoilWeight ?? 0)
-                : 0;
+            // 获取A类重量和占比
+            var classAWeight = items
+                .Where(d => d.Labeling == "A")
+                .Sum(d => d.SingleCoilWeight ?? 0);
 
             result.Add(new ShiftComparisonDto
             {
@@ -461,11 +481,19 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
 
         // 不合格分类统计
         var unqualifiedCategories = new Dictionary<string, decimal>();
+        decimal unqualifiedWeight = 0;
         foreach (var level in unqualifiedLevels)
         {
             var weight = items.Where(d => d.Labeling == level.Name).Sum(d => d.SingleCoilWeight ?? 0);
+            unqualifiedWeight += weight;
             unqualifiedCategories[level.Name] = weight;
         }
+
+        // 提取A类和B类数据
+        decimal classAWeight = qualifiedCategories.ContainsKey("A") ? qualifiedCategories["A"].Weight : 0;
+        decimal classBWeight = qualifiedCategories.ContainsKey("B") ? qualifiedCategories["B"].Weight : 0;
+        decimal classARate = totalWeight > 0 ? Math.Round(classAWeight / totalWeight * 100, 2) : 0;
+        decimal classBRate = totalWeight > 0 ? Math.Round(classBWeight / totalWeight * 100, 2) : 0;
 
         return new MonthlyQualityReportDetailDto
         {
@@ -477,7 +505,12 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
             QualifiedCategories = qualifiedCategories,
             QualifiedWeight = qualifiedWeight,
             QualifiedRate = totalWeight > 0 ? Math.Round(qualifiedWeight / totalWeight * 100, 2) : 0,
-            UnqualifiedCategories = unqualifiedCategories
+            UnqualifiedCategories = unqualifiedCategories,
+            UnqualifiedWeight = unqualifiedWeight,
+            ClassAWeight = classAWeight,
+            ClassARate = classARate,
+            ClassBWeight = classBWeight,
+            ClassBRate = classBRate
         };
     }
 
@@ -510,11 +543,19 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
 
         // 不合格分类统计
         var unqualifiedCategories = new Dictionary<string, decimal>();
+        decimal unqualifiedWeight = 0;
         foreach (var level in unqualifiedLevels)
         {
             var weight = items.Where(d => d.Labeling == level.Name).Sum(d => d.SingleCoilWeight ?? 0);
+            unqualifiedWeight += weight;
             unqualifiedCategories[level.Name] = weight;
         }
+
+        // 提取A类和B类数据
+        decimal classAWeight = qualifiedCategories.ContainsKey("A") ? qualifiedCategories["A"].Weight : 0;
+        decimal classBWeight = qualifiedCategories.ContainsKey("B") ? qualifiedCategories["B"].Weight : 0;
+        decimal classARate = totalWeight > 0 ? Math.Round(classAWeight / totalWeight * 100, 2) : 0;
+        decimal classBRate = totalWeight > 0 ? Math.Round(classBWeight / totalWeight * 100, 2) : 0;
 
         return new MonthlyQualityReportDetailDto
         {
@@ -525,6 +566,11 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
             QualifiedWeight = qualifiedWeight,
             QualifiedRate = totalWeight > 0 ? Math.Round(qualifiedWeight / totalWeight * 100, 2) : 0,
             UnqualifiedCategories = unqualifiedCategories,
+            UnqualifiedWeight = unqualifiedWeight,
+            ClassAWeight = classAWeight,
+            ClassARate = classARate,
+            ClassBWeight = classBWeight,
+            ClassBRate = classBRate,
             IsSummaryRow = true,
             SummaryType = summaryType
         };
@@ -558,6 +604,15 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
             };
         }
 
+        // 提取A类和B类数据
+        decimal classAWeight = qualifiedCategories.ContainsKey("A") ? qualifiedCategories["A"].Weight : 0;
+        decimal classBWeight = qualifiedCategories.ContainsKey("B") ? qualifiedCategories["B"].Weight : 0;
+        decimal classARate = totalWeight > 0 ? Math.Round(classAWeight / totalWeight * 100, 2) : 0;
+        decimal classBRate = totalWeight > 0 ? Math.Round(classBWeight / totalWeight * 100, 2) : 0;
+
+        // 计算不合格重量
+        decimal unqualifiedWeight = totalWeight - qualifiedWeight;
+
         return new MonthlyQualityReportShiftGroupDto
         {
             Shift = shift,
@@ -566,6 +621,11 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
             QualifiedCategories = qualifiedCategories,
             QualifiedWeight = qualifiedWeight,
             QualifiedRate = totalWeight > 0 ? Math.Round(qualifiedWeight / totalWeight * 100, 2) : 0,
+            UnqualifiedWeight = unqualifiedWeight,
+            ClassAWeight = classAWeight,
+            ClassARate = classARate,
+            ClassBWeight = classBWeight,
+            ClassBRate = classBRate,
             IsSummaryRow = isSummaryRow,
             SummaryType = summaryType
         };

@@ -90,33 +90,79 @@
   import { useECharts } from '/@/hooks/web/useECharts';
   import { Icon } from '/@/components/Icon';
   import { CountTo } from '/@/components/CountTo';
+  import { getDashboardKpi, type DashboardKpiDto } from '/@/api/lab/dashboard';
+
+  // Props
+  const props = defineProps<{
+    startDate: string;
+    endDate: string;
+  }>();
 
   // KPI数据
-  const qualificationRate = ref(91.2);
-  const trendValue = ref(1.5);
-  const todayOutput = ref(1256);
-  const outputGrowth = ref(3.4);
-  const laminationAvg = ref(89.5);
+  const qualificationRate = ref(0);
+  const trendValue = ref(0);
+  const todayOutput = ref(0);
+  const outputGrowth = ref(0);
+  const laminationAvg = ref(0);
   const targetValue = ref(90.0);
-  const warningCount = ref(3);
+  const warningCount = ref(0);
 
   // 预警列表
-  const warningList = ref([
-    { level: 'high', message: '2号机组-厚度超标' },
-    { level: 'medium', message: '4号机组-划痕检测' },
-    { level: 'high', message: '系统异常-数据延迟' },
-  ]);
+  const warningList = ref<Array<{ level: string; message: string }>>([]);
 
   // 图表引用
   const gaugeChartRef = ref<HTMLDivElement | null>(null);
   const miniTrendChartRef = ref<HTMLDivElement | null>(null);
-  
+
   let gaugeChart: any = null;
   let miniTrendChart: any = null;
+  let laminationTrendData: number[] = [];
+
+  // 获取数据
+  async function fetchData(start?: string, end?: string) {
+    try {
+      const startDate = start || props.startDate;
+      const endDate = end || props.endDate;
+      const data = await getDashboardKpi({ startDate, endDate });
+
+      // 更新KPI数据
+      qualificationRate.value = data.qualifiedRate;
+      todayOutput.value = Math.round(data.totalWeight / 1000); // 转换为吨
+      laminationAvg.value = data.laminationFactorAvg;
+      laminationTrendData = data.laminationFactorTrend || [];
+      warningCount.value = data.warnings.length;
+
+      // 计算趋势
+      if (laminationTrendData.length >= 2) {
+        const lastValue = laminationTrendData[laminationTrendData.length - 1];
+        const prevValue = laminationTrendData[laminationTrendData.length - 2];
+        trendValue.value = Math.round((lastValue - prevValue) * 10) / 10;
+      }
+
+      // 计算产量增长率（模拟）
+      outputGrowth.value = 0;
+
+      // 转换预警数据格式
+      warningList.value = data.warnings.slice(0, 3).map(w => ({
+        level: w.level === 'error' ? 'high' : w.level === 'warning' ? 'medium' : 'low',
+        message: w.message
+      }));
+
+      // 更新图表
+      if (gaugeChart) updateGaugeChart();
+      if (miniTrendChart) updateMiniTrendChart();
+    } catch (error) {
+      console.error('获取KPI数据失败:', error);
+    }
+  }
+
+  // 暴露给父组件的方法
+  defineExpose({ fetchData });
 
   onMounted(() => {
     initGaugeChart();
     initMiniTrendChart();
+    fetchData();
   });
 
   onUnmounted(() => {
@@ -131,9 +177,10 @@
   // 初始化仪表盘图表
   function initGaugeChart() {
     if (!gaugeChartRef.value) return;
-    
+
     const { setOptions, echarts } = useECharts(gaugeChartRef);
-    
+    gaugeChart = echarts;
+
     const option = {
       series: [
         {
@@ -148,7 +195,7 @@
             roundCap: true,
             clip: false,
             itemStyle: {
-              color: '#52c41a',
+              color: qualificationRate.value >= 90 ? '#52c41a' : '#faad14',
             },
           },
           axisLine: {
@@ -162,7 +209,7 @@
           axisLabel: { show: false },
           data: [
             {
-              value: qualificationRate.value,
+              value: qualificationRate.value || 0,
               name: '合格率',
             },
           ],
@@ -170,16 +217,41 @@
         },
       ],
     };
-    
+
     setOptions(option);
+  }
+
+  // 更新仪表盘图表
+  function updateGaugeChart() {
+    if (!gaugeChart) return;
+
+    const option = {
+      series: [
+        {
+          progress: {
+            itemStyle: {
+              color: qualificationRate.value >= 90 ? '#52c41a' : '#faad14',
+            },
+          },
+          data: [
+            {
+              value: qualificationRate.value,
+            },
+          ],
+        },
+      ],
+    };
+
+    gaugeChart.setOption(option);
   }
 
   // 初始化迷你趋势图
   function initMiniTrendChart() {
     if (!miniTrendChartRef.value) return;
-    
-    const { setOptions } = useECharts(miniTrendChartRef);
-    
+
+    const { setOptions, echarts } = useECharts(miniTrendChartRef);
+    miniTrendChart = echarts;
+
     const option = {
       grid: {
         left: 0,
@@ -190,17 +262,25 @@
       xAxis: {
         type: 'category',
         show: false,
-        data: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        data: laminationTrendData.length > 0
+          ? laminationTrendData.map((_, i) => i)
+          : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
       },
       yAxis: {
         type: 'value',
         show: false,
-        min: 88,
-        max: 92,
+        min: (data) => {
+          const min = Math.min(...data);
+          return Math.floor(min - 1);
+        },
+        max: (data) => {
+          const max = Math.max(...data);
+          return Math.ceil(max + 1);
+        },
       },
       series: [
         {
-          data: [89.2, 89.8, 89.5, 89.7, 89.9, 89.6, 89.5],
+          data: laminationTrendData.length > 0 ? laminationTrendData : [89.5],
           type: 'line',
           smooth: true,
           symbol: 'none',
@@ -224,8 +304,38 @@
         },
       ],
     };
-    
+
     setOptions(option);
+  }
+
+  // 更新迷你趋势图
+  function updateMiniTrendChart() {
+    if (!miniTrendChart) return;
+
+    const option = {
+      xAxis: {
+        data: laminationTrendData.length > 0
+          ? laminationTrendData.map((_, i) => i)
+          : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      },
+      yAxis: {
+        min: (data) => {
+          const min = Math.min(...laminationTrendData);
+          return min > 0 ? Math.floor(min - 1) : 88;
+        },
+        max: (data) => {
+          const max = Math.max(...laminationTrendData);
+          return max > 0 ? Math.ceil(max + 1) : 92;
+        },
+      },
+      series: [
+        {
+          data: laminationTrendData.length > 0 ? laminationTrendData : [89.5],
+        },
+      ],
+    };
+
+    miniTrendChart.setOption(option);
   }
 </script>
 

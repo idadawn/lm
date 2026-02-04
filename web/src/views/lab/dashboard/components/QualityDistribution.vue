@@ -18,26 +18,66 @@
 <script lang="ts" setup>
   import { ref, onMounted, onUnmounted } from 'vue';
   import { useECharts } from '/@/hooks/web/useECharts';
+  import { getQualityDistribution, type QualityDistributionDto } from '/@/api/lab/dashboard';
+
+  // Props
+  const props = defineProps<{
+    startDate: string;
+    endDate: string;
+  }>();
 
   const chartRef = ref<HTMLDivElement | null>(null);
-  const totalCount = ref(1379);
+  const totalCount = ref(0);
 
   // 质量分布数据
-  const qualityData = [
-    { name: 'A级', value: 1257, percentage: 91.2, color: '#52c41a' },
-    { name: 'B级', value: 76, percentage: 5.5, color: '#fadb14' },
-    { name: '性能不合', value: 29, percentage: 2.1, color: '#fa8c16' },
-    { name: '其他不合', value: 17, percentage: 1.2, color: '#f5222d' },
-  ];
+  const qualityData = ref<Array<{ name: string; value: number; percentage: number; color: string }>>([]);
+  let chartInstance: any = null;
+
+  // 获取数据
+  async function fetchData(start?: string, end?: string) {
+    try {
+      const startDate = start || props.startDate;
+      const endDate = end || props.endDate;
+      const data = await getQualityDistribution({ startDate, endDate });
+
+      // 更新数据
+      qualityData.value = data.map(item => ({
+        name: item.category,
+        value: item.count,
+        percentage: item.rate,
+        color: item.color || '#8c8c8c',
+      }));
+
+      totalCount.value = data.reduce((sum, item) => sum + item.count, 0);
+
+      // 更新图表
+      if (chartInstance) {
+        updateChart();
+      }
+    } catch (error) {
+      console.error('获取质量分布数据失败:', error);
+    }
+  }
+
+  // 暴露给父组件的方法
+  defineExpose({ fetchData });
 
   onMounted(() => {
     initChart();
+    fetchData();
+  });
+
+  onUnmounted(() => {
+    if (chartInstance) {
+      chartInstance.dispose();
+    }
   });
 
   function initChart() {
     if (!chartRef.value) return;
 
-    const { setOptions } = useECharts(chartRef);
+    const { setOptions, echarts } = useECharts(chartRef);
+    chartInstance = echarts;
 
     const option = {
       tooltip: {
@@ -54,6 +94,12 @@
         textStyle: {
           fontSize: 13,
           color: '#666',
+        },
+        formatter: (name: string) => {
+          const item = qualityData.value.find(d => d.name === name);
+          return `{name|${name}} {percent|${item?.percentage || 0}%}`;
+        },
+        textStyle: {
           rich: {
             name: {
               fontSize: 13,
@@ -65,10 +111,6 @@
               color: '#999',
             },
           },
-        },
-        formatter: (name: string) => {
-          const item = qualityData.find(d => d.name === name);
-          return `{name|${name}} {percent|${item?.percentage}%}`;
         },
       },
       series: [
@@ -107,7 +149,7 @@
               shadowColor: 'rgba(0, 0, 0, 0.2)',
             },
           },
-          data: qualityData.map(item => ({
+          data: qualityData.value.map(item => ({
             name: item.name,
             value: item.value,
             itemStyle: { color: item.color },
@@ -117,6 +159,30 @@
     };
 
     setOptions(option);
+  }
+
+  function updateChart() {
+    if (!chartInstance) return;
+
+    const option = {
+      legend: {
+        formatter: (name: string) => {
+          const item = qualityData.value.find(d => d.name === name);
+          return `{name|${name}} {percent|${item?.percentage || 0}%}`;
+        },
+      },
+      series: [
+        {
+          data: qualityData.value.map(item => ({
+            name: item.name,
+            value: item.value,
+            itemStyle: { color: item.color },
+          })),
+        },
+      ],
+    };
+
+    chartInstance.setOption(option);
   }
 </script>
 

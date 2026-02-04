@@ -10,28 +10,63 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, onMounted } from 'vue';
+  import { ref, onMounted, onUnmounted } from 'vue';
   import { useECharts } from '/@/hooks/web/useECharts';
+  import { getDefectTop5, type DefectTopData } from '/@/api/lab/dashboard';
+
+  // Props
+  const props = defineProps<{
+    startDate: string;
+    endDate: string;
+  }>();
 
   const chartRef = ref<HTMLDivElement | null>(null);
 
   // 缺陷数据
-  const defectData = [
-    { name: '划痕', value: 320 },
-    { name: '麻点', value: 256 },
-    { name: '毛边', value: 180 },
-    { name: '亮线', value: 110 },
-    { name: '网眼', value: 74 },
-  ];
+  const defectData = ref<Array<{ name: string; value: number }>>([]);
+  let chartInstance: any = null;
+
+  // 获取数据
+  async function fetchData(start?: string, end?: string) {
+    try {
+      const startDate = start || props.startDate;
+      const endDate = end || props.endDate;
+      const data = await getDefectTop5({ startDate, endDate });
+
+      // 更新数据
+      defectData.value = data.map(item => ({
+        name: item.category,
+        value: item.count,
+      }));
+
+      // 更新图表
+      if (chartInstance) {
+        updateChart();
+      }
+    } catch (error) {
+      console.error('获取缺陷Top5数据失败:', error);
+    }
+  }
+
+  // 暴露给父组件的方法
+  defineExpose({ fetchData });
 
   onMounted(() => {
     initChart();
+    fetchData();
+  });
+
+  onUnmounted(() => {
+    if (chartInstance) {
+      chartInstance.dispose();
+    }
   });
 
   function initChart() {
     if (!chartRef.value) return;
 
-    const { setOptions } = useECharts(chartRef);
+    const { setOptions, echarts } = useECharts(chartRef);
+    chartInstance = echarts;
 
     const option = {
       tooltip: {
@@ -67,7 +102,7 @@
       },
       yAxis: {
         type: 'category',
-        data: defectData.map(item => item.name).reverse(),
+        data: defectData.value.map(item => item.name).reverse(),
         axisLine: { show: false },
         axisTick: { show: false },
         axisLabel: {
@@ -79,7 +114,7 @@
         {
           name: '缺陷次数',
           type: 'bar',
-          data: defectData.map(item => item.value).reverse(),
+          data: defectData.value.map(item => item.value).reverse(),
           barWidth: 16,
           itemStyle: {
             borderRadius: [0, 8, 8, 0],
@@ -122,6 +157,23 @@
     };
 
     setOptions(option);
+  }
+
+  function updateChart() {
+    if (!chartInstance) return;
+
+    const option = {
+      yAxis: {
+        data: defectData.value.map(item => item.name).reverse(),
+      },
+      series: [
+        {
+          data: defectData.value.map(item => item.value).reverse(),
+        },
+      ],
+    };
+
+    chartInstance.setOption(option);
   }
 </script>
 

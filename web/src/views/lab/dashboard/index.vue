@@ -20,33 +20,32 @@
     </div>
 
     <!-- KPI卡片区 -->
-    <KpiCards ref="kpiCardsRef" />
+    <KpiCards ref="kpiCardsRef" :start-date="dateRange[0].format('YYYY-MM-DD')" :end-date="dateRange[1].format('YYYY-MM-DD')" />
 
     <!-- 图表区域 - 第一行 -->
     <div class="chart-row">
       <div class="chart-col-3">
-        <QualityDistribution ref="qualityRef" />
+        <QualityDistribution ref="qualityRef" :start-date="dateRange[0].format('YYYY-MM-DD')" :end-date="dateRange[1].format('YYYY-MM-DD')" />
       </div>
       <div class="chart-col-3">
-        <LaminationTrend ref="laminationRef" />
+        <LaminationTrend ref="laminationRef" :start-date="dateRange[0].format('YYYY-MM-DD')" :end-date="dateRange[1].format('YYYY-MM-DD')" />
       </div>
       <div class="chart-col-3">
-        <DefectTop5 ref="defectRef" />
+        <DefectTop5 ref="defectRef" :start-date="dateRange[0].format('YYYY-MM-DD')" :end-date="dateRange[1].format('YYYY-MM-DD')" />
       </div>
     </div>
 
     <!-- 图表区域 - 第二行 -->
     <div class="chart-row">
       <div class="chart-col-2">
-        <ProductionHeatmap ref="heatmapRef" />
+        <ProductionHeatmap ref="heatmapRef" :start-date="dateRange[0].format('YYYY-MM-DD')" :end-date="dateRange[1].format('YYYY-MM-DD')" />
       </div>
       <div class="chart-col-2">
-        <ThicknessCorrelation ref="correlationRef" />
+        <ThicknessCorrelation ref="correlationRef" :start-date="dateRange[0].format('YYYY-MM-DD')" :end-date="dateRange[1].format('YYYY-MM-DD')" />
       </div>
     </div>
 
-    <!-- AI助手 -->
-    <AiAssistant />
+    <!-- AI助手已移除 -->
   </div>
 </template>
 
@@ -63,7 +62,6 @@
   import DefectTop5 from './components/DefectTop5.vue';
   import ProductionHeatmap from './components/ProductionHeatmap.vue';
   import ThicknessCorrelation from './components/ThicknessCorrelation.vue';
-  import AiAssistant from './components/AiAssistant.vue';
 
   const { createMessage } = useMessage();
 
@@ -90,19 +88,22 @@
   // 日期范围变化
   function onDateRangeChange(dates: RangeValue | null) {
     if (dates) {
-      createMessage.success(`日期范围: ${dates[0].format('YYYY-MM-DD')} 至 ${dates[1].format('YYYY-MM-DD')}`);
       refreshData();
     }
   }
 
   // 刷新数据
   function refreshData() {
-    createMessage.loading('数据刷新中...', 1);
-    
-    // 模拟数据刷新
-    setTimeout(() => {
-      createMessage.success('数据已更新');
-    }, 1000);
+    const startDate = dateRange.value[0].format('YYYY-MM-DD');
+    const endDate = dateRange.value[1].format('YYYY-MM-DD');
+
+    // 调用所有子组件的刷新方法
+    kpiCardsRef.value?.fetchData?.(startDate, endDate);
+    qualityRef.value?.fetchData?.(startDate, endDate);
+    laminationRef.value?.fetchData?.(startDate, endDate);
+    defectRef.value?.fetchData?.(startDate, endDate);
+    heatmapRef.value?.fetchData?.(startDate, endDate);
+    correlationRef.value?.fetchData?.(startDate, endDate);
   }
 </script>
 

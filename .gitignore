@@ -1,4 +1,4 @@
-# Dependencies
+﻿# Dependencies
 node_modules/
 .pnpm-store/
 
@@ -319,3 +319,8 @@ _local
 # -------------------------------------------------------------------------
 codeTemp
 TemporaryFile/
+
+
+# Apps deployment directories
+apps/web/
+apps/api/

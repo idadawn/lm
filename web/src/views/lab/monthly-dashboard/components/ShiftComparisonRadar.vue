@@ -10,29 +10,46 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted, type Ref } from 'vue';
 import { useECharts } from '/@/hooks/web/useECharts';
-import type { ShiftComparison } from '/@/api/lab/monthlyQualityReport';
+import type { ShiftComparison, JudgmentLevelColumn } from '/@/api/lab/monthlyQualityReport';
 
 interface Props {
   data?: ShiftComparison[] | null;
   loading?: boolean;
+  qualifiedColumns?: JudgmentLevelColumn[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
+  qualifiedColumns: () => [],
 });
 
 const chartRef = ref<HTMLDivElement | null>(null);
 let setChartOptions: ((option: any) => void) | null = null;
-let chartEchartsInst: any = null;
+
+// 颜色池
+const colors = ['#42e695', '#4facfe', '#ff9a9e', '#fa709a', '#8ec5fc'];
+
+// 获取某个等级的占比数据
+function getCategoryRate(shift: ShiftComparison, colCode: string): number {
+  // 尝试从动态字段获取
+  const dynamicField = `class${colCode}Rate`;
+  if ((shift as any)[dynamicField] !== undefined) {
+    return Number((shift as any)[dynamicField]) || 0;
+  }
+  // 兼容旧字段
+  if (colCode === 'A' && (shift as any).classARate !== undefined) {
+    return Number(shift.classARate) || 0;
+  }
+  return 0;
+}
 
 function initChart() {
   if (!chartRef.value) return;
 
-  const { setOptions, echarts } = useECharts(chartRef.value);
+  const { setOptions } = useECharts(chartRef as Ref<HTMLDivElement>);
   setChartOptions = setOptions;
-  chartEchartsInst = echarts;
 
   updateChart();
 }
@@ -41,34 +58,55 @@ function updateChart() {
   if (!setChartOptions || !props.data) return;
 
   const shifts = props.data;
+  console.log('ShiftComparisonRadar data:', shifts); // Debug logging
+
+  // 动态构建指标：总产量、合格率，以及所有合格等级
   const indicators = [
     { name: '总产量', max: 0 },
     { name: '合格率', max: 100 },
-    { name: 'A类占比', max: 100 },
-    { name: 'B类占比', max: 100 },
   ];
 
-  // Calculate max for production weight
-  const maxWeight = Math.max(...shifts.map((s) => s.totalWeight || 0)) * 1.2;
+  // 根据合格等级列动态添加指标
+  for (const col of props.qualifiedColumns) {
+    indicators.push({ name: `${col.name}占比`, max: 100 });
+  }
+
+  // 计算总产量的最大值
+  const weights = shifts.map((s) => s.totalWeight || 0);
+  const maxVal = weights.length > 0 ? Math.max(...weights) : 0;
+  const maxWeight = maxVal > 0 ? maxVal * 1.2 : 100;
   indicators[0].max = maxWeight;
 
-  const series = shifts.map((shift) => ({
-    value: [
+  // 构建系列数据
+  const series = shifts.map((shift) => {
+    const value = [
       shift.totalWeight || 0,
       shift.qualifiedRate || 0,
-      shift.classARate || 0,
-      shift.classBRate || 0,
-    ],
-    name: shift.shift,
-  }));
+    ];
+
+    // 动态添加各等级占比数据
+    for (const col of props.qualifiedColumns) {
+      value.push(getCategoryRate(shift, col.code));
+    }
+
+    return {
+      value,
+      name: shift.shift,
+    };
+  });
 
   const option = {
     tooltip: {
       trigger: 'item',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#f0f2f5',
+      textStyle: { color: '#262626' },
     },
     legend: {
       data: shifts.map((s) => s.shift),
-      bottom: 10,
+      bottom: 0,
+      icon: 'circle',
+      textStyle: { color: '#666' }
     },
     radar: {
       indicator: indicators,
@@ -78,13 +116,16 @@ function updateChart() {
       axisName: {
         color: '#666',
         fontSize: 12,
+        fontWeight: 500
       },
       splitLine: {
         lineStyle: { color: '#e8e8e8' },
       },
       splitArea: {
         show: true,
-        areaStyle: { color: ['rgba(24, 144, 255, 0.05)', 'rgba(24, 144, 255, 0.1)'] },
+        areaStyle: {
+          color: ['rgba(245, 247, 250, 1)', 'rgba(255, 255, 255, 1)']
+        },
       },
       axisLine: {
         lineStyle: { color: '#e8e8e8' },
@@ -93,10 +134,13 @@ function updateChart() {
     series: [
       {
         type: 'radar',
-        data: series,
+        data: series.map((item, index) => ({
+          ...item,
+          itemStyle: { color: colors[index % colors.length] },
+          areaStyle: { opacity: 0.3 }
+        })),
         symbol: 'circle',
         symbolSize: 6,
-        areaStyle: { opacity: 0.2 },
       },
     ],
   };
@@ -118,33 +162,46 @@ onMounted(() => {
   initChart();
 });
 
-onUnmounted(() => {
-  if (setChartOptions) {
-    chartEchartsInst.dispose();
-  }
-});
+
 </script>
 
 <style lang="less" scoped>
 .chart-card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   height: 100%;
   display: flex;
   flex-direction: column;
+  transition: all 0.3s;
+  border: 1px solid rgba(0, 0, 0, 0.02);
+
+  &:hover {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  }
 }
 
 .chart-header {
-  margin-bottom: 12px;
+  margin-bottom: 20px;
 }
 
 .chart-title {
   font-size: 16px;
   font-weight: 600;
-  color: #262626;
+  color: #2d3748;
   margin: 0;
+  display: flex;
+  align-items: center;
+
+  &::before {
+    content: '';
+    width: 4px;
+    height: 16px;
+    background: #4facfe;
+    border-radius: 2px;
+    margin-right: 8px;
+  }
 }
 
 .chart-body {

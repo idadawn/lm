@@ -102,21 +102,30 @@
   // 一键分析
   const handleAnalysisFast = async () => {
     const btn = document.getElementById('fastgpt-chatbot-button');
+    const iframe = document.getElementById('fastgpt-chatbot-window') as HTMLIFrameElement | null;
+    
+    if (!iframe || !btn) {
+       console.warn('FastGPT chatbot elements not found.');
+       return;
+    }
 
-    const iframe = document.getElementById('fastgpt-chatbot-window');
-    const childWindow = document.getElementById('fastgpt-chatbot-window').contentWindow;
+    const childWindow = iframe.contentWindow;
     const style = window.getComputedStyle(iframe);
     const visibility = style.getPropertyValue('visibility');
     if (visibility === 'hidden') {
       btn.click();
     }
-    childWindow.postMessage(
-      {
-        type: 'sendPrompt',
-        text: '标准钢坏重量W=2532kg、标准钢坏长度L=11821mm，上一次估计的真实重量West=2533kg，以及上一次切割时的切割长度Length=11827，以及称所称出的对应重量Weight=2534kg',
-      },
-      '*',
-    );
+    if (childWindow) {
+      childWindow.postMessage(
+        {
+          type: 'sendPrompt',
+          text: '标准钢坏重量W=2532kg、标准钢坏长度L=11821mm，上一次估计的真实重量West=2533kg，以及上一次切割时的切割长度Length=11827，以及称所称出的对应重量Weight=2534kg',
+        },
+        '*',
+      );
+    } else {
+      console.warn('FastGPT chatbot window not found or not ready.');
+    }
   };
 
   const handleAnalysis = async () => {

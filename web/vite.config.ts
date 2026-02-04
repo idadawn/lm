@@ -82,15 +82,24 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       // Turning off reportCompressedSize display can slightly reduce packaging time
       reportCompressedSize: false,
       chunkSizeWarningLimit: 2000,
+      // Enable parallel processing
+      emptyOutDir: true,
+      // Optimize chunk splitting
       rollupOptions: {
         input: {
           index: pathResolve('index.html'),
         },
-        // 静态资源分类打包
         output: {
           chunkFileNames: 'static/js/[name]-[hash].js',
           entryFileNames: 'static/js/[name]-[hash].js',
           assetFileNames: 'static/[ext]/[name]-[hash].[ext]',
+          // Optimize manual chunks for better caching
+          manualChunks: {
+            vendor: ['vue', 'vue-router', 'pinia'],
+            antd: ['ant-design-vue'],
+            echarts: ['echarts'],
+            monaco: ['monaco-editor'],
+          },
         },
       },
     },

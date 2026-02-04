@@ -109,6 +109,11 @@ public class ShiftComparisonDto
     /// A类占比 (%).
     /// </summary>
     public decimal ClassARate { get; set; }
+
+    /// <summary>
+    /// B类占比 (%).
+    /// </summary>
+    public decimal ClassBRate { get; set; }
 }
 
 /// <summary>

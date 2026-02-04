@@ -10,7 +10,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted, type Ref } from 'vue';
 import { useECharts } from '/@/hooks/web/useECharts';
 import type { DetailRow } from '/@/api/lab/monthlyQualityReport';
 import dayjs from 'dayjs';
@@ -26,14 +26,12 @@ const props = withDefaults(defineProps<Props>(), {
 
 const chartRef = ref<HTMLDivElement | null>(null);
 let setChartOptions: ((option: any) => void) | null = null;
-let chartEchartsInst: any = null;
 
 function initChart() {
   if (!chartRef.value) return;
 
-  const { setOptions, echarts } = useECharts(chartRef.value);
+  const { setOptions } = useECharts(chartRef as Ref<HTMLDivElement>);
   setChartOptions = setOptions;
-  chartEchartsInst = echarts;
 
   updateChart();
 }
@@ -44,7 +42,10 @@ function updateChart() {
   // Group by date and shift, calculate qualified rate
   const dataMap = new Map<string, { date: string; shift: string; rate: number; count: number }>();
 
-  const shifts = ['甲', '乙', '丙'];
+  // 动态获取所有唯一的班次
+  const allShifts = [...new Set(props.details.map((d) => d.shift).filter(Boolean))];
+  const shifts = allShifts.length > 0 ? allShifts : ['甲', '乙', '丙'];
+
   const dates = [...new Set(props.details.map((d) => d.prodDate).filter(Boolean))].sort();
 
   for (const detail of props.details) {
@@ -157,11 +158,7 @@ onMounted(() => {
   initChart();
 });
 
-onUnmounted(() => {
-  if (setChartOptions) {
-    chartEchartsInst.dispose();
-  }
-});
+
 </script>
 
 <style lang="less" scoped>

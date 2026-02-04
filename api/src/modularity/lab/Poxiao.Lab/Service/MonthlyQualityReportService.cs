@@ -359,12 +359,18 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
                 .Where(d => d.Labeling == "A")
                 .Sum(d => d.SingleCoilWeight ?? 0);
 
+            // 获取B类重量和占比
+            var classBWeight = items
+                .Where(d => d.Labeling == "B")
+                .Sum(d => d.SingleCoilWeight ?? 0);
+
             result.Add(new ShiftComparisonDto
             {
                 Shift = shiftGroup.Key ?? "未知",
                 TotalWeight = totalWeight,
                 QualifiedRate = totalWeight > 0 ? Math.Round(qualifiedWeight / totalWeight * 100, 2) : 0,
-                ClassARate = totalWeight > 0 ? Math.Round(classAWeight / totalWeight * 100, 2) : 0
+                ClassARate = totalWeight > 0 ? Math.Round(classAWeight / totalWeight * 100, 2) : 0,
+                ClassBRate = totalWeight > 0 ? Math.Round(classBWeight / totalWeight * 100, 2) : 0
             });
         }
 

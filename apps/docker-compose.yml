@@ -20,6 +20,9 @@ services:
       - ${DEPLOY_DIR:-./deploy}/api/logs:/app/logs
       - ${DEPLOY_DIR:-./deploy}/api/uploads:/app/uploads
       - ${DEPLOY_DIR:-./deploy}/api/Configurations:/app/Configurations
+      - ${DEPLOY_DIR:-./deploy}/api/wwwroot:/app/wwwroot
+      - ${DEPLOY_DIR:-./deploy}/api/resources/:/app/resources/
+      - ${DEPLOY_DIR:-./deploy}/api/lib/:/app/lib/
     networks:
       - lm-apps-network
       - lm-infra-network

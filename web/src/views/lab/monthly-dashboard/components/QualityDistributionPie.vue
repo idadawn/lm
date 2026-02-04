@@ -10,29 +10,36 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted, type Ref } from 'vue';
 import { useECharts } from '/@/hooks/web/useECharts';
-import type { SummaryData } from '/@/api/lab/monthlyQualityReport';
+import type { SummaryData, JudgmentLevelColumn } from '/@/api/lab/monthlyQualityReport';
 
 interface Props {
   summary?: SummaryData | null;
   loading?: boolean;
+  qualifiedColumns?: JudgmentLevelColumn[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
+  qualifiedColumns: () => [],
 });
+
+// 预定义颜色池
+const qualifiedColors = [
+  '#42e695', '#4facfe', '#fa709a', '#8ec5fc',
+  '#a8edea', '#fed6e3', '#c1dfc4', '#deecf9'
+];
+const unqualifiedColors = ['#ff9a9e', '#fecfef', '#ff7875', '#ff9c6e', '#ffc069'];
 
 const chartRef = ref<HTMLDivElement | null>(null);
 let setChartOptions: ((option: any) => void) | null = null;
-let chartEchartsInst: any = null;
 
 function initChart() {
   if (!chartRef.value) return;
 
-  const { setOptions, echarts } = useECharts(chartRef.value);
+  const { setOptions } = useECharts(chartRef as Ref<HTMLDivElement>);
   setChartOptions = setOptions;
-  chartEchartsInst = echarts;
 
   updateChart();
 }
@@ -41,68 +48,118 @@ function updateChart() {
   if (!setChartOptions || !props.summary) return;
 
   const s = props.summary;
+  const pieData: { name: string; value: number; itemStyle?: { color: string } }[] = [];
 
-  // Build pie data from qualifiedCategories and unqualifiedCategories
-  const pieData: { name: string; value: number; itemStyle: { color: string } }[] = [];
-
-  // Add qualified categories
-  if (s.qualifiedCategories?.['A']) {
-    pieData.push({ name: 'A类', value: s.qualifiedCategories['A'].weight, itemStyle: { color: '#52c41a' } });
-  }
-  if (s.qualifiedCategories?.['B']) {
-    pieData.push({ name: 'B类', value: s.qualifiedCategories['B'].weight, itemStyle: { color: '#1890ff' } });
-  }
-  for (const [key, stat] of Object.entries(s.qualifiedCategories || {})) {
-    if (key !== 'A' && key !== 'B') {
-      pieData.push({ name: key, value: stat.weight, itemStyle: { color: '#52c41a' } });
+  // 动态生成合格分类数据（按 qualifiedColumns 顺序）
+  let qualifiedColorIndex = 0;
+  for (const col of props.qualifiedColumns || []) {
+    if (s.qualifiedCategories?.[col.code]) {
+      pieData.push({
+        name: col.name,
+        value: s.qualifiedCategories[col.code].weight,
+        itemStyle: {
+          color: col.color || qualifiedColors[qualifiedColorIndex % qualifiedColors.length]
+        }
+      });
+      qualifiedColorIndex++;
     }
   }
 
-  // Add unqualified categories with different colors
-  const unqualifiedColors = ['#ff4d4f', '#faad14', '#fa8c16', '#a0d911', '#722ed1'];
-  let colorIndex = 0;
+  // 添加不在 qualifiedColumns 中的其他合格分类（兜底）
+  for (const [key, stat] of Object.entries(s.qualifiedCategories || {})) {
+    const isInColumns = props.qualifiedColumns?.some(col => col.code === key);
+    if (!isInColumns) {
+      pieData.push({
+        name: key,
+        value: stat.weight,
+        itemStyle: { color: qualifiedColors[qualifiedColorIndex % qualifiedColors.length] }
+      });
+      qualifiedColorIndex++;
+    }
+  }
+
+  // 添加不合格分类
+  let unqualifiedColorIndex = 0;
   for (const [key, weight] of Object.entries(s.unqualifiedCategories || {})) {
     pieData.push({
       name: key,
       value: weight,
-      itemStyle: { color: unqualifiedColors[colorIndex % unqualifiedColors.length] }
+      itemStyle: { color: unqualifiedColors[unqualifiedColorIndex % unqualifiedColors.length] }
     });
-    colorIndex++;
+    unqualifiedColorIndex++;
   }
 
   const totalWeight = s.totalWeight || 0;
 
   // Format total weight for display
   const totalWeightText = totalWeight > 0
-    ? `${(totalWeight / 1000).toFixed(1)}吨`
-    : '0吨';
+    ? `${(totalWeight / 1000).toFixed(1)}`
+    : '0';
 
   const option = {
     tooltip: {
       trigger: 'item',
-      formatter: '{b}: {c}kg ({d}%)',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#f0f2f5',
+      textStyle: { color: '#262626' },
+      formatter: (params: any) => {
+        return `
+          <div style="margin-bottom: 4px; font-weight: 600;">${params.name}</div>
+          <div style="display: flex; justify-content: space-between; gap: 12px;">
+            <span>重量:</span>
+            <span style="font-weight: 500;">${params.value} kg</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; gap: 12px;">
+            <span>占比:</span>
+            <span style="font-weight: 500;">${params.percent}%</span>
+          </div>
+        `;
+      }
     },
     legend: {
+      type: 'plain', // Ensure all items are shown without scrolling
       orient: 'vertical',
       right: 10,
-      top: 'center',
-      textStyle: { fontSize: 12 },
+      top: 'middle',
+      align: 'left',
+      itemGap: 15, // Increased gap
+      itemWidth: 18, // Larger square
+      itemHeight: 18, // Larger square
+      icon: 'rect', 
+      textStyle: {
+        color: '#555', // Slightly darker text
+        fontSize: 13, // Slightly larger text
+        fontWeight: 500 // Bolder text
+      },
+      // Using standard formatter to avoid alignment issues
+      formatter: (name: string) => {
+        return name;
+      }
     },
     series: [
       {
         type: 'pie',
-        radius: ['40%', '65%'],
-        center: ['38%', '50%'],
+        radius: ['50%', '75%'],
+        center: ['30%', '50%'], // Moved left from 35%
         avoidLabelOverlap: false,
+        itemStyle: {
+          borderRadius: 8,
+          borderColor: '#fff',
+          borderWidth: 2
+        },
         label: {
           show: false,
         },
         emphasis: {
           label: {
             show: true,
-            fontSize: 14,
+            fontSize: 16,
             fontWeight: 'bold',
+            formatter: '{b}\n{d}%',
+            color: '#262626'
           },
+          scale: true,
+          scaleSize: 10
         },
         labelLine: {
           show: false,
@@ -113,19 +170,22 @@ function updateChart() {
     title: {
       show: true,
       text: totalWeightText,
-      subtext: '总重量',
-      left: '38%',
-      top: '44%',
+      subtext: '总吨数',
+      left: '29%', // Adjusted to match center (roughly center - half width estimate, or just use percentage alignment if textAlign is center)
+      top: 'center',
       textAlign: 'center',
       textStyle: {
-        fontSize: 20,
+        fontSize: 24,
         fontWeight: 'bold',
-        color: '#262626',
+        color: '#2d3748',
+        fontFamily: 'Inter, sans-serif'
       },
       subtextStyle: {
-        fontSize: 13,
-        color: '#8c8c8c',
+        fontSize: 12,
+        color: '#a0aec0',
+        marginTop: 4
       },
+      itemGap: 4
     },
   };
 
@@ -146,33 +206,46 @@ onMounted(() => {
   initChart();
 });
 
-onUnmounted(() => {
-  if (setChartOptions) {
-    chartEchartsInst.dispose();
-  }
-});
+
 </script>
 
 <style lang="less" scoped>
 .chart-card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   height: 100%;
   display: flex;
   flex-direction: column;
+  transition: all 0.3s;
+  border: 1px solid rgba(0, 0, 0, 0.02);
+
+  &:hover {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  }
 }
 
 .chart-header {
-  margin-bottom: 12px;
+  margin-bottom: 20px;
 }
 
 .chart-title {
   font-size: 16px;
   font-weight: 600;
-  color: #262626;
+  color: #2d3748;
   margin: 0;
+  display: flex;
+  align-items: center;
+
+  &::before {
+    content: '';
+    width: 4px;
+    height: 16px;
+    background: #4facfe;
+    border-radius: 2px;
+    margin-right: 8px;
+  }
 }
 
 .chart-body {

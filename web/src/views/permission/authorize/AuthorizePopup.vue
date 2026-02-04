@@ -171,31 +171,39 @@
     state.loading = true;
     state.treeData = [];
     getTree().setCheckedKeys([]);
-    getAuthorizeValues(state.objectId, state.params).then(res => {
-      state.key = +new Date();
-      const key = getKey();
-      state[key + 'AuthorizeTree'] = res.data.list || [];
-      state[key + 'AllData'] = res.data.all || [];
-      state.treeData = state[key + 'AuthorizeTree'];
-      const parentKeys = getTree().getParentKeys(state.treeData);
-      const dataIds = [...new Set([...state.dataForm[key], ...res.data.ids, ...state.moduleIdsTemp])];
-      setDataFormValue(dataIds);
-      const checkedKeys = dataIds.filter(o => !parentKeys.includes(o));
-      nextTick(() => {
-        getTree().setCheckedKeys(checkedKeys);
+    getAuthorizeValues(state.objectId, state.params)
+      .then(res => {
+        state.key = +new Date();
+        const key = getKey();
+        state[key + 'AuthorizeTree'] = res.data.list || [];
+        state[key + 'AllData'] = res.data.all || [];
+        state.treeData = state[key + 'AuthorizeTree'];
+        const parentKeys = getTree().getParentKeys(state.treeData);
+        const dataIds = [...new Set([...state.dataForm[key], ...res.data.ids, ...state.moduleIdsTemp])];
+        setDataFormValue(dataIds);
+        const checkedKeys = dataIds.filter(o => !parentKeys.includes(o));
+        nextTick(() => {
+          getTree().setCheckedKeys(checkedKeys);
+          state.loading = false;
+        });
+      })
+      .catch(() => {
         state.loading = false;
       });
-    });
   }
   function getRoleList() {
     state.loading = true;
     state.treeData = [];
     getTree().setCheckedKeys([]);
-    getRoleSelectorByPermission().then(res => {
-      state.treeData = res.data.list || [];
-      getTree().setCheckedKeys(state.dataForm.roleIds);
-      state.loading = false;
-    });
+    getRoleSelectorByPermission()
+      .then(res => {
+        state.treeData = res.data.list || [];
+        getTree().setCheckedKeys(state.dataForm.roleIds);
+        state.loading = false;
+      })
+      .catch(() => {
+        state.loading = false;
+      });
   }
   function getKey() {
     if (state.activeStep === 0) return 'systemIds';

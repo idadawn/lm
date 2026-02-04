@@ -89,6 +89,8 @@ export interface ShiftComparison {
     totalWeight: number;
     qualifiedRate: number;
     classARate: number;
+    classBRate?: number;
+    [key: string]: any; // Allow dynamic properties for other grades
 }
 
 // 查询参数

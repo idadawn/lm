@@ -163,6 +163,12 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             query = query.Where(t => t.JudgeStatus == status);
         }
 
+        // 按批次ID筛选
+        if (!string.IsNullOrEmpty(input.BatchId))
+        {
+            query = query.Where(t => t.BatchId == input.BatchId);
+        }
+
         // 先查询所有符合条件的数据（不排序，不分页）
         var allData = await query.ToListAsync();
 

@@ -860,15 +860,18 @@ const [registerTable, { reload, getDataSource }] = useTable({
         label: '计算状态',
         component: 'Select',
         colProps: { span: 4 },
+        defaultValue: -1,
         componentProps: {
           options: [
+            { label: '所有状态', value: -1 },
             { label: '未计算', value: 0 },
             { label: '计算中', value: 1 },
             { label: '成功', value: 2 },
             { label: '失败', value: 3 },
           ],
+          fieldNames: { label: 'label', value: 'value' },
           placeholder: '所有状态',
-          allowClear: true,
+          allowClear: false,
         },
       },
       {
@@ -876,15 +879,18 @@ const [registerTable, { reload, getDataSource }] = useTable({
         label: '判定状态',
         component: 'Select',
         colProps: { span: 4 },
+        defaultValue: -1,
         componentProps: {
           options: [
+            { label: '所有状态', value: -1 },
             { label: '未判定', value: 0 },
             { label: '判定中', value: 1 },
             { label: '成功', value: 2 },
             { label: '失败', value: 3 },
           ],
+          fieldNames: { label: 'label', value: 'value' },
           placeholder: '所有状态',
-          allowClear: true,
+          allowClear: false,
         },
       },
     ],
@@ -894,6 +900,14 @@ const [registerTable, { reload, getDataSource }] = useTable({
     ],
   },
   beforeFetch: params => {
+    // 处理状态筛选: -1表示全部
+    if (params.calcStatus === -1) {
+      delete params.calcStatus;
+    }
+    if (params.judgeStatus === -1) {
+      delete params.judgeStatus;
+    }
+
     // 使用表单中的产品规格ID
     if (params.productSpecId) {
       selectedProductSpecId.value = params.productSpecId;
@@ -1366,22 +1380,11 @@ async function handleBatchRecalculate() {
     return;
   }
 
-  // 筛选出计算失败的数据
-  const failedRecords = data.filter(record => {
-    const status = normalizeCalcStatus(record?.calcStatus);
-    return status === 'FAILED';
-  });
-
-  if (failedRecords.length === 0) {
-    createMessage.info('没有计算失败的数据需要重新计算');
-    return;
-  }
-
   try {
     batchCalculating.value = true;
-    const ids = failedRecords.map(record => record.id);
+    const ids = data.map(record => record.id);
     await recalculateIntermediateData(ids);
-    createMessage.success(`已触发 ${ids.length} 条失败数据的重新计算`);
+    createMessage.success(`已触发 ${ids.length} 条数据的计算`);
     // 稍后刷新
     setTimeout(() => {
       reload();

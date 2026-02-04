@@ -10,7 +10,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+import { ref, watch, onMounted, type Ref } from 'vue';
 import { useECharts } from '/@/hooks/web/useECharts';
 import type { UnqualifiedCategory } from '/@/api/lab/monthlyQualityReport';
 
@@ -25,14 +25,12 @@ const props = withDefaults(defineProps<Props>(), {
 
 const chartRef = ref<HTMLDivElement | null>(null);
 let setChartOptions: ((option: any) => void) | null = null;
-let chartEchartsInst: any = null;
 
 function initChart() {
   if (!chartRef.value) return;
 
-  const { setOptions, echarts } = useECharts(chartRef.value);
+  const { setOptions } = useECharts(chartRef as Ref<HTMLDivElement>);
   setChartOptions = setOptions;
-  chartEchartsInst = echarts;
 
   updateChart();
 }
@@ -51,16 +49,24 @@ function updateChart() {
   const option = {
     tooltip: {
       trigger: 'axis',
+      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+      borderColor: '#f0f2f5',
+      textStyle: { color: '#262626' },
       axisPointer: { type: 'shadow' },
       formatter: (params: any) => {
         const param = params[0];
         const item = top5[param.dataIndex];
-        return `${param.name}<br/>重量: ${param.value}kg<br/>占比: ${item.rate?.toFixed(2) || 0}%`;
+        if (!item) return '';
+        return `
+          <div style="font-weight: 600; margin-bottom: 4px;">${param.name}</div>
+          <div>重量: ${param.value}kg</div>
+          <div>占比: ${item.rate?.toFixed(2) || 0}%</div>
+        `;
       },
     },
     grid: {
       left: '3%',
-      right: '4%',
+      right: '8%',
       bottom: '3%',
       top: '3%',
       containLabel: true,
@@ -70,10 +76,10 @@ function updateChart() {
       axisLine: { show: false },
       axisTick: { show: false },
       splitLine: {
-        lineStyle: { color: '#f0f0f0', type: 'dashed' },
+        lineStyle: { color: '#f5f5f5', type: 'dashed' },
       },
       axisLabel: {
-        color: '#666',
+        color: '#8c9eae',
         fontSize: 12,
       },
     },
@@ -83,15 +89,18 @@ function updateChart() {
       axisLine: { show: false },
       axisTick: { show: false },
       axisLabel: {
-        color: '#262626',
+        color: '#2d3748',
         fontSize: 13,
+        fontWeight: 500,
+        width: 100,
+        overflow: 'truncate'
       },
     },
     series: [
       {
         type: 'bar',
         data: weights.length > 0 ? weights : [0],
-        barWidth: '60%',
+        barWidth: '24px',
         itemStyle: {
           color: {
             type: 'linear',
@@ -100,19 +109,28 @@ function updateChart() {
             x2: 1,
             y2: 0,
             colorStops: [
-              { offset: 0, color: '#ff7875' },
-              { offset: 1, color: '#ff4d4f' },
+              { offset: 0, color: '#ff9a9e' },
+              { offset: 1, color: '#ff7875' },
             ],
           },
-          borderRadius: [0, 4, 4, 0],
+          borderRadius: [0, 12, 12, 0],
+          shadowColor: 'rgba(255, 120, 117, 0.2)',
+          shadowBlur: 4,
+          shadowOffsetX: 2
         },
         label: {
           show: true,
           position: 'right',
-          formatter: '{c}kg',
-          color: '#666',
+          formatter: '{c} kg',
+          color: '#8c9eae',
           fontSize: 12,
+          offset: [5, 0]
         },
+        showBackground: true,
+        backgroundStyle: {
+          color: '#f5f7fa',
+          borderRadius: [0, 12, 12, 0]
+        }
       },
     ],
   };
@@ -134,33 +152,46 @@ onMounted(() => {
   initChart();
 });
 
-onUnmounted(() => {
-  if (setChartOptions) {
-    chartEchartsInst.dispose();
-  }
-});
+
 </script>
 
 <style lang="less" scoped>
 .chart-card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   height: 100%;
   display: flex;
   flex-direction: column;
+  transition: all 0.3s;
+  border: 1px solid rgba(0, 0, 0, 0.02);
+
+  &:hover {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  }
 }
 
 .chart-header {
-  margin-bottom: 12px;
+  margin-bottom: 20px;
 }
 
 .chart-title {
   font-size: 16px;
   font-weight: 600;
-  color: #262626;
+  color: #2d3748;
   margin: 0;
+  display: flex;
+  align-items: center;
+
+  &::before {
+    content: '';
+    width: 4px;
+    height: 16px;
+    background: #FF7875;
+    border-radius: 2px;
+    margin-right: 8px;
+  }
 }
 
 .chart-body {

@@ -37,12 +37,12 @@
       <div class="kpi-content">
         <div class="kpi-label">{{ col.name }}占比</div>
         <div class="kpi-value" :class="index === 0 ? 'success' : 'primary'">
-          <span class="number">{{ getCategoryRate(summary, col.code) }}</span>
+          <span class="number">{{ getCategoryRate(summary, col) }}</span>
           <span class="unit">%</span>
         </div>
         <div class="kpi-sub">
           <span class="sub-label">重量:</span>
-          <span class="sub-value">{{ getCategoryWeight(summary, col.code) }} kg</span>
+          <span class="sub-value">{{ getCategoryWeight(summary, col) }} kg</span>
         </div>
       </div>
     </div>
@@ -118,19 +118,19 @@ function getColumnGradient(index: number, col?: JudgmentLevelColumn): string {
 }
 
 // 获取某等级的占比（兼容多种数据格式）
-function getCategoryRate(summary: SummaryData | null | undefined, code: string): string {
+function getCategoryRate(summary: SummaryData | null | undefined, col: JudgmentLevelColumn): string {
   if (!summary) return '-';
 
-  // 优先从 qualifiedCategories 获取
-  if (summary.qualifiedCategories?.[code]?.rate !== undefined) {
-    return formatNumber(summary.qualifiedCategories[code].rate);
+  // 优先从 qualifiedCategories 获取（使用 name 作为 key，因为后端用 name 作为 key）
+  if (summary.qualifiedCategories?.[col.name]?.rate !== undefined) {
+    return formatNumber(summary.qualifiedCategories[col.name].rate);
   }
 
-  // 兼容旧字段
-  if (code === 'A' && summary.classARate !== undefined) {
+  // 兼容旧字段（使用 code 或 name 匹配）
+  if ((col.code === 'A' || col.name === 'A') && summary.classARate !== undefined) {
     return formatNumber(summary.classARate);
   }
-  if (code === 'B' && summary.classBRate !== undefined) {
+  if ((col.code === 'B' || col.name === 'B') && summary.classBRate !== undefined) {
     return formatNumber(summary.classBRate);
   }
 
@@ -138,19 +138,19 @@ function getCategoryRate(summary: SummaryData | null | undefined, code: string):
 }
 
 // 获取某等级的重量（兼容多种数据格式）
-function getCategoryWeight(summary: SummaryData | null | undefined, code: string): string {
+function getCategoryWeight(summary: SummaryData | null | undefined, col: JudgmentLevelColumn): string {
   if (!summary) return '-';
 
-  // 优先从 qualifiedCategories 获取
-  if (summary.qualifiedCategories?.[code]?.weight !== undefined) {
-    return formatNumber(summary.qualifiedCategories[code].weight);
+  // 优先从 qualifiedCategories 获取（使用 name 作为 key）
+  if (summary.qualifiedCategories?.[col.name]?.weight !== undefined) {
+    return formatNumber(summary.qualifiedCategories[col.name].weight);
   }
 
-  // 兼容旧字段
-  if (code === 'A' && summary.classAWeight !== undefined) {
+  // 兼容旧字段（使用 code 或 name 匹配）
+  if ((col.code === 'A' || col.name === 'A') && summary.classAWeight !== undefined) {
     return formatNumber(summary.classAWeight);
   }
-  if (code === 'B' && summary.classBWeight !== undefined) {
+  if ((col.code === 'B' || col.name === 'B') && summary.classBWeight !== undefined) {
     return formatNumber(summary.classBWeight);
   }
 

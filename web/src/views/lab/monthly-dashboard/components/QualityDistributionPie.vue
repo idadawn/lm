@@ -53,10 +53,11 @@ function updateChart() {
   // 动态生成合格分类数据（按 qualifiedColumns 顺序）
   let qualifiedColorIndex = 0;
   for (const col of props.qualifiedColumns || []) {
-    if (s.qualifiedCategories?.[col.code]) {
+    // 使用 col.name 而不是 col.code，因为后端用 name 作为 key
+    if (s.qualifiedCategories?.[col.name]) {
       pieData.push({
         name: col.name,
-        value: s.qualifiedCategories[col.code].weight,
+        value: s.qualifiedCategories[col.name].weight,
         itemStyle: {
           color: col.color || qualifiedColors[qualifiedColorIndex % qualifiedColors.length]
         }
@@ -67,7 +68,7 @@ function updateChart() {
 
   // 添加不在 qualifiedColumns 中的其他合格分类（兜底）
   for (const [key, stat] of Object.entries(s.qualifiedCategories || {})) {
-    const isInColumns = props.qualifiedColumns?.some(col => col.code === key);
+    const isInColumns = props.qualifiedColumns?.some(col => col.name === key);
     if (!isInColumns) {
       pieData.push({
         name: key,

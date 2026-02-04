@@ -72,9 +72,11 @@ export interface ShiftGroupRow {
 export interface QualityTrend {
     date: string;
     qualifiedRate: number;
+    qualifiedCategories?: Record<string, number>;  // 各合格等级的占比 (等级名 -> 占比%)
+    unqualifiedCategories?: Record<string, number>;  // 各不合格分类的占比 (分类名 -> 占比%)
     classARate?: number;
     classBRate?: number;
-    [key: string]: any; // Allow dynamic properties like classCRate, classDRate, etc.
+    [key: string]: any; // Allow dynamic properties
 }
 
 // 不合格分类

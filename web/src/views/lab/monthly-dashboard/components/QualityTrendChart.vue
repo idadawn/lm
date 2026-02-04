@@ -20,11 +20,13 @@ interface Props {
   data?: QualityTrend[] | null;
   loading?: boolean;
   qualifiedColumns?: JudgmentLevelColumn[];
+  unqualifiedColumns?: JudgmentLevelColumn[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
   qualifiedColumns: () => [],
+  unqualifiedColumns: () => [],
 });
 
 const chartRef = ref<HTMLDivElement | null>(null);
@@ -42,9 +44,6 @@ function initChart() {
 function updateChart() {
   if (!setChartOptions || !props.data) return;
 
-  // 颜色池
-  const colors = ['#42e695', '#4facfe', '#ff9a9e', '#fa709a', '#8ec5fc'];
-
   // 格式化日期
   const dates = props.data.map((item) => {
     const date = typeof item.date === 'number' ? dayjs(item.date) : dayjs(String(item.date));
@@ -52,6 +51,10 @@ function updateChart() {
   });
 
   const qualifiedRates = props.data.map((item) => Number(item.qualifiedRate) || 0);
+
+  // 颜色池
+  const qualifiedColors = ['#42e695', '#4facfe', '#8ec5fc', '#a8edea'];
+  const unqualifiedColors = ['#ff9a9e', '#fa709a', '#ff7875', '#ff9c6e', '#ffc069'];
 
   // 基础系列：合格率
   const legendData = ['合格率'];
@@ -75,43 +78,33 @@ function updateChart() {
     },
   ];
 
-  // 动态添加合格等级系列
-  const definedColumnRates: number[][] = []; // 存储每个已定义等级的数据，用于计算"其他合格"
-
+  // 动态添加合格等级系列（使用 qualifiedCategories 数据）
   if (props.qualifiedColumns && props.qualifiedColumns.length > 0) {
     props.qualifiedColumns.forEach((col, index) => {
-      // 构建可能的字段名
-      const dynamicField = `class${col.code}Rate`;
-
-      // 尝试从数据中获取该等级的占比
-      const colRates = props.data!.map((item: any) => {
-        // 优先使用动态字段
-        if (item[dynamicField] !== undefined && item[dynamicField] !== null) {
-          return Number(item[dynamicField]) || 0;
+      // 从 qualifiedCategories 中获取数据（使用 name 作为 key）
+      const colRates = props.data!.map((item) => {
+        if (item.qualifiedCategories && item.qualifiedCategories[col.name] !== undefined) {
+          return Number(item.qualifiedCategories[col.name]) || 0;
         }
         // 兼容旧字段
-        if (col.code === 'A' && item.classARate !== undefined && item.classARate !== null) {
+        if ((col.code === 'A' || col.name === 'A') && item.classARate !== undefined) {
           return Number(item.classARate) || 0;
         }
-        if (col.code === 'B' && item.classBRate !== undefined && item.classBRate !== null) {
+        if ((col.code === 'B' || col.name === 'B') && item.classBRate !== undefined) {
           return Number(item.classBRate) || 0;
         }
         return 0;
       });
 
-      // 存储该等级的数据，用于计算"其他合格"
-      definedColumnRates.push(colRates);
-
-      // 检查是否有有效数据（至少有一个非零值）
+      // 检查是否有有效数据
       const hasValidData = colRates.some(v => v > 0);
       if (!hasValidData) {
-        return; // 跳过没有数据的系列
+        return;
       }
 
       legendData.push(col.name);
 
-      // 使用列定义中的颜色，如果没有则从颜色池选择
-      const color = col.color || colors[index % colors.length];
+      const color = col.color || qualifiedColors[index % qualifiedColors.length];
 
       series.push({
         name: col.name,
@@ -127,33 +120,39 @@ function updateChart() {
     });
   }
 
-  // 添加"其他合格"系列（合格率 - 所有已定义等级占比之和）
-  if (definedColumnRates.length > 0) {
-    const otherQualifiedRates = props.data!.map((item, i) => {
-      const qualifiedRate = Number(item.qualifiedRate) || 0;
-      // 计算所有已定义等级占比之和
-      const definedSum = definedColumnRates.reduce((sum, rates) => sum + (rates[i] || 0), 0);
-      // 其他合格 = 合格率 - 已定义等级之和
-      return Math.max(0, qualifiedRate - definedSum);
-    });
+  // 动态添加不合格分类系列（使用 unqualifiedCategories 数据）
+  if (props.unqualifiedColumns && props.unqualifiedColumns.length > 0) {
+    props.unqualifiedColumns.forEach((col, index) => {
+      // 从 unqualifiedCategories 中获取数据
+      const colRates = props.data!.map((item) => {
+        if (item.unqualifiedCategories && item.unqualifiedCategories[col.name] !== undefined) {
+          return Number(item.unqualifiedCategories[col.name]) || 0;
+        }
+        return 0;
+      });
 
-    // 检查是否有有效数据
-    const hasValidOtherData = otherQualifiedRates.some(v => v > 0.1); // 至少有0.1%才算有效
-    if (hasValidOtherData) {
-      legendData.push('其他合格');
+      // 检查是否有有效数据
+      const hasValidData = colRates.some(v => v > 0);
+      if (!hasValidData) {
+        return;
+      }
+
+      legendData.push(col.name);
+
+      const color = col.color || unqualifiedColors[index % unqualifiedColors.length];
 
       series.push({
-        name: '其他合格',
+        name: col.name,
         type: 'line',
-        data: otherQualifiedRates,
+        data: colRates,
         smooth: true,
         showSymbol: false,
         symbol: 'circle',
         symbolSize: 5,
-        lineStyle: { color: '#a0aec0', width: 1.5, type: 'dashed' },
-        itemStyle: { color: '#a0aec0' },
+        lineStyle: { color, width: 2, type: 'dashed' },
+        itemStyle: { color },
       });
-    }
+    });
   }
 
   const option = {
@@ -178,9 +177,8 @@ function updateChart() {
         let result = `<div style="margin-bottom: 8px; font-weight: 600; color: #1f1f1f;">${params[0].name}</div>`;
         params.forEach((param) => {
           const color = param.color;
-          // 如果是 Series 的颜色是对象（比如渐变），可能需要处理，这里 simplified
           const colorStr = typeof color === 'string' ? color : (color?.colorStops?.[0]?.color || '#4facfe');
-          
+
           result += `
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 4px;">
               <div style="display: flex; align-items: center;">
@@ -204,6 +202,7 @@ function updateChart() {
         color: '#666',
         fontSize: 12,
       },
+      type: 'scroll',
     },
     grid: {
       left: '2%',
@@ -245,7 +244,7 @@ function updateChart() {
 }
 
 watch(
-  [() => props.data, () => props.qualifiedColumns],
+  [() => props.data, () => props.qualifiedColumns, () => props.unqualifiedColumns],
   () => {
     if (setChartOptions) {
       updateChart();

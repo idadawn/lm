@@ -27,7 +27,7 @@
 
     <div class="chart-row chart-row-2 animate-row delay-2">
       <div class="chart-col chart-col-3">
-        <QualityTrendChart ref="trendChartRef" :data="data?.qualityTrends" :loading="loading" :qualified-columns="data?.qualifiedColumns" />
+        <QualityTrendChart ref="trendChartRef" :data="data?.qualityTrends" :loading="loading" :qualified-columns="data?.qualifiedColumns" :unqualified-columns="data?.unqualifiedColumns" />
       </div>
       <div class="chart-col chart-col-2">
         <QualityDistributionPie ref="distributionPieRef" :summary="data?.summary" :loading="loading" :qualified-columns="data?.qualifiedColumns" />

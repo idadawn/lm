@@ -255,6 +255,7 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         var baseQuery = BuildBaseQuery(query);
         var statisticLevels = await GetStatisticLevelsAsync();
         var qualifiedLevels = statisticLevels.Where(l => l.QualityStatus == QualityStatusEnum.Qualified).ToList();
+        var unqualifiedLevels = statisticLevels.Where(l => l.QualityStatus == QualityStatusEnum.Unqualified).ToList();
 
         var data = await baseQuery.ToListAsync();
 
@@ -281,10 +282,20 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
                 qualifiedRates[level.Name] = totalWeight > 0 ? Math.Round(weight / totalWeight * 100, 2) : 0;
             }
 
+            // 动态计算各不合格分类的占比
+            var unqualifiedRates = new Dictionary<string, decimal>();
+            foreach (var level in unqualifiedLevels)
+            {
+                var weight = items.Where(d => d.Labeling == level.Name).Sum(d => d.SingleCoilWeight ?? 0);
+                unqualifiedRates[level.Name] = totalWeight > 0 ? Math.Round(weight / totalWeight * 100, 2) : 0;
+            }
+
             result.Add(new QualityTrendDto
             {
                 Date = dateGroup.Key,
                 QualifiedRate = totalWeight > 0 ? Math.Round(qualifiedWeight / totalWeight * 100, 2) : 0,
+                QualifiedCategories = qualifiedRates,
+                UnqualifiedCategories = unqualifiedRates,
                 // 为了兼容现有前端，暂时保留这两个字段
                 ClassARate = qualifiedRates.GetValueOrDefault("A", 0),
                 ClassBRate = qualifiedRates.GetValueOrDefault("B", 0)

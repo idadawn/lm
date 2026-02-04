@@ -54,12 +54,22 @@ public class QualityTrendDto
     public decimal QualifiedRate { get; set; }
 
     /// <summary>
-    /// A类占比 (%).
+    /// 各合格等级的占比 (等级名 -> 占比%).
+    /// </summary>
+    public Dictionary<string, decimal> QualifiedCategories { get; set; } = new();
+
+    /// <summary>
+    /// 各不合格分类的占比 (分类名 -> 占比%).
+    /// </summary>
+    public Dictionary<string, decimal> UnqualifiedCategories { get; set; } = new();
+
+    /// <summary>
+    /// A类占比 (%) - 兼容旧版本.
     /// </summary>
     public decimal ClassARate { get; set; }
 
     /// <summary>
-    /// B类占比 (%).
+    /// B类占比 (%) - 兼容旧版本.
     /// </summary>
     public decimal ClassBRate { get; set; }
 }

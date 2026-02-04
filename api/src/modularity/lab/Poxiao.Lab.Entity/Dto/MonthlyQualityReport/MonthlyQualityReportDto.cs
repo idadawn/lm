@@ -323,6 +323,11 @@ public class JudgmentLevelColumnDto
     /// 展示颜色.
     /// </summary>
     public string Color { get; set; }
+
+    /// <summary>
+    /// 判定权重 (优先级).
+    /// </summary>
+    public int Priority { get; set; }
 }
 
 /// <summary>
@@ -362,6 +367,22 @@ public class MonthlyQualityReportResponseDto
 
     /// <summary>
     /// 需要展示的不合格分类列 (IsStatistic=true 且 QualityStatus=Unqualified 的判定等级).
+    /// </summary>
+    public List<JudgmentLevelColumnDto> UnqualifiedColumns { get; set; } = new();
+}
+
+/// <summary>
+/// 判定等级列配置 DTO.
+/// </summary>
+public class MonthlyQualityReportColumnsDto
+{
+    /// <summary>
+    /// 合格等级列 (A级, B级等).
+    /// </summary>
+    public List<JudgmentLevelColumnDto> QualifiedColumns { get; set; } = new();
+
+    /// <summary>
+    /// 不合格等级列.
     /// </summary>
     public List<JudgmentLevelColumnDto> UnqualifiedColumns { get; set; } = new();
 }

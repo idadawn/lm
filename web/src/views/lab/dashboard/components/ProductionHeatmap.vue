@@ -11,50 +11,78 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, onMounted } from 'vue';
+  import { ref, onMounted, onUnmounted } from 'vue';
   import { useECharts } from '/@/hooks/web/useECharts';
+  import { getProductionHeatmap, type HeatmapData } from '/@/api/lab/dashboard';
+
+  // Props
+  const props = defineProps<{
+    startDate: string;
+    endDate: string;
+  }>();
 
   const chartRef = ref<HTMLDivElement | null>(null);
 
   // 时间标签
-  const hours = ['0:00', '3:00', '6:00', '9:00', '11:00', '15:00', '18:00', '21:00', '23:00'];
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  const hours = ['0:00', '1:00', '2:00', '3:00', '4:00', '5:00', '6:00', '7:00', '8:00', '9:00', '10:00', '11:00',
+                 '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00', '23:00'];
+  const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 
-  // 生成模拟热力图数据（合格率 85-98%）
-  const generateHeatmapData = () => {
-    const data: [number, number, number][] = [];
-    for (let i = 0; i < days.length; i++) {
-      for (let j = 0; j < hours.length; j++) {
-        // 模拟不同时间段的质量波动
-        let baseRate = 92;
-        // 夜班质量略低
-        if (j >= 6 || j <= 1) baseRate -= 3;
-        // 周末质量略低
-        if (i >= 5) baseRate -= 2;
-        // 添加随机波动
-        const rate = baseRate + Math.random() * 8 - 4;
-        data.push([i, j, Math.max(85, Math.min(98, Math.round(rate * 10) / 10))]);
+  // 热力图数据
+  const heatmapData = ref<[number, number, number][]>([]);
+  let chartInstance: any = null;
+
+  // 获取数据
+  async function fetchData(start?: string, end?: string) {
+    try {
+      const startDate = start || props.startDate;
+      const endDate = end || props.endDate;
+      const data = await getProductionHeatmap({ startDate, endDate });
+
+      // 转换数据格式为 [dayOfWeek, hour, value]
+      heatmapData.value = data
+        .filter(item => item.count > 0) // 只显示有数据的点
+        .map(item => [item.dayOfWeek, item.hour, Number(item.value)]);
+
+      // 更新图表
+      if (chartInstance) {
+        updateChart();
       }
+    } catch (error) {
+      console.error('获取生产热力图数据失败:', error);
     }
-    return data;
-  };
+  }
 
-  const heatmapData = generateHeatmapData();
+  // 暴露给父组件的方法
+  defineExpose({ fetchData });
 
   onMounted(() => {
     initChart();
+    fetchData();
+  });
+
+  onUnmounted(() => {
+    if (chartInstance) {
+      chartInstance.dispose();
+    }
   });
 
   function initChart() {
     if (!chartRef.value) return;
 
-    const { setOptions } = useECharts(chartRef);
+    const { setOptions, echarts } = useECharts(chartRef);
+    chartInstance = echarts;
+
+    const data = heatmapData.value.length > 0 ? heatmapData.value : [[0, 0, 0]];
 
     const option = {
       tooltip: {
         position: 'top',
         formatter: (params: any) => {
-          return `${days[params.value[0]]} ${hours[params.value[1]]}<br/>合格率: ${params.value[2]}%`;
+          const dayIndex = params.value[0];
+          const hourIndex = params.value[1];
+          const value = params.value[2];
+          return `${days[dayIndex]} ${hours[hourIndex]}<br/>合格率: ${value}%`;
         },
       },
       grid: {
@@ -109,8 +137,8 @@
         },
       },
       visualMap: {
-        min: 85,
-        max: 98,
+        min: 80,
+        max: 100,
         calculable: true,
         orient: 'horizontal',
         left: 'center',
@@ -127,7 +155,7 @@
         {
           name: '合格率',
           type: 'heatmap',
-          data: heatmapData,
+          data: data,
           label: {
             show: false,
           },
@@ -147,6 +175,22 @@
     };
 
     setOptions(option);
+  }
+
+  function updateChart() {
+    if (!chartInstance) return;
+
+    const data = heatmapData.value.length > 0 ? heatmapData.value : [[0, 0, 0]];
+
+    const option = {
+      series: [
+        {
+          data: data,
+        },
+      ],
+    };
+
+    chartInstance.setOption(option);
   }
 </script>
 

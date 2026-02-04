@@ -10,25 +10,71 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, onMounted } from 'vue';
+  import { ref, onMounted, onUnmounted } from 'vue';
   import { useECharts } from '/@/hooks/web/useECharts';
+  import { getLaminationTrend, type LaminationTrendData } from '/@/api/lab/dashboard';
+  import dayjs from 'dayjs';
+
+  // Props
+  const props = defineProps<{
+    startDate: string;
+    endDate: string;
+  }>();
 
   const chartRef = ref<HTMLDivElement | null>(null);
 
-  // 模拟7天数据
-  const dates = ['5/21', '5/22', '5/23', '5/24', '5/25', '5/26', '5/27'];
-  const avgValues = [89.3, 89.8, 89.5, 89.7, 89.9, 89.6, 89.8];
-  const upperBound = [90.0, 90.4, 90.2, 90.3, 90.5, 90.2, 90.4];
-  const lowerBound = [88.6, 89.2, 88.8, 89.1, 89.3, 89.0, 89.2];
+  // 趋势数据
+  const dates = ref<string[]>([]);
+  const avgValues = ref<number[]>([]);
+  const upperBound = ref<number[]>([]);
+  const lowerBound = ref<number[]>([]);
+
+  let chartInstance: any = null;
+
+  // 获取数据
+  async function fetchData(start?: string, end?: string) {
+    try {
+      const startDate = start || props.startDate;
+      const endDate = end || props.endDate;
+      const data = await getLaminationTrend({ startDate, endDate });
+
+      // 更新数据
+      dates.value = data.map(item => {
+        const date = dayjs(item.date);
+        return date.format('M/D');
+      });
+      avgValues.value = data.map(item => Number(item.value));
+      upperBound.value = data.map(item => Number(item.max));
+      lowerBound.value = data.map(item => Number(item.min));
+
+      // 更新图表
+      if (chartInstance) {
+        updateChart();
+      }
+    } catch (error) {
+      console.error('获取叠片系数趋势数据失败:', error);
+    }
+  }
+
+  // 暴露给父组件的方法
+  defineExpose({ fetchData });
 
   onMounted(() => {
     initChart();
+    fetchData();
+  });
+
+  onUnmounted(() => {
+    if (chartInstance) {
+      chartInstance.dispose();
+    }
   });
 
   function initChart() {
     if (!chartRef.value) return;
 
-    const { setOptions } = useECharts(chartRef);
+    const { setOptions, echarts } = useECharts(chartRef);
+    chartInstance = echarts;
 
     const option = {
       tooltip: {
@@ -59,7 +105,7 @@
       xAxis: {
         type: 'category',
         boundaryGap: false,
-        data: dates,
+        data: dates.value.length > 0 ? dates.value : [''],
         axisLine: {
           lineStyle: {
             color: '#e8e8e8',
@@ -72,8 +118,6 @@
       },
       yAxis: {
         type: 'value',
-        min: 88,
-        max: 91,
         axisLine: { show: false },
         axisTick: { show: false },
         splitLine: {
@@ -93,7 +137,7 @@
         {
           name: '置信区间',
           type: 'line',
-          data: upperBound,
+          data: upperBound.value,
           lineStyle: { opacity: 0 },
           stack: 'confidence-band',
           symbol: 'none',
@@ -104,7 +148,7 @@
         {
           name: '置信区间',
           type: 'line',
-          data: lowerBound.map((val, idx) => upperBound[idx] - val),
+          data: lowerBound.value.map((val, idx) => upperBound.value[idx] - val),
           lineStyle: { opacity: 0 },
           stack: 'confidence-band',
           symbol: 'none',
@@ -116,7 +160,7 @@
         {
           name: '叠片系数均值',
           type: 'line',
-          data: avgValues,
+          data: avgValues.value,
           smooth: true,
           symbol: 'circle',
           symbolSize: 8,
@@ -137,7 +181,7 @@
         {
           name: '目标值',
           type: 'line',
-          data: dates.map(() => 90),
+          data: dates.value.map(() => 90),
           lineStyle: {
             color: '#52c41a',
             width: 2,
@@ -150,6 +194,26 @@
     };
 
     setOptions(option);
+  }
+
+  function updateChart() {
+    if (!chartInstance) return;
+
+    const option = {
+      xAxis: {
+        data: dates.value,
+      },
+      series: [
+        { data: upperBound.value },
+        {
+          data: lowerBound.value.map((val, idx) => upperBound.value[idx] - val),
+        },
+        { data: avgValues.value },
+        { data: dates.value.map(() => 90) },
+      ],
+    };
+
+    chartInstance.setOption(option);
   }
 </script>
 

@@ -28,8 +28,15 @@
 </template>
 
 <script lang="ts" setup>
-  import { ref, onMounted } from 'vue';
+  import { ref, onMounted, onUnmounted } from 'vue';
   import { useECharts } from '/@/hooks/web/useECharts';
+  import { getThicknessCorrelation, type ScatterData } from '/@/api/lab/dashboard';
+
+  // Props
+  const props = defineProps<{
+    startDate: string;
+    endDate: string;
+  }>();
 
   const chartRef = ref<HTMLDivElement | null>(null);
 
@@ -39,77 +46,104 @@
     'B级': '#fadb14',
     '性能不合': '#fa8c16',
     '其他不合': '#f5222d',
+    '未判定': '#8c8c8c',
   };
 
-  // 生成模拟散点数据
-  const generateScatterData = () => {
-    const data: Record<string, [number, number][]> = {
-      'A级': [],
-      'B级': [],
-      '性能不合': [],
-      '其他不合': [],
-    };
+  // 散点数据
+  const scatterData = ref<Record<string, [number, number][]>>({
+    'A级': [],
+    'B级': [],
+    '性能不合': [],
+    '其他不合': [],
+    '未判定': [],
+  });
 
-    // A级品 - 集中在最佳工艺窗口
-    for (let i = 0; i < 80; i++) {
-      const thickness = 5.22 + Math.random() * 0.03;
-      const lamination = 90 + Math.random() * 1.5;
-      data['A级'].push([parseFloat(thickness.toFixed(3)), parseFloat(lamination.toFixed(2))]);
+  let chartInstance: any = null;
+
+  // 获取数据
+  async function fetchData(start?: string, end?: string) {
+    try {
+      const startDate = start || props.startDate;
+      const endDate = end || props.endDate;
+      const data = await getThicknessCorrelation({ startDate, endDate });
+
+      // 按质量等级分组
+      const grouped: Record<string, [number, number][]> = {
+        'A级': [],
+        'B级': [],
+        '性能不合': [],
+        '其他不合': [],
+        '未判定': [],
+      };
+
+      data.forEach(item => {
+        const level = item.qualityLevel || '未判定';
+        if (!grouped[level]) {
+          grouped[level] = [];
+        }
+        grouped[level].push([Number(item.thickness), Number(item.laminationFactor)]);
+      });
+
+      scatterData.value = grouped;
+
+      // 更新图表
+      if (chartInstance) {
+        updateChart();
+      }
+    } catch (error) {
+      console.error('获取厚度-叠片系数关联数据失败:', error);
     }
+  }
 
-    // B级品 - 分布稍广
-    for (let i = 0; i < 20; i++) {
-      const thickness = 5.20 + Math.random() * 0.06;
-      const lamination = 89.5 + Math.random() * 1.5;
-      data['B级'].push([parseFloat(thickness.toFixed(3)), parseFloat(lamination.toFixed(2))]);
-    }
-
-    // 性能不合 - 叠片系数较低
-    for (let i = 0; i < 15; i++) {
-      const thickness = 5.18 + Math.random() * 0.08;
-      const lamination = 88.5 + Math.random() * 1.2;
-      data['性能不合'].push([parseFloat(thickness.toFixed(3)), parseFloat(lamination.toFixed(2))]);
-    }
-
-    // 其他不合 - 厚度异常
-    for (let i = 0; i < 10; i++) {
-      const thickness = 5.15 + Math.random() * 0.12;
-      const lamination = 88.8 + Math.random() * 1.5;
-      data['其他不合'].push([parseFloat(thickness.toFixed(3)), parseFloat(lamination.toFixed(2))]);
-    }
-
-    return data;
-  };
-
-  const scatterData = generateScatterData();
+  // 暴露给父组件的方法
+  defineExpose({ fetchData });
 
   onMounted(() => {
     initChart();
+    fetchData();
+  });
+
+  onUnmounted(() => {
+    if (chartInstance) {
+      chartInstance.dispose();
+    }
   });
 
   function initChart() {
     if (!chartRef.value) return;
 
-    const { setOptions } = useECharts(chartRef);
+    const { setOptions, echarts } = useECharts(chartRef);
+    chartInstance = echarts;
 
-    const series = Object.keys(scatterData).map((key) => ({
-      name: key,
-      type: 'scatter',
-      data: scatterData[key],
-      symbolSize: 8,
-      itemStyle: {
-        color: qualityColors[key],
-        opacity: 0.8,
-      },
-      emphasis: {
-        focus: 'series',
+    const series = Object.keys(scatterData.value)
+      .filter(key => scatterData.value[key].length > 0)
+      .map((key) => ({
+        name: key,
+        type: 'scatter',
+        data: scatterData.value[key],
+        symbolSize: 8,
         itemStyle: {
-          opacity: 1,
-          borderWidth: 2,
-          borderColor: '#fff',
+          color: qualityColors[key] || '#8c8c8c',
+          opacity: 0.8,
         },
-      },
-    }));
+        emphasis: {
+          focus: 'series',
+          itemStyle: {
+            opacity: 1,
+            borderWidth: 2,
+            borderColor: '#fff',
+          },
+        },
+      }));
+
+    // 计算数据范围
+    const allData = Object.values(scatterData.value).flat();
+    const xData = allData.map(d => d[0]);
+    const yData = allData.map(d => d[1]);
+    const xMin = xData.length > 0 ? Math.min(...xData) : 5.15;
+    const xMax = xData.length > 0 ? Math.max(...xData) : 5.28;
+    const yMin = yData.length > 0 ? Math.min(...yData) : 88;
+    const yMax = yData.length > 0 ? Math.max(...yData) : 92;
 
     const option = {
       tooltip: {
@@ -129,8 +163,8 @@
         name: '厚度',
         nameLocation: 'middle',
         nameGap: 30,
-        min: 5.15,
-        max: 5.28,
+        min: Math.floor(xMin * 100) / 100 - 0.01,
+        max: Math.ceil(xMax * 100) / 100 + 0.01,
         nameTextStyle: {
           color: '#666',
           fontSize: 12,
@@ -152,8 +186,8 @@
         name: '叠片系数',
         nameLocation: 'middle',
         nameGap: 35,
-        min: 88,
-        max: 91.5,
+        min: Math.floor(yMin) - 1,
+        max: Math.ceil(yMax) + 1,
         nameTextStyle: {
           color: '#666',
           fontSize: 12,
@@ -174,6 +208,54 @@
     };
 
     setOptions(option);
+  }
+
+  function updateChart() {
+    if (!chartInstance) return;
+
+    const series = Object.keys(scatterData.value)
+      .filter(key => scatterData.value[key].length > 0)
+      .map((key) => ({
+        name: key,
+        type: 'scatter',
+        data: scatterData.value[key],
+        symbolSize: 8,
+        itemStyle: {
+          color: qualityColors[key] || '#8c8c8c',
+          opacity: 0.8,
+        },
+        emphasis: {
+          focus: 'series',
+          itemStyle: {
+            opacity: 1,
+            borderWidth: 2,
+            borderColor: '#fff',
+          },
+        },
+      }));
+
+    // 计算数据范围
+    const allData = Object.values(scatterData.value).flat();
+    const xData = allData.map(d => d[0]);
+    const yData = allData.map(d => d[1]);
+    const xMin = xData.length > 0 ? Math.min(...xData) : 5.15;
+    const xMax = xData.length > 0 ? Math.max(...xData) : 5.28;
+    const yMin = yData.length > 0 ? Math.min(...yData) : 88;
+    const yMax = yData.length > 0 ? Math.max(...yData) : 92;
+
+    const option = {
+      xAxis: {
+        min: Math.floor(xMin * 100) / 100 - 0.01,
+        max: Math.ceil(xMax * 100) / 100 + 0.01,
+      },
+      yAxis: {
+        min: Math.floor(yMin) - 1,
+        max: Math.ceil(yMax) + 1,
+      },
+      series,
+    };
+
+    chartInstance.setOption(option);
   }
 </script>
 

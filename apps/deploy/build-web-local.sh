@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================
-# 前端镜像构建脚本
-# 用途：从 dist.zip 构建前端 Docker 镜像
+# 前端本地镜像构建脚本
+# 用途：直接从 web/dist 构建前端 Docker 镜像，跳过打包解压步骤
 # ============================================
 
 set -e
@@ -10,11 +10,10 @@ set -e
 # 配置区域
 # ============================================
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$SCRIPT_DIR"
+PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+WEB_DIST_DIR="${PROJECT_ROOT}/web/dist"
 WEB_DEPLOY_DIR="${PROJECT_ROOT}/deploy/web"
-
-# 默认 dist.zip 路径（自动查找）
-DEFAULT_DIST_ZIP="/home/dawn/project/lm/publish/dist.zip"
+DOCKERFILE="${WEB_DEPLOY_DIR}/Dockerfile"
 
 # 镜像配置
 IMAGE_NAME="${IMAGE_NAME:-lm-web}"
@@ -50,7 +49,6 @@ show_help() {
 用法: $(basename "$0") [选项]
 
 选项:
-    -f, --file PATH      指定 dist.zip 文件路径 (默认: /home/dawn/project/lm/publish/dist.zip)
     -v, --version VER    指定镜像版本号 (默认: ${APP_VERSION})
     -t, --tag TAG        指定镜像标签 (默认: 与版本号相同)
     -r, --reload         构建完成后重新加载容器
@@ -58,11 +56,13 @@ show_help() {
     -h, --help           显示此帮助信息
 
 示例:
-    $(basename "$0")                    # 使用默认路径构建
+    $(basename "$0")                    # 使用默认版本构建
     $(basename "$0") -r                 # 构建并重新加载容器
     $(basename "$0") -v 1.2.3 -r        # 指定版本并重新加载
-    $(basename "$0") -t mytag           # 指定镜像标签
-    $(basename "$0") --skip-cleanup     # 构建后保留临时文件
+
+注意:
+    此脚本直接从 web/dist 目录构建，跳过打包和解压步骤
+    确保在 web 目录下已运行 pnpm build
 
 EOF
 }
@@ -71,15 +71,8 @@ EOF
 # 解析参数
 # ============================================
 parse_args() {
-    # 设置默认 dist.zip 路径
-    DIST_ZIP="$DEFAULT_DIST_ZIP"
-    
     while [[ $# -gt 0 ]]; do
         case $1 in
-            -f|--file)
-                DIST_ZIP="$2"
-                shift 2
-                ;;
             -v|--version)
                 APP_VERSION="$2"
                 shift 2
@@ -110,7 +103,7 @@ parse_args() {
 
     # 如果未指定标签，使用版本号作为标签
     IMAGE_TAG="${IMAGE_TAG:-$APP_VERSION}"
-    
+
     # 确保版本号和标签不为空
     if [ -z "$APP_VERSION" ]; then
         APP_VERSION="latest"
@@ -140,19 +133,25 @@ check_env() {
 
     log_info "Docker: $(docker --version | awk '{print $3}' | tr -d ',')"
 
-    # 检查 dist.zip 是否存在
-    if [ ! -f "$DIST_ZIP" ]; then
-        log_error "构建产物不存在: $DIST_ZIP"
-        log_info "请确保 dist.zip 已放置在正确位置"
+    # 检查 dist 目录是否存在
+    if [ ! -d "$WEB_DIST_DIR" ]; then
+        log_error "dist 目录不存在: $WEB_DIST_DIR"
+        log_info "请先运行: cd /home/dawn/project/lm/web && pnpm build"
         exit 1
     fi
 
-    log_info "构建产物: $DIST_ZIP"
-    log_info "文件大小: $(du -sh "$DIST_ZIP" 2>/dev/null | cut -f1)"
+    # 检查 dist 目录是否为空
+    if [ ! -f "$WEB_DIST_DIR/index.html" ]; then
+        log_error "dist 目录中没有 index.html，可能构建失败"
+        exit 1
+    fi
+
+    log_info "构建产物目录: $WEB_DIST_DIR"
+    log_info "文件大小: $(du -sh "$WEB_DIST_DIR" 2>/dev/null | cut -f1)"
 
     # 检查 Dockerfile 是否存在
-    if [ ! -f "${WEB_DEPLOY_DIR}/Dockerfile" ]; then
-        log_error "Dockerfile 不存在: ${WEB_DEPLOY_DIR}/Dockerfile"
+    if [ ! -f "$DOCKERFILE" ]; then
+        log_error "Dockerfile 不存在: $DOCKERFILE"
         exit 1
     fi
 
@@ -160,53 +159,26 @@ check_env() {
 }
 
 # ============================================
-# 清理旧的构建文件
+# 复制 dist 到部署目录
 # ============================================
-clean() {
-    log_step "清理旧的构建文件..."
+copy_dist() {
+    log_step "复制 dist 到部署目录..."
 
     # 清理旧的 dist 目录
     if [ -d "${WEB_DEPLOY_DIR}/dist" ]; then
         rm -rf "${WEB_DEPLOY_DIR}/dist"
         log_info "已清理旧的 dist 目录"
     fi
-}
 
-# ============================================
-# 解压构建产物
-# ============================================
-extract_dist() {
-    log_step "解压构建产物..."
-
-    mkdir -p "${WEB_DEPLOY_DIR}/dist"
-
-    # 检查 unzip 命令
-    if command -v unzip &> /dev/null; then
-        unzip -q "$DIST_ZIP" -d "${WEB_DEPLOY_DIR}/dist"
-    else
-        log_error "unzip 命令未安装"
-        log_info "请安装 unzip: apt-get install unzip 或 yum install unzip"
-        exit 1
-    fi
-
-    # 检查解压结果
-    if [ ! -f "${WEB_DEPLOY_DIR}/dist/index.html" ]; then
-        # 可能是 dist.zip 里包含了一层 dist 目录
-        if [ -d "${WEB_DEPLOY_DIR}/dist/dist" ]; then
-            mv "${WEB_DEPLOY_DIR}/dist/dist"/* "${WEB_DEPLOY_DIR}/dist/"
-            rmdir "${WEB_DEPLOY_DIR}/dist/dist" 2>/dev/null || true
-        else
-            log_warn "未找到 index.html，请检查 dist.zip 结构"
-        fi
-    fi
+    # 复制新的 dist
+    cp -r "$WEB_DIST_DIR" "${WEB_DEPLOY_DIR}/"
+    log_info "已复制 dist 到部署目录"
 
     # 复制配置文件（覆盖原有的空配置）
     if [ -f "${WEB_DEPLOY_DIR}/config.js" ]; then
         cp "${WEB_DEPLOY_DIR}/config.js" "${WEB_DEPLOY_DIR}/dist/config.js"
         log_info "已更新 API 配置文件"
     fi
-
-    log_info "解压完成"
 }
 
 # ============================================
@@ -217,10 +189,11 @@ build_image() {
     cd "$WEB_DEPLOY_DIR"
 
     log_info "镜像名称: ${IMAGE_NAME}:${IMAGE_TAG}"
+    log_info "Dockerfile: $DOCKERFILE"
     log_info "构建路径: $WEB_DEPLOY_DIR"
 
     # 构建镜像
-    if ! docker build --progress=plain -t "${IMAGE_NAME}:${IMAGE_TAG}" .; then
+    if ! docker build -f "$DOCKERFILE" --progress=plain --network=host -t "${IMAGE_NAME}:${IMAGE_TAG}" "$WEB_DEPLOY_DIR"; then
         log_error "Docker 镜像构建失败"
         exit 1
     fi
@@ -267,14 +240,14 @@ reload_container() {
         COMPOSE_CMD="docker compose"
     else
         log_warn "未找到 docker-compose 命令，尝试直接重启容器..."
-        
+
         # 直接使用 docker 重启容器
         local web_container=$(docker ps -q --filter "name=lm-web" 2>/dev/null || true)
         if [ -n "$web_container" ]; then
             log_info "重启 lm-web 容器..."
             docker stop lm-web 2>/dev/null || true
             docker rm lm-web 2>/dev/null || true
-            
+
             # 使用新镜像启动
             docker run -d \
                 --name lm-web \
@@ -297,7 +270,7 @@ reload_container() {
 
     # 使用 docker-compose 重新加载
     cd "$PROJECT_ROOT"
-    
+
     # 检查 docker-compose.yml 是否存在
     if [ ! -f "docker-compose.yml" ]; then
         log_warn "未找到 docker-compose.yml，无法自动重新加载"
@@ -305,18 +278,18 @@ reload_container() {
     fi
 
     log_info "使用 ${COMPOSE_CMD} 重新加载服务..."
-    
+
     # 更新镜像标签（如果使用 latest 标签需要拉取新镜像）
     export IMAGE_TAG
-    
+
     # 重新加载 web 服务
     if ${COMPOSE_CMD} up -d --no-deps web 2>/dev/null; then
         log_info "lm-web 服务已重新加载"
-        
+
         # 等待 web 健康
         log_info "等待服务健康检查..."
         sleep 3
-        
+
         # 检查 web 健康状态
         local web_health=$(docker inspect --format='{{.State.Health.Status}}' lm-web 2>/dev/null || echo "unknown")
         if [ "$web_health" = "healthy" ]; then
@@ -324,14 +297,14 @@ reload_container() {
         else
             log_warn "lm-web 健康状态: $web_health"
         fi
-        
+
         # 重新加载 nginx（因为 nginx 依赖 web，可能需要重启以更新连接）
         log_info "重新加载 nginx..."
         ${COMPOSE_CMD} exec nginx nginx -s reload 2>/dev/null || {
             log_warn "nginx 重新加载配置失败，尝试重启..."
             ${COMPOSE_CMD} restart nginx 2>/dev/null || true
         }
-        
+
         log_info "服务重新加载完成"
     else
         log_error "服务重新加载失败"
@@ -344,7 +317,7 @@ reload_container() {
 # ============================================
 show_result() {
     log_step "构建结果"
-    
+
     echo ""
     echo "========================================"
     echo "镜像名称: ${IMAGE_NAME}"
@@ -371,14 +344,13 @@ main() {
 
     echo ""
     echo "========================================"
-    echo "  前端镜像构建脚本"
+    echo "  前端本地镜像构建脚本"
     echo "  版本: ${APP_VERSION}"
     echo "========================================"
     echo ""
 
     check_env
-    clean
-    extract_dist
+    copy_dist
     build_image
     cleanup
     reload_container

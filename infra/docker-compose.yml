@@ -84,7 +84,7 @@ services:
     ports:
       - "${TEI_PORT:-8081}:80"
     environment:
-      - MODEL_ID=BAAI/${TEI_MODEL_NAME:-bge-m3}
+      - MODEL_ID=/models/${TEI_MODEL_NAME:-bge-m3}
     volumes:
       - ${MODELS_HOST_PATH:-/opt/models}:/models
       - ${DEPLOY_DIR:-./deploy}/tei/cache:/data
@@ -110,11 +110,16 @@ services:
     ports:
       - "${VLLM_PORT:-8082}:8000"
     environment:
-      - MODEL_PATH=/models/${VLLM_MODEL_NAME:-Qwen2.5-7B-Instruct}
       - GPU_MEMORY_UTILIZATION=${VLLM_GPU_MEMORY_UTILIZATION:-0.7}
       - MAX_MODEL_LEN=${VLLM_MAX_MODEL_LEN:-4096}
     volumes:
       - ${MODELS_HOST_PATH:-/opt/models}:/models
+    command:
+      - /models/${VLLM_MODEL_NAME:-qwen2.5-7b}
+      - --gpu-memory-utilization
+      - "${VLLM_GPU_MEMORY_UTILIZATION:-0.7}"
+      - --max-model-len
+      - "${VLLM_MAX_MODEL_LEN:-4096}"
     networks:
       - lm-infra-network
     deploy:

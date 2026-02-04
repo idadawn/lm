@@ -13,6 +13,7 @@
     "serve": "npm run dev",
     "dev": "vite",
     "build": "cross-env NODE_ENV=production NODE_OPTIONS=--max-old-space-size=8192 vite build && cross-env NODE_NO_WARNINGS=1 esno ./build/script/postBuild.ts",
+    "build:fast": "cross-env NODE_ENV=production NODE_OPTIONS=--max-old-space-size=8192 vite build --mode fastbuild && cross-env NODE_NO_WARNINGS=1 esno ./build/script/postBuild.ts",
     "build:test": "cross-env NODE_OPTIONS=--max-old-space-size=8192 vite build --mode test && cross-env NODE_NO_WARNINGS=1 esno ./build/script/postBuild.ts",
     "build:no-cache": "pnpm clean:cache && npm run build",
     "report": "cross-env REPORT=true npm run build",

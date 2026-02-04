@@ -1,0 +1,1 @@
+window.__PRODUCTION__LM__CONF__={"VITE_GLOB_APP_TITLE":"实验室数据分析系统","VITE_GLOB_APP_SHORT_NAME":"lm","VITE_GLOB_API_URL":"","VITE_GLOB_WEBSOCKET_URL":"","VITE_GLOB_API_URL_PREFIX":""};Object.freeze(window.__PRODUCTION__LM__CONF__);Object.defineProperty(window,"__PRODUCTION__LM__CONF__",{configurable:false,writable:false,});

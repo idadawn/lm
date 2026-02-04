@@ -1,7 +1,0 @@
-{
-    "CorsAccessorSettings": {
-        "PolicyName": "PoxiaoCorsAccessor",
-        "WithOrigins": [ "http://localhost:3100", "http://localhost:5000" ],
-        "WithExposedHeaders": [ "access-token", "x-access-token", "Content-Disposition" ]
-    }
-}

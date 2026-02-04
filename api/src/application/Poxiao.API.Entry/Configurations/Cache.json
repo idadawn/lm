@@ -1,7 +1,7 @@
 {
   "Redis": {
     "Enabled": true,
-    "Connection": "lm-redis:6380,defaultDatabase=0,password=Lm@Redis#2025$Secure!",
+    "Connection": "lm-redis:6380,defaultDatabase=0,password=Lm@Redis#2025Secure!",
     "InstanceName": "LM:"
   },
   "Cache": {

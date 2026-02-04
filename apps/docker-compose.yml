@@ -10,6 +10,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      network: host
     image: ${API_IMAGE:-lm-api}:${IMAGE_TAG:-latest}
     container_name: ${CONTAINER_PREFIX:-lm}-api-${IMAGE_TAG:-latest}
     restart: unless-stopped
@@ -45,6 +46,7 @@ services:
     build:
       context: .
       dockerfile: web/Dockerfile
+      network: host
     image: ${WEB_IMAGE:-lm-web}:${IMAGE_TAG:-latest}
     container_name: ${CONTAINER_PREFIX:-lm}-web-${IMAGE_TAG:-latest}
     restart: unless-stopped

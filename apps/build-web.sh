@@ -1,1 +1,3 @@
-deploy/build-web.sh
+#!/bin/bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec "${SCRIPT_DIR}/deploy/build-web.sh" "$@"

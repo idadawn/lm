@@ -1,22 +1,23 @@
 # ============================================
-# 实验室数据分析系统 - 前端 Dockerfile
-# 基于 dist.zip 构建前端镜像
+# 前端 Web 镜像 - 基于 Nginx 的静态文件服务
+# 从 dist.zip 直接解压构建
 # ============================================
-
 FROM nginx:1.27-alpine
 
-# 使用国内镜像源安装 unzip
-RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
-    apk add --no-cache curl unzip
+# 安装必要的工具
+RUN apk add --no-cache curl unzip
 
 # 复制 Nginx 配置
-COPY conf/nginx.docker.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # 复制并解压 dist.zip
 COPY dist.zip /tmp/dist.zip
 RUN unzip /tmp/dist.zip -d /usr/share/nginx/html && \
     rm /tmp/dist.zip && \
     chown -R nginx:nginx /usr/share/nginx/html
+
+# 复制生产环境配置（覆盖原有的空配置）
+COPY config.js /usr/share/nginx/html/config.js
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \

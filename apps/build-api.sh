@@ -46,3 +46,4 @@ docker build \
   --network=host
 
 log_info "Build complete for image: $IMAGE_NAME:${IMAGE_TAG:-latest}"
+

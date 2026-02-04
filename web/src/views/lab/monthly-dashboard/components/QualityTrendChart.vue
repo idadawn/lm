@@ -76,21 +76,43 @@ function updateChart() {
   ];
 
   // 动态添加合格等级系列
+  const definedColumnRates: number[][] = []; // 存储每个已定义等级的数据，用于计算"其他合格"
+
   if (props.qualifiedColumns && props.qualifiedColumns.length > 0) {
     props.qualifiedColumns.forEach((col, index) => {
-      legendData.push(col.name);
-      
+      // 构建可能的字段名
+      const dynamicField = `class${col.code}Rate`;
+
+      // 尝试从数据中获取该等级的占比
       const colRates = props.data!.map((item: any) => {
-         // 尝试从动态字段获取
-        const dynamicField = `class${col.code}Rate`;
-        return Number(item[dynamicField]) || 0;
+        // 优先使用动态字段
+        if (item[dynamicField] !== undefined && item[dynamicField] !== null) {
+          return Number(item[dynamicField]) || 0;
+        }
+        // 兼容旧字段
+        if (col.code === 'A' && item.classARate !== undefined && item.classARate !== null) {
+          return Number(item.classARate) || 0;
+        }
+        if (col.code === 'B' && item.classBRate !== undefined && item.classBRate !== null) {
+          return Number(item.classBRate) || 0;
+        }
+        return 0;
       });
 
-      // 为每个系列分配不同的颜色
-      // 跳过第一个颜色(留给合格率，虽然合格率用了固定的 #4facfe，但为了区分，我们从颜色池的其他颜色开始选)
-      // 这里简单处理，循环使用颜色池
-      const color = colors[index % colors.length];
-      
+      // 存储该等级的数据，用于计算"其他合格"
+      definedColumnRates.push(colRates);
+
+      // 检查是否有有效数据（至少有一个非零值）
+      const hasValidData = colRates.some(v => v > 0);
+      if (!hasValidData) {
+        return; // 跳过没有数据的系列
+      }
+
+      legendData.push(col.name);
+
+      // 使用列定义中的颜色，如果没有则从颜色池选择
+      const color = col.color || colors[index % colors.length];
+
       series.push({
         name: col.name,
         type: 'line',
@@ -99,11 +121,39 @@ function updateChart() {
         showSymbol: false,
         symbol: 'circle',
         symbolSize: 5,
-        lineStyle: { width: 2 }, // 细一点，区分主线
-        itemStyle: { color: color },
-        // 不需要 areaStyle，避免遮挡
+        lineStyle: { color, width: 2 },
+        itemStyle: { color },
       });
     });
+  }
+
+  // 添加"其他合格"系列（合格率 - 所有已定义等级占比之和）
+  if (definedColumnRates.length > 0) {
+    const otherQualifiedRates = props.data!.map((item, i) => {
+      const qualifiedRate = Number(item.qualifiedRate) || 0;
+      // 计算所有已定义等级占比之和
+      const definedSum = definedColumnRates.reduce((sum, rates) => sum + (rates[i] || 0), 0);
+      // 其他合格 = 合格率 - 已定义等级之和
+      return Math.max(0, qualifiedRate - definedSum);
+    });
+
+    // 检查是否有有效数据
+    const hasValidOtherData = otherQualifiedRates.some(v => v > 0.1); // 至少有0.1%才算有效
+    if (hasValidOtherData) {
+      legendData.push('其他合格');
+
+      series.push({
+        name: '其他合格',
+        type: 'line',
+        data: otherQualifiedRates,
+        smooth: true,
+        showSymbol: false,
+        symbol: 'circle',
+        symbolSize: 5,
+        lineStyle: { color: '#a0aec0', width: 1.5, type: 'dashed' },
+        itemStyle: { color: '#a0aec0' },
+      });
+    }
   }
 
   const option = {

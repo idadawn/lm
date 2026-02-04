@@ -35,12 +35,22 @@ const colors = ['#42e695', '#4facfe', '#ff9a9e', '#fa709a', '#8ec5fc'];
 function getCategoryRate(shift: ShiftComparison, colCode: string): number {
   // 尝试从动态字段获取
   const dynamicField = `class${colCode}Rate`;
-  if ((shift as any)[dynamicField] !== undefined) {
-    return Number((shift as any)[dynamicField]) || 0;
+  const val = (shift as any)[dynamicField];
+  if (val !== undefined && val !== null) {
+    return Number(val) || 0;
   }
   // 兼容旧字段
-  if (colCode === 'A' && (shift as any).classARate !== undefined) {
-    return Number(shift.classARate) || 0;
+  if (colCode === 'A') {
+    const legacyVal = (shift as any).classARate;
+    if (legacyVal !== undefined && legacyVal !== null) {
+      return Number(legacyVal) || 0;
+    }
+  }
+  if (colCode === 'B') {
+    const legacyVal = (shift as any).classBRate;
+    if (legacyVal !== undefined && legacyVal !== null) {
+      return Number(legacyVal) || 0;
+    }
   }
   return 0;
 }

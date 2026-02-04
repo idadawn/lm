@@ -151,6 +151,10 @@ const [registerTable, { reload }] = useTable({
     ],
     fieldMapToTime: [['dateRange', ['startDate', 'endDate'], 'YYYY-MM-DD']],
   },
+  fetchSetting: {
+    listField: 'list',
+    totalField: 'pagination.total',
+  },
   // 处理参数
   beforeFetch: (params) => {
     // 如果选择全部(-1)，则不传isValidData或传null
@@ -159,16 +163,16 @@ const [registerTable, { reload }] = useTable({
     }
     return params;
   },
-  // 处理返回数据，转换成分页格式
+  // afterFetch 接收的是已经根据 fetchSetting.listField 提取出的数组
+  // 只需返回处理后的数组即可，不需要再包装成 { items, total }
   afterFetch: (data) => {
-    // 后端返回格式: { list: [], pagination: { currentPage, pageSize, total } }
-    if (data && data.list) {
-      return {
-        items: data.list,
-        total: data.pagination?.total || data.list.length,
-      };
+    console.log('MagneticData afterFetch:', data);
+    // data 应该已经是数组，直接返回或做必要处理
+    if (Array.isArray(data)) {
+      return data;
     }
-    return data;
+    // 如果不是数组，尝试提取
+    return data?.list || data?.items || [];
   },
 });
 

@@ -27,7 +27,7 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
   // The boolean type read by loadEnv is a string. This function can be converted to boolean type
   const viteEnv = wrapperEnv(env);
 
-  const { VITE_PORT, VITE_PUBLIC_PATH, VITE_PROXY, VITE_DROP_CONSOLE } = viteEnv;
+  const { VITE_PORT, VITE_PUBLIC_PATH, VITE_PROXY, VITE_DROP_CONSOLE, VITE_CDN } = viteEnv;
 
   const isBuild = command === 'build';
 
@@ -95,9 +95,9 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
           assetFileNames: 'static/[ext]/[name]-[hash].[ext]',
           // Optimize manual chunks for better caching
           manualChunks: {
-            vendor: ['vue', 'vue-router', 'pinia'],
+            vendor: VITE_CDN === true ? [] : ['vue', 'vue-router', 'pinia'],
             antd: ['ant-design-vue'],
-            echarts: ['echarts'],
+            echarts: VITE_CDN === true ? [] : ['echarts'],
             monaco: ['monaco-editor'],
           },
         },

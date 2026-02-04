@@ -46,8 +46,6 @@
       </div>
     </div>
 
-    <!-- AI 对话助手 -->
-    <ChatAssistant :report-data="data" />
   </div>
 </template>
 
@@ -65,7 +63,6 @@ import QualityDistributionPie from './components/QualityDistributionPie.vue';
 import ShiftComparisonRadar from './components/ShiftComparisonRadar.vue';
 import UnqualifiedTop5 from './components/UnqualifiedTop5.vue';
 import ProductionShiftHeatmap from './components/ProductionShiftHeatmap.vue';
-import ChatAssistant from './components/ChatAssistant.vue';
 
 const loading = ref(false);
 const data = ref<MonthlyReportResponse | null>(null);

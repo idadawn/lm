@@ -30,19 +30,19 @@
 
     <!-- Dynamic Qualified Columns -->
     <div v-for="(col, index) in qualifiedColumns" :key="col.code" class="kpi-card">
-      <div class="kpi-icon-wrapper" :style="{ background: getColumnGradient(index) }">
+      <div class="kpi-icon-wrapper" :style="{ background: getColumnGradient(index, col) }">
         <CheckCircleOutlined v-if="index === 0" class="kpi-icon" />
         <CheckSquareOutlined v-else class="kpi-icon" />
       </div>
       <div class="kpi-content">
         <div class="kpi-label">{{ col.name }}占比</div>
         <div class="kpi-value" :class="index === 0 ? 'success' : 'primary'">
-          <span class="number">{{ formatNumber(summary?.qualifiedCategories?.[col.code]?.rate) }}</span>
+          <span class="number">{{ getCategoryRate(summary, col.code) }}</span>
           <span class="unit">%</span>
         </div>
         <div class="kpi-sub">
           <span class="sub-label">重量:</span>
-          <span class="sub-value">{{ formatNumber(summary?.qualifiedCategories?.[col.code]?.weight) }} kg</span>
+          <span class="sub-value">{{ getCategoryWeight(summary, col.code) }} kg</span>
         </div>
       </div>
     </div>
@@ -103,7 +103,11 @@ function getRateClass(rate?: number): string {
 }
 
 // Get gradient for dynamic columns
-function getColumnGradient(index: number): string {
+function getColumnGradient(index: number, col?: JudgmentLevelColumn): string {
+  // 优先使用列定义中的颜色
+  if (col?.color) {
+    return `linear-gradient(135deg, ${col.color} 0%, ${col.color}dd 100%)`;
+  }
   const gradients = [
     'linear-gradient(135deg, #42e695 0%, #3bb2b8 100%)', // Green-ish for first
     'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', // Blue-ish for second
@@ -111,6 +115,46 @@ function getColumnGradient(index: number): string {
     'linear-gradient(135deg, #8fd3f4 0%, #84fab0 100%)', // Light green
   ];
   return gradients[index % gradients.length];
+}
+
+// 获取某等级的占比（兼容多种数据格式）
+function getCategoryRate(summary: SummaryData | null | undefined, code: string): string {
+  if (!summary) return '-';
+
+  // 优先从 qualifiedCategories 获取
+  if (summary.qualifiedCategories?.[code]?.rate !== undefined) {
+    return formatNumber(summary.qualifiedCategories[code].rate);
+  }
+
+  // 兼容旧字段
+  if (code === 'A' && summary.classARate !== undefined) {
+    return formatNumber(summary.classARate);
+  }
+  if (code === 'B' && summary.classBRate !== undefined) {
+    return formatNumber(summary.classBRate);
+  }
+
+  return '-';
+}
+
+// 获取某等级的重量（兼容多种数据格式）
+function getCategoryWeight(summary: SummaryData | null | undefined, code: string): string {
+  if (!summary) return '-';
+
+  // 优先从 qualifiedCategories 获取
+  if (summary.qualifiedCategories?.[code]?.weight !== undefined) {
+    return formatNumber(summary.qualifiedCategories[code].weight);
+  }
+
+  // 兼容旧字段
+  if (code === 'A' && summary.classAWeight !== undefined) {
+    return formatNumber(summary.classAWeight);
+  }
+  if (code === 'B' && summary.classBWeight !== undefined) {
+    return formatNumber(summary.classBWeight);
+  }
+
+  return '-';
 }
 </script>
 

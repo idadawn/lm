@@ -72,8 +72,9 @@ export interface ShiftGroupRow {
 export interface QualityTrend {
     date: string;
     qualifiedRate: number;
-    classARate: number;
-    classBRate: number;
+    classARate?: number;
+    classBRate?: number;
+    [key: string]: any; // Allow dynamic properties like classCRate, classDRate, etc.
 }
 
 // 不合格分类

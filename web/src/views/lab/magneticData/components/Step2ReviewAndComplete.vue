@@ -13,11 +13,7 @@
     <!-- 导入结果 -->
     <div v-else class="result-section">
       <!-- 成功状态 -->
-      <a-result
-        v-if="importSuccess"
-        status="success"
-        title="数据导入成功"
-        :sub-title="`成功更新 ${stats.updatedRows} 条数据`">
+      <a-result v-if="importSuccess" status="success" title="数据导入成功" :sub-title="`成功更新 ${stats.updatedRows} 条数据`">
         <template #extra>
           <div class="result-stats">
             <a-row :gutter="24" style="margin-bottom: 24px">
@@ -41,11 +37,7 @@
       </a-result>
 
       <!-- 失败状态 -->
-      <a-result
-        v-else-if="importError"
-        status="error"
-        title="数据导入失败"
-        :sub-title="importError">
+      <a-result v-else-if="importError" status="error" title="数据导入失败" :sub-title="importError">
         <template #extra>
           <a-button type="primary" @click="handleRetry">重试</a-button>
         </template>
@@ -54,10 +46,7 @@
       <!-- 核对数据状态（默认显示） -->
       <div v-else class="review-section">
         <div class="review-header">
-          <a-alert
-            type="info"
-            show-icon
-            style="margin-bottom: 16px">
+          <a-alert type="info" show-icon style="margin-bottom: 16px">
             <template #message>
               <div class="alert-message">
                 <span>第二步：核对最优数据并确认导入</span>
@@ -74,7 +63,9 @@
                       <p><strong>保存规则：</strong>带K保存到刻痕后，不带K保存到正常性能指标。</p>
                     </div>
                   </template>
-                  <a-button type="link" size="small"><InfoCircleOutlined /> 匹配规则说明</a-button>
+                  <a-button type="link" size="small">
+                    <InfoCircleOutlined /> 匹配规则说明
+                  </a-button>
                 </a-tooltip>
               </div>
             </template>
@@ -103,13 +94,8 @@
           <!-- 标签页 1：拟导入最优数据 -->
           <a-tab-pane key="best" tab="拟导入最优数据">
             <div class="tab-content">
-              <a-table
-                :columns="bestDataColumns"
-                :data-source="bestDataList"
-                :pagination="{ pageSize: 10, size: 'small' }"
-                size="small"
-                :scroll="{ y: 400 }"
-                bordered>
+              <a-table :columns="bestDataColumns" :data-source="bestDataList"
+                :pagination="{ pageSize: 10, size: 'small' }" size="small" :scroll="{ y: 400 }" bordered>
                 <template #bodyCell="{ column, record }">
                   <template v-if="column.key === 'isScratched'">
                     <a-tag :color="(record.isScratched || record.IsScratched) ? 'orange' : 'blue'">
@@ -120,7 +106,8 @@
                     <span class="highlight-value">{{ record.psLoss ?? record.PsLoss }}</span>
                   </template>
                   <template v-else-if="column.key === 'detectionTime'">
-                    {{ (record.detectionTime || record.DetectionTime) ? formatToDateTime(record.detectionTime || record.DetectionTime) : '-' }}
+                    {{ (record.detectionTime || record.DetectionTime) ? formatToDateTime(record.detectionTime ||
+                      record.DetectionTime) : '-' }}
                   </template>
 
                 </template>
@@ -131,12 +118,8 @@
           <!-- 标签页 2：完整核对明细 (全部有效数据) -->
           <a-tab-pane key="all" tab="完整核对明细">
             <div class="tab-content">
-              <a-table
-                :columns="validDataColumns"
-                :data-source="getValidData"
-                :pagination="{ pageSize: 15, size: 'small' }"
-                size="small"
-                :scroll="{ y: 400 }"
+              <a-table :columns="validDataColumns" :data-source="getValidData"
+                :pagination="{ pageSize: 15, size: 'small' }" size="small" :scroll="{ y: 400 }"
                 :row-class-name="getRowClassName">
 
                 <template #bodyCell="{ column, record }">
@@ -152,7 +135,8 @@
                     <span v-else>-</span>
                   </template>
                   <template v-else-if="column.key === 'detectionTime'">
-                    {{ (record.detectionTime || record.DetectionTime) ? formatToDateTime(record.detectionTime || record.DetectionTime) : '-' }}
+                    {{ (record.detectionTime || record.DetectionTime) ? formatToDateTime(record.detectionTime ||
+                      record.DetectionTime) : '-' }}
                   </template>
 
                 </template>
@@ -169,7 +153,7 @@
             </template>
             <div class="tab-content">
               <div class="error-list">
-                <a-list size="small" bordered :data-source="reviewData.errors">
+                <a-list size="small" bordered :data-source="reviewData.errors || []">
                   <template #renderItem="{ item }">
                     <a-list-item>
                       <a-typography-text type="danger">
@@ -203,10 +187,10 @@
 <script lang="ts" setup>
 import { ref, computed, watch, onMounted } from 'vue';
 import { message } from 'ant-design-vue';
-import { 
-  CheckCircleOutlined, 
-  ReloadOutlined, 
-  InfoCircleOutlined, 
+import {
+  CheckCircleOutlined,
+  ReloadOutlined,
+  InfoCircleOutlined,
   CloudUploadOutlined,
   CloseCircleOutlined
 } from '@ant-design/icons-vue';
@@ -322,14 +306,14 @@ async function loadReviewData() {
   try {
     // 获取核对数据
     const review = await getMagneticImportReview(props.importSessionId);
-     // 调试日志
+    // 调试日志
     reviewData.value = review;
 
     // 检查是否有有效数据
     const validCount = review.validDataRows || 0;
     const totalCount = review.totalRows || 0;
-     // 调试日志
-    
+    // 调试日志
+
     if (validCount === 0) {
       if (totalCount > 0) {
         importError.value = `共解析 ${totalCount} 行数据，但没有有效数据。请检查数据格式是否正确。`;
@@ -478,6 +462,7 @@ defineExpose({
         margin-right: 8px;
         font-size: 13px;
       }
+
       .value {
         font-weight: 600;
         font-size: 16px;
@@ -487,6 +472,7 @@ defineExpose({
       &.primary .value {
         color: #52c41a;
       }
+
       &.warning .value {
         color: #faad14;
       }
@@ -525,7 +511,7 @@ defineExpose({
       background-color: #f6ffed;
       border-left: 3px solid #52c41a;
     }
-    
+
     :deep(.ant-table-tbody tr.best-data-row:hover) {
       background-color: #f0f9e8;
     }
@@ -541,16 +527,18 @@ defineExpose({
 
 .rules-tooltip {
   padding: 4px;
+
   p {
     margin-bottom: 8px;
   }
+
   ol {
     padding-left: 18px;
     margin-bottom: 8px;
+
     li {
       margin-bottom: 2px;
     }
   }
 }
 </style>
-

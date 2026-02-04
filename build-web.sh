@@ -10,7 +10,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$SCRIPT_DIR"
 WEB_PROJECT_PATH="${PROJECT_ROOT}/web"
-OUTPUT_DIR="${PROJECT_ROOT}/apps/web"
+OUTPUT_DIR="${PROJECT_ROOT}/apps/dist"
 
 # Colors
 GREEN='\033[0;32m'

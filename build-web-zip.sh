@@ -11,7 +11,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$SCRIPT_DIR"
 DEFAULT_ZIP_FILE="${PROJECT_ROOT}/web/dist.zip"
-OUTPUT_DIR="${PROJECT_ROOT}/apps/web"
+OUTPUT_DIR="${PROJECT_ROOT}/apps/dist"
 
 # Get zip file path from argument or use default
 ZIP_FILE="${1:-$DEFAULT_ZIP_FILE}"

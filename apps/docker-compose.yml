@@ -7,8 +7,11 @@
 services:
   # 后端 API
   api:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: ${API_IMAGE:-lm-api}:${IMAGE_TAG:-latest}
-    container_name: ${CONTAINER_PREFIX:-lm}-api
+    container_name: ${CONTAINER_PREFIX:-lm}-api-${IMAGE_TAG:-latest}
     restart: unless-stopped
     ports:
       - "${API_PORT:-9530}:9530"
@@ -39,8 +42,11 @@ services:
 
   # 前端 Web（静态文件服务）
   web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
     image: ${WEB_IMAGE:-lm-web}:${IMAGE_TAG:-latest}
-    container_name: ${CONTAINER_PREFIX:-lm}-web
+    container_name: ${CONTAINER_PREFIX:-lm}-web-${IMAGE_TAG:-latest}
     restart: unless-stopped
     # 内部端口，不对外暴露
     expose:
@@ -62,7 +68,7 @@ services:
   # Nginx 反向代理
   nginx:
     image: nginx:${NGINX_VERSION:-1.27-alpine}
-    container_name: ${CONTAINER_PREFIX:-lm}-nginx
+    container_name: ${CONTAINER_PREFIX:-lm}-nginx-${IMAGE_TAG:-latest}
     restart: unless-stopped
     ports:
       - "${NGINX_PORT:-8923}:80"

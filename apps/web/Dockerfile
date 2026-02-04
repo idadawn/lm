@@ -7,13 +7,10 @@ FROM nginx:1.27-alpine
 RUN apk add --no-cache curl
 
 # 复制 Nginx 配置
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY web/nginx.conf /etc/nginx/conf.d/default.conf
 
 # 复制前端构建产物
 COPY dist /usr/share/nginx/html
-
-# 复制生产环境配置（覆盖原有的空配置）
-COPY config.js /usr/share/nginx/html/config.js
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \

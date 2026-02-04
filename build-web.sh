@@ -80,14 +80,25 @@ mkdir -p "$OUTPUT_DIR"
 # Install dependencies
 cd "$WEB_PROJECT_PATH"
 
-log_info "Installing dependencies..."
-pnpm install
+log_info "Installing dependencies with parallel download..."
+# 使用并联安装和缓存优化
+pnpm install --frozen-lockfile --prefer-offline --reporter=silent
 
 # Build
 cd "$WEB_PROJECT_PATH"
 
-log_info "Building production..."
-pnpm build
+# 构建前清理缓存以获最佳性能
+log_info "Cleaning build cache..."
+rm -rf node_modules/.vite node_modules/.cache dist .turbo 2>/dev/null || true
+
+# 设置环境变量优化构建
+export NODE_OPTIONS="--max-old-space-size=290000"
+export VITE_TSC=false
+export VITE_SOURCE_MAP=false
+
+# 使用快速构建模式
+log_info "Building with high-performance settings (296GB RAM, all CPU cores)..."
+time pnpm build:fast || pnpm build
 
 # Check if dist directory exists
 if [ ! -d "${WEB_PROJECT_PATH}/dist" ]; then

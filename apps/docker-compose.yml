@@ -23,12 +23,13 @@ services:
     volumes:
       - ${VOLUMES_DIR:-./volumes}/api/logs:/app/logs
       - ${VOLUMES_DIR:-./volumes}/api/uploads:/app/uploads
-      - ${VOLUMES_DIR:-./volumes}/api/Configurations:/app/Configurations
+        #- ${VOLUMES_DIR:-./volumes}/api/Configurations:/app/Configurations
       - ${VOLUMES_DIR:-./volumes}/api/wwwroot:/app/wwwroot
       - ${VOLUMES_DIR:-./volumes}/api/resources/:/app/resources/
       - ${VOLUMES_DIR:-./volumes}/api/lib/:/app/lib/
     networks:
       - lm-apps-network
+      - lm-infra-network
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9530/health" ]
       interval: 30s
@@ -55,6 +56,7 @@ services:
       - "80"
     networks:
       - lm-apps-network
+      - lm-infra-network
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost/health" ]
       interval: 30s
@@ -76,15 +78,26 @@ services:
       - "${NGINX_PORT:-8923}:80"
     volumes:
       - ${VOLUMES_DIR:-./volumes}/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ${VOLUMES_DIR:-./volumes}/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ${VOLUMES_DIR:-./volumes}/nginx/conf.d/default.conf.template:/etc/nginx/templates/default.conf.template:ro
       - ${VOLUMES_DIR:-./volumes}/nginx/ssl:/etc/nginx/ssl:ro
+      - ${VOLUMES_DIR:-./volumes}/nginx/docker-entrypoint.sh:/custom-entrypoint.sh:ro
+    environment:
+      - API_SERVICE_NAME=${API_SERVICE_NAME:-api}
+      - WEB_SERVICE_NAME=${WEB_SERVICE_NAME:-web}
+      - API_PORT=${API_PORT}
+      - WEB_INTERNAL_PORT=${WEB_INTERNAL_PORT:-80}
+    entrypoint: ["/bin/sh", "/custom-entrypoint.sh"]
+    command: ["nginx", "-g", "daemon off;"]
     networks:
       - lm-apps-network
+      - lm-infra-network
     depends_on:
       api:
         condition: service_healthy
       web:
         condition: service_healthy
+    tmpfs:
+      - /etc/nginx/conf.d:rw,size=10m
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost/health" ]
       interval: 30s
@@ -101,3 +114,7 @@ networks:
   lm-apps-network:
     name: ${NETWORK_NAME:-lm-apps-network}
     driver: bridge
+  lm-infra-network:
+    name: ${INFRA_NETWORK_NAME:-lm-infra-network}
+    driver: bridge
+    external: true

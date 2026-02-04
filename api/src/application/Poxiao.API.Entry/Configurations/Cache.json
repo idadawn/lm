@@ -1,15 +1,9 @@
 {
-  "Redis": {
-    "Enabled": true,
-    "Connection": "lm-redis:6380,defaultDatabase=0,password=Lm@Redis#2025Secure!",
-    "InstanceName": "LM:"
-  },
   "Cache": {
-    "CacheProvider": "Redis",
-    "Expire": {
-      "Default": "30",
-      "List": "30",
-      "Dictionary": "30"
-    }
+    "CacheType": "RedisCache",
+    "ip": "localhost",
+    "port": 6380,
+    "password": "Lm@Redis#2025Secure!",
+    "RedisConnectionString": "{0}:{1},password={2}, poolsize=500,ssl=false,defaultDatabase=2"
   }
 }

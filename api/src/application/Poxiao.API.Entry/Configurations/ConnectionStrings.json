@@ -3,23 +3,23 @@
     "ConnectionConfigs": [
       {
         "ConfigId": "default",
-        "DBName": "lumei",
+        "DBName": "postgres",
         "DBType": "MySql",
-        "Host": "lm-mysql",
-        "Port": "3307",
-        "UserName": "root",
-        "Password": "Lm@Mysql#2025App",
-        "DefaultConnection": "server=lm-mysql;Port=3307;Database={0};Uid=poxiao;Pwd=Lm@Mysql#2025App;AllowLoadLocalInfile=true;Charset=utf8mb4;"
+        "Host": "localhost",
+        "Port": "5433",
+        "UserName": "postgres",
+        "Password": "Sys#2025#Pos!",
+        "DefaultConnection": "server=localhost;Port=5433;Database={0};Uid=poxiao;Pwd=Sys#2025#Pos!;AllowLoadLocalInfile=true;Charset=utf8mb4;"
       },
       {
         "ConfigId": "Poxiao-Job",
-        "DBName": "lumei",
+        "DBName": "postgres",
         "DBType": "MySql",
-        "Host": "lm-mysql",
-        "Port": "3307",
-        "UserName": "root",
-        "Password": "Lm@Mysql#2025App",
-        "DefaultConnection": "server=lm-mysql;Port=3307;Database={0};Uid=poxiao;Pwd=Lm@Mysql#2025App;AllowLoadLocalInfile=true;Charset=utf8mb4;"
+        "Host": "localhost",
+        "Port": "5433",
+        "UserName": "postgres",
+        "Password": "Sys#2025#Pos!",
+        "DefaultConnection": "server=localhost;Port=5433;Database={0};Uid=poxiao;Pwd=Sys#2025#Pos!;AllowLoadLocalInfile=true;Charset=utf8mb4;"
       }
     ]
   }

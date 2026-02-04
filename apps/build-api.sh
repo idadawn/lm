@@ -33,16 +33,16 @@ if [ ! -f "$DOCKERFILE" ]; then
     exit 1
 fi
 
-log_info "Building Docker image: $IMAGE_NAME"
+log_info "Building Docker image: $IMAGE_NAME:${IMAGE_TAG:-latest}"
 log_info "Context: $API_DIR"
 log_info "Dockerfile: $DOCKERFILE"
 
 # Execute docker build
 docker build \
-  -t "$IMAGE_NAME" \
+  -t "$IMAGE_NAME:${IMAGE_TAG:-latest}" \
   -f "$DOCKERFILE" \
   "$API_DIR" \
   --progress=plain \
   --network=host
 
-log_info "Build complete for image: $IMAGE_NAME"
+log_info "Build complete for image: $IMAGE_NAME:${IMAGE_TAG:-latest}"

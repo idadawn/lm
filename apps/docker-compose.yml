@@ -7,7 +7,7 @@
 services:
   # 后端 API
   api:
-    image: ${API_IMAGE:-lm-api}
+    image: ${API_IMAGE:-lm-api}:${IMAGE_TAG:-latest}
     container_name: ${CONTAINER_PREFIX:-lm}-api
     restart: unless-stopped
     ports:
@@ -39,7 +39,7 @@ services:
 
   # 前端 Web（静态文件服务）
   web:
-    image: ${WEB_IMAGE:-lm-web}
+    image: ${WEB_IMAGE:-lm-web}:${IMAGE_TAG:-latest}
     container_name: ${CONTAINER_PREFIX:-lm}-web
     restart: unless-stopped
     # 内部端口，不对外暴露

@@ -22,27 +22,34 @@ public static class MachineHelper
         try
         {
             var systemInfo = new SystemInfoModel();
+            // 使用 ip addr 命令代替已弃用的 ifconfig
             var process = new Process
             {
-                StartInfo = new ProcessStartInfo("ifconfig")
+                StartInfo = new ProcessStartInfo("ip", "addr")
                 {
                     RedirectStandardOutput = true,
                     UseShellExecute = false
                 }
             };
             process.Start();
-            var hddInfo = process.StandardOutput.ReadToEnd();
+            var output = process.StandardOutput.ReadToEnd();
             process.WaitForExit();
             process.Dispose();
             process.Close();
-            var lines = hddInfo.Split('\n');
+            var lines = output.Split('\n');
             foreach (var item in lines)
             {
-                if (item.Contains("inet"))
+                // ip addr 输出格式: inet 192.168.1.100/24 brd 192.168.1.255 scope global eth0
+                if (item.Contains("inet ") && !item.Contains("127.0.0.1"))
                 {
-                    var li = item.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    systemInfo.ip = li[1];
-                    break;
+                    var li = item.Trim().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (li.Length >= 2)
+                    {
+                        // 移除CIDR掩码 (如 /24)
+                        var ipWithMask = li[1];
+                        systemInfo.ip = ipWithMask.Contains("/") ? ipWithMask.Split('/')[0] : ipWithMask;
+                        break;
+                    }
                 }
             }
 

@@ -337,7 +337,7 @@ public class Startup : AppStartup
         app.MapWebSocketManager("/api/message/websocket", serviceProvider.GetService<IMHandler>());
 
         // 初始化数据库表
-        serviceProvider.InitializeLabDatabase();
+        //serviceProvider.InitializeLabDatabase();
 
         app.UseEndpoints(endpoints =>
         {

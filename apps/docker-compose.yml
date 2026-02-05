@@ -23,13 +23,12 @@ services:
     volumes:
       - ${VOLUMES_DIR:-./volumes}/api/logs:/app/logs
       - ${VOLUMES_DIR:-./volumes}/api/uploads:/app/uploads
-        #- ${VOLUMES_DIR:-./volumes}/api/Configurations:/app/Configurations
+      - ${VOLUMES_DIR:-./volumes}/api/Configurations:/app/Configurations
       - ${VOLUMES_DIR:-./volumes}/api/wwwroot:/app/wwwroot
       - ${VOLUMES_DIR:-./volumes}/api/resources/:/app/resources/
       - ${VOLUMES_DIR:-./volumes}/api/lib/:/app/lib/
     networks:
       - lm-apps-network
-      - lm-infra-network
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:9530/health" ]
       interval: 30s
@@ -56,7 +55,6 @@ services:
       - "80"
     networks:
       - lm-apps-network
-      - lm-infra-network
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost/health" ]
       interval: 30s
@@ -90,7 +88,6 @@ services:
     command: ["nginx", "-g", "daemon off;"]
     networks:
       - lm-apps-network
-      - lm-infra-network
     depends_on:
       api:
         condition: service_healthy
@@ -114,7 +111,3 @@ networks:
   lm-apps-network:
     name: ${NETWORK_NAME:-lm-apps-network}
     driver: bridge
-  lm-infra-network:
-    name: ${INFRA_NETWORK_NAME:-lm-infra-network}
-    driver: bridge
-    external: true

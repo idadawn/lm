@@ -1,0 +1,155 @@
+{
+  "Poxiao_App": {
+    "CodeAreasName": [
+      "SubDev",
+      "Lab"
+    ],
+    "SystemPath": "/app/resources",
+    "MPUploadFileType": [
+      "bmp",
+      "png",
+      "jpeg",
+      "jpg",
+      "gif",
+      "mp3",
+      "wma",
+      "wav",
+      "amr",
+      "mp4"
+    ],
+    "WeChatUploadFileType": [
+      "jpg",
+      "png",
+      "doc",
+      "docx",
+      "ppt",
+      "pptx",
+      "xls",
+      "xlsx",
+      "pdf",
+      "txt",
+      "rar",
+      "zip",
+      "csv",
+      "amr",
+      "mp4"
+    ],
+    "AllowUploadImageType": [
+      "jpg",
+      "gif",
+      "png",
+      "bmp",
+      "jpeg",
+      "tiff",
+      "psd",
+      "swf",
+      "svg",
+      "pcx",
+      "dxf",
+      "wmf",
+      "emf",
+      "lic",
+      "eps",
+      "tga"
+    ],
+    "AllowUploadFileType": [
+      "jpg",
+      "mp3",
+      "gif",
+      "png",
+      "bmp",
+      "jpeg",
+      "doc",
+      "docx",
+      "ppt",
+      "pptx",
+      "xls",
+      "xlsx",
+      "pdf",
+      "txt",
+      "rar",
+      "zip",
+      "csv",
+      "ogm",
+      "wmv",
+      "asx",
+      "mpg",
+      "webm",
+      "mp4",
+      "ogv",
+      "mpeg",
+      "mov",
+      "m4v",
+      "avi"
+    ],
+    "SpecialString": [
+      "/",
+      "<",
+      ">",
+      "|",
+      "?",
+      "\\",
+      ":",
+      "\"",
+      "*",
+      "_"
+    ],
+    "PreviewType": "kkfile",
+    "KKFileDomain": "http://lm-api:9530/FileServer",
+    "Domain": "http://localhost:9530",
+    "YOZO": {
+      "domain": "http://dcsapi.com/",
+      "domainKey": "57462250284462899305150",
+      "UploadAPI": "http://dmc.yozocloud.cn/api/file/http?fileUrl={0}&appId={1}&sign={2}",
+      "DownloadAPI": "http://eic.yozocloud.cn/api/view/file?fileVersionId={0}&appId={1}&sign={2}",
+      "AppId": "yozoAQh5dPSt6063",
+      "AppKey": "6365bfbd733fce644fd7ac0aaeca"
+    },
+    "ErrorReport": false,
+    "ErrorReportTo": "poxiao@163.com"
+  },
+  "OAuth": {
+    "Enabled": false,
+    "LoginPath": "http://localhost:9530/api/oauth/Login",
+    "SucessFrontUrl": "http://localhost:3000/sso",
+    "DefaultSSO": "auth2",
+    "TicketTimeout": 5,
+    "TicketOutMessage": false,
+    "SSO": {
+      "auth2": {
+        "enabled": false,
+        "clientId": "",
+        "clientSecret": "",
+        "authorizeUrl": "",
+        "accessTokenUrl": "",
+        "userInfoUrl": ""
+      },
+      "cas": {
+        "enabled": false,
+        "serverLoginUrl": "",
+        "serverValidateUrl": ""
+      }
+    },
+    "Pull": {
+      "Enabled": false,
+      "CreateRestAddress": "",
+      "ReplaceRestAddress": "",
+      "ChangePasswordRestAddress": "",
+      "DeleteRestAddress": "",
+      "CredentialType": "Basic",
+      "UserName": "",
+      "Password": ""
+    }
+  },
+  "Socials": {
+    "SocialsEnabled": false,
+    "DoMain": "http://localhost:9530",
+    "Config": []
+  },
+  "Message": {
+    "ApiDoMain": "http://lm-api:9530",
+    "DoMainPc": "http://localhost:3000",
+    "DoMainApp": "http://localhost:8081",
+    "AppPushUrl": ""
+  }
+}

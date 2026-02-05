@@ -1,8 +1,3 @@
-# ============================================
-# 基础设施服务 - Docker Compose 配置
-# 包含：MySQL、Redis、Qdrant、TEI、vLLM
-# 适用场景：基础环境与应用服务部署在不同服务器
-# ============================================
 
 services:
   # MySQL 数据库
@@ -21,8 +16,6 @@ services:
     volumes:
       - ${DEPLOY_DIR:-./deploy}/mysql/data:/var/lib/mysql
       - ${DEPLOY_DIR:-./deploy}/mysql/config/custom.cnf:/etc/mysql/conf.d/custom.cnf:ro
-    networks:
-      - lm-infra-network
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root123}"]
       interval: 10s
@@ -34,108 +27,3 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-  # Redis 缓存
-  redis:
-    image: redis:${REDIS_VERSION:-8.0-alpine}
-    container_name: ${CONTAINER_PREFIX:-lm}-redis
-    restart: unless-stopped
-    ports:
-      - "${REDIS_PORT:-6380}:6379"
-    command: redis-server --requirepass ${REDIS_PASSWORD:-redis123456}
-    volumes:
-      - ${DEPLOY_DIR:-./deploy}/redis/data:/data
-    networks:
-      - lm-infra-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis123456}", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  # Qdrant 向量数据库
-  qdrant:
-    image: qdrant/qdrant:${QDRANT_VERSION:-v1.12.1}
-    container_name: ${CONTAINER_PREFIX:-lm}-qdrant
-    restart: unless-stopped
-    ports:
-      - "${QDRANT_HTTP_PORT:-6333}:6333"
-      - "${QDRANT_GRPC_PORT:-6334}:6334"
-    volumes:
-      - ${DEPLOY_DIR:-./deploy}/qdrant/storage:/qdrant/storage
-    networks:
-      - lm-infra-network
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  # TEI 文本嵌入服务
-  tei:
-    image: ghcr.io/huggingface/text-embeddings-inference:cpu-${TEI_VERSION:-1.6.0}
-    container_name: ${CONTAINER_PREFIX:-lm}-tei
-    restart: unless-stopped
-    ports:
-      - "${TEI_PORT:-8081}:80"
-    environment:
-      - MODEL_ID=/models/${TEI_MODEL_NAME:-bge-m3}
-    volumes:
-      - ${MODELS_HOST_PATH:-/opt/models}:/models
-      - ${DEPLOY_DIR:-./deploy}/tei/cache:/data
-    networks:
-      - lm-infra-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-  # vLLM 大模型推理服务（需要 GPU）
-  vllm:
-    image: vllm/vllm-openai:${VLLM_VERSION:-latest}
-    container_name: ${CONTAINER_PREFIX:-lm}-vllm
-    restart: unless-stopped
-    ports:
-      - "${VLLM_PORT:-8082}:8000"
-    environment:
-      - GPU_MEMORY_UTILIZATION=${VLLM_GPU_MEMORY_UTILIZATION:-0.7}
-      - MAX_MODEL_LEN=${VLLM_MAX_MODEL_LEN:-4096}
-    volumes:
-      - ${MODELS_HOST_PATH:-/opt/models}:/models
-    command:
-      - /models/${VLLM_MODEL_NAME:-qwen2.5-7b}
-      - --gpu-memory-utilization
-      - "${VLLM_GPU_MEMORY_UTILIZATION:-0.7}"
-      - --max-model-len
-      - "${VLLM_MAX_MODEL_LEN:-4096}"
-    networks:
-      - lm-infra-network
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
-networks:
-  lm-infra-network:
-    name: ${NETWORK_NAME:-lm-infra-network}
-    driver: bridge

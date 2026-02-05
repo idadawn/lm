@@ -5,21 +5,21 @@
         "ConfigId": "default",
         "DBName": "lumei",
         "DBType": "MySql",
-        "Host": "localhost",
-        "Port": "3307",
+        "Host": "infra-mysql",
+        "Port": "3306",
         "UserName": "root",
         "Password": "Lm@Mysql#2025Root",
-        "DefaultConnection": "server=localhost;Port=3307;Database={0};Uid=root;Pwd=Lm@Mysql#2025Root;AllowLoadLocalInfile=true;Charset=utf8mb4;"
+        "DefaultConnection": "server=infra-mysql;Port=3306;Database={0};Uid=root;Pwd=Lm@Mysql#2025Root;AllowLoadLocalInfile=true;Charset=utf8mb4;"
       },
       {
         "ConfigId": "Poxiao-Job",
         "DBName": "lumei",
         "DBType": "MySql",
-        "Host": "localhost",
-        "Port": "3307",
+        "Host": "infra-mysql",
+        "Port": "3306",
         "UserName": "root",
         "Password": "Lm@Mysql#2025Root",
-        "DefaultConnection": "server=localhost;Port=3307;Database={0};Uid=root;Pwd=Lm@Mysql#2025Root;AllowLoadLocalInfile=true;Charset=utf8mb4;"
+        "DefaultConnection": "server=infra-mysql;Port=3306;Database={0};Uid=root;Pwd=Lm@Mysql#2025Root;AllowLoadLocalInfile=true;Charset=utf8mb4;"
       }
     ]
   }

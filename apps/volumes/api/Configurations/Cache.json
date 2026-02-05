@@ -1,0 +1,9 @@
+{
+  "Cache": {
+    "CacheType": "RedisCache",
+    "ip": "localhost",
+    "port": 6380,
+    "password": "Lm@Redis#2025Secure!",
+    "RedisConnectionString": "{0}:{1},password={2}, poolsize=500,ssl=false,defaultDatabase=2"
+  }
+}

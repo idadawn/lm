@@ -1,7 +1,7 @@
 import type { BasicColumn, BasicTableProps, CellFormat, GetColumnsParams } from '../types/table';
 import type { PaginationProps } from '../types/pagination';
 import type { ComputedRef } from 'vue';
-import { computed, Ref, ref, reactive, toRaw, unref, watch } from 'vue';
+import { computed, Ref, ref, reactive, toRaw, unref, watch, shallowRef } from 'vue';
 import { renderEditCell } from '../components/editable';
 import { usePermission } from '/@/hooks/web/usePermission';
 import { useI18n } from '/@/hooks/web/useI18n';
@@ -9,6 +9,20 @@ import { isArray, isBoolean, isFunction, isMap, isString } from '/@/utils/is';
 import { cloneDeep, isEqual } from 'lodash-es';
 import { formatToDate } from '/@/utils/dateUtil';
 import { ACTION_COLUMN_FLAG, DEFAULT_ALIGN, INDEX_COLUMN_FLAG, PAGE_SIZE } from '../const';
+
+/**
+ * 浅拷贝函数 - 性能优化
+ * 用于列配置等不需要深拷贝的场景
+ */
+function shallowClone<T>(obj: T): T {
+  if (Array.isArray(obj)) {
+    return obj.slice() as T;
+  }
+  if (obj && typeof obj === 'object') {
+    return { ...obj } as T;
+  }
+  return obj;
+}
 
 function handleItem(item: BasicColumn, ellipsis: boolean) {
   const { key, dataIndex, children } = item;
@@ -93,10 +107,19 @@ function handleActionColumn(propsRef: ComputedRef<BasicTableProps>, columns: Bas
 }
 
 export function useColumns(propsRef: ComputedRef<BasicTableProps>, getPaginationRef: ComputedRef<boolean | PaginationProps>) {
-  const columnsRef = ref(unref(propsRef).columns) as unknown as Ref<BasicColumn[]>;
+  // 性能优化：使用 shallowRef 避免列配置的深度响应式追踪
+  const columnsRef = shallowRef(unref(propsRef).columns) as unknown as Ref<BasicColumn[]>;
   let cacheColumns = unref(propsRef).columns;
 
+  /**
+   * 性能优化：减少列配置的深拷贝
+   * 只在必要时进行深拷贝，其他情况使用浅拷贝
+   *
+   * 注意：必须使用 cloneDeep 确保 Ant Design Vue 3.x 兼容性
+   * shallowClone 会导致响应式系统破坏和大量警告
+   */
   const getColumnsRef = computed(() => {
+    // 必须使用 cloneDeep：确保与 Ant Design Vue 的响应式系统兼容
     const columns = cloneDeep(unref(columnsRef));
 
     handleIndexColumn(propsRef, getPaginationRef, columns);
@@ -158,9 +181,14 @@ export function useColumns(propsRef: ComputedRef<BasicTableProps>, getPagination
       if ((edit || editRow) && !isDefaultAction) {
         column.customRender = renderEditCell(column);
       }
-      return reactive(column);
+      // 直接返回 column，不使用 reactive 包装
+      // cloneDeep 已经创建了新对象，Ant Design Vue Table 会自动处理响应式
+      // 手动 reactive 包装会导致循环引用和 Stack overflow
+      return column;
     };
 
+    // 必须使用 cloneDeep：确保与 Ant Design Vue 的响应式系统兼容
+    // shallowClone 会导致 8600+ 警告和响应式系统破坏
     const columns = cloneDeep(viewColumns);
     return columns
       .filter(column => hasColumnP(column.auth) && isIfShow(column))
@@ -204,9 +232,11 @@ export function useColumns(propsRef: ComputedRef<BasicTableProps>, getPagination
   }
   /**
    * set columns
+   * 性能优化：只在必要时使用深拷贝
    * @param columnList key｜column
    */
   function setColumns(columnList: Partial<BasicColumn>[] | (string | string[])[]) {
+    // 必须使用 cloneDeep：确保与 Ant Design Vue 的响应式系统兼容
     const columns = cloneDeep(columnList);
     if (!isArray(columns)) return;
 

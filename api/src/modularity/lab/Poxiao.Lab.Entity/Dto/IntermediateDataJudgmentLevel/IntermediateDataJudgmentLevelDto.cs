@@ -68,6 +68,16 @@ public class IntermediateDataJudgmentLevelDto
     /// 判定条件 (JSON格式).
     /// </summary>
     public string Condition { get; set; }
+
+    /// <summary>
+    /// 产品规格ID.
+    /// </summary>
+    public string ProductSpecId { get; set; }
+
+    /// <summary>
+    /// 产品规格名称.
+    /// </summary>
+    public string ProductSpecName { get; set; }
 }
 
 /// <summary>
@@ -80,6 +90,11 @@ public class IntermediateDataJudgmentLevelListInput
     /// </summary>
     [Required(ErrorMessage = "判定公式ID不能为空")]
     public string FormulaId { get; set; }
+
+    /// <summary>
+    /// 产品规格ID (可选筛选).
+    /// </summary>
+    public string ProductSpecId { get; set; }
 }
 
 /// <summary>
@@ -133,6 +148,11 @@ public class IntermediateDataJudgmentLevelAddInput
     /// 判定条件 (JSON格式).
     /// </summary>
     public string Condition { get; set; }
+
+    /// <summary>
+    /// 产品规格ID.
+    /// </summary>
+    public string ProductSpecId { get; set; }
 }
 
 /// <summary>

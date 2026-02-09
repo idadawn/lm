@@ -25,6 +25,18 @@ public class IntermediateDataJudgmentLevelEntity : CLDEntityBase
     public string FormulaName { get; set; }
 
     /// <summary>
+    /// 产品规格ID.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_PRODUCT_SPEC_ID", Length = 50, IsNullable = true)]
+    public string ProductSpecId { get; set; }
+
+    /// <summary>
+    /// 产品规格名称 (冗余字段).
+    /// </summary>
+    [SugarColumn(ColumnName = "F_PRODUCT_SPEC_NAME", Length = 100, IsNullable = true)]
+    public string ProductSpecName { get; set; }
+
+    /// <summary>
     /// 等级代码 (自动生成唯一值).
     /// </summary>
     [SugarColumn(ColumnName = "F_CODE", Length = 50, IsNullable = false)]

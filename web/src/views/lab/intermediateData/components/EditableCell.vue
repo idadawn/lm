@@ -16,7 +16,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, nextTick, watch } from 'vue';
+import { ref, shallowRef, nextTick, watch } from 'vue';
 import { EditOutlined } from '@ant-design/icons-vue';
 
 const props = defineProps<{
@@ -32,8 +32,8 @@ const emit = defineEmits<{
 }>();
 
 const editing = ref(false);
-const editValue = ref<any>(null);
-const inputRef = ref<any>(null);
+const editValue = shallowRef<any>(null);
+const inputRef = shallowRef<any>(null);
 
 function formatDisplayValue(val: any) {
   if (val === null || val === undefined || val === '') return '-';

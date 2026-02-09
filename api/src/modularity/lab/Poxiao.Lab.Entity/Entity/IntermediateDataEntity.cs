@@ -501,6 +501,7 @@ public class IntermediateDataEntity : CLDEntityBase
     /// <summary>
     /// 单卷重量(kg).
     /// </summary>
+    [IntermediateDataColumn("单卷重量", sort: 36, dataType: "decimal", description: "单卷重量")]
     [SugarColumn(ColumnName = "F_SINGLE_COIL_WEIGHT", DecimalDigits = 6, IsNullable = true)]
     public decimal? SingleCoilWeight { get; set; }
 

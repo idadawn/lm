@@ -854,10 +854,10 @@ public class AppearanceFeatureService : IAppearanceFeatureService, IDynamicApiCo
         catch (Exception ex)
         {
             Log.Error($"[BatchMatch] AI匹配失败: {ex.Message}");
-            // AI分析失败，直接返回错误信息，不跳转人工修正
+            // AI分析失败，直接返回错误信息给前端用户展示
             result.MatchMethod = "ai_error";
-            result.IsPerfectMatch = true; // 设置为true以避免前端跳转修正列表
-            result.FeatureName = $"AI分析失败: {ex.Message}";
+            result.IsPerfectMatch = false; // 设置为false表示匹配失败
+            result.ErrorMessage = $"AI分析失败: {ex.Message}";
             result.ManualCorrections = new List<ManualCorrectionOption>();
             return new List<MatchItemOutput> { result };
         }

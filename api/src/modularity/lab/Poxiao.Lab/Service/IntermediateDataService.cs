@@ -177,8 +177,13 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         {
             try
             {
+                var jsonOptions = new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
                 var sortRules = System.Text.Json.JsonSerializer.Deserialize<List<SortRule>>(
-                    input.SortRules
+                    input.SortRules,
+                    jsonOptions
                 );
                 if (sortRules != null && sortRules.Count > 0)
                 {
@@ -436,7 +441,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
                 var featureIds = System.Text.Json.JsonSerializer.Deserialize<List<string>>(input.AppearanceFeatureIds);
                 if (featureIds != null && featureIds.Any())
                 {
-                    var features = await _appearanceFeatureRepository.GetListAsync(f => featureIds.Contains(f.Id));
+                    var features = await _appearanceFeatureRepository.GetListAsync(f => featureIds.Contains(f.Id) && f.DeleteMark == null);
                     
                     var categoryIds = features
                         .Select(f => f.CategoryId)

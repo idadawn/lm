@@ -1,24 +1,16 @@
 <template>
   <BasicModal v-bind="$attrs" @register="registerModal" :title="getTitle" @ok="handleSubmit">
     <a-form :model="formState" :label-col="{ span: 6 }" :wrapper-col="{ span: 16 }">
+      <a-form-item label="产品规格">
+        <a-select v-model:value="formState.productSpecId" placeholder="请选择产品规格" allowClear show-search
+          :filter-option="filterOption">
+          <a-select-option v-for="item in productSpecList" :key="item.id" :value="item.id">
+            {{ item.name }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
       <a-form-item label="等级名称" required>
         <a-input v-model:value="formState.name" placeholder="请输入等级名称" />
-      </a-form-item>
-      <a-form-item label="质量状态">
-        <a-radio-group v-model:value="formState.qualityStatus">
-          <a-radio :value="0">合格</a-radio>
-          <a-radio :value="1">不合格</a-radio>
-          <a-radio :value="2">其他</a-radio>
-        </a-radio-group>
-      </a-form-item>
-      <a-form-item label="展示颜色">
-        <div class="flex gap-2">
-          <a-input v-model:value="formState.color" type="color" style="width: 50px; padding: 0;" />
-          <a-input v-model:value="formState.color" placeholder="#FFFFFF" />
-        </div>
-      </a-form-item>
-      <a-form-item label="是否统计">
-        <a-switch v-model:checked="formState.isStatistic" />
       </a-form-item>
       <a-form-item label="是否默认">
         <a-switch v-model:checked="formState.isDefault" />
@@ -33,13 +25,14 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, unref } from 'vue';
+import { ref, computed, unref, onMounted } from 'vue';
 import { BasicModal, useModalInner } from '/@/components/Modal';
 import { useMessage } from '/@/hooks/web/useMessage';
 import {
   createIntermediateDataJudgmentLevel,
   updateIntermediateDataJudgmentLevel,
 } from '/@/api/lab/intermediateDataJudgmentLevel';
+import { getProductSpecList } from '/@/api/lab/productSpec';
 
 const emit = defineEmits(['success', 'register']);
 const { createMessage } = useMessage();
@@ -57,6 +50,26 @@ const formState = ref({
   isDefault: false,
   description: '',
   condition: '',
+  productSpecId: '',
+});
+
+const productSpecList = ref<any[]>([]);
+
+const filterOption = (input: string, option: any) => {
+  return option.children?.[0]?.children?.toLowerCase()?.includes(input.toLowerCase());
+};
+
+const loadProductSpecList = async () => {
+  try {
+    const res = await getProductSpecList({});
+    productSpecList.value = res.list || [];
+  } catch (error) {
+    console.error('加载产品规格失败', error);
+  }
+};
+
+onMounted(() => {
+  loadProductSpecList();
 });
 
 const [registerModal, { setModalProps, closeModal }] = useModalInner(async (data) => {
@@ -75,6 +88,7 @@ const [registerModal, { setModalProps, closeModal }] = useModalInner(async (data
       isDefault: data.record.isDefault,
       description: data.record.description,
       condition: data.record.condition || '',
+      productSpecId: data.record.productSpecId || '',
     };
   } else {
     rowId.value = '';
@@ -87,6 +101,7 @@ const [registerModal, { setModalProps, closeModal }] = useModalInner(async (data
       isDefault: false,
       description: '',
       condition: '',
+      productSpecId: data?.productSpecId || '',
     };
   }
 });

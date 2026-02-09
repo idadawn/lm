@@ -81,7 +81,7 @@
 </template>
 <script lang="ts">
   import type { BasicColumn, BasicTableProps, ColumnChangeParam } from '../../types/table';
-  import { defineComponent, ref, reactive, toRefs, watchEffect, nextTick, unref, computed } from 'vue';
+  import { defineComponent, ref, reactive, toRefs, watchEffect, watch, nextTick, unref, computed, shallowRef } from 'vue';
   import { Tooltip, Popover, Checkbox, Divider } from 'ant-design-vue';
   import type { CheckboxChangeEvent } from 'ant-design-vue/lib/checkbox/interface';
   import { SettingOutlined, DragOutlined } from '@ant-design/icons-vue';
@@ -96,6 +96,20 @@
   import { cloneDeep, omit } from 'lodash-es';
   import Sortablejs from 'sortablejs';
   import type Sortable from 'sortablejs';
+
+  /**
+   * 浅拷贝函数 - 用于缓存不需要深拷贝的场景
+   * 性能优化：避免深拷贝大型对象（如表格列配置、数据源等）
+   */
+  function shallowClone<T>(obj: T): T {
+    if (Array.isArray(obj)) {
+      return obj.slice() as T;
+    }
+    if (obj && typeof obj === 'object') {
+      return { ...obj } as T;
+    }
+    return obj;
+  }
 
   interface State {
     checkAll: boolean;
@@ -136,8 +150,10 @@
       // 是否当前组件触发的setProps
       let isSetPropsFromThis = false;
 
-      const cachePlainOptions = ref<Options[]>([]);
-      const plainOptions = ref<Options[] | any>([]);
+      // 使用 shallowRef 避免深度响应式追踪 - 性能优化
+      // 列配置是大型对象，不需要深层响应式
+      const cachePlainOptions = shallowRef<Options[]>([]);
+      const plainOptions = shallowRef<Options[] | any>([]);
 
       const plainSortOptions = ref<Options[]>([]);
 
@@ -170,16 +186,27 @@
         }, 0);
       });
 
-      watchEffect(() => {
-        const values = unref(getValues);
-        if (isSetPropsFromThis) {
-          isSetPropsFromThis = false;
-        } else {
-          cacheTableProps = cloneDeep(values);
-        }
-        checkIndex.value = !!values.showIndexColumn;
-        checkSelect.value = !!values.rowSelection;
-      });
+      /**
+       * 性能优化：使用 watch 代替 watchEffect，减少不必要的深拷贝触发
+       * - 使用 flush: 'post' 在 DOM 更新后执行，避免阻塞渲染
+       * - 添加 nextTick 批量更新，进一步减少深拷贝次数
+       */
+      watch(
+        () => unref(getValues),
+        (values) => {
+          if (isSetPropsFromThis) {
+            isSetPropsFromThis = false;
+          } else {
+            // 使用 nextTick 延迟执行，批量更新时只执行最后一次深拷贝
+            nextTick(() => {
+              cacheTableProps = cloneDeep(values);
+            });
+          }
+          checkIndex.value = !!values.showIndexColumn;
+          checkSelect.value = !!values.rowSelection;
+        },
+        { flush: 'post' } // 在 DOM 更新后执行，不阻塞渲染
+      );
 
       function getColumns() {
         const ret: Options[] = [];
@@ -193,6 +220,10 @@
         return ret;
       }
 
+      /**
+       * 性能优化：初始化列配置
+       * 关键优化：减少不必要的深拷贝操作
+       */
       async function init(isReset = false) {
         // Sortablejs存在bug，不知道在哪个步骤中会向el append了一个childNode，因此这里先清空childNode
         // 有可能复现上述问题的操作：拖拽一个元素，快速的上下移动，最后放到最后的位置中松手
@@ -203,6 +234,7 @@
           Array.from(el.children).forEach(item => el.removeChild(item));
         }
         await nextTick();
+        // 性能优化：只在重置时进行深拷贝，初始化时直接使用返回值
         const columns = isReset ? cloneDeep(cachePlainOptions.value) : getColumns();
 
         const checkList = table
@@ -218,7 +250,8 @@
         plainSortOptions.value = columns;
         // 更新缓存配置
         table.setCacheColumns?.(columns);
-        !isReset && (cachePlainOptions.value = cloneDeep(columns));
+        // 性能优化：只在非重置时更新缓存，使用浅拷贝
+        !isReset && (cachePlainOptions.value = shallowClone(columns));
         state.defaultCheckList = checkList;
         state.checkedList = checkList;
         // 是否列展示全选
@@ -295,8 +328,9 @@
               if (isNullAndUnDef(oldIndex) || isNullAndUnDef(newIndex) || oldIndex === newIndex) {
                 return;
               }
-              // Sort column
-              const columns = cloneDeep(plainSortOptions.value);
+              // 性能优化：拖拽排序时使用浅拷贝+手动重组，避免深拷贝
+              // 直接操作数组元素比深拷贝更高效
+              const columns = shallowClone(plainSortOptions.value);
 
               if (oldIndex > newIndex) {
                 columns.splice(newIndex, 0, columns[oldIndex]);

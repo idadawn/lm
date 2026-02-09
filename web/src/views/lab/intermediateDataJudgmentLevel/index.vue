@@ -1,7 +1,16 @@
 <template>
   <div class="h-full flex p-4 gap-4">
-    <!-- 左侧：判定列列表 -->
+    <!-- 左侧：产品规格 + 判定列列表 -->
     <div class="w-[300px] flex-none bg-white rounded-lg shadow-sm flex flex-col">
+      <div class="p-4 border-b">
+        <h2 class="text-lg font-bold mb-3">产品规格</h2>
+        <a-select v-model:value="selectedProductSpecId" placeholder="请选择产品规格" allowClear show-search
+          :filter-option="filterOption" style="width: 100%" @change="handleProductSpecChange">
+          <a-select-option v-for="item in productSpecList" :key="item.id" :value="item.id">
+            {{ item.name }}
+          </a-select-option>
+        </a-select>
+      </div>
       <div class="p-4 border-b">
         <h2 class="text-lg font-bold">判定项目</h2>
       </div>
@@ -117,6 +126,7 @@ import {
   deleteIntermediateDataJudgmentLevel,
   updateIntermediateDataJudgmentLevelSort,
 } from '/@/api/lab/intermediateDataJudgmentLevel';
+import { getProductSpecList } from '/@/api/lab/productSpec';
 import LevelForm from './components/form.vue';
 import LevelConditionModal from './components/LevelConditionModal.vue';
 import CopyConditionModal from './components/CopyConditionModal.vue';
@@ -136,6 +146,27 @@ const selectedFormula = ref<any>(null);
 
 const loadingLevel = ref(false);
 const levelList = ref<any[]>([]);
+
+// 产品规格相关
+const productSpecList = ref<any[]>([]);
+const selectedProductSpecId = ref<string | undefined>(undefined);
+
+const filterOption = (input: string, option: any) => {
+  return option.children?.[0]?.children?.toLowerCase()?.includes(input.toLowerCase());
+};
+
+const loadProductSpecList = async () => {
+  try {
+    const res = await getProductSpecList({});
+    productSpecList.value = res.list || [];
+  } catch (error) {
+    console.error('加载产品规格失败', error);
+  }
+};
+
+const handleProductSpecChange = () => {
+  loadLevels();
+};
 // ... (keep existing refs)
 
 // ... (keep existing methods)
@@ -218,11 +249,10 @@ const getQualityStatusColor = (status: number) => {
 };
 
 const columns = [
+  { title: '产品规格', dataIndex: 'productSpecName', width: 120 },
   { title: '等级名称', dataIndex: 'name', width: 120 },
+  { title: '优先级', dataIndex: 'priority', width: 80 },
   { title: '条件个数', key: 'conditionCount', width: 100 },
-  { title: '质量状态', key: 'qualityStatus', width: 100 },
-  { title: '颜色', key: 'color', width: 80 },
-  { title: '统计', key: 'isStatistic', width: 80 },
   { title: '默认', key: 'isDefault', width: 80 },
   { title: '判定条件', key: 'conditionText', width: 200, ellipsis: true },
   // { title: '说明', dataIndex: 'description' },
@@ -240,34 +270,56 @@ const ca = columns.reduce((total, column) => {
 const tableScrollX = ca + 200; // 额外留出弹性空间
 
 // 初始化拖拽
+let sortableInstance: any = null;
+
 const initSortable = () => {
   nextTick(() => {
     const el = document.querySelectorAll('.ant-table-tbody')[0] as HTMLElement;
     if (!el) return;
 
-    const { initSortable } = useSortable(el, {
+    // 如果已有实例，先销毁
+    if (sortableInstance) {
+      sortableInstance.destroy();
+      sortableInstance = null;
+    }
+
+    const { initSortable: createSortable } = useSortable(el, {
       handle: '.ant-table-row',
       onEnd: async (evt) => {
         const { oldIndex, newIndex } = evt;
-        if (oldIndex === newIndex) return;
+        if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return;
 
-        const currRow = levelList.value.splice(oldIndex!, 1)[0];
-        levelList.value.splice(newIndex!, 0, currRow);
+        // 直接从 DOM 中读取拖拽后所有行的 ID 顺序
+        const rows = el.querySelectorAll('tr.ant-table-row');
+        const ids: string[] = [];
+        rows.forEach((row) => {
+          const id = row.getAttribute('data-row-key');
+          if (id) {
+            ids.push(id);
+          }
+        });
 
-        // 获取新的ID排序
-        const ids = levelList.value.map(item => item.id);
+        console.log('拖拽排序 - oldIndex:', oldIndex, 'newIndex:', newIndex);
+        console.log('拖拽排序 - 从DOM读取的ids顺序:', ids);
+
+        if (ids.length === 0) {
+          createMessage.error('获取排序数据失败');
+          return;
+        }
+
         try {
           await updateIntermediateDataJudgmentLevelSort(ids);
           createMessage.success('排序更新成功');
-          // 重新加载以获取最新状态（顺便刷新优先级显示）
-          loadLevels();
+          // 重新加载以获取最新状态
+          await loadLevels();
         } catch (error) {
           console.error(error);
           createMessage.error('排序更新失败');
+          await loadLevels();
         }
       },
     });
-    initSortable();
+    sortableInstance = createSortable();
   });
 };
 
@@ -318,7 +370,11 @@ const loadLevels = async () => {
   if (!selectedFormulaId.value) return;
   loadingLevel.value = true;
   try {
-    const res: any = await getIntermediateDataJudgmentLevelList({ formulaId: selectedFormulaId.value });
+    const params: any = { formulaId: selectedFormulaId.value };
+    if (selectedProductSpecId.value) {
+      params.productSpecId = selectedProductSpecId.value;
+    }
+    const res: any = await getIntermediateDataJudgmentLevelList(params);
     levelList.value = res.data || res || [];
     // 数据加载完成后初始化拖拽
     initSortable();
@@ -334,6 +390,7 @@ const handleAdd = () => {
   openModal(true, {
     isUpdate: false,
     formulaId: selectedFormulaId.value,
+    productSpecId: selectedProductSpecId.value,
   });
 };
 
@@ -353,6 +410,7 @@ const handleSuccess = () => {
 };
 
 onMounted(() => {
+  loadProductSpecList();
   loadFormulas();
 });
 </script>

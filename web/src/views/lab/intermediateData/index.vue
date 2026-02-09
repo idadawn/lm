@@ -34,6 +34,14 @@
                   <a-tab-pane v-for="spec in productSpecOptions" :key="spec.id" :tab="spec.name" />
                 </a-tabs>
               </div>
+              <!-- 数据统计 -->
+              <div class="data-statistics">
+                <span v-if="currentPagination.total > 0" class="data-count">
+                  共 {{ currentPagination.total }} 条，
+                  第 {{ currentPagination.current }} / {{ Math.ceil(currentPagination.total / currentPagination.pageSize)
+                  }} 页
+                </span>
+              </div>
               <a-space>
                 <a-upload :before-upload="handleQuickImport" :show-upload-list="false" accept=".xlsx,.xls">
                   <a-button>
@@ -63,18 +71,13 @@
             </template>
             <template #bodyCell="{ column, record, text }">
 
-              <!-- 贴标列 - 特殊样式处理 -->
-              <template v-if="column.key === 'labeling'">
-                <div :class="['status-cell', (record.labeling || text) === '性能不合' ? 'bg-red' : '']"
-                  :style="{ backgroundColor: getCellColor(record.id, column.key) }"
-                  @click="handleCellColor(record.id, column.key)">
-                  <span>{{ record.labeling || text }}</span>
-                </div>
-              </template>
+              <!-- 贴标列 -->
+              <LabelingCell v-if="column.key === 'labeling'" :record="record" :text="text"
+                :cell-class="getCellClass(record.id, column.key)" @click="handleCellColor(record.id, column.key)" />
 
-              <!-- 日期列 -->
+              <!-- 日期列 (dateMonth - 可编辑) -->
               <template v-else-if="column.key === 'dateMonth'">
-                <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
+                <div :class="['cell-content', getCellClass(record.id, column.key)]"
                   @click="handleCellColor(record.id, column.key)">
                   <a-input v-if="editingCell?.id === record.id && editingCell?.field === 'dateMonth'"
                     v-model:value="editingValue" size="small" style="width: 100px" @blur="handleCellBlur"
@@ -86,62 +89,27 @@
               </template>
 
               <!-- 日期字符串列（检测日期、生产日期等） -->
-              <template v-else-if="column.key === 'detectionDateStr' || column.key === 'prodDateStr'">
-                <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
-                  @click="handleCellColor(record.id, column.key)">
-                  <span>{{ text || '-' }}</span>
-                </div>
-              </template>
+              <DateCell v-else-if="column.key === 'detectionDateStr' || column.key === 'prodDateStr'" :record="record"
+                :text="text" :cell-class="getCellClass(record.id, column.key)"
+                @click="handleCellColor(record.id, column.key)" />
 
               <!-- 性能数据列 -->
-              <template v-else-if="column.key?.startsWith('perf')">
-                <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
-                  @click="handleCellColor(record.id, column.key)">
-                  <a-spin :spinning="record.pendingPerfCalc || false" size="small">
-                    <EditableCell v-if="hasBtnP(PERM_MAGNETIC)" :record="record" :field="column.key"
-                      :value="record[column.key]" type="number" :precision="getFieldPrecision(column.key)"
-                      @save="val => handlePerfSave(record, column.key, val)" />
-                    <span v-else>{{ record[column.key] }}</span>
-                  </a-spin>
-                </div>
-              </template>
+              <PerfCell v-else-if="column.key?.startsWith('perf')" :record="record" :column="column"
+                :cell-class="getCellClass(record.id, column.key)" :has-permission="hasBtnP(PERM_MAGNETIC)"
+                :get-field-precision="getFieldPrecision" @click="handleCellColor(record.id, column.key)"
+                @save="val => handlePerfSave(record, column.key, val)" />
 
-              <!-- 外观特性（汉字） -->
-              <template v-else-if="column.key === 'featureSuffix'">
-                <div class="cell-content feature-list-cell" :class="{ 'editable': hasBtnP(PERM_APPEARANCE) }"
-                  :style="{ backgroundColor: getCellColor(record.id, column.key) }"
-                  @click="handleCellColor(record.id, column.key)" @dblclick="handleOpenFeatureDialog(record)">
-                  <a-tag v-if="record.featureSuffix" color="orange">{{ record.featureSuffix }}</a-tag>
-                  <span v-else>-</span>
-                  <EditOutlined v-if="hasBtnP(PERM_APPEARANCE)" class="feature-edit-icon" />
-                </div>
-              </template>
-
-              <!-- 外观特性列表 -->
-              <template v-else-if="column.key === 'appearanceFeatureList'">
-                <div class="cell-content feature-list-cell" :class="{ 'editable': hasBtnP(PERM_APPEARANCE) }"
-                  :style="{ backgroundColor: getCellColor(record.id, column.key) }"
-                  @click="handleCellColor(record.id, column.key)" @dblclick="handleOpenFeatureDialog(record)">
-                  <a-space wrap size="small" v-if="getMatchedFeatureLabels(record).length > 0">
-                    <a-tag v-for="feature in getMatchedFeatureLabels(record)" :key="feature.id" color="blue">
-                      {{ feature.label }}
-                    </a-tag>
-                  </a-space>
-                  <span v-else>-</span>
-                  <EditOutlined v-if="hasBtnP(PERM_APPEARANCE)" class="feature-edit-icon" />
-                </div>
-              </template>
+              <!-- 外观特性列 -->
+              <FeatureCell v-else-if="column.key === 'featureSuffix' || column.key === 'appearanceFeatureList'"
+                :record="record" :column="column" :cell-class="getCellClass(record.id, column.key)"
+                :has-permission="hasBtnP(PERM_APPEARANCE)" :get-matched-feature-labels="getMatchedFeatureLabels"
+                @click="handleCellColor(record.id, column.key)" @dblclick="handleOpenFeatureDialog(record)" />
 
               <!-- 可编辑的测量值（中Si、中B、花纹、断头数、单卷重量等） -->
-              <template v-else-if="isEditableMeasurement(column.key)">
-                <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
-                  @click="handleCellColor(record.id, column.key)">
-                  <EditableCell v-if="hasBtnP(PERM_APPEARANCE)" :record="record" :field="column.key"
-                    :value="record[column.key]" type="number"
-                    @save="val => handleMeasurementSave(record, column.key, val)" />
-                  <span v-else>{{ record[column.key] }}</span>
-                </div>
-              </template>
+              <EditableMeasurementCell v-else-if="isEditableMeasurement(column.key)" :record="record" :column="column"
+                :cell-class="getCellClass(record.id, column.key)" :has-permission="hasBtnP(PERM_APPEARANCE)"
+                @click="handleCellColor(record.id, column.key)"
+                @save="val => handleMeasurementSave(record, column.key, val)" />
 
               <template v-else-if="column.key === 'calcStatus'">
                 <div class="cell-content">
@@ -196,38 +164,24 @@
               </template>
 
               <!-- 数值列 - 负数红色显示 -->
-              <template v-else-if="isNumericColumn(column.key)">
-                <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
-                  @click="handleCellColor(record.id, column.key)">
-                  <span :class="{ 'text-danger': isNegative(text) }">{{ formatNumericValue(text, column.key) }}</span>
-                </div>
-              </template>
+              <NumericCell v-else-if="isNumericColumn(column.key)" :record="record" :column="column" :text="text"
+                :cell-class="getCellClass(record.id, column.key)" :format-numeric-value="formatNumericValue"
+                @click="handleCellColor(record.id, column.key)" />
 
               <!-- 动态检测列 -->
-              <template v-else-if="column.key?.startsWith('detection')">
-                <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
-                  @click="handleCellColor(record.id, column.key)">
-                  <span>{{ formatNumericValue(text, column.key) }}</span>
-                </div>
-              </template>
+              <NumericCell v-else-if="column.key?.startsWith('detection')" :record="record" :column="column"
+                :text="text" :cell-class="getCellClass(record.id, column.key)"
+                :format-numeric-value="formatNumericValue" @click="handleCellColor(record.id, column.key)" />
 
               <!-- 动态带厚列 -->
-              <template v-else-if="column.key?.startsWith('thickness') && column.key !== 'thicknessRange'">
-                <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
-                  @click="handleCellColor(record.id, column.key)">
-                  <span :class="{ 'text-danger': isNegative(text) }">{{ formatNumericValue(text, column.key) }}</span>
-                </div>
-              </template>
+              <NumericCell v-else-if="column.key?.startsWith('thickness') && column.key !== 'thicknessRange'"
+                :record="record" :column="column" :text="text" :cell-class="getCellClass(record.id, column.key)"
+                :format-numeric-value="formatNumericValue" @click="handleCellColor(record.id, column.key)" />
 
               <!-- 其他列 -->
-              <template v-else>
-                <div class="cell-content" :style="{ backgroundColor: getCellColor(record.id, column.key) }"
-                  @click="handleCellColor(record.id, column.key)">
-                  <NumericTableCell v-if="isNumericString(record[column.key])" :value="record[column.key]"
-                    :field-name="column.key" />
-                  <span v-else>{{ formatValue(record[column.key], column.key) }}</span>
-                </div>
-              </template>
+              <DefaultCellWithNumeric v-else :record="record" :column="column"
+                :cell-class="getCellClass(record.id, column.key)" :is-numeric-string="isNumericString"
+                :format-value="formatValue" @click="handleCellColor(record.id, column.key)" />
             </template>
           </BasicTable>
         </div>
@@ -275,7 +229,7 @@
 
 
 <script lang="ts" setup>
-import { ref, computed, onMounted, watch, nextTick } from 'vue';
+import { ref, computed, onMounted, watch, nextTick, shallowRef } from 'vue';
 import { BasicTable, useTable, BasicColumn } from '/@/components/Table';
 import { useMessage } from '/@/hooks/web/useMessage';
 import { usePermission } from '/@/hooks/web/usePermission';
@@ -300,14 +254,20 @@ import type { CellColorInfo } from '/@/api/lab/model/intermediateDataColorModel'
 import { getAllAppearanceFeatureCategories, type AppearanceFeatureCategoryInfo } from '/@/api/lab/appearanceCategory';
 import { getAppearanceFeatureList } from '/@/api/lab/appearanceFeature';
 
-import EditableCell from './components/EditableCell.vue';
-import NumericTableCell from './components/NumericTableCell.vue';
+// 单元格渲染器组件（性能优化）
+import LabelingCell from './components/cells/LabelingCell.vue';
+import PerfCell from './components/cells/PerfCell.vue';
+import FeatureCell from './components/cells/FeatureCell.vue';
+import DateCell from './components/cells/DateCell.vue';
+import EditableMeasurementCell from './components/cells/EditableMeasurementCell.vue';
+import NumericCell from './components/cells/NumericCell.vue';
+import DefaultCellWithNumeric from './components/cells/DefaultCellWithNumeric.vue';
 import CustomSortControl from '../rawData/components/CustomSortControl.vue';
 import { useFormulaPrecision } from '/@/composables/useFormulaPrecision';
+import { useColorStyles } from '/@/composables/useColorStyles';
 
 import { useModal } from '/@/components/Modal';
-import { UploadOutlined, ReloadOutlined, DownloadOutlined, CheckCircleOutlined, EditOutlined, SyncOutlined, ClockCircleOutlined } from '@ant-design/icons-vue';
-import { Spin as ASpin } from 'ant-design-vue';
+import { UploadOutlined, ReloadOutlined, DownloadOutlined, CheckCircleOutlined, SyncOutlined, ClockCircleOutlined } from '@ant-design/icons-vue';
 import MagneticDataImportQuickModal from '../magneticData/MagneticDataImportQuickModal.vue';
 import { createMagneticImportSession, uploadAndParseMagneticData } from '/@/api/lab/magneticData';
 import type { IntermediateDataCalcLogItem } from '/@/api/lab/model/intermediateDataCalcLogModel';
@@ -360,8 +320,13 @@ const editingValue = ref<any>(null);
 
 // 颜色选择状态
 const selectedColor = ref<string>('');
-const coloredCells = ref<Record<string, string>>({}); // 存储单元格颜色 { 'rowId::field': 'color' }
+// 使用 shallowRef 减少深度响应式开销 - 对于大量颜色数据，不需要深层响应式
+const coloredCells = shallowRef<Record<string, string>>({}); // 存储单元格颜色 { 'rowId::field': 'color' }
 // const colorLoaded = ref<boolean>(false); // 颜色数据是否已加载
+
+// 使用颜色样式管理器（使用CSS类替代内联样式，大幅提升性能）
+const { getCellClass } = useColorStyles({ coloredCells });
+
 const savingColors = ref<boolean>(false); // 是否正在保存颜色
 const batchCalculating = ref<boolean>(false); // 是否正在批量计算
 const batchJudging = ref<boolean>(false); // 是否正在批量判定
@@ -384,8 +349,8 @@ const exportDateShortcuts = [
   { key: 'lastYear', label: '去年', activeColor: 'orange' },
 ];
 
-// 存储表格数据用于行/列填充
-const tableData = ref<any[]>([]);
+// 存储表格数据用于行/列填充 - 使用 shallowRef 避免深度响应式
+const tableData = shallowRef<any[]>([]);
 
 // WPS 10个标准色
 const standardColors = [
@@ -531,12 +496,30 @@ function getMatchedFeatureLabels(record: any): Array<{ id: string; label: string
 }
 
 
-// 合并所有列
-const allColumns = computed(() => {
-  // 获取当前产品规格的检测列数量
-  const spec = productSpecOptions.value.find(item => item.id === selectedProductSpecId.value);
-  const detectionColumns = spec?.detectionColumns || 15; // 默认15列
+// 列配置缓存 - 使用更稳定的缓存策略
+const cachedColumnsKey = ref<string>('');
+const cachedColumnsValue = shallowRef<BasicColumn[] | null>(null);
 
+/**
+ * 获取检测列数量 - 提取为独立函数便于缓存判断
+ */
+function getDetectionColumnsCount(): number {
+  const spec = productSpecOptions.value.find(item => item.id === selectedProductSpecId.value);
+  return spec?.detectionColumns || 15;
+}
+
+// 合并所有列（带缓存）
+const allColumns = computed(() => {
+  // 生成缓存键：基于产品规格ID和检测列数
+  const detectionColumns = getDetectionColumnsCount();
+  const currentKey = `${selectedProductSpecId.value}-${detectionColumns}`;
+
+  // 如果缓存键匹配，直接返回缓存的列配置
+  if (cachedColumnsValue.value && cachedColumnsKey.value === currentKey) {
+    return cachedColumnsValue.value;
+  }
+
+  // 缓存失效，重新计算列配置
   const columns: BasicColumn[] = [
     // --- 基础信息区（固定左侧） ---
     { title: '检验日期', dataIndex: 'detectionDateStr', key: 'detectionDateStr', width: 80, fixed: 'left', align: 'center' },
@@ -806,7 +789,18 @@ const allColumns = computed(() => {
     { title: '日志', dataIndex: 'calcLog', key: 'calcLog', width: 70, fixed: 'right', align: 'center' },
   ];
 
-  return columns;
+  // 更新缓存 - 移除 markRaw 避免 cloneDeep 冲突
+  cachedColumnsKey.value = currentKey;
+  cachedColumnsValue.value = columns;
+
+  return cachedColumnsValue.value;
+});
+
+// 分页状态 - 需要在 useTable 之前定义
+const currentPagination = ref({
+  current: 1,
+  pageSize: 50,
+  total: 0,
 });
 
 const [registerTable, { reload, getDataSource }] = useTable({
@@ -814,10 +808,28 @@ const [registerTable, { reload, getDataSource }] = useTable({
   columns: allColumns,
   useSearchForm: true,
   immediate: false,
-  scroll: { x: 4000 },
   bordered: true,
   size: 'small',
-  pagination: { pageSize: 50, showSizeChanger: true },
+  // 传统分页配置
+  pagination: {
+    pageSize: 50,
+    showSizeChanger: true,       // 显示每页条数选择器
+    showQuickJumper: true,        // 显示快速跳转
+    pageSizeOptions: ['20', '50', '100', '200'],  // 每页条数选项
+    current: 1,                   // 当前页
+    total: 0,                     // 总条数（动态设置）
+    hideOnSinglePage: false,      // 即使只有一页也显示分页器
+    onChange: (page: number, pageSize: number) => {
+      currentPagination.value.current = page;
+      currentPagination.value.pageSize = pageSize;
+      reload({ page, pageSize });
+    },
+    onShowSizeChange: (_current: number, size: number) => {
+      currentPagination.value.current = 1;
+      currentPagination.value.pageSize = size;
+      reload({ page: 1, pageSize: size });
+    },
+  },
   showIndexColumn: false,
   formConfig: {
     baseColProps: { span: 6 },
@@ -920,16 +932,25 @@ const [registerTable, { reload, getDataSource }] = useTable({
     }
     return params;
   },
-  afterFetch: async data => {
+  afterFetch: async (data, res) => {
+    // 更新分页信息 - 只更新本地状态，不调用 setPagination 避免循环
+    if (res && res.data && res.data.pagination) {
+      const pagination = res.data.pagination;
+      currentPagination.value.total = pagination.total || 0;
+      currentPagination.value.current = pagination.currentPage || 1;
+      currentPagination.value.pageSize = pagination.pageSize || 50;
+    }
 
     // 数据映射：将后端返回的 Detection1, Thickness1 等字段映射为小写
     if (Array.isArray(data)) {
+      const spec = productSpecOptions.value.find(s => s.id === selectedProductSpecId.value);
+      const detectionCount = spec?.detectionColumns || 15;
+
+      // 数据映射：将后端返回的字段名统一转换为小写格式
       const mappedData = data.map(item => {
         const mapped: any = { ...item };
 
         // 映射检测列：Detection1 -> detection1 (支持大小写)
-        const spec = productSpecOptions.value.find(s => s.id === selectedProductSpecId.value);
-        const detectionCount = spec?.detectionColumns || 15;
         for (let i = 1; i <= detectionCount; i++) {
           // 尝试大写和小写两种格式
           const detectionUpper = item['Detection' + i];
@@ -952,31 +973,20 @@ const [registerTable, { reload, getDataSource }] = useTable({
         return mapped;
       });
 
-
-      // 加载颜色数据
+      // 加载颜色数据（延迟执行避免阻塞渲染）
       if (mappedData.length > 0) {
         const dataIds = mappedData.map(item => item.id);
 
-        // 检查ID格式 - 对比保存时使用的ID格式
-        dataIds.forEach(id => {
-          // 检查原始数据对象，看看是否有其他ID字段
-          const originalItem = data.find(d => d.id === id);
-          if (originalItem) {
-          }
-        });
-
-        await loadColorsByIds(dataIds);
-
-        // 强制触发视图更新
-        await nextTick();
-        // 创建一个延迟，确保颜色应用到DOM
+        // 使用 setTimeout 替代 nextTick，给浏览器更多时间完成初始渲染
+        // 100ms 延迟确保数据已经渲染到 DOM，再加载颜色
         setTimeout(() => {
+          loadColorsByIds(dataIds);
         }, 100);
-      } else {
       }
 
       // 保存表格数据用于行/列填充
       tableData.value = mappedData;
+
       return mappedData;
     }
     return data;
@@ -1013,14 +1023,6 @@ function isEditableMeasurement(key: string) {
   ];
   return editableKeys.includes(key);
 }
-
-// function getAppearanceFieldType(key: string) {
-//   if (key === 'breakCount') return 'number';
-//   if (key === 'singleCoilWeight') return 'number';
-//   return 'text';
-// }
-
-
 
 // 获取日期快捷方式
 function getDateRanges() {
@@ -1067,7 +1069,8 @@ watch(selectedProductSpecId, async (newVal, oldVal) => {
   if (newVal && newVal !== oldVal) {
     // 清空现有颜色数据
     coloredCells.value = {};
-
+    // 重置到第一页
+    currentPagination.value.current = 1;
     // 重新加载表格数据（会触发afterFetch重新加载颜色）
     await nextTick();
     reload({ page: 1 });
@@ -1077,6 +1080,8 @@ watch(selectedProductSpecId, async (newVal, oldVal) => {
 // 处理排序变化（新的多字段排序）
 function handleSortChange(newSortRules: any[]) {
   sortRules.value = newSortRules;
+  // 重置到第一页
+  currentPagination.value.current = 1;
   // 重新加载表格数据
   reload({ page: 1 });
 }
@@ -1589,12 +1594,7 @@ function formatNumericValue(value: any, _fieldName?: string) {
   return value;
 }
 
-// 判断是否为负数
-function isNegative(value: any): boolean {
-  if (value === null || value === undefined) return false;
-  const num = typeof value === 'number' ? value : parseFloat(value);
-  return !isNaN(num) && num < 0;
-}
+
 
 // 判断是否为数值列
 function isNumericColumn(key: string): boolean {
@@ -1684,17 +1684,8 @@ async function loadAppearanceCategories() {
   }
 }
 
-// 获取单元格颜色
-function getCellColor(rowId: string, field: string): string {
-  const key = `${rowId}::${field}`;
-  const color = coloredCells.value[key] || '';
-  // 调试日志 - 仅在有颜色数据时打印
-  if (Object.keys(coloredCells.value).length > 0 && !color) {
-    // 只打印前几次查询，避免日志过多
-    // const existingKeys = Object.keys(coloredCells.value).slice(0, 3);
-  }
-  return color;
-}
+// getCellColor 函数已被 useColorStyles 中的 getCellClass 替代
+// 使用CSS类替代内联样式，大幅提升性能（160,000+次响应式查找 -> ~100条CSS规则）
 
 // 处理单元格颜色选择
 async function handleCellColor(rowId: string, field: string) {
@@ -1789,14 +1780,22 @@ function clearSelectedColor() {
   createMessage.info('清除模式：点击单元格可清除颜色');
 }
 
+const isLoadingColors = ref(false);
+
 // 根据ID列表加载颜色数据
 async function loadColorsByIds(dataIds: string[]) {
-
+  console.log('loadColorsByIds called', dataIds.length);
   if (!selectedProductSpecId.value || !dataIds || dataIds.length === 0) {
     return;
   }
 
+  if (isLoadingColors.value) {
+    console.warn('loadColorsByIds ignored (already loading)');
+    return;
+  }
+
   try {
+    isLoadingColors.value = true;
     const response = await getIntermediateDataColors({
       productSpecId: selectedProductSpecId.value,
       intermediateDataIds: dataIds,
@@ -1811,17 +1810,26 @@ async function loadColorsByIds(dataIds: string[]) {
       // 创建新的对象以确保响应式更新
       const newColorMap: Record<string, string> = { ...coloredCells.value };
       colors.forEach((color: CellColorInfo) => {
-        const key = `${color.intermediateDataId}::${color.fieldName}`;
-        newColorMap[key] = color.colorValue;
+        if (color.intermediateDataId && color.fieldName) {
+          const key = `${color.intermediateDataId}::${color.fieldName}`;
+          newColorMap[key] = color.colorValue;
+        }
       });
       // 使用新对象替换，确保触发响应式更新
-      coloredCells.value = newColorMap;
+      try {
+        console.log('Updating coloredCells.value');
+        coloredCells.value = newColorMap;
+      } catch (e) {
+        console.error('更新颜色映射失败:', e);
+      }
     } else {
       // 如果没有颜色数据，清空颜色映射
       coloredCells.value = {};
     }
   } catch (error) {
     console.error('加载颜色数据失败:', error);
+  } finally {
+    isLoadingColors.value = false;
   }
 }
 
@@ -1955,6 +1963,21 @@ async function handleQuickImport(file: File) {
 </script>
 
 <style scoped>
+/* 数据统计样式 */
+.data-statistics {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 16px;
+}
+
+.data-count {
+  font-size: 12px;
+  color: #666;
+  padding: 2px 8px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
 .table-toolbar {
   margin-bottom: 1px;
   display: flex;

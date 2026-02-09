@@ -102,6 +102,12 @@ public class MatchItemOutput
     /// </summary>
     [JsonPropertyName("manualCorrections")]
     public List<ManualCorrectionOption> ManualCorrections { get; set; }
+
+    /// <summary>
+    /// 错误信息（当匹配失败时返回给前端用户展示）
+    /// </summary>
+    [JsonPropertyName("errorMessage")]
+    public string ErrorMessage { get; set; }
 }
 
 /// <summary>

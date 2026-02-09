@@ -26,6 +26,7 @@ public class IntermediateDataJudgmentLevelService
 {
     private readonly ISqlSugarRepository<IntermediateDataJudgmentLevelEntity> _repository;
     private readonly ISqlSugarRepository<IntermediateDataFormulaEntity> _formulaRepository;
+    private readonly ISqlSugarRepository<ProductSpecEntity> _productSpecRepository;
     private readonly ICacheManager _cacheManager;
     private readonly IUserManager _userManager;
 
@@ -34,12 +35,14 @@ public class IntermediateDataJudgmentLevelService
     public IntermediateDataJudgmentLevelService(
         ISqlSugarRepository<IntermediateDataJudgmentLevelEntity> repository,
         ISqlSugarRepository<IntermediateDataFormulaEntity> formulaRepository,
+        ISqlSugarRepository<ProductSpecEntity> productSpecRepository,
         ICacheManager cacheManager,
         IUserManager userManager
     )
     {
         _repository = repository;
         _formulaRepository = formulaRepository;
+        _productSpecRepository = productSpecRepository;
         _cacheManager = cacheManager;
         _userManager = userManager;
     }
@@ -54,19 +57,24 @@ public class IntermediateDataJudgmentLevelService
         [FromQuery] IntermediateDataJudgmentLevelListInput input
     )
     {
-        var cacheKey = BuildCacheKey(input.FormulaId);
-        if (_cacheManager.Exists(cacheKey))
+        // 如果有 ProductSpecId 筛选条件，跳过缓存直接查询
+        if (string.IsNullOrEmpty(input.ProductSpecId))
         {
-            var cached = _cacheManager.Get<List<IntermediateDataJudgmentLevelDto>>(cacheKey);
-            if (cached != null)
+            var cacheKey = BuildCacheKey(input.FormulaId);
+            if (_cacheManager.Exists(cacheKey))
             {
-                return cached;
+                var cached = _cacheManager.Get<List<IntermediateDataJudgmentLevelDto>>(cacheKey);
+                if (cached != null)
+                {
+                    return cached;
+                }
             }
         }
 
         var list = await _repository
             .AsQueryable()
             .Where(t => t.DeleteMark == null && t.FormulaId == input.FormulaId)
+            .WhereIF(!string.IsNullOrEmpty(input.ProductSpecId), t => t.ProductSpecId == input.ProductSpecId)
             .OrderBy(t => t.Priority) // 按优先级排序
             .OrderBy(t => t.CreatorTime) // 然后按创建时间
             .ToListAsync();
@@ -79,7 +87,11 @@ public class IntermediateDataJudgmentLevelService
         //     result.Add(new IntermediateDataJudgmentLevelDto { ... });
         // }
 
-        await _cacheManager.SetAsync(cacheKey, result, TimeSpan.FromHours(6));
+        // 只有无筛选条件时才缓存
+        if (string.IsNullOrEmpty(input.ProductSpecId))
+        {
+            await _cacheManager.SetAsync(BuildCacheKey(input.FormulaId), result, TimeSpan.FromHours(6));
+        }
 
         return result;
     }
@@ -127,6 +139,17 @@ public class IntermediateDataJudgmentLevelService
         entity.Code = Guid.NewGuid().ToString("N")[..8].ToUpper(); // 生成8位短UUID作为Code
         entity.FormulaName = formula.FormulaName; // 冗余公式名称
 
+        // 处理产品规格
+        if (!string.IsNullOrEmpty(input.ProductSpecId))
+        {
+            var productSpec = await _productSpecRepository.GetFirstAsync(t => t.Id == input.ProductSpecId && t.DeleteMark == null);
+            if (productSpec != null)
+            {
+                entity.ProductSpecId = productSpec.Id;
+                entity.ProductSpecName = productSpec.Name;
+            }
+        }
+
         if (input.IsDefault)
         {
             // 如果设置为默认，取消当前公式下的其他默认项
@@ -168,7 +191,7 @@ public class IntermediateDataJudgmentLevelService
             var entity = entities.FirstOrDefault(t => t.Id == id);
             if (entity != null)
             {
-                entity.Priority = i + 1; // 重新分配优先级
+                entity.Priority = i + 1; // 从1开始重新分配优先级
                 entity.LastModify();
             }
         }
@@ -200,6 +223,22 @@ public class IntermediateDataJudgmentLevelService
         entity.IsDefault = input.IsDefault;
         entity.Description = input.Description;
         entity.Condition = input.Condition;
+
+        // 处理产品规格
+        if (!string.IsNullOrEmpty(input.ProductSpecId) && entity.ProductSpecId != input.ProductSpecId)
+        {
+            var productSpec = await _productSpecRepository.GetFirstAsync(t => t.Id == input.ProductSpecId && t.DeleteMark == null);
+            if (productSpec != null)
+            {
+                entity.ProductSpecId = productSpec.Id;
+                entity.ProductSpecName = productSpec.Name;
+            }
+        }
+        else if (string.IsNullOrEmpty(input.ProductSpecId))
+        {
+            entity.ProductSpecId = null;
+            entity.ProductSpecName = null;
+        }
 
         if (input.IsDefault)
         {

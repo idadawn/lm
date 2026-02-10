@@ -1,19 +1,37 @@
 <template>
-    <div class="detail-table-container">
+    <div class="detail-table-container" :class="{ 'detail-table-fullscreen': isFullscreen }">
         <div class="table-header">
             <h3 class="table-title">
                 <Icon icon="ant-design:table-outlined" :size="18" />
                 质量检测明细
             </h3>
+            <a-button type="text" size="small" class="fullscreen-btn" @click="toggleFullscreen">
+                <template #icon>
+                    <FullscreenOutlined v-if="!isFullscreen" />
+                    <FullscreenExitOutlined v-else />
+                </template>
+                {{ isFullscreen ? '退出全屏' : '全屏' }}
+            </a-button>
         </div>
 
         <a-table :columns="columns" :data-source="data" :loading="loading" :pagination="false"
-            :scroll="{ x: scrollX, y: 'calc(100vh - 320px)' }" size="small" bordered :row-class-name="getRowClassName">
+            :scroll="{ y: tableScrollY }" size="small" bordered :row-class-name="getRowClassName">
             <template #bodyCell="{ column, record }">
                 <!-- 生产日期 -->
                 <template v-if="column.key === 'prodDate'">
-                    <span v-if="!record.isSummaryRow">{{ formatDate(record.prodDate) }}</span>
+                    <span v-if="!record.isSummaryRow" :title="formatDate(record.prodDate)">{{ formatDate(record.prodDate) }}</span>
                     <span v-else class="summary-label">合计</span>
+                </template>
+
+                <!-- 带宽、班次、炉号：窄列 + 悬停显示全文 -->
+                <template v-else-if="column.key === 'productSpecCode'">
+                    <span :title="record.productSpecCode">{{ record.productSpecCode ?? '-' }}</span>
+                </template>
+                <template v-else-if="column.key === 'shift'">
+                    <span :title="record.shift">{{ record.shift ?? '-' }}</span>
+                </template>
+                <template v-else-if="column.key === 'shiftNo'">
+                    <span :title="record.shiftNo">{{ record.shiftNo ?? '-' }}</span>
                 </template>
 
                 <!-- 合格率 -->
@@ -52,11 +70,33 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
 import { Icon } from '/@/components/Icon';
+import { FullscreenOutlined, FullscreenExitOutlined } from '@ant-design/icons-vue';
 import type { DetailRow, JudgmentLevelColumn } from '/@/api/lab/monthlyQualityReport';
 import type { ReportConfig } from '/@/api/lab/reportConfig';
 import dayjs from 'dayjs';
+
+const isFullscreen = ref(false);
+
+function toggleFullscreen() {
+    isFullscreen.value = !isFullscreen.value;
+}
+
+function handleEscape(e: KeyboardEvent) {
+    if (e.key === 'Escape') isFullscreen.value = false;
+}
+
+onMounted(() => {
+    window.addEventListener('keydown', handleEscape);
+});
+onUnmounted(() => {
+    window.removeEventListener('keydown', handleEscape);
+});
+
+const tableScrollY = computed(() =>
+    isFullscreen.value ? 'calc(100vh - 120px)' : 'calc(100vh - 320px)'
+);
 
 interface Props {
     data: DetailRow[];
@@ -74,36 +114,45 @@ const props = withDefaults(defineProps<Props>(), {
     reportConfigs: () => [],
 });
 
-// 固定列
+// 基础列（必须指定 width，否则 scroll.y 时表头与表体为两套表格会错位）
+const colWidth = {
+    prodDate: 90,
+    productSpec: 56,
+    shift: 48,
+    shiftNo: 108,
+    detection: 70,
+    dynamic: 60,
+    dynamicRate: 64, // A占比、B占比等
+    unqualified: 56,
+} as const;
+
 const fixedColumns = [
     {
         title: '生产日期',
         dataIndex: 'prodDate',
         key: 'prodDate',
-        width: 100,
-        fixed: 'left',
-        align: 'center',
-    },
-    {
-        title: '班次',
-        dataIndex: 'shift',
-        key: 'shift',
-        width: 60,
-        fixed: 'left',
-        align: 'center',
-    },
-    {
-        title: '炉号',
-        dataIndex: 'shiftNo',
-        key: 'shiftNo',
-        width: 100,
+        width: colWidth.prodDate,
         align: 'center',
     },
     {
         title: '带宽',
         dataIndex: 'productSpecCode',
         key: 'productSpecCode',
-        width: 70,
+        width: colWidth.productSpec,
+        align: 'center',
+    },
+    {
+        title: '班次',
+        dataIndex: 'shift',
+        key: 'shift',
+        width: colWidth.shift,
+        align: 'center',
+    },
+    {
+        title: '炉号',
+        dataIndex: 'shiftNo',
+        key: 'shiftNo',
+        width: colWidth.shiftNo,
         align: 'center',
     },
 ];
@@ -125,100 +174,56 @@ const levelQualificationMap = computed(() => {
     return map;
 });
 
-// 动态生成表格列
+// 动态生成表格列（指定 width 保证表头与表体列对齐）
 const detailColumns = computed(() => {
-    // 检测明细（kg）组 - 合格等级
     const qualifiedChildren: any[] = [
         {
             title: '检测量',
             dataIndex: 'detectionWeight',
             key: 'detectionWeight',
-            width: 90,
+            width: colWidth.detection,
             align: 'center',
         },
     ];
 
-    // 合格等级列由 reportConfigs 动态统计配置驱动，不再硬编码
-
-    // 动态统计配置
-    if (props.reportConfigs && props.reportConfigs.length > 0) {
-        const reportVisibleConfigs = props.reportConfigs.filter(c => c.isShowInReport);
-        reportVisibleConfigs.forEach(config => {
-            if (config.isPercentage) {
-                // 百分比类型：只生成占比列
+    const reportVisibleConfigs = (props.reportConfigs || []).filter(c => c.isShowInReport);
+    reportVisibleConfigs.forEach(config => {
+        if (config.isPercentage) {
+            qualifiedChildren.push({
+                title: config.name,
+                key: `dynamic_rate_${config.id}`,
+                width: colWidth.dynamic,
+                align: 'center',
+            });
+        } else {
+            qualifiedChildren.push({
+                title: `${config.name}`,
+                key: `dynamic_weight_${config.id}`,
+                width: colWidth.dynamic,
+                align: 'center',
+            });
+            if (config.isShowRatio) {
                 qualifiedChildren.push({
-                    title: config.name,
+                    title: `${config.name}占比`,
                     key: `dynamic_rate_${config.id}`,
-                    width: 80,
+                    width: colWidth.dynamicRate,
                     align: 'center',
                 });
-            } else {
-                // 非百分比类型：先生成重量列
-                qualifiedChildren.push({
-                    title: `${config.name}`,
-                    key: `dynamic_weight_${config.id}`,
-                    width: 80,
-                    align: 'center',
-                });
-                // 再根据 isShowRatio 可选生成占比列
-                if (config.isShowRatio) {
-                    qualifiedChildren.push({
-                        title: `${config.name}占比`,
-                        key: `dynamic_rate_${config.id}`,
-                        width: 70,
-                        align: 'center',
-                    });
-                }
             }
-        });
-    } else {
-        // Fallback: 合格 + 合格率
-        qualifiedChildren.push({
-            title: '合格',
-            dataIndex: 'qualifiedWeight',
-            key: 'qualifiedWeight',
-            width: 80,
-            align: 'center',
-        });
-        qualifiedChildren.push({
-            title: '合格率',
-            dataIndex: 'qualifiedRate',
-            key: 'qualifiedRate',
-            width: 70,
-            align: 'center',
-        });
-    }
+        }
+    });
 
-    // 不合格分类组 - 从 ReportConfig 中 name 为"不合格"的配置获取要显示的等级
     const unqualifiedChildren: any[] = [];
-
-    // 找到 name 为"不合格"的配置项
-    const unqualifiedConfig = props.reportConfigs?.find(c => c.name === '不合格');
+    const unqualifiedConfig = (props.reportConfigs || []).find(c => c.name === '不合格');
     const unqualifiedLevelNames = unqualifiedConfig?.levelNames || [];
-
-    if (unqualifiedLevelNames.length > 0) {
-        // 按配置中的 levelNames 顺序显示
-        unqualifiedLevelNames.forEach(levelName => {
-            unqualifiedChildren.push({
-                title: levelName,
-                key: `weight_${levelName}`,
-                width: 80,
-                align: 'center',
-            });
+    unqualifiedLevelNames.forEach(levelName => {
+        unqualifiedChildren.push({
+            title: levelName,
+            key: `weight_${levelName}`,
+            width: colWidth.unqualified,
+            align: 'center',
         });
-    } else {
-        // Fallback: 使用 unqualifiedColumns
-        const sortedUnqualifiedLevels = [...props.unqualifiedColumns]
-            .sort((a, b) => (a.priority || 0) - (b.priority || 0));
-        sortedUnqualifiedLevels.forEach(level => {
-            unqualifiedChildren.push({
-                title: level.name,
-                key: `weight_${level.name}`,
-                width: 80,
-                align: 'center',
-            });
-        });
-    }
+    });
 
     // 返回两个分组列
     const result: any[] = [];
@@ -240,35 +245,6 @@ const detailColumns = computed(() => {
 // 合并所有列
 const columns = computed(() => {
     return [...fixedColumns, ...detailColumns.value];
-});
-
-// 计算表格横向滚动宽度
-const scrollX = computed(() => {
-    const fixedWidth = 330; // 固定列宽度
-    const qualifiedCount = props.qualifiedColumns.length;
-    const unqualifiedCount = props.unqualifiedColumns.length;
-    // 每个合格等级 2 列 (150)，每个不合格等级 1 列 (80)，
-    // 加上检测量(90)
-    let detailWidth = 90 + (qualifiedCount * 150) + (unqualifiedCount * 80);
-
-    // 加上动态列
-    if (props.reportConfigs && props.reportConfigs.length > 0) {
-        const reportVisibleConfigs = props.reportConfigs.filter(c => c.isShowInReport);
-        reportVisibleConfigs.forEach(config => {
-            if (config.isPercentage) {
-                detailWidth += 80; // 只有占比列
-            } else {
-                detailWidth += 80; // 重量列
-                if (config.isShowRatio) {
-                    detailWidth += 70; // 占比列
-                }
-            }
-        });
-    } else {
-        detailWidth += 150; // Qualified Weight + Rate
-    }
-
-    return fixedWidth + detailWidth;
 });
 
 // 获取等级重量（从 qualifiedCategories 或 unqualifiedCategories 中取）
@@ -399,6 +375,37 @@ function getDynamicRateClass(record: DetailRow, key: string) {
     border-radius: 12px;
     padding: 16px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+    overflow-x: auto; /* 列不设宽时表格按内容撑开，容器横向滚动 */
+
+    &.detail-table-fullscreen {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        border-radius: 0;
+        display: flex;
+        flex-direction: column;
+        padding: 16px 24px 24px;
+        box-shadow: none;
+        overflow: hidden;
+
+        .table-header {
+            flex-shrink: 0;
+            margin-bottom: 12px;
+        }
+
+        .ant-table-wrapper {
+            flex: 1;
+            min-height: 0;
+            overflow: auto;
+        }
+    }
+}
+
+.fullscreen-btn {
+    color: #666;
+    &:hover {
+        color: #1890ff;
+    }
 }
 
 .table-header {
@@ -463,14 +470,16 @@ function getDynamicRateClass(record: DetailRow, key: string) {
 :deep(.ant-table) {
     font-size: 12px;
 
-    .ant-table-thead>tr>th {
+    /* 使用列配置的 width，表头与表体为同一套列宽，保证对齐 */
+    .ant-table-thead > tr > th {
         background: #fafafa;
         font-weight: 600;
         color: #595959;
         padding: 8px 6px;
+        white-space: nowrap;
     }
 
-    .ant-table-tbody>tr>td {
+    .ant-table-tbody > tr > td {
         padding: 6px;
     }
 }

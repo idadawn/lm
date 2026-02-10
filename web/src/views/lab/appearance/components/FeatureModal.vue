@@ -306,6 +306,13 @@ async function handleSubmit() {
   try {
     const values = await validate();
 
+    if (!unref(isUpdate)) {
+      if (!values.categoryId?.trim()) {
+        createMessage.error('请选择特性大类');
+        return;
+      }
+    }
+
     // 将 severity 名称转换为 severityLevelId
     if (values.severity) {
       const severityLevel = severityLevels.value.find(l => l.name === values.severity);

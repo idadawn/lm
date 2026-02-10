@@ -31,10 +31,12 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const chartRef = ref<HTMLDivElement | null>(null);
-const { setOptions } = useECharts(chartRef as Ref<HTMLDivElement>);
+const { setOptions, resize } = useECharts(chartRef as Ref<HTMLDivElement>);
 
 onMounted(() => {
     updateChart();
+    // 布局稳定后重绘以填满容器（如在驾驶舱中高度由父级控制）
+    setTimeout(() => resize?.(), 150);
 });
 
 watch(() => [props.data, props.reportConfigs], () => {
@@ -73,53 +75,25 @@ function updateChart() {
 
     const legendData = ['合格率'];
 
-    // Configured dynamic stats
-    if (props.reportConfigs && props.reportConfigs.length > 0) {
-        const colors = ['#1890ff', '#13c2c2', '#722ed1', '#fa8c16', '#f5222d'];
-        const reportVisibleConfigs = props.reportConfigs.filter(c => c.isShowInReport);
-        reportVisibleConfigs.forEach((config, index) => {
-            const rates = props.data.map(d => d.dynamicStats?.[config.id] || 0);
-            const color = colors[index % colors.length];
+    // 动态统计配置 - 由 ReportConfig 驱动
+    const colors = ['#1890ff', '#13c2c2', '#722ed1', '#fa8c16', '#f5222d'];
+    const reportVisibleConfigs = (props.reportConfigs || []).filter(c => c.isShowInReport);
+    reportVisibleConfigs.forEach((config, index) => {
+        const rates = props.data.map(d => d.dynamicStats?.[config.id] || 0);
+        const color = colors[index % colors.length];
 
-            legendData.push(config.name);
-            series.push({
-                name: config.name,
-                type: 'line',
-                data: rates,
-                smooth: true,
-                symbol: 'circle',
-                symbolSize: 5,
-                lineStyle: { width: 2, color: color },
-                itemStyle: { color: color },
-            });
-        });
-    } else {
-        // Fallback: A类, B类
-        const classARates = props.data.map(d => d.classARate);
-        const classBRates = props.data.map(d => d.classBRate);
-
-        legendData.push('A类占比', 'B类占比');
+        legendData.push(config.name);
         series.push({
-            name: 'A类占比',
+            name: config.name,
             type: 'line',
-            data: classARates,
+            data: rates,
             smooth: true,
             symbol: 'circle',
             symbolSize: 5,
-            lineStyle: { width: 2, color: '#1890ff' },
-            itemStyle: { color: '#1890ff' },
+            lineStyle: { width: 2, color: color },
+            itemStyle: { color: color },
         });
-        series.push({
-            name: 'B类占比',
-            type: 'line',
-            data: classBRates,
-            smooth: true,
-            symbol: 'circle',
-            symbolSize: 5,
-            lineStyle: { width: 2, color: '#13c2c2' },
-            itemStyle: { color: '#13c2c2' },
-        });
-    }
+    });
 
     const option: any = {
         tooltip: {
@@ -202,6 +176,8 @@ function updateChart() {
 }
 
 .chart-container {
-    height: 200px;
+    min-height: 200px;
+    height: 100%;
+    width: 100%;
 }
 </style>

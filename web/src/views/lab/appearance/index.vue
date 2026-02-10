@@ -60,8 +60,9 @@
         </p>
 
         <div class="mb-2">输入测试文本</div>
-        <a-input-search v-model:value="testText" placeholder="例如: 1-1有些发脆..." enter-button="规则 + AI 匹配" size="large"
+        <a-input-search v-model:value="testText" placeholder="例如: 微脆微脆微划 或 1-1有些发脆..." enter-button="规则 + AI 匹配" size="large"
           @search="handleSemanticSearch" class="custom-search-input" />
+        <div class="mt-1 text-xs text-purple-200">连续两位中文会自动分割后匹配（如：微脆、微划）</div>
 
         <div v-if="searchMethod" class="mt-3 text-xs text-purple-200">
           匹配方式: {{ searchMethod }}
@@ -496,21 +497,47 @@ function handleGoToSeverityLevels() {
   router.push('/lab/severity-level');
 }
 
+/** 将输入按两位中文特性名分割为多个 query（如 "微脆微脆微划" → ["微脆","微脆","微划"]），去重后返回 */
+function splitTwoCharSegments(text: string): string[] {
+  if (!text || !text.trim()) return [];
+  const trimmed = text.trim();
+  // 提取连续中文字符段（CJK 统一汉字），再按每 2 字切分
+  const cjkRegex = /[\u4e00-\u9fff]+/g;
+  const segments: string[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = cjkRegex.exec(trimmed)) !== null) {
+    const segment = m[0];
+    for (let i = 0; i < segment.length; i += 2) {
+      const two = segment.slice(i, i + 2);
+      if (two.length === 2) segments.push(two);
+      // 若最后剩 1 字也加入，便于匹配单字特性名
+      else if (two.length === 1) segments.push(two);
+    }
+  }
+  // 若没有中文段，整句作为一条（兼容 "1-1有些发脆" 等）
+  if (segments.length === 0) return [trimmed];
+  // 去重并保持顺序，减少重复匹配
+  const seen = new Set<string>();
+  const unique: string[] = [];
+  for (const s of segments) {
+    if (!seen.has(s)) {
+      seen.add(s);
+      unique.push(s);
+    }
+  }
+  return unique;
+}
+
 // 语义匹配搜索（使用新的批量匹配API）
 const handleSemanticSearch = async () => {
   if (!testText.value) return;
   searched.value = true;
   searchMethod.value = '匹配中...';
   try {
-    // 使用批量匹配API，将单个输入包装成数组
-    const res: any = await batchMatchAppearanceFeature({
-      items: [
-        {
-          id: '1', // 单个输入使用固定ID
-          query: testText.value,
-        },
-      ],
-    });
+    // 先按两位中文分割，再批量匹配（用户常输入如 "微脆微脆微划"）
+    const queries = splitTwoCharSegments(testText.value);
+    const items = queries.map((query, i) => ({ id: String(i + 1), query }));
+    const res: any = await batchMatchAppearanceFeature({ items });
 
     let resultArray: MatchItemOutput[] = [];
     if (Array.isArray(res)) {
@@ -524,11 +551,18 @@ const handleSemanticSearch = async () => {
     matchResult.value = resultArray;
 
     if (resultArray.length > 0) {
-      const firstResult = resultArray[0];
-      if (firstResult.isPerfectMatch) {
-        searchMethod.value = `匹配成功 (${getMatchMethodText(firstResult.matchMethod)})`;
+      const perfectCount = resultArray.filter((r) => r.isPerfectMatch).length;
+      const total = resultArray.length;
+      if (perfectCount === total) {
+        searchMethod.value = total === 1
+          ? `匹配成功 (${getMatchMethodText(resultArray[0].matchMethod)})`
+          : `匹配成功 共 ${total} 条 (已按两位中文分割)`;
+      } else if (perfectCount > 0) {
+        searchMethod.value = `部分需确认 共 ${total} 条`;
       } else {
-        searchMethod.value = `需要人工确认 (${getMatchMethodText(firstResult.matchMethod)})`;
+        searchMethod.value = total === 1
+          ? `需要人工确认 (${getMatchMethodText(resultArray[0].matchMethod)})`
+          : `需确认 共 ${total} 条 (已按两位中文分割)`;
       }
     } else {
       searchMethod.value = '无匹配结果';

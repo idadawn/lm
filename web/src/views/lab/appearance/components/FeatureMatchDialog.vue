@@ -134,20 +134,38 @@
         </div>
         <div v-if="showCreateNew" class="create-new-content">
           <a-alert
-            message="如果现有特性都不匹配，可以创建新特性"
+            message="如果现有特性都不匹配，可以创建新特性。已删除的特性名称可重新使用。"
             type="info"
             show-icon
             style="margin-bottom: 12px" />
           <a-form :model="newFeatureForm" layout="vertical">
             <a-form-item label="特性大类" required>
-              <a-input
-                v-model:value="newFeatureForm.category"
-                placeholder="例如: 韧性" />
+              <a-tree-select
+                v-model:value="newFeatureForm.categoryId"
+                placeholder="请选择特性大类"
+                allow-clear
+                show-search
+                tree-default-expand-all
+                :tree-data="categoryTreeData"
+                :field-names="{ label: 'name', value: 'id' }"
+                style="width: 100%"
+              />
             </a-form-item>
             <a-form-item label="特性名称" required>
               <a-input
                 v-model:value="newFeatureForm.name"
                 placeholder="例如: 脆" />
+            </a-form-item>
+            <a-form-item label="特性等级" required>
+              <a-select
+                v-model:value="newFeatureForm.severityLevelId"
+                placeholder="请选择特性等级"
+                allow-clear
+                show-search
+                :options="severityLevelOptions"
+                :field-names="{ label: 'fullName', value: 'id' }"
+                style="width: 100%"
+              />
             </a-form-item>
             <a-form-item label="描述">
               <a-textarea
@@ -175,6 +193,8 @@
   import { ref, computed, watch } from 'vue';
   import { useMessage } from '/@/hooks/web/useMessage';
   import { AppearanceFeatureInfo, getAppearanceFeatureList, createAppearanceFeature, addKeywordToFeature } from '/@/api/lab/appearance';
+  import { getAllAppearanceFeatureCategories, type AppearanceFeatureCategoryInfo } from '/@/api/lab/appearanceCategory';
+  import { getEnabledSeverityLevels, type SeverityLevelInfo } from '/@/api/lab/severityLevel';
 
   const emit = defineEmits(['confirm', 'cancel', 'keyword-added']);
 
@@ -200,10 +220,34 @@
   const allFeatures = ref<AppearanceFeatureInfo[]>([]);
   const categoryOptions = ref<string[]>([]);
 
-  // 新特性表单
+  // 特性大类树（创建新特性用）
+  const categories = ref<AppearanceFeatureCategoryInfo[]>([]);
+  const categoryTreeData = computed(() => convertToTreeData(categories.value));
+
+  function convertToTreeData(cats: AppearanceFeatureCategoryInfo[]): any[] {
+    if (!cats?.length) return [];
+    const convertNode = (node: AppearanceFeatureCategoryInfo): any => {
+      const treeNode: any = { id: node.id, name: node.name };
+      if (node.children?.length) treeNode.children = node.children.map(convertNode);
+      return treeNode;
+    };
+    return cats.map(convertNode);
+  }
+
+  // 特性等级选项（创建新特性用）
+  const severityLevels = ref<SeverityLevelInfo[]>([]);
+  const severityLevelOptions = computed(() =>
+    severityLevels.value.map((level) => ({
+      fullName: level.description ? `${level.name} (${level.description})` : level.name,
+      id: level.id,
+    }))
+  );
+
+  // 新特性表单（必须传 categoryId、severityLevelId，后端不对比已删除记录）
   const newFeatureForm = ref({
-    category: '',
+    categoryId: '',
     name: '',
+    severityLevelId: '',
     description: '',
   });
 
@@ -217,28 +261,29 @@
 
   // 初始化
   const init = async () => {
-    // 加载所有特性
     try {
-      const res: any = await getAppearanceFeatureList({ pageSize: 1000 });
-      if (Array.isArray(res)) {
-        allFeatures.value = res;
-      } else if (res?.data && Array.isArray(res.data)) {
-        allFeatures.value = res.data;
-      } else if (res?.list && Array.isArray(res.list)) {
-        allFeatures.value = res.list;
-      }
+      const [featuresRes, categoriesRes, levelsRes]: any[] = await Promise.all([
+        getAppearanceFeatureList({ pageSize: 1000 }),
+        getAllAppearanceFeatureCategories(),
+        getEnabledSeverityLevels(),
+      ]);
 
-      // 提取所有大类
-      const categories = new Set<string>();
-      allFeatures.value.forEach(f => {
-        if (f.category) categories.add(f.category);
-      });
-      categoryOptions.value = Array.from(categories).sort();
+      let features: AppearanceFeatureInfo[] = [];
+      if (Array.isArray(featuresRes)) features = featuresRes;
+      else if (featuresRes?.data && Array.isArray(featuresRes.data)) features = featuresRes.data;
+      else if (featuresRes?.list && Array.isArray(featuresRes.list)) features = featuresRes.list;
+      allFeatures.value = features;
+
+      const catSet = new Set<string>();
+      allFeatures.value.forEach((f) => { if (f.category) catSet.add(f.category); });
+      categoryOptions.value = Array.from(catSet).sort();
+
+      categories.value = Array.isArray(categoriesRes) ? categoriesRes : categoriesRes?.data ?? [];
+      severityLevels.value = Array.isArray(levelsRes) ? levelsRes : levelsRes?.data ?? levelsRes?.list ?? [];
     } catch (error) {
-      console.error('加载特性列表失败:', error);
+      console.error('加载数据失败:', error);
     }
 
-    // 如果有自动匹配结果，默认选择第一个
     if (props.autoMatchResults && props.autoMatchResults.length > 0) {
       selectedMatchId.value = props.autoMatchResults[0].id;
       matchMode.value = 'auto';
@@ -264,8 +309,9 @@
     showManualSelect.value = false;
     showCreateNew.value = false;
     newFeatureForm.value = {
-      category: '',
+      categoryId: '',
       name: '',
+      severityLevelId: '',
       description: '',
     };
   };
@@ -355,17 +401,26 @@
           return;
         }
       } else if (matchMode.value === 'create') {
-        // 创建新特性
-        if (!newFeatureForm.value.category || !newFeatureForm.value.name) {
-          createMessage.warning('请填写大类 and 特性名称');
+        // 创建新特性（必须选择特性大类和特性等级，已删除的特性名称可重复使用）
+        const form = newFeatureForm.value;
+        if (!form.categoryId?.trim()) {
+          createMessage.warning('请选择特性大类');
+          return;
+        }
+        if (!form.name?.trim()) {
+          createMessage.warning('请填写特性名称');
+          return;
+        }
+        if (!form.severityLevelId?.trim()) {
+          createMessage.warning('请选择特性等级');
           return;
         }
 
-        // 创建新特性
         const created = await createAppearanceFeature({
-          category: newFeatureForm.value.category,
-          name: newFeatureForm.value.name,
-          description: newFeatureForm.value.description,
+          categoryId: form.categoryId,
+          name: form.name.trim(),
+          severityLevelId: form.severityLevelId,
+          description: form.description?.trim() || undefined,
         });
 
         // 重新加载特性列表

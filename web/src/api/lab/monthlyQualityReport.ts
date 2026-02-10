@@ -26,10 +26,10 @@ export interface SummaryData {
     unqualifiedCategories: Record<string, number>;   // { "性能不合": 50 }
     unqualifiedWeight: number;
     unqualifiedRate: number;
-    classAWeight: number;
-    classARate: number;
-    classBWeight: number;
-    classBRate: number;
+    classAWeight?: number;  // legacy
+    classARate?: number;    // legacy
+    classBWeight?: number;  // legacy
+    classBRate?: number;    // legacy
     dynamicStats?: Record<string, LevelStat>; // 动态统计
 }
 
@@ -45,10 +45,10 @@ export interface DetailRow {
     qualifiedRate: number;
     unqualifiedCategories: Record<string, number>;   // 不合格分类
     unqualifiedWeight: number;
-    classAWeight: number;
-    classARate: number;
-    classBWeight: number;
-    classBRate: number;
+    classAWeight?: number;  // legacy
+    classARate?: number;    // legacy
+    classBWeight?: number;  // legacy
+    classBRate?: number;    // legacy
     isSummaryRow?: boolean;
     summaryType?: string;
     dynamicStats?: Record<string, LevelStat>; // 动态统计
@@ -63,10 +63,10 @@ export interface ShiftGroupRow {
     qualifiedWeight: number;
     qualifiedRate: number;
     unqualifiedWeight: number;
-    classAWeight: number;
-    classARate: number;
-    classBWeight: number;
-    classBRate: number;
+    classAWeight?: number;  // legacy
+    classARate?: number;    // legacy
+    classBWeight?: number;  // legacy
+    classBRate?: number;    // legacy
     isSummaryRow?: boolean;
     summaryType?: string;
     dynamicStats?: Record<string, LevelStat>; // 动态统计

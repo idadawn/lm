@@ -1,6 +1,6 @@
 <template>
-  <div class="kpi-cards-row" :style="{ gridTemplateColumns: `repeat(${1 + headerConfigs.length}, 1fr)` }">
-    <!-- Card 1: Total Weight (固定) -->
+  <div class="kpi-cards-row">
+    <!-- 检验总重 -->
     <div class="kpi-card">
       <div class="kpi-icon-wrapper" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
         <DatabaseOutlined class="kpi-icon" />
@@ -10,6 +10,27 @@
         <div class="kpi-value">
           <span class="number">{{ formatNumber(summary?.totalWeight) }}</span>
           <span class="unit">kg</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 今日产量（紧跟检验总重后） -->
+    <div v-if="dailyProduction != null" class="kpi-card">
+      <div class="kpi-icon-wrapper" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)">
+        <RiseOutlined v-if="dailyProduction.changeRate >= 0" class="kpi-icon" />
+        <FallOutlined v-else class="kpi-icon" />
+      </div>
+      <div class="kpi-content">
+        <div class="kpi-label">今日产量</div>
+        <div class="kpi-value">
+          <span class="number">{{ formatNumber(dailyProduction.todayWeight) }}</span>
+          <span class="unit">kg</span>
+        </div>
+        <div class="kpi-sub">
+          <span class="sub-label">较昨日</span>
+          <span class="sub-value" :class="dailyProduction.changeRate >= 0 ? 'change-up' : 'change-down'">
+            {{ dailyProduction.changeRate >= 0 ? '↑' : '↓' }}{{ Math.abs(dailyProduction.changeRate).toFixed(1) }}%
+          </span>
         </div>
       </div>
     </div>
@@ -51,26 +72,32 @@ import {
   DatabaseOutlined,
   CheckCircleOutlined,
   CheckSquareOutlined,
+  RiseOutlined,
+  FallOutlined,
 } from '@ant-design/icons-vue';
 import { computed } from 'vue';
 import type { SummaryData } from '/@/api/lab/monthlyQualityReport';
 import type { ReportConfig } from '/@/api/lab/reportConfig';
+import type { DailyProductionDto } from '/@/api/lab/dashboard';
 
 interface Props {
   summary?: SummaryData | null;
   loading?: boolean;
   reportConfigs?: ReportConfig[];
+  dailyProduction?: DailyProductionDto | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
   reportConfigs: () => [],
+  dailyProduction: null,
 });
 
 // 只展示 isHeader=true 的配置
 const headerConfigs = computed(() => {
   return (props.reportConfigs || []).filter(c => c.isHeader);
 });
+
 
 // 获取动态统计数据
 function getDynamicStat(configId: string) {
@@ -107,9 +134,16 @@ function getConfigGradient(index: number): string {
 
 <style lang="less" scoped>
 .kpi-cards-row {
-  display: grid;
-  gap: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
   margin-bottom: 24px;
+}
+
+.kpi-cards-row .kpi-card {
+  flex: 1 1 auto;
+  min-width: 180px;
+  max-width: 280px;
 }
 
 .kpi-card {
@@ -211,24 +245,28 @@ function getConfigGradient(index: number): string {
   margin-top: 6px;
   display: flex;
   gap: 4px;
-}
 
-// Responsive
-@media (max-width: 1400px) {
-  .kpi-cards-row {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+  .change-up {
+    color: #52c41a;
+    font-weight: 600;
+  }
+
+  .change-down {
+    color: #ff4d4f;
+    font-weight: 600;
   }
 }
 
 @media (max-width: 900px) {
-  .kpi-cards-row {
-    grid-template-columns: repeat(2, 1fr) !important;
+  .kpi-cards-row .kpi-card {
+    min-width: 140px;
+    max-width: none;
   }
 }
 
 @media (max-width: 600px) {
-  .kpi-cards-row {
-    grid-template-columns: 1fr !important;
+  .kpi-cards-row .kpi-card {
+    min-width: 100%;
   }
 }
 </style>

@@ -31,9 +31,11 @@ export interface QualityDistributionDto {
   color?: string;
 }
 
-// 叠片系数趋势数据
+// 叠片系数趋势数据（按产品规格统计，后端按日期+规格分组）
 export interface LaminationTrendData {
   date: string;
+  productSpecCode?: string | null;
+  productSpecName?: string | null;
   value: number;
   min: number;
   max: number;
@@ -60,6 +62,13 @@ export interface ScatterData {
   laminationFactor: number;
   qualityLevel: string;  // A级、B级等
   id: string;
+}
+
+// 今日产量数据
+export interface DailyProductionDto {
+  todayWeight: number;
+  yesterdayWeight: number;
+  changeRate: number;
 }
 
 // API接口
@@ -102,5 +111,11 @@ export function getThicknessCorrelation(params: DashboardQueryParams) {
   return defHttp.get<ScatterData[]>({
     url: '/api/lab/dashboard/thickness-correlation',
     params,
+  });
+}
+
+export function getDailyProduction() {
+  return defHttp.get<DailyProductionDto>({
+    url: '/api/lab/dashboard/daily-production',
   });
 }

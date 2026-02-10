@@ -755,7 +755,7 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         var allConfigs = await GetReportConfigsAsync();
         var reportConfigs = allConfigs.Where(c => c.IsShowInReport).OrderBy(c => c.SortOrder).ToList();
 
-        // 获取不合格分类的 levelNames（从 name=="不合格" 的配置中获取）
+        // 获取不合格分类列名（从 ReportConfig name="不合格" 的 LevelNames 获取）
         var unqualifiedConfig = allConfigs.FirstOrDefault(c => c.Name == "不合格");
         var unqualifiedLevelNames = new List<string>();
         if (unqualifiedConfig != null && !string.IsNullOrEmpty(unqualifiedConfig.LevelNames))

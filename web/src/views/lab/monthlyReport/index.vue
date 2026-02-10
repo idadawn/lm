@@ -33,17 +33,10 @@
                     :unqualified-columns="unqualifiedColumns" :report-configs="reportConfigs" />
             </div>
 
-            <!-- 右侧班组统计和图表 -->
+            <!-- 右侧班组统计 -->
             <div class="content-right">
                 <ShiftGroupPanel :data="shiftGroupData" :loading="loading" :qualified-columns="qualifiedColumns"
                     :report-configs="reportConfigs" />
-
-                <div class="charts-section">
-                    <QualityTrendChart :data="qualityTrendData" :loading="loading" :report-configs="reportConfigs" />
-                    <UnqualifiedCategoryChart :data="unqualifiedCategoryData" :loading="loading" />
-                    <ShiftComparisonChart :data="shiftComparisonData" :loading="loading"
-                        :report-configs="reportConfigs" />
-                </div>
             </div>
         </div>
     </div>
@@ -63,9 +56,6 @@ import {
     type SummaryData,
     type DetailRow,
     type ShiftGroupRow,
-    type QualityTrend,
-    type UnqualifiedCategory,
-    type ShiftComparison,
     type JudgmentLevelColumn,
 } from '/@/api/lab/monthlyQualityReport';
 import { type ReportConfig } from '/@/api/lab/reportConfig';
@@ -75,9 +65,6 @@ import SummaryCards from './components/SummaryCards.vue';
 import FilterPanel from './components/FilterPanel.vue';
 import DetailTable from './components/DetailTable.vue';
 import ShiftGroupPanel from './components/ShiftGroupPanel.vue';
-import QualityTrendChart from './components/QualityTrendChart.vue';
-import UnqualifiedCategoryChart from './components/UnqualifiedCategoryChart.vue';
-import ShiftComparisonChart from './components/ShiftComparisonChart.vue';
 
 const { createMessage } = useMessage();
 
@@ -103,16 +90,9 @@ const summaryData = ref<SummaryData>({
     unqualifiedWeight: 0,
     unqualifiedCategories: {},
     unqualifiedRate: 0,
-    classAWeight: 0,
-    classARate: 0,
-    classBWeight: 0,
-    classBRate: 0,
 });
 const detailData = ref<DetailRow[]>([]);
 const shiftGroupData = ref<ShiftGroupRow[]>([]);
-const qualityTrendData = ref<QualityTrend[]>([]);
-const unqualifiedCategoryData = ref<UnqualifiedCategory[]>([]);
-const shiftComparisonData = ref<ShiftComparison[]>([]);
 const qualifiedColumns = ref<JudgmentLevelColumn[]>([]);
 const unqualifiedColumns = ref<JudgmentLevelColumn[]>([]);
 const reportConfigs = ref<ReportConfig[]>([]);
@@ -170,10 +150,6 @@ async function loadData() {
         };
         detailData.value = data?.details || [];
         shiftGroupData.value = data?.shiftGroups || [];
-        qualityTrendData.value = data?.qualityTrends || [];
-        unqualifiedCategoryData.value = data?.unqualifiedCategoryStats || [];
-        unqualifiedCategoryData.value = data?.unqualifiedCategoryStats || [];
-        shiftComparisonData.value = data?.shiftComparisons || [];
         // 如果后端返回了最新的配置，更新之
         if (data?.reportConfigs) {
             reportConfigs.value = data.reportConfigs;
@@ -324,12 +300,5 @@ onMounted(async () => {
     @media (max-width: 1400px) {
         width: 100%;
     }
-}
-
-// 图表区域
-.charts-section {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
 }
 </style>

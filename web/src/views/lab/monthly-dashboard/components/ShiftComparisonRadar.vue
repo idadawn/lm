@@ -30,6 +30,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const chartRef = ref<HTMLDivElement | null>(null);
 let setChartOptions: ((option: any) => void) | null = null;
+let resizeFn: (() => void) | undefined;
 
 // 颜色池
 const colors = ['#42e695', '#4facfe', '#ff9a9e', '#fa709a', '#8ec5fc'];
@@ -65,8 +66,9 @@ function getCategoryRate(shift: ShiftComparison, statKey: string): number {
 function initChart() {
   if (!chartRef.value) return;
 
-  const { setOptions } = useECharts(chartRef as Ref<HTMLDivElement>);
+  const { setOptions, resize } = useECharts(chartRef as Ref<HTMLDivElement>);
   setChartOptions = setOptions;
+  resizeFn = resize;
 
   updateChart();
 }
@@ -75,7 +77,6 @@ function updateChart() {
   if (!setChartOptions || !props.data) return;
 
   const shifts = props.data;
-  console.log('ShiftComparisonRadar data:', shifts); // Debug logging
   const visibleConfigs = (props.reportConfigs || []).filter((c) =>
     String(c?.formulaId || '').toLowerCase() === 'firstinspection' && c.isShowInReport,
   );
@@ -215,6 +216,8 @@ watch(
 
 onMounted(() => {
   initChart();
+  // 布局稳定后重绘，使雷达图填满容器
+  setTimeout(() => resizeFn?.(), 150);
 });
 
 

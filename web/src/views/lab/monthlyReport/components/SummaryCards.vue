@@ -56,10 +56,6 @@ function getDynamicStat(name: string) {
     return props.data?.dynamicStats?.[name] || { weight: 0, rate: 0 };
 }
 
-function getCategoryStat(name: string) {
-    return props.data?.qualifiedCategories?.[name] || { weight: 0, rate: 0 };
-}
-
 // 颜色主题映射（循环使用）
 const colorClasses = ['blue', 'cyan', 'purple', 'green'];
 const icons = [
@@ -71,60 +67,8 @@ const icons = [
 
 // 卡片配置
 const cards = computed(() => {
-    // 如果有配置动态统计，优先使用配置
-    if (props.reportConfigs && props.reportConfigs.length > 0) {
-        // 基本卡片：检验总重
-        const newCards: Card[] = [
-            {
-                key: 'total',
-                label: '检验总重',
-                value: props.data?.totalWeight ?? 0,
-                unit: 'kg',
-                decimals: 1,
-                icon: 'ant-design:experiment-outlined',
-                colorClass: 'purple',
-            }
-        ];
-
-        // 动态配置卡片 - 只展示 isHeader=true 的配置
-        const headerConfigs = props.reportConfigs.filter(c => c.isHeader);
-        const dynamicCards = headerConfigs.map((config, index) => {
-            // 后端返回的 dynamicStats key 是 config.id
-            const stat = getDynamicStat(config.id);
-
-            if (config.isPercentage) {
-                // 百分比类型：主值显示百分比，不显示副值
-                return {
-                    key: `config-${config.id}`,
-                    label: config.name,
-                    value: stat.rate,
-                    unit: '%',
-                    decimals: 2,
-                    icon: icons[index % icons.length],
-                    colorClass: colorClasses[index % colorClasses.length],
-                };
-            } else {
-                // 非百分比类型：主值显示求和(weight)，isShowRatio 时下方显示占比
-                return {
-                    key: `config-${config.id}`,
-                    label: config.name,
-                    value: stat.weight,
-                    unit: 'kg',
-                    decimals: 1,
-                    subValue: config.isShowRatio ? stat.rate : undefined,
-                    icon: icons[index % icons.length],
-                    colorClass: colorClasses[index % colorClasses.length],
-                };
-            }
-        });
-
-        newCards.push(...dynamicCards);
-
-        return newCards;
-    }
-
-    // 后备逻辑：使用默认的硬编码逻辑
-    const baseCards: Card[] = [
+    // 基本卡片：检验总重
+    const result: Card[] = [
         {
             key: 'total',
             label: '检验总重',
@@ -133,42 +77,44 @@ const cards = computed(() => {
             decimals: 1,
             icon: 'ant-design:experiment-outlined',
             colorClass: 'purple',
-        },
-        {
-            key: 'qualified',
-            label: '合格率',
-            value: props.data?.qualifiedRate ?? 0,
-            unit: '%',
-            decimals: 2,
-            icon: 'ant-design:check-circle-outlined',
-            colorClass: 'green',
-        },
+        }
     ];
 
-    // 动态添加合格等级卡片
-    const qualifiedCategories = props.data?.qualifiedCategories || {};
-    const categoryKeys = Object.keys(qualifiedCategories);
+    // 动态配置卡片 - 只展示 isHeader=true 的配置
+    const headerConfigs = (props.reportConfigs || []).filter(c => c.isHeader);
+    const dynamicCards = headerConfigs.map((config, index) => {
+        // 后端返回的 dynamicStats key 是 config.id
+        const stat = getDynamicStat(config.id);
 
-    // 按字母排序保证顺序一致
-    categoryKeys.sort();
-
-    categoryKeys.forEach((key, index) => {
-        const stat = getCategoryStat(key);
-        baseCards.push({
-            key: `category-${key}`,
-            label: `${key}类总计`,
-            value: stat.weight,
-            unit: 'kg',
-            decimals: 1,
-            subValue: stat.rate,
-            icon: icons[index % icons.length],
-            colorClass: colorClasses[index % colorClasses.length],
-        });
+        if (config.isPercentage) {
+            // 百分比类型：主值显示百分比，不显示副值
+            return {
+                key: `config-${config.id}`,
+                label: config.name,
+                value: stat.rate,
+                unit: '%',
+                decimals: 2,
+                icon: icons[index % icons.length],
+                colorClass: colorClasses[index % colorClasses.length],
+            };
+        } else {
+            // 非百分比类型：主值显示求和(weight)，isShowRatio 时下方显示占比
+            return {
+                key: `config-${config.id}`,
+                label: config.name,
+                value: stat.weight,
+                unit: 'kg',
+                decimals: 1,
+                subValue: config.isShowRatio ? stat.rate : undefined,
+                icon: icons[index % icons.length],
+                colorClass: colorClasses[index % colorClasses.length],
+            };
+        }
     });
 
+    result.push(...dynamicCards);
 
-
-    return baseCards;
+    return result;
 });
 </script>
 

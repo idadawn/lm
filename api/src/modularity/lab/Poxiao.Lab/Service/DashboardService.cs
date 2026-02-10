@@ -192,15 +192,25 @@ public class DashboardService : IDashboardService, IDynamicApiController, ITrans
             .OrderBy(d => d.ProdDate)
             .ToListAsync();
 
+        // 按「日期 + 产品规格」分组统计，叠片系数按产品规格维度展示
         var trend = data
-            .GroupBy(d => d.ProdDate!.Value.Date)
+            .GroupBy(d => new
+            {
+                Date = d.ProdDate!.Value.Date,
+                ProductSpecCode = string.IsNullOrWhiteSpace(d.ProductSpecCode) ? null : d.ProductSpecCode.Trim(),
+                ProductSpecName = string.IsNullOrWhiteSpace(d.ProductSpecName) ? null : d.ProductSpecName.Trim()
+            })
             .Select(g => new LaminationTrendDto
             {
-                Date = g.Key.ToString("yyyy-MM-dd"),
+                Date = g.Key.Date.ToString("yyyy-MM-dd"),
+                ProductSpecCode = g.Key.ProductSpecCode,
+                ProductSpecName = string.IsNullOrWhiteSpace(g.Key.ProductSpecName) ? (g.Key.ProductSpecCode ?? "未指定规格") : g.Key.ProductSpecName,
                 Value = Math.Round(g.Average(d => d.LaminationFactor!.Value), 2),
                 Min = Math.Round(g.Min(d => d.LaminationFactor!.Value), 2),
                 Max = Math.Round(g.Max(d => d.LaminationFactor!.Value), 2)
             })
+            .OrderBy(t => t.Date)
+            .ThenBy(t => t.ProductSpecCode ?? "")
             .ToList();
 
         return trend;
@@ -331,6 +341,38 @@ public class DashboardService : IDashboardService, IDynamicApiController, ITrans
         }).ToList();
 
         return result;
+    }
+
+    /// <summary>
+    /// 获取今日产量数据（与昨日对比）
+    /// </summary>
+    [HttpGet("daily-production")]
+    public async Task<DailyProductionDto> GetDailyProductionAsync()
+    {
+        var today = DateTime.Today;
+        var yesterday = today.AddDays(-1);
+        var tomorrow = today.AddDays(1);
+
+        var todayWeight = await _intermediateDataRepository.AsQueryable()
+            .Where(d => d.DeleteMark == null)
+            .Where(d => d.ProdDate >= today && d.ProdDate < tomorrow)
+            .SumAsync(d => d.SingleCoilWeight ?? 0);
+
+        var yesterdayWeight = await _intermediateDataRepository.AsQueryable()
+            .Where(d => d.DeleteMark == null)
+            .Where(d => d.ProdDate >= yesterday && d.ProdDate < today)
+            .SumAsync(d => d.SingleCoilWeight ?? 0);
+
+        var changeRate = yesterdayWeight > 0
+            ? Math.Round((todayWeight - yesterdayWeight) / yesterdayWeight * 100, 2)
+            : 0;
+
+        return new DailyProductionDto
+        {
+            TodayWeight = todayWeight,
+            YesterdayWeight = yesterdayWeight,
+            ChangeRate = changeRate
+        };
     }
 
     #region Private Methods

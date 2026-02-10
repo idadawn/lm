@@ -92,47 +92,36 @@ const columns = computed(() => {
 
     // 合格等级列由 reportConfigs 动态统计配置驱动，不再硬编码
 
-    // 动态统计配置
-    if (props.reportConfigs && props.reportConfigs.length > 0) {
-        const reportVisibleConfigs = props.reportConfigs.filter(c => c.isShowInReport);
-        reportVisibleConfigs.forEach(config => {
-            if (config.isPercentage) {
-                // 百分比类型：只生成占比列
+    // 动态统计配置 - 由 ReportConfig 驱动
+    const reportVisibleConfigs = (props.reportConfigs || []).filter(c => c.isShowInReport);
+    reportVisibleConfigs.forEach(config => {
+        if (config.isPercentage) {
+            // 百分比类型：只生成占比列
+            detailChildren.push({
+                title: config.name,
+                key: `dynamic_rate_${config.id}`,
+                width: 65,
+                align: 'right',
+            });
+        } else {
+            // 非百分比类型：先生成重量列
+            detailChildren.push({
+                title: `${config.name}`,
+                key: `dynamic_weight_${config.id}`,
+                width: 60,
+                align: 'right',
+            });
+            // 再根据 isShowRatio 可选生成占比列
+            if (config.isShowRatio) {
                 detailChildren.push({
-                    title: config.name,
+                    title: `${config.name}占比`,
                     key: `dynamic_rate_${config.id}`,
-                    width: 65,
+                    width: 50,
                     align: 'right',
                 });
-            } else {
-                // 非百分比类型：先生成重量列
-                detailChildren.push({
-                    title: `${config.name}`,
-                    key: `dynamic_weight_${config.id}`,
-                    width: 60,
-                    align: 'right',
-                });
-                // 再根据 isShowRatio 可选生成占比列
-                if (config.isShowRatio) {
-                    detailChildren.push({
-                        title: `${config.name}占比`,
-                        key: `dynamic_rate_${config.id}`,
-                        width: 50,
-                        align: 'right',
-                    });
-                }
             }
-        });
-    } else {
-        // Fallback or Legacy: 合格率
-        detailChildren.push({
-            title: '合格率',
-            dataIndex: 'qualifiedRate',
-            key: 'qualifiedRate',
-            width: 65,
-            align: 'right',
-        });
-    }
+        }
+    });
 
     // 返回分组列结构
     return [

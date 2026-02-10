@@ -36,4 +36,9 @@ public interface IDashboardService
     /// 获取厚度-叠片系数关联数据.
     /// </summary>
     Task<List<ThicknessCorrelationDto>> GetThicknessCorrelationAsync(DashboardQueryDto query);
+
+    /// <summary>
+    /// 获取今日产量数据（与昨日对比）.
+    /// </summary>
+    Task<DailyProductionDto> GetDailyProductionAsync();
 }

@@ -1,7 +1,7 @@
 <template>
   <div class="chart-card">
     <div class="chart-header">
-      <h3 class="chart-title">不合格原因Top5</h3>
+      <h3 class="chart-title">不合格原因</h3>
     </div>
     <div class="chart-body">
       <div ref="chartRef" class="chart-container"></div>

@@ -30,7 +30,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const chartRef = ref<HTMLDivElement | null>(null);
-const { setOptions } = useECharts(chartRef as Ref<HTMLDivElement>);
+const { setOptions, resize } = useECharts(chartRef as Ref<HTMLDivElement>);
 
 // 班次颜色
 const shiftColors: Record<string, string> = {
@@ -41,6 +41,8 @@ const shiftColors: Record<string, string> = {
 
 onMounted(() => {
     updateChart();
+    // 布局稳定后重绘以填满容器（如在驾驶舱中高度由父级控制）
+    setTimeout(() => resize?.(), 150);
 });
 
 watch(() => [props.data, props.reportConfigs], () => {
@@ -225,6 +227,8 @@ function updateChart() {
 }
 
 .chart-container {
-    height: 200px;
+    min-height: 200px;
+    height: 100%;
+    width: 100%;
 }
 </style>

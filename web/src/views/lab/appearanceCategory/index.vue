@@ -68,7 +68,7 @@
   } from '/@/api/lab/appearanceCategory';
   import CategoryModal from './components/CategoryModal.vue';
 
-  defineOptions({ name: 'AppearanceFeatureCategory' });
+  defineOptions({ name: 'labAppearanceCategory' });
 
   const router = useRouter();
   const { createMessage, createConfirm } = useMessage();

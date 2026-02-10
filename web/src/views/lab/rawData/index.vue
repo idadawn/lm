@@ -145,7 +145,7 @@ import {
   SolutionOutlined,
 } from '@ant-design/icons-vue';
 
-defineOptions({ name: 'RawData' });
+defineOptions({ name: 'labRawData' });
 
 const { createMessage } = useMessage();
 const { t } = useI18n();

@@ -235,7 +235,7 @@ import {
 import { confirmCorrection } from '/@/api/lab/featureLearning';
 import { getAllAppearanceFeatureCategories, AppearanceFeatureCategoryInfo } from '/@/api/lab/appearanceCategory';
 
-defineOptions({ name: 'AppearanceFeature' });
+defineOptions({ name: 'labAppearance' });
 
 const router = useRouter();
 const { createMessage } = useMessage();

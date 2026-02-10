@@ -123,7 +123,7 @@
 </template>
 
 <script lang="ts" setup>
-defineOptions({ name: 'IntermediateDataJudgmentLevel' });
+defineOptions({ name: 'intermediateDataJudgmentLevel' });
 import { ref, onMounted } from 'vue';
 import { useMessage } from '/@/hooks/web/useMessage';
 import { useModal } from '/@/components/Modal';

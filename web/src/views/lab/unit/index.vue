@@ -133,6 +133,7 @@
 </template>
 
 <script lang="ts" setup>
+defineOptions({ name: 'labUnit' });
 import { ref, onMounted } from 'vue';
 import { useModal } from '/@/components/Modal';
 import { useMessage } from '/@/hooks/web/useMessage';

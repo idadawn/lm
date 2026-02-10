@@ -153,7 +153,7 @@
 </template>
 
 <script lang="ts" setup>
-defineOptions({ name: 'IntermediateDataFormula' });
+defineOptions({ name: 'lab-formula' });
 import { ref, onMounted, computed } from 'vue';
 import { useModal } from '/@/components/Modal';
 import { useMessage } from '/@/hooks/web/useMessage';

@@ -267,7 +267,7 @@ import FeatureSelectDialog from '../appearance/components/FeatureSelectDialog.vu
 
 
 
-defineOptions({ name: 'IntermediateData' });
+defineOptions({ name: 'labSubTable' });
 
 const { createMessage } = useMessage();
 const { hasBtnP } = usePermission();

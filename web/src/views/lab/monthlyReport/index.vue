@@ -43,7 +43,7 @@
 </template>
 
 <script lang="ts" setup>
-defineOptions({ name: 'LabMonthlyReport' });
+defineOptions({ name: 'report' });
 import { ref, computed, onMounted } from 'vue';
 import dayjs, { Dayjs } from 'dayjs';
 import { Icon } from '/@/components/Icon';

@@ -11,7 +11,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, unref, watch } from 'vue';
+import { computed, defineComponent, unref } from 'vue';
 
 import FrameLayout from '/@/layouts/iframe/index.vue';
 import { EXCEPTION_COMPONENT } from '/@/router/constant';
@@ -43,11 +43,6 @@ export default defineComponent({
       }
       return tabStore.getCachedTabList;
     });
-
-    // DEBUG: 调试 keep-alive 缓存
-    watch([openCache, getCaches], ([cache, caches]) => {
-      console.log('[PageLayout] openCache:', cache, '| getCaches:', caches);
-    }, { immediate: true });
 
     return {
       getTransitionName,

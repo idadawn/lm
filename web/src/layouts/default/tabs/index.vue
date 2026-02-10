@@ -106,6 +106,13 @@
       });
 
       function handleChange(activeKey: any) {
+        const currentRoute = unref(router.currentRoute);
+        const currentKey = currentRoute.fullPath || currentRoute.path;
+        // 已在当前路由时不再 push，避免 keep-alive 下重复导航触发递归更新
+        if (activeKey === currentKey) {
+          activeKeyRef.value = activeKey;
+          return;
+        }
         activeKeyRef.value = activeKey;
         go(activeKey, false);
       }

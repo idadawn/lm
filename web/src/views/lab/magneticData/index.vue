@@ -71,7 +71,7 @@ import MagneticDataImportQuickModal from './MagneticDataImportQuickModal.vue';
 import { createMagneticImportSession, uploadAndParseMagneticData } from '/@/api/lab/magneticData';
 
 
-defineOptions({ name: 'MagneticData' });
+defineOptions({ name: 'magnetic' });
 
 const { createMessage } = useMessage();
 

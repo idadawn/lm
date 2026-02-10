@@ -33,7 +33,7 @@ const lab: AppRouteModule = {
         },
         {
             path: 'intermediate-data-formula',
-            name: 'IntermediateDataFormula',
+            name: 'lab-formula',
             component: () => import('/@/views/lab/intermediateDataFormula/index.vue'),
             meta: {
                 title: '公式维护',
@@ -41,7 +41,7 @@ const lab: AppRouteModule = {
         },
         {
             path: 'intermediate-data-judgment-level',
-            name: 'IntermediateDataJudgmentLevel',
+            name: 'intermediateDataJudgmentLevel',
             component: () => import('/@/views/lab/intermediateDataJudgmentLevel/index.vue'),
             meta: {
                 title: '判定等级',
@@ -49,11 +49,20 @@ const lab: AppRouteModule = {
         },
         {
             path: 'monthly-report',
-            name: 'LabMonthlyReport',
+            name: 'lab-monthly-report',
             component: () => import('/@/views/lab/monthlyReport/index.vue'),
             meta: {
                 title: '月度质量报表',
                 icon: 'ant-design:bar-chart-outlined',
+            },
+        },
+        {
+            path: 'magnetic-data',
+            name: 'magnetic',
+            component: () => import('/@/views/lab/magneticData/index.vue'),
+            meta: {
+                title: '磁性数据',
+                icon: 'ant-design:database-outlined',
             },
         },
         {

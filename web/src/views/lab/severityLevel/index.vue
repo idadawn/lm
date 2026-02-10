@@ -137,6 +137,7 @@
 </style>
 
 <script lang="ts" setup>
+defineOptions({ name: 'labSeverityLevel' });
 import { ref, onMounted } from 'vue';
 
 import { useModal } from '/@/components/Modal';

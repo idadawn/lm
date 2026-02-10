@@ -72,6 +72,7 @@
 </template>
 
 <script lang="ts" setup>
+defineOptions({ name: 'labAppearanceCorrection' });
 import { ref, onMounted } from 'vue';
 import { UploadOutlined } from '@ant-design/icons-vue';
 import { BasicTable, useTable, TableAction, BasicColumn } from '/@/components/Table';

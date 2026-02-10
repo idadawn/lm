@@ -6,6 +6,7 @@
       :field="column.key"
       :value="record[column.key]"
       type="number"
+      :precision="getFieldPrecision ? getFieldPrecision(column.key) : undefined"
       @save="handleSave"
     />
     <span v-else>{{ record[column.key] }}</span>
@@ -20,6 +21,7 @@ const props = defineProps<{
   column: any;
   cellClass: string;
   hasPermission?: boolean;
+  getFieldPrecision?: (field: string) => number;
 }>();
 
 const emit = defineEmits<{

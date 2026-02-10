@@ -1,6 +1,6 @@
 <template>
-  <div class="kpi-cards-row" :style="{ gridTemplateColumns: `repeat(${3 + (qualifiedColumns?.length || 0)}, 1fr)` }">
-    <!-- Card 1: Total Weight -->
+  <div class="kpi-cards-row" :style="{ gridTemplateColumns: `repeat(${1 + headerConfigs.length}, 1fr)` }">
+    <!-- Card 1: Total Weight (固定) -->
     <div class="kpi-card">
       <div class="kpi-icon-wrapper" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
         <DatabaseOutlined class="kpi-icon" />
@@ -14,54 +14,33 @@
       </div>
     </div>
 
-    <!-- Card 2: Qualified Rate (Standard Style) -->
-    <div class="kpi-card">
-      <div class="kpi-icon-wrapper" style="background: linear-gradient(135deg, #42e695 0%, #3bb2b8 100%)">
-        <SafetyCertificateOutlined class="kpi-icon" />
-      </div>
-      <div class="kpi-content">
-        <div class="kpi-label">合格率</div>
-        <div class="kpi-value" :class="getRateClass(summary?.qualifiedRate)">
-          <span class="number">{{ formatNumber(summary?.qualifiedRate) }}</span>
-          <span class="unit">%</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Dynamic Qualified Columns -->
-    <div v-for="(col, index) in qualifiedColumns" :key="col.code" class="kpi-card">
-      <div class="kpi-icon-wrapper" :style="{ background: getColumnGradient(index, col) }">
-        <CheckCircleOutlined v-if="index === 0" class="kpi-icon" />
+    <!-- 动态配置卡片 - 只展示 isHeader=true 的配置 -->
+    <div v-for="(config, index) in headerConfigs" :key="config.id" class="kpi-card">
+      <div class="kpi-icon-wrapper" :style="{ background: getConfigGradient(index) }">
+        <CheckCircleOutlined v-if="config.isPercentage" class="kpi-icon" />
         <CheckSquareOutlined v-else class="kpi-icon" />
       </div>
       <div class="kpi-content">
-        <div class="kpi-label">{{ col.name }}占比</div>
-        <div class="kpi-value" :class="index === 0 ? 'success' : 'primary'">
-          <span class="number">{{ getCategoryRate(summary, col) }}</span>
-          <span class="unit">%</span>
-        </div>
-        <div class="kpi-sub">
-          <span class="sub-label">重量:</span>
-          <span class="sub-value">{{ getCategoryWeight(summary, col) }} kg</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Card Last: Unqualified Rate -->
-    <div class="kpi-card">
-      <div class="kpi-icon-wrapper" style="background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)">
-        <CloseCircleOutlined class="kpi-icon" />
-      </div>
-      <div class="kpi-content">
-        <div class="kpi-label">不合格率</div>
-        <div class="kpi-value error">
-          <span class="number">{{ formatNumber(summary?.unqualifiedRate) }}</span>
-          <span class="unit">%</span>
-        </div>
-        <div class="kpi-sub">
-          <span class="sub-label">重量:</span>
-          <span class="sub-value">{{ formatNumber(summary?.unqualifiedWeight) }} kg</span>
-        </div>
+        <div class="kpi-label">{{ config.name }}</div>
+        <template v-if="config.isPercentage">
+          <!-- 百分比类型：主值显示百分比 -->
+          <div class="kpi-value" :class="getRateClass(getDynamicStat(config.id).rate)">
+            <span class="number">{{ formatNumber(getDynamicStat(config.id).rate) }}</span>
+            <span class="unit">%</span>
+          </div>
+        </template>
+        <template v-else>
+          <!-- 非百分比类型：主值显示求和(weight) -->
+          <div class="kpi-value">
+            <span class="number">{{ formatNumber(getDynamicStat(config.id).weight) }}</span>
+            <span class="unit">kg</span>
+          </div>
+          <!-- isShowRatio 时下方显示占比 -->
+          <div v-if="config.isShowRatio" class="kpi-sub">
+            <span class="sub-label">占比:</span>
+            <span class="sub-value">{{ formatNumber(getDynamicStat(config.id).rate) }}%</span>
+          </div>
+        </template>
       </div>
     </div>
   </div>
@@ -72,21 +51,31 @@ import {
   DatabaseOutlined,
   CheckCircleOutlined,
   CheckSquareOutlined,
-  CloseCircleOutlined,
-  SafetyCertificateOutlined,
 } from '@ant-design/icons-vue';
-import type { SummaryData, JudgmentLevelColumn } from '/@/api/lab/monthlyQualityReport';
+import { computed } from 'vue';
+import type { SummaryData } from '/@/api/lab/monthlyQualityReport';
+import type { ReportConfig } from '/@/api/lab/reportConfig';
 
 interface Props {
   summary?: SummaryData | null;
   loading?: boolean;
-  qualifiedColumns?: JudgmentLevelColumn[];
+  reportConfigs?: ReportConfig[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
-  qualifiedColumns: () => [],
+  reportConfigs: () => [],
 });
+
+// 只展示 isHeader=true 的配置
+const headerConfigs = computed(() => {
+  return (props.reportConfigs || []).filter(c => c.isHeader);
+});
+
+// 获取动态统计数据
+function getDynamicStat(configId: string) {
+  return props.summary?.dynamicStats?.[configId] || { weight: 0, rate: 0 };
+}
 
 // Format number with thousand separators
 function formatNumber(value?: number): string {
@@ -102,66 +91,23 @@ function getRateClass(rate?: number): string {
   return 'error';
 }
 
-// Get gradient for dynamic columns
-function getColumnGradient(index: number, col?: JudgmentLevelColumn): string {
-  // 优先使用列定义中的颜色
-  if (col?.color) {
-    return `linear-gradient(135deg, ${col.color} 0%, ${col.color}dd 100%)`;
-  }
+// 动态配置的渐变色
+function getConfigGradient(index: number): string {
   const gradients = [
-    'linear-gradient(135deg, #42e695 0%, #3bb2b8 100%)', // Green-ish for first
-    'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', // Blue-ish for second
-    'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', // Orange-ish for third
-    'linear-gradient(135deg, #8fd3f4 0%, #84fab0 100%)', // Light green
+    'linear-gradient(135deg, #42e695 0%, #3bb2b8 100%)',
+    'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+    'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+    'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+    'linear-gradient(135deg, #8fd3f4 0%, #84fab0 100%)',
+    'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
   ];
   return gradients[index % gradients.length];
-}
-
-// 获取某等级的占比（兼容多种数据格式）
-function getCategoryRate(summary: SummaryData | null | undefined, col: JudgmentLevelColumn): string {
-  if (!summary) return '-';
-
-  // 优先从 qualifiedCategories 获取（使用 name 作为 key，因为后端用 name 作为 key）
-  if (summary.qualifiedCategories?.[col.name]?.rate !== undefined) {
-    return formatNumber(summary.qualifiedCategories[col.name].rate);
-  }
-
-  // 兼容旧字段（使用 code 或 name 匹配）
-  if ((col.code === 'A' || col.name === 'A') && summary.classARate !== undefined) {
-    return formatNumber(summary.classARate);
-  }
-  if ((col.code === 'B' || col.name === 'B') && summary.classBRate !== undefined) {
-    return formatNumber(summary.classBRate);
-  }
-
-  return '-';
-}
-
-// 获取某等级的重量（兼容多种数据格式）
-function getCategoryWeight(summary: SummaryData | null | undefined, col: JudgmentLevelColumn): string {
-  if (!summary) return '-';
-
-  // 优先从 qualifiedCategories 获取（使用 name 作为 key）
-  if (summary.qualifiedCategories?.[col.name]?.weight !== undefined) {
-    return formatNumber(summary.qualifiedCategories[col.name].weight);
-  }
-
-  // 兼容旧字段（使用 code 或 name 匹配）
-  if ((col.code === 'A' || col.name === 'A') && summary.classAWeight !== undefined) {
-    return formatNumber(summary.classAWeight);
-  }
-  if ((col.code === 'B' || col.name === 'B') && summary.classBWeight !== undefined) {
-    return formatNumber(summary.classBWeight);
-  }
-
-  return '-';
 }
 </script>
 
 <style lang="less" scoped>
 .kpi-cards-row {
   display: grid;
-  // grid-template-columns set via inline style for dynamic count
   gap: 20px;
   margin-bottom: 24px;
 }
@@ -225,11 +171,6 @@ function getCategoryWeight(summary: SummaryData | null | undefined, col: Judgmen
   margin-bottom: 8px;
   font-weight: 500;
   white-space: nowrap;
-
-  &.center {
-    text-align: center;
-    margin-top: -10px;
-  }
 }
 
 .kpi-value {
@@ -273,15 +214,9 @@ function getCategoryWeight(summary: SummaryData | null | undefined, col: Judgmen
 }
 
 // Responsive
-@media (max-width: 1600px) {
-  .kpi-cards-row {
-    // grid-template-columns: repeat(5, 1fr); // Use inline style instead
-  }
-}
-
 @media (max-width: 1400px) {
   .kpi-cards-row {
-     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
   }
 }
 

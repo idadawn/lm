@@ -23,6 +23,15 @@
                 <template v-else-if="column.key?.startsWith('rate_')">
                     <span>{{ getLevelRate(record, column.key) }}%</span>
                 </template>
+
+                <!-- 动态统计列 -->
+                <template v-else-if="column.key?.startsWith('dynamic_rate_')">
+                    <span :class="getDynamicRateClass(record, column.key)">{{ getDynamicStatRate(record, column.key)
+                        }}%</span>
+                </template>
+                <template v-else-if="column.key?.startsWith('dynamic_weight_')">
+                    <span>{{ getDynamicStatWeight(record, column.key) }}</span>
+                </template>
                 <template v-else-if="isWeightColumn(column.dataIndex)">
                     {{ typeof text === 'number' ? text.toFixed(1) : text }}
                 </template>
@@ -35,17 +44,20 @@
 import { computed } from 'vue';
 import { Icon } from '/@/components/Icon';
 import type { ShiftGroupRow, JudgmentLevelColumn } from '/@/api/lab/monthlyQualityReport';
+import type { ReportConfig } from '/@/api/lab/reportConfig';
 
 interface Props {
     data: ShiftGroupRow[];
     loading?: boolean;
     qualifiedColumns?: JudgmentLevelColumn[];
+    reportConfigs?: ReportConfig[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
     loading: false,
     data: () => [],
     qualifiedColumns: () => [],
+    reportConfigs: () => [],
 });
 
 const columns = computed(() => {
@@ -78,34 +90,49 @@ const columns = computed(() => {
         },
     ];
 
-    // 按优先级排序的合格等级
-    const sortedLevels = [...(props.qualifiedColumns || [])]
-        .sort((a, b) => (a.priority || 0) - (b.priority || 0));
+    // 合格等级列由 reportConfigs 动态统计配置驱动，不再硬编码
 
-    // 添加合格等级列（重量 + 占比）
-    sortedLevels.forEach((level) => {
+    // 动态统计配置
+    if (props.reportConfigs && props.reportConfigs.length > 0) {
+        const reportVisibleConfigs = props.reportConfigs.filter(c => c.isShowInReport);
+        reportVisibleConfigs.forEach(config => {
+            if (config.isPercentage) {
+                // 百分比类型：只生成占比列
+                detailChildren.push({
+                    title: config.name,
+                    key: `dynamic_rate_${config.id}`,
+                    width: 65,
+                    align: 'right',
+                });
+            } else {
+                // 非百分比类型：先生成重量列
+                detailChildren.push({
+                    title: `${config.name}`,
+                    key: `dynamic_weight_${config.id}`,
+                    width: 60,
+                    align: 'right',
+                });
+                // 再根据 isShowRatio 可选生成占比列
+                if (config.isShowRatio) {
+                    detailChildren.push({
+                        title: `${config.name}占比`,
+                        key: `dynamic_rate_${config.id}`,
+                        width: 50,
+                        align: 'right',
+                    });
+                }
+            }
+        });
+    } else {
+        // Fallback or Legacy: 合格率
         detailChildren.push({
-            title: level.name,
-            key: `weight_${level.name}`,
-            width: 70,
+            title: '合格率',
+            dataIndex: 'qualifiedRate',
+            key: 'qualifiedRate',
+            width: 65,
             align: 'right',
         });
-        detailChildren.push({
-            title: `${level.name}%`,
-            key: `rate_${level.name}`,
-            width: 50,
-            align: 'right',
-        });
-    });
-
-    // 合格率
-    detailChildren.push({
-        title: '合格率',
-        dataIndex: 'qualifiedRate',
-        key: 'qualifiedRate',
-        width: 65,
-        align: 'right',
-    });
+    }
 
     // 返回分组列结构
     return [
@@ -128,7 +155,35 @@ function getLevelWeight(record: ShiftGroupRow, key: string) {
 function getLevelRate(record: ShiftGroupRow, key: string) {
     const levelName = key.replace('rate_', '');
     const stat = record.qualifiedCategories?.[levelName];
+    // ShiftGroupRow has qualifiedCategories too? Yes, based on service logic.
+    // Wait, check dto definition. ShiftGroupRow should extend ...
     return stat?.rate?.toFixed(0) ?? '0';
+}
+
+// 获取动态统计占比
+function getDynamicStatRate(record: ShiftGroupRow, key: string) {
+    const id = key.replace('dynamic_rate_', '');
+    const config = props.reportConfigs?.find(c => c.id === id);
+    if (!config) return '0';
+
+    const stat = record.dynamicStats?.[config.id];
+    return stat?.rate?.toFixed(0) ?? '0';
+}
+
+// 获取动态统计重量
+function getDynamicStatWeight(record: ShiftGroupRow, key: string) {
+    const id = key.replace('dynamic_weight_', '');
+    const config = props.reportConfigs?.find(c => c.id === id);
+    if (!config) return '0.0';
+
+    const stat = record.dynamicStats?.[config.id];
+    return stat?.weight?.toFixed(1) ?? '0.0';
+}
+
+function getDynamicRateClass(record: ShiftGroupRow, key: string) {
+    const rateStr = getDynamicStatRate(record, key);
+    const rate = parseFloat(rateStr);
+    return getQualifiedRateClass(rate);
 }
 
 // 获取行样式类名

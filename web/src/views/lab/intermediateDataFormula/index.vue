@@ -153,6 +153,7 @@
 </template>
 
 <script lang="ts" setup>
+defineOptions({ name: 'IntermediateDataFormula' });
 import { ref, onMounted, computed } from 'vue';
 import { useModal } from '/@/components/Modal';
 import { useMessage } from '/@/hooks/web/useMessage';

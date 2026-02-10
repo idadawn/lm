@@ -276,6 +276,147 @@ public class IntermediateDataJudgmentLevelService
     }
 
     /// <summary>
+    /// 批量复制等级到其他判定项目.
+    /// </summary>
+    /// <param name="input">批量复制参数</param>
+    /// <returns>复制结果</returns>
+            [HttpPost("batch-copy")]
+    public async Task<object> BatchCopyAsync([FromBody] BatchCopyLevelsInput input)
+    {
+        // 1. 获取源判定项目下的等级
+        var sourceLevelQuery = _repository
+            .AsQueryable()
+            .Where(t => t.FormulaId == input.SourceFormulaId && t.DeleteMark == null);
+
+        // 如果指定了源产品规格，则只复制该规格下的等级
+        if (!string.IsNullOrEmpty(input.SourceProductSpecId))
+        {
+            sourceLevelQuery = sourceLevelQuery.Where(t => t.ProductSpecId == input.SourceProductSpecId);
+        }
+
+        var sourceLevels = await sourceLevelQuery
+            .OrderBy(t => t.Priority)
+            .ToListAsync();
+
+        if (!sourceLevels.Any())
+            throw Oops.Oh(ErrorCode.COM1005, "源判定项目下没有符合条件的等级数据");
+
+        int copiedCount = 0;
+        int skippedCount = 0;
+        int overwrittenCount = 0;
+
+        // 2. 确定目标组合 (Formula, ProductSpec)
+        // 如果 TargetProductSpecIds 为空，则保留源等级的 ProductSpecId (即 null 或 原有ID)
+        // 如果 TargetProductSpecIds 不为空，则为每个 TargetFormula + TargetProductSpec 生成组合
+        var targetSpecs = new List<(string Id, string Name)>();
+        if (input.TargetProductSpecIds != null && input.TargetProductSpecIds.Any())
+        {
+            var specs = await _productSpecRepository.AsQueryable()
+                .Where(t => input.TargetProductSpecIds.Contains(t.Id))
+                .Select(t => new { t.Id, t.Name })
+                .ToListAsync();
+            targetSpecs = specs.Select(t => (t.Id, t.Name)).ToList();
+        }
+
+        foreach (var targetFormulaId in input.TargetFormulaIds)
+        {
+            // 验证目标判定项目
+            var targetFormula = await _formulaRepository.GetFirstAsync(
+                t => t.Id == targetFormulaId && t.DeleteMark == null);
+            if (targetFormula == null) continue;
+
+            // 获取该目标项目下已有的所有等级，用于查重
+            var existingLevels = await _repository
+                .AsQueryable()
+                .Where(t => t.FormulaId == targetFormulaId && t.DeleteMark == null)
+                .ToListAsync();
+
+            var currentMaxPriority = existingLevels.Any() ? existingLevels.Max(t => t.Priority) : 0;
+
+            // 内部函数：执行单个等级的复制/覆盖逻辑
+            async Task ProcessCopy(IntermediateDataJudgmentLevelEntity source, string targetSpecId, string targetSpecName)
+            {
+                // 查找是否存在同名且同规格的等级
+                var existingLevel = existingLevels.FirstOrDefault(t =>
+                    t.Name == source.Name &&
+                    t.ProductSpecId == targetSpecId // 比较目标规格ID
+                );
+
+                if (existingLevel != null)
+                {
+                    if (input.OverwriteExisting)
+                    {
+                        // 覆盖
+                        existingLevel.Condition = source.Condition;
+                        existingLevel.QualityStatus = source.QualityStatus;
+                        existingLevel.Color = source.Color;
+                        existingLevel.IsStatistic = source.IsStatistic;
+                        existingLevel.IsDefault = source.IsDefault;
+                        existingLevel.Description = source.Description;
+                        existingLevel.LastModify();
+                        await _repository.UpdateAsync(existingLevel);
+                        overwrittenCount++;
+                    }
+                    else
+                    {
+                        skippedCount++;
+                    }
+                }
+                else
+                {
+                    // 新增
+                    var newEntity = new IntermediateDataJudgmentLevelEntity
+                    {
+                        FormulaId = targetFormulaId,
+                        FormulaName = targetFormula.FormulaName,
+                        ProductSpecId = targetSpecId,    // 使用目标规格ID
+                        ProductSpecName = targetSpecName,// 使用目标规格名称
+                        Code = Guid.NewGuid().ToString("N")[..8].ToUpper(),
+                        Name = source.Name,
+                        QualityStatus = source.QualityStatus,
+                        Priority = ++currentMaxPriority,
+                        Color = source.Color,
+                        IsStatistic = source.IsStatistic,
+                        IsDefault = source.IsDefault,
+                        Description = source.Description,
+                        Condition = source.Condition,
+                    };
+                    newEntity.Creator();
+                    await _repository.InsertAsync(newEntity);
+                    copiedCount++;
+                }
+            }
+
+            // 开始复制
+            if (targetSpecs.Any())
+            {
+                // 模式A: 显式指定了目标规格 -> 笛卡尔积复制
+                foreach (var spec in targetSpecs)
+                {
+                    foreach (var sourceLevel in sourceLevels)
+                    {
+                        await ProcessCopy(sourceLevel, spec.Id, spec.Name);
+                    }
+                }
+            }
+            else
+            {
+                // 模式B: 未指定目标规格 -> 保持源等级的规格信息 (通常用于同规格下的复制，或者不涉及规格的复制)
+                // 注意：如果源数据有规格ID，且直接复制到另一个Formula下，可能那个Formula并不适用该规格ID
+                // 但通常用法是：未指定目标规格时，我们认为用户希望"原样仅仅换个Formula"
+                foreach (var sourceLevel in sourceLevels)
+                {
+                    await ProcessCopy(sourceLevel, sourceLevel.ProductSpecId, sourceLevel.ProductSpecName);
+                }
+            }
+
+            await ClearCacheAsync(targetFormulaId);
+        }
+
+        return new { copiedCount, skippedCount, overwrittenCount };
+    }
+
+    /// <summary>
     /// 删除判定等级.
     /// </summary>
     /// <param name="id">主键ID</param>

@@ -49,4 +49,9 @@ public class MonthlyQualityReportResponseDto
     /// 不合格等级列定义（性能不合等，只显示重量）
     /// </summary>
     public List<JudgmentLevelColumnDto> UnqualifiedColumns { get; set; }
+
+    /// <summary>
+    /// 报表统计配置
+    /// </summary>
+    public List<ReportConfig.ReportConfigDto> ReportConfigs { get; set; }
 }

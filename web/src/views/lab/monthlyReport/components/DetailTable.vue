@@ -21,6 +21,15 @@
                     <span :class="getQualifiedRateClass(record.qualifiedRate)">{{ record.qualifiedRate }}%</span>
                 </template>
 
+                <!-- 动态统计列 -->
+                <template v-else-if="column.key?.startsWith('dynamic_rate_')">
+                    <span :class="getDynamicRateClass(record, column.key)">{{ getDynamicStatRate(record, column.key)
+                    }}%</span>
+                </template>
+                <template v-else-if="column.key?.startsWith('dynamic_weight_')">
+                    <span>{{ getDynamicStatWeight(record, column.key) }}</span>
+                </template>
+
                 <!-- 等级重量列（合格和不合格通用） -->
                 <template v-else-if="column.key?.startsWith('weight_')">
                     <span :class="getLevelValueClass(record, column.key)">
@@ -46,6 +55,7 @@
 import { computed } from 'vue';
 import { Icon } from '/@/components/Icon';
 import type { DetailRow, JudgmentLevelColumn } from '/@/api/lab/monthlyQualityReport';
+import type { ReportConfig } from '/@/api/lab/reportConfig';
 import dayjs from 'dayjs';
 
 interface Props {
@@ -53,6 +63,7 @@ interface Props {
     loading?: boolean;
     qualifiedColumns: JudgmentLevelColumn[];
     unqualifiedColumns: JudgmentLevelColumn[];
+    reportConfigs?: ReportConfig[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -60,6 +71,7 @@ const props = withDefaults(defineProps<Props>(), {
     data: () => [],
     qualifiedColumns: () => [],
     unqualifiedColumns: () => [],
+    reportConfigs: () => [],
 });
 
 // 固定列
@@ -70,6 +82,7 @@ const fixedColumns = [
         key: 'prodDate',
         width: 100,
         fixed: 'left',
+        align: 'center',
     },
     {
         title: '班次',
@@ -77,18 +90,21 @@ const fixedColumns = [
         key: 'shift',
         width: 60,
         fixed: 'left',
+        align: 'center',
     },
     {
         title: '炉号',
         dataIndex: 'shiftNo',
         key: 'shiftNo',
         width: 100,
+        align: 'center',
     },
     {
         title: '带宽',
         dataIndex: 'productSpecCode',
         key: 'productSpecCode',
         width: 70,
+        align: 'center',
     },
 ];
 
@@ -118,65 +134,94 @@ const detailColumns = computed(() => {
             dataIndex: 'detectionWeight',
             key: 'detectionWeight',
             width: 90,
-            align: 'right',
+            align: 'center',
         },
     ];
 
-    // 按优先级排序的合格等级
-    const sortedQualifiedLevels = [...props.qualifiedColumns]
-        .sort((a, b) => (a.priority || 0) - (b.priority || 0));
+    // 合格等级列由 reportConfigs 动态统计配置驱动，不再硬编码
 
-    // 添加合格等级列（重量 + 占比）
-    sortedQualifiedLevels.forEach(level => {
+    // 动态统计配置
+    if (props.reportConfigs && props.reportConfigs.length > 0) {
+        const reportVisibleConfigs = props.reportConfigs.filter(c => c.isShowInReport);
+        reportVisibleConfigs.forEach(config => {
+            if (config.isPercentage) {
+                // 百分比类型：只生成占比列
+                qualifiedChildren.push({
+                    title: config.name,
+                    key: `dynamic_rate_${config.id}`,
+                    width: 80,
+                    align: 'center',
+                });
+            } else {
+                // 非百分比类型：先生成重量列
+                qualifiedChildren.push({
+                    title: `${config.name}`,
+                    key: `dynamic_weight_${config.id}`,
+                    width: 80,
+                    align: 'center',
+                });
+                // 再根据 isShowRatio 可选生成占比列
+                if (config.isShowRatio) {
+                    qualifiedChildren.push({
+                        title: `${config.name}占比`,
+                        key: `dynamic_rate_${config.id}`,
+                        width: 70,
+                        align: 'center',
+                    });
+                }
+            }
+        });
+    } else {
+        // Fallback: 合格 + 合格率
         qualifiedChildren.push({
-            title: level.name,
-            key: `weight_${level.name}`,
+            title: '合格',
+            dataIndex: 'qualifiedWeight',
+            key: 'qualifiedWeight',
             width: 80,
-            align: 'right',
+            align: 'center',
         });
         qualifiedChildren.push({
-            title: `${level.name}占比`,
-            key: `rate_${level.name}`,
+            title: '合格率',
+            dataIndex: 'qualifiedRate',
+            key: 'qualifiedRate',
             width: 70,
-            align: 'right',
+            align: 'center',
         });
-    });
+    }
 
-    // 合格 + 合格率
-    qualifiedChildren.push({
-        title: '合格',
-        dataIndex: 'qualifiedWeight',
-        key: 'qualifiedWeight',
-        width: 80,
-        align: 'right',
-    });
-    qualifiedChildren.push({
-        title: '合格率',
-        dataIndex: 'qualifiedRate',
-        key: 'qualifiedRate',
-        width: 70,
-        align: 'right',
-    });
-
-    // 不合格分类组 - 不合格等级
+    // 不合格分类组 - 从 ReportConfig 中 name 为"不合格"的配置获取要显示的等级
     const unqualifiedChildren: any[] = [];
 
-    // 按优先级排序的不合格等级
-    const sortedUnqualifiedLevels = [...props.unqualifiedColumns]
-        .sort((a, b) => (a.priority || 0) - (b.priority || 0));
+    // 找到 name 为"不合格"的配置项
+    const unqualifiedConfig = props.reportConfigs?.find(c => c.name === '不合格');
+    const unqualifiedLevelNames = unqualifiedConfig?.levelNames || [];
 
-    // 添加不合格等级列（只有重量）
-    sortedUnqualifiedLevels.forEach(level => {
-        unqualifiedChildren.push({
-            title: level.name,
-            key: `weight_${level.name}`,
-            width: 80,
-            align: 'right',
+    if (unqualifiedLevelNames.length > 0) {
+        // 按配置中的 levelNames 顺序显示
+        unqualifiedLevelNames.forEach(levelName => {
+            unqualifiedChildren.push({
+                title: levelName,
+                key: `weight_${levelName}`,
+                width: 80,
+                align: 'center',
+            });
         });
-    });
+    } else {
+        // Fallback: 使用 unqualifiedColumns
+        const sortedUnqualifiedLevels = [...props.unqualifiedColumns]
+            .sort((a, b) => (a.priority || 0) - (b.priority || 0));
+        sortedUnqualifiedLevels.forEach(level => {
+            unqualifiedChildren.push({
+                title: level.name,
+                key: `weight_${level.name}`,
+                width: 80,
+                align: 'center',
+            });
+        });
+    }
 
     // 返回两个分组列
-    const result = [];
+    const result: any[] = [];
     if (qualifiedChildren.length > 0) {
         result.push({
             title: '检测明细（kg）',
@@ -202,8 +247,27 @@ const scrollX = computed(() => {
     const fixedWidth = 330; // 固定列宽度
     const qualifiedCount = props.qualifiedColumns.length;
     const unqualifiedCount = props.unqualifiedColumns.length;
-    // 每个合格等级 2 列 (150)，每个不合格等级 1 列 (80)，加上检测量(90) + 合格合计(80) + 合格率(70)
-    const detailWidth = 90 + (qualifiedCount * 150) + (unqualifiedCount * 80) + 80 + 70;
+    // 每个合格等级 2 列 (150)，每个不合格等级 1 列 (80)，
+    // 加上检测量(90)
+    let detailWidth = 90 + (qualifiedCount * 150) + (unqualifiedCount * 80);
+
+    // 加上动态列
+    if (props.reportConfigs && props.reportConfigs.length > 0) {
+        const reportVisibleConfigs = props.reportConfigs.filter(c => c.isShowInReport);
+        reportVisibleConfigs.forEach(config => {
+            if (config.isPercentage) {
+                detailWidth += 80; // 只有占比列
+            } else {
+                detailWidth += 80; // 重量列
+                if (config.isShowRatio) {
+                    detailWidth += 70; // 占比列
+                }
+            }
+        });
+    } else {
+        detailWidth += 150; // Qualified Weight + Rate
+    }
+
     return fixedWidth + detailWidth;
 });
 
@@ -273,7 +337,7 @@ function formatDate(date: string | Date | null | undefined) {
         if (d.year() === 1 || d.year() < 1900) {
             return '-';
         }
-        return d.format('MM-DD');
+        return d.format('YYYYMMDD');
     } catch (error) {
         console.warn('日期格式化失败:', date, error);
         return '-';
@@ -299,6 +363,33 @@ function getQualifiedRateClass(rate: number) {
 // 判断是否为重量列
 function isWeightColumn(dataIndex: string) {
     return dataIndex?.includes('Weight');
+}
+
+// 获取动态统计占比
+function getDynamicStatRate(record: DetailRow, key: string) {
+    // key format: dynamic_rate_{id}
+    const id = key.replace('dynamic_rate_', '');
+    const config = props.reportConfigs?.find(c => c.id === id);
+    if (!config) return '0.00';
+
+    const stat = record.dynamicStats?.[config.id];
+    return stat?.rate?.toFixed(2) ?? '0.00';
+}
+
+// 获取动态统计重量
+function getDynamicStatWeight(record: DetailRow, key: string) {
+    const id = key.replace('dynamic_weight_', '');
+    const config = props.reportConfigs?.find(c => c.id === id);
+    if (!config) return '0.0';
+
+    const stat = record.dynamicStats?.[config.id];
+    return stat?.weight?.toFixed(1) ?? '0.0';
+}
+
+function getDynamicRateClass(record: DetailRow, key: string) {
+    const rateStr = getDynamicStatRate(record, key);
+    const rate = parseFloat(rateStr);
+    return getQualifiedRateClass(rate);
 }
 </script>
 

@@ -19,7 +19,7 @@
         </div>
 
         <!-- 顶部指标卡片 -->
-        <SummaryCards :data="summaryData" :loading="loading" />
+        <SummaryCards :data="summaryData" :loading="loading" :report-configs="reportConfigs" />
 
         <!-- 筛选条件 -->
         <FilterPanel v-model:dateRange="dateRange" v-model:shift="filterShift" v-model:shiftNo="filterShiftNo"
@@ -30,17 +30,19 @@
             <!-- 左侧明细表格 -->
             <div class="content-left">
                 <DetailTable :data="detailData" :loading="loading" :qualified-columns="qualifiedColumns"
-                    :unqualified-columns="unqualifiedColumns" />
+                    :unqualified-columns="unqualifiedColumns" :report-configs="reportConfigs" />
             </div>
 
             <!-- 右侧班组统计和图表 -->
             <div class="content-right">
-                <ShiftGroupPanel :data="shiftGroupData" :loading="loading" :qualified-columns="qualifiedColumns" />
+                <ShiftGroupPanel :data="shiftGroupData" :loading="loading" :qualified-columns="qualifiedColumns"
+                    :report-configs="reportConfigs" />
 
                 <div class="charts-section">
-                    <QualityTrendChart :data="qualityTrendData" :loading="loading" />
+                    <QualityTrendChart :data="qualityTrendData" :loading="loading" :report-configs="reportConfigs" />
                     <UnqualifiedCategoryChart :data="unqualifiedCategoryData" :loading="loading" />
-                    <ShiftComparisonChart :data="shiftComparisonData" :loading="loading" />
+                    <ShiftComparisonChart :data="shiftComparisonData" :loading="loading"
+                        :report-configs="reportConfigs" />
                 </div>
             </div>
         </div>
@@ -48,6 +50,7 @@
 </template>
 
 <script lang="ts" setup>
+defineOptions({ name: 'LabMonthlyReport' });
 import { ref, computed, onMounted } from 'vue';
 import dayjs, { Dayjs } from 'dayjs';
 import { Icon } from '/@/components/Icon';
@@ -57,7 +60,6 @@ import {
     getMonthlyReportColumns,
     exportMonthlyReport,
     type MonthlyReportQueryParams,
-    type MonthlyReportResponse,
     type SummaryData,
     type DetailRow,
     type ShiftGroupRow,
@@ -66,6 +68,7 @@ import {
     type ShiftComparison,
     type JudgmentLevelColumn,
 } from '/@/api/lab/monthlyQualityReport';
+import { type ReportConfig } from '/@/api/lab/reportConfig';
 
 // 导入组件
 import SummaryCards from './components/SummaryCards.vue';
@@ -100,6 +103,10 @@ const summaryData = ref<SummaryData>({
     unqualifiedWeight: 0,
     unqualifiedCategories: {},
     unqualifiedRate: 0,
+    classAWeight: 0,
+    classARate: 0,
+    classBWeight: 0,
+    classBRate: 0,
 });
 const detailData = ref<DetailRow[]>([]);
 const shiftGroupData = ref<ShiftGroupRow[]>([]);
@@ -108,6 +115,7 @@ const unqualifiedCategoryData = ref<UnqualifiedCategory[]>([]);
 const shiftComparisonData = ref<ShiftComparison[]>([]);
 const qualifiedColumns = ref<JudgmentLevelColumn[]>([]);
 const unqualifiedColumns = ref<JudgmentLevelColumn[]>([]);
+const reportConfigs = ref<ReportConfig[]>([]);
 
 // 当前日期范围显示
 const currentDateRange = computed(() => {
@@ -120,13 +128,14 @@ async function loadColumns() {
     try {
         const response = await getMonthlyReportColumns();
         // 响应可能被包装在 data 字段中
-        const data = response?.data || response;
-        console.log('列定义响应:', response);
-        console.log('data:', data);
-        console.log('data.qualifiedColumns:', data?.qualifiedColumns);
-        console.log('data.unqualifiedColumns:', data?.unqualifiedColumns);
-        qualifiedColumns.value = data?.qualifiedColumns || [];
-        unqualifiedColumns.value = data?.unqualifiedColumns || [];
+        const data = response as any;
+        qualifiedColumns.value = data?.qualifiedColumns || data?.data?.qualifiedColumns || [];
+        unqualifiedColumns.value = data?.unqualifiedColumns || data?.data?.unqualifiedColumns || [];
+        // 提取报表配置
+        const configs = data?.reportConfigs || data?.data?.reportConfigs || [];
+        if (configs.length > 0) {
+            reportConfigs.value = configs;
+        }
     } catch (error) {
         console.error('加载列定义失败:', error);
         qualifiedColumns.value = [];
@@ -163,7 +172,12 @@ async function loadData() {
         shiftGroupData.value = data?.shiftGroups || [];
         qualityTrendData.value = data?.qualityTrends || [];
         unqualifiedCategoryData.value = data?.unqualifiedCategoryStats || [];
+        unqualifiedCategoryData.value = data?.unqualifiedCategoryStats || [];
         shiftComparisonData.value = data?.shiftComparisons || [];
+        // 如果后端返回了最新的配置，更新之
+        if (data?.reportConfigs) {
+            reportConfigs.value = data.reportConfigs;
+        }
     } catch (error) {
         console.error('加载报表数据失败:', error);
         createMessage.error('加载报表数据失败');

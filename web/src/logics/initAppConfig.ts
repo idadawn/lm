@@ -27,7 +27,8 @@ export function initAppConfigStore() {
   const localeStore = useLocaleStore();
   const appStore = useAppStore();
   let projCfg: ProjectConfig = Persistent.getLocal(PROJ_CFG_KEY) as ProjectConfig;
-  projCfg = deepMerge(projectSetting, projCfg || {});
+  // 以代码配置为准，持久化配置只作为补充（避免旧配置覆盖新代码中的设置）
+  projCfg = deepMerge(deepMerge({}, projCfg || {}), projectSetting);
   const darkMode = appStore.getDarkMode;
   const {
     colorWeak,

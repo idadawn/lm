@@ -149,7 +149,7 @@ const setting: ProjectConfig = {
   },
 
   // 是否开启KeepAlive缓存  开发时候最好关闭,不然每次都需要清除缓存
-  openKeepAlive: false,
+  openKeepAlive: true,
 
   // 自动锁屏时间，为0不锁屏。 单位分钟 默认1个小时
   lockTime: 0,

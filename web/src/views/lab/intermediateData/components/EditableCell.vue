@@ -4,7 +4,8 @@
       <a-input v-if="type === 'text'" ref="inputRef" v-model:value="editValue" size="small" @blur="handleSave"
         @pressEnter="handleSave" @keyup.esc="cancelEdit" />
       <a-input-number v-else-if="type === 'number'" ref="inputRef" v-model:value="editValue" size="small"
-        :precision="precision ?? 2" @blur="handleSave" @pressEnter="handleSave" @keyup.esc="cancelEdit" />
+        :precision="effectivePrecision" :controls="false" @blur="handleSave" @pressEnter="handleSave"
+        @keyup.esc="cancelEdit" />
     </template>
     <template v-else>
       <span class="cell-value" :class="{ empty: !value && value !== 0 }">
@@ -16,7 +17,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, shallowRef, nextTick, watch } from 'vue';
+import { ref, shallowRef, computed, nextTick, watch } from 'vue';
 import { EditOutlined } from '@ant-design/icons-vue';
 
 const props = defineProps<{
@@ -34,6 +35,8 @@ const emit = defineEmits<{
 const editing = ref(false);
 const editValue = shallowRef<any>(null);
 const inputRef = shallowRef<any>(null);
+
+const effectivePrecision = computed(() => Math.min(props.precision ?? 4, 4));
 
 function formatDisplayValue(val: any) {
   if (val === null || val === undefined || val === '') return '-';

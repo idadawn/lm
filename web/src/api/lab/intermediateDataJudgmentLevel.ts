@@ -24,3 +24,11 @@ export const deleteIntermediateDataJudgmentLevel = (id: string) =>
 
 export const updateIntermediateDataJudgmentLevelSort = (ids: string[]) =>
   defHttp.put({ url: `${Api.Update}/sort`, params: ids });
+
+export const batchCopyLevels = (params: {
+  sourceFormulaId: string;
+  targetFormulaIds: string[];
+  overwriteExisting: boolean;
+  sourceProductSpecId?: string;
+  targetProductSpecIds?: string[];
+}) => defHttp.post({ url: `${Api.Create}/batch-copy`, params });

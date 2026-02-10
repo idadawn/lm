@@ -79,6 +79,12 @@ public class RawDataEntity : CLDEntityBase
     public decimal? SubcoilNo { get; set; }
 
     /// <summary>
+    /// 特殊标记（W或者w）.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_SPECIAL_MARKER", Length = 50, IsNullable = true)]
+    public string SpecialMarker { get; set; }
+
+    /// <summary>
     /// 特性描述（从炉号解析）.
     /// </summary>
     [SugarColumn(ColumnName = "F_FEATURE_SUFFIX", Length = 50, IsNullable = true)]

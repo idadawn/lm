@@ -42,9 +42,14 @@
             - {{ selectedFormula.displayName || selectedFormula.formulaName }}
           </span>
         </h2>
-        <a-button type="primary" :disabled="!selectedFormulaId" @click="handleAdd">
-          新增等级
-        </a-button>
+        <a-space>
+          <a-button type="primary" :disabled="!selectedFormulaId" @click="handleAdd">
+            新增等级
+          </a-button>
+          <a-button :disabled="!selectedFormulaId || levelList.length === 0" @click="handleBatchCopy">
+            批量复制
+          </a-button>
+        </a-space>
       </div>
       <div class="flex-1 overflow-hidden p-4 flex flex-col">
         <div v-if="!selectedFormulaId" class="h-full flex items-center justify-center text-gray-400">
@@ -113,10 +118,12 @@
     <LevelForm @register="registerModal" @success="handleSuccess" />
     <LevelConditionModal @register="registerConditionModal" @success="handleSuccess" />
     <CopyConditionModal @register="registerCopyModal" @success="handleSuccess" @clone="handleCloneToNew" />
+    <BatchCopyModal @register="registerBatchCopyModal" @success="handleSuccess" />
   </div>
 </template>
 
 <script lang="ts" setup>
+defineOptions({ name: 'IntermediateDataJudgmentLevel' });
 import { ref, onMounted } from 'vue';
 import { useMessage } from '/@/hooks/web/useMessage';
 import { useModal } from '/@/components/Modal';
@@ -130,6 +137,7 @@ import { getProductSpecList } from '/@/api/lab/productSpec';
 import LevelForm from './components/form.vue';
 import LevelConditionModal from './components/LevelConditionModal.vue';
 import CopyConditionModal from './components/CopyConditionModal.vue';
+import BatchCopyModal from './components/BatchCopyModal.vue';
 import ConditionCell from './components/ConditionCell.vue';
 import { useSortable } from '/@/hooks/web/useSortable';
 import { nextTick } from 'vue';
@@ -138,6 +146,7 @@ const { createMessage } = useMessage();
 const [registerModal, { openModal }] = useModal();
 const [registerConditionModal, { openModal: openConditionModal }] = useModal();
 const [registerCopyModal, { openModal: openCopyModal }] = useModal();
+const [registerBatchCopyModal, { openModal: openBatchCopyModal }] = useModal();
 
 const loadingFormula = ref(false);
 const formulaList = ref<any[]>([]);
@@ -391,6 +400,22 @@ const handleAdd = () => {
     isUpdate: false,
     formulaId: selectedFormulaId.value,
     productSpecId: selectedProductSpecId.value,
+  });
+};
+
+const handleBatchCopy = () => {
+  const currentSpecName = selectedProductSpecId.value
+    ? productSpecList.value.find(item => item.id === selectedProductSpecId.value)?.name
+    : '';
+
+  openBatchCopyModal(true, {
+    formulaId: selectedFormulaId.value,
+    formulaName: selectedFormula.value?.displayName || selectedFormula.value?.formulaName,
+    productSpecId: selectedProductSpecId.value, // 传递当前选中的产品规格ID
+    productSpecName: currentSpecName,           // 传递当前选中的产品规格名称
+    levelCount: levelList.value.length,
+    allFormulas: formulaList.value,
+    productSpecList: productSpecList.value,     // 传递所有产品规格列表给弹窗
   });
 };
 

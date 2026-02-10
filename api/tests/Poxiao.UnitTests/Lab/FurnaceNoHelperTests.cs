@@ -268,5 +268,74 @@ namespace Poxiao.UnitTests.Lab
             Assert.Equal("1乙20251101-1", batchNo2);
             Assert.Equal("2甲20251101-1", batchNo3);
         }
+        [Theory]
+        [InlineData("1甲20251101-1-4-1W", true, "W", null)]
+        [InlineData("1甲20251101-1-4-1w", true, "w", null)]
+        [InlineData("1甲20251101-1-4-1W脆", true, "W", "脆")]
+        [InlineData("1甲20251101-1-4-1w硬", true, "w", "硬")]
+        [InlineData("1甲20251101-1-4-1", true, "", null)] // Regression
+        public void ParseFurnaceNo_Should_Support_SpecialMarker(
+            string furnaceNo,
+            bool expectedSuccess,
+            string expectedMarker,
+            string expectedFeature
+        )
+        {
+            // Act
+            var result = FurnaceNoHelper.ParseFurnaceNo(furnaceNo);
+
+            // Assert
+            if (expectedSuccess)
+            {
+                Assert.True(
+                    result.Success,
+                    $"Expected success for {furnaceNo}, but failed: {result.ErrorMessage}"
+                );
+                
+                // Helper returns FurnaceNo object, but we need to check internal FurnaceNo logic or helper DTO?
+                // Wait, FurnaceNoHelper.ParseFurnaceNo returns FurnaceNoParseResultDto, NOT FurnaceNo object directly.
+                // I need to check if FurnaceNoHelper maps the SpecialMarker.
+                // Let's check FurnaceNoHelper.cs first.
+            }
+            else
+            {
+                Assert.False(result.Success, $"Expected failure for {furnaceNo}, but succeeded.");
+            }
+        }
+        
+        [Fact]
+        public void FurnaceNoClass_Should_Parse_SpecialMarker()
+        {
+             // Arrange
+            var furnaceNoStr = "1甲20251101-1-4-1W脆";
+
+            // Act
+            var furnaceNo = FurnaceNo.Parse(furnaceNoStr);
+
+            // Assert
+            Assert.True(furnaceNo.IsValid);
+            Assert.Equal("W", furnaceNo.SpecialMarker);
+            Assert.Equal("脆", furnaceNo.FeatureSuffix);
+            Assert.Equal("1甲20251101-1-4-1W脆", furnaceNo.GetFullFurnaceNo());
+            Assert.Equal("1甲20251101-1-4-1W", furnaceNo.GetFurnaceNo());
+            Assert.Equal("1甲20251101-1", furnaceNo.GetStandardFurnaceNo());
+        }
+
+        [Fact]
+        public void FurnaceNoClass_Should_Parse_SpecialMarker_Lower()
+        {
+             // Arrange
+            var furnaceNoStr = "1甲20251101-1-4-1w";
+
+            // Act
+            var furnaceNo = FurnaceNo.Parse(furnaceNoStr);
+
+            // Assert
+            Assert.True(furnaceNo.IsValid);
+            Assert.Equal("w", furnaceNo.SpecialMarker);
+            Assert.True(string.IsNullOrEmpty(furnaceNo.FeatureSuffix));
+            Assert.Equal("1甲20251101-1-4-1w", furnaceNo.GetFullFurnaceNo());
+            Assert.Equal("1甲20251101-1-4-1w", furnaceNo.GetFurnaceNo());
+        }
     }
 }

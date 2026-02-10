@@ -5,8 +5,8 @@ namespace Poxiao.Lab.Entity.Models;
 
 /// <summary>
 /// 炉号封装类
-/// 格式：[产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号][可选特性汉字]
-/// 示例：1甲20251101-1-4-1脆
+/// 格式：[产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号][可能存在W或者w][可选特性汉字]
+/// 示例：1甲20251101-1-4-1W脆
 /// </summary>
 public class FurnaceNo
 {
@@ -39,6 +39,11 @@ public class FurnaceNo
     /// 分卷号（支持小数，如：1, 1.5, 2等）
     /// </summary>
     public string SubcoilNo { get; private set; }
+
+    /// <summary>
+    /// 特殊标记（W或者w）
+    /// </summary>
+    public string SpecialMarker { get; private set; }
 
     /// <summary>
     /// 特性描述（特性汉字，如：脆, 硬等）
@@ -108,13 +113,13 @@ public class FurnaceNo
             return result;
         }
 
-        // 正则表达式：匹配 [产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号][可选特性汉字]
-        // 例如：1甲20251101-1-4-1脆 或 1乙20251101-1-1-1
+        // 正则表达式：匹配 [产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号][可能存在W或者w][可选特性汉字]
+        // 例如：1甲20251101-1-4-1W脆 或 1乙20251101-1-1-1
         // 卷号和分卷号支持小数：\d+(\.\d+)?
         // 允许炉号、卷号、分卷号前后有空格
         // 特性描述限制为中文汉字或括号：[\u4e00-\u9fa5\(\)\uff08\uff09]*
         var pattern =
-            @"^\s*(\d+)(.*?)(\d{8})\s*-\s*(\d+)\s*-\s*(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*([\u4e00-\u9fa5\(\)\uff08\uff09]*)\s*$";
+            @"^\s*(\d+)(.*?)(\d{8})\s*-\s*(\d+)\s*-\s*(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*([Ww]?)\s*([\u4e00-\u9fa5\(\)\uff08\uff09]*)\s*$";
         var match = Regex.Match(furnaceNo.Trim(), pattern);
 
         if (!match.Success)
@@ -131,7 +136,8 @@ public class FurnaceNo
             result.FurnaceBatchNo = match.Groups[4].Value; // 炉次号
             result.CoilNo = match.Groups[5].Value; // 卷号
             result.SubcoilNo = match.Groups[6].Value; // 分卷号
-            result.FeatureSuffix = match.Groups[7].Value?.Trim(); // 特性描述（可选）
+            result.SpecialMarker = match.Groups[7].Value; // 特殊标记（W/w）
+            result.FeatureSuffix = match.Groups[8].Value?.Trim(); // 特性描述（可选）
 
             // 忽略特定的非特性后缀（如复测）
             if (!string.IsNullOrEmpty(result.FeatureSuffix))
@@ -220,6 +226,7 @@ public class FurnaceNo
     /// <param name="furnaceBatchNo">炉次号</param>
     /// <param name="coilNo">卷号</param>
     /// <param name="subcoilNo">分卷号</param>
+    /// <param name="specialMarker">特殊标记（W/w）</param>
     /// <param name="featureSuffix">特性描述（可选）</param>
     /// <returns>炉号实例</returns>
     public static FurnaceNo Build(
@@ -229,6 +236,7 @@ public class FurnaceNo
         string furnaceBatchNo,
         string coilNo,
         string subcoilNo,
+        string specialMarker = null,
         string featureSuffix = null
     )
     {
@@ -240,6 +248,7 @@ public class FurnaceNo
             FurnaceBatchNo = furnaceBatchNo,
             CoilNo = coilNo,
             SubcoilNo = subcoilNo,
+            SpecialMarker = specialMarker,
             FeatureSuffix = featureSuffix,
             OriginalFurnaceNo = null,
         };
@@ -286,6 +295,10 @@ public class FurnaceNo
         var dateStr = prodDate.Value.ToString("yyyyMMdd");
         result.OriginalFurnaceNo =
             $"{lineNo}{shift}{dateStr}-{furnaceBatchNo}-{coilNo}-{subcoilNo}";
+        if (!string.IsNullOrWhiteSpace(specialMarker))
+        {
+            result.OriginalFurnaceNo += specialMarker;
+        }
         if (!string.IsNullOrWhiteSpace(featureSuffix))
         {
             result.OriginalFurnaceNo += featureSuffix;
@@ -309,6 +322,10 @@ public class FurnaceNo
 
             var dateStr = ProdDate.Value.ToString("yyyyMMdd");
             var furnaceNo = $"{LineNo}{Shift}{dateStr}-{FurnaceBatchNo}-{CoilNo}-{SubcoilNo}";
+            if (!string.IsNullOrWhiteSpace(SpecialMarker))
+            {
+                furnaceNo += SpecialMarker;
+            }
             if (!string.IsNullOrWhiteSpace(FeatureSuffix))
             {
                 furnaceNo += FeatureSuffix;
@@ -320,8 +337,8 @@ public class FurnaceNo
     }
 
     /// <summary>
-    /// 获取基础炉号（不包含特性描述）
-    /// 格式：[产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号]
+    /// 获取基础炉号（不包含特性描述，但包含特殊标记W）
+    /// 格式：[产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号][W/w]
     /// </summary>
     /// <returns>基础炉号字符串</returns>
     public string GetFurnaceNo()
@@ -330,11 +347,17 @@ public class FurnaceNo
             return null;
 
         var dateStr = ProdDate.Value.ToString("yyyyMMdd");
-        return $"{LineNo}{Shift}{dateStr}-{FurnaceBatchNo}-{CoilNo}-{SubcoilNo}";
+        var baseNo = $"{LineNo}{Shift}{dateStr}-{FurnaceBatchNo}-{CoilNo}-{SubcoilNo}";
+        if (!string.IsNullOrWhiteSpace(SpecialMarker))
+        {
+            baseNo += SpecialMarker;
+        }
+        return baseNo;
     }
 
     /// <summary>
     /// 获取标准炉号（等同于批次号，即 [产线数字][班次汉字][8位日期]-[炉次号]）
+    /// 注意：标准炉号不包含W标记，因为W标记随卷变化
     /// </summary>
     /// <returns>标准炉号字符串</returns>
     public string GetStandardFurnaceNo() => GetBatchNo();
@@ -376,7 +399,7 @@ public class FurnaceNo
         if (!IsValid)
             return this;
 
-        return Build(LineNo, Shift, ProdDate, FurnaceBatchNo, CoilNo, SubcoilNo, null);
+        return Build(LineNo, Shift, ProdDate, FurnaceBatchNo, CoilNo, SubcoilNo, SpecialMarker, null);
     }
 
     /// <summary>
@@ -422,7 +445,7 @@ public class FurnaceNo
     {
         if (obj is FurnaceNo other)
         {
-            return GetFurnaceNo() == other.GetFurnaceNo();
+            return GetStandardFurnaceNo() == other.GetStandardFurnaceNo();
         }
         return false;
     }
@@ -433,7 +456,7 @@ public class FurnaceNo
     /// <returns>哈希码</returns>
     public override int GetHashCode()
     {
-        return GetFurnaceNo()?.GetHashCode() ?? 0;
+        return GetStandardFurnaceNo()?.GetHashCode() ?? 0;
     }
 
     /// <summary>

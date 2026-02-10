@@ -13,16 +13,19 @@
 import { ref, watch, onMounted, type Ref } from 'vue';
 import { useECharts } from '/@/hooks/web/useECharts';
 import type { ShiftComparison, JudgmentLevelColumn } from '/@/api/lab/monthlyQualityReport';
+import type { ReportConfig } from '/@/api/lab/reportConfig';
 
 interface Props {
   data?: ShiftComparison[] | null;
   loading?: boolean;
   qualifiedColumns?: JudgmentLevelColumn[];
+  reportConfigs?: ReportConfig[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
   qualifiedColumns: () => [],
+  reportConfigs: () => [],
 });
 
 const chartRef = ref<HTMLDivElement | null>(null);
@@ -32,21 +35,26 @@ let setChartOptions: ((option: any) => void) | null = null;
 const colors = ['#42e695', '#4facfe', '#ff9a9e', '#fa709a', '#8ec5fc'];
 
 // 获取某个等级的占比数据
-function getCategoryRate(shift: ShiftComparison, colCode: string): number {
-  // 尝试从动态字段获取
-  const dynamicField = `class${colCode}Rate`;
+function getCategoryRate(shift: ShiftComparison, statKey: string): number {
+  if (shift.dynamicStats) {
+    const dynamicVal = shift.dynamicStats[statKey];
+    if (dynamicVal !== undefined && dynamicVal !== null) {
+      return Number(dynamicVal) || 0;
+    }
+  }
+
+  const dynamicField = `class${statKey}Rate`;
   const val = (shift as any)[dynamicField];
   if (val !== undefined && val !== null) {
     return Number(val) || 0;
   }
-  // 兼容旧字段
-  if (colCode === 'A') {
+  if (statKey === 'A') {
     const legacyVal = (shift as any).classARate;
     if (legacyVal !== undefined && legacyVal !== null) {
       return Number(legacyVal) || 0;
     }
   }
-  if (colCode === 'B') {
+  if (statKey === 'B') {
     const legacyVal = (shift as any).classBRate;
     if (legacyVal !== undefined && legacyVal !== null) {
       return Number(legacyVal) || 0;
@@ -54,7 +62,6 @@ function getCategoryRate(shift: ShiftComparison, colCode: string): number {
   }
   return 0;
 }
-
 function initChart() {
   if (!chartRef.value) return;
 
@@ -69,34 +76,40 @@ function updateChart() {
 
   const shifts = props.data;
   console.log('ShiftComparisonRadar data:', shifts); // Debug logging
+  const visibleConfigs = (props.reportConfigs || []).filter((c) =>
+    String(c?.formulaId || '').toLowerCase() === 'firstinspection' && c.isShowInReport,
+  );
+  const indicatorConfigs = visibleConfigs.length > 0
+    ? visibleConfigs.map((c) => ({ name: c.name, key: c.id }))
+    : props.qualifiedColumns.map((c) => ({ name: c.name, key: c.code }));
 
-  // 动态构建指标：总产量、合格率，以及所有合格等级
+  // 动态构建指标：总产量占比（归一化）、合格率，以及所有合格等级
   const indicators = [
-    { name: '总产量', max: 0 },
+    { name: '产量占比', max: 100 },
     { name: '合格率', max: 100 },
   ];
 
   // 根据合格等级列动态添加指标
-  for (const col of props.qualifiedColumns) {
-    indicators.push({ name: `${col.name}占比`, max: 100 });
+  for (const cfg of indicatorConfigs) {
+    indicators.push({ name: `${cfg.name}占比`, max: 100 });
   }
 
-  // 计算总产量的最大值
+  // 计算总产量的最大值用于归一化
   const weights = shifts.map((s) => s.totalWeight || 0);
   const maxVal = weights.length > 0 ? Math.max(...weights) : 0;
   const maxWeight = maxVal > 0 ? maxVal * 1.2 : 100;
-  indicators[0].max = maxWeight;
 
-  // 构建系列数据
+  // 构建系列数据（总产量归一化为百分比）
   const series = shifts.map((shift) => {
+    const weightPercent = maxVal > 0 ? ((shift.totalWeight || 0) / maxWeight) * 100 : 0;
     const value = [
-      shift.totalWeight || 0,
+      weightPercent,
       shift.qualifiedRate || 0,
     ];
 
     // 动态添加各等级占比数据
-    for (const col of props.qualifiedColumns) {
-      value.push(getCategoryRate(shift, col.code));
+    for (const cfg of indicatorConfigs) {
+      value.push(getCategoryRate(shift, cfg.key));
     }
 
     return {
@@ -111,6 +124,37 @@ function updateChart() {
       backgroundColor: 'rgba(255, 255, 255, 0.95)',
       borderColor: '#f0f2f5',
       textStyle: { color: '#262626' },
+      formatter: (params: any) => {
+        const shiftName = params.name;
+        const shiftData = shifts.find((s) => s.shift === shiftName);
+        if (!shiftData) return params.name;
+        
+        let html = `<div style="font-weight:600;margin-bottom:8px;">${shiftName}</div>`;
+        
+        // 产量占比 - 显示实际重量
+        const weightPercent = maxVal > 0 ? ((shiftData.totalWeight || 0) / maxWeight) * 100 : 0;
+        html += `<div style="display:flex;align-items:center;margin:4px 0;">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${params.color};margin-right:8px;"></span>
+          <span>产量占比: ${weightPercent.toFixed(1)}% (${shiftData.totalWeight?.toFixed(2) || 0}kg)</span>
+        </div>`;
+        
+        // 合格率
+        html += `<div style="display:flex;align-items:center;margin:4px 0;">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${params.color};margin-right:8px;"></span>
+          <span>合格率: ${(shiftData.qualifiedRate || 0).toFixed(2)}%</span>
+        </div>`;
+        
+        // 各等级占比
+        for (const cfg of indicatorConfigs) {
+          const rate = getCategoryRate(shiftData, cfg.key);
+          html += `<div style="display:flex;align-items:center;margin:4px 0;">
+            <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${params.color};margin-right:8px;"></span>
+            <span>${cfg.name}占比: ${rate.toFixed(2)}%</span>
+          </div>`;
+        }
+        
+        return html;
+      },
     },
     legend: {
       data: shifts.map((s) => s.shift),
@@ -123,6 +167,7 @@ function updateChart() {
       radius: '65%',
       center: ['50%', '50%'],
       splitNumber: 4,
+      scale: false,
       axisName: {
         color: '#666',
         fontSize: 12,

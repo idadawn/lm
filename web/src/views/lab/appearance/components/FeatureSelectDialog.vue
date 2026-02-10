@@ -111,7 +111,29 @@ const [registerTable, { reload, setSelectedRowKeys, getForm }] = useTable({
   rowSelection: {
     type: 'checkbox',
     onChange: (_selectedRowKeys: string[], selectedRows: AppearanceFeatureInfo[]) => {
-      selectedFeatures.value = selectedRows;
+      // 获取新增的选中项（相比之前的选中项）
+      // 注意：selectedRows 是目前被勾选的所有项，包括之前的和新勾选的
+      const currentSelected = selectedFeatures.value || [];
+      const addedItems = selectedRows.filter(row => !currentSelected.some(item => item.id === row.id));
+
+      let finalSelection = [...selectedRows];
+
+      // 如果有新增选中项，检查同类互斥
+      if (addedItems.length > 0) {
+        addedItems.forEach(newItem => {
+          // 移除同大类的其他项（保留当前新增项）
+          finalSelection = finalSelection.filter(item =>
+            item.id === newItem.id || item.categoryId !== newItem.categoryId
+          );
+        });
+      }
+
+      selectedFeatures.value = finalSelection;
+
+      // 如果经过互斥处理后，选中项数量发生变化（即发生了排他），需要手动同步表格选中状态
+      if (finalSelection.length !== selectedRows.length) {
+        setSelectedRowKeys(finalSelection.map(item => item.id));
+      }
     },
   },
   formConfig: {
@@ -274,8 +296,11 @@ function handleRowClick(record: AppearanceFeatureInfo) {
 
   let newSelected: AppearanceFeatureInfo[] = [];
   if (index === -1) {
-    newSelected = [...currentSelected, record];
+    // 新选中：移除同类其他项，添加当前项
+    newSelected = currentSelected.filter(item => item.categoryId !== record.categoryId);
+    newSelected.push(record);
   } else {
+    //取消选中
     newSelected = currentSelected.filter(item => item.id !== record.id);
   }
 

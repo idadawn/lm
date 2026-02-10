@@ -13,19 +13,21 @@
 import { ref, watch, onMounted, type Ref } from 'vue';
 import { useECharts } from '/@/hooks/web/useECharts';
 import type { SummaryData, JudgmentLevelColumn } from '/@/api/lab/monthlyQualityReport';
+import type { ReportConfig } from '/@/api/lab/reportConfig';
 
 interface Props {
   summary?: SummaryData | null;
   loading?: boolean;
   qualifiedColumns?: JudgmentLevelColumn[];
+  reportConfigs?: ReportConfig[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
   qualifiedColumns: () => [],
+  reportConfigs: () => [],
 });
 
-// 预定义颜色池
 const qualifiedColors = [
   '#42e695', '#4facfe', '#fa709a', '#8ec5fc',
   '#a8edea', '#fed6e3', '#c1dfc4', '#deecf9'
@@ -37,10 +39,8 @@ let setChartOptions: ((option: any) => void) | null = null;
 
 function initChart() {
   if (!chartRef.value) return;
-
   const { setOptions } = useECharts(chartRef as Ref<HTMLDivElement>);
   setChartOptions = setOptions;
-
   updateChart();
 }
 
@@ -50,52 +50,39 @@ function updateChart() {
   const s = props.summary;
   const pieData: { name: string; value: number; itemStyle?: { color: string } }[] = [];
 
-  // 动态生成合格分类数据（按 qualifiedColumns 顺序）
-  let qualifiedColorIndex = 0;
-  for (const col of props.qualifiedColumns || []) {
-    // 使用 col.name 而不是 col.code，因为后端用 name 作为 key
-    if (s.qualifiedCategories?.[col.name]) {
-      pieData.push({
-        name: col.name,
-        value: s.qualifiedCategories[col.name].weight,
-        itemStyle: {
-          color: col.color || qualifiedColors[qualifiedColorIndex % qualifiedColors.length]
-        }
-      });
-      qualifiedColorIndex++;
-    }
-  }
+  // 使用所有 isShowInReport 的 reportConfigs，从 dynamicStats 获取数据
+  const visibleConfigs = (props.reportConfigs || []).filter((c) => c.isShowInReport);
 
-  // 添加不在 qualifiedColumns 中的其他合格分类（兜底）
-  for (const [key, stat] of Object.entries(s.qualifiedCategories || {})) {
-    const isInColumns = props.qualifiedColumns?.some(col => col.name === key);
-    if (!isInColumns) {
+  if (visibleConfigs.length > 0 && s.dynamicStats) {
+    visibleConfigs.forEach((config, index) => {
+      const stat = (s.dynamicStats as any)?.[config.id];
+      const weight = Number(stat?.weight) || 0;
+      if (weight <= 0) return;
       pieData.push({
-        name: key,
-        value: stat.weight,
-        itemStyle: { color: qualifiedColors[qualifiedColorIndex % qualifiedColors.length] }
+        name: config.name,
+        value: weight,
+        itemStyle: { color: qualifiedColors[index % qualifiedColors.length] },
       });
-      qualifiedColorIndex++;
-    }
-  }
-
-  // 添加不合格分类
-  let unqualifiedColorIndex = 0;
-  for (const [key, weight] of Object.entries(s.unqualifiedCategories || {})) {
-    pieData.push({
-      name: key,
-      value: weight,
-      itemStyle: { color: unqualifiedColors[unqualifiedColorIndex % unqualifiedColors.length] }
     });
-    unqualifiedColorIndex++;
+  }
+
+  // 补充不合格分类数据
+  if (s.unqualifiedCategories) {
+    let unqualifiedColorIndex = 0;
+    for (const [key, weight] of Object.entries(s.unqualifiedCategories)) {
+      if (Number(weight) > 0) {
+        pieData.push({
+          name: key,
+          value: Number(weight),
+          itemStyle: { color: unqualifiedColors[unqualifiedColorIndex % unqualifiedColors.length] },
+        });
+        unqualifiedColorIndex++;
+      }
+    }
   }
 
   const totalWeight = s.totalWeight || 0;
-
-  // Format total weight for display
-  const totalWeightText = totalWeight > 0
-    ? `${(totalWeight / 1000).toFixed(1)}`
-    : '0';
+  const totalWeightText = totalWeight > 0 ? `${(totalWeight / 1000).toFixed(1)}` : '0';
 
   const option = {
     tooltip: {
@@ -118,39 +105,34 @@ function updateChart() {
       }
     },
     legend: {
-      type: 'plain', // Ensure all items are shown without scrolling
+      type: 'plain',
       orient: 'vertical',
       right: 10,
       top: 'middle',
       align: 'left',
-      itemGap: 15, // Increased gap
-      itemWidth: 18, // Larger square
-      itemHeight: 18, // Larger square
-      icon: 'rect', 
+      itemGap: 15,
+      itemWidth: 18,
+      itemHeight: 18,
+      icon: 'rect',
       textStyle: {
-        color: '#555', // Slightly darker text
-        fontSize: 13, // Slightly larger text
-        fontWeight: 500 // Bolder text
+        color: '#555',
+        fontSize: 13,
+        fontWeight: 500
       },
-      // Using standard formatter to avoid alignment issues
-      formatter: (name: string) => {
-        return name;
-      }
+      formatter: (name: string) => name,
     },
     series: [
       {
         type: 'pie',
         radius: ['50%', '75%'],
-        center: ['30%', '50%'], // Moved left from 35%
+        center: ['30%', '50%'],
         avoidLabelOverlap: false,
         itemStyle: {
           borderRadius: 8,
           borderColor: '#fff',
           borderWidth: 2
         },
-        label: {
-          show: false,
-        },
+        label: { show: false },
         emphasis: {
           label: {
             show: true,
@@ -162,17 +144,15 @@ function updateChart() {
           scale: true,
           scaleSize: 10
         },
-        labelLine: {
-          show: false,
-        },
+        labelLine: { show: false },
         data: pieData,
       },
     ],
     title: {
       show: true,
       text: totalWeightText,
-      subtext: '总吨数',
-      left: '29%', // Adjusted to match center (roughly center - half width estimate, or just use percentage alignment if textAlign is center)
+      subtext: '总重量',
+      left: '29%',
       top: 'center',
       textAlign: 'center',
       textStyle: {
@@ -194,7 +174,7 @@ function updateChart() {
 }
 
 watch(
-  () => props.summary,
+  [() => props.summary, () => props.reportConfigs],
   () => {
     if (setChartOptions) {
       updateChart();
@@ -206,8 +186,6 @@ watch(
 onMounted(() => {
   initChart();
 });
-
-
 </script>
 
 <style lang="less" scoped>

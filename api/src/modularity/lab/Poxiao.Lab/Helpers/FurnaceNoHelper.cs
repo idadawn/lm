@@ -54,6 +54,11 @@ public static class FurnaceNoHelper
         public string SubcoilNo { get; set; }
 
         /// <summary>
+        /// 特殊标记（W或者w）.
+        /// </summary>
+        public string SpecialMarker { get; set; }
+
+        /// <summary>
         /// 特性描述（特性汉字）.
         /// </summary>
         public string FeatureSuffix { get; set; }
@@ -86,8 +91,8 @@ public static class FurnaceNoHelper
 
     /// <summary>
     /// 解析炉号.
-    /// 格式：[产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号][可选特性汉字]
-    /// 示例：1甲20251101-1-4-1脆
+    /// 格式：[产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号][可能存在W或者w][可选特性汉字]
+    /// 示例：1甲20251101-1-4-1W脆
     /// 注意：炉号格式为 [产线数字][班次汉字][8位日期]-[炉次号]
     /// </summary>
     /// <param name="furnaceNo">原始炉号</param>
@@ -120,6 +125,7 @@ public static class FurnaceNoHelper
         result.FurnaceNo = furnaceNoObj.FurnaceBatchNo; // 注意：这里存储的是炉次号
         result.CoilNo = furnaceNoObj.CoilNo;
         result.SubcoilNo = furnaceNoObj.SubcoilNo;
+        result.SpecialMarker = furnaceNoObj.SpecialMarker;
         result.FeatureSuffix = furnaceNoObj.FeatureSuffix;
         result.LineNoNumeric = furnaceNoObj.LineNoNumeric;
         result.ShiftNumeric = furnaceNoObj.ShiftNumeric;

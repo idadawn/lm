@@ -100,7 +100,7 @@
                 @save="val => handlePerfSave(record, column.key, val)" />
 
               <!-- 外观特性列 -->
-              <FeatureCell v-else-if="column.key === 'featureSuffix' || column.key === 'appearanceFeatureList'"
+              <FeatureCell v-else-if="column.key === 'appearanceFeatureList'"
                 :record="record" :column="column" :cell-class="getCellClass(record.id, column.key)"
                 :has-permission="hasBtnP(PERM_APPEARANCE)" :get-matched-feature-labels="getMatchedFeatureLabels"
                 @click="handleCellColor(record.id, column.key)" @dblclick="handleOpenFeatureDialog(record)" />
@@ -135,23 +135,15 @@
               <!-- 判定状态 -->
               <template v-else-if="column.key === 'judgeStatus'">
                 <div class="cell-content flex items-center justify-center">
-                  <a-tooltip v-if="isJudgeFailed(record)" :title="record.judgeErrorMessage">
-                    <a-tag color="error" class="cursor-pointer" @click.stop="handleRejudge(record)">
-                      <template #icon>
-                        <ReloadOutlined :spin="record.rejudging" />
-                      </template>
-                      {{ record.rejudging ? '判定中' : '失败' }}
-                    </a-tag>
-                  </a-tooltip>
-                  <a-tag v-else :color="getCalcStatusInfo(record.judgeStatus).color" class="cursor-pointer"
-                    @click.stop="handleRejudge(record)">
+                  <a-tag :color="isNeedJudge(record) ? 'orange' : 'success'"
+                    :class="isNeedJudge(record) ? 'cursor-pointer' : ''"
+                    :title="isNeedJudge(record) ? '贴标为空，需执行判定' : '贴标有值，无需判定'"
+                    @click.stop="isNeedJudge(record) && handleRejudge(record)">
                     <template #icon>
-                      <ReloadOutlined :spin="record.rejudging" v-if="record.rejudging" />
-                      <CheckCircleOutlined v-else-if="record.judgeStatus === 2" />
-                      <SyncOutlined v-else-if="record.judgeStatus === 1" spin />
-                      <ClockCircleOutlined v-else />
+                      <ReloadOutlined :spin="record.rejudging" v-if="record.rejudging || isNeedJudge(record)" />
+                      <CheckCircleOutlined v-else />
                     </template>
-                    {{ record.rejudging ? '判定中' : getCalcStatusInfo(record.judgeStatus).text }}
+                    {{ record.rejudging ? '判定中' : (isNeedJudge(record) ? '需要判定' : '无需判定') }}
                   </a-tag>
                 </div>
               </template>
@@ -229,7 +221,7 @@
 
 
 <script lang="ts" setup>
-import { ref, computed, onMounted, watch, nextTick, shallowRef } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch, nextTick, shallowRef } from 'vue';
 import { BasicTable, useTable, BasicColumn } from '/@/components/Table';
 import { useMessage } from '/@/hooks/web/useMessage';
 import { usePermission } from '/@/hooks/web/usePermission';
@@ -267,7 +259,7 @@ import { useFormulaPrecision } from '/@/composables/useFormulaPrecision';
 import { useColorStyles } from '/@/composables/useColorStyles';
 
 import { useModal } from '/@/components/Modal';
-import { UploadOutlined, ReloadOutlined, DownloadOutlined, CheckCircleOutlined, SyncOutlined, ClockCircleOutlined } from '@ant-design/icons-vue';
+import { UploadOutlined, ReloadOutlined, DownloadOutlined, CheckCircleOutlined } from '@ant-design/icons-vue';
 import MagneticDataImportQuickModal from '../magneticData/MagneticDataImportQuickModal.vue';
 import { createMagneticImportSession, uploadAndParseMagneticData } from '/@/api/lab/magneticData';
 import type { IntermediateDataCalcLogItem } from '/@/api/lab/model/intermediateDataCalcLogModel';
@@ -330,12 +322,16 @@ const { getCellClass } = useColorStyles({ coloredCells });
 const savingColors = ref<boolean>(false); // 是否正在保存颜色
 const batchCalculating = ref<boolean>(false); // 是否正在批量计算
 const batchJudging = ref<boolean>(false); // 是否正在批量判定
+const judgeQueuePolling = ref<boolean>(false); // 是否正在轮询判定队列
 const exporting = ref<boolean>(false); // 是否正在导出
 const exportModalVisible = ref<boolean>(false); // 导出模态框是否可见
 const exportDateRange = ref<number[]>([]); // 导出日期范围（时间戳数组）
 const selectedExportShortcut = ref<string>(''); // 当前选中的导出快捷方式
+const judgeStatusFilter = ref<number>(-1); // 判定状态筛选：-1全部 0需要判定 1无需判定
+const lastFetchParams = ref<Record<string, any>>({}); // 当前查询条件(不含分页)
 const isClearMode = ref<boolean>(false); // 是否处于清除颜色模式
 const fillMode = ref<'cell' | 'row' | 'column'>('cell'); // 填充模式：单元格/整行/整列
+let judgeQueuePollTimer: ReturnType<typeof setTimeout> | null = null;
 
 // 导出日期快捷选项配置
 const exportDateShortcuts = [
@@ -411,9 +407,15 @@ function isCalcFailed(record: any) {
   return key === 'FAILED' && !!record?.calcErrorMessage;
 }
 
-function isJudgeFailed(record: any) {
-  // judgeStatus: 0=未判定, 1=判定中, 2=成功, 3=失败
-  return record?.judgeStatus === 3 && !!record?.judgeErrorMessage;
+function isNeedJudge(record: any) {
+  const labelingValue = record?.labeling ?? record?.Labeling;
+  if (labelingValue === null || labelingValue === undefined) {
+    return true;
+  }
+  if (typeof labelingValue === 'string') {
+    return labelingValue.trim().length === 0;
+  }
+  return false;
 }
 
 function formatDateTime(value: any) {
@@ -450,7 +452,7 @@ function getMatchedFeatureLabels(record: any): Array<{ id: string; label: string
   if (record.appearanceFeatureDetails && record.appearanceFeatureDetails.length > 0) {
     return record.appearanceFeatureDetails.map((detail: any) => ({
       id: detail.featureId || detail.id,
-      label: [detail.categoryName, detail.severityLevelName, detail.featureName]
+      label: [detail.categoryName, detail.severityLevelName]
         .filter(Boolean)
         .join(' / '),
     }));
@@ -472,11 +474,10 @@ function getMatchedFeatureLabels(record: any): Array<{ id: string; label: string
       return ids.map((id: string) => {
         const feature = allFeatures.value.find(f => f.id === id);
         if (feature) {
-          // 格式: 特性大类 / 特性等级 / 特性名称
+          // 格式: 特性大类 / 特性等级
           const labelParts = [
             feature.category,     // 特性大类
             feature.severityLevel,// 特性等级
-            feature.name          // 特性名称
           ].filter(Boolean); // 过滤掉空值
 
           return {
@@ -496,30 +497,11 @@ function getMatchedFeatureLabels(record: any): Array<{ id: string; label: string
 }
 
 
-// 列配置缓存 - 使用更稳定的缓存策略
-const cachedColumnsKey = ref<string>('');
-const cachedColumnsValue = shallowRef<BasicColumn[] | null>(null);
-
-/**
- * 获取检测列数量 - 提取为独立函数便于缓存判断
- */
-function getDetectionColumnsCount(): number {
-  const spec = productSpecOptions.value.find(item => item.id === selectedProductSpecId.value);
-  return spec?.detectionColumns || 15;
-}
-
-// 合并所有列（带缓存）
+// 合并所有列（computed 自带缓存，依赖不变就不会重算）
 const allColumns = computed(() => {
-  // 生成缓存键：基于产品规格ID和检测列数
-  const detectionColumns = getDetectionColumnsCount();
-  const currentKey = `${selectedProductSpecId.value}-${detectionColumns}`;
+  const spec = productSpecOptions.value.find(item => item.id === selectedProductSpecId.value);
+  const detectionColumns = spec?.detectionColumns || 15;
 
-  // 如果缓存键匹配，直接返回缓存的列配置
-  if (cachedColumnsValue.value && cachedColumnsKey.value === currentKey) {
-    return cachedColumnsValue.value;
-  }
-
-  // 缓存失效，重新计算列配置
   const columns: BasicColumn[] = [
     // --- 基础信息区（固定左侧） ---
     { title: '检验日期', dataIndex: 'detectionDateStr', key: 'detectionDateStr', width: 80, fixed: 'left', align: 'center' },
@@ -636,8 +618,7 @@ const allColumns = computed(() => {
     { title: '叠片系数', dataIndex: 'laminationFactor', key: 'laminationFactor', width: 70, align: 'right' },
 
     // --- 外观缺陷区 ---
-    { title: '外观特性', dataIndex: 'featureSuffix', key: 'featureSuffix', width: 90, align: 'center' },
-    { title: '外观特性列表', dataIndex: 'appearanceFeatureList', key: 'appearanceFeatureList', width: 220, align: 'left' },
+    { title: '外观特性', dataIndex: 'appearanceFeatureList', key: 'appearanceFeatureList', width: 220, align: 'left' },
 
     { title: '断头数(个)', dataIndex: 'breakCount', key: 'breakCount', width: 70, align: 'right' },
     { title: '单卷重量(kg)', dataIndex: 'singleCoilWeight', key: 'singleCoilWeight', width: 80, align: 'right' },
@@ -789,11 +770,7 @@ const allColumns = computed(() => {
     { title: '日志', dataIndex: 'calcLog', key: 'calcLog', width: 70, fixed: 'right', align: 'center' },
   ];
 
-  // 更新缓存 - 移除 markRaw 避免 cloneDeep 冲突
-  cachedColumnsKey.value = currentKey;
-  cachedColumnsValue.value = columns;
-
-  return cachedColumnsValue.value;
+  return columns;
 });
 
 // 分页状态 - 需要在 useTable 之前定义
@@ -894,14 +871,12 @@ const [registerTable, { reload, getDataSource }] = useTable({
         defaultValue: -1,
         componentProps: {
           options: [
-            { label: '所有状态', value: -1 },
-            { label: '未判定', value: 0 },
-            { label: '判定中', value: 1 },
-            { label: '成功', value: 2 },
-            { label: '失败', value: 3 },
+            { label: '全部状态', value: -1 },
+            { label: '需要判定', value: 0 },
+            { label: '无需判定', value: 1 },
           ],
           fieldNames: { label: 'label', value: 'value' },
-          placeholder: '所有状态',
+          placeholder: '判定状态',
           allowClear: false,
         },
       },
@@ -916,9 +891,8 @@ const [registerTable, { reload, getDataSource }] = useTable({
     if (params.calcStatus === -1) {
       delete params.calcStatus;
     }
-    if (params.judgeStatus === -1) {
-      delete params.judgeStatus;
-    }
+    judgeStatusFilter.value = Number(params.judgeStatus ?? -1);
+    delete params.judgeStatus;
 
     // 使用表单中的产品规格ID
     if (params.productSpecId) {
@@ -930,6 +904,8 @@ const [registerTable, { reload, getDataSource }] = useTable({
     if (sortRules.value.length > 0) {
       params.sortRules = JSON.stringify(sortRules.value);
     }
+    const { page, currentPage, pageSize, ...queryParams } = params;
+    lastFetchParams.value = { ...queryParams };
     return params;
   },
   afterFetch: async (data, res) => {
@@ -973,9 +949,17 @@ const [registerTable, { reload, getDataSource }] = useTable({
         return mapped;
       });
 
+      const filteredData = judgeStatusFilter.value === -1
+        ? mappedData
+        : mappedData.filter(item => judgeStatusFilter.value === 0 ? isNeedJudge(item) : !isNeedJudge(item));
+
+      if (judgeStatusFilter.value !== -1) {
+        currentPagination.value.total = filteredData.length;
+      }
+
       // 加载颜色数据（延迟执行避免阻塞渲染）
-      if (mappedData.length > 0) {
-        const dataIds = mappedData.map(item => item.id);
+      if (filteredData.length > 0) {
+        const dataIds = filteredData.map(item => item.id);
 
         // 使用 setTimeout 替代 nextTick，给浏览器更多时间完成初始渲染
         // 100ms 延迟确保数据已经渲染到 DOM，再加载颜色
@@ -985,9 +969,9 @@ const [registerTable, { reload, getDataSource }] = useTable({
       }
 
       // 保存表格数据用于行/列填充
-      tableData.value = mappedData;
+      tableData.value = filteredData;
 
-      return mappedData;
+      return filteredData;
     }
     return data;
   },
@@ -1401,45 +1385,84 @@ async function handleBatchRecalculate() {
   }
 }
 
-// 批量判定（针对计算成功的数据执行判定逻辑）
+// 批量判定（仅对“需要判定”的数据执行判定）
 async function handleBatchJudge() {
   if (batchJudging.value) return;
 
-  // 获取当前表格数据
-  const data = getDataSource();
-  if (!data || data.length === 0) {
+  const baseParams = {
+    ...lastFetchParams.value,
+    productSpecId: selectedProductSpecId.value || lastFetchParams.value?.productSpecId,
+  };
+
+  if (!baseParams.productSpecId) {
     createMessage.warning('当前没有数据');
     return;
   }
 
-  // 筛选出计算成功的数据（只有计算成功的才能执行判定）
-  const successRecords = data.filter(record => {
-    const status = normalizeCalcStatus(record?.calcStatus);
-    return status === 'SUCCESS';
-  });
+  const pageSize = 500;
+  const allRecords: any[] = [];
+  const idSet = new Set<string>();
+  let page = 1;
+  let totalPages = 1;
 
-  if (successRecords.length === 0) {
-    createMessage.info('没有计算成功的数据可供判定');
+  try {
+    batchJudging.value = true;
+
+    while (page <= totalPages) {
+      const response = await getIntermediateDataList({
+        ...baseParams,
+        page,
+        currentPage: page,
+        pageSize,
+      });
+      const result = (response as any)?.data || response;
+      const list: any[] = result?.list || [];
+      const pagination = result?.pagination || {};
+      const total = Number(pagination.total ?? list.length);
+      const current = Number(pagination.currentPage ?? page);
+      const size = Number(pagination.pageSize ?? pageSize);
+      totalPages = Math.max(1, Math.ceil(total / Math.max(size, 1)));
+
+      list.forEach(item => {
+        const id = item?.id;
+        if (!id || idSet.has(id)) return;
+        idSet.add(id);
+        allRecords.push(item);
+      });
+
+      if (list.length === 0 || current >= totalPages) {
+        break;
+      }
+      page = current + 1;
+    }
+  } catch (error) {
+    createMessage.error('加载全量数据失败');
+    batchJudging.value = false;
+    return;
+  }
+
+  // 筛选出需要判定的数据（贴标为空）
+  const needJudgeRecords = allRecords.filter(record => isNeedJudge(record));
+
+  if (needJudgeRecords.length === 0) {
+    createMessage.info('没有需要判定的数据');
+    batchJudging.value = false;
     return;
   }
 
   try {
-    batchJudging.value = true;
-    const ids = successRecords.map(record => record.id);
-    await judgeIntermediateData(ids);
-    createMessage.success(`已触发 ${ids.length} 条数据的判定`);
-    // 稍后刷新
-    setTimeout(() => {
-      reload();
-      batchJudging.value = false;
-    }, 1000);
+    const ids = needJudgeRecords.map(record => record.id);
+    const response = await judgeIntermediateData(ids);
+    const result = (response as any)?.data || response || {};
+    createMessage.success(result?.message || `已提交 ${ids.length} 条判定任务到队列`);
+    await reload();
+    startJudgeQueuePolling();
   } catch (error) {
     createMessage.error('批量判定失败');
+  } finally {
     batchJudging.value = false;
   }
 }
-
-// 快速导出处理
 function handleQuickExport({ key }: { key: string }) {
   if (key === 'custom') {
     openExportModal();
@@ -1891,6 +1914,66 @@ async function saveColorsBatch() {
     savingColors.value = false;
   }
 }
+
+function clearJudgeQueuePolling() {
+  if (judgeQueuePollTimer) {
+    clearTimeout(judgeQueuePollTimer);
+    judgeQueuePollTimer = null;
+  }
+  judgeQueuePolling.value = false;
+}
+
+function startJudgeQueuePolling() {
+  if (judgeQueuePolling.value) {
+    return;
+  }
+
+  const maxAttempts = 30;
+  let attempts = 0;
+  judgeQueuePolling.value = true;
+
+  const tick = async () => {
+    attempts += 1;
+    try {
+      const baseParams = {
+        ...lastFetchParams.value,
+        productSpecId: selectedProductSpecId.value || lastFetchParams.value?.productSpecId,
+      };
+      const response = await getIntermediateDataList({
+        ...baseParams,
+        pageSize: 1,
+        currentPage: 1,
+        page: 1,
+        judgeStatus: 1,
+      });
+
+      const result = (response as any)?.data || response;
+      const totalProcessing = Number(result?.pagination?.total ?? 0);
+      if (totalProcessing <= 0) {
+        clearJudgeQueuePolling();
+        await reload();
+        createMessage.success('判定队列处理完成');
+        return;
+      }
+    } catch (error) {
+      clearJudgeQueuePolling();
+      return;
+    }
+
+    if (attempts >= maxAttempts) {
+      clearJudgeQueuePolling();
+      return;
+    }
+
+    judgeQueuePollTimer = setTimeout(tick, 2000);
+  };
+
+  judgeQueuePollTimer = setTimeout(tick, 2000);
+}
+
+onUnmounted(() => {
+  clearJudgeQueuePolling();
+});
 
 onMounted(() => {
   loadProductSpecOptions();

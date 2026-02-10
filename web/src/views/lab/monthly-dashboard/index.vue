@@ -18,7 +18,7 @@
     </div>
 
     <div class="animate-row delay-1">
-      <KpiCards ref="kpiCardsRef" :summary="data?.summary" :qualified-columns="data?.qualifiedColumns" :loading="loading" />
+      <KpiCards ref="kpiCardsRef" :summary="data?.summary" :report-configs="data?.reportConfigs" :loading="loading" />
     </div>
 
     <!-- 空数据提示 -->
@@ -27,19 +27,23 @@
 
     <div class="chart-row chart-row-2 animate-row delay-2">
       <div class="chart-col chart-col-3">
-        <QualityTrendChart ref="trendChartRef" :data="data?.qualityTrends" :loading="loading" :qualified-columns="data?.qualifiedColumns" :unqualified-columns="data?.unqualifiedColumns" />
+        <QualityTrendChart ref="trendChartRef" :data="qualityTrendData" :loading="loading"
+          :qualified-columns="data?.qualifiedColumns" :unqualified-columns="data?.unqualifiedColumns"
+          :report-configs="data?.reportConfigs" />
       </div>
       <div class="chart-col chart-col-2">
-        <QualityDistributionPie ref="distributionPieRef" :summary="data?.summary" :loading="loading" :qualified-columns="data?.qualifiedColumns" />
+        <QualityDistributionPie ref="distributionPieRef" :summary="distributionSummary" :loading="loading"
+          :qualified-columns="data?.qualifiedColumns" :report-configs="data?.reportConfigs" />
       </div>
     </div>
 
     <div class="chart-row chart-row-3 animate-row delay-3">
       <div class="chart-col chart-col-2">
-        <ShiftComparisonRadar ref="radarChartRef" :data="data?.shiftComparisons" :loading="loading" :qualified-columns="data?.qualifiedColumns" />
+        <ShiftComparisonRadar ref="radarChartRef" :data="shiftComparisonData" :loading="loading"
+          :qualified-columns="data?.qualifiedColumns" :report-configs="data?.reportConfigs" />
       </div>
       <div class="chart-col chart-col-2">
-        <UnqualifiedTop5 ref="top5ChartRef" :data="data?.unqualifiedCategoryStats" :loading="loading" />
+        <UnqualifiedTop5 ref="top5ChartRef" :data="unqualifiedTop5Data" :loading="loading" />
       </div>
       <div class="chart-col chart-col-1">
         <ProductionShiftHeatmap ref="heatmapChartRef" :details="data?.details" :loading="loading" />
@@ -50,11 +54,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+defineOptions({ name: 'LabMonthlyDashboard' });
+import { ref, onMounted, computed } from 'vue';
 import { ReloadOutlined } from '@ant-design/icons-vue';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
-import { getMonthlyReport, type MonthlyReportResponse } from '/@/api/lab/monthlyQualityReport';
+import {
+  getMonthlyReport,
+  type MonthlyReportResponse,
+  type QualityTrend,
+  type ShiftComparison,
+  type UnqualifiedCategory,
+  type SummaryData,
+} from '/@/api/lab/monthlyQualityReport';
+import type { ReportConfig } from '/@/api/lab/reportConfig';
 import { message } from 'ant-design-vue';
 
 import KpiCards from './components/KpiCards.vue';
@@ -71,6 +84,155 @@ const dateFormat = 'YYYY-MM-DD';
 const today = dayjs();
 const startOfMonth = today.startOf('month');
 const dateRange = ref<[Dayjs, Dayjs]>([startOfMonth, today]);
+
+const validDetails = computed(() => {
+  return (data.value?.details || []).filter((d: any) => !d?.isSummaryRow && !!d?.prodDate);
+});
+
+const reportDisplayConfigs = computed<ReportConfig[]>(() => {
+  return (data.value?.reportConfigs || []).filter((c: any) => !!c?.isShowInReport);
+});
+
+function getConfigWeightFromRow(row: any, config: ReportConfig): number {
+  // 优先从后端已计算的 dynamicStats 中获取
+  const stat = row?.dynamicStats?.[config.id];
+  if (stat) {
+    return Number(stat?.weight) || 0;
+  }
+  // 回退：通过 levelNames 从 qualifiedCategories/unqualifiedCategories 中计算
+  const levels = config?.levelNames || [];
+  if (!levels.length) return 0;
+  return levels.reduce((sum: number, levelName: string) => {
+    const qualifiedWeight = Number(row?.qualifiedCategories?.[levelName]?.weight) || 0;
+    const unqualifiedWeight = Number(row?.unqualifiedCategories?.[levelName]) || 0;
+    return sum + qualifiedWeight + unqualifiedWeight;
+  }, 0);
+}
+
+const qualityTrendData = computed<QualityTrend[]>(() => {
+  const groups = new Map<string, any[]>();
+
+  validDetails.value.forEach((row: any) => {
+    const dateKey = dayjs(row.prodDate).format('YYYY-MM-DD');
+    if (!groups.has(dateKey)) groups.set(dateKey, []);
+    groups.get(dateKey)!.push(row);
+  });
+
+  return Array.from(groups.keys()).sort().map((dateKey) => {
+    const rows = groups.get(dateKey) || [];
+    const totalWeight = rows.reduce((sum, r) => sum + (Number(r.detectionWeight) || 0), 0);
+    const qualifiedWeight = rows.reduce((sum, r) => sum + (Number(r.qualifiedWeight) || 0), 0);
+    const qualifiedCategories: Record<string, number> = {};
+    const unqualifiedCategories: Record<string, number> = {};
+    const dynamicStats: Record<string, number> = {};
+
+    reportDisplayConfigs.value.forEach((config: ReportConfig) => {
+      const configWeight = rows.reduce((sum, r) => sum + getConfigWeightFromRow(r, config), 0);
+      dynamicStats[config.id] = totalWeight > 0 ? Number(((configWeight / totalWeight) * 100).toFixed(2)) : 0;
+    });
+
+    return {
+      date: dateKey,
+      qualifiedRate: totalWeight > 0 ? Number(((qualifiedWeight / totalWeight) * 100).toFixed(2)) : 0,
+      qualifiedCategories,
+      unqualifiedCategories,
+      classARate: 0,
+      classBRate: 0,
+      dynamicStats,
+    };
+  });
+});
+
+const shiftComparisonData = computed<ShiftComparison[]>(() => {
+  const shiftMap = new Map<string, any[]>();
+
+  validDetails.value.forEach((row: any) => {
+    const shiftKey = row.shift || '未知';
+    if (!shiftMap.has(shiftKey)) shiftMap.set(shiftKey, []);
+    shiftMap.get(shiftKey)!.push(row);
+  });
+
+  return Array.from(shiftMap.entries()).map(([shift, rows]) => {
+    const totalWeight = rows.reduce((sum, r) => sum + (Number(r.detectionWeight) || 0), 0);
+    const qualifiedWeight = rows.reduce((sum, r) => sum + (Number(r.qualifiedWeight) || 0), 0);
+
+    const dynamicStats: Record<string, number> = {};
+    reportDisplayConfigs.value.forEach((config: ReportConfig) => {
+      const configWeight = rows.reduce((sum, r) => sum + getConfigWeightFromRow(r, config), 0);
+      dynamicStats[config.id] = totalWeight > 0 ? Number(((configWeight / totalWeight) * 100).toFixed(2)) : 0;
+    });
+
+    return {
+      shift,
+      totalWeight,
+      qualifiedRate: totalWeight > 0 ? Number(((qualifiedWeight / totalWeight) * 100).toFixed(2)) : 0,
+      classARate: 0,
+      classBRate: 0,
+      dynamicStats,
+    };
+  });
+});
+
+const unqualifiedTop5Data = computed<UnqualifiedCategory[]>(() => {
+  const totalWeight = validDetails.value.reduce((sum, r: any) => sum + (Number(r.detectionWeight) || 0), 0);
+  const unqualifiedLevelNames = new Set((data.value?.unqualifiedColumns || []).map((c: any) => c.name));
+  const map = new Map<string, number>();
+
+  reportDisplayConfigs.value.forEach((config: ReportConfig) => {
+    const levelNames = (config.levelNames || []).filter((name) => unqualifiedLevelNames.has(name));
+    if (!levelNames.length) return;
+    let configWeight = 0;
+    validDetails.value.forEach((row: any) => {
+      levelNames.forEach((levelName) => {
+        configWeight += Number(row.unqualifiedCategories?.[levelName]) || 0;
+      });
+    });
+    if (configWeight > 0) {
+      map.set(config.name, configWeight);
+    }
+  });
+
+  return Array.from(map.entries())
+    .map(([categoryName, weight]) => ({
+      categoryName,
+      weight,
+      rate: totalWeight > 0 ? Number(((weight / totalWeight) * 100).toFixed(2)) : 0,
+    }))
+    .sort((a, b) => b.weight - a.weight)
+    .slice(0, 5);
+});
+
+const distributionSummary = computed<SummaryData>(() => {
+  const totalWeight = validDetails.value.reduce((sum, r: any) => sum + (Number(r.detectionWeight) || 0), 0);
+  const qualifiedWeight = validDetails.value.reduce((sum, r: any) => sum + (Number(r.qualifiedWeight) || 0), 0);
+
+  const dynamicStats: Record<string, { weight: number; rate: number }> = {};
+  reportDisplayConfigs.value.forEach((config: ReportConfig) => {
+    const weight = validDetails.value.reduce((sum, r: any) => sum + getConfigWeightFromRow(r, config), 0);
+    dynamicStats[config.id] = {
+      weight,
+      rate: totalWeight > 0 ? Number(((weight / totalWeight) * 100).toFixed(2)) : 0,
+    };
+  });
+
+  const qualifiedCategories: Record<string, { weight: number; rate: number }> = {};
+  const unqualifiedCategories: Record<string, number> = {};
+
+  return {
+    totalWeight,
+    qualifiedRate: totalWeight > 0 ? Number(((qualifiedWeight / totalWeight) * 100).toFixed(2)) : 0,
+    qualifiedCategories,
+    qualifiedWeight,
+    unqualifiedCategories,
+    unqualifiedWeight: 0,
+    unqualifiedRate: 0,
+    classAWeight: 0,
+    classARate: 0,
+    classBWeight: 0,
+    classBRate: 0,
+    dynamicStats,
+  };
+});
 
 async function fetchData() {
   if (!dateRange.value || dateRange.value.length !== 2) {

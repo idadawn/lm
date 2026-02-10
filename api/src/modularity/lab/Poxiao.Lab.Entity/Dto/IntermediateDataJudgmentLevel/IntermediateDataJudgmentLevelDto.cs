@@ -166,3 +166,36 @@ public class IntermediateDataJudgmentLevelUpdateInput : IntermediateDataJudgment
     [Required(ErrorMessage = "Id不能为空")]
     public string Id { get; set; }
 }
+
+/// <summary>
+/// 批量复制等级输入 DTO.
+/// </summary>
+public class BatchCopyLevelsInput
+{
+    /// <summary>
+    /// 源判定项目ID.
+    /// </summary>
+    [Required(ErrorMessage = "源判定项目ID不能为空")]
+    public string SourceFormulaId { get; set; }
+
+    /// <summary>
+    /// 目标判定项目ID列表.
+    /// </summary>
+    [Required(ErrorMessage = "目标判定项目不能为空")]
+    public List<string> TargetFormulaIds { get; set; }
+
+    /// <summary>
+    /// 是否覆盖已存在的同名等级.
+    /// </summary>
+    public bool OverwriteExisting { get; set; }
+
+    /// <summary>
+    /// 源产品规格ID (可选).
+    /// </summary>
+    public string SourceProductSpecId { get; set; }
+
+    /// <summary>
+    /// 目标产品规格ID列表 (可选).
+    /// </summary>
+    public List<string> TargetProductSpecIds { get; set; }
+}

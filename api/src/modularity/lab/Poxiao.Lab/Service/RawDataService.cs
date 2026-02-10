@@ -545,6 +545,7 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
                             entity.FurnaceBatchNo = parseResult.FurnaceNoNumeric;
                             entity.CoilNo = parseResult.CoilNoNumeric;
                             entity.SubcoilNo = parseResult.SubcoilNoNumeric;
+                            entity.SpecialMarker = parseResult.SpecialMarker;
                             entity.FeatureSuffix = parseResult.FeatureSuffix;
 
                             // 生产日期（ProdDate）：优先使用从原始炉号（FurnaceNo）中解析出的日期

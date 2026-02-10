@@ -4,18 +4,12 @@
     @click="handleClick"
     @dblclick="handleDblClick"
   >
-    <template v-if="column.key === 'featureSuffix'">
-      <a-tag v-if="record.featureSuffix" color="orange">{{ record.featureSuffix }}</a-tag>
-      <span v-else>-</span>
-    </template>
-    <template v-else>
-      <a-space v-if="matchedFeatures.length > 0" wrap size="small">
-        <a-tag v-for="feature in matchedFeatures" :key="feature.id" color="blue">
-          {{ feature.label }}
-        </a-tag>
-      </a-space>
-      <span v-else>-</span>
-    </template>
+    <div v-if="matchedFeatures.length > 0" class="feature-tags-row">
+      <a-tag v-for="feature in matchedFeatures" :key="feature.id" color="blue" class="feature-tag-inline">
+        {{ feature.label }}
+      </a-tag>
+    </div>
+    <span v-else>-</span>
     <EditOutlined v-if="hasPermission" class="feature-edit-icon" />
   </div>
 </template>
@@ -82,5 +76,18 @@ const matchedFeatures = computed(() => {
 
 .feature-list-cell.editable:hover .feature-edit-icon {
   opacity: 1;
+}
+
+.feature-tags-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.feature-tag-inline {
+  flex-shrink: 0;
+  margin: 0 !important;
 }
 </style>

@@ -4,7 +4,7 @@ export enum PageEnum {
   // basic sso path
   BASE_SSO = '/sso',
   // basic home path
-  BASE_HOME = '/lab/dashboard',
+  BASE_HOME = '/lab/monthly-dashboard',
   // basic formShortLink path
   BASE_FORM_SHORT_LINK = '/formShortLink',
   // error page path

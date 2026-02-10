@@ -85,7 +85,15 @@ public class AppearanceFeatureRuleMatcher : ITransient
         var results = new List<MatchResult>();
         var normalizedInput = inputText.Trim();
 
-        // 1. 分解组合特性："脆有划痕" -> ["脆", "划痕"]
+        // 1. 预处理：移除需忽略的文字
+        var ignoredPatterns = new[] { "（复测）", "(复测)", "复测" };
+        foreach (var pattern in ignoredPatterns)
+        {
+            normalizedInput = normalizedInput.Replace(pattern, "");
+        }
+        normalizedInput = normalizedInput.Trim();
+
+        // 2. 分解组合特性："脆有划痕" -> ["脆", "划痕"]
         var featureParts = SplitFeatures(normalizedInput);
 
         foreach (var part in featureParts)
@@ -168,10 +176,23 @@ public class AppearanceFeatureRuleMatcher : ITransient
             }
         }
 
-        // 如果没有分隔符，返回整个文本
+        // 如果没有分隔符，且只有2个字符或更少，直接返回
         if (!string.IsNullOrWhiteSpace(text))
         {
-            parts.Add(text);
+            // 客户需求：如果没有分隔符，按每2个中文字符分割
+            // 例如 "微脆微划" -> "微脆", "微划"
+            if (text.Length > 2 && text.Length % 2 == 0)
+            {
+                for (int i = 0; i < text.Length; i += 2)
+                {
+                    parts.Add(text.Substring(i, 2));
+                }
+            }
+            else
+            {
+                // 如果不是偶数长度，或者只有2位及以下，则作为整体
+                parts.Add(text);
+            }
         }
 
         return parts;

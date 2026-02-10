@@ -453,6 +453,12 @@ public class IntermediateDataEntity : CLDEntityBase
     #region 外观特性（可编辑）
 
     /// <summary>
+    /// 特殊标记（W或者w）.
+    /// </summary>
+    [SugarColumn(ColumnName = "F_SPECIAL_MARKER", Length = 50, IsNullable = true)]
+    public string SpecialMarker { get; set; }
+
+    /// <summary>
     /// 特性描述（从炉号解析）.
     /// </summary>
     [IntermediateDataColumn("所有特性", sort: 36, dataType: "string", description: "所有特性")]

@@ -59,4 +59,11 @@ public class MonthlyQualityReportSummaryDto
     /// B类占比（%）
     /// </summary>
     public decimal ClassBRate { get; set; }
+
+    /// <summary>
+    /// 动态统计列
+    /// Key: 统计配置ID
+    /// Value: { Weight: 重量, Rate: 占比 }
+    /// </summary>
+    public Dictionary<string, LevelStatDto> DynamicStats { get; set; } = new();
 }

@@ -1,4 +1,5 @@
 using Poxiao.Lab.Entity.Enum;
+using Poxiao.Lab.Entity.Dto.ReportConfig;
 
 namespace Poxiao.Lab.Entity.Dto.MonthlyQualityReport;
 
@@ -72,6 +73,13 @@ public class QualityTrendDto
     /// B类占比 (%) - 兼容旧版本.
     /// </summary>
     public decimal ClassBRate { get; set; }
+
+    /// <summary>
+    /// 动态统计趋势
+    /// Key: 统计配置ID
+    /// Value: 占比%
+    /// </summary>
+    public Dictionary<string, decimal> DynamicStats { get; set; } = new();
 }
 
 /// <summary>
@@ -124,6 +132,13 @@ public class ShiftComparisonDto
     /// B类占比 (%).
     /// </summary>
     public decimal ClassBRate { get; set; }
+
+    /// <summary>
+    /// 动态统计对比
+    /// Key: 统计配置ID
+    /// Value: 占比%
+    /// </summary>
+    public Dictionary<string, decimal> DynamicStats { get; set; } = new();
 }
 
 /// <summary>
@@ -140,4 +155,9 @@ public class MonthlyQualityReportColumnsDto
     /// 不合格等级列.
     /// </summary>
     public List<JudgmentLevelColumnDto> UnqualifiedColumns { get; set; } = new();
+
+    /// <summary>
+    /// 报表统计配置列表
+    /// </summary>
+    public List<ReportConfigDto> ReportConfigs { get; set; } = new();
 }

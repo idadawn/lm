@@ -39,8 +39,8 @@ function initChart() {
 function updateChart() {
   if (!setChartOptions || !props.details) return;
 
-  // Group by date and shift, calculate qualified rate
-  const dataMap = new Map<string, { date: string; shift: string; rate: number; count: number }>();
+  // Group by date and shift, calculate weighted qualified rate by weight
+  const dataMap = new Map<string, { date: string; shift: string; totalWeight: number; qualifiedWeight: number }>();
 
   // 动态获取所有唯一的班次
   const allShifts = [...new Set(props.details.map((d) => d.shift).filter(Boolean))];
@@ -55,25 +55,25 @@ function updateChart() {
     const key = `${dateStr}-${detail.shift}`;
 
     if (!dataMap.has(key)) {
-      dataMap.set(key, { date: dateStr, shift: detail.shift, rate: 0, count: 0 });
+      dataMap.set(key, { date: dateStr, shift: detail.shift, totalWeight: 0, qualifiedWeight: 0 });
     }
 
     const entry = dataMap.get(key)!;
-    entry.rate += detail.qualifiedRate || 0;
-    entry.count++;
+    entry.totalWeight += Number(detail.detectionWeight) || 0;
+    entry.qualifiedWeight += Number(detail.qualifiedWeight) || 0;
   }
 
-  // Calculate average rates
+  // Calculate weighted rates
   const heatmapData: [number, number, number][] = [];
   const xAxisData = dates.map((d) => dayjs(d).format('MM-DD'));
 
   dataMap.forEach((value) => {
-    const avgRate = value.count > 0 ? value.rate / value.count : 0;
+    const weightedRate = value.totalWeight > 0 ? (value.qualifiedWeight / value.totalWeight) * 100 : 0;
     const xIndex = xAxisData.indexOf(value.date);
     const yIndex = shifts.indexOf(value.shift);
 
     if (xIndex >= 0 && yIndex >= 0) {
-      heatmapData.push([xIndex, yIndex, Number(avgRate.toFixed(2))]);
+      heatmapData.push([xIndex, yIndex, Number(weightedRate.toFixed(2))]);
     }
   });
 

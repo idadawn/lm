@@ -28,15 +28,33 @@ import { computed } from 'vue';
 import { Icon } from '/@/components/Icon';
 import { CountTo } from '/@/components/CountTo';
 import type { SummaryData } from '/@/api/lab/monthlyQualityReport';
+import type { ReportConfig } from '/@/api/lab/reportConfig';
 
 interface Props {
     data: SummaryData;
     loading?: boolean;
+    reportConfigs?: ReportConfig[];
+}
+
+interface Card {
+    key: string;
+    label: string;
+    value: number;
+    unit: string;
+    decimals: number;
+    icon: string;
+    colorClass: string;
+    subValue?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
     loading: false,
+    reportConfigs: () => [],
 });
+
+function getDynamicStat(name: string) {
+    return props.data?.dynamicStats?.[name] || { weight: 0, rate: 0 };
+}
 
 function getCategoryStat(name: string) {
     return props.data?.qualifiedCategories?.[name] || { weight: 0, rate: 0 };
@@ -53,7 +71,60 @@ const icons = [
 
 // 卡片配置
 const cards = computed(() => {
-    const baseCards = [
+    // 如果有配置动态统计，优先使用配置
+    if (props.reportConfigs && props.reportConfigs.length > 0) {
+        // 基本卡片：检验总重
+        const newCards: Card[] = [
+            {
+                key: 'total',
+                label: '检验总重',
+                value: props.data?.totalWeight ?? 0,
+                unit: 'kg',
+                decimals: 1,
+                icon: 'ant-design:experiment-outlined',
+                colorClass: 'purple',
+            }
+        ];
+
+        // 动态配置卡片 - 只展示 isHeader=true 的配置
+        const headerConfigs = props.reportConfigs.filter(c => c.isHeader);
+        const dynamicCards = headerConfigs.map((config, index) => {
+            // 后端返回的 dynamicStats key 是 config.id
+            const stat = getDynamicStat(config.id);
+
+            if (config.isPercentage) {
+                // 百分比类型：主值显示百分比，不显示副值
+                return {
+                    key: `config-${config.id}`,
+                    label: config.name,
+                    value: stat.rate,
+                    unit: '%',
+                    decimals: 2,
+                    icon: icons[index % icons.length],
+                    colorClass: colorClasses[index % colorClasses.length],
+                };
+            } else {
+                // 非百分比类型：主值显示求和(weight)，isShowRatio 时下方显示占比
+                return {
+                    key: `config-${config.id}`,
+                    label: config.name,
+                    value: stat.weight,
+                    unit: 'kg',
+                    decimals: 1,
+                    subValue: config.isShowRatio ? stat.rate : undefined,
+                    icon: icons[index % icons.length],
+                    colorClass: colorClasses[index % colorClasses.length],
+                };
+            }
+        });
+
+        newCards.push(...dynamicCards);
+
+        return newCards;
+    }
+
+    // 后备逻辑：使用默认的硬编码逻辑
+    const baseCards: Card[] = [
         {
             key: 'total',
             label: '检验总重',
@@ -95,17 +166,7 @@ const cards = computed(() => {
         });
     });
 
-    // 不合格总计
-    baseCards.push({
-        key: 'unqualified',
-        label: '不合格总计',
-        value: props.data?.unqualifiedWeight ?? 0,
-        unit: 'kg',
-        decimals: 1,
-        subValue: props.data?.unqualifiedRate ?? 0,
-        icon: 'ant-design:warning-outlined',
-        colorClass: 'orange',
-    });
+
 
     return baseCards;
 });

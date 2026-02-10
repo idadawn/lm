@@ -1,4 +1,5 @@
 import { defHttp } from '/@/utils/http/axios';
+import { ReportConfig } from './reportConfig';
 
 // 等级统计（合格等级需要 重量+占比）
 export interface LevelStat {
@@ -29,6 +30,7 @@ export interface SummaryData {
     classARate: number;
     classBWeight: number;
     classBRate: number;
+    dynamicStats?: Record<string, LevelStat>; // 动态统计
 }
 
 // 明细行
@@ -49,6 +51,7 @@ export interface DetailRow {
     classBRate: number;
     isSummaryRow?: boolean;
     summaryType?: string;
+    dynamicStats?: Record<string, LevelStat>; // 动态统计
 }
 
 // 班组统计行
@@ -66,6 +69,7 @@ export interface ShiftGroupRow {
     classBRate: number;
     isSummaryRow?: boolean;
     summaryType?: string;
+    dynamicStats?: Record<string, LevelStat>; // 动态统计
 }
 
 // 质量趋势
@@ -76,6 +80,7 @@ export interface QualityTrend {
     unqualifiedCategories?: Record<string, number>;  // 各不合格分类的占比 (分类名 -> 占比%)
     classARate?: number;
     classBRate?: number;
+    dynamicStats?: Record<string, number>; // 动态统计 (key -> rate)
     [key: string]: any; // Allow dynamic properties
 }
 
@@ -93,6 +98,7 @@ export interface ShiftComparison {
     qualifiedRate: number;
     classARate: number;
     classBRate?: number;
+    dynamicStats?: Record<string, number>; // 动态统计 (key -> rate)
     [key: string]: any; // Allow dynamic properties for other grades
 }
 
@@ -116,6 +122,7 @@ export interface MonthlyReportResponse {
     shiftComparisons: ShiftComparison[];
     qualifiedColumns: JudgmentLevelColumn[];    // 合格等级列定义
     unqualifiedColumns: JudgmentLevelColumn[];  // 不合格等级列定义
+    reportConfigs: ReportConfig[];              // 报表统计配置
 }
 
 // 列定义响应

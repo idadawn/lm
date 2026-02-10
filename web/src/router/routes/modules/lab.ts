@@ -7,22 +7,13 @@ const lab: AppRouteModule = {
     path: '/lab',
     name: 'Lab',
     component: LAYOUT,
-    redirect: '/lab/dashboard',
+    redirect: '/lab/monthly-dashboard',
     meta: {
         orderNo: 100,
         icon: 'ion:flask-outline',
         title: t('routes.lab.lab'),
     },
     children: [
-        {
-            path: 'dashboard',
-            name: 'LabDashboard',
-            component: () => import('/@/views/lab/monthly-dashboard/index.vue'),
-            meta: {
-                title: '生产驾驶舱',
-                affix: true,
-            },
-        },
         {
             path: 'metric/form/:id?',
             name: 'MetricForm',
@@ -66,12 +57,22 @@ const lab: AppRouteModule = {
             },
         },
         {
+            path: 'report-config',
+            name: 'ReportConfigList',
+            component: () => import('/@/views/lab/reportConfig/index.vue'),
+            meta: {
+                title: '指标列表',
+                icon: 'ant-design:ordered-list-outlined',
+            },
+        },
+        {
             path: 'monthly-dashboard',
             name: 'LabMonthlyDashboard',
             component: () => import('/@/views/lab/monthly-dashboard/index.vue'),
             meta: {
                 title: '生产驾驶舱',
                 icon: 'ion:grid-outline',
+                affix: true,
             },
         },
     ],

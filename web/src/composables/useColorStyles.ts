@@ -1,126 +1,73 @@
-import { watch, onUnmounted, type Ref, nextTick } from 'vue';
+import { watchEffect, onUnmounted, type ShallowRef } from 'vue';
 
-const STYLE_ID = 'intermediate-data-colors';
+let instanceCounter = 0;
 
 interface ColorStylesOptions {
-  coloredCells: Ref<Record<string, string>>;
+  coloredCells: ShallowRef<Record<string, string>>;
 }
 
 /**
- * 颜色样式管理器 - 性能优化版本
- * 使用批量更新和浅层监听，大幅减少响应式查找
- *
- * 对于2000行x80列的表格：
- * - 原方案：160,000+次响应式查找（deep: true）
- * - 优化后：浅层监听 + 增量CSS更新
+ * Convert a cell key (rowId + field) to a valid, deterministic CSS class name.
+ * Same inputs always produce the same output.
  */
+function cellCssClass(rowId: string, field: string): string {
+  return `cc-${rowId}-${field}`.replace(/[^a-zA-Z0-9-_]/g, '-');
+}
+
 export function useColorStyles({ coloredCells }: ColorStylesOptions) {
-  // 使用 Map 存储颜色到 CSS 类的映射，避免重复生成类名
-  const colorClassCache = new Map<string, string>();
+  const styleId = `cell-colors-${++instanceCounter}`;
+  let styleEl: HTMLStyleElement | null = null;
 
-  // 增量更新：记录已处理过的颜色，避免重复生成CSS规则
-  const processedColors = new Set<string>();
-
-  // 批量更新调度器状态
-  let updateScheduled = false;
-  let isUpdating = false;
-
-  /**
-   * 生成CSS类名（带缓存）
-   * 将 :: 等特殊字符替换为 -
-   */
-  const generateClass = (key: string): string => {
-    if (colorClassCache.has(key)) {
-      return colorClassCache.get(key)!;
-    }
-    const className = `cell-color-${key.replace(/[^a-zA-Z0-9]/g, '-')}`;
-    colorClassCache.set(key, className);
-    return className;
-  };
-
-  /**
-   * 增量更新样式表
-   * 只处理新增的颜色，避免全量重建CSS规则
-   */
-  const updateStyles = (colors: Record<string, string>) => {
-    let styleEl = document.getElementById(STYLE_ID) as HTMLStyleElement;
+  function getStyleEl(): HTMLStyleElement {
     if (!styleEl) {
       styleEl = document.createElement('style');
-      styleEl.id = STYLE_ID;
+      styleEl.id = styleId;
       document.head.appendChild(styleEl);
     }
+    return styleEl;
+  }
 
-    // 只为新增的颜色生成CSS规则
-    const newRules: string[] = [];
-    Object.entries(colors).forEach(([key, color]) => {
-      const colorKey = `${key}::${color}`;
-      if (!processedColors.has(colorKey)) {
-        const className = generateClass(key);
-        newRules.push(`.${className} { background-color: ${color} !important; }`);
-        processedColors.add(colorKey);
-      }
-    });
+  // Reactively rebuild CSS rules when coloredCells changes.
+  // flush: 'post' ensures this runs AFTER DOM updates, preventing recursive update loops.
+  // Reading coloredCells.value here creates the reactive dependency so that
+  // triggerRef(coloredCells) triggers a CSS rebuild.
+  const stop = watchEffect(() => {
+    const map = coloredCells.value;
+    const el = getStyleEl();
+    const rules: string[] = [];
 
-    // 增量添加新规则
-    if (newRules.length > 0) {
-      styleEl.innerHTML += newRules.join('\n');
+    for (const [compositeKey, color] of Object.entries(map)) {
+      if (!color) continue;
+      const sep = compositeKey.indexOf('::');
+      if (sep === -1) continue;
+      const rowId = compositeKey.substring(0, sep);
+      const field = compositeKey.substring(sep + 2);
+      const cls = cellCssClass(rowId, field);
+      rules.push(`.${cls}{background-color:${color}!important}`);
     }
-  };
+
+    el.textContent = rules.join('\n');
+  }, { flush: 'post' });
 
   /**
-   * 批量更新调度器
-   * 使用 nextTick 确保在同一次事件循环中多次变化只触发一次更新
-   * 添加防抖标志防止递归更新
-   */
-  const scheduleUpdate = () => {
-    if (updateScheduled || isUpdating) return;
-    updateScheduled = true;
-
-    nextTick(() => {
-      isUpdating = true;
-      try {
-        updateStyles(coloredCells.value);
-      } finally {
-        updateScheduled = false;
-        // 延迟重置 isUpdating，确保当前更新周期完全结束
-        setTimeout(() => {
-          isUpdating = false;
-        }, 0);
-      }
-    });
-  };
-
-  // 使用浅层监听 - 只监听对象引用变化，不深度遍历
-  const stopWatch = watch(
-    () => coloredCells.value,
-    () => {
-      try {
-        scheduleUpdate();
-      } catch (error) {
-        console.error('Error in useColorStyles watcher:', error);
-      }
-    },
-    { immediate: false }
-  );
-
-  /**
-   * 获取单元格CSS类名
+   * Returns a deterministic CSS class name for a cell.
+   *
+   * IMPORTANT: This function does NOT read from any reactive state.
+   * This means calling it during template rendering creates NO reactive
+   * dependencies. Color styling is applied purely via CSS rules generated
+   * by the watchEffect above - the browser's CSS engine handles applying
+   * and removing background colors when rules change.
    */
   const getCellClass = (rowId: string, field: string): string => {
-    const key = `${rowId}::${field}`;
-    const color = coloredCells.value[key];
-    return color ? generateClass(key) : '';
+    return cellCssClass(rowId, field);
   };
 
-  // 清理
   onUnmounted(() => {
-    stopWatch();
-    const styleEl = document.getElementById(STYLE_ID);
+    stop();
     if (styleEl) {
       styleEl.remove();
+      styleEl = null;
     }
-    colorClassCache.clear();
-    processedColors.clear();
   });
 
   return { getCellClass };

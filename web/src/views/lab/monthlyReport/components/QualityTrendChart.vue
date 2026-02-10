@@ -15,16 +15,19 @@ import { ref, onMounted, watch, type Ref } from 'vue';
 import { useECharts } from '/@/hooks/web/useECharts';
 import { Icon } from '/@/components/Icon';
 import type { QualityTrend } from '/@/api/lab/monthlyQualityReport';
+import type { ReportConfig } from '/@/api/lab/reportConfig';
 import dayjs from 'dayjs';
 
 interface Props {
     data: QualityTrend[];
     loading?: boolean;
+    reportConfigs?: ReportConfig[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
     loading: false,
     data: () => [],
+    reportConfigs: () => [],
 });
 
 const chartRef = ref<HTMLDivElement | null>(null);
@@ -34,7 +37,7 @@ onMounted(() => {
     updateChart();
 });
 
-watch(() => props.data, () => {
+watch(() => [props.data, props.reportConfigs], () => {
     updateChart();
 }, { deep: true });
 
@@ -43,8 +46,80 @@ function updateChart() {
 
     const dates = props.data.map(d => dayjs(d.date).format('MM-DD'));
     const qualifiedRates = props.data.map(d => d.qualifiedRate);
-    const classARates = props.data.map(d => d.classARate);
-    const classBRates = props.data.map(d => d.classBRate);
+
+    // Dynamic series
+    const series: any[] = [
+        {
+            name: '合格率',
+            type: 'line',
+            data: qualifiedRates,
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 6,
+            lineStyle: { width: 2, color: '#52c41a' },
+            itemStyle: { color: '#52c41a' },
+            areaStyle: {
+                color: {
+                    type: 'linear',
+                    x: 0, y: 0, x2: 0, y2: 1,
+                    colorStops: [
+                        { offset: 0, color: 'rgba(82, 196, 26, 0.3)' },
+                        { offset: 1, color: 'rgba(82, 196, 26, 0.05)' },
+                    ],
+                },
+            },
+        }
+    ];
+
+    const legendData = ['合格率'];
+
+    // Configured dynamic stats
+    if (props.reportConfigs && props.reportConfigs.length > 0) {
+        const colors = ['#1890ff', '#13c2c2', '#722ed1', '#fa8c16', '#f5222d'];
+        const reportVisibleConfigs = props.reportConfigs.filter(c => c.isShowInReport);
+        reportVisibleConfigs.forEach((config, index) => {
+            const rates = props.data.map(d => d.dynamicStats?.[config.id] || 0);
+            const color = colors[index % colors.length];
+
+            legendData.push(config.name);
+            series.push({
+                name: config.name,
+                type: 'line',
+                data: rates,
+                smooth: true,
+                symbol: 'circle',
+                symbolSize: 5,
+                lineStyle: { width: 2, color: color },
+                itemStyle: { color: color },
+            });
+        });
+    } else {
+        // Fallback: A类, B类
+        const classARates = props.data.map(d => d.classARate);
+        const classBRates = props.data.map(d => d.classBRate);
+
+        legendData.push('A类占比', 'B类占比');
+        series.push({
+            name: 'A类占比',
+            type: 'line',
+            data: classARates,
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 5,
+            lineStyle: { width: 2, color: '#1890ff' },
+            itemStyle: { color: '#1890ff' },
+        });
+        series.push({
+            name: 'B类占比',
+            type: 'line',
+            data: classBRates,
+            smooth: true,
+            symbol: 'circle',
+            symbolSize: 5,
+            lineStyle: { width: 2, color: '#13c2c2' },
+            itemStyle: { color: '#13c2c2' },
+        });
+    }
 
     const option: any = {
         tooltip: {
@@ -56,16 +131,17 @@ function updateChart() {
             formatter: (params: any) => {
                 let result = `<div style="font-weight: 500; margin-bottom: 8px">${params[0].axisValue}</div>`;
                 params.forEach((param: any) => {
+                    const value = param.value !== undefined ? param.value : 0;
                     result += `<div style="display: flex; align-items: center; gap: 6px; margin: 4px 0">
               <span style="width: 8px; height: 8px; border-radius: 50%; background: ${param.color}"></span>
-              <span>${param.seriesName}: ${param.value}%</span>
+              <span>${param.seriesName}: ${value}%</span>
             </div>`;
                 });
                 return result;
             },
         },
         legend: {
-            data: ['合格率', 'A类占比', 'B类占比'],
+            data: legendData,
             bottom: 0,
             itemWidth: 12,
             itemHeight: 8,
@@ -96,48 +172,7 @@ function updateChart() {
             },
             splitLine: { lineStyle: { color: '#f0f0f0', type: 'dashed' } },
         },
-        series: [
-            {
-                name: '合格率',
-                type: 'line',
-                data: qualifiedRates,
-                smooth: true,
-                symbol: 'circle',
-                symbolSize: 6,
-                lineStyle: { width: 2, color: '#52c41a' },
-                itemStyle: { color: '#52c41a' },
-                areaStyle: {
-                    color: {
-                        type: 'linear',
-                        x: 0, y: 0, x2: 0, y2: 1,
-                        colorStops: [
-                            { offset: 0, color: 'rgba(82, 196, 26, 0.3)' },
-                            { offset: 1, color: 'rgba(82, 196, 26, 0.05)' },
-                        ],
-                    },
-                },
-            },
-            {
-                name: 'A类占比',
-                type: 'line',
-                data: classARates,
-                smooth: true,
-                symbol: 'circle',
-                symbolSize: 5,
-                lineStyle: { width: 2, color: '#1890ff' },
-                itemStyle: { color: '#1890ff' },
-            },
-            {
-                name: 'B类占比',
-                type: 'line',
-                data: classBRates,
-                smooth: true,
-                symbol: 'circle',
-                symbolSize: 5,
-                lineStyle: { width: 2, color: '#13c2c2' },
-                itemStyle: { color: '#13c2c2' },
-            },
-        ],
+        series: series,
     };
 
     setOptions(option);

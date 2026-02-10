@@ -13,6 +13,7 @@
 import { ref, watch, onMounted, type Ref } from 'vue';
 import { useECharts } from '/@/hooks/web/useECharts';
 import type { QualityTrend, JudgmentLevelColumn } from '/@/api/lab/monthlyQualityReport';
+import type { ReportConfig } from '/@/api/lab/reportConfig';
 import dayjs from 'dayjs';
 import * as echarts from 'echarts';
 
@@ -21,12 +22,14 @@ interface Props {
   loading?: boolean;
   qualifiedColumns?: JudgmentLevelColumn[];
   unqualifiedColumns?: JudgmentLevelColumn[];
+  reportConfigs?: ReportConfig[];
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
   qualifiedColumns: () => [],
   unqualifiedColumns: () => [],
+  reportConfigs: () => [],
 });
 
 const chartRef = ref<HTMLDivElement | null>(null);
@@ -78,8 +81,32 @@ function updateChart() {
     },
   ];
 
+  const visibleConfigs = (props.reportConfigs || []).filter((c) =>
+    String(c?.formulaId || '').toLowerCase() === 'firstinspection' && c.isShowInReport,
+  );
+
+  if (visibleConfigs.length > 0) {
+    visibleConfigs.forEach((config, index) => {
+      const rates = props.data!.map((item) => Number((item.dynamicStats as any)?.[config.id]) || 0);
+      if (!rates.some((v) => v > 0)) return;
+      const color = qualifiedColors[index % qualifiedColors.length];
+      legendData.push(config.name);
+      series.push({
+        name: config.name,
+        type: 'line',
+        data: rates,
+        smooth: true,
+        showSymbol: false,
+        symbol: 'circle',
+        symbolSize: 5,
+        lineStyle: { color, width: 2 },
+        itemStyle: { color },
+      });
+    });
+  }
+
   // 动态添加合格等级系列（使用 qualifiedCategories 数据）
-  if (props.qualifiedColumns && props.qualifiedColumns.length > 0) {
+  if (visibleConfigs.length === 0 && props.qualifiedColumns && props.qualifiedColumns.length > 0) {
     props.qualifiedColumns.forEach((col, index) => {
       // 从 qualifiedCategories 中获取数据（使用 name 作为 key）
       const colRates = props.data!.map((item) => {
@@ -121,7 +148,7 @@ function updateChart() {
   }
 
   // 动态添加不合格分类系列（使用 unqualifiedCategories 数据）
-  if (props.unqualifiedColumns && props.unqualifiedColumns.length > 0) {
+  if (visibleConfigs.length === 0 && props.unqualifiedColumns && props.unqualifiedColumns.length > 0) {
     props.unqualifiedColumns.forEach((col, index) => {
       // 从 unqualifiedCategories 中获取数据
       const colRates = props.data!.map((item) => {
@@ -143,6 +170,53 @@ function updateChart() {
 
       series.push({
         name: col.name,
+        type: 'line',
+        data: colRates,
+        smooth: true,
+        showSymbol: false,
+        symbol: 'circle',
+        symbolSize: 5,
+        lineStyle: { color, width: 2, type: 'dashed' },
+        itemStyle: { color },
+      });
+    });
+  }
+
+  // 兜底：当列定义为空时，直接从数据中的分类键推导曲线，避免只显示“合格率”
+  if (legendData.length === 1) {
+    const qualifiedKeys = new Set<string>();
+    const unqualifiedKeys = new Set<string>();
+
+    props.data.forEach((item) => {
+      Object.keys(item.qualifiedCategories || {}).forEach((k) => qualifiedKeys.add(k));
+      Object.keys(item.unqualifiedCategories || {}).forEach((k) => unqualifiedKeys.add(k));
+    });
+
+    Array.from(qualifiedKeys).forEach((key, index) => {
+      const colRates = props.data!.map((item) => Number(item.qualifiedCategories?.[key]) || 0);
+      if (!colRates.some(v => v > 0)) return;
+      const color = qualifiedColors[index % qualifiedColors.length];
+      legendData.push(key);
+      series.push({
+        name: key,
+        type: 'line',
+        data: colRates,
+        smooth: true,
+        showSymbol: false,
+        symbol: 'circle',
+        symbolSize: 5,
+        lineStyle: { color, width: 2 },
+        itemStyle: { color },
+      });
+    });
+
+    Array.from(unqualifiedKeys).forEach((key, index) => {
+      const colRates = props.data!.map((item) => Number(item.unqualifiedCategories?.[key]) || 0);
+      if (!colRates.some(v => v > 0)) return;
+      const color = unqualifiedColors[index % unqualifiedColors.length];
+      legendData.push(key);
+      series.push({
+        name: key,
         type: 'line',
         data: colRates,
         smooth: true,
@@ -244,7 +318,7 @@ function updateChart() {
 }
 
 watch(
-  [() => props.data, () => props.qualifiedColumns, () => props.unqualifiedColumns],
+  [() => props.data, () => props.qualifiedColumns, () => props.unqualifiedColumns, () => props.reportConfigs],
   () => {
     if (setChartOptions) {
       updateChart();

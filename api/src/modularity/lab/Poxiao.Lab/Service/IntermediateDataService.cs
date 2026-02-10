@@ -611,7 +611,58 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     [HttpPost("judge")]
     public async Task<FormulaCalculationResult> Judge([FromBody] List<string> ids)
     {
-        return await _formulaBatchCalculator.JudgeByIdsAsync(ids);
+        var normalizedIds = ids?
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList() ?? new List<string>();
+
+        if (normalizedIds.Count == 0)
+        {
+            return new FormulaCalculationResult { Message = "No IDs provided, judge task not queued." };
+        }
+
+        var validIds = await _repository
+            .AsQueryable()
+            .Where(t => normalizedIds.Contains(t.Id) && t.DeleteMark == null)
+            .Select(t => t.Id)
+            .ToListAsync();
+
+        if (validIds.Count == 0)
+        {
+            return new FormulaCalculationResult { Message = "No valid data found for judging." };
+        }
+
+        var now = DateTime.Now;
+        await _repository
+            .AsUpdateable()
+            .SetColumns(t => t.JudgeStatus == IntermediateDataCalcStatus.PROCESSING)
+            .SetColumns(t => t.JudgeStatusTime == now)
+            .SetColumns(t => t.JudgeErrorMessage == null)
+            .Where(t => validIds.Contains(t.Id) && t.DeleteMark == null)
+            .ExecuteCommandAsync();
+
+        var tenantId = _userManager?.TenantId ?? "global";
+        const int queueChunkSize = 10;
+        foreach (var idChunk in validIds.Chunk(queueChunkSize))
+        {
+            await _eventPublisher.PublishAsync(
+                "IntermediateData:JudgeByIds",
+                new IntermediateDataJudgeEventPayload
+                {
+                    TenantId = tenantId,
+                    SessionId = _userManager?.UserId ?? string.Empty,
+                    IntermediateDataIds = idChunk.ToList(),
+                    ChunkSize = queueChunkSize
+                }
+            );
+        }
+
+        return new FormulaCalculationResult
+        {
+            TotalCount = validIds.Count,
+            Message =
+                $"Judge tasks queued: {validIds.Count} items. Each queue task processes up to 10 items."
+        };
     }
 
     /// <inheritdoc />

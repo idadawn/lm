@@ -15,12 +15,10 @@
       <span class="rules-content">
         <template v-for="(rule, index) in displayRules" :key="index">
           <span v-if="index > 0" class="separator">→</span>
-          <a-tooltip :title="getRuleTooltip(rule)">
-            <span class="rule-item">
+          <span class="rule-item" :title="getRuleTooltip(rule)">
               {{ rule.label }}
               <span class="order-icon">{{ rule.order === 'asc' ? '↑' : '↓' }}</span>
-            </span>
-          </a-tooltip>
+          </span>
         </template>
       </span>
 
@@ -49,7 +47,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, nextTick, onMounted } from 'vue';
 import { SortAscendingOutlined } from '@ant-design/icons-vue';
 import CustomSortEditor from './CustomSortEditor.vue';
 import { message } from 'ant-design-vue';
@@ -117,24 +115,7 @@ const displayRules = computed(() => {
 
 // 生命周期钩子
 onMounted(() => {
-
-  // 添加全局错误监听
-  window.addEventListener('error', handleGlobalError);
 });
-
-onUnmounted(() => {
-  window.removeEventListener('error', handleGlobalError);
-});
-
-function handleGlobalError(event: ErrorEvent) {
-  // 忽略 ResizeObserver 的常见警告，这是浏览器的一个已知问题
-  if (event.message && event.message.includes('ResizeObserver loop completed with undelivered notifications')) {
-    // 这是一个无害的警告，可以安全忽略
-    return;
-  }
-  console.error('Global error in CustomSortControl:', event);
-  lastError.value = event.message;
-}
 
 function onButtonMouseDown() {
 }
@@ -403,14 +384,3 @@ watch(editorVisible, (newValue) => {
 }
 </style>
 
-<style lang="less">
-// 修复tooltip
-.ant-tooltip {
-  max-width: 200px;
-  z-index: 1070;
-
-  .ant-tooltip-inner {
-    word-wrap: break-word;
-  }
-}
-</style>

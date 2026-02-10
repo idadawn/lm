@@ -17,7 +17,7 @@ export function useTitle() {
   const localeStore = useLocaleStore();
   const appStore = useAppStore();
   const pageTitle = usePageTitle();
-  const customPageTitle = ref(appStore.getSysConfigInfo.title);
+  const customPageTitle = ref(appStore.getSysConfigInfo?.title);
 
   const getTitle = computed(() =>
     localeStore.getLocale === 'en' ? 'JNPF' : localeStore.getLocale === 'zh_TW' ? 'JNPF軟件開發平臺' : customPageTitle.value || title,
@@ -26,7 +26,8 @@ export function useTitle() {
   watch(
     () => appStore.getSysConfigInfo,
     (val, oldVal) => {
-      if (oldVal?.title === val.title) return;
+      if (!val || oldVal?.title === val?.title) return;
+      customPageTitle.value = val.title;
     },
   );
   watch(

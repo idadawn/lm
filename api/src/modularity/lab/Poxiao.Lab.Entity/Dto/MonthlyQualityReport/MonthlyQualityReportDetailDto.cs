@@ -88,4 +88,11 @@ public class MonthlyQualityReportDetailDto
     /// 汇总类型（ShiftSubtotal=班次小计, MonthlyTotal=月度合计）
     /// </summary>
     public string SummaryType { get; set; }
+
+    /// <summary>
+    /// 动态统计列
+    /// Key: 统计配置ID
+    /// Value: { Weight: 重量, Rate: 占比 }
+    /// </summary>
+    public Dictionary<string, LevelStatDto> DynamicStats { get; set; } = new();
 }

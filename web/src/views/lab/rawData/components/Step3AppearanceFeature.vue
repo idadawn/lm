@@ -57,10 +57,7 @@
         <template #bodyCell="{ column, record }">
           <template v-if="column.dataIndex === 'rowIndex'">
             <div class="row-index-cell">
-              <span>{{ record.rowIndex }}</span>
               <!-- 置信度 < 90% 时在行号旁显示警告图标 -->
-              <ExclamationCircleOutlined v-if="record.matchConfidence && record.matchConfidence < 0.9"
-                class="warning-icon" style="color: #faad14; margin-left: 4px; font-size: 14px" />
             </div>
           </template>
 
@@ -100,21 +97,7 @@
             </div>
           </template>
 
-          <template v-else-if="column.dataIndex === 'matchConfidence'">
-            <div class="confidence-cell">
-              <a-progress v-if="record.matchConfidence" :percent="Math.round(record.matchConfidence * 100)"
-                :stroke-color="getConfidenceColor(record.matchConfidence)" size="small" :show-info="false" />
-              <span v-if="record.matchConfidence" class="confidence-text">
-                {{ Math.round(record.matchConfidence * 100) }}%
-              </span>
-              <span v-else>-</span>
-              <!-- 置信度 < 90% 时显示警告标识 -->
-              <a-tag v-if="record.matchConfidence && record.matchConfidence < 0.9" color="warning" size="small"
-                style="margin-left: 8px">
-                <ExclamationCircleOutlined /> 需人工确认
-              </a-tag>
-            </div>
-          </template>
+
 
           <template v-else-if="column.dataIndex === 'actions'">
             <a-space v-if="record.featureSuffix">
@@ -328,12 +311,7 @@ const columns = [
     width: 300,
     align: 'center',
   },
-  {
-    title: '匹配置信度',
-    dataIndex: 'matchConfidence',
-    width: 120,
-    align: 'center',
-  },
+
   {
     title: '操作',
     dataIndex: 'actions',
@@ -427,11 +405,7 @@ function getMatchedFeatureLabels(record: RawDataRow): Array<{ id: string; label:
   return [];
 }
 
-function getConfidenceColor(confidence: number): string {
-  if (confidence >= 0.9) return '#52c41a';
-  if (confidence >= 0.7) return '#faad14';
-  return '#ff4d4f';
-}
+
 
 function handleRefresh() {
   hasLoaded.value = false; // 重置加载标记，允许重新加载

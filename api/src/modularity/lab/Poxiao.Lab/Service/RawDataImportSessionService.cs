@@ -65,6 +65,7 @@ public class RawDataImportSessionService
     private readonly IDictionaryTypeService _dictionaryTypeService;
     private readonly ISqlSugarRepository<DictionaryTypeEntity> _dictionaryTypeRepository;
     private readonly ISqlSugarRepository<DictionaryDataEntity> _dictionaryDataRepository;
+    private readonly AppearanceFeatureRuleMatcher _featureRuleMatcher;
     private readonly ITenant _db;
 
     public RawDataImportSessionService(
@@ -88,7 +89,8 @@ public class RawDataImportSessionService
         IDictionaryDataService dictionaryDataService,
         IDictionaryTypeService dictionaryTypeService,
         ISqlSugarRepository<DictionaryTypeEntity> dictionaryTypeRepository,
-        ISqlSugarRepository<DictionaryDataEntity> dictionaryDataRepository
+        ISqlSugarRepository<DictionaryDataEntity> dictionaryDataRepository,
+        AppearanceFeatureRuleMatcher featureRuleMatcher
     )
     {
         _sessionRepository = sessionRepository;
@@ -107,11 +109,11 @@ public class RawDataImportSessionService
         _excelTemplateRepository = excelTemplateRepository;
         _cacheManager = cacheManager;
         _eventPublisher = eventPublisher;
-        _eventPublisher = eventPublisher;
         _dictionaryDataService = dictionaryDataService;
         _dictionaryTypeService = dictionaryTypeService;
         _dictionaryTypeRepository = dictionaryTypeRepository;
         _dictionaryDataRepository = dictionaryDataRepository;
+        _featureRuleMatcher = featureRuleMatcher;
         _db = context.AsTenant();
     }
 
@@ -928,50 +930,29 @@ public class RawDataImportSessionService
         bool needSave = false;
         if (unMatchedEntities.Count > 0)
         {
-            // 执行自动匹配
-            var batchInput = new BatchMatchInput
-            {
-                Items = unMatchedEntities
-                    .Select(e => new MatchItemInput { Id = e.Id, Query = e.FeatureSuffix })
-                    .ToList(),
-            };
-            var batchMatches = await _appearanceFeatureService.BatchMatch(batchInput);
-            var matchGroups = batchMatches
-                .GroupBy(m => m.Id)
-                .ToDictionary(g => g.Key, g => g.ToList());
+            // Fetch degree words for matcher
+            var enabledLevels = await _featureLevelService.GetEnabledLevels();
+            var degreeWords =
+                enabledLevels?.Select(l => l.Name).Where(n => !string.IsNullOrEmpty(n)).ToList()
+                ?? new List<string>();
 
             foreach (var entity in unMatchedEntities)
             {
-                if (!matchGroups.TryGetValue(entity.Id, out var group))
-                {
+                if (string.IsNullOrWhiteSpace(entity.FeatureSuffix))
                     continue;
-                }
 
-                var matchedIdSet = new HashSet<string>();
-                foreach (var match in group)
+                var matches = _featureRuleMatcher.Match(
+                    entity.FeatureSuffix,
+                    features,
+                    degreeWords,
+                    categoryNameDict,
+                    levelNameDict
+                );
+
+                if (matches.Any())
                 {
-                    if (!match.IsPerfectMatch || string.IsNullOrWhiteSpace(match.FeatureName))
-                    {
-                        continue;
-                    }
-
-                    var featureId = ResolveFeatureId(
-                        match,
-                        features,
-                        categoryNameToId,
-                        levelNameToId
-                    );
-                    if (!string.IsNullOrWhiteSpace(featureId))
-                    {
-                        matchedIdSet.Add(featureId);
-                    }
-                }
-
-                if (matchedIdSet.Count > 0)
-                {
-                    entity.AppearanceFeatureIds = JsonConvert.SerializeObject(
-                        matchedIdSet.ToList()
-                    );
+                    var featureIds = matches.Select(m => m.Feature.Id).Distinct().ToList();
+                    entity.AppearanceFeatureIds = JsonConvert.SerializeObject(featureIds);
                     entity.MatchConfidence = 1.0;
                     needSave = true;
                 }

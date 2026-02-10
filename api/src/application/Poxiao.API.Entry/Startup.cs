@@ -176,35 +176,32 @@ public class Startup : AppStartup
                 switch (config.EventBusType)
                 {
                     case EventBusType.RabbitMQ:
-                        // 创建连接工厂
+                        var hostName = config.HostName;
+                        var port = 5672;
+                        if (!string.IsNullOrWhiteSpace(hostName))
+                        {
+                            var hostParts = hostName.Split(':', StringSplitOptions.RemoveEmptyEntries);
+                            if (hostParts.Length == 2 && int.TryParse(hostParts[1], out var parsedPort))
+                            {
+                                hostName = hostParts[0];
+                                port = parsedPort;
+                            }
+                        }
+
                         var factory = new RabbitMQ.Client.ConnectionFactory
                         {
-                            // 设置主机名
-                            HostName = config.HostName,
-
-                            // 用户名
+                            HostName = hostName,
+                            Port = port,
                             UserName = config.UserName,
-
-                            // 密码
                             Password = config.Password,
                         };
 
-                        // 创建默认内存通道事件源对象，可自定义队列路由key，比如这里是 eventbus
-                        var rbmqEventSourceStorer = new RabbitMQEventSourceStorer(
-                            factory,
-                            "eventbus",
-                            3000
+                        options.ReplaceStorerOrFallback(_ =>
+                            new RabbitMQEventSourceStorer(factory, "eventbus", 3000)
                         );
-
-                        // 替换默认事件总线存储器
-                        options.ReplaceStorer(serviceProvider =>
-                        {
-                            return rbmqEventSourceStorer;
-                        });
                         break;
                 }
             }
-
             options.UseUtcTimestamp = false;
 
             // 不启用事件日志

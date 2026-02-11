@@ -33,6 +33,8 @@ const emit = defineEmits<{
 }>();
 
 const editing = ref(false);
+/** 本次编辑是否已触发保存，避免 blur + pressEnter 重复触发导致重复请求 */
+const savedThisEdit = ref(false);
 const editValue = shallowRef<any>(null);
 /** 数字类型编辑时的字符串，根据精度限制小数位数 */
 const editStr = ref('');
@@ -79,6 +81,7 @@ function formatDisplayValue(val: any) {
 
 function startEdit() {
   editing.value = true;
+  savedThisEdit.value = false;
   editValue.value = props.value;
   if (props.type === 'number') {
     editStr.value =
@@ -92,6 +95,7 @@ function startEdit() {
 }
 
 function handleSave() {
+  if (savedThisEdit.value) return;
   if (props.type === 'number') {
     const num =
       editStr.value === '' || editStr.value === '-'
@@ -100,8 +104,12 @@ function handleSave() {
     const same =
       num === props.value ||
       (num == null && (props.value == null || props.value === ''));
-    if (!same && (num == null || !Number.isNaN(num))) emit('save', num);
+    if (!same && (num == null || !Number.isNaN(num))) {
+      savedThisEdit.value = true;
+      emit('save', num);
+    }
   } else if (editValue.value !== props.value) {
+    savedThisEdit.value = true;
     emit('save', editValue.value);
   }
   editing.value = false;

@@ -1,4 +1,5 @@
 using Mapster;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -64,6 +65,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     private readonly IFormulaParser _formulaParser;
     private readonly IntermediateDataFormulaBatchCalculator _formulaBatchCalculator;
     private readonly IEventPublisher _eventPublisher;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public IntermediateDataService(
         ISqlSugarRepository<IntermediateDataEntity> repository,
@@ -78,7 +80,8 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         IIntermediateDataFormulaService formulaService,
         IFormulaParser formulaParser,
         IntermediateDataFormulaBatchCalculator formulaBatchCalculator,
-        IEventPublisher eventPublisher
+        IEventPublisher eventPublisher,
+        IHttpContextAccessor httpContextAccessor
     )
     {
         _repository = repository;
@@ -94,15 +97,33 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         _formulaParser = formulaParser;
         _formulaBatchCalculator = formulaBatchCalculator;
         _eventPublisher = eventPublisher;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     /// <summary>
     /// 发布操作日志（中间数据-编辑/删除等）.
+    /// 同一请求内对相同 key 只发布一次，避免重复日志（如前端重复提交或过滤器重复触发）.
+    /// <param name="furnaceNo">炉号（单条可传一个，批量可传逗号分隔），会写入 Json 便于检索.</param>
     /// </summary>
-    private async Task PublishOpLogAsync(string abstracts, string moduleName = "中间数据", string objectId = null, string json = null)
+    private async Task PublishOpLogAsync(string abstracts, string moduleName = "中间数据", string objectId = null, string json = null, string furnaceNo = null)
     {
         try
         {
+            var ctx = _httpContextAccessor?.HttpContext;
+            if (ctx != null)
+            {
+                var logKey = $"Lab_OpLog_{moduleName}_{objectId ?? "batch"}_{(abstracts?.GetHashCode()).GetValueOrDefault()}";
+                if (ctx.Items[logKey] != null)
+                {
+                    return;
+                }
+
+                ctx.Items[logKey] = true;
+            }
+
+            var jsonWithFurnace = string.IsNullOrEmpty(furnaceNo)
+                ? json
+                : (string.IsNullOrEmpty(json) ? $"炉号={furnaceNo}" : $"炉号={furnaceNo}；{json}");
             var tenantId = _userManager?.TenantId ?? "global";
             await _eventPublisher.PublishAsync(new LogEventSource("Log:CreateOpLog", tenantId, new SysLogEntity
             {
@@ -116,7 +137,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
                 CreatorTime = DateTime.Now,
                 ModuleName = moduleName,
                 ObjectId = objectId,
-                Json = json,
+                Json = jsonWithFurnace,
             }));
         }
         catch (Exception ex)
@@ -406,6 +427,24 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         return PageResult<IntermediateDataCalcLogOutput>.SqlSugarPageResult(page);
     }
 
+    /// <summary>
+    /// 格式化性能字段的旧值→新值（仅包含有变化的项），中文显示.
+    /// </summary>
+    private static string BuildPerformanceChangeSummary(
+        decimal? oldSs, decimal? newSs, decimal? oldPs, decimal? newPs, decimal? oldHc, decimal? newHc,
+        decimal? oldAfterSs, decimal? newAfterSs, decimal? oldAfterPs, decimal? newAfterPs, decimal? oldAfterHc, decimal? newAfterHc)
+    {
+        string Fmt(decimal? v) => v.HasValue ? v.Value.ToString(CultureInfo.InvariantCulture) : "空";
+        var parts = new List<string>();
+        if (oldSs != newSs) parts.Add($"Ss激磁功率：{Fmt(oldSs)} → {Fmt(newSs)}");
+        if (oldPs != newPs) parts.Add($"Ps铁损：{Fmt(oldPs)} → {Fmt(newPs)}");
+        if (oldHc != newHc) parts.Add($"Hc：{Fmt(oldHc)} → {Fmt(newHc)}");
+        if (oldAfterSs != newAfterSs) parts.Add($"刻痕后Ss激磁功率：{Fmt(oldAfterSs)} → {Fmt(newAfterSs)}");
+        if (oldAfterPs != newAfterPs) parts.Add($"刻痕后Ps铁损：{Fmt(oldAfterPs)} → {Fmt(newAfterPs)}");
+        if (oldAfterHc != newAfterHc) parts.Add($"刻痕后Hc：{Fmt(oldAfterHc)} → {Fmt(newAfterHc)}");
+        return parts.Count > 0 ? string.Join("；", parts) : "（无变更）";
+    }
+
     /// <inheritdoc />
     [HttpPut("performance")]
     // [Microsoft.AspNetCore.Authorization.Authorize("lab:intermediateData:performance_edit")]
@@ -421,7 +460,14 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             throw Oops.Oh("数据不存在");
         }
 
-        // 只更新传入的非null字段
+        // 记录旧值用于操作日志
+        var oldSs = entity.PerfSsPower;
+        var oldPs = entity.PerfPsLoss;
+        var oldHc = entity.PerfHc;
+        var oldAfterSs = entity.PerfAfterSsPower;
+        var oldAfterPs = entity.PerfAfterPsLoss;
+        var oldAfterHc = entity.PerfAfterHc;
+
         // 始终更新字段（支持清空），前端需配合发送所有字段
         entity.PerfSsPower = input.PerfSsPower;
         entity.PerfPsLoss = input.PerfPsLoss;
@@ -438,11 +484,17 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         entity.LastModifyTime = DateTime.Now;
 
         await _repository.UpdateAsync(entity);
+
+        var changeSummary = BuildPerformanceChangeSummary(
+            oldSs, input.PerfSsPower, oldPs, input.PerfPsLoss, oldHc, input.PerfHc,
+            oldAfterSs, input.PerfAfterSsPower, oldAfterPs, input.PerfAfterPsLoss, oldAfterHc, input.PerfAfterHc);
+        var furnaceNo = entity.FurnaceNoFormatted ?? entity.Id;
         await PublishOpLogAsync(
-            $"编辑性能数据：炉号 {entity.FurnaceNoFormatted ?? entity.Id}",
+            $"编辑性能数据：炉号 {furnaceNo}，{changeSummary}",
             "中间数据",
             entity.Id,
-            $"PerfSsPower={input.PerfSsPower}, PerfPsLoss={input.PerfPsLoss}, PerfHc={input.PerfHc}, PerfAfterSsPower={input.PerfAfterSsPower}, PerfAfterPsLoss={input.PerfAfterPsLoss}, PerfAfterHc={input.PerfAfterHc}");
+            changeSummary,
+            furnaceNo);
     }
 
     /// <inheritdoc />
@@ -572,10 +624,13 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         entity.LastModifyTime = DateTime.Now;
 
         await _repository.UpdateAsync(entity);
+        var furnaceNoApp = entity.FurnaceNoFormatted ?? entity.Id;
         await PublishOpLogAsync(
-            $"编辑外观数据：炉号 {entity.FurnaceNoFormatted ?? entity.Id}",
+            $"编辑外观数据：炉号 {furnaceNoApp}",
             "中间数据",
-            entity.Id);
+            entity.Id,
+            json: null,
+            furnaceNo: furnaceNoApp);
     }
 
     /// <inheritdoc />
@@ -599,10 +654,13 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         entity.LastModifyTime = DateTime.Now;
 
         await _repository.UpdateAsync(entity);
+        var furnaceNoBase = entity.FurnaceNoFormatted ?? entity.Id;
         await PublishOpLogAsync(
-            $"编辑基础信息：炉号 {entity.FurnaceNoFormatted ?? entity.Id}",
+            $"编辑基础信息：炉号 {furnaceNoBase}",
             "中间数据",
-            entity.Id);
+            entity.Id,
+            json: null,
+            furnaceNo: furnaceNoBase);
     }
 
     /// <inheritdoc />
@@ -624,10 +682,13 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         entity.DeleteTime = DateTime.Now;
 
         await _repository.UpdateAsync(entity);
+        var furnaceNoDel = entity.FurnaceNoFormatted ?? entity.Id;
         await PublishOpLogAsync(
-            $"删除中间数据：炉号 {entity.FurnaceNoFormatted ?? entity.Id}",
+            $"删除中间数据：炉号 {furnaceNoDel}",
             "中间数据",
-            entity.Id);
+            entity.Id,
+            json: null,
+            furnaceNo: furnaceNoDel);
     }
 
     /// <inheritdoc />
@@ -638,6 +699,13 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         {
             throw Oops.Oh("请选择要删除的数据");
         }
+
+        var furnaceNos = await _repository
+            .AsQueryable()
+            .Where(t => ids.Contains(t.Id) && t.DeleteMark == null)
+            .Select(t => t.FurnaceNoFormatted ?? t.Id)
+            .ToListAsync();
+        var furnaceNoStr = furnaceNos.Count > 0 ? string.Join(",", furnaceNos) : null;
 
         await _repository
             .AsUpdateable()
@@ -650,7 +718,8 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             $"批量删除中间数据：共 {ids.Count} 条",
             "中间数据",
             null,
-            $"Ids={string.Join(",", ids.Take(10))}{(ids.Count > 10 ? "..." : "")}");
+            $"Ids={string.Join(",", ids.Take(10))}{(ids.Count > 10 ? "..." : "")}",
+            furnaceNo: furnaceNoStr);
     }
 
     /// <inheritdoc />

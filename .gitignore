@@ -324,3 +324,7 @@ TemporaryFile/
 # Apps deployment directories
 apps/web/
 apps/api/
+
+# Temporary build verification files
+api/tmp_build_verify*
+api/tmp_build_verify/

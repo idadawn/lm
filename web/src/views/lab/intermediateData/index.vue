@@ -26,7 +26,7 @@
 
         <!-- 主表格 -->
         <div class="table-container">
-          <BasicTable @register="registerTable">
+          <BasicTable @register="registerTable" @selection-change="onTableSelectionChange">
 
             <template #tableTitle>
               <div class="spec-tabs-wrap">
@@ -53,6 +53,10 @@
                 </a-button>
                 <a-button type="primary" color="success" :loading="batchJudging" @click="handleBatchJudge">
                   <CheckCircleOutlined v-if="!batchJudging" /> 批量判定
+                </a-button>
+                <a-button danger :disabled="!selectedRowCount" :loading="batchDeleting" @click="handleBatchDelete">
+                  <DeleteOutlined /> 批量删除
+                  <template v-if="selectedRowCount">({{ selectedRowCount }})</template>
                 </a-button>
                 <a-dropdown>
                   <a-button :loading="exporting">
@@ -237,6 +241,7 @@ import {
   recalculateIntermediateData,
   judgeIntermediateData,
   exportIntermediateData,
+  batchDeleteIntermediateData,
 } from '/@/api/lab/intermediateData';
 import {
   saveIntermediateDataColors,
@@ -259,7 +264,7 @@ import { useFormulaPrecision } from '/@/composables/useFormulaPrecision';
 import { useColorStyles } from '/@/composables/useColorStyles';
 
 import { useModal } from '/@/components/Modal';
-import { UploadOutlined, ReloadOutlined, DownloadOutlined, CheckCircleOutlined } from '@ant-design/icons-vue';
+import { UploadOutlined, ReloadOutlined, DownloadOutlined, CheckCircleOutlined, DeleteOutlined } from '@ant-design/icons-vue';
 import MagneticDataImportQuickModal from '../magneticData/MagneticDataImportQuickModal.vue';
 import { createMagneticImportSession, uploadAndParseMagneticData } from '/@/api/lab/magneticData';
 import type { IntermediateDataCalcLogItem } from '/@/api/lab/model/intermediateDataCalcLogModel';
@@ -269,7 +274,7 @@ import FeatureSelectDialog from '../appearance/components/FeatureSelectDialog.vu
 
 defineOptions({ name: 'labSubTable' });
 
-const { createMessage } = useMessage();
+const { createMessage, createConfirm } = useMessage();
 const { hasBtnP } = usePermission();
 
 // 权限标识 (对应按钮编码)
@@ -322,6 +327,8 @@ const { getCellClass } = useColorStyles({ coloredCells });
 const savingColors = ref<boolean>(false); // 是否正在保存颜色
 const batchCalculating = ref<boolean>(false); // 是否正在批量计算
 const batchJudging = ref<boolean>(false); // 是否正在批量判定
+const batchDeleting = ref<boolean>(false); // 是否正在批量删除
+const selectedRowKeys = ref<string[]>([]); // 表格勾选的行 id，用于批量删除
 const judgeQueuePolling = ref<boolean>(false); // 是否正在轮询判定队列
 const exporting = ref<boolean>(false); // 是否正在导出
 const exportModalVisible = ref<boolean>(false); // 导出模态框是否可见
@@ -508,7 +515,7 @@ const allColumns = computed(() => {
     { title: '喷次', dataIndex: 'sprayNo', key: 'sprayNo', width: 120, fixed: 'left', align: 'center' },
     { title: '贴标', dataIndex: 'labeling', key: 'labeling', width: 100, fixed: 'left', align: 'center' },
     // --- 炉号与成分区（蓝色背景组） ---
-    { title: '炉号', dataIndex: 'furnaceNoFormatted', key: 'furnaceNoFormatted', width: 140, fixed: 'left', align: 'center' },
+    { title: '炉号', dataIndex: 'furnaceNoFormatted', key: 'furnaceNoFormatted', width: 145, fixed: 'left', align: 'center' },
     // --- 性能区 ---
     {
       title: '1.35T',
@@ -780,9 +787,15 @@ const currentPagination = ref({
   total: 0,
 });
 
-const [registerTable, { reload, getDataSource }] = useTable({
+const rowSelectionComputed = computed(() => ({
+  type: 'checkbox' as const,
+}));
+
+const [registerTable, { reload, getDataSource, getSelectRows, clearSelectedRowKeys }] = useTable({
   api: getIntermediateDataList,
   columns: allColumns,
+  rowKey: 'id',
+  rowSelection: rowSelectionComputed,
   useSearchForm: true,
   immediate: false,
   bordered: true,
@@ -977,6 +990,47 @@ const [registerTable, { reload, getDataSource }] = useTable({
   },
 });
 
+// 表格勾选变化时同步到本地，用于批量删除按钮展示
+function onTableSelectionChange({ keys }: { keys: string[]; rows: any[] }) {
+  selectedRowKeys.value = keys || [];
+}
+
+// 当前勾选行数（用于批量删除按钮展示）
+const selectedRowCount = computed(() => selectedRowKeys.value.length);
+
+// 批量删除
+async function handleBatchDelete() {
+  const rows = getSelectRows();
+  if (!rows || rows.length === 0) {
+    createMessage.warning('请先勾选要删除的数据');
+    return;
+  }
+  const ids = rows.map((r: any) => r.id).filter(Boolean);
+  if (ids.length === 0) {
+    createMessage.warning('未获取到有效数据');
+    return;
+  }
+  createConfirm({
+    title: '确认批量删除',
+    content: `将删除选中的 ${ids.length} 条中间数据，删除后不可恢复。是否继续？`,
+    onOk: async () => {
+      if (batchDeleting.value) return;
+      try {
+        batchDeleting.value = true;
+        await batchDeleteIntermediateData(ids);
+        createMessage.success(`已删除 ${ids.length} 条数据`);
+        selectedRowKeys.value = [];
+        clearSelectedRowKeys();
+        await reload();
+      } catch (e: any) {
+        createMessage.error(e?.message || '批量删除失败');
+      } finally {
+        batchDeleting.value = false;
+      }
+    },
+  });
+}
+
 // 外观特性字段（动态字段 + 固定字段）
 // const appearanceFields = computed(() => {
 //   const dynamicFields = appearanceCategories.value
@@ -1119,20 +1173,21 @@ function handleCellBlur() {
 }
 
 async function handleCellSave() {
-  if (!editingCell.value) return;
+  const cell = editingCell.value;
+  if (!cell) return;
+  // 立即清空，避免 blur + pressEnter 重复触发导致重复请求
+  editingCell.value = null;
+  const payload = { id: cell.id, [cell.field]: editingValue.value };
+  editingValue.value = null;
 
   try {
-    await updateBaseInfo({
-      id: editingCell.value.id,
-      [editingCell.value.field]: editingValue.value,
-    });
+    await updateBaseInfo(payload);
     createMessage.success('保存成功');
     reload();
   } catch (error) {
     createMessage.error('保存失败');
-  } finally {
-    editingCell.value = null;
-    editingValue.value = null;
+    editingCell.value = cell;
+    editingValue.value = payload[cell.field];
   }
 }
 

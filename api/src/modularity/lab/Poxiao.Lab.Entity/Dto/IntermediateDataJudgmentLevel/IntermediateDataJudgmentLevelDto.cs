@@ -168,6 +168,27 @@ public class IntermediateDataJudgmentLevelUpdateInput : IntermediateDataJudgment
 }
 
 /// <summary>
+/// 判定等级名称 DTO（供下拉框使用，按 Name 去重取交集后的结果）.
+/// </summary>
+public class JudgmentLevelNameDto
+{
+    /// <summary>
+    /// 等级名称.
+    /// </summary>
+    public string Name { get; set; }
+
+    /// <summary>
+    /// 质量状态.
+    /// </summary>
+    public QualityStatusEnum QualityStatus { get; set; }
+
+    /// <summary>
+    /// 展示颜色.
+    /// </summary>
+    public string Color { get; set; }
+}
+
+/// <summary>
 /// 批量复制等级输入 DTO.
 /// </summary>
 public class BatchCopyLevelsInput

@@ -15,7 +15,7 @@ let loadingPrecision = false;
  */
 export function getFieldPrecision(fieldName: string): number {
   if (!precisionCache) {
-    return 2; // 默认2位小数
+    return 4; // 默认4位小数
   }
 
   // 1. 精确匹配
@@ -45,7 +45,7 @@ export function getFieldPrecision(fieldName: string): number {
     }
   }
 
-  return 2; // 默认2位小数
+  return 4; // 默认4位小数
 }
 
 /**

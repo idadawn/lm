@@ -23,7 +23,7 @@
                 <a-form-item label="选择目标产品规格(可选)">
                     <a-select v-model:value="targetProductSpecIds" mode="multiple" placeholder="留空则保持原产品规格，选择后将复制到指定规格下"
                         :filter-option="filterOption" show-search allow-clear style="width: 100%">
-                        <a-select-option v-for="item in productSpecList" :key="item.id" :value="item.id"
+                        <a-select-option v-for="item in productSpecOptions" :key="item.id" :value="item.id"
                             :filterText="item.name">
                             {{ item.name }}
                         </a-select-option>
@@ -73,12 +73,28 @@ const targetFormulaIds = ref<string[]>([]);
 const targetProductSpecIds = ref<string[]>([]);
 const overwriteExisting = ref(false);
 
-// 过滤掉源判定项目
+// 判定项目列表按 id 去重
 const availableFormulas = computed(() => {
-    // 允许复制到同一个公式下（如果是为了复制到不同规格）
-    // 但如果没选规格，复制到同一个公式没意义（除非是想复制一份副本，但目前逻辑是通过名字排重的，所以如果不选规格，同公式同名会被跳过或覆盖）
-    // 这里简单起见，还是允许选所有，让后端逻辑处理
-    return allFormulas.value;
+    const list = allFormulas.value || [];
+    const seen = new Set<string>();
+    return list.filter((item: any) => {
+        const id = item?.id;
+        if (id == null || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+    });
+});
+
+// 产品规格列表按 id 去重
+const productSpecOptions = computed(() => {
+    const list = productSpecList.value || [];
+    const seen = new Set<string>();
+    return list.filter((item: any) => {
+        const id = item?.id;
+        if (id == null || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+    });
 });
 
 const filterOption = (input: string, option: any) => {
@@ -112,10 +128,10 @@ const handleSubmit = async () => {
             setModalProps({ confirmLoading: true });
             const res: any = await batchCopyLevels({
                 sourceFormulaId: sourceFormulaId.value,
-                targetFormulaIds: targetFormulaIds.value,
+                targetFormulaIds: [...new Set(targetFormulaIds.value)],
                 overwriteExisting: overwriteExisting.value,
                 sourceProductSpecId: sourceProductSpecId.value,
-                targetProductSpecIds: targetProductSpecIds.value,
+                targetProductSpecIds: [...new Set(targetProductSpecIds.value)],
             });
 
             const data = res?.data || res || {};

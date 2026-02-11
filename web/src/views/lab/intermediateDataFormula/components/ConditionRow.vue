@@ -137,25 +137,23 @@ const useFeatureValueSelect = computed(() => {
 
 const featureValueOptions = computed(() => {
   if (!selectedField.value) return [];
+  const dedupeById = (list: { id: string; name: string }[]) => {
+    const seen = new Set<string>();
+    return list.filter(item => {
+      const id = item?.id;
+      if (id == null || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    }).map(item => ({ label: item.name, value: item.id }));
+  };
   if (props.condition.leftExpr === 'AppearanceFeatureCategoryIds') {
-    return (selectedField.value.featureCategories || []).map(item => ({
-      label: item.name,
-      value: item.id,
-    }));
+    return dedupeById(selectedField.value.featureCategories || []);
   }
   if (props.condition.leftExpr === 'AppearanceFeatureLevelIds') {
-    return (selectedField.value.featureLevels || []).map(item => ({
-      label: item.name,
-      value: item.id,
-    }));
+    return dedupeById(selectedField.value.featureLevels || []);
   }
-
   if (props.condition.leftExpr === 'AppearanceFeatureIds') {
-    // In backend, we mapped features to featureCategories for this specific column
-    return (selectedField.value.featureCategories || []).map(item => ({
-      label: item.name,
-      value: item.id,
-    }));
+    return dedupeById(selectedField.value.featureCategories || []);
   }
   return [];
 });

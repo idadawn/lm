@@ -40,7 +40,7 @@ import { BasicModal, useModalInner, useModal } from '/@/components/Modal';
 import { BasicTable, useTable, TableAction } from '/@/components/Table';
 import { BasicForm, useForm } from '/@/components/Form';
 import { getReportConfigList, addReportConfig, updateReportConfig, deleteReportConfig, ReportConfig } from '/@/api/lab/reportConfig';
-import { getIntermediateDataJudgmentLevelList } from '/@/api/lab/intermediateDataJudgmentLevel';
+import { getJudgmentLevelNames } from '/@/api/lab/intermediateDataJudgmentLevel';
 import { useMessage } from '/@/hooks/web/useMessage';
 
 const { createMessage } = useMessage();
@@ -98,11 +98,10 @@ const [registerForm, { setFieldsValue, resetFields, validate }] = useForm({
             label: '包含等级',
             component: 'ApiSelect',
             componentProps: {
-                api: getIntermediateDataJudgmentLevelList,
+                api: () => getJudgmentLevelNames(''),
                 labelField: 'name',
                 valueField: 'name',
                 mode: 'multiple',
-                // resultField is omitted, assuming root array or 'items' handled automatically or check later
             },
             required: true,
         },

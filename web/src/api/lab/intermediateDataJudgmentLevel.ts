@@ -25,6 +25,13 @@ export const deleteIntermediateDataJudgmentLevel = (id: string) =>
 export const updateIntermediateDataJudgmentLevelSort = (ids: string[]) =>
   defHttp.put({ url: `${Api.Update}/sort`, params: ids });
 
+/** 获取等级名称列表（按 Name 去重取交集，供下拉框使用） */
+export const getJudgmentLevelNames = (formulaId: string) =>
+  defHttp.get<{ name: string; qualityStatus: number; color: string }[]>({
+    url: `${Api.List}/names`,
+    params: { formulaId },
+  });
+
 export const batchCopyLevels = (params: {
   sourceFormulaId: string;
   targetFormulaIds: string[];

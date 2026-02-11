@@ -12,6 +12,7 @@ using Poxiao.Lab.Entity.Enums;
 using Poxiao.Lab.Interfaces;
 using SqlSugar;
 using System.Data;
+using System.Globalization;
 using System.IO.Compression;
 using System.Text.Json;
 namespace Poxiao.Lab.Service;
@@ -24,23 +25,32 @@ namespace Poxiao.Lab.Service;
 public partial class IntermediateDataExportService : IDynamicApiController, ITransient
 {
     private readonly IIntermediateDataService _intermediateDataService;
+    private readonly IIntermediateDataColorService _colorService;
     private readonly ISqlSugarRepository<IntermediateDataEntity> _repository;
     private readonly ISqlSugarRepository<ProductSpecEntity> _productSpecRepository;
     private readonly ISqlSugarRepository<AppearanceFeatureCategoryEntity> _categoryRepository;
+    private readonly ISqlSugarRepository<AppearanceFeatureEntity> _appearanceFeatureRepository;
+    private readonly ISqlSugarRepository<AppearanceFeatureLevelEntity> _appearanceLevelRepository;
     private readonly IUserManager _userManager;
 
     public IntermediateDataExportService(
         ISqlSugarRepository<IntermediateDataEntity> repository,
         ISqlSugarRepository<ProductSpecEntity> productSpecRepository,
         ISqlSugarRepository<AppearanceFeatureCategoryEntity> categoryRepository,
+        ISqlSugarRepository<AppearanceFeatureEntity> appearanceFeatureRepository,
+        ISqlSugarRepository<AppearanceFeatureLevelEntity> appearanceLevelRepository,
         IUserManager userManager,
-        IIntermediateDataService intermediateDataService)
+        IIntermediateDataService intermediateDataService,
+        IIntermediateDataColorService colorService)
     {
         _repository = repository;
         _productSpecRepository = productSpecRepository;
         _categoryRepository = categoryRepository;
+        _appearanceFeatureRepository = appearanceFeatureRepository;
+        _appearanceLevelRepository = appearanceLevelRepository;
         _userManager = userManager;
         _intermediateDataService = intermediateDataService;
+        _colorService = colorService;
     }
 
     /// <summary>
@@ -92,6 +102,45 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
                  (c.ParentId == null || c.ParentId == "-1")
         );
         var categoryMap = categories.ToDictionary(c => c.Id, c => c.Name);
+        var sortedCategories = categoryMap.OrderBy(k => k.Value).ToList();
+
+        // 2.6 获取特性与等级映射（用于外观列导出特性等级名称）
+        var allFeatures = await _appearanceFeatureRepository.GetListAsync(
+            f => f.DeleteMark == null || f.DeleteMark == 0);
+        var levelIds = allFeatures
+            .Select(f => f.SeverityLevelId)
+            .Where(id => !string.IsNullOrEmpty(id))
+            .Distinct()
+            .ToList();
+        var allLevels = levelIds.Count > 0
+            ? await _appearanceLevelRepository.GetListAsync(l => levelIds.Contains(l.Id) && (l.DeleteMark == null || l.DeleteMark == 0))
+            : new List<AppearanceFeatureLevelEntity>();
+        var levelIdToName = allLevels.ToDictionary(l => l.Id, l => l.Name ?? "");
+        var featureIdToCategoryAndLevelName = allFeatures.ToDictionary(
+            f => f.Id,
+            f => (CategoryId: f.CategoryId ?? "", LevelName: !string.IsNullOrEmpty(f.SeverityLevelId) && levelIdToName.TryGetValue(f.SeverityLevelId, out var n) ? n : ""));
+
+        // 2.7 加载导出范围内的单元格颜色（按产品规格分组查询后合并）
+        var colorMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var specGroups = dataList
+            .GroupBy(d => d.ContainsKey("productSpecId") ? d["productSpecId"]?.ToString() ?? "" : "")
+            .Where(g => !string.IsNullOrEmpty(g.Key));
+        foreach (var specGroup in specGroups)
+        {
+            var productSpecId = specGroup.Key;
+            var ids = specGroup.Where(d => d.ContainsKey("id") && d["id"] != null).Select(d => d["id"].ToString()).Where(id => !string.IsNullOrEmpty(id)).Distinct().ToList();
+            if (ids.Count == 0) continue;
+            var colorDto = await _colorService.GetColors(new GetIntermediateDataColorInput { ProductSpecId = productSpecId, IntermediateDataIds = ids });
+            if (colorDto?.Colors != null)
+            {
+                foreach (var cell in colorDto.Colors)
+                {
+                    if (string.IsNullOrEmpty(cell.IntermediateDataId) || string.IsNullOrEmpty(cell.FieldName)) continue;
+                    var key = $"{cell.IntermediateDataId}::{cell.FieldName}";
+                    colorMap[key] = cell.ColorValue ?? "";
+                }
+            }
+        }
 
         // 3. 按月份+产品规格分组
         // 字典中的 key 是 camelCase: prodDate, productSpecId, productSpecCode, productSpecName
@@ -132,10 +181,18 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         // 4. 生成Excel
         var memoryStream = new MemoryStream();
         var sheets = new Dictionary<string, object>();
+        var sheetRowData = new Dictionary<string, List<(string Id, string ProductSpecId)>>();
+        var firstDetectionColumns = groupedData.Count > 0 ? groupedData[0].DetectionColumns : 15;
+        var columnFieldNames = BuildColumnFieldNames(firstDetectionColumns, sortedCategories);
 
         foreach (var group in groupedData)
         {
-            var dataTable = BuildDataTableFromDict(group.DataList, group.DetectionColumns, categoryMap);
+            var dataTable = BuildDataTableFromDict(
+                group.DataList,
+                group.DetectionColumns,
+                categoryMap,
+                sortedCategories,
+                featureIdToCategoryAndLevelName);
 
             // Sheet名称不能超过31个字符，且不能包含特殊字符
             // 移除导入文件名称可能包含的前缀 "_______"
@@ -153,6 +210,12 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
             }
 
             sheets[safeSheetName] = dataTable;
+            var rowData = group.DataList
+                .Select(d => (
+                    Id: d.ContainsKey("id") ? d["id"]?.ToString() ?? "" : "",
+                    ProductSpecId: d.ContainsKey("productSpecId") ? d["productSpecId"]?.ToString() ?? "" : ""))
+                .ToList();
+            sheetRowData[safeSheetName] = rowData;
         }
 
         // 使用配置禁用自动筛选
@@ -163,8 +226,8 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         memoryStream.SaveAs(sheets, printHeader: false, configuration: config);
         memoryStream.Position = 0;
 
-        // Post-process with NPOI merged cells
-        var finalStream = PostProcessExcel(memoryStream);
+        // Post-process with NPOI merged cells and cell fill colors
+        var finalStream = PostProcessExcel(memoryStream, sheetRowData, columnFieldNames, colorMap);
 
         var fileName = $"{DateTime.Now:yyyyMMddHHmmss}.xlsx";
         return new FileStreamResult(finalStream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
@@ -174,12 +237,84 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
     }
 
     /// <summary>
-    /// 使用 NPOI 后处理 Excel，应用合并单元格和样式.
+    /// 判断导出列是否为数值列（用于将文本型数字转为数值，避免 Excel 提示“该数字是文本类型”）.
     /// </summary>
+    private static bool IsNumericExportColumn(string fieldName)
+    {
+        if (string.IsNullOrEmpty(fieldName)) return false;
+        if (fieldName.StartsWith("perf", StringComparison.OrdinalIgnoreCase)) return true;
+        if (fieldName == "oneMeterWeight" || fieldName == "width" || fieldName == "thicknessDiff"
+            || fieldName == "density" || fieldName == "laminationFactor" || fieldName == "breakCount"
+            || fieldName == "singleCoilWeight" || fieldName == "avgThickness" || fieldName == "coilWeight"
+            || fieldName == "maxThicknessRaw" || fieldName == "maxAvgThickness" || fieldName == "stripType")
+            return true;
+        if (fieldName.StartsWith("thickness", StringComparison.OrdinalIgnoreCase) && fieldName != "thicknessRange") return true;
+        if (fieldName.StartsWith("detection", StringComparison.OrdinalIgnoreCase)) return true;
+        if (fieldName == "midSiLeft" || fieldName == "midSiRight" || fieldName == "midBLeft" || fieldName == "midBRight") return true;
+        if (fieldName == "leftPatternWidth" || fieldName == "leftPatternSpacing" || fieldName == "midPatternWidth"
+            || fieldName == "midPatternSpacing" || fieldName == "rightPatternWidth" || fieldName == "rightPatternSpacing")
+            return true;
+        return false;
+    }
+
     /// <summary>
-    /// 使用 NPOI 后处理 Excel，应用合并单元格和样式.
+    /// 构建列索引对应的前端字段名列表（用于颜色映射）.
     /// </summary>
-    private MemoryStream PostProcessExcel(MemoryStream sourceStream)
+    private static List<string> BuildColumnFieldNames(int detectionColumns, List<KeyValuePair<string, string>> sortedCategories)
+    {
+        var list = new List<string>
+        {
+            "detectionDateStr", "sprayNo", "labeling", "furnaceNoFormatted",
+            "perfSsPower", "perfPsLoss", "perfHc", "perfAfterSsPower", "perfAfterPsLoss", "perfAfterHc", "perfEditorName",
+            "oneMeterWeight", "width"
+        };
+        for (int i = 1; i <= detectionColumns; i++)
+            list.Add($"thickness{i}");
+        list.Add("thicknessMin");
+        list.Add(null); // 分隔符 ~ 无字段
+        list.Add("thicknessMax");
+        list.Add("thicknessDiff");
+        list.Add("density");
+        list.Add("laminationFactor");
+        for (int i = 0; i < sortedCategories.Count; i++)
+            list.Add("appearanceFeatureList");
+        list.Add("breakCount");
+        list.Add("singleCoilWeight");
+        list.Add("appearEditorName");
+        list.Add("avgThickness");
+        list.Add("magneticResult");
+        list.Add("thicknessResult");
+        list.Add("laminationResult");
+        list.Add("midSiLeft");
+        list.Add("midSiRight");
+        list.Add("midBLeft");
+        list.Add("midBRight");
+        list.Add("leftPatternWidth");
+        list.Add("leftPatternSpacing");
+        list.Add("midPatternWidth");
+        list.Add("midPatternSpacing");
+        list.Add("rightPatternWidth");
+        list.Add("rightPatternSpacing");
+        list.Add("coilWeight");
+        for (int i = 1; i <= detectionColumns; i++)
+            list.Add($"detection{i}");
+        list.Add("maxThicknessRaw");
+        list.Add("maxAvgThickness");
+        list.Add("creatorUserName");
+        list.Add("stripType");
+        list.Add("firstInspection");
+        list.Add("shiftNo");
+        return list;
+    }
+
+    /// <summary>
+    /// 使用 NPOI 后处理 Excel，应用合并单元格、样式和单元格填充颜色.
+    /// </summary>
+    private MemoryStream PostProcessExcel(
+        MemoryStream sourceStream,
+        Dictionary<string, List<(string Id, string ProductSpecId)>> sheetRowData,
+        List<string> columnFieldNames,
+        Dictionary<string, string> colorMap)
     {
         var workbook = new XSSFWorkbook(sourceStream);
         var style = workbook.CreateCellStyle();
@@ -240,6 +375,35 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
             headerStyle.BorderTop = BorderStyle.Thin;
             headerStyle.WrapText = true; // 自动换行
 
+            var fillStyleCache = new Dictionary<string, ICellStyle>();
+            ICellStyle GetOrCreateFillStyle(string hexColor)
+            {
+                if (string.IsNullOrEmpty(hexColor) || hexColor.Length < 6) return style;
+                if (fillStyleCache.TryGetValue(hexColor, out var cached)) return cached;
+                var fillStyle = (XSSFCellStyle)workbook.CreateCellStyle();
+                fillStyle.Alignment = HorizontalAlignment.Center;
+                fillStyle.VerticalAlignment = VerticalAlignment.Center;
+                fillStyle.BorderBottom = BorderStyle.Thin;
+                fillStyle.BorderLeft = BorderStyle.Thin;
+                fillStyle.BorderRight = BorderStyle.Thin;
+                fillStyle.BorderTop = BorderStyle.Thin;
+                fillStyle.FillPattern = FillPattern.SolidForeground;
+                try
+                {
+                    var hex = hexColor.TrimStart('#');
+                    if (hex.Length == 6)
+                    {
+                        var rb = Convert.ToByte(hex.Substring(0, 2), 16);
+                        var g = Convert.ToByte(hex.Substring(2, 2), 16);
+                        var b = Convert.ToByte(hex.Substring(4, 2), 16);
+                        fillStyle.SetFillForegroundColor(new XSSFColor(new byte[] { rb, g, b }, null));
+                    }
+                }
+                catch { /* ignore invalid hex */ }
+                fillStyleCache[hexColor] = fillStyle;
+                return fillStyle;
+            }
+
             for (int r = 0; r <= sheet.LastRowNum; r++)
             {
                 var row = sheet.GetRow(r);
@@ -253,15 +417,56 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
                 else
                     row.HeightInPoints = 20;
 
+                List<(string Id, string ProductSpecId)> rowDataList = null;
+                var isDataRow = r >= 2 && sheetRowData != null && columnFieldNames != null && colorMap != null
+                    && sheetRowData.TryGetValue(sheet.SheetName, out rowDataList);
+                var dataRowIndex = r - 2;
+                var rowId = isDataRow && rowDataList != null && dataRowIndex >= 0 && dataRowIndex < rowDataList.Count
+                    ? rowDataList[dataRowIndex].Id
+                    : null;
+
                 for (int c = 0; c < row.LastCellNum; c++)
                 {
                     var cell = row.GetCell(c);
                     if (cell != null)
                     {
-                        // 表头行使用带换行的样式，数据行使用普通样式
-                        cell.CellStyle = (r <= 1) ? headerStyle : style;
+                        if (r <= 1)
+                        {
+                            cell.CellStyle = headerStyle;
+                        }
+                        else
+                        {
+                            if (!string.IsNullOrEmpty(rowId) && c < columnFieldNames.Count)
+                            {
+                                var fieldName = columnFieldNames[c];
+                                if (!string.IsNullOrEmpty(fieldName) && colorMap != null)
+                                {
+                                    var key = $"{rowId}::{fieldName}";
+                                    if (colorMap.TryGetValue(key, out var colorValue) && !string.IsNullOrEmpty(colorValue))
+                                    {
+                                        cell.CellStyle = GetOrCreateFillStyle(colorValue);
+                                        ConvertTextToNumericIfApplicable(r, cell, c);
+                                        continue;
+                                    }
+                                }
+                            }
+                            cell.CellStyle = style;
+                            ConvertTextToNumericIfApplicable(r, cell, c);
+                        }
                     }
                 }
+            }
+
+            void ConvertTextToNumericIfApplicable(int rowIndex, ICell cell, int columnIndex)
+            {
+                if (rowIndex < 2 || columnFieldNames == null || columnIndex >= columnFieldNames.Count) return;
+                var fieldName = columnFieldNames[columnIndex];
+                if (!IsNumericExportColumn(fieldName)) return;
+                if (cell.CellType != CellType.String) return;
+                var s = cell.StringCellValue?.Trim();
+                if (string.IsNullOrEmpty(s)) return;
+                if (double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var num))
+                    cell.SetCellValue(num);
             }
 
             // 强制合并第一列 (检测日期) - Row 0 & Row 1
@@ -365,7 +570,12 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
     /// <summary>
     /// 构建 DataTable (从字典列表).
     /// </summary>
-    private DataTable BuildDataTableFromDict(List<Dictionary<string, object>> dataList, int detectionColumns, Dictionary<string, string> categoryMap)
+    private DataTable BuildDataTableFromDict(
+        List<Dictionary<string, object>> dataList,
+        int detectionColumns,
+        Dictionary<string, string> categoryMap,
+        List<KeyValuePair<string, string>> sortedCategories,
+        Dictionary<string, (string CategoryId, string LevelName)> featureIdToCategoryAndLevelName)
     {
         var dataTable = new DataTable();
 
@@ -405,27 +615,8 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         AddCol("C_Density"); // 密度
         AddCol("C_Lam"); // 叠片系数
 
-        // 7. 外观缺陷 (动态列)
-        // 获取排序后的分类列表
-        // 注意：categoryMap 是 Id -> Name。可以按照 SortCode 排序吗？
-        // 这里只有 Map，无法获取 SortCode。需要改进 Fetch 逻辑或者这里不排序 (假设 Map 顺序不保证)。
-        // 为了保证顺序，我们应该传入 Category Entity List 或者 List<(string Name, string Id)>。
-        // 但为了最小改动，我们这里假设 categoryMap 是 Dictionary，顺序不确定。
-        // 正确做法：ExportIntermediateData 方法里 list query 已经排序了。
-        // Let's modify ExportIntermediateData to handle sorting if strict, but here we just use what we have.
-        // Wait, the input `categoryMap` is just `Dictionary`.
-        // I will revert to iterate the dictionary. If strict sorting needed, the Caller should pass a List.
-        // Given existing code context, I'll pass existing map.
-        // But for column headers, I need names.
-        // Let's assume user wants them all. I will iterate the Map.
-        var sortedCategories = categoryMap.OrderBy(k => k.Value).ToList(); // 按名称排序? No, should be code.
-        // In Step 47, I created `categorynames` list sorted by SortCode.
-        // But in Step 51, I changed it to `categoryMap`.
-        // I should have passed a List of Objects.
-        // Let's just use the Map for now, sorted by Key or Value?
-        // Ideally should be sorted by SortCode.
-        // I'll stick to simple iteration for now, or just ID sort.
-        foreach (var kvp in categoryMap) AddCol($"Appear_{kvp.Key}");
+        // 7. 外观缺陷 (动态列，与 sortedCategories 顺序一致)
+        foreach (var kvp in sortedCategories) AddCol($"Appear_{kvp.Key}");
 
         // 8. 外观固定字段
         AddCol("C_Break"); // 断头数
@@ -500,8 +691,8 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         r1[c++] = "密度 (g/cm³)";
         r1[c++] = "叠片系数";
 
-        // 7. 外观缺陷 (Top level)
-        foreach (var kvp in categoryMap) r1[c++] = kvp.Value;
+        // 7. 外观缺陷 (Top level，与 sortedCategories 顺序一致)
+        foreach (var kvp in sortedCategories) r1[c++] = kvp.Value;
 
         // 8.
         r1[c++] = "断头数(个)";
@@ -579,7 +770,7 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         r2[c++] = "";
 
         // 7. 外观 (Empty for span)
-        foreach (var kvp in categoryMap) r2[c++] = "";
+        foreach (var kvp in sortedCategories) r2[c++] = "";
 
         // 8.
         r2[c++] = "";
@@ -659,25 +850,41 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
             row[c++] = Get("density");
             row[c++] = Get("laminationFactor");
 
-            // 7. 外观特性动态列
-            var appearIds = new HashSet<string>();
-            if (d.ContainsKey("appearanceFeatureCategoryIds") && d["appearanceFeatureCategoryIds"] != null)
+            // 7. 外观特性动态列：导出特性等级名称（如 轻、中、重），不再导出 ✓
+            var categoryIdToLevelNames = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            if (d.ContainsKey("appearanceFeatureIds") && d["appearanceFeatureIds"] != null)
             {
                 try
                 {
-                    var validJson = d["appearanceFeatureCategoryIds"].ToString();
-                    if (!string.IsNullOrEmpty(validJson))
+                    var idsJson = d["appearanceFeatureIds"].ToString();
+                    if (!string.IsNullOrEmpty(idsJson))
                     {
-                        var ids = JsonSerializer.Deserialize<List<string>>(validJson);
-                        if (ids != null) foreach (var id in ids) appearIds.Add(id);
+                        var featureIds = JsonSerializer.Deserialize<List<string>>(idsJson);
+                        if (featureIds != null && featureIdToCategoryAndLevelName != null)
+                        {
+                            foreach (var fid in featureIds)
+                            {
+                                if (string.IsNullOrEmpty(fid) || !featureIdToCategoryAndLevelName.TryGetValue(fid, out var catLevel)) continue;
+                                if (string.IsNullOrEmpty(catLevel.CategoryId)) continue;
+                                if (!categoryIdToLevelNames.TryGetValue(catLevel.CategoryId, out var list))
+                                {
+                                    list = new List<string>();
+                                    categoryIdToLevelNames[catLevel.CategoryId] = list;
+                                }
+                                if (!string.IsNullOrEmpty(catLevel.LevelName) && !list.Contains(catLevel.LevelName))
+                                    list.Add(catLevel.LevelName);
+                            }
+                        }
                     }
                 }
                 catch { }
             }
-            foreach (var kvp in categoryMap)
+            foreach (var kvp in sortedCategories)
             {
-                // Check if the current Column's category ID (Key) is in the data's appearIds
-                row[c++] = appearIds.Contains(kvp.Key) ? "✓" : "";
+                var levelNames = categoryIdToLevelNames.TryGetValue(kvp.Key, out var names) && names != null && names.Count > 0
+                    ? string.Join("/", names)
+                    : "";
+                row[c++] = levelNames;
             }
 
             // 8.

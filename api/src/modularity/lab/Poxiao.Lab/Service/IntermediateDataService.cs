@@ -18,8 +18,12 @@ using Poxiao.Lab.Entity.Extensions;
 using Poxiao.Lab.Entity.Models;
 using Poxiao.Lab.EventBus;
 using Poxiao.Lab.Helpers;
+using Poxiao.EventHandler;
+using Poxiao.Infrastructure.Net;
+using Poxiao.Infrastructure.Security;
 using Poxiao.Lab.Interfaces;
 using Poxiao.Systems.Entitys.Permission;
+using Poxiao.Systems.Entitys.System;
 using SqlSugar;
 using System.Globalization;
 using System.Text.Json;
@@ -90,6 +94,35 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         _formulaParser = formulaParser;
         _formulaBatchCalculator = formulaBatchCalculator;
         _eventPublisher = eventPublisher;
+    }
+
+    /// <summary>
+    /// 发布操作日志（中间数据-编辑/删除等）.
+    /// </summary>
+    private async Task PublishOpLogAsync(string abstracts, string moduleName = "中间数据", string objectId = null, string json = null)
+    {
+        try
+        {
+            var tenantId = _userManager?.TenantId ?? "global";
+            await _eventPublisher.PublishAsync(new LogEventSource("Log:CreateOpLog", tenantId, new SysLogEntity
+            {
+                Id = SnowflakeIdHelper.NextId(),
+                UserId = _userManager?.UserId,
+                UserName = _userManager?.RealName,
+                Category = 3,
+                IPAddress = NetHelper.Ip,
+                Abstracts = abstracts,
+                PlatForm = null,
+                CreatorTime = DateTime.Now,
+                ModuleName = moduleName,
+                ObjectId = objectId,
+                Json = json,
+            }));
+        }
+        catch (Exception ex)
+        {
+            Log.Warning($"写入操作日志失败: {ex.Message}");
+        }
     }
 
     /// <inheritdoc />
@@ -405,6 +438,11 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         entity.LastModifyTime = DateTime.Now;
 
         await _repository.UpdateAsync(entity);
+        await PublishOpLogAsync(
+            $"编辑性能数据：炉号 {entity.FurnaceNoFormatted ?? entity.Id}",
+            "中间数据",
+            entity.Id,
+            $"PerfSsPower={input.PerfSsPower}, PerfPsLoss={input.PerfPsLoss}, PerfHc={input.PerfHc}, PerfAfterSsPower={input.PerfAfterSsPower}, PerfAfterPsLoss={input.PerfAfterPsLoss}, PerfAfterHc={input.PerfAfterHc}");
     }
 
     /// <inheritdoc />
@@ -534,6 +572,10 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         entity.LastModifyTime = DateTime.Now;
 
         await _repository.UpdateAsync(entity);
+        await PublishOpLogAsync(
+            $"编辑外观数据：炉号 {entity.FurnaceNoFormatted ?? entity.Id}",
+            "中间数据",
+            entity.Id);
     }
 
     /// <inheritdoc />
@@ -557,6 +599,10 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         entity.LastModifyTime = DateTime.Now;
 
         await _repository.UpdateAsync(entity);
+        await PublishOpLogAsync(
+            $"编辑基础信息：炉号 {entity.FurnaceNoFormatted ?? entity.Id}",
+            "中间数据",
+            entity.Id);
     }
 
     /// <inheritdoc />
@@ -578,6 +624,10 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         entity.DeleteTime = DateTime.Now;
 
         await _repository.UpdateAsync(entity);
+        await PublishOpLogAsync(
+            $"删除中间数据：炉号 {entity.FurnaceNoFormatted ?? entity.Id}",
+            "中间数据",
+            entity.Id);
     }
 
     /// <inheritdoc />
@@ -596,6 +646,11 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             .SetColumns(t => t.DeleteTime == DateTime.Now)
             .Where(t => ids.Contains(t.Id) && t.DeleteMark == null)
             .ExecuteCommandAsync();
+        await PublishOpLogAsync(
+            $"批量删除中间数据：共 {ids.Count} 条",
+            "中间数据",
+            null,
+            $"Ids={string.Join(",", ids.Take(10))}{(ids.Count > 10 ? "..." : "")}");
     }
 
     /// <inheritdoc />

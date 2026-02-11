@@ -10,7 +10,7 @@ import { ref, computed, unref } from 'vue';
 import { BasicDrawer, useDrawerInner } from '/@/components/Drawer';
 import { BasicForm, useForm } from '/@/components/Form';
 import { addReportConfig, updateReportConfig } from '/@/api/lab/reportConfig';
-import { getIntermediateDataJudgmentLevelList } from '/@/api/lab/intermediateDataJudgmentLevel';
+import { getJudgmentLevelNames } from '/@/api/lab/intermediateDataJudgmentLevel';
 import { getIntermediateDataFormulaList } from '/@/api/lab/intermediateDataFormula';
 import { useMessage } from '/@/hooks/web/useMessage';
 
@@ -38,14 +38,14 @@ async function loadFormulaOptions() {
     }
 }
 
-// 根据公式ID加载等级列表
+// 根据公式ID加载等级名称列表（按 Name 去重取交集）
 async function loadLevelOptions(formulaId: string) {
     if (!formulaId) {
         levelOptions.value = [];
         return;
     }
     try {
-        const res: any = await getIntermediateDataJudgmentLevelList({ FormulaId: formulaId });
+        const res: any = await getJudgmentLevelNames(formulaId);
         const list = Array.isArray(res) ? res : (res.data || []);
         levelOptions.value = list.map((item: any) => ({
             id: item.name,

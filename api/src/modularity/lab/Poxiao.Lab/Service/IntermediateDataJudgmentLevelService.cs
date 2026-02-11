@@ -97,6 +97,71 @@ public class IntermediateDataJudgmentLevelService
     }
 
     /// <summary>
+    /// 获取等级名称列表（按 Name 去重取交集，供下拉框使用）.
+    /// 若指定 FormulaId，查询该公式下所有产品规格的等级，只返回在每个规格中都存在的等级名称。
+    /// 若不指定 FormulaId，查询所有等级并按 Name 去重。
+    /// </summary>
+    /// <param name="formulaId">判定公式ID（可选）</param>
+    /// <returns>去重后的等级名称列表</returns>
+    [HttpGet("names")]
+    public async Task<List<JudgmentLevelNameDto>> GetLevelNamesAsync([FromQuery] string formulaId = null)
+    {
+        // 查询等级（可选按公式筛选）
+        var allLevels = await _repository
+            .AsQueryable()
+            .Where(t => t.DeleteMark == null)
+            .WhereIF(!string.IsNullOrEmpty(formulaId), t => t.FormulaId == formulaId)
+            .Select(t => new { t.Name, t.ProductSpecId, t.QualityStatus, t.Color })
+            .ToListAsync();
+
+        if (!allLevels.Any())
+            return new List<JudgmentLevelNameDto>();
+
+        // 按产品规格分组（null 视为一组）
+        var groups = allLevels.GroupBy(t => t.ProductSpecId ?? "__none__").ToList();
+
+        if (groups.Count <= 1)
+        {
+            // 只有一个规格（或全部无规格），直接按 Name 去重
+            return allLevels
+                .GroupBy(t => t.Name)
+                .Select(g => new JudgmentLevelNameDto
+                {
+                    Name = g.Key,
+                    QualityStatus = g.First().QualityStatus,
+                    Color = g.First().Color,
+                })
+                .ToList();
+        }
+
+        // 多个规格：取每个规格的 Name 集合的交集
+        HashSet<string> intersection = null;
+        foreach (var group in groups)
+        {
+            var nameSet = new HashSet<string>(group.Select(t => t.Name));
+            if (intersection == null)
+                intersection = nameSet;
+            else
+                intersection.IntersectWith(nameSet);
+        }
+
+        if (intersection == null || !intersection.Any())
+            return new List<JudgmentLevelNameDto>();
+
+        // 用交集 Name 去重返回，取第一个规格的属性作为代表
+        return allLevels
+            .Where(t => intersection.Contains(t.Name))
+            .GroupBy(t => t.Name)
+            .Select(g => new JudgmentLevelNameDto
+            {
+                Name = g.Key,
+                QualityStatus = g.First().QualityStatus,
+                Color = g.First().Color,
+            })
+            .ToList();
+    }
+
+    /// <summary>
     /// 获取单个判定等级.
     /// </summary>
     /// <param name="id">主键ID</param>

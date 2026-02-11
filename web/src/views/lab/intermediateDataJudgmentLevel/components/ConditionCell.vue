@@ -7,6 +7,8 @@
             </span>
 
             <span class="group-block">
+                <!-- 条件组标签（与弹窗一致） -->
+                <span v-if="group.items.length || group.subGroups.length" class="group-label">条件组 {{ group.groupLabel }} </span>
                 <!-- Items -->
                 <template v-for="(item, iIdx) in group.items" :key="'i-' + iIdx">
                     <span v-if="item.connector" class="connector" :class="item.connector === '或' ? 'or' : 'and'">
@@ -25,7 +27,7 @@
                         {{ sg.connector }}
                     </span>
                     <span class="sub-group-block">
-                        <span class="sub-label">子组</span>
+                        <span class="sub-label">子组 {{ sg.subLabel }}：</span>
                         <template v-for="(subItem, siIdx) in sg.items" :key="'si-' + siIdx">
                             <span v-if="subItem.connector" class="connector"
                                 :class="subItem.connector === '或' ? 'or' : 'and'">
@@ -51,8 +53,86 @@ const props = defineProps({
     condition: {
         type: String,
         default: ''
-    }
+    },
+    /** 可用列选项，用于将列名显示为中文（与 RulePreviewCard 一致） */
+    fieldOptions: {
+        type: Array as () => { value: string; label: string }[],
+        default: () => []
+    },
+    /** 特性列表，用于将 CONTAINS_ANY 等右值 ID 显示为中文 */
+    featureList: { type: Array as () => any[], default: () => [] },
+    /** 特性大类列表 */
+    featureCategoryList: { type: Array as () => { id: string; name: string }[], default: () => [] },
+    /** 特性等级列表 */
+    featureSeverityList: { type: Array as () => { id: string; name: string }[], default: () => [] }
 });
+
+/** 将列名/变量名转为中文显示名（与 RulePreviewCard.getFieldName 一致） */
+function getFieldDisplayName(fieldValue: string): string {
+    const options = props.fieldOptions || [];
+    const raw = (fieldValue || '').replace(/[\[\]]/g, '').trim();
+    const field = options.find((f: { value: string }) => f.value === raw);
+    const label = field ? field.label : raw;
+    return label.replace(/\s*\(.*?\)\s*/g, '').trim();
+}
+
+/** 将条件右值转为展示文本（特性大类/等级/特性 ID 转中文名称，与 RulePreviewCard.getConditionValue 一致） */
+function getConditionValueDisplay(c: { leftExpr: string; operator: string; rightValue: string }): string {
+    const op = c.operator || '';
+    const isMultiSelect = op === 'CONTAINS_ANY' || op === 'NOT_CONTAINS_ANY';
+    if (!isMultiSelect) return c.rightValue ?? '';
+
+    const fieldKey = (c.leftExpr || '').replace(/[\[\]]/g, '').trim();
+    const fieldLower = fieldKey.toLowerCase();
+    const fieldOption = (props.fieldOptions || []).find((f: { value: string }) => f.value === fieldKey);
+    const fieldLabel = (fieldOption?.label ?? '').toLowerCase();
+
+    let ids: string[] = [];
+    try {
+        const parsed = JSON.parse(c.rightValue);
+        ids = Array.isArray(parsed) ? parsed.map((x: any) => String(x)) : [String(parsed)];
+    } catch {
+        ids = String(c.rightValue ?? '').split(',').map(s => s.trim()).filter(Boolean);
+    }
+    if (ids.length === 0) return c.rightValue ?? '';
+
+    const categories = props.featureCategoryList || [];
+    const severities = props.featureSeverityList || [];
+    const features = props.featureList || [];
+
+    const idMatch = (item: { id?: string | number }, idStr: string) => String(item.id) === String(idStr);
+
+    if (fieldLower.includes('category') || fieldLabel.includes('大类') || fieldLabel.includes('category')) {
+        if (categories.length > 0) {
+            return ids.map(id => {
+                const cat = categories.find((x: any) => idMatch(x, id));
+                return cat ? cat.name : id;
+            }).join('、');
+        }
+    }
+    if (fieldLower.includes('level') || fieldLower.includes('severity') || fieldLabel.includes('等级') || fieldLabel.includes('severity')) {
+        if (severities.length > 0) {
+            return ids.map(id => {
+                const level = severities.find((l: any) => idMatch(l, id));
+                return level ? level.name : id;
+            }).join('、');
+        }
+    }
+    if (fieldLower.includes('feature') || fieldLabel.includes('特性')) {
+        if (features.length > 0) {
+            return ids.map(id => {
+                const feature = features.find((f: any) => idMatch(f, id));
+                if (feature) {
+                    const category = feature.rootCategory || feature.category || '';
+                    const severity = feature.severityLevel || '';
+                    return `[${category} ${feature.name} ${severity}]`.trim().replace(/\s+/g, ' ');
+                }
+                return id;
+            }).join('、');
+        }
+    }
+    return ids.join('、');
+}
 
 const displayGroups = computed(() => {
     const conditionJson = props.condition;
@@ -61,19 +141,19 @@ const displayGroups = computed(() => {
         const data = JSON.parse(conditionJson);
         if (!data || !Array.isArray(data.groups)) return [];
 
+        const options = props.fieldOptions || [];
         const groups: any[] = [];
 
-        // Helper to process a single condition
+        // Helper to process a single condition（字段名与右值均使用中文展示）
         const processCondition = (c: any) => {
-            let left = c.leftExpr || '';
-            if (left.includes('[')) { // Remove brackets for display if simple
-                left = left.replace(/[\[\]]/g, '');
+            let leftRaw = c.leftExpr || '';
+            if (leftRaw.includes('[')) {
+                leftRaw = leftRaw.replace(/[\[\]]/g, '');
             }
+            const left = options.length > 0 ? getFieldDisplayName(leftRaw) : leftRaw;
             const op = c.operator || '';
-            let right = c.rightValue || '';
-            if (right === '[]') right = '';
+            const isNoValue = op === 'IS_NULL' || op === 'NOT_NULL';
 
-            // Translate common operators
             const opMap: Record<string, string> = {
                 '=': '=',
                 '>': '>',
@@ -89,23 +169,24 @@ const displayGroups = computed(() => {
                 'NOT_NULL': '不为空'
             };
             const displayOp = opMap[op] || op;
+            const right = isNoValue ? '' : getConditionValueDisplay(c);
 
             return {
                 left,
                 op: displayOp,
                 right,
-                isNoValue: op === 'IS_NULL' || op === 'NOT_NULL'
+                isNoValue
             };
         };
 
-        data.groups.forEach((group: any) => {
+        data.groups.forEach((group: any, groupIdx: number) => {
             const groupObj = {
+                groupLabel: String.fromCharCode(65 + groupIdx),
                 logic: group.logic === 'OR' ? '或' : '且',
                 items: [] as any[],
                 subGroups: [] as any[]
             };
 
-            // Simple conditions
             if (group.conditions) {
                 group.conditions.forEach((c: any, idx: number) => {
                     groupObj.items.push({
@@ -115,10 +196,10 @@ const displayGroups = computed(() => {
                 });
             }
 
-            // SubGroups
             if (group.subGroups) {
                 group.subGroups.forEach((sg: any, sgIdx: number) => {
                     const subGroupObj = {
+                        subLabel: String.fromCharCode(65 + sgIdx),
                         items: [] as any[],
                         connector: sgIdx > 0 ? (group.logic === 'OR' ? '或' : '且') : null,
                         logic: sg.logic === 'OR' ? '或' : '且'
@@ -202,6 +283,13 @@ const displayGroups = computed(() => {
         font-family: monospace;
         font-weight: 600;
     }
+}
+
+.group-label {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 500;
+    margin-right: 2px;
 }
 
 .sub-group-block {

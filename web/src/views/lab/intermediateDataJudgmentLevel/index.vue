@@ -1,11 +1,17 @@
 <template>
   <div class="h-full flex p-4 gap-4">
     <!-- 左侧：产品规格 + 判定列列表 -->
-    <div class="w-[300px] flex-none bg-white rounded-lg shadow-sm flex flex-col">
+    <div class="w-[240px] flex-none bg-white rounded-lg shadow-sm flex flex-col">
       <div class="p-4 border-b">
         <h2 class="text-lg font-bold mb-3">产品规格</h2>
-        <a-select v-model:value="selectedProductSpecId" placeholder="请选择产品规格" allowClear show-search
-          :filter-option="filterOption" style="width: 100%" @change="handleProductSpecChange">
+        <a-select
+          v-model:value="selectedProductSpecId"
+          placeholder="请选择产品规格"
+          allowClear
+          show-search
+          :filter-option="filterOption"
+          style="width: 100%"
+          @change="handleProductSpecChange">
           <a-select-option v-for="item in productSpecList" :key="item.id" :value="item.id">
             {{ item.name }}
           </a-select-option>
@@ -16,10 +22,11 @@
       </div>
       <div class="flex-1 overflow-auto p-2">
         <a-spin :spinning="loadingFormula">
-          <div v-if="formulaList.length === 0" class="text-center text-gray-400 py-10">
-            暂无判定项目
-          </div>
-          <div v-else v-for="item in formulaList" :key="item.id"
+          <div v-if="formulaList.length === 0" class="text-center text-gray-400 py-10"> 暂无判定项目 </div>
+          <div
+            v-else
+            v-for="item in formulaList"
+            :key="item.id"
             class="p-3 mb-2 rounded cursor-pointer transition-colors border hover:border-blue-400 hover:bg-blue-50"
             :class="selectedFormulaId === item.id ? 'bg-blue-50 border-blue-500' : 'bg-white border-gray-200'"
             @click="handleSelectFormula(item)">
@@ -43,9 +50,7 @@
           </span>
         </h2>
         <a-space>
-          <a-button type="primary" :disabled="!selectedFormulaId" @click="handleAdd">
-            新增等级
-          </a-button>
+          <a-button type="primary" :disabled="!selectedFormulaId" @click="handleAdd"> 新增等级 </a-button>
           <a-button :disabled="!selectedFormulaId || levelList.length === 0" @click="handleBatchCopy">
             批量复制
           </a-button>
@@ -57,7 +62,11 @@
         </div>
         <a-spin v-else :spinning="loadingLevel">
           <div class="table-container">
-            <a-table :columns="columns" :data-source="levelList" :pagination="false" row-key="id"
+            <a-table
+              :columns="columns"
+              :data-source="levelList"
+              :pagination="false"
+              row-key="id"
               :scroll="{ x: tableScrollX, y: 'calc(100vh - 300px)' }">
               <template #bodyCell="{ column, record }">
                 <template v-if="column.key === 'conditionCount'">
@@ -75,14 +84,14 @@
                   </a-tag>
                 </template>
                 <template v-else-if="column.key === 'conditionText'">
-                  <a-tooltip color="#fff" placement="topLeft" v-if="record.condition">
-                    <template #title>
-                      <ConditionCell :condition="record.condition" />
-                    </template>
-                    <div class="truncate w-full block">
-                      <ConditionCell :condition="record.condition" />
-                    </div>
-                  </a-tooltip>
+                  <div class="condition-text-wrap">
+                    <ConditionCell
+                      :condition="record.condition"
+                      :field-options="fieldOptions"
+                      :feature-list="featureList"
+                      :feature-category-list="featureCategoryList"
+                      :feature-severity-list="featureSeverityList" />
+                  </div>
                 </template>
                 <template v-else-if="column.key === 'isStatistic'">
                   <a-tag :color="record.isStatistic ? 'green' : 'gray'">
@@ -123,371 +132,431 @@
 </template>
 
 <script lang="ts" setup>
-defineOptions({ name: 'intermediateDataJudgmentLevel' });
-import { ref, onMounted } from 'vue';
-import { useMessage } from '/@/hooks/web/useMessage';
-import { useModal } from '/@/components/Modal';
-import { getIntermediateDataFormulaList } from '/@/api/lab/intermediateDataFormula';
-import {
-  getIntermediateDataJudgmentLevelList,
-  deleteIntermediateDataJudgmentLevel,
-  updateIntermediateDataJudgmentLevelSort,
-} from '/@/api/lab/intermediateDataJudgmentLevel';
-import { getProductSpecList } from '/@/api/lab/productSpec';
-import LevelForm from './components/form.vue';
-import LevelConditionModal from './components/LevelConditionModal.vue';
-import CopyConditionModal from './components/CopyConditionModal.vue';
-import BatchCopyModal from './components/BatchCopyModal.vue';
-import ConditionCell from './components/ConditionCell.vue';
-import { useSortable } from '/@/hooks/web/useSortable';
-import { nextTick } from 'vue';
+  defineOptions({ name: 'intermediateDataJudgmentLevel' });
+  import { ref, onMounted } from 'vue';
+  import { useMessage } from '/@/hooks/web/useMessage';
+  import { useModal } from '/@/components/Modal';
+  import { getIntermediateDataFormulaList, getAvailableColumns } from '/@/api/lab/intermediateDataFormula';
+  import {
+    getIntermediateDataJudgmentLevelList,
+    deleteIntermediateDataJudgmentLevel,
+    updateIntermediateDataJudgmentLevelSort,
+  } from '/@/api/lab/intermediateDataJudgmentLevel';
+  import { getProductSpecList } from '/@/api/lab/productSpec';
+  import {
+    getAppearanceFeatureList,
+    getAllAppearanceFeatureCategories,
+    getEnabledSeverityLevels,
+  } from '/@/api/lab/appearanceFeature';
+  import LevelForm from './components/form.vue';
+  import LevelConditionModal from './components/LevelConditionModal.vue';
+  import CopyConditionModal from './components/CopyConditionModal.vue';
+  import BatchCopyModal from './components/BatchCopyModal.vue';
+  import ConditionCell from './components/ConditionCell.vue';
+  import { useSortable } from '/@/hooks/web/useSortable';
+  import { nextTick } from 'vue';
 
-const { createMessage } = useMessage();
-const [registerModal, { openModal }] = useModal();
-const [registerConditionModal, { openModal: openConditionModal }] = useModal();
-const [registerCopyModal, { openModal: openCopyModal }] = useModal();
-const [registerBatchCopyModal, { openModal: openBatchCopyModal }] = useModal();
+  const { createMessage } = useMessage();
+  const [registerModal, { openModal }] = useModal();
+  const [registerConditionModal, { openModal: openConditionModal }] = useModal();
+  const [registerCopyModal, { openModal: openCopyModal }] = useModal();
+  const [registerBatchCopyModal, { openModal: openBatchCopyModal }] = useModal();
 
-const loadingFormula = ref(false);
-const formulaList = ref<any[]>([]);
-const selectedFormulaId = ref<string>('');
-const selectedFormula = ref<any>(null);
+  const loadingFormula = ref(false);
+  const formulaList = ref<any[]>([]);
+  const selectedFormulaId = ref<string>('');
+  const selectedFormula = ref<any>(null);
 
-const loadingLevel = ref(false);
-const levelList = ref<any[]>([]);
+  const loadingLevel = ref(false);
+  const levelList = ref<any[]>([]);
+  /** 可用列选项，用于条件单元格将列名显示为中文 */
+  const fieldOptions = ref<{ value: string; label: string }[]>([]);
+  /** 特性/大类/等级列表，用于条件单元格将 ID 显示为中文名称 */
+  const featureList = ref<any[]>([]);
+  const featureCategoryList = ref<{ id: string; name: string }[]>([]);
+  const featureSeverityList = ref<{ id: string; name: string }[]>([]);
 
-// 产品规格相关
-const productSpecList = ref<any[]>([]);
-const selectedProductSpecId = ref<string | undefined>(undefined);
+  // 产品规格相关
+  const productSpecList = ref<any[]>([]);
+  const selectedProductSpecId = ref<string | undefined>(undefined);
 
-const filterOption = (input: string, option: any) => {
-  return option.children?.[0]?.children?.toLowerCase()?.includes(input.toLowerCase());
-};
+  const filterOption = (input: string, option: any) => {
+    return option.children?.[0]?.children?.toLowerCase()?.includes(input.toLowerCase());
+  };
 
-const loadProductSpecList = async () => {
-  try {
-    const res = await getProductSpecList({});
-    productSpecList.value = res.list || [];
-  } catch (error) {
-    console.error('加载产品规格失败', error);
-  }
-};
+  const loadProductSpecList = async () => {
+    try {
+      const res = await getProductSpecList({});
+      productSpecList.value = res.list || [];
+    } catch (error) {
+      console.error('加载产品规格失败', error);
+    }
+  };
 
-const handleProductSpecChange = () => {
-  loadLevels();
-};
-// ... (keep existing refs)
+  const handleProductSpecChange = () => {
+    loadLevels();
+  };
+  // ... (keep existing refs)
 
-// ... (keep existing methods)
+  // ... (keep existing methods)
 
-const handleEditCondition = (record: any) => {
-  openConditionModal(true, {
-    levelId: record.id,
-    formulaId: selectedFormulaId.value,
-    levelName: record.name,
-  });
-};
+  const handleEditCondition = (record: any) => {
+    openConditionModal(true, {
+      levelId: record.id,
+      formulaId: selectedFormulaId.value,
+      levelName: record.name,
+    });
+  };
 
-const handleCopy = (record: any) => {
-  openCopyModal(true, {
-    sourceLevel: record,
-    formulaId: selectedFormulaId.value,
-    allLevels: levelList.value,
-  });
-};
+  const handleCopy = (record: any) => {
+    openCopyModal(true, {
+      sourceLevel: record,
+      formulaId: selectedFormulaId.value,
+      allLevels: levelList.value,
+    });
+  };
 
-const handleCloneToNew = (record: any) => {
-  openModal(true, {
-    isUpdate: false, // 标记为新建
-    record: { ...record, name: `复制-${record.name}` }, // 预填充数据，修改名称以示区别
-    formulaId: selectedFormulaId.value,
-  });
-};
+  const handleCloneToNew = (record: any) => {
+    openModal(true, {
+      isUpdate: false, // 标记为新建
+      record: { ...record, name: `复制-${record.name}` }, // 预填充数据，修改名称以示区别
+      formulaId: selectedFormulaId.value,
+    });
+  };
 
-const handleEdit = (record: any) => {
-  openModal(true, {
-    isUpdate: true,
-    record,
-    formulaId: selectedFormulaId.value,
-  });
-};
+  const handleEdit = (record: any) => {
+    openModal(true, {
+      isUpdate: true,
+      record,
+      formulaId: selectedFormulaId.value,
+    });
+  };
 
-const getConditionCount = (conditionJson: string) => {
-  if (!conditionJson) return 0;
-  try {
-    const data = JSON.parse(conditionJson);
-    if (!data || !Array.isArray(data.groups)) return 0;
+  const getConditionCount = (conditionJson: string) => {
+    if (!conditionJson) return 0;
+    try {
+      const data = JSON.parse(conditionJson);
+      if (!data || !Array.isArray(data.groups)) return 0;
 
-    let count = 0;
-    for (const group of data.groups) {
-      // 统计当前组的条件
-      if (Array.isArray(group.conditions)) {
-        count += group.conditions.length;
-      }
-      // 统计子组的条件
-      if (Array.isArray(group.subGroups)) {
-        for (const subGroup of group.subGroups) {
-          if (Array.isArray(subGroup.conditions)) {
-            count += subGroup.conditions.length;
+      let count = 0;
+      for (const group of data.groups) {
+        // 统计当前组的条件
+        if (Array.isArray(group.conditions)) {
+          count += group.conditions.length;
+        }
+        // 统计子组的条件
+        if (Array.isArray(group.subGroups)) {
+          for (const subGroup of group.subGroups) {
+            if (Array.isArray(subGroup.conditions)) {
+              count += subGroup.conditions.length;
+            }
           }
         }
       }
+      return count;
+    } catch (e) {
+      return 0;
     }
-    return count;
-  } catch (e) {
-    return 0;
-  }
-};
+  };
 
-const getQualityStatusText = (status: number) => {
-  switch (status) {
-    case 0: return '合格';
-    case 1: return '不合格';
-    case 2: return '其他';
-    default: return '未知';
-  }
-};
-
-const getQualityStatusColor = (status: number) => {
-  switch (status) {
-    case 0: return 'success';
-    case 1: return 'error';
-    case 2: return 'default';
-    default: return 'default';
-  }
-};
-
-const columns = [
-  { title: '产品规格', dataIndex: 'productSpecName', width: 120 },
-  { title: '等级名称', dataIndex: 'name', width: 120 },
-  { title: '优先级', dataIndex: 'priority', width: 80 },
-  { title: '条件个数', key: 'conditionCount', width: 100 },
-  { title: '默认', key: 'isDefault', width: 80 },
-  { title: '判定条件', key: 'conditionText', width: 200, ellipsis: true },
-  // { title: '说明', dataIndex: 'description' },
-  { title: '操作', key: 'action', width: 300, fixed: 'right' },
-];
-
-// 计算固定宽度列的总宽度（不包括弹性列）
-const ca = columns.reduce((total, column) => {
-  const width = Number(column.width) || 0;
-  return total + width;
-}, 0);
-
-// scroll.x 设置为大于列宽总和的值，确保水平滚动条正常显示
-// 非固定列宽度之和不超过 scroll.x
-const tableScrollX = ca + 200; // 额外留出弹性空间
-
-// 初始化拖拽
-let sortableInstance: any = null;
-
-const initSortable = () => {
-  nextTick(() => {
-    const el = document.querySelectorAll('.ant-table-tbody')[0] as HTMLElement;
-    if (!el) return;
-
-    // 如果已有实例，先销毁
-    if (sortableInstance) {
-      sortableInstance.destroy();
-      sortableInstance = null;
+  const getQualityStatusText = (status: number) => {
+    switch (status) {
+      case 0:
+        return '合格';
+      case 1:
+        return '不合格';
+      case 2:
+        return '其他';
+      default:
+        return '未知';
     }
+  };
 
-    const { initSortable: createSortable } = useSortable(el, {
-      handle: '.ant-table-row',
-      onEnd: async (evt) => {
-        const { oldIndex, newIndex } = evt;
-        if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return;
+  const getQualityStatusColor = (status: number) => {
+    switch (status) {
+      case 0:
+        return 'success';
+      case 1:
+        return 'error';
+      case 2:
+        return 'default';
+      default:
+        return 'default';
+    }
+  };
 
-        // 直接从 DOM 中读取拖拽后所有行的 ID 顺序
-        const rows = el.querySelectorAll('tr.ant-table-row');
-        const ids: string[] = [];
-        rows.forEach((row) => {
-          const id = row.getAttribute('data-row-key');
-          if (id) {
-            ids.push(id);
+  const columns = [
+    { title: '产品规格', dataIndex: 'productSpecName', align: 'center', width: 80 },
+    { title: '等级名称', dataIndex: 'name', align: 'center', width: 100 },
+    { title: '优先级', dataIndex: 'priority', align: 'center', width: 80 },
+    { title: '条件个数', key: 'conditionCount', align: 'center', width: 80 },
+    { title: '默认', key: 'isDefault', align: 'center', width: 50 },
+    { title: '判定条件', key: 'conditionText', minWidth: 220, width: 280, ellipsis: false, className: 'condition-text-cell' },
+    { title: '操作', key: 'action', width: 350, align: 'center' },
+  ];
+
+  // 计算固定宽度列的总宽度（不包括弹性列）
+  const ca = columns.reduce((total, column) => {
+    const width = Number(column.width) || 0;
+    return total + width;
+  }, 0);
+
+  // scroll.x 设置为大于列宽总和的值，确保水平滚动条正常显示
+  // 非固定列宽度之和不超过 scroll.x
+  const tableScrollX = ca + 200; // 额外留出弹性空间
+
+  // 初始化拖拽
+  let sortableInstance: any = null;
+
+  const initSortable = () => {
+    nextTick(() => {
+      const el = document.querySelectorAll('.ant-table-tbody')[0] as HTMLElement;
+      if (!el) return;
+
+      // 如果已有实例，先销毁
+      if (sortableInstance) {
+        sortableInstance.destroy();
+        sortableInstance = null;
+      }
+
+      const { initSortable: createSortable } = useSortable(el, {
+        handle: '.ant-table-row',
+        onEnd: async evt => {
+          const { oldIndex, newIndex } = evt;
+          if (oldIndex === undefined || newIndex === undefined || oldIndex === newIndex) return;
+
+          // 直接从 DOM 中读取拖拽后所有行的 ID 顺序
+          const rows = el.querySelectorAll('tr.ant-table-row');
+          const ids: string[] = [];
+          rows.forEach(row => {
+            const id = row.getAttribute('data-row-key');
+            if (id) {
+              ids.push(id);
+            }
+          });
+
+          console.log('拖拽排序 - oldIndex:', oldIndex, 'newIndex:', newIndex);
+          console.log('拖拽排序 - 从DOM读取的ids顺序:', ids);
+
+          if (ids.length === 0) {
+            createMessage.error('获取排序数据失败');
+            return;
           }
-        });
 
-        console.log('拖拽排序 - oldIndex:', oldIndex, 'newIndex:', newIndex);
-        console.log('拖拽排序 - 从DOM读取的ids顺序:', ids);
+          try {
+            await updateIntermediateDataJudgmentLevelSort(ids);
+            createMessage.success('排序更新成功');
+            // 重新加载以获取最新状态
+            await loadLevels();
+          } catch (error) {
+            console.error(error);
+            createMessage.error('排序更新失败');
+            await loadLevels();
+          }
+        },
+      });
+      sortableInstance = createSortable();
+    });
+  };
 
-        if (ids.length === 0) {
-          createMessage.error('获取排序数据失败');
+  import { useRoute } from 'vue-router';
+
+  const route = useRoute();
+
+  // 加载可用列及特性大类/等级（用于条件列中文展示）
+  const loadFieldOptions = async () => {
+    try {
+      const [colsRes, featuresRes, categoriesRes, severityRes]: [any, any, any, any] = await Promise.all([
+        getAvailableColumns(),
+        getAppearanceFeatureList({ pageSize: 1000, currentPage: 1 }),
+        getAllAppearanceFeatureCategories(),
+        getEnabledSeverityLevels(),
+      ]);
+      const list = colsRes?.data ?? colsRes ?? [];
+      fieldOptions.value = (Array.isArray(list) ? list : []).map((f: { columnName: string; displayName?: string }) => ({
+        value: f.columnName,
+        label: f.displayName ? `${f.displayName} (${f.columnName})` : f.columnName,
+      }));
+      featureList.value = featuresRes?.list ?? featuresRes ?? [];
+      featureCategoryList.value = Array.isArray(categoriesRes) ? categoriesRes : (categoriesRes?.list ?? categoriesRes?.data ?? []);
+      featureSeverityList.value = Array.isArray(severityRes) ? severityRes : (severityRes?.list ?? severityRes?.data ?? []);
+    } catch (e) {
+      fieldOptions.value = [];
+      featureList.value = [];
+      featureCategoryList.value = [];
+      featureSeverityList.value = [];
+    }
+  };
+
+  // 加载判定项目列表
+  const loadFormulas = async () => {
+    loadingFormula.value = true;
+    try {
+      await loadFieldOptions();
+      const res: any = await getIntermediateDataFormulaList();
+      const list = res.data || res || [];
+      // 过滤出 JUDGE 类型
+      formulaList.value = list.filter((item: any) => item.formulaType === 'JUDGE');
+
+      // 优先使用路由参数选中
+      const queryId = route.query.formulaId as string;
+      if (queryId) {
+        const target = formulaList.value.find(item => item.id === queryId);
+        if (target) {
+          handleSelectFormula(target);
           return;
         }
-
-        try {
-          await updateIntermediateDataJudgmentLevelSort(ids);
-          createMessage.success('排序更新成功');
-          // 重新加载以获取最新状态
-          await loadLevels();
-        } catch (error) {
-          console.error(error);
-          createMessage.error('排序更新失败');
-          await loadLevels();
-        }
-      },
-    });
-    sortableInstance = createSortable();
-  });
-};
-
-import { useRoute } from 'vue-router';
-
-const route = useRoute();
-
-// 加载判定项目列表
-const loadFormulas = async () => {
-  loadingFormula.value = true;
-  try {
-    const res: any = await getIntermediateDataFormulaList();
-    const list = res.data || res || [];
-    // 过滤出 JUDGE 类型
-    formulaList.value = list.filter((item: any) => item.formulaType === 'JUDGE');
-
-    // 优先使用路由参数选中
-    const queryId = route.query.formulaId as string;
-    if (queryId) {
-      const target = formulaList.value.find(item => item.id === queryId);
-      if (target) {
-        handleSelectFormula(target);
-        return;
       }
+
+      // 默认选中第一条
+      if (formulaList.value.length > 0) {
+        handleSelectFormula(formulaList.value[0]);
+      }
+    } catch (error) {
+      console.error(error);
+      createMessage.error('加载判定项目失败');
+    } finally {
+      loadingFormula.value = false;
     }
+  };
 
-    // 默认选中第一条
-    if (formulaList.value.length > 0) {
-      handleSelectFormula(formulaList.value[0]);
-    }
-  } catch (error) {
-    console.error(error);
-    createMessage.error('加载判定项目失败');
-  } finally {
-    loadingFormula.value = false;
-  }
-};
-
-// 选择判定项目
-const handleSelectFormula = (item: any) => {
-  selectedFormulaId.value = item.id;
-  selectedFormula.value = item;
-  loadLevels();
-};
-
-// 加载等级列表
-const loadLevels = async () => {
-  if (!selectedFormulaId.value) return;
-  loadingLevel.value = true;
-  try {
-    const params: any = { formulaId: selectedFormulaId.value };
-    if (selectedProductSpecId.value) {
-      params.productSpecId = selectedProductSpecId.value;
-    }
-    const res: any = await getIntermediateDataJudgmentLevelList(params);
-    levelList.value = res.data || res || [];
-    // 数据加载完成后初始化拖拽
-    initSortable();
-  } catch (error) {
-    console.error(error);
-    createMessage.error('加载等级列表失败');
-  } finally {
-    loadingLevel.value = false;
-  }
-};
-
-const handleAdd = () => {
-  openModal(true, {
-    isUpdate: false,
-    formulaId: selectedFormulaId.value,
-    productSpecId: selectedProductSpecId.value,
-  });
-};
-
-const handleBatchCopy = () => {
-  const currentSpecName = selectedProductSpecId.value
-    ? productSpecList.value.find(item => item.id === selectedProductSpecId.value)?.name
-    : '';
-
-  openBatchCopyModal(true, {
-    formulaId: selectedFormulaId.value,
-    formulaName: selectedFormula.value?.displayName || selectedFormula.value?.formulaName,
-    productSpecId: selectedProductSpecId.value, // 传递当前选中的产品规格ID
-    productSpecName: currentSpecName,           // 传递当前选中的产品规格名称
-    levelCount: levelList.value.length,
-    allFormulas: formulaList.value,
-    productSpecList: productSpecList.value,     // 传递所有产品规格列表给弹窗
-  });
-};
-
-const handleDelete = async (id: string) => {
-  try {
-    await deleteIntermediateDataJudgmentLevel(id);
-    createMessage.success('删除成功');
+  // 选择判定项目
+  const handleSelectFormula = (item: any) => {
+    selectedFormulaId.value = item.id;
+    selectedFormula.value = item;
     loadLevels();
-  } catch (error) {
-    console.error(error);
-    createMessage.error('删除失败');
-  }
-};
+  };
 
-const handleSuccess = () => {
-  loadLevels();
-};
+  // 加载等级列表
+  const loadLevels = async () => {
+    if (!selectedFormulaId.value) return;
+    loadingLevel.value = true;
+    try {
+      const params: any = { formulaId: selectedFormulaId.value };
+      if (selectedProductSpecId.value) {
+        params.productSpecId = selectedProductSpecId.value;
+      }
+      const res: any = await getIntermediateDataJudgmentLevelList(params);
+      levelList.value = res.data || res || [];
+      // 数据加载完成后初始化拖拽
+      initSortable();
+    } catch (error) {
+      console.error(error);
+      createMessage.error('加载等级列表失败');
+    } finally {
+      loadingLevel.value = false;
+    }
+  };
 
-onMounted(() => {
-  loadProductSpecList();
-  loadFormulas();
-});
+  const handleAdd = () => {
+    openModal(true, {
+      isUpdate: false,
+      formulaId: selectedFormulaId.value,
+      productSpecId: selectedProductSpecId.value,
+    });
+  };
+
+  const handleBatchCopy = () => {
+    const currentSpecName = selectedProductSpecId.value
+      ? productSpecList.value.find(item => item.id === selectedProductSpecId.value)?.name
+      : '';
+
+    openBatchCopyModal(true, {
+      formulaId: selectedFormulaId.value,
+      formulaName: selectedFormula.value?.displayName || selectedFormula.value?.formulaName,
+      productSpecId: selectedProductSpecId.value, // 传递当前选中的产品规格ID
+      productSpecName: currentSpecName, // 传递当前选中的产品规格名称
+      levelCount: levelList.value.length,
+      allFormulas: formulaList.value,
+      productSpecList: productSpecList.value, // 传递所有产品规格列表给弹窗
+    });
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteIntermediateDataJudgmentLevel(id);
+      createMessage.success('删除成功');
+      loadLevels();
+    } catch (error) {
+      console.error(error);
+      createMessage.error('删除失败');
+    }
+  };
+
+  const handleSuccess = () => {
+    loadLevels();
+  };
+
+  onMounted(async () => {
+    await loadProductSpecList();
+    if (productSpecList.value.length > 0 && selectedProductSpecId.value == null) {
+      selectedProductSpecId.value = productSpecList.value[0].id;
+    }
+    await loadFormulas();
+  });
 </script>
 
 <style lang="less" scoped>
-.table-container {
-  width: 100%;
-  height: calc(100vh - 220px);
-  overflow: auto;
+  .table-container {
+    width: 100%;
+    height: calc(100vh - 220px);
+    overflow: auto;
 
-  :deep(.ant-table-wrapper) {
-    height: 100%;
-
-    .ant-spin-nested-loading,
-    .ant-spin-container {
+    :deep(.ant-table-wrapper) {
       height: 100%;
-    }
 
-    .ant-table {
-      height: 100%;
-      overflow: visible !important;
-    }
+      .ant-spin-nested-loading,
+      .ant-spin-container {
+        height: 100%;
+      }
 
-    .ant-table-container {
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      overflow: visible !important;
-    }
+      .ant-table {
+        height: 100%;
+        overflow: visible !important;
+      }
 
-    .ant-table-header {
-      flex-shrink: 0;
-      overflow: visible !important;
-    }
+      .ant-table-container {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: visible !important;
+      }
 
-    // 关键：当使用固定列时，需要设置 content 层的水平滚动
-    .ant-table-content {
-      overflow-x: auto !important;
-      overflow-y: hidden !important;
-    }
+      .ant-table-header {
+        flex-shrink: 0;
+        overflow: visible !important;
+      }
 
-    .ant-table-body {
-      flex: 1;
-      overflow-x: auto !important;
-      overflow-y: auto !important;
-    }
+      // 关键：当使用固定列时，需要设置 content 层的水平滚动
+      .ant-table-content {
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+      }
 
-    // 固定列的阴影效果
-    .ant-table-cell-fix-left-last::after,
-    .ant-table-cell-fix-right-first::after {
-      box-shadow: inset 10px 0 8px -8px rgba(0, 0, 0, 0.1);
+      .ant-table-body {
+        flex: 1;
+        overflow-x: auto !important;
+        overflow-y: auto !important;
+      }
+
+      // 固定列的阴影效果
+      .ant-table-cell-fix-left-last::after,
+      .ant-table-cell-fix-right-first::after {
+        box-shadow: inset 10px 0 8px -8px rgba(0, 0, 0, 0.1);
+      }
+
+      // 判定条件列：根据内容自动换行、完整显示
+      .ant-table-cell.condition-text-cell {
+        white-space: normal;
+        word-break: break-word;
+        vertical-align: top;
+      }
     }
   }
-}
+
+  .condition-text-wrap {
+    min-width: 0;
+    white-space: normal;
+    word-break: break-word;
+  }
 </style>

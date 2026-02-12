@@ -347,7 +347,23 @@ async function loadData() {
       rawData = response.items;
     }
 
-    data.value = rawData;
+    // 归一化后端 PascalCase 为前端使用的 camelCase，避免保存后重载仍显示未匹配
+    data.value = rawData.map((row: any) => ({
+      ...row,
+      id: row.id ?? row.rawDataId ?? row.RawDataId,
+      appearanceFeatureIds: row.appearanceFeatureIds ?? row.AppearanceFeatureIds,
+      featureSuffix: row.featureSuffix ?? row.FeatureSuffix,
+      furnaceNo: row.furnaceNo ?? row.FurnaceNo,
+      matchConfidence: row.matchConfidence ?? row.MatchConfidence,
+      matchDetails: row.matchDetails ?? row.MatchDetails?.map((d: any) => ({
+        featureId: d.featureId ?? d.FeatureId,
+        featureName: d.featureName ?? d.FeatureName,
+        categoryId: d.categoryId ?? d.CategoryId,
+        categoryName: d.categoryName ?? d.CategoryName,
+        severityLevelId: d.severityLevelId ?? d.SeverityLevelId,
+        severityLevelName: d.severityLevelName ?? d.SeverityLevelName,
+      })),
+    }));
 
     // 添加行号
     data.value.forEach((row, index) => {

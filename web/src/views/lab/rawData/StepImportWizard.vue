@@ -244,26 +244,32 @@ async function handleSubmit() {
   await handleComplete();
 }
 
-// 完成导入（导入已在进入最后一步时自动执行）
+// 完成导入（最后一步点击「确定」时：若尚未完成导入则自动触发完成导入，成功后关闭）
 async function handleComplete() {
   try {
     changeOkLoading(true);
-    // 检查导入是否成功 (使用 unref 安全获取值，无论是 ref 还是普通值)
     const canProceed = unref(step4Ref.value?.canGoNext);
     if (canProceed) {
-      // 先重置状态（清空 importSessionId，防止子组件再加载数据）
       init();
-      // 然后关闭弹窗
       closePopup();
-      // 最后刷新列表
+      emit('reload');
+      createMessage.success('导入完成');
+      return;
+    }
+    // 尚未完成导入：自动触发「完成导入」，等待成功后再关闭
+    const triggerComplete = step4Ref.value?.triggerCompleteImport;
+    if (typeof triggerComplete === 'function') {
+      await triggerComplete();
+      init();
+      closePopup();
       emit('reload');
       createMessage.success('导入完成');
     } else {
-      createMessage.warning('请等待导入完成');
+      createMessage.warning('请点击完成导入');
     }
   } catch (error) {
     console.error('完成导入失败:', error);
-    createMessage.error('完成导入失败，请重试');
+    createMessage.error(error?.message || '完成导入失败，请重试');
   } finally {
     changeOkLoading(false);
   }

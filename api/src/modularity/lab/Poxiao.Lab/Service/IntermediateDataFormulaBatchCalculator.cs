@@ -537,14 +537,6 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
             "[LoadFormulas] 从服务获取公式总数={Total}, ProductSpecId={ProductSpecId}",
             all.Count, productSpecId ?? "(空)");
 
-        // 诊断日志：输出前几条公式的关键字段，帮助排查过滤问题
-        foreach (var f in all.Take(5))
-        {
-            _logger.LogInformation(
-                "[LoadFormulas] 公式样本: Id={Id}, ColumnName={ColumnName}, FormulaType='{FormulaType}', SourceType='{SourceType}', IsEnabled={IsEnabled}, TableName='{TableName}'",
-                f.Id, f.ColumnName, f.FormulaType, f.SourceType, f.IsEnabled, f.TableName);
-        }
-
         // 计算公式：仅系统默认
         var calcEnabled = all
             .Where(t => t.IsEnabled)

@@ -167,6 +167,8 @@ const emit = defineEmits(['complete', 'prev', 'cancel']);
 const loading = ref(true); // 初始加载状态
 const loadingReview = ref(false); // 加载核对数据状态
 const importing = ref(false); // 导入执行状态
+/** 当前执行中的导入 Promise，供「确定」自动触发时复用，避免重复发起 */
+let runningImportPromise: Promise<void> | null = null;
 const importProgress = ref(0); // 导入进度 0-100
 const importProgressMessage = ref(''); // 导入进度消息
 const importProgressTip = computed(() => importing.value ? '正在导入数据...' : '正在加载...');
@@ -372,20 +374,28 @@ async function loadReviewData() {
 }
 
 // 执行导入
-async function handleStartImport() {
+async function handleStartImport(): Promise<void> {
+  if (importSuccess.value) {
+    return;
+  }
+  if (importing.value && runningImportPromise) {
+    return runningImportPromise;
+  }
+
   if (!props.importSessionId || props.importSessionId.trim() === '') {
     message.error('导入会话ID缺失');
-    return;
+    return Promise.reject(new Error('导入会话ID缺失'));
   }
 
   // 检查是否有有效数据
   const validCount = reviewData.value?.validDataRows || 0;
   if (validCount === 0) {
     message.warning('没有有效数据可以导入');
-    return;
+    return Promise.reject(new Error('没有有效数据可以导入'));
   }
 
   importing.value = true;
+  runningImportPromise = (async () => {
   importError.value = '';
   importSuccess.value = false;
   importProgress.value = 0;
@@ -442,7 +452,15 @@ async function handleStartImport() {
     message.error(importError.value);
   } finally {
     importing.value = false;
+    runningImportPromise = null;
   }
+  })();
+  return runningImportPromise;
+}
+
+/** 由父组件「确定」按钮调用：若尚未完成导入则自动执行完成导入并返回 Promise */
+function triggerCompleteImport(): Promise<void> {
+  return handleStartImport() ?? Promise.resolve();
 }
 
 // 刷新核对数据
@@ -530,6 +548,7 @@ defineExpose({
   canGoNext,
   saveAndNext,
   triggerLoad, // 暴露触发加载的方法
+  triggerCompleteImport, // 最后一步点击「确定」时由父组件调用，自动触发完成导入
 });
 </script>
 

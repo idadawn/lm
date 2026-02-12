@@ -328,27 +328,45 @@ function close() {
 async function handleConfirm() {
   confirmLoading.value = true;
   try {
-    // 如果有关键词，则调用 AddKeyword API 将关键词添加到选中的特性
+    // 如果有关键词，则调用 AddKeyword API 将关键词添加到选中的每个特性（每个特性都会添加）
     const keywords = props.keywords?.filter(k => k) || [];
-    if (keywords.length > 0 && selectedFeatures.value.length > 0) {
-      let successCount = 0;
-      // 遍历每个选中的特性
-      for (const feature of selectedFeatures.value) {
-        // 遍历每个关键词
+    const features = selectedFeatures.value;
+    if (keywords.length > 0 && features.length > 0) {
+      // 为每个（特性 × 关键词）组合发起请求，并行执行且不因单个失败而中断
+      const tasks: Array<Promise<void>> = [];
+      const taskMeta: Array<{ feature: AppearanceFeatureInfo; keyword: string }> = [];
+      for (const feature of features) {
         for (const keyword of keywords) {
-          try {
-            await addKeywordToFeature({
+          taskMeta.push({ feature, keyword });
+          tasks.push(
+            addKeywordToFeature({
               FeatureId: feature.id,
-              Keyword: keyword
-            });
-            successCount++;
-          } catch (err) {
-            console.warn(`添加关键词 "${keyword}" 到特性 ${feature.name} 失败:`, err);
-          }
+              Keyword: keyword,
+            }).then(() => {})
+          );
         }
       }
-      if (successCount > 0) {
-        createMessage.success(`已添加 ${successCount} 个关键词到 ${selectedFeatures.value.length} 个特性`);
+      const results = await Promise.allSettled(tasks);
+      const succeeded = results.filter(r => r.status === 'fulfilled').length;
+      const failed = results.filter(r => r.status === 'rejected').length;
+      const featuresSucceeded = new Set<string>();
+      results.forEach((r, i) => {
+        if (r.status === 'fulfilled') featuresSucceeded.add(taskMeta[i].feature.id);
+      });
+      if (succeeded > 0) {
+        createMessage.success(
+          `已将关键词添加到 ${featuresSucceeded.size} 个特性${failed > 0 ? `（${failed} 次失败）` : ''}`
+        );
+      }
+      if (failed > 0) {
+        results.forEach((r, i) => {
+          if (r.status === 'rejected') {
+            console.warn(
+              `添加关键词 "${taskMeta[i].keyword}" 到特性 ${taskMeta[i].feature.name} 失败:`,
+              (r as PromiseRejectedResult).reason
+            );
+          }
+        });
       }
     }
 

@@ -84,14 +84,26 @@
                   </a-tag>
                 </template>
                 <template v-else-if="column.key === 'conditionText'">
-                  <div class="condition-text-wrap">
-                    <ConditionCell
-                      :condition="record.condition"
-                      :field-options="fieldOptions"
-                      :feature-list="featureList"
-                      :feature-category-list="featureCategoryList"
-                      :feature-severity-list="featureSeverityList" />
-                  </div>
+                  <a-tooltip placement="topLeft" :mouse-enter-delay="0.3" overlay-class-name="condition-tooltip-light">
+                    <template #title>
+                      <div class="condition-tooltip-inner">
+                        <ConditionCell
+                          :condition="record.condition"
+                          :field-options="fieldOptions"
+                          :feature-list="featureList"
+                          :feature-category-list="featureCategoryList"
+                          :feature-severity-list="featureSeverityList" />
+                      </div>
+                    </template>
+                    <div class="condition-text-wrap">
+                      <ConditionCell
+                        :condition="record.condition"
+                        :field-options="fieldOptions"
+                        :feature-list="featureList"
+                        :feature-category-list="featureCategoryList"
+                        :feature-severity-list="featureSeverityList" />
+                    </div>
+                  </a-tooltip>
                 </template>
                 <template v-else-if="column.key === 'isStatistic'">
                   <a-tag :color="record.isStatistic ? 'green' : 'gray'">
@@ -545,18 +557,79 @@
         box-shadow: inset 10px 0 8px -8px rgba(0, 0, 0, 0.1);
       }
 
-      // 判定条件列：根据内容自动换行、完整显示
+      // 判定条件列：固定单行高度，悬停 tooltip 展示完整
       .ant-table-cell.condition-text-cell {
         white-space: normal;
         word-break: break-word;
-        vertical-align: top;
+        vertical-align: middle;
+        max-width: 280px;
+        min-height: 40px;
+        height: 40px;
+        padding-top: 8px;
+        padding-bottom: 8px;
       }
     }
   }
 
+  // 表格内条件文本：默认只显示 1 行，悬停通过 tooltip 看完整
   .condition-text-wrap {
     min-width: 0;
-    white-space: normal;
     word-break: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 24px;
+    min-height: 24px;
   }
+
+  // tooltip 内完整条件文本：加宽显示，每个条件组一行，高度加大以减少滚动
+  .condition-tooltip-inner {
+    max-width: 560px;
+    min-width: 380px;
+    max-height: 520px;
+    overflow: auto;
+    word-break: break-word;
+    white-space: normal;
+    padding: 6px 0;
+  }
+
+  .condition-tooltip-inner :deep(.condition-cell) {
+    display: block;
+  }
+
+  .condition-tooltip-inner :deep(.group-block) {
+    display: block;
+    margin-bottom: 10px;
+  }
+
+  .condition-tooltip-inner :deep(.group-block:last-child) {
+    margin-bottom: 0;
+  }
+</style>
+
+<!-- 判定条件 tooltip：浅灰底+边框与页面区分，整块同色避免右侧透明 -->
+<style lang="less">
+.condition-tooltip-light.ant-tooltip .ant-tooltip-content {
+  background: #f5f6f8;
+  border: 1px solid #e4e6eb;
+  border-radius: 8px;
+  box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+}
+.condition-tooltip-light.ant-tooltip .ant-tooltip-inner {
+  background: #f5f6f8;
+  color: rgba(0, 0, 0, 0.88);
+  border: none;
+  border-radius: 6px;
+  min-height: 100%;
+  min-width: 380px; /* 与内部 condition-tooltip-inner 一致，避免外层被限制宽度后右侧露白 */
+  max-height: 520px; /* 与内容区一致，提高后多数情况无需滚动条 */
+}
+.condition-tooltip-light.ant-tooltip .ant-tooltip-inner .condition-tooltip-inner {
+  background: #f5f6f8; /* 内层与外层同色，溢出部分也不透明 */
+}
+.condition-tooltip-light.ant-tooltip .ant-tooltip-arrow-content {
+  background: #f5f6f8;
+  border: 1px solid #e4e6eb;
+}
 </style>

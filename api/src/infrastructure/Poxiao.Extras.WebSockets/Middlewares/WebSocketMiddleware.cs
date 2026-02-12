@@ -52,9 +52,19 @@ public class WebSocketMiddleware
 
         WebSocket? socket = await context.WebSockets.AcceptWebSocketAsync().ConfigureAwait(false);
 
-        var token = new JsonWebToken(context.Request.Path.ToString().TrimStart('/').Replace("Bearer%20", string.Empty).Replace("bearer%20", string.Empty));
+        // 支持 token 从查询字符串 (?token=xxx) 或路径 (/Bearer%20xxx) 获取，便于经反向代理时路径过长或截断
+        var pathToken = context.Request.Path.ToString().TrimStart('/');
+        var queryToken = context.Request.Query["token"].FirstOrDefault()
+            ?? context.Request.Query["access_token"].FirstOrDefault();
+        var rawToken = !string.IsNullOrWhiteSpace(queryToken)
+            ? HttpUtility.UrlDecode(queryToken, Encoding.UTF8)
+            : HttpUtility.UrlDecode(pathToken, Encoding.UTF8);
+        if (!string.IsNullOrWhiteSpace(rawToken) && !rawToken.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            rawToken = "Bearer " + rawToken;
+
+        var token = new JsonWebToken(rawToken?.Replace("Bearer ", string.Empty, StringComparison.OrdinalIgnoreCase) ?? string.Empty);
         var httpContext = (DefaultHttpContext)context;
-        httpContext.Request.Headers["Authorization"] = HttpUtility.UrlDecode(context.Request.Path.ToString().TrimStart('/'), Encoding.UTF8);
+        httpContext.Request.Headers["Authorization"] = rawToken ?? string.Empty;
         UserAgent userAgent = new UserAgent(httpContext);
         if (!JWTEncryption.ValidateJwtBearerToken(httpContext, out token))
         {

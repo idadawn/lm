@@ -43,6 +43,12 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
     private readonly LabOptions _labOptions;
     private readonly ILogger<IntermediateDataFormulaBatchCalculator> _logger;
 
+    /// <summary>
+    /// 创建者用户ID，用于写入计算日志等场景。
+    /// Web API 场景中由框架自动获取（App.User），Worker 场景中由消息携带传入。
+    /// </summary>
+    public string CreatorUserId { get; set; }
+
     public IntermediateDataFormulaBatchCalculator(
         ISqlSugarRepository<IntermediateDataEntity> intermediateRepository,
         ISqlSugarRepository<UnitDefinitionEntity> unitRepository,
@@ -62,6 +68,17 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         _formulaParser = formulaParser;
         _labOptions = labOptions?.Value ?? new LabOptions();
         _logger = logger;
+
+        // Web API 场景：尝试从当前用户上下文获取 CreatorUserId
+        // Worker 场景：App.User 不可用，CreatorUserId 保持 null，由调用方通过属性设置
+        try
+        {
+            CreatorUserId = App.User?.FindFirst(Poxiao.Infrastructure.Const.ClaimConst.CLAINMUSERID)?.Value;
+        }
+        catch
+        {
+            // Worker 进程中 App 未初始化，忽略
+        }
     }
 
     public async Task<FormulaCalculationResult> CalculateByBatchAsync(
@@ -112,6 +129,29 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
     }
 
     /// <summary>
+    /// 执行单条中间数据的判定逻辑（仅判定，不计算），直接使用已加载的实体，避免重复查询。
+    /// </summary>
+    /// <param name="entity">中间数据实体（可为由磁性更新后的当前内存对象，判定结果会写回并持久化）。</param>
+    /// <returns>判定结果（TotalCount=1，SuccessCount/FailedCount 为 0 或 1）。</returns>
+    public async Task<FormulaCalculationResult> JudgeByIdAsync(IntermediateDataEntity entity)
+    {
+        if (entity == null)
+        {
+            return new FormulaCalculationResult { Message = "未传入中间数据实体，未执行判定。" };
+        }
+        _logger.LogInformation(
+            "[JudgeById] 中间数据实体数据: " +
+            "Id={Id}, FurnaceNo={FurnaceNo}, ProductSpec={Spec}, PerfSsPower={SS}, PerfPsLoss={PS}, PerfHc={Hc}, IsScratched={IsScratched}, CalcStatus={CalcStatus}",
+            entity.Id, entity.FurnaceNoFormatted, entity.ProductSpecCode, entity.PerfSsPower, entity.PerfPsLoss, entity.PerfHc, entity.IsScratched, entity.CalcStatus);
+
+        var productSpecId = string.IsNullOrWhiteSpace(entity.ProductSpecId) ? null : entity.ProductSpecId;
+        var formulaSet = await LoadFormulasAsync(productSpecId);
+        var batchId = entity.BatchId ?? string.Empty;
+        return await JudgeInternalAsync(new List<IntermediateDataEntity> { entity }, batchId, formulaSet);
+    }
+
+
+    /// <summary>
     /// 批量执行判定逻辑（仅判定，不计算）。
     /// </summary>
     public async Task<FormulaCalculationResult> JudgeByIdsAsync(List<string> intermediateDataIds)
@@ -136,8 +176,46 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
             .Where(t => ids.Contains(t.Id) && t.DeleteMark == null)
             .ToListAsync();
 
+        _logger.LogInformation(
+            "[JudgeByIds] 查询到 {Found}/{Requested} 条中间数据",
+            entities.Count, ids.Count);
+
+        if (entities.Count > 0)
+        {
+            var sample = entities[0];
+            _logger.LogInformation(
+                "[JudgeByIds] 首条数据: Id={Id}, FurnaceNo={FurnaceNo}, ProductSpec={Spec}, PerfSsPower={SS}, PerfPsLoss={PS}, PerfHc={Hc}, IsScratched={IsScratched}, CalcStatus={CalcStatus}",
+                sample.Id, sample.FurnaceNoFormatted, sample.ProductSpecCode,
+                sample.PerfSsPower, sample.PerfPsLoss, sample.PerfHc, sample.IsScratched, sample.CalcStatus);
+        }
+
         var batchId = entities.Select(t => t.BatchId).FirstOrDefault();
-        return await JudgeInternalAsync(entities, batchId);
+
+        // 按产品规格分组：不同产品规格使用不同的判定等级，需分别加载并判定
+        var bySpec = entities
+            .GroupBy(e => e.ProductSpecId ?? string.Empty)
+            .ToList();
+
+        var result = new FormulaCalculationResult { TotalCount = entities.Count };
+        foreach (var group in bySpec)
+        {
+            var productSpecId = string.IsNullOrEmpty(group.Key) ? null : group.Key;
+            var subset = group.ToList();
+            _logger.LogInformation(
+                "[JudgeByIds] 按产品规格判定: ProductSpecId={ProductSpecId}, 条数={Count}",
+                productSpecId ?? "(空)", subset.Count);
+
+            var formulaSet = await LoadFormulasAsync(productSpecId);
+            var subResult = await JudgeInternalAsync(subset, batchId, formulaSet);
+
+            result.SuccessCount += subResult.SuccessCount;
+            result.FailedCount += subResult.FailedCount;
+            if (subResult.Errors != null && subResult.Errors.Count > 0)
+                result.Errors.AddRange(subResult.Errors);
+        }
+
+        result.Message = $"判定完成，共{result.TotalCount}条，成功{result.SuccessCount}条，失败{result.FailedCount}条。";
+        return result;
     }
 
 
@@ -228,8 +306,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
                     Interlocked.Increment(ref failedCount);
 
                     var detail = JsonConvert.SerializeObject(
-                        entityErrors.Select(err => new
-                        {
+                        entityErrors.Select(err => new {
                             err.ColumnName,
                             err.FormulaType,
                             err.ErrorType,
@@ -277,11 +354,12 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
     }
 
     /// <summary>
-    /// 仅执行判定逻辑（不执行计算公式）。
+    /// 仅执行判定逻辑（不执行计算公式）。<paramref name="formulaSet"/> 由外部按产品规格加载后传入。
     /// </summary>
     private async Task<FormulaCalculationResult> JudgeInternalAsync(
         List<IntermediateDataEntity> entities,
-        string batchId
+        string batchId,
+        FormulaSet formulaSet
     )
     {
         var result = new FormulaCalculationResult { TotalCount = entities?.Count ?? 0 };
@@ -292,7 +370,24 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
             return result;
         }
 
-        var formulaSet = await LoadFormulasAsync();
+        if (formulaSet == null)
+        {
+            result.Message = "未传入公式集。";
+            return result;
+        }
+
+        _logger.LogInformation(
+            "[JudgeInternal] 加载公式完成: 计算公式={CalcCount}, 判定公式={JudgeCount}, 判定等级组数={LevelGroups}, 实体数={EntityCount}",
+            formulaSet.CalcFormulas.Count, formulaSet.JudgeFormulas.Count, formulaSet.Levels.Count, entities.Count);
+
+        foreach (var jf in formulaSet.JudgeFormulas)
+        {
+            var levelCount = formulaSet.Levels.GetValueOrDefault(jf.Id)?.Count ?? 0;
+            _logger.LogInformation(
+                "[JudgeInternal] 判定公式: Id={Id}, Column={Column}, DisplayName={DisplayName}, LevelsCount={LevelsCount}, HasFormula={HasFormula}",
+                jf.Id, jf.ColumnName, jf.DisplayName, levelCount, !string.IsNullOrWhiteSpace(jf.Formula));
+        }
+
         if (formulaSet.JudgeFormulas.Count == 0)
         {
             result.Message = "未找到可用判定公式，未执行判定。";
@@ -329,7 +424,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
             (entity, _) =>
             {
                 var entityErrors = new List<CalcErrorItem>();
-                
+
                 // 1. 初始化上下文
                 var contextData = IntermediateDataFormulaCalcHelper.ExtractContextDataFromEntity(
                     entity
@@ -376,8 +471,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
                     Interlocked.Increment(ref failedCount);
 
                     var detail = JsonConvert.SerializeObject(
-                        entityErrors.Select(err => new
-                        {
+                        entityErrors.Select(err => new {
                             err.ColumnName,
                             err.FormulaType,
                             err.ErrorType,
@@ -385,6 +479,10 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
                             err.ErrorDetail
                         })
                     );
+
+                    _logger.LogWarning(
+                        "[JudgeInternal] 判定失败: Id={Id}, FurnaceNo={FurnaceNo}, Errors={ErrorCount}, Summary={Summary}",
+                        entity.Id, entity.FurnaceNoFormatted, entityErrors.Count, entity.JudgeErrorMessage);
 
                     resultErrors.Add(
                         new FormulaCalculationError
@@ -401,6 +499,10 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
                     entity.JudgeStatus = IntermediateDataCalcStatus.SUCCESS;
                     entity.JudgeErrorMessage = null;
                     Interlocked.Increment(ref successCount);
+
+                    _logger.LogInformation(
+                        "[JudgeInternal] 判定成功: Id={Id}, FurnaceNo={FurnaceNo}, MagneticResult={MR}, ThicknessResult={TR}, LaminationResult={LR}",
+                        entity.Id, entity.FurnaceNoFormatted, entity.MagneticResult, entity.ThicknessResult, entity.LaminationResult);
                 }
 
                 foreach (var err in entityErrors)
@@ -424,39 +526,77 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         return result;
     }
 
-    private async Task<FormulaSet> LoadFormulasAsync()
+    /// <summary>
+    /// 加载公式集。传入 <paramref name="productSpecId"/> 时，判定等级按该产品规格过滤（等级表有 ProductSpecId，不同规格判定条件不同）。
+    /// </summary>
+    private async Task<FormulaSet> LoadFormulasAsync(string? productSpecId = null)
     {
         var all = await _formulaService.GetListAsync();
 
-        var enabled = all
+        _logger.LogInformation(
+            "[LoadFormulas] 从服务获取公式总数={Total}, ProductSpecId={ProductSpecId}",
+            all.Count, productSpecId ?? "(空)");
+
+        // 诊断日志：输出前几条公式的关键字段，帮助排查过滤问题
+        foreach (var f in all.Take(5))
+        {
+            _logger.LogInformation(
+                "[LoadFormulas] 公式样本: Id={Id}, ColumnName={ColumnName}, FormulaType='{FormulaType}', SourceType='{SourceType}', IsEnabled={IsEnabled}, TableName='{TableName}'",
+                f.Id, f.ColumnName, f.FormulaType, f.SourceType, f.IsEnabled, f.TableName);
+        }
+
+        // 计算公式：仅系统默认
+        var calcEnabled = all
             .Where(t => t.IsEnabled)
             .Where(t =>
                 (string.IsNullOrWhiteSpace(t.TableName)
-                || t.TableName.Equals("INTERMEDIATE_DATA", StringComparison.OrdinalIgnoreCase))
-                && t.SourceType == "SYSTEM" // 仅加载系统默认公式，自定义公式不参与计算
+                 || t.TableName.Equals("INTERMEDIATE_DATA", StringComparison.OrdinalIgnoreCase))
+                && string.Equals(t.SourceType, "SYSTEM", StringComparison.OrdinalIgnoreCase)
             )
             .OrderBy(t => t.SortOrder)
             .ThenBy(t => t.CreatorTime)
             .ToList();
 
-        var calcFormulas = enabled
+        // 判定公式：系统+自定义均参与（不同产品规格可能使用自定义判定公式）
+        var judgeEnabled = all
+            .Where(t => t.IsEnabled)
+            .Where(t =>
+                string.IsNullOrWhiteSpace(t.TableName)
+                || t.TableName.Equals("INTERMEDIATE_DATA", StringComparison.OrdinalIgnoreCase))
+            .Where(t => NormalizeFormulaType(t.FormulaType) == FormulaTypeJudge)
+            .OrderBy(t => t.SortOrder)
+            .ThenBy(t => t.CreatorTime)
+            .ToList();
+
+        var calcFormulas = calcEnabled
             .Where(t => NormalizeFormulaType(t.FormulaType) == FormulaTypeCalc)
             .GroupBy(t => t.ColumnName ?? string.Empty, StringComparer.OrdinalIgnoreCase)
             .Select(t => t.First())
             .ToList();
 
-        var judgeFormulas = enabled
-            .Where(t => NormalizeFormulaType(t.FormulaType) == FormulaTypeJudge)
+        var judgeFormulas = judgeEnabled
             .GroupBy(t => t.ColumnName ?? string.Empty, StringComparer.OrdinalIgnoreCase)
             .Select(t => t.First())
             .ToList();
 
-        // 加载所有的判定等级
+        _logger.LogInformation(
+            "[LoadFormulas] 过滤结果: calcEnabled={CalcEnabled}, judgeEnabled={JudgeEnabled}, calcFormulas={CalcFormulas}, judgeFormulas={JudgeFormulas}",
+            calcEnabled.Count, judgeEnabled.Count, calcFormulas.Count, judgeFormulas.Count);
+
+        // 加载判定等级：按产品规格过滤（等级表 F_PRODUCT_SPEC_ID，为空表示通用）
         var judgeFormulaIds = judgeFormulas.Select(t => t.Id).Distinct().ToList();
-        var levels = await _levelRepository
+        var levelQuery = _levelRepository
             .AsQueryable()
-            .Where(t => judgeFormulaIds.Contains(t.FormulaId) && t.DeleteMark == null)
+            .Where(t => judgeFormulaIds.Contains(t.FormulaId) && t.DeleteMark == null);
+
+        if (!string.IsNullOrEmpty(productSpecId))
+        {
+            levelQuery = levelQuery.Where(t => t.ProductSpecId == productSpecId || t.ProductSpecId == null);
+        }
+
+        var levels = await levelQuery
             .OrderBy(t => t.Priority)
+            .OrderBy(t => t.CreatorTime)
             .ToListAsync();
 
         var levelMap = levels
@@ -747,7 +887,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
                         var ruleGroup = JObject.Parse(level.Condition);
                         var matched = EvaluateRuleGroup(ruleGroup, entity, contextData);
                         _logger.LogInformation($"[Judge] Level '{level.Name}' (Priority {level.Priority}): Match = {matched}");
-                        
+
                         if (matched)
                         {
                             judgeResult = new JudgeResult { ResultValue = level.Name, HasError = false };
@@ -789,9 +929,9 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         {
             // 没有匹配到任何等级，且没有默认等级，标记为判定失败
             _logger.LogWarning($"[Judge] FAILED: No level matched for Column: {formula.ColumnName}, Entity ID: {entity.Id}");
-            judgeResult = new JudgeResult 
-            { 
-                ResultValue = null, 
+            judgeResult = new JudgeResult
+            {
+                ResultValue = null,
                 HasError = true,
                 ErrorMessage = $"[{formula.DisplayName ?? formula.ColumnName}] 无匹配的判定等级",
                 ErrorDetail = "所有判定条件均不满足，且未设置默认等级。"
@@ -980,7 +1120,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
 
                 var satisfied = EvaluateCondition(condition, entity, contextData);
                 // 不再在这里记录，EvaluateCondition 内部会记录详细信息
-                
+
                 if (logic == "OR")
                 {
                     if (satisfied)
@@ -1013,7 +1153,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
 
                 var satisfied = EvaluateRuleGroup(subGroup, entity, contextData);
                 // 子组的日志已在递归调用中记录
-                
+
                 if (logic == "OR")
                 {
                     if (satisfied)
@@ -1242,11 +1382,11 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         {
             // 移除 $ 前缀进行查找
             var lookupId = formulaId.TrimStart('$');
-            
+
             // 尝试从公式服务获取公式定义
             // 公式的 ColumnName 应该与 lookupId 对应（如 VAR_1769806633591）
             var formula = _formulaService.GetListAsync().Result
-                .FirstOrDefault(f => 
+                .FirstOrDefault(f =>
                     string.Equals(f.ColumnName, lookupId, StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(f.ColumnName, formulaId, StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(f.Id, lookupId.Replace("VAR_", ""), StringComparison.OrdinalIgnoreCase)
@@ -1263,7 +1403,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
             // 构建计算上下文（entity 的字段 + 已计算的 contextData）
             object calcContext = contextData;
             var computed = _formulaParser.Calculate(formula.Formula, calcContext);
-            
+
             _logger.LogInformation($"[ResolveCustomFormula] '{formulaId}' = {formula.Formula} => {computed}");
             return computed;
         }
@@ -1791,6 +1931,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
             {
                 var log = new IntermediateDataFormulaCalcLogEntity
                 {
+                    Id = Guid.NewGuid().ToString(),
                     BatchId = err.BatchId,
                     IntermediateDataId = err.IntermediateDataId,
                     ColumnName = err.ColumnName,
@@ -1798,9 +1939,11 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
                     FormulaType = err.FormulaType,
                     ErrorType = err.ErrorType,
                     ErrorMessage = err.ErrorMessage,
-                    ErrorDetail = err.ErrorDetail
+                    ErrorDetail = err.ErrorDetail,
+                    CreatorTime = DateTime.Now,
+                    CreatorUserId = CreatorUserId,
+                    EnabledMark = 1
                 };
-                log.Creator();
                 return log;
             })
             .ToList();

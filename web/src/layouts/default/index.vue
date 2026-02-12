@@ -61,7 +61,7 @@
       const { initWebSocket } = useWebSocket();
 
       onMounted(() => {
-        // initWebSocket();
+        initWebSocket();
       });
 
       return {

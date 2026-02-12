@@ -12,6 +12,7 @@ using Poxiao.Logging;
 using Poxiao.Infrastructure.Core.Manager.Files;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Config;
+using Poxiao.Lab.Entity.Dto.IntermediateData;
 using Poxiao.Lab.Entity.Dto.MagneticData;
 using Poxiao.Lab.Entity.Enum;
 using Poxiao.Lab.Helpers;
@@ -40,6 +41,7 @@ public class MagneticDataImportSessionService
     private readonly IFileService _fileService;
     private readonly IUserManager _userManager;
     private readonly IFileManager _fileManager;
+    private readonly CalcTaskPublisher _calcTaskPublisher;
 
     public MagneticDataImportSessionService(
         ISqlSugarRepository<MagneticDataImportSessionEntity> sessionRepository,
@@ -48,7 +50,8 @@ public class MagneticDataImportSessionService
         ISqlSugarRepository<ExcelImportTemplateEntity> templateRepository,
         IFileService fileService,
         IUserManager userManager,
-        IFileManager fileManager
+        IFileManager fileManager,
+        CalcTaskPublisher calcTaskPublisher
     )
     {
         _sessionRepository = sessionRepository;
@@ -58,19 +61,35 @@ public class MagneticDataImportSessionService
         _fileService = fileService;
         _userManager = userManager;
         _fileManager = fileManager;
+        _calcTaskPublisher = calcTaskPublisher;
     }
 
     /// <inheritdoc />
     [HttpPost("create")]
     public async Task<string> Create([FromBody] MagneticDataImportSessionInput input)
     {
+        if (input == null)
+            throw Oops.Oh("请求体不能为空");
+        if (string.IsNullOrWhiteSpace(input.FileName))
+            throw Oops.Oh("文件名不能为空");
+
+        string? creatorUserId = null;
+        try
+        {
+            creatorUserId = _userManager.UserId;
+        }
+        catch
+        {
+            // 未登录或上下文无用户时允许为空，表字段可空
+        }
+
         var session = new MagneticDataImportSessionEntity
         {
             Id = Guid.NewGuid().ToString(),
-            FileName = input.FileName,
+            FileName = input.FileName.Trim(),
             Status = "pending",
             CurrentStep = 0,
-            CreatorUserId = _userManager.UserId,
+            CreatorUserId = creatorUserId,
             CreatorTime = DateTime.Now,
         };
 
@@ -80,14 +99,17 @@ public class MagneticDataImportSessionService
             try
             {
                 var fileBytes = Convert.FromBase64String(input.FileData);
-                var saveFileName = $"{DateTime.Now:yyyyMMddHHmmss}_{input.FileName}";
+                var saveFileName = $"{DateTime.Now:yyyyMMddHHmmss}_{input.FileName.Trim()}";
                 var basePath = _fileService.GetPathByType("MagneticData");
                 if (string.IsNullOrEmpty(basePath))
                     basePath = _fileService.GetPathByType("");
 
-                using var stream = new MemoryStream(fileBytes);
-                await _fileManager.UploadFileByType(stream, basePath, saveFileName);
-                session.SourceFileId = $"{basePath}/{saveFileName}";
+                if (!string.IsNullOrEmpty(basePath))
+                {
+                    using var stream = new MemoryStream(fileBytes);
+                    await _fileManager.UploadFileByType(stream, basePath, saveFileName);
+                    session.SourceFileId = $"{basePath}/{saveFileName}";
+                }
             }
             catch (Exception ex)
             {
@@ -96,8 +118,16 @@ public class MagneticDataImportSessionService
             }
         }
 
-        await _sessionRepository.InsertAsync(session);
-        return session.Id;
+        try
+        {
+            await _sessionRepository.InsertAsync(session);
+            return session.Id;
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"[Create] Insert session failed: {ex.Message}");
+            throw Oops.Oh("创建导入会话失败：" + ex.Message);
+        }
     }
 
     /// <inheritdoc />
@@ -344,97 +374,39 @@ public class MagneticDataImportSessionService
             rawDataEntities.Add(rawDataEntity);
         }
 
-        // 3. 按炉号分组（不区分是否刻痕），每个炉号只选择一条最优数据
+        // 3. 按炉号分组，构建 MQ 消息载荷（不再逐条查询中间数据表，由 Worker 端通过炉号查找）
         var dataByFurnaceNo = validData.GroupBy(t => t.FurnaceNo).ToList();
-
-        // 准备需要更新的中间数据实体列表
-        var intermediateDataToUpdate =
-            new List<(IntermediateDataEntity Entity, string OriginalFurnaceNo)>();
+        var magneticJudgeItems = new List<MagneticDataPayload>();
 
         foreach (var group in dataByFurnaceNo)
         {
             var items = group.ToList();
+            MagneticDataImportItem bestItem = items.Count > 1 ? SelectBestData(items) : items[0];
 
-            // 从该炉号的所有数据（包括带K和不带K）中选择一条最优数据
-            // 取值规则：值最小为最优数据，优先级分别是H(Ps铁损)、I(Ss激磁功率)、F(Hc)
-            // 如果以上数据还无法确定一条数据，以最后的检测时间作为最好的数据
-            MagneticDataImportItem bestItem;
-            if (items.Count > 1)
+            // 构建磁性数据载荷（包含炉号，Worker 端用炉号查找中间数据记录）
+            var payload = new MagneticDataPayload
             {
-                bestItem = SelectBestData(items);
-            }
-            else
-            {
-                bestItem = items[0];
-            }
+                FurnaceNo = bestItem.FurnaceNo,
+                OriginalFurnaceNo = bestItem.OriginalFurnaceNo,
+                IsScratched = bestItem.IsScratched,
+                SsPower = bestItem.SsPower,
+                PsLoss = bestItem.PsLoss,
+                Hc = bestItem.Hc,
+                DetectionTime = bestItem.DetectionTime,
+                EditorId = _userManager.UserId,
+                EditorName = _userManager.RealName,
+            };
 
-            // 查找中间数据表中对应的记录
-            var magneticFurnaceNo = bestItem.FurnaceNo;
-
-            // 构建查询条件：使用 FurnaceNoFormatted 匹配
-            var query = _intermediateDataRepository
-                .AsQueryable()
-                .Where(t => t.DeleteMark == null)
-                .Where(t =>
-                    t.FurnaceNoFormatted != null && t.FurnaceNoFormatted.Equals(magneticFurnaceNo)
-                );
-
-            var intermediateData = await query.FirstAsync();
-
-            if (intermediateData == null)
-            {
-                // 记录错误，但不立即抛出，等事务中统一处理
-                continue;
-            }
-
-            // 根据是否带K，更新不同的字段
-            if (bestItem.IsScratched)
-            {
-                // 带K：更新刻痕后性能字段
-                intermediateData.PerfAfterSsPower = bestItem.SsPower;
-                intermediateData.PerfAfterPsLoss = bestItem.PsLoss;
-                intermediateData.PerfAfterHc = bestItem.Hc;
-                // 设置是否刻痕标识为1（是）
-                intermediateData.IsScratched = 1;
-            }
-            else
-            {
-                // 不带K：更新正常性能字段
-                intermediateData.PerfSsPower = bestItem.SsPower;
-                intermediateData.PerfPsLoss = bestItem.PsLoss;
-                intermediateData.PerfHc = bestItem.Hc;
-                // 设置是否刻痕标识为0（否）
-                intermediateData.IsScratched = 0;
-            }
-
-            // 更新检测时间（如果有）
-            if (bestItem.DetectionTime.HasValue)
-            {
-                // 使用检测时间更新中间数据表的检测日期
-                intermediateData.DetectionDate = bestItem.DetectionTime.Value.Date;
-            }
-
-            // 更新编辑信息
-            intermediateData.PerfEditorId = _userManager.UserId;
-            intermediateData.PerfEditorName = _userManager.RealName;
-            intermediateData.PerfEditTime = DateTime.Now;
-            intermediateData.LastModifyUserId = _userManager.UserId;
-            intermediateData.LastModifyTime = DateTime.Now;
-
-            intermediateDataToUpdate.Add((intermediateData, bestItem.OriginalFurnaceNo));
+            magneticJudgeItems.Add(payload);
         }
 
-        // 4. 使用事务确保原始数据和中间数据的导入操作原子性（同时成功或同时失败）
+        // 4. 事务：只写入磁性原始数据（不更新中间表）
         var db = _sessionRepository.AsSugarClient();
-        int updatedRows = 0;
-        int skippedRows = 0;
-        var errors = new List<string>();
 
         try
         {
             await db.Ado.BeginTranAsync();
 
-            // 4.1 将所有原始数据写入磁性原始数据表（包括有效和无效数据）
             if (rawDataEntities.Count > 0)
             {
                 // 先删除已存在的同名炉号数据，防止重复堆积
@@ -444,7 +416,6 @@ public class MagneticDataImportSessionService
                     .ToList();
                 if (furnaceNos.Count > 0)
                 {
-                    // 分批删除防止参数过多
                     var deleteBatches = furnaceNos.Chunk(1000);
                     foreach (var batch in deleteBatches)
                     {
@@ -465,50 +436,6 @@ public class MagneticDataImportSessionService
                 }
             }
 
-            // 4.2 更新中间数据表
-            foreach (var (entity, originalFurnaceNo) in intermediateDataToUpdate)
-            {
-                try
-                {
-                    await _intermediateDataRepository.UpdateAsync(entity);
-                    updatedRows++;
-                }
-                catch (Exception ex)
-                {
-                    errors.Add($"更新炉号 {originalFurnaceNo} 失败: {ex.Message}");
-                    skippedRows++;
-                }
-            }
-
-            // 检查是否有未找到的记录
-            var foundFurnaceNos = intermediateDataToUpdate
-                .Select(x => x.OriginalFurnaceNo)
-                .ToHashSet();
-            foreach (var group in dataByFurnaceNo)
-            {
-                var items = group.ToList();
-                MagneticDataImportItem bestItem =
-                    items.Count > 1 ? SelectBestData(items) : items[0];
-
-                if (!foundFurnaceNos.Contains(bestItem.OriginalFurnaceNo))
-                {
-                    errors.Add($"未找到炉号 {bestItem.OriginalFurnaceNo} 对应的中间数据记录");
-                    skippedRows++;
-                }
-            }
-
-            // 如果所有更新都失败，回滚事务
-            if (updatedRows == 0 && intermediateDataToUpdate.Count > 0)
-            {
-                await db.Ado.RollbackTranAsync();
-                var errorSummary =
-                    errors.Count <= 10
-                        ? string.Join("; ", errors)
-                        : string.Join("; ", errors.Take(10)) + $"... (共 {errors.Count} 条错误)";
-                throw Oops.Oh($"导入失败，数据已回滚: {errorSummary}");
-            }
-
-            // 提交事务
             await db.Ado.CommitTranAsync();
         }
         catch (Exception ex)
@@ -517,34 +444,22 @@ public class MagneticDataImportSessionService
             throw Oops.Oh($"导入失败，数据已回滚: {ex.Message}");
         }
 
-        // 5. 更新会话状态（在事务外，确保状态正确反映）
-        session.Status = errors.Count > 0 && updatedRows == 0 ? "failed" : "completed";
+        // 5. 更新会话状态
+        session.Status = magneticJudgeItems.Count == 0 ? "failed" : "completed";
         session.CurrentStep = 2;
         await _sessionRepository.UpdateAsync(session);
 
-        // 如果有错误但至少更新了一些数据，返回警告而不是错误
-        if (errors.Count > 0)
+        // 6. 发布 per-item 磁性更新+判定任务到 MQ（Worker 端通过炉号查找中间数据、更新磁性字段、执行判定）
+        if (magneticJudgeItems.Count > 0)
         {
-            if (updatedRows > 0)
-            {
-                // 部分成功，返回警告信息
-                var errorSummary =
-                    errors.Count <= 10
-                        ? string.Join("; ", errors)
-                        : string.Join("; ", errors.Take(10)) + $"... (共 {errors.Count} 条错误)";
-                throw Oops.Oh(
-                    $"导入完成，成功更新 {updatedRows} 条数据，但有 {errors.Count} 条错误: {errorSummary}"
-                );
-            }
-            else
-            {
-                // 完全失败
-                var errorSummary =
-                    errors.Count <= 10
-                        ? string.Join("; ", errors)
-                        : string.Join("; ", errors.Take(10)) + $"... (共 {errors.Count} 条错误)";
-                throw Oops.Oh($"导入失败: {errorSummary}");
-            }
+            var batchId = Guid.NewGuid().ToString();
+            var tenantId = _userManager?.TenantId ?? "global";
+            var userId = _userManager?.UserId ?? string.Empty;
+            _calcTaskPublisher.PublishMagneticJudgeItems(batchId, magneticJudgeItems, tenantId, userId);
+        }
+        else
+        {
+            throw Oops.Oh("没有有效的磁性数据可以处理");
         }
     }
 

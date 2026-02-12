@@ -1,5 +1,3 @@
-import { ref, unref } from 'vue';
-import { useWebSocket as useSocket } from '@vueuse/core';
 import { useMessage } from '/@/hooks/web/useMessage';
 import { useUserStore } from '/@/store/modules/user';
 import { useGlobSetting } from '/@/hooks/setting';
@@ -10,134 +8,153 @@ const userStore = useUserStore();
 const { createMessage } = useMessage();
 const globSetting = useGlobSetting();
 
-const url = isDevMode()
-  ? globSetting.webSocketUrl + '/api/message/websocket/'
-  : globSetting.webSocketUrl
-  ? globSetting.webSocketUrl + '/websocket/'
-  : window.location.origin + '/websocket/';
-const webSocketUrl = url.replace('https://', 'wss://').replace('http://', 'ws://');
+// 开发环境：走 Vite 代理 (/dev → .env.development 中 VITE_PROXY 配置的地址，通常为 127.0.0.1:9530)
+// 生产环境：通过 webSocketUrl 或 origin 直连
+function getWebSocketBaseUrl() {
+  const url = isDevMode()
+    ? window.location.origin + '/dev/api/message/websocket'
+    : globSetting.webSocketUrl
+    ? globSetting.webSocketUrl + '/api/message/websocket'
+    : window.location.origin + '/api/message/websocket';
+  return url.replace('https://', 'wss://').replace('http://', 'ws://');
+}
 
-let result: any;
-let ws: any;
-const listeners = new Map();
+const reconnectRetries = isDevMode() ? 3 : 10;
+const reconnectDelay = isDevMode() ? 10000 : 5000;
+const heartbeatInterval = 50000;
 
+const listeners = new Map<((data: object) => void), null>();
+let ws: WebSocket | null = null;
+let currentToken = '';
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+let retryCount = 0;
+
+function buildWsUrl(token: string) {
+  const base = getWebSocketBaseUrl();
+  const tokenParam = typeof token === 'string' && token ? encodeURIComponent(token) : '';
+  return tokenParam ? `${base}?token=${tokenParam}` : base;
+}
+
+function clearTimers() {
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+  if (heartbeatTimer) {
+    clearInterval(heartbeatTimer);
+    heartbeatTimer = null;
+  }
+}
+
+function sendHeartbeat() {
+  if (ws?.readyState === WebSocket.OPEN) {
+    try {
+      ws.send(JSON.stringify({ method: 'heartCheck', token: currentToken }));
+    } catch (_) {}
+  }
+}
+
+function handleOpen() {
+  retryCount = 0;
+  clearTimers();
+  try {
+    ws?.send(JSON.stringify({ method: 'OnConnection', token: currentToken, mobileDevice: false }));
+  } catch (_) {}
+  heartbeatTimer = setInterval(sendHeartbeat, heartbeatInterval);
+}
+
+function handleMessage(event: MessageEvent) {
+  if (!event.data) return;
+  try {
+    const data = JSON.parse(event.data as string);
+    for (const callback of listeners.keys()) {
+      try {
+        callback(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    switch (data.method) {
+      case 'refresh':
+        location.reload();
+        break;
+      case 'closeSocket':
+        if (ws) {
+          ws.close();
+          ws = null;
+        }
+        clearTimers();
+        break;
+      case 'logout':
+        if (data.token && data.token !== currentToken) return location.reload();
+        if (ws) {
+          ws.close();
+          ws = null;
+        }
+        clearTimers();
+        createMessage.error(data.msg || '登录过期,请重新登录').then(() => {
+          userStore.resetToken();
+        });
+        break;
+      default:
+        break;
+    }
+  } catch (err) {
+    console.error('[WebSocket] data解析失败：', err);
+  }
+}
+
+function connect() {
+  const url = buildWsUrl(currentToken);
+  try {
+    const socket = new WebSocket(url);
+    ws = socket;
+    socket.onopen = handleOpen;
+    socket.onerror = () => {};
+    socket.onclose = () => {
+      clearTimers();
+      if (retryCount < reconnectRetries) {
+        retryCount += 1;
+        reconnectTimer = setTimeout(connect, reconnectDelay);
+      } else {
+        createMessage.error('WebSocket连接失败，请联系管理员');
+      }
+    };
+    socket.onmessage = handleMessage;
+  } catch (_) {
+    if (retryCount < reconnectRetries) {
+      retryCount += 1;
+      reconnectTimer = setTimeout(connect, reconnectDelay);
+    } else {
+      createMessage.error('WebSocket连接失败，请联系管理员');
+    }
+  }
+}
+
+/**
+ * 消息 WebSocket（原生实现，避免 VueUse 与 Ant Design Vue eagerComputed 的响应式循环导致栈溢出）
+ */
 export function useWebSocket() {
-  const token = getToken();
-  const heartbeatMsg = {
-    method: 'heartCheck',
-    token,
-  };
-  const server = ref(webSocketUrl + encodeURIComponent(token as string));
-  /** 初始化WebSocket */
+  currentToken = getToken();
+
   function initWebSocket() {
+    clearTimers();
     if (ws) {
       ws.close();
       ws = null;
     }
-    result = useSocket(server.value, {
-      autoReconnect: {
-        retries: 10,
-        delay: 5000,
-        onFailed() {
-          createMessage.error('WebSocket连接失败，请联系管理员');
-        },
-      },
-      // 心跳检测
-      heartbeat: {
-        message: JSON.stringify(heartbeatMsg),
-        interval: 50000,
-      },
-    });
-
-    if (result) {
-      ws = unref(result.ws);
-      ws.onopen = onOpen;
-      if (ws != null) {
-        ws.onerror = onError;
-        ws.onmessage = onMessage;
-      }
-    }
-    function onOpen() {
-      const ws = unref(result.ws);
-      const onConnection = {
-        method: 'OnConnection',
-        token: token,
-        mobileDevice: false,
-      };
-      ws.send(JSON.stringify(onConnection));
-    }
-
-    function onError(e) {
-    }
-
-    function onMessage(res) {
-      if (res.data) {
-        try {
-          const data = JSON.parse(res.data);
-          for (const callback of listeners.keys()) {
-            try {
-              callback(data);
-            } catch (err) {
-              console.error(err);
-            }
-          }
-          // initMessage: //初始化
-          // sendMessage: //发送消息
-          // receiveMessage: //接收消息
-          // messageList: //消息列表
-          // messagePush: //消息推送
-          switch (data.method) {
-            //刷新页面
-            case 'refresh':
-              location.reload();
-              break;
-            //断开websocket连接
-            case 'closeSocket':
-              if (ws) {
-                ws.close();
-                ws = null;
-              }
-              break;
-            //用户过期
-            case 'logout':
-              if (data.token && data.token !== token) return location.reload();
-              if (ws) {
-                ws.close();
-                ws = null;
-              }
-              createMessage.error(data.msg || '登录过期,请重新登录').then(() => {
-                userStore.resetToken();
-              });
-              break;
-            default:
-              break;
-          }
-        } catch (err) {
-          console.error('[WebSocket] data解析失败：', err);
-        }
-      }
-    }
+    retryCount = 0;
+    connect();
   }
-  /**
-   * 添加 WebSocket 消息监听
-   * @param callback
-   */
-  function onWebSocket(callback: (data: object) => any) {
-    if (!listeners.has(callback)) {
-      if (typeof callback === 'function') {
-        listeners.set(callback, null);
-      } else {
-        console.debug('[WebSocket] 添加 WebSocket 消息监听失败：传入的参数不是一个方法');
-      }
+
+  function onWebSocket(callback: (data: object) => void) {
+    if (typeof callback === 'function' && !listeners.has(callback)) {
+      listeners.set(callback, null);
     }
   }
 
-  /**
-   * 解除 WebSocket 消息监听
-   *
-   * @param callback
-   */
-  function offWebSocket(callback: (data: object) => any) {
+  function offWebSocket(callback: (data: object) => void) {
     listeners.delete(callback);
   }
 
@@ -148,13 +165,13 @@ export function useWebSocket() {
   function sendWsMsg(msg: string) {
     try {
       const msgObj = JSON.parse(msg);
-      msgObj.token = token;
-      ws.send(JSON.stringify(msgObj));
+      msgObj.token = currentToken;
+      ws?.send(JSON.stringify(msgObj));
     } catch (_) {}
-    return;
   }
 
   function closeWebSocket() {
+    clearTimers();
     if (ws) {
       ws.close();
       ws = null;

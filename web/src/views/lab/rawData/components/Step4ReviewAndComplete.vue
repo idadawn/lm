@@ -38,7 +38,7 @@
 
       <!-- 成功状态 -->
       <a-result v-else-if="importSuccess" status="success" title="数据导入成功"
-        :sub-title="`成功导入 ${stats.validDataRows} 条数据`">
+        :sub-title="`成功导入 ${stats.validDataRows} 条数据，后台正在进行公式计算，完成后将通知您`">
         <template #extra>
           <div class="result-stats">
             <a-row :gutter="24" style="margin-bottom: 24px">
@@ -422,7 +422,7 @@ async function handleStartImport() {
     await new Promise(resolve => setTimeout(resolve, 500));
 
     importSuccess.value = true;
-    message.success('数据导入成功');
+    message.success('数据导入成功，后台正在计算中，完成后将通知您');
     // 导入成功后自动通知父组件关闭弹窗
     emit('complete');
   } catch (error: any) {

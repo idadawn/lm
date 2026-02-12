@@ -362,7 +362,7 @@ async function handleStartImport() {
   importSuccess.value = false;
 
   try {
-    // 执行导入
+    // 执行导入（API 写入原始数据后，更新和判定由后台 Worker 处理）
     await completeMagneticImport(props.importSessionId);
 
     // 重新加载核对数据以获取更新后的统计信息
@@ -370,12 +370,19 @@ async function handleStartImport() {
 
     // 标记为成功
     importSuccess.value = true;
-    message.success('数据导入成功');
+    message.success('磁性数据已写入，更新和判定正在后台处理');
     emit('complete');
   } catch (error: any) {
     const errorMsg = error.message || error.msg || '导入失败';
-    importError.value = errorMsg;
-    message.error(errorMsg);
+    // 部分成功时（包含警告信息），仍然标记为成功
+    if (errorMsg.includes('正在后台处理')) {
+      importSuccess.value = true;
+      message.warning(errorMsg);
+      emit('complete');
+    } else {
+      importError.value = errorMsg;
+      message.error(errorMsg);
+    }
   } finally {
     importing.value = false;
   }

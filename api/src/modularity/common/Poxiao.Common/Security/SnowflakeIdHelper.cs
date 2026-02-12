@@ -48,8 +48,22 @@ public class SnowflakeIdHelper
 
     /// <summary>
     /// 缓存配置.
+    /// 使用 Lazy 延迟初始化，避免在 Worker 进程等非 Web Host 环境中因 App.Configuration 未初始化而抛出 NullReferenceException。
     /// </summary>
-    private static CacheOptions _cacheOptions = App.GetConfig<CacheOptions>("Cache", true);
+    private static readonly Lazy<CacheOptions> _cacheOptionsLazy = new(() =>
+    {
+        try
+        {
+            return App.GetConfig<CacheOptions>("Cache", true);
+        }
+        catch
+        {
+            // Worker 进程等场景中 App.Configuration 可能未初始化，返回 null 走降级逻辑
+            return null;
+        }
+    });
+
+    private static CacheOptions _cacheOptions => _cacheOptionsLazy.Value;
 
     /// <summary>
     /// 生成ID.
@@ -60,22 +74,27 @@ public class SnowflakeIdHelper
         // 这个if判断在高并发的情况下可能会有问题
         if (YitIdHelper.IdGenInstance == null)
         {
-            UnRegister();
-
             // 如果不用自动注册WorkerId的话，直接传一个数值就可以了
             ushort workerId = 1;
-            try
+
+            // 仅在有缓存配置时（Web API 场景）才尝试通过 Redis 注册分布式 WorkerId
+            // Worker 进程等非 Web Host 环境中直接使用默认 WorkerId=1
+            if (_cacheOptions != null)
             {
-                workerId = RegisterOne(
-                    _cacheOptions.ip,
-                    _cacheOptions.port,
-                    _cacheOptions.password,
-                    63
-                );
-            }
-            catch (Exception ex)
-            {
-                Log.Error("RegisterOne failed", ex);
+                try
+                {
+                    UnRegister();
+                    workerId = RegisterOne(
+                        _cacheOptions.ip,
+                        _cacheOptions.port,
+                        _cacheOptions.password,
+                        63
+                    );
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("RegisterOne failed", ex);
+                }
             }
 
             // 创建 IdGeneratorOptions 对象，可在构造函数中输入 WorkerId：

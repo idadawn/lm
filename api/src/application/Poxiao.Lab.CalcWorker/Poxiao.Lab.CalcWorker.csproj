@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <RootNamespace>Poxiao.Lab.CalcWorker</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="RabbitMQ.Client" Version="6.8.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0-preview.1.25080.5" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 引用 Lab 模块（包含计算器逻辑） -->
+    <ProjectReference Include="..\..\modularity\lab\Poxiao.Lab\Poxiao.Lab.csproj" />
+    <!-- 引用 SqlSugar 数据库访问框架 -->
+    <ProjectReference Include="..\..\..\framework\Poxiao.Extras.DatabaseAccessor.SqlSugar\Poxiao.Extras.DatabaseAccessor.SqlSugar.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Configurations\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="StyleCop.Analyzers" Version="1.1.118" />
+  </ItemGroup>
+
+</Project>

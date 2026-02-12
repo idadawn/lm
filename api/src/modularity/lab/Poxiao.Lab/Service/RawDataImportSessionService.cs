@@ -1,4 +1,4 @@
-﻿using Mapster;
+using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using MiniExcelLibs;
 using Newtonsoft.Json;
@@ -61,6 +61,7 @@ public class RawDataImportSessionService
     private readonly ISqlSugarRepository<ExcelImportTemplateEntity> _excelTemplateRepository;
     private readonly ICacheManager _cacheManager;
     private readonly IEventPublisher _eventPublisher;
+    private readonly CalcTaskPublisher _calcTaskPublisher;
     private readonly IDictionaryDataService _dictionaryDataService;
     private readonly IDictionaryTypeService _dictionaryTypeService;
     private readonly ISqlSugarRepository<DictionaryTypeEntity> _dictionaryTypeRepository;
@@ -82,6 +83,7 @@ public class RawDataImportSessionService
         ISqlSugarRepository<ExcelImportTemplateEntity> excelTemplateRepository,
         ICacheManager cacheManager,
         IEventPublisher eventPublisher,
+        CalcTaskPublisher calcTaskPublisher,
         ISqlSugarClient context,
         IProductSpecService productSpecService,
         IAppearanceFeatureCategoryService featureCategoryService,
@@ -109,6 +111,7 @@ public class RawDataImportSessionService
         _excelTemplateRepository = excelTemplateRepository;
         _cacheManager = cacheManager;
         _eventPublisher = eventPublisher;
+        _calcTaskPublisher = calcTaskPublisher;
         _dictionaryDataService = dictionaryDataService;
         _dictionaryTypeService = dictionaryTypeService;
         _dictionaryTypeRepository = dictionaryTypeRepository;
@@ -1456,9 +1459,7 @@ public class RawDataImportSessionService
             foreach (var mapping in templateConfig.FieldMappings)
             {
                 if (string.IsNullOrWhiteSpace(mapping.Field))
-                {
                     continue;
-                }
 
                 unitPrecisions[mapping.Field] = new UnitPrecisionInfo
                 {
@@ -1468,7 +1469,7 @@ public class RawDataImportSessionService
             }
         }
 
-        // 从JSON文件读取数据
+        // 1. 从JSON文件读取数据
         var allData = await LoadParsedDataFromFile(sessionId);
         var validData = allData.Where(t => t.IsValidData == 1).ToList();
 
@@ -1491,7 +1492,7 @@ public class RawDataImportSessionService
             }
         }
 
-        // 2. 生成中间数据（在事务之前准备好所有数据）
+        // 2. 准备骨架中间数据（仅基础字段复制，不做任何计算）
         var specsList = await _productSpecService.GetList(new ProductSpecListQuery());
         var specs = specsList.Cast<ProductSpecEntity>().ToList();
         var batchId = Guid.NewGuid().ToString();
@@ -1516,64 +1517,46 @@ public class RawDataImportSessionService
             decimal density = 7.25m;
 
             var lengthAttr = attributes.FirstOrDefault(a => a.AttributeKey == "length");
-            if (
-                lengthAttr != null
+            if (lengthAttr != null
                 && !string.IsNullOrEmpty(lengthAttr.AttributeValue)
-                && decimal.TryParse(lengthAttr.AttributeValue, out var l)
-            )
+                && decimal.TryParse(lengthAttr.AttributeValue, out var l))
             {
                 length = l;
             }
 
             var layersAttr = attributes.FirstOrDefault(a => a.AttributeKey == "layers");
-            if (
-                layersAttr != null
+            if (layersAttr != null
                 && !string.IsNullOrEmpty(layersAttr.AttributeValue)
-                && int.TryParse(layersAttr.AttributeValue, out var lay)
-            )
+                && int.TryParse(layersAttr.AttributeValue, out var lay))
             {
                 layers = lay;
             }
 
             var densityAttr = attributes.FirstOrDefault(a => a.AttributeKey == "density");
-            if (
-                densityAttr != null
+            if (densityAttr != null
                 && !string.IsNullOrEmpty(densityAttr.AttributeValue)
-                && decimal.TryParse(densityAttr.AttributeValue, out var d)
-            )
+                && decimal.TryParse(densityAttr.AttributeValue, out var d))
             {
                 density = d;
             }
 
-            var detectionColumns = _intermediateDataService.ParseDetectionColumns(
-                spec.DetectionColumns
-            );
-
             foreach (var raw in group)
             {
-                var intermediate = await _intermediateDataService.GenerateIntermediateDataAsync(
-                    raw,
-                    spec,
-                    detectionColumns,
-                    layers,
-                    length,
-                    density,
-                    null,
-                    batchId
-                );
-                intermediate.CreatorUserId = _userManager.UserId;
-                intermediateEntities.Add(intermediate);
+                var skeleton = IntermediateDataGenerator.CreateSkeleton(
+                    raw, spec, layers, length, density, null, batchId);
+                skeleton.CreatorUserId = _userManager.UserId;
+                intermediateEntities.Add(skeleton);
             }
         }
 
-        // 3. 使用事务确保原始数据和中间数据的导入操作原子性（同时成功或同时失败）
+        // 3. 事务：原始数据 + 骨架中间数据 同时写入，保证一致性
         try
         {
             _db.BeginTran();
-            // 3.1 将有效数据写入原始数据表
+
+            // 3.1 写入原始数据
             if (validData.Count > 0)
             {
-                // 分批插入防止SQL太长
                 var batches = validData.Chunk(1000);
                 foreach (var batch in batches)
                 {
@@ -1583,14 +1566,20 @@ public class RawDataImportSessionService
                         .ExecuteCommandAsync();
                 }
             }
-            // 3.2 将中间数据写入中间数据表
+
+            // 3.2 写入骨架中间数据（CalcStatus=PENDING，计算字段为空）
             if (intermediateEntities.Count > 0)
             {
-                await _sessionRepository
-                    .AsSugarClient()
-                    .Insertable(intermediateEntities)
-                    .ExecuteCommandAsync();
+                var batches = intermediateEntities.Chunk(1000);
+                foreach (var batch in batches)
+                {
+                    await _sessionRepository
+                        .AsSugarClient()
+                        .Insertable(batch.ToList())
+                        .ExecuteCommandAsync();
+                }
             }
+
             _db.CommitTran();
         }
         catch (Exception ex)
@@ -1601,29 +1590,28 @@ public class RawDataImportSessionService
             throw Oops.Oh($"导入失败，数据已回滚: {ex.Message}");
         }
 
+        // 4. 发送 MQ 消息给 Worker：每条中间数据一条 MQ 消息，Worker 并发消费
         if (intermediateEntities.Count > 0)
         {
             var tenantId = _userManager?.TenantId ?? "global";
-            await _eventPublisher.PublishAsync(
-                new IntermediateDataCalcEventSource(
-                    "IntermediateData:CalcByBatch",
-                    tenantId,
-                    sessionId,
-                    batchId,
-                    intermediateEntities.Count,
-                    unitPrecisions
-                )
-            );
+            var userId = _userManager?.UserId ?? string.Empty;
+            var ids = intermediateEntities.Select(e => e.Id).ToList();
+
+            _calcTaskPublisher.PublishCalcItems(
+                batchId,
+                ids,
+                tenantId,
+                userId,
+                unitPrecisions);
         }
 
-        // 3. Mark Session Complete
+        // 5. Mark Session Complete
         session.Status = "completed";
-        session.TotalRows = allData.Count; // 更新总数据行数
-        session.ValidDataRows = validData.Count; // 更新有效数据行数
+        session.TotalRows = allData.Count;
+        session.ValidDataRows = validData.Count;
         await _sessionRepository.UpdateAsync(session);
 
-        // 4. Create Log
-        // 获取本次导入时跳过的行数（用于计算累计行数）
+        // 6. Create Log
         int previousSkipRows = 0;
         var lastLog = await _logRepository
             .AsQueryable()
@@ -1638,9 +1626,9 @@ public class RawDataImportSessionService
         var log = new RawDataImportLogEntity
         {
             FileName = session.FileName,
-            TotalRows = previousSkipRows + allData.Count, // 累计的行数（上次跳过的 + 本次导入的）
-            SuccessCount = validData.Count, // 有效数据行数（导入到中间数据表）
-            FailCount = allData.Count - validData.Count, // 无效数据行数
+            TotalRows = previousSkipRows + allData.Count,
+            SuccessCount = validData.Count,
+            FailCount = allData.Count - validData.Count,
             Status = "success",
             ImportTime = DateTime.Now,
             ImportSessionId = sessionId,
@@ -1655,24 +1643,21 @@ public class RawDataImportSessionService
         log.Creator();
         await _logRepository.InsertAsync(log);
 
-        // 5. 清理临时JSON文件（保留 session 记录用于查询）
+        // 7. 清理临时JSON文件
         try
         {
-            if (
-                !string.IsNullOrEmpty(session.ParsedDataFile) && File.Exists(session.ParsedDataFile)
-            )
+            if (!string.IsNullOrEmpty(session.ParsedDataFile) && File.Exists(session.ParsedDataFile))
             {
                 File.Delete(session.ParsedDataFile);
                 session.ParsedDataFile = null;
             }
-            // 更新 session 状态为已完成，但不删除记录（保留用于查询）
+
             session.Status = "completed";
             await _sessionRepository.UpdateAsync(session);
         }
         catch (Exception ex)
         {
             Log.Error($"[CompleteImport] Failed to cleanup: {ex.Message}");
-            // 不影响主流程，但尽量更新 session 状态
             try
             {
                 session.Status = "completed";

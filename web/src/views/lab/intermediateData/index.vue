@@ -24,6 +24,12 @@
           </div>
         </div>
 
+        <!-- 计算进度状态栏 -->
+        <CalcProgressBar
+          :active-list="activeProgressList"
+          :completed-list="recentCompletedList"
+        />
+
         <!-- 主表格 -->
         <div class="table-container">
           <BasicTable @register="registerTable" @selection-change="onTableSelectionChange">
@@ -260,6 +266,8 @@ import EditableMeasurementCell from './components/cells/EditableMeasurementCell.
 import NumericCell from './components/cells/NumericCell.vue';
 import DefaultCellWithNumeric from './components/cells/DefaultCellWithNumeric.vue';
 import CustomSortControl from '../rawData/components/CustomSortControl.vue';
+import CalcProgressBar from './components/CalcProgressBar.vue';
+import { useCalcProgress } from '/@/hooks/web/useCalcProgress';
 import { useFormulaPrecision } from '/@/composables/useFormulaPrecision';
 import { useColorStyles } from '/@/composables/useColorStyles';
 
@@ -276,6 +284,19 @@ defineOptions({ name: 'labSubTable' });
 
 const { createMessage, createConfirm } = useMessage();
 const { hasBtnP } = usePermission();
+
+// 计算进度监听
+const { activeProgressList, recentCompletedList, hasActiveCalc } = useCalcProgress({
+  onCompleted: () => {
+    // 计算完成后自动刷新表格
+    setTimeout(() => reload(), 500);
+  },
+  onFailed: () => {
+    // 失败也刷新，展示失败状态
+    setTimeout(() => reload(), 500);
+  },
+  showNotification: true,
+});
 
 // 权限标识 (对应按钮编码)
 const PERM_MAGNETIC = 'btn_edit_magnetic';
@@ -1281,33 +1302,19 @@ async function handlePerfSave(record: any, field: string, value: any) {
 
     // 设置处理中状态
     record.pendingPerfCalc = true;
-    createMessage.success('保存成功，正在计算和判定...', 1.5);
+    createMessage.success('保存成功，正在重新计算和判定...', 1.5);
 
     try {
-      // 第一步：自动触发重新计算
+      // 触发重新计算，判定由后端自动触发（Recalculate → PublishJudgeTask）
       await recalculateIntermediateData([record.id]);
-
-      // 等待计算完成后触发判定
-      setTimeout(async () => {
-        try {
-          // 第二步：自动触发判定
-          await judgeIntermediateData([record.id]);
-
-          // 判定完成后刷新数据
-          setTimeout(() => {
-            reload();
-            record.pendingPerfCalc = false;
-          }, 500);
-        } catch (judgeError) {
-          console.error('判定失败:', judgeError);
-          record.pendingPerfCalc = false;
-          reload();
-        }
-      }, 800); // 等待计算完成
+      // 等待 Worker 处理完成后通过 WebSocket 推送，延迟刷新表格
+      setTimeout(() => {
+        reload();
+        record.pendingPerfCalc = false;
+      }, 1500);
     } catch (calcError) {
       console.error('计算失败:', calcError);
       record.pendingPerfCalc = false;
-      // 计算失败时不显示错误，避免干扰用户操作，刷新即可显示失败状态
       reload();
     }
   } catch (error) {
@@ -1509,9 +1516,9 @@ async function handleBatchJudge() {
     const ids = needJudgeRecords.map(record => record.id);
     const response = await judgeIntermediateData(ids);
     const result = (response as any)?.data || response || {};
-    createMessage.success(result?.message || `已提交 ${ids.length} 条判定任务到队列`);
+    createMessage.success(result?.message || `已提交 ${ids.length} 条判定任务，处理进度通过通知推送`);
     await reload();
-    startJudgeQueuePolling();
+    // 判定进度由 Worker 通过 WebSocket 推送，不再需要轮询
   } catch (error) {
     createMessage.error('批量判定失败');
   } finally {

@@ -36,9 +36,13 @@ public static class App
     public static AppSettingsOptions Settings => _settings ??= GetConfig<AppSettingsOptions>("AppSettings", true);
 
     /// <summary>
-    /// 全局配置选项
+    /// 全局配置选项。
+    /// Worker 等非 Web Host 场景下 InternalApp.Configuration 可能未初始化，此时返回空配置避免 NullReferenceException。
     /// </summary>
-    public static IConfiguration Configuration => CatchOrDefault(() => InternalApp.Configuration.Reload(), new ConfigurationBuilder().Build());
+    public static IConfiguration Configuration =>
+        InternalApp.Configuration != null
+            ? CatchOrDefault(() => InternalApp.Configuration.Reload(), new ConfigurationBuilder().Build())
+            : new ConfigurationBuilder().Build();
 
     /// <summary>
     /// 获取Web主机环境，如，是否是开发环境，生产环境等
@@ -197,7 +201,11 @@ public static class App
     /// <returns>TOptions</returns>
     public static TOptions GetConfig<TOptions>(string path, bool loadPostConfigure = false)
     {
-        var options = Configuration.GetSection(path).Get<TOptions>();
+        var configuration = Configuration;
+        if (configuration == null)
+            return default;
+
+        var options = configuration.GetSection(path).Get<TOptions>();
 
         // 加载默认选项配置
         if (loadPostConfigure && typeof(IConfigurableOptions).IsAssignableFrom(typeof(TOptions)))

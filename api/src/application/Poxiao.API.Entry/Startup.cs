@@ -12,6 +12,7 @@ using Poxiao.Infrastructure.Core;
 using Poxiao.Infrastructure.Core.Filter;
 using Poxiao.Infrastructure.Core.Handlers;
 using Poxiao.JsonSerialization;
+using Poxiao.Lab.Service;
 using Poxiao.SpecificationDocument;
 using Poxiao.UnifyResult;
 using Poxiao.VirtualFileServer;
@@ -112,6 +113,10 @@ public class Startup : AppStartup
         services.AddConfigurableOptions<ConnectionStringsOptions>();
         services.AddConfigurableOptions<TenantOptions>();
 
+        // Lab 模块配置（从 AppSetting.json 中的 "Lab" 节读取）
+        services.Configure<Poxiao.Lab.Entity.Config.LabOptions>(
+            App.Configuration.GetSection(Poxiao.Lab.Entity.Config.LabOptions.SectionName));
+
         services
             .AddControllers()
             .AddMvcFilter<RequestActionFilter>()
@@ -210,6 +215,10 @@ public class Startup : AppStartup
             // 事件执行器（失败重试）
             options.AddExecutor<RetryEventHandlerExecutor>();
         });
+
+        // CalcProgressConsumer 作为 BackgroundService（CalcTaskPublisher 通过 ISingleton 自动注册）
+        services.AddSingleton<CalcProgressConsumer>();
+        services.AddHostedService(sp => sp.GetRequiredService<CalcProgressConsumer>());
 
         // 视图引擎
         services.AddViewEngine();
@@ -332,6 +341,30 @@ public class Startup : AppStartup
         });
 
         app.MapWebSocketManager("/api/message/websocket", serviceProvider.GetService<IMHandler>());
+
+        // 初始化计算队列服务（CalcTaskPublisher + CalcProgressConsumer）
+        {
+            var ebConfig = App.GetOptions<EventBusOptions>();
+            if (ebConfig.EventBusType == EventBusType.RabbitMQ && !string.IsNullOrWhiteSpace(ebConfig.HostName))
+            {
+                var mqHost = ebConfig.HostName;
+                var mqPort = 5672;
+                var parts = mqHost.Split(':', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length == 2 && int.TryParse(parts[1], out var pp))
+                {
+                    mqHost = parts[0];
+                    mqPort = pp;
+                }
+
+                // 初始化 CalcTaskPublisher（ISingleton，已由框架自动注册）
+                var calcTaskPublisher = serviceProvider.GetService<CalcTaskPublisher>();
+                calcTaskPublisher?.Initialize(mqHost, mqPort, ebConfig.UserName, ebConfig.Password);
+
+                // 初始化 CalcProgressConsumer
+                var calcProgressConsumer = serviceProvider.GetService<CalcProgressConsumer>();
+                calcProgressConsumer?.Configure(mqHost, mqPort, ebConfig.UserName, ebConfig.Password);
+            }
+        }
 
         // 初始化数据库表
         //serviceProvider.InitializeLabDatabase();

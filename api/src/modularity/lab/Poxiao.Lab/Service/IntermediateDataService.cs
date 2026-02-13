@@ -209,18 +209,35 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             }
         }
 
-        // 按计算状态筛选
+        // 按计算状态筛选（0=待算：包含 PENDING+FAILED，2=已算：SUCCESS）
         if (input.CalcStatus.HasValue)
         {
-            var status = (IntermediateDataCalcStatus)input.CalcStatus.Value;
-            query = query.Where(t => t.CalcStatus == status);
+            if (input.CalcStatus.Value == (int)IntermediateDataCalcStatus.PENDING)
+            {
+                // "待算"：未计算 或 计算失败
+                query = query.Where(t => t.CalcStatus == IntermediateDataCalcStatus.PENDING
+                    || t.CalcStatus == IntermediateDataCalcStatus.FAILED);
+            }
+            else
+            {
+                var status = (IntermediateDataCalcStatus)input.CalcStatus.Value;
+                query = query.Where(t => t.CalcStatus == status);
+            }
         }
 
-        // 按判定状态筛选
+        // 按判定状态筛选（基于贴标字段：0=待判 labeling 为空，1=已判 labeling 有值）
         if (input.JudgeStatus.HasValue)
         {
-            var status = (IntermediateDataCalcStatus)input.JudgeStatus.Value;
-            query = query.Where(t => t.JudgeStatus == status);
+            if (input.JudgeStatus.Value == 0)
+            {
+                // 待判：贴标为空
+                query = query.Where(t => t.Labeling == null || t.Labeling == "");
+            }
+            else if (input.JudgeStatus.Value == 1)
+            {
+                // 已判：贴标有值
+                query = query.Where(t => t.Labeling != null && t.Labeling != "");
+            }
         }
 
         // 按批次ID筛选

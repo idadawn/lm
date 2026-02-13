@@ -19,8 +19,9 @@
       <template #[item]="data" v-for="item in Object.keys($slots)" :key="item">
         <slot :name="item" v-bind="data || {}"></slot>
       </template>
-      <template #headerCell="{ column }">
-        <HeaderCell :column="column" />
+      <template #headerCell="data">
+        <slot v-if="$slots.headerCell" name="headerCell" v-bind="data || {}" />
+        <HeaderCell v-else :column="data.column" />
       </template>
       <!-- 增加对antdv3.x兼容 -->
       <template #bodyCell="data">

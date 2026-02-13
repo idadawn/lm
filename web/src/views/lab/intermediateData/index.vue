@@ -72,10 +72,11 @@
                 </a-dropdown>
               </a-space>
             </template>
-            <template #headerCell="{ column }">
+            <template #headerCell="{ column, title }">
               <input v-if="column.key === '_selection'"
                 type="checkbox" class="custom-row-checkbox"
                 @click.stop="toggleSelectAll($event)" />
+              <template v-else>{{ column.title || column.customTitle || title }}</template>
             </template>
             <template #bodyCell="{ column, record, text }">
 
@@ -156,7 +157,7 @@
                       <ReloadOutlined :spin="record.rejudging" v-if="record.rejudging || isNeedJudge(record)" />
                       <CheckCircleOutlined v-else />
                     </template>
-                    {{ record.rejudging ? '判定中' : (isNeedJudge(record) ? '需要判定' : '无需判定') }}
+                    {{ record.rejudging ? '判定中' : (isNeedJudge(record) ? '待判' : '已判') }}
                   </a-tag>
                 </div>
               </template>
@@ -358,7 +359,6 @@ const exporting = ref<boolean>(false); // 是否正在导出
 const exportModalVisible = ref<boolean>(false); // 导出模态框是否可见
 const exportDateRange = ref<number[]>([]); // 导出日期范围（时间戳数组）
 const selectedExportShortcut = ref<string>(''); // 当前选中的导出快捷方式
-const judgeStatusFilter = ref<number>(-1); // 判定状态筛选：-1全部 0需要判定 1无需判定
 const lastFetchParams = ref<Record<string, any>>({}); // 当前查询条件(不含分页)
 const isClearMode = ref<boolean>(false); // 是否处于清除颜色模式
 let judgeQueuePollTimer: ReturnType<typeof setTimeout> | null = null;
@@ -399,10 +399,10 @@ const sortRules = ref([
 ]);
 
 const calcStatusMap: Record<string, { text: string; color: string }> = {
-  PENDING: { text: '未计算', color: 'default' },
+  PENDING: { text: '待算', color: 'orange' },
   PROCESSING: { text: '计算中', color: 'processing' },
-  SUCCESS: { text: '成功', color: 'success' },
-  FAILED: { text: '失败', color: 'error' },
+  SUCCESS: { text: '已算', color: 'success' },
+  FAILED: { text: '待算', color: 'orange' },
 };
 
 const calcStatusNumberMap: Record<number, string> = {
@@ -875,11 +875,9 @@ const [registerTable, { reload, getDataSource, getCursorTotal, scrollTo }] = use
         defaultValue: -1,
         componentProps: {
           options: [
-            { label: '所有状态', value: -1 },
-            { label: '未计算', value: 0 },
-            { label: '计算中', value: 1 },
-            { label: '成功', value: 2 },
-            { label: '失败', value: 3 },
+            { label: '全部', value: -1 },
+            { label: '待算', value: 0 },
+            { label: '已算', value: 2 },
           ],
           fieldNames: { label: 'label', value: 'value' },
           placeholder: '所有状态',
@@ -894,9 +892,9 @@ const [registerTable, { reload, getDataSource, getCursorTotal, scrollTo }] = use
         defaultValue: -1,
         componentProps: {
           options: [
-            { label: '全部状态', value: -1 },
-            { label: '需要判定', value: 0 },
-            { label: '无需判定', value: 1 },
+            { label: '全部', value: -1 },
+            { label: '待判', value: 0 },
+            { label: '已判', value: 1 },
           ],
           fieldNames: { label: 'label', value: 'value' },
           placeholder: '判定状态',
@@ -910,12 +908,13 @@ const [registerTable, { reload, getDataSource, getCursorTotal, scrollTo }] = use
     ],
   },
   beforeFetch: params => {
-    // 处理状态筛选: -1表示全部
+    // 处理状态筛选: -1表示全部，删除不发送
     if (params.calcStatus === -1) {
       delete params.calcStatus;
     }
-    judgeStatusFilter.value = Number(params.judgeStatus ?? -1);
-    delete params.judgeStatus;
+    if (params.judgeStatus === -1) {
+      delete params.judgeStatus;
+    }
 
     // 使用表单中的产品规格ID
     if (params.productSpecId) {
@@ -972,26 +971,14 @@ const [registerTable, { reload, getDataSource, getCursorTotal, scrollTo }] = use
         return mapped;
       });
 
-      const filteredData = judgeStatusFilter.value === -1
-        ? mappedData
-        : mappedData.filter(item => judgeStatusFilter.value === 0 ? isNeedJudge(item) : !isNeedJudge(item));
-
-      if (judgeStatusFilter.value !== -1) {
-        currentPagination.value.total = filteredData.length;
+      // 收集颜色加载 ID（防抖，多次 afterFetch 合并为一次请求）
+      if (mappedData.length > 0) {
+        const dataIds = mappedData.map(item => item.id);
+        pendingColorIds.push(...dataIds);
+        scheduleLoadColors();
       }
 
-      // 加载颜色数据（延迟执行避免阻塞渲染）
-      if (filteredData.length > 0) {
-        const dataIds = filteredData.map(item => item.id);
-
-        // 使用 setTimeout 替代 nextTick，给浏览器更多时间完成初始渲染
-        // 100ms 延迟确保数据已经渲染到 DOM，再加载颜色
-        setTimeout(() => {
-          loadColorsByIds(dataIds);
-        }, 100);
-      }
-
-      return filteredData;
+      return mappedData;
     }
     return data;
   },
@@ -1442,19 +1429,20 @@ async function handleRejudge(record: any) {
 async function handleBatchRecalculate() {
   if (batchCalculating.value) return;
 
-  // 获取当前表格数据
-  const data = getDataSource();
-  if (!data || data.length === 0) {
+  // 有勾选时只计算勾选的，没勾选时计算全部
+  const ids = selectedIdSet.size > 0
+    ? Array.from(selectedIdSet)
+    : (getDataSource() as Recordable[]).map(r => r.id);
+
+  if (ids.length === 0) {
     createMessage.warning('当前没有数据');
     return;
   }
 
   try {
     batchCalculating.value = true;
-    const ids = data.map(record => record.id);
     await recalculateIntermediateData(ids);
     createMessage.success(`已触发 ${ids.length} 条数据的计算`);
-    // 稍后刷新
     setTimeout(() => {
       reload();
       batchCalculating.value = false;
@@ -1465,78 +1453,76 @@ async function handleBatchRecalculate() {
   }
 }
 
-// 批量判定（仅对“需要判定”的数据执行判定）
+// 批量判定（有勾选时只判定勾选的，没勾选时判定全部"需要判定"的数据）
 async function handleBatchJudge() {
   if (batchJudging.value) return;
-
-  const baseParams = {
-    ...lastFetchParams.value,
-    productSpecId: selectedProductSpecId.value || lastFetchParams.value?.productSpecId,
-  };
-
-  if (!baseParams.productSpecId) {
-    createMessage.warning('当前没有数据');
-    return;
-  }
-
-  const pageSize = 500;
-  const allRecords: any[] = [];
-  const idSet = new Set<string>();
-  let page = 1;
-  let totalPages = 1;
 
   try {
     batchJudging.value = true;
 
-    while (page <= totalPages) {
-      const response = await getIntermediateDataList({
-        ...baseParams,
-        page,
-        currentPage: page,
-        pageSize,
-      });
-      const result = (response as any)?.data || response;
-      const list: any[] = result?.list || [];
-      const pagination = result?.pagination || {};
-      const total = Number(pagination.total ?? list.length);
-      const current = Number(pagination.currentPage ?? page);
-      const size = Number(pagination.pageSize ?? pageSize);
-      totalPages = Math.max(1, Math.ceil(total / Math.max(size, 1)));
+    let idsToJudge: string[];
 
-      list.forEach(item => {
-        const id = item?.id;
-        if (!id || idSet.has(id)) return;
-        idSet.add(id);
-        allRecords.push(item);
-      });
+    if (selectedIdSet.size > 0) {
+      // 有勾选：直接用勾选的 ID
+      idsToJudge = Array.from(selectedIdSet);
+    } else {
+      // 没勾选：加载全量数据，筛选出需要判定的
+      const baseParams = {
+        ...lastFetchParams.value,
+        productSpecId: selectedProductSpecId.value || lastFetchParams.value?.productSpecId,
+      };
 
-      if (list.length === 0 || current >= totalPages) {
-        break;
+      if (!baseParams.productSpecId) {
+        createMessage.warning('当前没有数据');
+        batchJudging.value = false;
+        return;
       }
-      page = current + 1;
+
+      const pageSize = 500;
+      const allRecords: any[] = [];
+      const idSet = new Set<string>();
+      let page = 1;
+      let totalPages = 1;
+
+      while (page <= totalPages) {
+        const response = await getIntermediateDataList({
+          ...baseParams,
+          page,
+          currentPage: page,
+          pageSize,
+        });
+        const result = (response as any)?.data || response;
+        const list: any[] = result?.list || [];
+        const pagination = result?.pagination || {};
+        const total = Number(pagination.total ?? list.length);
+        const current = Number(pagination.currentPage ?? page);
+        const size = Number(pagination.pageSize ?? pageSize);
+        totalPages = Math.max(1, Math.ceil(total / Math.max(size, 1)));
+
+        list.forEach(item => {
+          const id = item?.id;
+          if (!id || idSet.has(id)) return;
+          idSet.add(id);
+          allRecords.push(item);
+        });
+
+        if (list.length === 0 || current >= totalPages) break;
+        page = current + 1;
+      }
+
+      const needJudgeRecords = allRecords.filter(record => isNeedJudge(record));
+      if (needJudgeRecords.length === 0) {
+        createMessage.info('没有需要判定的数据');
+        batchJudging.value = false;
+        return;
+      }
+      idsToJudge = needJudgeRecords.map(record => record.id);
     }
-  } catch (error) {
-    createMessage.error('加载全量数据失败');
-    batchJudging.value = false;
-    return;
-  }
 
-  // 筛选出需要判定的数据（贴标为空）
-  const needJudgeRecords = allRecords.filter(record => isNeedJudge(record));
-
-  if (needJudgeRecords.length === 0) {
-    createMessage.info('没有需要判定的数据');
-    batchJudging.value = false;
-    return;
-  }
-
-  try {
-    const ids = needJudgeRecords.map(record => record.id);
-    const response = await judgeIntermediateData(ids);
+    const response = await judgeIntermediateData(idsToJudge);
     const result = (response as any)?.data || response || {};
-    createMessage.success(result?.message || `已提交 ${ids.length} 条判定任务，处理进度通过通知推送`);
+    createMessage.success(result?.message || `已提交 ${idsToJudge.length} 条判定任务`);
     await reload();
-    // 判定进度由 Worker 通过 WebSocket 推送，不再需要轮询
   } catch (error) {
     createMessage.error('批量判定失败');
   } finally {
@@ -1850,15 +1836,24 @@ function clearSelectedColor() {
 
 const isLoadingColors = ref(false);
 
+// 防抖收集：多次 afterFetch 的 ID 合并为一次颜色加载请求
+const pendingColorIds: string[] = [];
+let colorLoadTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleLoadColors() {
+  if (colorLoadTimer) clearTimeout(colorLoadTimer);
+  colorLoadTimer = setTimeout(() => {
+    const ids = [...new Set(pendingColorIds)]; // 去重
+    pendingColorIds.length = 0;
+    if (ids.length > 0) {
+      loadColorsByIds(ids);
+    }
+  }, 300);
+}
+
 // 根据ID列表加载颜色数据
 async function loadColorsByIds(dataIds: string[]) {
-  console.log('loadColorsByIds called', dataIds.length);
   if (!selectedProductSpecId.value || !dataIds || dataIds.length === 0) {
-    return;
-  }
-
-  if (isLoadingColors.value) {
-    console.warn('loadColorsByIds ignored (already loading)');
     return;
   }
 

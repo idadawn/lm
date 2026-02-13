@@ -30,17 +30,26 @@
         <HeaderCell :column="column" />
       </template> -->
     </Table>
+    <!-- 游标模式：加载更多居中浮动提示（DOM 切换显隐，不走 Vue 响应式，避免 ant-design-vue 级联更新） -->
+    <div v-if="isCursorMode" ref="cursorLoadingRef" class="cursor-loading-indicator">
+      <div class="cursor-spinner"></div>
+      <span>加载中...</span>
+    </div>
+    <!-- 游标模式：表格外单独渲染底部栏，不传 footer 给 Table，避免 Ant Table 内部 watchEffect 无限递归 -->
+    <CursorFooter v-if="isCursorMode" />
   </div>
 </template>
 <script lang="ts">
   import type { BasicTableProps, TableActionType, SizeType, ColumnChangeParam } from './types/table';
 
-  import { defineComponent, ref, computed, unref, toRaw, inject, watchEffect } from 'vue';
+  import { defineComponent, ref, shallowRef, computed, unref, toRaw, inject, watch, watchEffect, provide } from 'vue';
   import { Table } from 'ant-design-vue';
   import { BasicForm, useForm } from '/@/components/Form';
   import { PageWrapperFixedHeightKey } from '/@/enums/pageEnum';
   import HeaderCell from './components/HeaderCell.vue';
+  import CursorFooter from './components/CursorFooter.vue';
   import { InnerHandlers } from './types/table';
+  import { CURSOR_STATE_KEY } from './components/CursorFooter.vue';
 
   import { usePagination } from './hooks/usePagination';
   import { useColumns } from './hooks/useColumns';
@@ -60,7 +69,7 @@
 
   import { omit } from 'lodash-es';
   import { basicProps } from './props';
-  import { isFunction } from '/@/utils/is';
+  import { isFunction, isBoolean } from '/@/utils/is';
   import { warn } from '/@/utils/log';
 
   export default defineComponent({
@@ -69,6 +78,7 @@
       Table,
       BasicForm,
       HeaderCell,
+      CursorFooter,
     },
     props: basicProps,
     emits: [
@@ -91,7 +101,7 @@
     ],
     setup(props, { attrs, emit, slots, expose }) {
       const tableElRef = ref(null);
-      const tableData = ref<Recordable[]>([]);
+      const tableData = shallowRef<Recordable[]>([]);
 
       const wrapRef = ref(null);
       const formRef = ref(null);
@@ -103,6 +113,8 @@
       const getProps = computed(() => {
         return { ...props, ...unref(innerPropsRef) } as BasicTableProps;
       });
+
+      const isCursorMode = computed(() => unref(getProps).paginationMode === 'cursor');
 
       const isFixedHeightPage = inject(PageWrapperFixedHeightKey, false);
       watchEffect(() => {
@@ -141,6 +153,11 @@
         fetch,
         getRowKey,
         reload,
+        loadMore,
+        hasMoreCursor,
+        getCursorTotal,
+        cursorTotalRef,
+        loadingMoreRef,
         getAutoCreateKey,
         updateTableData,
       } = useDataSource(
@@ -170,9 +187,38 @@
         getPaginationInfo,
       );
 
-      const { getScrollRef, redoHeight } = useTableScroll(getProps, tableElRef, getColumnsRef, getRowSelectionRef, getDataSourceRef, wrapRef, formRef);
-
       const { scrollTo } = useTableScrollTo(tableElRef, getDataSourceRef);
+
+      const cursorPageSize = computed(() => {
+        const { pagination } = unref(getProps);
+        return (!isBoolean(pagination) && pagination?.pageSize) || 50;
+      });
+
+      const loadedItemsCount = computed(() => unref(getDataSourceRef)?.length || 0);
+
+      const cursorActions = computed(() =>
+        unref(getProps).paginationMode === 'cursor'
+          ? {
+              loadMore,
+              hasMore: hasMoreCursor,
+              loadingMore: loadingMoreRef,
+              pageSize: unref(cursorPageSize),
+              loadedItems: loadedItemsCount,
+              totalItems: cursorTotalRef,
+            }
+          : undefined,
+      );
+
+      const { getScrollRef, redoHeight } = useTableScroll(
+        getProps,
+        tableElRef,
+        getColumnsRef,
+        getRowSelectionRef,
+        getDataSourceRef,
+        wrapRef,
+        formRef,
+        () => unref(cursorActions),
+      );
 
       const { customRow } = useCustomRow(getProps, {
         setSelectedRowKeys,
@@ -194,12 +240,34 @@
 
       const { getHeaderProps } = useTableHeader(getProps, slots, handlers);
 
-      const { getFooterProps } = useTableFooter(getProps, getScrollRef, tableElRef, getDataSourceRef);
+      // 加载中指示器：通过 DOM 操作切换显隐，避免触发 ant-design-vue 组件的响应式级联更新
+      const cursorLoadingRef = ref<HTMLElement | null>(null);
+      watch(loadingMoreRef, (loading) => {
+        const el = cursorLoadingRef.value;
+        if (el) el.style.display = loading ? 'flex' : 'none';
+      }, { flush: 'post' });
+
+      // 通过 provide 注入 cursor 状态给 CursorFooter（不通过 props 传递，保证 footer 函数引用稳定）
+      provide(CURSOR_STATE_KEY, {
+        cursorTotalRef,
+        loadingMoreRef,
+        hasMore: hasMoreCursor,
+        loadedItems: loadedItemsCount,
+        scrollTo,
+      });
+
+      const { getFooterProps } = useTableFooter(
+        getProps,
+        getScrollRef,
+        tableElRef,
+        getDataSourceRef,
+      );
 
       const { getFormProps, replaceFormSlotKey, getFormSlotKeys, handleSearchInfoChange } = useTableForm(getProps, slots, fetch, getLoading);
 
       const getBindValues = computed(() => {
         const dataSource = unref(getDataSourceRef);
+        const cursorMode = unref(isCursorMode);
         let propsData: Recordable = {
           ...attrs,
           ...unref(getProps),
@@ -213,7 +281,7 @@
           columns: toRaw(unref(getViewColumns)),
           pagination: toRaw(unref(getPaginationInfo)),
           dataSource,
-          footer: unref(getFooterProps),
+          footer: cursorMode ? undefined : unref(getFooterProps),
           ...unref(getExpandOption),
         };
         // if (slots.expandedRowRender) {
@@ -283,6 +351,8 @@
         collapseAll,
         getIsExpanded,
         scrollTo,
+        getCursorTotal,
+        loadMore,
         getSize: () => {
           return unref(getBindValues).size as SizeType;
         },
@@ -307,6 +377,8 @@
         wrapRef,
         tableAction,
         redoHeight,
+        isCursorMode,
+        cursorLoadingRef,
         getFormProps: getFormProps as any,
         replaceFormSlotKey,
         getFormSlotKeys,
@@ -329,6 +401,7 @@
   }
 
   .@{prefix-cls} {
+    position: relative;
     max-width: 100%;
     height: 100%;
 
@@ -414,6 +487,42 @@
       .ant-table-wrapper {
         padding: 0;
       }
+    }
+
+    .cursor-loading-indicator {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      align-items: center;
+      gap: 8px;
+      padding: 10px 24px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+      z-index: 10;
+      pointer-events: none;
+
+      .cursor-spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid #e8e8e8;
+        border-top-color: @primary-color;
+        border-radius: 50%;
+        animation: cursor-spin 0.8s linear infinite;
+      }
+
+      span {
+        color: @primary-color;
+        font-size: 14px;
+      }
+    }
+  }
+
+  @keyframes cursor-spin {
+    to {
+      transform: rotate(360deg);
     }
   }
 </style>

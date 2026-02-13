@@ -1,6 +1,6 @@
 import type { BasicTableProps, FetchParams, SorterResult } from '../types/table';
 import type { PaginationProps } from '../types/pagination';
-import { ref, unref, ComputedRef, computed, onMounted, watch, reactive, Ref, watchEffect, nextTick } from 'vue';
+import { ref, shallowRef, unref, ComputedRef, computed, onMounted, watch, reactive, Ref, watchEffect, nextTick } from 'vue';
 import { useTimeoutFn } from '/@/hooks/core/useTimeout';
 import { buildUUID } from '/@/utils/uuid';
 import { isFunction, isBoolean, isObject } from '/@/utils/is';
@@ -30,9 +30,15 @@ export function useDataSource(
     sortInfo: {},
     filterInfo: {},
   });
-  const dataSourceRef = ref<Recordable[]>([]);
+  const dataSourceRef = shallowRef<Recordable[]>([]);
   const rawDataSourceRef = ref<Recordable>({});
   const fetchParams = ref<Recordable>({});
+  // 游标分页：下一页游标（无更多为 null）
+  const nextCursorRef = ref<string | number | null>(null);
+  // 游标分页：服务端返回的总条数（用于展示「共 N 条」）
+  const cursorTotalRef = ref(0);
+  // 游标分页：是否正在加载更多（避免重复请求）
+  const loadingMoreRef = ref(false);
 
   watchEffect(() => {
     tableData.value = unref(dataSourceRef);
@@ -122,7 +128,9 @@ export function useDataSource(
   async function updateTableData(index: number, key: string, value: any) {
     const record = dataSourceRef.value[index];
     if (record) {
-      dataSourceRef.value[index][key] = value;
+      record[key] = value;
+      // shallowRef 需要新引用才能触发更新
+      dataSourceRef.value = dataSourceRef.value.slice();
     }
     return dataSourceRef.value[index];
   }
@@ -134,6 +142,7 @@ export function useDataSource(
       for (const field in row) {
         if (Reflect.has(record, field)) row[field] = record[field];
       }
+      dataSourceRef.value = dataSourceRef.value.slice();
       return row;
     }
   }
@@ -179,6 +188,7 @@ export function useDataSource(
       deleteRow(dataSourceRef.value, key);
       deleteRow(unref(propsRef).dataSource, key);
     }
+    dataSourceRef.value = dataSourceRef.value.slice();
     setPagination({
       total: unref(propsRef).dataSource?.length,
     });
@@ -188,7 +198,9 @@ export function useDataSource(
     // if (!dataSourceRef.value || dataSourceRef.value.length == 0) return;
     index = index ?? dataSourceRef.value?.length;
     const _record = isObject(record) ? [record as Recordable] : (record as Recordable[]);
-    unref(dataSourceRef).splice(index, 0, ..._record);
+    const arr = unref(dataSourceRef);
+    arr.splice(index, 0, ..._record);
+    dataSourceRef.value = arr.slice();
     return unref(dataSourceRef);
   }
 
@@ -229,18 +241,45 @@ export function useDataSource(
     return findRow(dataSourceRef.value);
   }
 
+  const isCursorMode = computed(() => unref(propsRef).paginationMode === 'cursor');
+
   async function fetch(opt?: FetchParams) {
     const { api, searchInfo, defSort, fetchSetting, beforeFetch, afterFetch, useSearchForm, pagination } = unref(propsRef);
     if (!api || !isFunction(api)) return;
+    const cursorMode = unref(isCursorMode);
+    // loadMore 总是传 cursor 参数，reload/首屏不传 cursor → 用 cursor 区分
+    const isFirstOrReload = cursorMode && opt?.cursor === undefined;
+    const isLoadMore = cursorMode && opt?.cursor !== undefined;
+
     try {
-      setLoading(true);
-      const { pageField, sizeField, listField, totalField } = Object.assign({}, FETCH_SETTING, fetchSetting);
+      if (!isLoadMore) setLoading(true);
+      else loadingMoreRef.value = true;
+
+      const { pageField, sizeField, listField, totalField, cursorField, nextCursorField } = Object.assign(
+        {},
+        FETCH_SETTING,
+        fetchSetting,
+      );
       let pageParams: Recordable = {};
 
-      const { current = 1, pageSize = PAGE_SIZE } = unref(getPaginationInfo) as PaginationProps;
+      const paginationInfo = unref(getPaginationInfo) as PaginationProps | boolean;
+      const pageSize = isBoolean(paginationInfo) ? PAGE_SIZE : (paginationInfo?.pageSize ?? PAGE_SIZE);
+      const current = isBoolean(paginationInfo) ? 1 : (paginationInfo?.current ?? 1);
       const isNoPagination = (isBoolean(pagination) && !pagination) || isBoolean(getPaginationInfo);
 
-      if (isNoPagination) {
+      if (cursorMode) {
+        // 游标模式：首屏或 reload 不传 cursor；加载更多传 cursor（或兼容用 page）
+        const cursorParamName = cursorField || pageField;
+        if (isFirstOrReload) {
+          pageParams[pageField] = 1;
+          pageParams[sizeField] = pageSize;
+          nextCursorRef.value = null;
+        } else {
+          const cursorVal = opt?.cursor ?? opt?.page ?? 1;
+          pageParams[cursorParamName] = cursorVal;
+          pageParams[sizeField] = pageSize;
+        }
+      } else if (isNoPagination) {
         pageParams = {};
       } else {
         pageParams[pageField] = (opt && opt.page) || current;
@@ -273,50 +312,81 @@ export function useDataSource(
 
       let resultItems: Recordable[] = isArrayResult ? data : get(data, listField);
       let resultTotal: number = 0;
-      if (!isNoPagination) resultTotal = isArrayResult ? data.length : get(data, totalField);
+      if (!isNoPagination || cursorMode) resultTotal = isArrayResult ? data.length : get(data, totalField);
 
-      // 假如数据变少，导致总页数变少并小于当前选中页码，通过getPaginationRef获取到的页码是不正确的，需获取正确的页码再次执行
-      if (Number(resultTotal)) {
-        const currentTotalPage = Math.ceil(resultTotal / pageSize);
-        if (current > currentTotalPage) {
-          setPagination({
-            current: currentTotalPage,
-          });
-          return await fetch(opt);
+      if (cursorMode) {
+        cursorTotalRef.value = resultTotal || 0;
+        if (afterFetch && isFunction(afterFetch)) {
+          resultItems = (await afterFetch(resultItems)) || resultItems;
+        }
+        if (isFirstOrReload) {
+          dataSourceRef.value = resultItems;
+          // 兼容模式：无 nextCursorField 时用页码模拟；有则用接口返回
+          if (nextCursorField) {
+            nextCursorRef.value = get(data, nextCursorField) ?? (resultItems.length >= pageSize ? 2 : null);
+          } else {
+            nextCursorRef.value = resultItems.length >= pageSize ? 2 : null;
+          }
+        } else {
+          const prev = dataSourceRef.value || [];
+          dataSourceRef.value = [...prev, ...resultItems];
+          const currentPage = Number(params[pageField] ?? params[cursorField || pageField] ?? 1);
+          if (nextCursorField) {
+            nextCursorRef.value = get(data, nextCursorField) ?? null;
+          } else {
+            nextCursorRef.value = resultItems.length >= pageSize ? currentPage + 1 : null;
+          }
+        }
+        // ⚠️ cursor 模式下不调用 setPagination，避免写入 configRef 触发无限递归更新
+      } else {
+        // 假如数据变少，导致总页数变少并小于当前选中页码
+        if (Number(resultTotal)) {
+          const currentTotalPage = Math.ceil(resultTotal / pageSize);
+          if (current > currentTotalPage) {
+            setPagination({ current: currentTotalPage });
+            return await fetch(opt);
+          }
+        }
+        if (afterFetch && isFunction(afterFetch)) {
+          resultItems = (await afterFetch(resultItems)) || resultItems;
+        }
+        dataSourceRef.value = resultItems;
+        setPagination({ total: resultTotal || 0 });
+        if (opt && opt.page) {
+          setPagination({ current: opt.page || 1 });
         }
       }
 
-      if (afterFetch && isFunction(afterFetch)) {
-        resultItems = (await afterFetch(resultItems)) || resultItems;
-      }
-      dataSourceRef.value = resultItems;
-      setPagination({
-        total: resultTotal || 0,
-      });
-      if (opt && opt.page) {
-        setPagination({
-          current: opt.page || 1,
-        });
-      }
       emit('fetch-success', {
-        items: unref(resultItems),
-        total: resultTotal,
+        items: cursorMode ? unref(dataSourceRef) : resultItems,
+        total: cursorMode ? cursorTotalRef.value : resultTotal,
       });
       return resultItems;
     } catch (error) {
       emit('fetch-error', error);
-      dataSourceRef.value = [];
-      setPagination({
-        total: 0,
-      });
+      if (!isLoadMore) dataSourceRef.value = [];
+      // cursor 模式下不调用 setPagination
+      if (!cursorMode) {
+        setPagination({ total: 0 });
+      }
     } finally {
       const { isTreeTable, defaultExpandAllRows } = unref(propsRef);
       nextTick(() => {
         if (isTreeTable && defaultExpandAllRows) expandAll();
       });
       setLoading(false);
+      loadingMoreRef.value = false;
     }
   }
+
+  /** 游标模式：加载下一页（滚动到底部约 20% 时由 useCursorScroll 调用） */
+  async function loadMore() {
+    if (!unref(isCursorMode) || nextCursorRef.value == null || loadingMoreRef.value) return;
+    await fetch({ cursor: nextCursorRef.value, page: typeof nextCursorRef.value === 'number' ? nextCursorRef.value : undefined });
+  }
+
+  const hasMoreCursor = computed(() => nextCursorRef.value != null);
+  const getCursorTotal = () => cursorTotalRef.value;
 
   function setTableData<T = Recordable>(values: T[]) {
     dataSourceRef.value = values as [];
@@ -354,6 +424,12 @@ export function useDataSource(
     getAutoCreateKey,
     fetch,
     reload,
+    loadMore,
+    hasMoreCursor,
+    getCursorTotal,
+    cursorTotalRef,
+    isCursorMode,
+    loadingMoreRef,
     updateTableData,
     updateTableDataRecord,
     deleteTableDataRecord,

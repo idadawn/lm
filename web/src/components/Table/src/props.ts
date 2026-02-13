@@ -121,6 +121,11 @@ export const basicProps = {
     type: [Object, Boolean] as PropType<PaginationProps | boolean>,
     default: null,
   },
+  /** 分页模式：page 传统分页，cursor 游标无限滚动 */
+  paginationMode: {
+    type: String as PropType<'page' | 'cursor'>,
+    default: 'page',
+  },
   loading: propTypes.bool,
   rowClassName: {
     type: Function as PropType<(record: TableCustomRecord<any>, index: number) => string>,

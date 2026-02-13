@@ -38,7 +38,11 @@ export function useTableScrollTo(
 
     // judge pos type
     if (pos === 'top') {
-      findTargetRowToScroll(dataSource[0]);
+      if (dataSource.length && dataSource[0]) {
+        findTargetRowToScroll(dataSource[0]);
+      } else {
+        bodyEl.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     } else if (pos === 'bottom') {
       findTargetRowToScroll(dataSource[dataSource.length - 1]);
     } else {

@@ -229,45 +229,15 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             query = query.Where(t => t.BatchId == input.BatchId);
         }
 
-        // 先查询所有符合条件的数据（不排序，不分页）
-        var allData = await query.ToListAsync();
+        // 应用排序（数据库层面）
+        query = ApplySortRulesToQuery(query, input.SortRules);
 
-        // 处理排序规则
-        if (!string.IsNullOrEmpty(input.SortRules))
-        {
-            try
-            {
-                var jsonOptions = new System.Text.Json.JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                };
-                var sortRules = System.Text.Json.JsonSerializer.Deserialize<List<SortRule>>(
-                    input.SortRules,
-                    jsonOptions
-                );
-                if (sortRules != null && sortRules.Count > 0)
-                {
-                    allData = ApplySortRules(allData, sortRules);
-                }
-            }
-            catch
-            {
-                // 如果排序规则解析失败，使用默认排序
-                allData = ApplyDefaultSort(allData);
-            }
-        }
-        else
-        {
-            // 没有排序规则，使用默认排序
-            allData = ApplyDefaultSort(allData);
-        }
-
-        // 手动分页
-        var total = allData.Count;
+        // 数据库层面分页（不再加载全部数据到内存）
+        var total = await query.CountAsync();
         var pageSize = input.PageSize > 0 ? input.PageSize : 10;
         var currentPage = input.CurrentPage > 0 ? input.CurrentPage : 1;
         var skip = (currentPage - 1) * pageSize;
-        var pagedData = allData.Skip(skip).Take(pageSize).ToList();
+        var pagedData = await query.Skip(skip).Take(pageSize).ToListAsync();
 
         // 获取创建者姓名
         var userIds = pagedData
@@ -2435,6 +2405,68 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     /// <summary>
     /// 应用排序规则.
     /// </summary>
+    /// <summary>
+    /// 将排序规则应用到 SqlSugar 查询（数据库层面排序，不加载全部数据到内存）.
+    /// </summary>
+    private ISugarQueryable<IntermediateDataEntity> ApplySortRulesToQuery(
+        ISugarQueryable<IntermediateDataEntity> query,
+        string sortRulesJson
+    )
+    {
+        // 允许排序的字段白名单（前端 camelCase → 数据库列名）
+        var allowedFields = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["proddate"] = "F_PROD_DATE",
+            ["furnacebatchno"] = "F_FURNACE_BATCH_NO",
+            ["coilno"] = "F_COIL_NO",
+            ["subcoilno"] = "F_SUBCOIL_NO",
+            ["lineno"] = "F_LINE_NO",
+            ["productspecname"] = "F_PRODUCT_SPEC_NAME",
+            ["creatortime"] = "F_CREATORTIME",
+        };
+
+        if (!string.IsNullOrEmpty(sortRulesJson))
+        {
+            try
+            {
+                var jsonOptions = new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+                var sortRules = System.Text.Json.JsonSerializer.Deserialize<List<SortRule>>(
+                    sortRulesJson, jsonOptions
+                );
+                if (sortRules != null && sortRules.Count > 0)
+                {
+                    var orderParts = new List<string>();
+                    foreach (var rule in sortRules)
+                    {
+                        if (string.IsNullOrEmpty(rule.Field)) continue;
+                        if (!allowedFields.TryGetValue(rule.Field.ToLowerInvariant(), out var columnName)) continue;
+                        var dir = rule.Order?.ToLower() == "desc" ? "desc" : "asc";
+                        orderParts.Add($"{columnName} {dir}");
+                    }
+                    if (orderParts.Count > 0)
+                    {
+                        return query.OrderBy(string.Join(", ", orderParts));
+                    }
+                }
+            }
+            catch
+            {
+                // 解析失败，使用默认排序
+            }
+        }
+
+        // 默认排序
+        return query
+            .OrderBy(t => t.ProdDate)
+            .OrderBy(t => t.FurnaceBatchNo)
+            .OrderBy(t => t.CoilNo)
+            .OrderBy(t => t.SubcoilNo)
+            .OrderBy(t => t.LineNo);
+    }
+
     private List<IntermediateDataEntity> ApplySortRules(
         List<IntermediateDataEntity> data,
         List<SortRule> sortRules

@@ -7,6 +7,24 @@ import { useWindowSizeFn } from '/@/hooks/event/useWindowSizeFn';
 import { useModalContext } from '/@/components/Modal';
 import { onMountedOrActivated } from '/@/hooks/core/onMountedOrActivated';
 import { useDebounceFn } from '@vueuse/core';
+import { useEventListener } from '/@/hooks/event/useEventListener';
+
+/** 距底部约 20% 时触发加载更多 */
+const CURSOR_LOAD_THRESHOLD = 0.8;
+/** 游标底部栏高度（表格外单独渲染时的预留高度） */
+const CURSOR_FOOTER_HEIGHT = 44;
+
+export interface CursorScrollActions {
+  loadMore: () => Promise<void>;
+  hasMore: Ref<boolean> | ComputedRef<boolean>;
+  loadingMore: Ref<boolean>;
+  /** 每页条数（用于计算当前页） */
+  pageSize?: number;
+  /** 已加载的条数 */
+  loadedItems?: ComputedRef<number>;
+  /** 服务端总条数 */
+  totalItems?: Ref<number>;
+}
 
 export function useTableScroll(
   propsRef: ComputedRef<BasicTableProps>,
@@ -16,7 +34,9 @@ export function useTableScroll(
   getDataSourceRef: ComputedRef<Recordable[]>,
   wrapRef: Ref<HTMLElement | null>,
   formRef: Ref<ComponentRef>,
+  cursorActions?: (() => CursorScrollActions | undefined) | CursorScrollActions,
 ) {
+
   const tableHeightRef: Ref<Nullable<number | string>> = ref(167);
   const modalFn = useModalContext();
 
@@ -103,7 +123,8 @@ export function useTableScroll(
     let paddingHeight = 10;
     // Pager height
     let paginationHeight = 0;
-    if (!isBoolean(pagination)) {
+    const isCursorPaginationMode = unref(propsRef).paginationMode === 'cursor';
+    if (!isBoolean(pagination) && !isCursorPaginationMode) {
       paginationEl = tableEl.querySelector('.ant-pagination') as HTMLElement;
       if (paginationEl) {
         const offsetHeight = paginationEl.offsetHeight;
@@ -117,10 +138,13 @@ export function useTableScroll(
     }
 
     let footerHeight = 0;
-    if (!isBoolean(pagination)) {
+    if (isCursorPaginationMode) {
+      footerHeight += CURSOR_FOOTER_HEIGHT;
+    } else if (!isBoolean(pagination)) {
       if (!footerEl) {
         footerEl = tableEl.querySelector('.ant-table-footer') as HTMLElement;
-      } else {
+      }
+      if (footerEl) {
         const offsetHeight = footerEl.offsetHeight;
         footerHeight += offsetHeight || 0;
       }
@@ -168,10 +192,76 @@ export function useTableScroll(
     bodyEl!.style.height = `${height}px`;
   }
   useWindowSizeFn(calcTableHeight, 280);
+
+  function setupCursorScrollListener() {
+    const actions = typeof cursorActions === 'function' ? cursorActions() : cursorActions;
+    if (!actions) return;
+    const table = unref(tableElRef);
+    if (!table?.$el) return;
+    const bodyEl = table.$el.querySelector('.ant-table-body') as HTMLElement;
+    if (!bodyEl) return;
+    const { pageSize = 50, loadedItems, totalItems } = actions;
+    // 页码指示器 DOM 元素（直接更新 DOM，避免响应式引起整表重渲染）
+    let pageIndicatorEl: HTMLElement | null = null;
+
+    /**
+     * 检查是否需要加载更多数据。
+     * loadMore 本身通过 loadingMoreRef 防止重复调用，
+     * 这里只需判断：有更多数据 + 未在加载中 + 滚动比例达到阈值。
+     */
+    const checkAndLoad = () => {
+      const { loadMore, hasMore, loadingMore } = actions;
+      const { scrollTop, clientHeight, scrollHeight } = bodyEl;
+
+      // 直接更新页码指示器 DOM（不走 Vue 响应式）
+      if (loadedItems && pageSize > 0) {
+        const loaded = unref(loadedItems);
+        if (loaded > 0 && scrollHeight > 0) {
+          const firstVisibleRow = Math.floor(scrollTop / scrollHeight * loaded);
+          const currentPage = Math.floor(firstVisibleRow / pageSize) + 1;
+          const totalPages = Math.ceil((totalItems ? unref(totalItems) : loaded) / pageSize) || 1;
+          if (!pageIndicatorEl) {
+            pageIndicatorEl = table.$el.querySelector('.cursor-page-indicator') as HTMLElement;
+          }
+          if (pageIndicatorEl) {
+            pageIndicatorEl.textContent = totalPages > 1 ? `第 ${currentPage} 页 / 共 ${totalPages} 页` : '';
+          }
+        }
+      }
+
+      if (unref(loadingMore) || !unref(hasMore)) return;
+      // 内容不足以填满视口时 scrollHeight <= clientHeight，直接触发加载
+      if (scrollHeight <= clientHeight) {
+        loadMore();
+        return;
+      }
+      const ratio = (scrollTop + clientHeight) / scrollHeight;
+      if (ratio >= CURSOR_LOAD_THRESHOLD) {
+        loadMore();
+      }
+    };
+
+    // 使用 throttle（而非 debounce）让滚动时更及时响应
+    useEventListener({
+      el: bodyEl,
+      name: 'scroll',
+      listener: checkAndLoad,
+      isDebounce: false,
+      wait: 150,
+      options: true,
+    });
+
+    // 首次检查：如果初始数据不足以填满视口，自动加载更多
+    nextTick(checkAndLoad);
+  }
+
   onMountedOrActivated(() => {
     calcTableHeight();
     nextTick(() => {
       debounceRedoHeight();
+      if (unref(propsRef).paginationMode === 'cursor' && cursorActions) {
+        nextTick(setupCursorScrollListener);
+      }
     });
   });
 

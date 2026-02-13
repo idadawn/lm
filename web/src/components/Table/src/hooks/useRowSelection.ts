@@ -18,7 +18,8 @@ export function useRowSelection(propsRef: ComputedRef<BasicTableProps>, tableDat
     return {
       selectedRowKeys: unref(selectedRowKeysRef),
       onChange: (selectedRowKeys: string[]) => {
-        setSelectedRowKeys(selectedRowKeys);
+        // 延迟更新，避免同步 reactive 级联导致 80+ 列表格卡顿
+        nextTick(() => setSelectedRowKeys(selectedRowKeys));
       },
       ...omit(rowSelection, ['onChange']),
     };
@@ -31,26 +32,27 @@ export function useRowSelection(propsRef: ComputedRef<BasicTableProps>, tableDat
     },
   );
 
+  // 选中行变化时通知外部（不使用 deep，因为我们总是替换数组引用而非原地修改）
+  let emitTimer: ReturnType<typeof setTimeout> | null = null;
   watch(
-    () => unref(selectedRowKeysRef),
+    selectedRowKeysRef,
     () => {
-      nextTick(() => {
+      // 防抖 50ms，避免快速连续选择时频繁触发
+      if (emitTimer) clearTimeout(emitTimer);
+      emitTimer = setTimeout(() => {
         const { rowSelection } = unref(propsRef);
         if (rowSelection) {
           const { onChange } = rowSelection;
           if (onChange && isFunction(onChange)) onChange(getSelectRowKeys(), getSelectRows());
         }
-        // table行选择时卡顿明显
         if (unref(tableData).length) {
           emit('selection-change', {
             keys: getSelectRowKeys(),
             rows: getSelectRows(),
           });
         }
-        // table行选择时卡顿明显
-      });
+      }, 50);
     },
-    { deep: true },
   );
 
   const getAutoCreateKey = computed(() => {
@@ -64,19 +66,27 @@ export function useRowSelection(propsRef: ComputedRef<BasicTableProps>, tableDat
 
   function setSelectedRowKeys(rowKeys: string[]) {
     selectedRowKeysRef.value = rowKeys;
-    const allSelectedRows = findNodeAll(
-      toRaw(unref(tableData)).concat(toRaw(unref(selectedRowRef))),
-      item => rowKeys?.includes(item[unref(getRowKey) as string]),
-      {
-        children: propsRef.value.childrenColumnName ?? 'children',
-      },
-    );
-    const trueSelectedRows: any[] = [];
-    rowKeys?.forEach((key: string) => {
-      const found = allSelectedRows.find(item => item[unref(getRowKey) as string] === key);
-      found && trueSelectedRows.push(found);
+    // 延迟执行昂贵的行查找操作，只同步更新 keys（控制复选框状态）
+    nextTick(() => {
+      const rowKeyField = unref(getRowKey) as string;
+      const keySet = new Set(rowKeys);
+      const allSelectedRows = findNodeAll(
+        toRaw(unref(tableData)).concat(toRaw(unref(selectedRowRef))),
+        item => keySet.has(item[rowKeyField]),
+        {
+          children: propsRef.value.childrenColumnName ?? 'children',
+        },
+      );
+      // 按 rowKeys 顺序排列
+      const rowMap = new Map<string, Recordable>();
+      allSelectedRows.forEach(row => rowMap.set(row[rowKeyField], row));
+      const trueSelectedRows: Recordable[] = [];
+      rowKeys?.forEach((key: string) => {
+        const found = rowMap.get(key);
+        if (found) trueSelectedRows.push(found);
+      });
+      selectedRowRef.value = trueSelectedRows;
     });
-    selectedRowRef.value = trueSelectedRows;
   }
 
   function setSelectedRows(rows: Recordable[]) {
@@ -89,11 +99,7 @@ export function useRowSelection(propsRef: ComputedRef<BasicTableProps>, tableDat
   }
 
   function deleteSelectRowByKey(key: string) {
-    const selectedRowKeys = unref(selectedRowKeysRef);
-    const index = selectedRowKeys.findIndex(item => item === key);
-    if (index !== -1) {
-      unref(selectedRowKeysRef).splice(index, 1);
-    }
+    selectedRowKeysRef.value = unref(selectedRowKeysRef).filter(item => item !== key);
   }
 
   function getSelectRowKeys() {
@@ -101,7 +107,6 @@ export function useRowSelection(propsRef: ComputedRef<BasicTableProps>, tableDat
   }
 
   function getSelectRows<T = Recordable>() {
-    // const ret = toRaw(unref(selectedRowRef)).map((item) => toRaw(item));
     return unref(selectedRowRef) as T[];
   }
 

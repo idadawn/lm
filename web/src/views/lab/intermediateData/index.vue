@@ -11,11 +11,6 @@
               <div v-for="color in standardColors" :key="color" class="color-option" :style="{ backgroundColor: color }"
                 :class="{ active: selectedColor === color }" @click="selectColor(color)" :title="color"></div>
             </div>
-            <a-radio-group v-model:value="fillMode" size="small" button-style="solid">
-              <a-radio-button value="cell">单元格</a-radio-button>
-              <a-radio-button value="row">整行</a-radio-button>
-              <a-radio-button value="column">整列</a-radio-button>
-            </a-radio-group>
             <a-button size="small" @click="clearSelectedColor" :type="isClearMode ? 'primary' : 'default'"
               :danger="isClearMode">
               {{ isClearMode ? '清除模式' : '清除' }}
@@ -40,12 +35,10 @@
                   <a-tab-pane v-for="spec in productSpecOptions" :key="spec.id" :tab="spec.name" />
                 </a-tabs>
               </div>
-              <!-- 数据统计 -->
+              <!-- 数据统计（游标模式时仅显示总条数，由底部 CursorFooter 展示「回到顶部」） -->
               <div class="data-statistics">
-                <span v-if="currentPagination.total > 0" class="data-count">
-                  共 {{ currentPagination.total }} 条，
-                  第 {{ currentPagination.current }} / {{ Math.ceil(currentPagination.total / currentPagination.pageSize)
-                  }} 页
+                <span v-if="(getCursorTotal?.() ?? currentPagination.total) > 0" class="data-count">
+                  共 {{ getCursorTotal?.() ?? currentPagination.total }} 条
                 </span>
               </div>
               <a-space>
@@ -83,12 +76,12 @@
 
               <!-- 贴标列 -->
               <LabelingCell v-if="column.key === 'labeling'" :record="record" :text="text"
-                :cell-class="getCellClass(record.id, column.key)" @click="handleCellColor(record.id, column.key)" />
+                :cell-class="getCellClass(record.id, column.key)" @click="handleCellColor(record.id, column.key, $event)" />
 
               <!-- 日期列 (dateMonth - 可编辑) -->
               <template v-else-if="column.key === 'dateMonth'">
                 <div :class="['cell-content', getCellClass(record.id, column.key)]"
-                  @click="handleCellColor(record.id, column.key)">
+                  @click="handleCellColor(record.id, column.key, $event)">
                   <a-input v-if="editingCell?.id === record.id && editingCell?.field === 'dateMonth'"
                     v-model:value="editingValue" size="small" style="width: 100px" @blur="handleCellBlur"
                     @press-enter="handleCellSave" />
@@ -101,24 +94,24 @@
               <!-- 日期字符串列（检测日期、生产日期等） -->
               <DateCell v-else-if="column.key === 'detectionDateStr' || column.key === 'prodDateStr'" :record="record"
                 :text="text" :cell-class="getCellClass(record.id, column.key)"
-                @click="handleCellColor(record.id, column.key)" />
+                @click="handleCellColor(record.id, column.key, $event)" />
 
               <!-- 性能数据列 -->
               <PerfCell v-else-if="column.key?.startsWith('perf')" :record="record" :column="column"
                 :cell-class="getCellClass(record.id, column.key)" :has-permission="hasBtnP(PERM_MAGNETIC)"
-                :get-field-precision="getFieldPrecision" @click="handleCellColor(record.id, column.key)"
+                :get-field-precision="getFieldPrecision" @click="handleCellColor(record.id, column.key, $event)"
                 @save="val => handlePerfSave(record, column.key, val)" />
 
               <!-- 外观特性列 -->
               <FeatureCell v-else-if="column.key === 'appearanceFeatureList'"
                 :record="record" :column="column" :cell-class="getCellClass(record.id, column.key)"
                 :has-permission="hasBtnP(PERM_APPEARANCE)" :get-matched-feature-labels="getMatchedFeatureLabels"
-                @click="handleCellColor(record.id, column.key)" @dblclick="handleOpenFeatureDialog(record)" />
+                @click="handleCellColor(record.id, column.key, $event)" @dblclick="handleOpenFeatureDialog(record)" />
 
               <!-- 可编辑的测量值（中Si、中B、花纹、断头数、单卷重量等） -->
               <EditableMeasurementCell v-else-if="isEditableMeasurement(column.key)" :record="record" :column="column"
                 :cell-class="getCellClass(record.id, column.key)" :has-permission="hasBtnP(PERM_APPEARANCE)"
-                @click="handleCellColor(record.id, column.key)"
+                @click="handleCellColor(record.id, column.key, $event)"
                 @save="val => handleMeasurementSave(record, column.key, val)" />
 
               <template v-else-if="column.key === 'calcStatus'">
@@ -168,22 +161,22 @@
               <!-- 数值列 - 负数红色显示 -->
               <NumericCell v-else-if="isNumericColumn(column.key)" :record="record" :column="column" :text="text"
                 :cell-class="getCellClass(record.id, column.key)" :format-numeric-value="formatNumericValue"
-                @click="handleCellColor(record.id, column.key)" />
+                @click="handleCellColor(record.id, column.key, $event)" />
 
               <!-- 动态检测列 -->
               <NumericCell v-else-if="column.key?.startsWith('detection')" :record="record" :column="column"
                 :text="text" :cell-class="getCellClass(record.id, column.key)"
-                :format-numeric-value="formatNumericValue" @click="handleCellColor(record.id, column.key)" />
+                :format-numeric-value="formatNumericValue" @click="handleCellColor(record.id, column.key, $event)" />
 
               <!-- 动态带厚列 -->
               <NumericCell v-else-if="column.key?.startsWith('thickness') && column.key !== 'thicknessRange'"
                 :record="record" :column="column" :text="text" :cell-class="getCellClass(record.id, column.key)"
-                :format-numeric-value="formatNumericValue" @click="handleCellColor(record.id, column.key)" />
+                :format-numeric-value="formatNumericValue" @click="handleCellColor(record.id, column.key, $event)" />
 
               <!-- 其他列 -->
               <DefaultCellWithNumeric v-else :record="record" :column="column"
                 :cell-class="getCellClass(record.id, column.key)" :is-numeric-string="isNumericString"
-                :format-value="formatValue" @click="handleCellColor(record.id, column.key)" />
+                :format-value="formatValue" @click="handleCellColor(record.id, column.key, $event)" />
             </template>
           </BasicTable>
         </div>
@@ -358,7 +351,6 @@ const selectedExportShortcut = ref<string>(''); // 当前选中的导出快捷�
 const judgeStatusFilter = ref<number>(-1); // 判定状态筛选：-1全部 0需要判定 1无需判定
 const lastFetchParams = ref<Record<string, any>>({}); // 当前查询条件(不含分页)
 const isClearMode = ref<boolean>(false); // 是否处于清除颜色模式
-const fillMode = ref<'cell' | 'row' | 'column'>('cell'); // 填充模式：单元格/整行/整列
 let judgeQueuePollTimer: ReturnType<typeof setTimeout> | null = null;
 
 // 导出日期快捷选项配置
@@ -812,7 +804,7 @@ const rowSelectionComputed = computed(() => ({
   type: 'checkbox' as const,
 }));
 
-const [registerTable, { reload, getDataSource, getSelectRows, clearSelectedRowKeys }] = useTable({
+const [registerTable, { reload, getDataSource, getSelectRows, clearSelectedRowKeys, getCursorTotal, scrollTo }] = useTable({
   api: getIntermediateDataList,
   columns: allColumns,
   rowKey: 'id',
@@ -821,25 +813,15 @@ const [registerTable, { reload, getDataSource, getSelectRows, clearSelectedRowKe
   immediate: false,
   bordered: true,
   size: 'small',
-  // 传统分页配置
+  // 游标式无限滚动（类似淘宝 APP）：只显示总条数 + 回到顶部，滚动到底部约 20% 时自动加载下一页
+  paginationMode: 'cursor',
   pagination: {
     pageSize: 50,
-    showSizeChanger: true,       // 显示每页条数选择器
-    showQuickJumper: true,        // 显示快速跳转
-    pageSizeOptions: ['20', '50', '100', '200'],  // 每页条数选项
-    current: 1,                   // 当前页
-    total: 0,                     // 总条数（动态设置）
-    hideOnSinglePage: false,      // 即使只有一页也显示分页器
-    onChange: (page: number, pageSize: number) => {
-      currentPagination.value.current = page;
-      currentPagination.value.pageSize = pageSize;
-      reload({ page, pageSize });
-    },
-    onShowSizeChange: (_current: number, size: number) => {
-      currentPagination.value.current = 1;
-      currentPagination.value.pageSize = size;
-      reload({ page: 1, pageSize: size });
-    },
+    total: 0,
+  },
+  fetchSetting: {
+    listField: 'list',
+    totalField: 'pagination.total',
   },
   showIndexColumn: false,
   formConfig: {
@@ -1130,6 +1112,8 @@ watch(selectedProductSpecId, async (newVal, oldVal) => {
     coloredCells.value = {};
     // 重置到第一页
     currentPagination.value.current = 1;
+    // 滚动回顶部
+    scrollTo('top');
     // 重新加载表格数据（会触发afterFetch重新加载颜色）
     await nextTick();
     reload({ page: 1 });
@@ -1773,50 +1757,25 @@ async function loadAppearanceCategories() {
 // 使用CSS类替代内联样式，大幅提升性能（160,000+次响应式查找 -> ~100条CSS规则）
 
 // 处理单元格颜色选择
-async function handleCellColor(rowId: string, field: string) {
-
-  // 根据填充模式获取需要处理的单元格
-  let cellsToProcess: { rowId: string; field: string }[] = [];
-
-  if (fillMode.value === 'cell') {
-    // 单元格模式
-    cellsToProcess = [{ rowId, field }];
-  } else if (fillMode.value === 'row') {
-    // 整行模式：获取所有列的字段名
-    const columns = allColumns.value.flatMap(col => {
-      if (col.children) {
-        return col.children.map(child => child.key || child.dataIndex);
-      }
-      return [col.key || col.dataIndex];
-    }).filter(Boolean);
-    cellsToProcess = columns.map(f => ({ rowId, field: f as string }));
-  } else if (fillMode.value === 'column') {
-    // 整列模式：获取所有行的ID
-    cellsToProcess = tableData.value.map(row => ({ rowId: row.id, field }));
+async function handleCellColor(rowId: string, field: string, e?: MouseEvent) {
+  // 有颜色选中或清除模式时，阻止冒泡到行点击（避免同时触发 row selection 导致 isCE 报错）
+  if ((selectedColor.value || isClearMode.value) && e) {
+    e.stopPropagation();
   }
 
+  const key = `${rowId}::${field}`;
 
   // 清除模式
   if (isClearMode.value) {
     const newColorMap = { ...coloredCells.value };
-    cellsToProcess.forEach(cell => {
-      const key = `${cell.rowId}::${cell.field}`;
-      delete newColorMap[key];
-    });
+    delete newColorMap[key];
     coloredCells.value = newColorMap;
 
-    // 批量保存到后端（使用空颜色值表示删除）
     try {
-      const colorsToSave = cellsToProcess.map(cell => ({
-        intermediateDataId: cell.rowId,
-        fieldName: cell.field,
-        colorValue: '', // 空颜色值表示删除
-      }));
       await saveIntermediateDataColors({
-        colors: colorsToSave,
+        colors: [{ intermediateDataId: rowId, fieldName: field, colorValue: '' }],
         productSpecId: selectedProductSpecId.value,
       });
-      createMessage.success(`已清除 ${cellsToProcess.length} 个单元格的颜色`);
     } catch (error) {
       console.error('清除颜色失败:', error);
       createMessage.error('清除颜色失败');
@@ -1827,24 +1786,14 @@ async function handleCellColor(rowId: string, field: string) {
   // 填充模式
   if (selectedColor.value) {
     const newColorMap = { ...coloredCells.value };
-    cellsToProcess.forEach(cell => {
-      const key = `${cell.rowId}::${cell.field}`;
-      newColorMap[key] = selectedColor.value;
-    });
+    newColorMap[key] = selectedColor.value;
     coloredCells.value = newColorMap;
 
-    // 批量保存到后端
     try {
-      const colorsToSave = cellsToProcess.map(cell => ({
-        intermediateDataId: cell.rowId,
-        fieldName: cell.field,
-        colorValue: selectedColor.value,
-      }));
       await saveIntermediateDataColors({
-        colors: colorsToSave,
+        colors: [{ intermediateDataId: rowId, fieldName: field, colorValue: selectedColor.value }],
         productSpecId: selectedProductSpecId.value,
       });
-      createMessage.success(`已填充 ${cellsToProcess.length} 个单元格`);
     } catch (error) {
       console.error('保存颜色失败:', error);
       createMessage.error('颜色保存失败');
@@ -1892,7 +1841,6 @@ async function loadColorsByIds(dataIds: string[]) {
     const colors = result?.colors;
 
     if (colors && colors.length > 0) {
-      // 创建新的对象以确保响应式更新
       const newColorMap: Record<string, string> = { ...coloredCells.value };
       colors.forEach((color: CellColorInfo) => {
         if (color.intermediateDataId && color.fieldName) {
@@ -1900,17 +1848,9 @@ async function loadColorsByIds(dataIds: string[]) {
           newColorMap[key] = color.colorValue;
         }
       });
-      // 使用新对象替换，确保触发响应式更新
-      try {
-        console.log('Updating coloredCells.value');
-        coloredCells.value = newColorMap;
-      } catch (e) {
-        console.error('更新颜色映射失败:', e);
-      }
-    } else {
-      // 如果没有颜色数据，清空颜色映射
-      coloredCells.value = {};
+      coloredCells.value = newColorMap;
     }
+    // 注意：新加载的数据没有颜色时，不清空已有颜色（loadMore 场景）
   } catch (error) {
     console.error('加载颜色数据失败:', error);
   } finally {

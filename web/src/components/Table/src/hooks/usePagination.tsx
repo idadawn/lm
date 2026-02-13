@@ -40,9 +40,13 @@ export function usePagination(refProps: ComputedRef<BasicTableProps>) {
   );
 
   const getPaginationInfo = computed((): PaginationProps | boolean => {
-    const { pagination } = unref(refProps);
+    const { pagination, paginationMode } = unref(refProps);
 
     if (!unref(show) || (isBoolean(pagination) && !pagination)) {
+      return false;
+    }
+    // 游标无限滚动模式：不显示传统分页，由 CursorFooter 展示总条数 + 回到顶部
+    if (paginationMode === 'cursor') {
       return false;
     }
 
@@ -62,6 +66,10 @@ export function usePagination(refProps: ComputedRef<BasicTableProps>) {
   });
 
   function setPagination(info: Partial<PaginationProps>) {
+    // cursor 模式下不需要分页状态，跳过写入 configRef 以避免触发无限递归更新
+    const { paginationMode } = unref(refProps);
+    if (paginationMode === 'cursor') return;
+
     const paginationInfo = unref(getPaginationInfo);
     configRef.value = {
       ...(!isBoolean(paginationInfo) ? paginationInfo : {}),

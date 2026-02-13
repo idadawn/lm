@@ -1,6 +1,6 @@
 import type { ComputedRef } from 'vue';
 import type { BasicTableProps } from '../types/table';
-import { unref } from 'vue';
+import { unref, nextTick } from 'vue';
 import { ROW_KEY } from '../const';
 import { isString, isFunction } from '/@/utils/is';
 
@@ -49,12 +49,11 @@ export function useCustomRow(
             const checkBox = tr.querySelector('input[type=checkbox]');
             if (!checkBox || checkBox.hasAttribute('disabled')) return;
             if (!keys.includes(key)) {
-              setSelectedRowKeys([...keys, key]);
+              // 延迟更新，避免同步 reactive 级联触发 ant-design-vue transformColumns2 isCE 报错
+              nextTick(() => setSelectedRowKeys([...keys, key]));
               return;
             }
-            const keyIndex = keys.findIndex(item => item === key);
-            keys.splice(keyIndex, 1);
-            setSelectedRowKeys(keys);
+            nextTick(() => setSelectedRowKeys(keys.filter(item => item !== key)));
             return;
           }
 
@@ -64,10 +63,10 @@ export function useCustomRow(
               if (keys.length) {
                 clearSelectedRowKeys();
               }
-              setSelectedRowKeys([key]);
+              nextTick(() => setSelectedRowKeys([key]));
               return;
             }
-            clearSelectedRowKeys();
+            nextTick(() => clearSelectedRowKeys());
           }
         }
         handleClick();

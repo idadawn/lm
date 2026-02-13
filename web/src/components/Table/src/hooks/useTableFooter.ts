@@ -19,7 +19,10 @@ export function useTableFooter(
   });
 
   const getFooterProps = computed((): Recordable | undefined => {
-    const { summaryFunc, showSummary, summaryData } = unref(propsRef);
+    const { summaryFunc, showSummary, summaryData, paginationMode } = unref(propsRef);
+    if (paginationMode === 'cursor') {
+      return undefined;
+    }
     return showSummary && !unref(getIsEmptyData)
       ? () => h(TableFooter, { summaryFunc, summaryData, scroll: unref(scrollRef) })
       : undefined;

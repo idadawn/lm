@@ -71,6 +71,8 @@ export interface FetchParams {
   page?: number;
   sortInfo?: Recordable;
   filterInfo?: Recordable;
+  /** 游标分页时的下一页游标，不传表示首次加载 */
+  cursor?: string | null;
 }
 
 export interface GetColumnsParams {
@@ -91,6 +93,8 @@ export interface TableActionType {
   collapseAll: () => void;
   getIsExpanded: () => boolean;
   scrollTo: (pos: string) => void; // pos: id | "top" | "bottom"
+  getCursorTotal?: () => number;
+  loadMore?: () => Promise<void>;
   getSelectRowKeys: () => string[];
   deleteSelectRowByKey: (key: string) => void;
   setPagination: (info: Partial<PaginationProps>) => void;
@@ -129,6 +133,10 @@ export interface FetchSetting {
   listField: string;
   // 请求结果总数字段  支持 a.b.c
   totalField: string;
+  // 游标分页：请求参数中游标字段名（不传则为首页）
+  cursorField?: string;
+  // 游标分页：响应中下一页游标字段名 支持 a.b.c
+  nextCursorField?: string;
 }
 
 export interface TableSetting {
@@ -214,8 +222,13 @@ export interface BasicTableProps<T = any> {
   maxHeight?: number;
   // 是否显示边框
   bordered?: boolean;
-  // 分页配置
+  // 分页配置；为 false 时不显示分页
   pagination?: PaginationProps | boolean;
+  /**
+   * 分页模式：page 传统页码分页，cursor 游标无限滚动（类似淘宝 APP）
+   * cursor 时：只显示总条数 + 回到顶部，滚动到底部约 20% 时自动加载下一页
+   */
+  paginationMode?: 'page' | 'cursor';
   // loading加载
   loading?: boolean;
 

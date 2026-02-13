@@ -27,7 +27,7 @@
 
         <!-- 主表格 -->
         <div class="table-container">
-          <BasicTable @register="registerTable" @selection-change="onTableSelectionChange">
+          <BasicTable @register="registerTable">
 
             <template #tableTitle>
               <div class="spec-tabs-wrap">
@@ -72,10 +72,20 @@
                 </a-dropdown>
               </a-space>
             </template>
+            <template #headerCell="{ column }">
+              <input v-if="column.key === '_selection'"
+                type="checkbox" class="custom-row-checkbox"
+                @click.stop="toggleSelectAll($event)" />
+            </template>
             <template #bodyCell="{ column, record, text }">
 
+              <!-- 自定义复选框列（不走 ant-design-vue rowSelection，避免 80+ 列重渲染） -->
+              <input v-if="column.key === '_selection'"
+                type="checkbox" class="custom-row-checkbox"
+                @click.stop="toggleRowSelection(record.id, $event)" />
+
               <!-- 贴标列 -->
-              <LabelingCell v-if="column.key === 'labeling'" :record="record" :text="text"
+              <LabelingCell v-else-if="column.key === 'labeling'" :record="record" :text="text"
                 :cell-class="getCellClass(record.id, column.key)" @click="handleCellColor(record.id, column.key, $event)" />
 
               <!-- 日期列 (dateMonth - 可编辑) -->
@@ -365,9 +375,6 @@ const exportDateShortcuts = [
   { key: 'lastYear', label: '去年', activeColor: 'orange' },
 ];
 
-// 存储表格数据用于行/列填充 - 使用 shallowRef 避免深度响应式
-const tableData = shallowRef<any[]>([]);
-
 // WPS 10个标准色
 const standardColors = [
   '#C00000', // 深红
@@ -523,6 +530,8 @@ const allColumns = computed(() => {
   const detectionColumns = spec?.detectionColumns || 15;
 
   const columns: BasicColumn[] = [
+    // --- 自定义复选框列（不使用 ant-design-vue rowSelection，避免 80+ 列全量重渲染） ---
+    { title: '', dataIndex: '_selection', key: '_selection', width: 40, fixed: 'left', align: 'center' },
     // --- 基础信息区（固定左侧） ---
     { title: '检验日期', dataIndex: 'detectionDateStr', key: 'detectionDateStr', width: 80, fixed: 'left', align: 'center' },
     { title: '喷次', dataIndex: 'sprayNo', key: 'sprayNo', width: 120, fixed: 'left', align: 'center' },
@@ -800,15 +809,13 @@ const currentPagination = ref({
   total: 0,
 });
 
-const rowSelectionComputed = computed(() => ({
-  type: 'checkbox' as const,
-}));
+// 自定义复选框：用 Set 管理选中状态，不触发 Table 重渲染
+const selectedIdSet = new Set<string>();
 
-const [registerTable, { reload, getDataSource, getSelectRows, clearSelectedRowKeys, getCursorTotal, scrollTo }] = useTable({
+const [registerTable, { reload, getDataSource, getCursorTotal, scrollTo }] = useTable({
   api: getIntermediateDataList,
   columns: allColumns,
   rowKey: 'id',
-  rowSelection: rowSelectionComputed,
   useSearchForm: true,
   immediate: false,
   bordered: true,
@@ -984,18 +991,49 @@ const [registerTable, { reload, getDataSource, getSelectRows, clearSelectedRowKe
         }, 100);
       }
 
-      // 保存表格数据用于行/列填充
-      tableData.value = filteredData;
-
       return filteredData;
     }
     return data;
   },
 });
 
-// 表格勾选变化时同步到本地，用于批量删除按钮展示
-function onTableSelectionChange({ keys }: { keys: string[]; rows: any[] }) {
-  selectedRowKeys.value = keys || [];
+// 自定义复选框：切换选中状态（不触发 Table 重渲染）
+function toggleRowSelection(id: string, e: MouseEvent) {
+  const checkbox = e.target as HTMLInputElement;
+  if (checkbox.checked) {
+    selectedIdSet.add(id);
+  } else {
+    selectedIdSet.delete(id);
+  }
+  selectedRowKeys.value = Array.from(selectedIdSet);
+}
+
+// 全选/取消全选（仅操作当前已加载的数据）
+function toggleSelectAll(e: MouseEvent) {
+  const checkbox = e.target as HTMLInputElement;
+  const allData = getDataSource() as Recordable[];
+  if (checkbox.checked) {
+    allData.forEach(row => selectedIdSet.add(row.id));
+  } else {
+    selectedIdSet.clear();
+  }
+  selectedRowKeys.value = Array.from(selectedIdSet);
+  // 同步所有可见行的复选框状态
+  document.querySelectorAll('.custom-row-checkbox').forEach(cb => {
+    if (cb !== checkbox) {
+      (cb as HTMLInputElement).checked = checkbox.checked;
+    }
+  });
+}
+
+// 清空所有选中（批量删除后、切换页签时调用）
+function clearSelection() {
+  selectedIdSet.clear();
+  selectedRowKeys.value = [];
+  // 取消当前可见的复选框勾选
+  document.querySelectorAll('.custom-row-checkbox:checked').forEach(cb => {
+    (cb as HTMLInputElement).checked = false;
+  });
 }
 
 // 当前勾选行数（用于批量删除按钮展示）
@@ -1003,14 +1041,9 @@ const selectedRowCount = computed(() => selectedRowKeys.value.length);
 
 // 批量删除
 async function handleBatchDelete() {
-  const rows = getSelectRows();
-  if (!rows || rows.length === 0) {
-    createMessage.warning('请先勾选要删除的数据');
-    return;
-  }
-  const ids = rows.map((r: any) => r.id).filter(Boolean);
+  const ids = Array.from(selectedIdSet);
   if (ids.length === 0) {
-    createMessage.warning('未获取到有效数据');
+    createMessage.warning('请先勾选要删除的数据');
     return;
   }
   createConfirm({
@@ -1022,8 +1055,7 @@ async function handleBatchDelete() {
         batchDeleting.value = true;
         await batchDeleteIntermediateData(ids);
         createMessage.success(`已删除 ${ids.length} 条数据`);
-        selectedRowKeys.value = [];
-        clearSelectedRowKeys();
+        clearSelection();
         await reload();
       } catch (e: any) {
         createMessage.error(e?.message || '批量删除失败');
@@ -1110,6 +1142,8 @@ watch(selectedProductSpecId, async (newVal, oldVal) => {
   if (newVal && newVal !== oldVal) {
     // 清空现有颜色数据
     coloredCells.value = {};
+    // 清空选中状态
+    clearSelection();
     // 重置到第一页
     currentPagination.value.current = 1;
     // 滚动回顶部
@@ -2048,6 +2082,13 @@ async function handleQuickImport(file: File) {
 </script>
 
 <style scoped>
+/* 自定义复选框 */
+.custom-row-checkbox {
+  cursor: pointer;
+  width: 15px;
+  height: 15px;
+}
+
 /* 数据统计样式 */
 .data-statistics {
   display: inline-flex;

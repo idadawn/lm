@@ -2,33 +2,47 @@
   <div class="page-content-wrapper">
     <div class="page-content-wrapper-center">
       <div class="page-content-wrapper-content">
-        <!-- 自定义排序控制 -->
-        <div class="table-toolbar">
-          <CustomSortControl v-model="sortRules" @change="handleSortChange" />
-          <div class="color-fill-control">
-            <span class="color-label">填充颜色:</span>
-            <div class="color-palette">
-              <div v-for="color in standardColors" :key="color" class="color-option" :style="{ backgroundColor: color }"
-                :class="{ active: selectedColor === color }" @click="selectColor(color)" :title="color"></div>
-            </div>
-            <a-button size="small" @click="clearSelectedColor" :type="isClearMode ? 'primary' : 'default'"
-              :danger="isClearMode">
-              {{ isClearMode ? '清除模式' : '清除' }}
-            </a-button>
-            <a-button size="small" type="primary" @click="saveColorsBatch" :loading="savingColors">保存配置</a-button>
-          </div>
-        </div>
-
-        <!-- 计算进度状态栏 -->
-        <CalcProgressBar
-          :active-list="activeProgressList"
-          :completed-list="recentCompletedList"
-        />
-
-        <!-- 主表格 -->
+        <!-- 主表格：第一行查询条件，第二行排序+填充颜色+查询按钮 -->
         <div class="table-container">
           <BasicTable @register="registerTable">
-
+            <template #form-toolbar>
+              <div class="form-second-row">
+                <!-- 查询、重置放在最左侧 -->
+                <div class="form-action-buttons">
+                  <a-button type="primary" @click="handleFormSubmit">查询</a-button>
+                  <a-button @click="handleFormReset">重置</a-button>
+                </div>
+                <!-- 自定义排序 -->
+                <div class="sort-control-wrapper">
+                  <div class="sort-control-inline" @click="openSortEditor">
+                    <SortAscendingOutlined />
+                    <span class="sort-label">排序</span>
+                  </div>
+                  <!-- 排序规格显示 -->
+                  <div class="sort-rules-compact">
+                    <template v-if="sortRules.length > 0">
+                      <span v-for="(rule, index) in displaySortRules" :key="index" class="sort-rule-tag">
+                        {{ rule.label }}{{ rule.order === 'asc' ? '↑' : '↓' }}
+                      </span>
+                    </template>
+                    <span v-else class="sort-rule-default">默认排序</span>
+                  </div>
+                </div>
+                <!-- 填充颜色 -->
+                <div class="color-fill-control">
+                  <span class="color-label">填充颜色:</span>
+                  <div class="color-palette">
+                    <div v-for="color in standardColors" :key="color" class="color-option" :style="{ backgroundColor: color }"
+                      :class="{ active: selectedColor === color }" @click="selectColor(color)" :title="color"></div>
+                  </div>
+                  <a-button size="small" @click="clearSelectedColor" :type="isClearMode ? 'primary' : 'default'"
+                    :danger="isClearMode">
+                    {{ isClearMode ? '清除模式' : '清除' }}
+                  </a-button>
+                  <a-button size="small" type="primary" @click="saveColorsBatch" :loading="savingColors">保存配置</a-button>
+                </div>
+              </div>
+            </template>
             <template #tableTitle>
               <div class="spec-tabs-wrap">
                 <a-tabs v-model:activeKey="selectedProductSpecId" type="card" size="small" class="spec-tabs">
@@ -193,6 +207,13 @@
         </div>
 
       </div>
+
+      <!-- 计算进度状态栏（表格底部居中，不遮挡 CursorFooter） -->
+      <CalcProgressBar
+        :active-list="activeProgressList"
+        :completed-list="recentCompletedList"
+      />
+
       <MagneticDataImportQuickModal @register="registerQuickModal" @reload="handleImportSuccess" />
       <FeatureSelectDialog ref="featureSelectDialogRef" @confirm="handleFeatureSelectConfirm" />
 
@@ -228,6 +249,13 @@
         <a-table :columns="calcLogColumns" :data-source="calcLogData" :pagination="calcLogPagination"
           :loading="calcLogLoading" row-key="id" size="small" @change="handleCalcLogTableChange" />
       </a-drawer>
+
+      <!-- 自定义排序编辑器 -->
+      <CustomSortEditor
+        v-model:visible="sortEditorVisible"
+        v-model:sortRules="sortRules"
+        @change="handleSortChangeFromEditor"
+      />
     </div>
   </div>
 </template>
@@ -269,14 +297,14 @@ import DateCell from './components/cells/DateCell.vue';
 import EditableMeasurementCell from './components/cells/EditableMeasurementCell.vue';
 import NumericCell from './components/cells/NumericCell.vue';
 import DefaultCellWithNumeric from './components/cells/DefaultCellWithNumeric.vue';
-import CustomSortControl from '../rawData/components/CustomSortControl.vue';
+import CustomSortEditor from '../rawData/components/CustomSortEditor.vue';
 import CalcProgressBar from './components/CalcProgressBar.vue';
 import { useCalcProgress } from '/@/hooks/web/useCalcProgress';
 import { useFormulaPrecision } from '/@/composables/useFormulaPrecision';
 import { useColorStyles } from '/@/composables/useColorStyles';
 
 import { useModal } from '/@/components/Modal';
-import { UploadOutlined, ReloadOutlined, DownloadOutlined, CheckCircleOutlined, DeleteOutlined } from '@ant-design/icons-vue';
+import { UploadOutlined, ReloadOutlined, DownloadOutlined, CheckCircleOutlined, DeleteOutlined, SortAscendingOutlined } from '@ant-design/icons-vue';
 import MagneticDataImportQuickModal from '../magneticData/MagneticDataImportQuickModal.vue';
 import { createMagneticImportSession, uploadAndParseMagneticData } from '/@/api/lab/magneticData';
 import type { IntermediateDataCalcLogItem } from '/@/api/lab/model/intermediateDataCalcLogModel';
@@ -397,6 +425,25 @@ const sortRules = ref([
   { field: 'subcoilNo', order: 'asc' as 'asc' | 'desc' },
   { field: 'lineNo', order: 'asc' as 'asc' | 'desc' }
 ]);
+
+// 字段映射
+const sortFieldMap: Record<string, string> = {
+  prodDate: '生产日期',
+  furnaceBatchNo: '炉次号',
+  coilNo: '卷号',
+  subcoilNo: '分卷号',
+  lineNo: '产线',
+  productSpecName: '产品规格',
+  creatorTime: '录入日期',
+};
+
+// 简化显示的排序规则
+const displaySortRules = computed(() => {
+  return sortRules.value.map(rule => ({
+    ...rule,
+    label: sortFieldMap[rule.field] || rule.field,
+  }));
+});
 
 const calcStatusMap: Record<string, { text: string; color: string }> = {
   PENDING: { text: '待算', color: 'orange' },
@@ -810,9 +857,36 @@ const currentPagination = ref({
 });
 
 // 自定义复选框：用 Set 管理选中状态，不触发 Table 重渲染
+// 自定义排序编辑器显示状态
+const sortEditorVisible = ref(false);
+
+// 打开排序编辑器
+function openSortEditor() {
+  sortEditorVisible.value = true;
+}
+
+function handleFormSubmit() {
+  getForm()?.submit();
+}
+
+async function handleFormReset() {
+  await getForm()?.resetFields();
+  getForm()?.submit();
+}
+
+// 处理排序变化
+function handleSortChangeFromEditor(newRules: any[]) {
+  sortRules.value = newRules;
+  // 重置到第一页
+  currentPagination.value.current = 1;
+  // 重新加载表格数据
+  reload({ page: 1 });
+}
+
+// 自定义复选框：用 Set 管理选中状态，不触发 Table 重渲浏迟
 const selectedIdSet = new Set<string>();
 
-const [registerTable, { reload, getDataSource, getCursorTotal, scrollTo }] = useTable({
+const [registerTable, { reload, getDataSource, getCursorTotal, scrollTo, getForm }] = useTable({
   api: getIntermediateDataList,
   columns: allColumns,
   rowKey: 'id',
@@ -833,9 +907,12 @@ const [registerTable, { reload, getDataSource, getCursorTotal, scrollTo }] = use
   showIndexColumn: false,
   formConfig: {
     baseColProps: { span: 6 },
-    labelWidth: 100,
+    labelWidth: 72,
     showAdvancedButton: false,
+    showActionButtonGroup: false,
+    actionClass: 'form-action-inline',
     schemas: [
+      // 第一行：查询条件
       {
         field: 'keyword',
         label: '关键词',
@@ -850,7 +927,7 @@ const [registerTable, { reload, getDataSource, getCursorTotal, scrollTo }] = use
         field: 'detectionDateRange',
         label: '检测日期',
         component: 'DateRange',
-        colProps: { span: 6 },
+        colProps: { span: 5 },
         componentProps: {
           placeholder: ['开始日期', '结束日期'],
           ranges: getDateRanges(),
@@ -860,8 +937,7 @@ const [registerTable, { reload, getDataSource, getCursorTotal, scrollTo }] = use
         field: 'prodDateRange',
         label: '生产日期',
         component: 'DateRange',
-        colProps: { span: 6 },
-
+        colProps: { span: 5 },
         componentProps: {
           placeholder: ['开始日期', '结束日期'],
           ranges: getDateRanges(),
@@ -871,7 +947,7 @@ const [registerTable, { reload, getDataSource, getCursorTotal, scrollTo }] = use
         field: 'calcStatus',
         label: '计算状态',
         component: 'Select',
-        colProps: { span: 4 },
+        colProps: { span: 5 },
         defaultValue: -1,
         componentProps: {
           options: [
@@ -888,7 +964,7 @@ const [registerTable, { reload, getDataSource, getCursorTotal, scrollTo }] = use
         field: 'judgeStatus',
         label: '判定状态',
         component: 'Select',
-        colProps: { span: 4 },
+        colProps: { span: 5 },
         defaultValue: -1,
         componentProps: {
           options: [
@@ -901,6 +977,16 @@ const [registerTable, { reload, getDataSource, getCursorTotal, scrollTo }] = use
           allowClear: false,
         },
       },
+      // 第二行：查询/重置在 form-toolbar 内最左侧，排序+填充颜色占满整行
+      {
+        field: '_toolbar',
+        label: '',
+        component: 'Input',
+        slot: 'toolbar',
+        colProps: { span: 24 },
+        itemProps: { style: { marginBottom: 0 } },
+      },
+
     ],
     fieldMapToTime: [
       ['detectionDateRange', ['detectionStartDate', 'detectionEndDate'], 'YYYY-MM-DD'],
@@ -908,6 +994,8 @@ const [registerTable, { reload, getDataSource, getCursorTotal, scrollTo }] = use
     ],
   },
   beforeFetch: params => {
+    // 表单占位字段，不参与查询
+    if (params._colorFill !== undefined) delete params._colorFill;
     // 处理状态筛选: -1表示全部，删除不发送
     if (params.calcStatus === -1) {
       delete params.calcStatus;
@@ -1140,15 +1228,6 @@ watch(selectedProductSpecId, async (newVal, oldVal) => {
     reload({ page: 1 });
   }
 });
-
-// 处理排序变化（新的多字段排序）
-function handleSortChange(newSortRules: any[]) {
-  sortRules.value = newSortRules;
-  // 重置到第一页
-  currentPagination.value.current = 1;
-  // 重新加载表格数据
-  reload({ page: 1 });
-}
 
 function handleCalcLogTableChange(pagination: any) {
   loadCalcLogs(pagination?.current || 1, pagination?.pageSize || 20);
@@ -2099,15 +2178,76 @@ async function handleQuickImport(file: File) {
   border-radius: 4px;
 }
 
-.table-toolbar {
-  margin-bottom: 1px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
 .spec-tabs {
   margin-bottom: 8px;
+}
+
+
+
+/* 自定义排序控件包装器 */
+.sort-control-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* 简化的自定义排序按钮 */
+.sort-control-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: #ffffff;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #595959;
+  transition: all 0.3s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.sort-control-inline:hover {
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+.sort-control-inline .sort-label {
+  font-size: 14px;
+}
+
+/* 紧凑的排序规格显示：单行不换行，过长时横向滚动 */
+/* 单行不换行，放宽宽度避免出现滚动条 */
+.sort-rules-compact {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+  min-width: 0;
+  max-width: 560px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.sort-rule-tag {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 2px 8px;
+  background: #e6f7ff;
+  border: 1px solid #91d5ff;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #1890ff;
+  white-space: nowrap;
+}
+
+.sort-rule-default {
+  font-size: 13px;
+  color: #8c8c8c;
+  font-style: italic;
 }
 
 /* 颜色填充控制 */
@@ -2116,18 +2256,24 @@ async function handleQuickImport(file: File) {
   align-items: center;
   gap: 8px;
   padding: 4px 8px;
-  background: #f5f5f5;
+  background: #fafafa;
   border-radius: 4px;
+  min-width: auto;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .color-label {
-  font-size: 12px;
+  font-size: 14px;
   color: #666;
+  flex-shrink: 0;
 }
 
 .color-palette {
   display: flex;
   gap: 4px;
+  flex-shrink: 0;
 }
 
 .color-option {
@@ -2217,13 +2363,155 @@ async function handleQuickImport(file: File) {
   margin-bottom: 0;
 }
 
-/* 查询表单与 Tab 之间减小间距 */
+/* 查询表单整体布局 - 两行显示 */
 .page-content-wrapper-content :deep(.search-form) {
   margin-bottom: 0;
 }
 
+.page-content-wrapper-content :deep(.search-form .ant-form) {
+  width: 100%;
+}
+
+.page-content-wrapper-content :deep(.search-form .ant-row) {
+  margin: 0 -8px !important;
+  align-items: center;
+}
+
+.page-content-wrapper-content :deep(.search-form .ant-col) {
+  padding: 0 8px !important;
+}
+
+/* 表单项间距 */
 .page-content-wrapper-content :deep(.search-form .ant-form-item) {
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+/* 搜索表单控件区域：用 flex 占满剩余空间，避免 calc(100% - 80px) 在窄列中导致输入框过窄 */
+.page-content-wrapper-content :deep(.search-form .ant-form-item .ant-form-item-control) {
+  flex: 1;
+  min-width: 0;
+  width: auto !important;
+}
+
+.page-content-wrapper-content :deep(.search-form .ant-form-item .ant-form-item-control-input) {
+  width: 100%;
+}
+
+.page-content-wrapper-content :deep(.search-form .ant-form-item .ant-form-item-control-input-content) {
+  width: 100%;
+}
+
+/* 第二行与第一行增加 10px 间距（第二行为单列 span 24） */
+.page-content-wrapper-content :deep(.search-form .ant-row .ant-col-24) {
+  margin-top: 10px;
+}
+
+/* 第二行左侧查询/重置按钮组 */
+.form-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.form-action-buttons .ant-btn {
+  height: 32px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+/* 第二行控件容器：与查询/重置按钮间距一致 */
+.form-second-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 4px 0;
+}
+
+/* 表单操作按钮区域：与第二行左侧内容垂直居中对齐 */
+.page-content-wrapper-content :deep(.search-form .form-action-inline) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-shrink: 0;
+  min-height: 32px;
+}
+
+/* 按钮所在列与左侧同高、垂直居中 */
+.page-content-wrapper-content :deep(.search-form .ant-form-item.form-action-inline) {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+}
+
+.page-content-wrapper-content :deep(.search-form .form-action-inline .ant-form-item-control-input-content) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 查询按钮样式调整 */
+.page-content-wrapper-content :deep(.search-form .ant-btn) {
+  height: 32px;
+  padding: 0 16px;
+  font-size: 14px;
+}
+
+/* 计算状态和判定状态下拉框样式优化 */
+.page-content-wrapper-content :deep(.search-form .ant-select) {
+  font-size: 14px;
+}
+
+.page-content-wrapper-content :deep(.search-form .ant-select-selector) {
+  border-radius: 4px;
+  height: 32px;
+  line-height: 32px;
+  padding: 0 11px !important;
+}
+
+.page-content-wrapper-content :deep(.search-form .ant-select-selection-item) {
+  line-height: 30px;
+  font-size: 14px;
+}
+
+.page-content-wrapper-content :deep(.search-form .ant-form-item-label > label) {
+  font-size: 14px;
+  color: #595959;
+  height: 32px;
+  line-height: 32px;
+}
+
+.page-content-wrapper-content :deep(.search-form .ant-input) {
+  font-size: 14px;
+  border-radius: 4px;
+  height: 32px;
+  padding: 0 11px;
+}
+
+/* 输入框外层包装（带前后缀时）：与 Select 统一为 32px */
+.page-content-wrapper-content :deep(.search-form .ant-input-affix-wrapper) {
+  height: 32px;
+  padding: 0 11px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.page-content-wrapper-content :deep(.search-form .ant-input-affix-wrapper .ant-input) {
+  height: 30px;
+  padding: 0;
+  font-size: 14px;
+}
+
+.page-content-wrapper-content :deep(.search-form .ant-picker) {
+  font-size: 14px;
+  border-radius: 4px;
+  height: 32px;
+  padding: 0 11px;
+}
+
+.page-content-wrapper-content :deep(.search-form .ant-picker-input > input) {
+  font-size: 14px;
 }
 
 /* 表格容器样式 */

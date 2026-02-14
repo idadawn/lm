@@ -1,46 +1,42 @@
 <template>
-  <div v-if="visible" class="calc-progress-bar">
-    <div v-for="progress in activeList" :key="progress.batchId" class="progress-item">
-      <div class="progress-info">
+  <div v-if="visible" class="calc-progress-wrapper">
+    <div class="calc-progress-bar">
+      <!-- 活跃任务 -->
+      <div v-for="progress in activeList" :key="progress.batchId" class="progress-item">
         <span class="progress-icon">
           <LoadingOutlined v-if="progress.status === 'PROCESSING'" spin />
           <CheckCircleOutlined v-else-if="progress.status === 'COMPLETED'" class="icon-success" />
           <CloseCircleOutlined v-else-if="progress.status === 'FAILED'" class="icon-error" />
         </span>
         <span class="progress-label">
-          {{ progress.taskType === 'JUDGE' ? '批量判定' : progress.taskType === 'MAGNETIC_JUDGE' ? '磁性导入判定' : '后台计算' }}
+          {{ progress.taskType === 'JUDGE' ? '判定' : progress.taskType === 'MAGNETIC_JUDGE' ? '磁性判定' : '计算' }}
         </span>
-        <span class="progress-detail">
-          {{ progress.completed }}/{{ progress.total }} 条
-          <template v-if="progress.failedCount > 0">
-            <span class="failed-count">({{ progress.failedCount }} 失败)</span>
-          </template>
-        </span>
+        <div class="progress-bar-row">
+          <a-progress
+            :percent="calcPercent(progress)"
+            :status="progressStatus(progress)"
+            :stroke-color="progressColor(progress)"
+            size="small"
+            class="progress-bar"
+            :format="(p) => `${p}%`"
+          />
+          <span class="progress-detail">
+            {{ progress.completed }}/{{ progress.total }}
+            <span v-if="progress.failedCount > 0" class="failed-count">({{ progress.failedCount }}失败)</span>
+          </span>
+        </div>
       </div>
-      <a-progress
-        :percent="calcPercent(progress)"
-        :status="progressStatus(progress)"
-        :stroke-color="progressColor(progress)"
-        size="small"
-        class="progress-bar"
-        :format="(p) => `${p}%`"
-      />
-      <span class="progress-message">{{ progress.message }}</span>
-    </div>
 
-    <!-- 完成/失败的提示 -->
-    <div v-for="progress in completedList" :key="'done-' + progress.batchId" class="progress-item completed">
-      <div class="progress-info">
+      <!-- 完成/失败的提示 -->
+      <div v-for="progress in completedList" :key="'done-' + progress.batchId" class="progress-item completed">
         <span class="progress-icon">
           <CheckCircleOutlined v-if="progress.status === 'COMPLETED'" class="icon-success" />
           <CloseCircleOutlined v-else class="icon-error" />
         </span>
         <span class="progress-detail">
-          {{ progress.status === 'COMPLETED' ? (progress.taskType === 'MAGNETIC_JUDGE' || progress.taskType === 'JUDGE' ? '判定完成' : '处理完成') : (progress.taskType === 'MAGNETIC_JUDGE' || progress.taskType === 'JUDGE' ? '判定失败' : '处理失败') }}:
-          成功 {{ progress.successCount }} 条
-          <template v-if="progress.failedCount > 0">
-            , 失败 {{ progress.failedCount }} 条
-          </template>
+          {{ progress.status === 'COMPLETED' ? (progress.taskType === 'MAGNETIC_JUDGE' || progress.taskType === 'JUDGE' ? '判定完成' : '处理完成') : (progress.taskType === 'MAGNETIC_JUDGE' || progress.taskType === 'JUDGE' ? '判定失败' : '处理失败') }}
+          {{ progress.successCount }}条
+          <span v-if="progress.failedCount > 0" class="failed-count">/ {{ progress.failedCount }}失败</span>
         </span>
       </div>
     </div>
@@ -80,42 +76,38 @@ function progressColor(progress: CalcProgressData): string {
 </script>
 
 <style lang="less" scoped>
+.calc-progress-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 4px 0;
+}
+
 .calc-progress-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
   background: linear-gradient(135deg, #e6f7ff 0%, #f0f5ff 100%);
   border: 1px solid #91d5ff;
-  border-radius: 6px;
-  padding: 8px 16px;
-  margin-bottom: 12px;
-  transition: all 0.3s ease;
+  border-radius: 16px;
+  padding: 4px 16px;
+  max-width: 80%;
 }
 
 .progress-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 4px 0;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: 12px;
 
   &.completed {
     opacity: 0.8;
   }
-
-  & + .progress-item {
-    border-top: 1px dashed #d9d9d9;
-    padding-top: 8px;
-    margin-top: 4px;
-  }
-}
-
-.progress-info {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-  min-width: 180px;
 }
 
 .progress-icon {
-  font-size: 16px;
+  font-size: 14px;
   display: flex;
   align-items: center;
 }
@@ -131,12 +123,40 @@ function progressColor(progress: CalcProgressData): string {
 .progress-label {
   font-weight: 600;
   color: #1890ff;
-  font-size: 13px;
+  font-size: 12px;
+}
+
+/* 进度条与右侧数量/失败信息同一行，并与百分比垂直对齐 */
+.progress-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 20px;
+}
+
+.progress-bar-row :deep(.ant-progress) {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0;
+}
+
+.progress-bar-row :deep(.ant-progress-outer),
+.progress-bar-row :deep(.ant-progress-inner) {
+  border-radius: 4px;
+}
+
+.progress-bar-row :deep(.ant-progress-text) {
+  min-width: 32px;
+  font-size: 12px;
+  line-height: 20px;
+  margin-left: 8px;
 }
 
 .progress-detail {
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 20px;
   color: #595959;
+  flex-shrink: 0;
 }
 
 .failed-count {
@@ -145,17 +165,6 @@ function progressColor(progress: CalcProgressData): string {
 }
 
 .progress-bar {
-  flex: 1;
-  min-width: 120px;
-  max-width: 300px;
-}
-
-.progress-message {
-  font-size: 12px;
-  color: #8c8c8c;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 200px;
+  width: 100px;
 }
 </style>

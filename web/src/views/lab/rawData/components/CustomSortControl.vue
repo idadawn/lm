@@ -218,19 +218,23 @@ watch(editorVisible, (newValue) => {
 .custom-sort-control {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 6px 0;
+  gap: 8px;
+  padding: 4px 8px;
+  flex-wrap: nowrap;
+  min-width: 0;
+  background: #ffffff;
+  border-radius: 6px;
 
   * {
     box-sizing: border-box;
   }
 
   .ant-btn {
-    height: 40px;
-    width: 130px;
-    padding: 8px;
-    font-size: 13px;
-    border-radius: 8px;
+    height: 32px;
+    width: auto;
+    padding: 4px 12px;
+    font-size: 14px;
+    border-radius: 6px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
@@ -268,20 +272,19 @@ watch(editorVisible, (newValue) => {
 
   .sort-rules-display {
     flex: 1;
+    min-width: 200px;
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
-    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    gap: 6px;
+    padding: 4px 8px;
+    background: transparent;
     border: 1px solid #e8e8e8;
-    border-radius: 6px;
-    font-size: 13px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+    font-size: 14px;
     transition: all 0.3s;
 
     &:hover {
-      border-color: #d4edda;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      border-color: #d9d9d9;
     }
 
     .rules-label {
@@ -289,6 +292,7 @@ watch(editorVisible, (newValue) => {
       white-space: nowrap;
       flex-shrink: 0;
       font-weight: 500;
+      font-size: 14px;
     }
 
     .rules-content {
@@ -302,13 +306,13 @@ watch(editorVisible, (newValue) => {
       .rule-item {
         display: inline-flex;
         align-items: center;
-        padding: 2px 8px;
+        padding: 2px 6px;
         background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%);
         border: 1px solid #91d5ff;
         border-radius: 4px;
         cursor: default;
         transition: all 0.3s;
-        font-size: 12px;
+        font-size: 13px;
         font-weight: 500;
         color: #1890ff;
 
@@ -353,18 +357,18 @@ watch(editorVisible, (newValue) => {
 
   .sort-rules-placeholder {
     flex: 1;
+    min-width: 200px;
     color: #8c8c8c;
-    font-size: 13px;
-    padding: 6px 12px;
-    background: #fafafa;
+    font-size: 14px;
+    padding: 4px 8px;
+    background: transparent;
     border: 1px dashed #d9d9d9;
-    border-radius: 6px;
+    border-radius: 4px;
     text-align: center;
     transition: all 0.3s;
 
     &:hover {
       border-color: #91d5ff;
-      background: #f0f9ff;
       color: #595959;
     }
   }

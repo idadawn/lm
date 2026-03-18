@@ -92,8 +92,6 @@ cp "$BUILD_DIR/api/"*.exe "$BUILD_DIR/api-minimal/" 2>/dev/null || true
 cp "$BUILD_DIR/api/"*.json "$BUILD_DIR/api-minimal/" 2>/dev/null || true
 cp "$BUILD_DIR/api/"*.config "$BUILD_DIR/api-minimal/" 2>/dev/null || true
 cp "$BUILD_DIR/api/"*.xml "$BUILD_DIR/api-minimal/" 2>/dev/null || true
-# 保留Configurations目录
-cp -r "$BUILD_DIR/api/Configurations" "$BUILD_DIR/api-minimal/" 2>/dev/null || true
 
 mkdir -p "$BUILD_DIR/worker-minimal"
 cp "$BUILD_DIR/worker/"*.dll "$BUILD_DIR/worker-minimal/" 2>/dev/null || true
@@ -101,7 +99,6 @@ cp "$BUILD_DIR/worker/"*.exe "$BUILD_DIR/worker-minimal/" 2>/dev/null || true
 cp "$BUILD_DIR/worker/"*.json "$BUILD_DIR/worker-minimal/" 2>/dev/null || true
 cp "$BUILD_DIR/worker/"*.config "$BUILD_DIR/worker-minimal/" 2>/dev/null || true
 cp "$BUILD_DIR/worker/"*.xml "$BUILD_DIR/worker-minimal/" 2>/dev/null || true
-cp -r "$BUILD_DIR/worker/Configurations" "$BUILD_DIR/worker-minimal/" 2>/dev/null || true
 
 # 打包后端 (api + worker 最小集)
 tar -czvf "lm-backend-$VERSION.tar.gz" api-minimal worker-minimal

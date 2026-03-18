@@ -2,6 +2,8 @@ using Newtonsoft.Json.Serialization;
 
 namespace Poxiao.Infrastructure.Const;
 
+using Microsoft.Extensions.Configuration;
+
 /// <summary>
 /// 公共常量.
 /// </summary>
@@ -27,9 +29,9 @@ public class CommonConst
     public const string GLOBALTENANT = "poxiao:globaltenant";
 
     /// <summary>
-    /// 默认密码.
+    /// 默认密码（从配置读取，默认 lm@2025）.
     /// </summary>
-    public const string DEFAULTPASSWORD = "123456";
+    public static string DEFAULTPASSWORD => App.Configuration?["AppSettings:DefaultPassword"] ?? "lm@2025";
 
     /// <summary>
     /// 用户缓存.

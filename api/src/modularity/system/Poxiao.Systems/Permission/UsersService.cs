@@ -983,7 +983,9 @@ public class UsersService : IUsersService, IDynamicApiController, ITransient
         entity.QuickQuery = PinyinHelper.PinyinString(input.realName);
         entity.Secretkey = Guid.NewGuid().ToString();
         entity.Password = MD5Encryption.Encrypt(MD5Encryption.Encrypt(CommonConst.DEFAULTPASSWORD) + entity.Secretkey);
-        string? headIcon = input.headIcon.Split('/').ToList().Last();
+        string? headIcon = string.IsNullOrEmpty(input.headIcon)
+            ? "001.png"
+            : input.headIcon.Split('/').ToList().Last();
         if (string.IsNullOrEmpty(headIcon))
             headIcon = "001.png";
         entity.HeadIcon = headIcon;

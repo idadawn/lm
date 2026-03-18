@@ -29,7 +29,7 @@
                   </div>
                 </div>
                 <!-- 填充颜色 -->
-                <div class="color-fill-control">
+                <div v-if="hasBtnP(PERM_FILL_COLOR)" class="color-fill-control">
                   <span class="color-label">填充颜色:</span>
                   <div class="color-palette">
                     <div v-for="color in standardColors" :key="color" class="color-option" :style="{ backgroundColor: color }"
@@ -61,13 +61,13 @@
                     <UploadOutlined /> 磁性数据导入
                   </a-button>
                 </a-upload>
-                <a-button type="primary" :loading="batchCalculating" @click="handleBatchRecalculate">
+                <a-button v-if="hasBtnP(PERM_CALC)" type="primary" :loading="batchCalculating" @click="handleBatchRecalculate">
                   <ReloadOutlined v-if="!batchCalculating" /> 批量计算
                 </a-button>
-                <a-button type="primary" color="success" :loading="batchJudging" @click="handleBatchJudge">
+                <a-button v-if="hasBtnP(PERM_JUDGE)" type="primary" color="success" :loading="batchJudging" @click="handleBatchJudge">
                   <CheckCircleOutlined v-if="!batchJudging" /> 批量判定
                 </a-button>
-                <a-button danger :disabled="!selectedRowCount" :loading="batchDeleting" @click="handleBatchDelete">
+                <a-button v-if="hasBtnP(PERM_DEL)" danger :disabled="!selectedRowCount" :loading="batchDeleting" @click="handleBatchDelete">
                   <DeleteOutlined /> 批量删除
                   <template v-if="selectedRowCount">({{ selectedRowCount }})</template>
                 </a-button>
@@ -333,9 +333,10 @@ const { activeProgressList, recentCompletedList, hasActiveCalc } = useCalcProgre
 // 权限标识 (对应按钮编码)
 const PERM_MAGNETIC = 'btn_edit_magnetic';
 const PERM_APPEARANCE = 'btn_edit_appearance';
-// const PERM_FILL_COLOR = 'btn_fill_color';
-// const PERM_CALC = 'btn_calc';
-// const PERM_JUDGE = 'btn_judge';
+const PERM_FILL_COLOR = 'btn_fill_color';
+const PERM_CALC = 'btn_calc';
+const PERM_JUDGE = 'btn_judge';
+const PERM_DEL = 'btn_del';
 
 
 // 产品规格选项

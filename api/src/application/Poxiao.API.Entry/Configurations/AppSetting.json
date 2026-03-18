@@ -1,6 +1,7 @@
 {
     "AppSettings": {
-        "InjectMiniProfiler": true
+        "InjectMiniProfiler": true,
+        "DefaultPassword": "lm@2025"
     },
     "Lab": {
         "Formula": {

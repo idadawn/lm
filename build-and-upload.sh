@@ -136,12 +136,17 @@ if command -v node &> /dev/null; then
         version: '$VERSION',
         backend: '$BACKEND_URL',
         web: '$WEB_URL',
-        date: new Date().toISOString()
+        date: new Date().toISOString(),
+        latest: true
     };
+    // 先清除其他版本的 latest 标记
+    data.versions.forEach(v => v.latest = false);
     // 插入到开头（最新在前）
     data.versions.unshift(newVersion);
     // 只保留最近 10 个版本
     data.versions = data.versions.slice(0, 10);
+    // 设置 latest 快捷引用
+    data.latest = newVersion;
     fs.writeFileSync('$VERSIONS_FILE', JSON.stringify(data, null, 2));
     "
     

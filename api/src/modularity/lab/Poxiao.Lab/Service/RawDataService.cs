@@ -788,6 +788,7 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
                     {
                         Id = l.Id,
                         FileName = l.FileName,
+                        SourceFileId = l.SourceFileId,
                         TotalRows = l.TotalRows,
                         SuccessCount = l.SuccessCount,
                         FailCount = l.FailCount,

@@ -49,14 +49,14 @@ BUILD_DIR="/tmp/lm-build-$VERSION"
 rm -rf "$BUILD_DIR"
 mkdir -p "$BUILD_DIR"
 
-# 1. 编译 API
+# 1. 编译 API (发布模式，只包含修改过的文件)
 if check_tool "dotnet"; then
     log_info "编译 API 服务..."
     API_PROJECT="$PROJECT_ROOT/api/src/application/Poxiao.API.Entry/Poxiao.API.Entry.csproj"
     dotnet publish "$API_PROJECT" \
         -c Release \
         -r win-x64 \
-        --self-contained false \
+        --no-restore \
         -o "$BUILD_DIR/api"
 fi
 
@@ -67,7 +67,7 @@ if check_tool "dotnet"; then
     dotnet publish "$WORKER_PROJECT" \
         -c Release \
         -r win-x64 \
-        --self-contained false \
+        --no-restore \
         -o "$BUILD_DIR/worker"
 fi
 
@@ -85,8 +85,27 @@ fi
 log_info "打包..."
 cd "$BUILD_DIR"
 
-# 4.1 打包后端 (api + worker)
-tar -czvf "lm-backend-$VERSION.tar.gz" api worker
+# 4.1 打包后端 (只打包 dll + exe + config 等运行时文件)
+# 排除 pdb 调试文件以减小体积
+mkdir -p "$BUILD_DIR/api-minimal"
+cp "$BUILD_DIR/api/"*.dll "$BUILD_DIR/api-minimal/" 2>/dev/null || true
+cp "$BUILD_DIR/api/"*.exe "$BUILD_DIR/api-minimal/" 2>/dev/null || true
+cp "$BUILD_DIR/api/"*.json "$BUILD_DIR/api-minimal/" 2>/dev/null || true
+cp "$BUILD_DIR/api/"*.config "$BUILD_DIR/api-minimal/" 2>/dev/null || true
+cp "$BUILD_DIR/api/"*.xml "$BUILD_DIR/api-minimal/" 2>/dev/null || true
+# 保留Configurations目录
+cp -r "$BUILD_DIR/api/Configurations" "$BUILD_DIR/api-minimal/" 2>/dev/null || true
+
+mkdir -p "$BUILD_DIR/worker-minimal"
+cp "$BUILD_DIR/worker/"*.dll "$BUILD_DIR/worker-minimal/" 2>/dev/null || true
+cp "$BUILD_DIR/worker/"*.exe "$BUILD_DIR/worker-minimal/" 2>/dev/null || true
+cp "$BUILD_DIR/worker/"*.json "$BUILD_DIR/worker-minimal/" 2>/dev/null || true
+cp "$BUILD_DIR/worker/"*.config "$BUILD_DIR/worker-minimal/" 2>/dev/null || true
+cp "$BUILD_DIR/worker/"*.xml "$BUILD_DIR/worker-minimal/" 2>/dev/null || true
+cp -r "$BUILD_DIR/worker/Configurations" "$BUILD_DIR/worker-minimal/" 2>/dev/null || true
+
+# 打包后端 (api + worker 最小集)
+tar -czvf "lm-backend-$VERSION.tar.gz" api-minimal worker-minimal
 
 # 4.2 打包前端 (web)
 tar -czvf "lm-web-$VERSION.tar.gz" web
@@ -112,11 +131,11 @@ echo ""
 echo "========== 部署信息 =========="
 echo "版本: $VERSION"
 echo ""
-echo "后端包 (API + Worker):"
+echo "后端包 (API + Worker - 增量DLL):"
 echo "  URL: $BACKEND_URL"
-echo "  部署到: D:\Lab\api\, D:\Lab\worker\"
+echo "  部署: 解压后复制 dll/json/exe 到 D:\\Lab\\api\\ 和 D:\\Lab\\worker\\"
 echo ""
 echo "前端包 (Web):"
 echo "  URL: $WEB_URL"
-echo "  部署到: D:\Lab\nginx\html\"
+echo "  部署到: D:\\Lab\\nginx\\html\\"
 echo "================================"

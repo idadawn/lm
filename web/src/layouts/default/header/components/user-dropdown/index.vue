@@ -59,6 +59,9 @@
             <span>{{ t('layout.header.dropdownItemLoginOut') }}</span>
           </span>
         </a-menu-item>
+        <div class="user-dropdown-version">
+          <span>{{ sysVersion }}</span>
+        </div>
       </Menu>
     </template>
   </Dropdown>
@@ -73,6 +76,7 @@
   import { useGlobSetting } from '/@/hooks/setting';
   import { useUserStore } from '/@/store/modules/user';
   import { useLockStore } from '/@/store/modules/lock';
+  import { useAppStore } from '/@/store/modules/app';
   import { useHeaderSetting } from '/@/hooks/setting/useHeaderSetting';
   import { useI18n } from '/@/hooks/web/useI18n';
   import { useMessage } from '/@/hooks/web/useMessage';
@@ -108,6 +112,11 @@
       const { getUseLockPage } = useHeaderSetting();
       const userStore = useUserStore();
       const lockStore = useLockStore();
+      const appStore = useAppStore();
+
+      // 获取系统配置信息
+      const sysConfigInfo = computed(() => appStore.getProjectConfig.sysConfigInfo || {});
+      const sysVersion = computed(() => sysConfigInfo.value.sysVersion || 'v1.0.0');
       const [registerAboutModal, { openModal: openAboutModal }] = useModal();
       const [registerStatementModal, { openModal: openStatementModal }] = useModal();
 
@@ -155,6 +164,7 @@
         registerAboutModal,
         registerStatementModal,
         toggleSystem,
+        sysVersion,
       };
     },
   });
@@ -204,5 +214,13 @@
     .ant-dropdown-menu-submenu-arrow {
       display: none !important;
     }
+  }
+
+  .user-dropdown-version {
+    padding: 8px 20px;
+    font-size: 12px;
+    color: #999;
+    text-align: center;
+    border-top: 1px solid #f0f0f0;
   }
 </style>

@@ -1,12 +1,10 @@
 import { defHttp } from '/@/utils/http/axios';
 
 enum Api {
-  Prefix = '/api/system/v1/Version',
+  Version = '/api/system/v1/Version',
+  Changelog = '/api/system/v1/Version/changelog',
 }
 
-/**
- * 版本信息输出
- */
 export interface VersionOutput {
   apiVersion: string;
   webVersion: string;
@@ -14,9 +12,6 @@ export interface VersionOutput {
   message?: string;
 }
 
-/**
- * 更新日志项
- */
 export interface ChangelogItem {
   version: string;
   date: string;
@@ -25,23 +20,10 @@ export interface ChangelogItem {
   improved: string[];
 }
 
-/**
- * 获取版本信息
- */
-export function getVersion(webVersion: string) {
-  return defHttp.get<VersionOutput>(
-    { url: Api.Prefix },
-    {
-      headers: {
-        'X-Web-Version': webVersion,
-      },
-    }
-  );
+export function getVersion(): Promise<VersionOutput> {
+  return defHttp.get({ url: Api.Version });
 }
 
-/**
- * 获取更新日志
- */
-export function getChangelog() {
-  return defHttp.get<ChangelogItem[]>({ url: Api.Prefix + '/Changelog' });
+export function getChangelog(): Promise<ChangelogItem[]> {
+  return defHttp.get({ url: Api.Changelog });
 }

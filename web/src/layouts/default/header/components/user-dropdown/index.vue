@@ -77,6 +77,7 @@
   import { useUserStore } from '/@/store/modules/user';
   import { useLockStore } from '/@/store/modules/lock';
   import { useAppStore } from '/@/store/modules/app';
+  import { getVersion } from '/@/api/system/version';
   import { useHeaderSetting } from '/@/hooks/setting/useHeaderSetting';
   import { useI18n } from '/@/hooks/web/useI18n';
   import { useMessage } from '/@/hooks/web/useMessage';
@@ -114,9 +115,17 @@
       const lockStore = useLockStore();
       const appStore = useAppStore();
 
-      // 获取系统配置信息
-      const sysConfigInfo = computed(() => appStore.getProjectConfig.sysConfigInfo || {});
-      const sysVersion = computed(() => sysConfigInfo.value.sysVersion || 'v1.0.0');
+      // 获取版本信息（从 API 获取）
+      const sysVersion = ref('v1.0.0');
+      getVersion()
+        .then((res) => {
+          if (res && res.webVersion) {
+            sysVersion.value = 'v' + res.webVersion;
+          }
+        })
+        .catch(() => {
+          // 获取失败使用默认值
+        });
       const [registerAboutModal, { openModal: openAboutModal }] = useModal();
       const [registerStatementModal, { openModal: openStatementModal }] = useModal();
 

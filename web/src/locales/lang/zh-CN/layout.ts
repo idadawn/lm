@@ -1,5 +1,13 @@
 export default {
-  footer: { onlinePreview: '在线预览', onlineDocument: '在线文档' },
+  footer: { 
+    onlinePreview: '在线预览', 
+    onlineDocument: '在线文档',
+    versionInfo: '版本信息',
+    versionMismatch: '版本不一致',
+    webVersion: '前端版本',
+    apiVersion: '后端版本',
+    changelog: '更新日志',
+  },
   header: {
     // user dropdown
     dropdownItemDoc: '文档',

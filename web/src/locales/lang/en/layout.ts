@@ -1,5 +1,13 @@
 export default {
-  footer: { onlinePreview: 'Preview', onlineDocument: 'Document' },
+  footer: { 
+    onlinePreview: 'Preview', 
+    onlineDocument: 'Document',
+    versionInfo: 'Version Info',
+    versionMismatch: 'Version Mismatch',
+    webVersion: 'Web Version',
+    apiVersion: 'API Version',
+    changelog: 'Changelog',
+  },
   header: {
     // user dropdown
     dropdownItemDoc: 'Document',

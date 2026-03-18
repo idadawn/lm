@@ -67,18 +67,18 @@ dotnet publish "$WORKER_PROJECT" \
 # 3. 打包
 log_info "打包..."
 cd "$BUILD_DIR"
-zip -r "$BUILD_DIR/lm-$VERSION.zip" api worker
+tar -czvf "$BUILD_DIR/lm-$VERSION.tar.gz" api worker
 
 # 4. 上传到 OSS
 log_info "上传到 OSS..."
-$OSSUTIL cp "$BUILD_DIR/lm-$VERSION.zip" "$OSS_BUCKET/$OSS_PATH/"
+$OSSUTIL cp "$BUILD_DIR/lm-$VERSION.tar.gz" "$OSS_BUCKET/$OSS_PATH/"
 
-# 5. 清理
+# 清理
 log_info "清理临时文件..."
 rm -rf "$BUILD_DIR"
 
 # 输出结果
-OSS_URL="https://dawnlee.oss-rg-china-mainland.aliyuncs.com/lm/releases/lm-$VERSION.zip"
+OSS_URL="https://dawnlee.oss-rg-china-mainland.aliyuncs.com/lm/releases/lm-$VERSION.tar.gz"
 log_info "打包完成!"
 log_info "OSS 地址: $OSS_URL"
 log_info "Windows 下载命令: curl -O $OSS_URL"

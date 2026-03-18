@@ -1,0 +1,96 @@
+# LM 自动化部署 Workflow
+# 触发方式：
+# 1. 手动触发 (workflow_dispatch)
+# 2. Git Tag 推送 (如 v1.0.2)
+
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '部署版本号'
+        required: true
+        type: string
+      skip_backup:
+        description: '跳过备份'
+        required: false
+        type: boolean
+        default: false
+      services:
+        description: '部署服务 (逗号分隔: api,nginx,redis)'
+        required: false
+        type: string
+        default: 'api,nginx'
+        
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout deploy scripts
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ secrets.DEPLOY_REPO || 'your-org/lm-deploy' }}
+          token: ${{ secrets.GH_TOKEN }}
+          path: deploy-scripts
+
+      - name: Setup SSH Key for Windows Server
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.WINDOWS_SSH_KEY }}
+
+      - name: Setup PowerShell
+        uses: powershell/setup-powershell@v1
+        with:
+          version: '7.4'
+
+      - name: Copy deployment package
+        run: |
+          # 从发布页面下载部署包 或 从构建产物复制
+          echo "准备部署文件..."
+          # 实际部署时从 S3/文件服务器下载或从当前仓库获取
+          
+      - name: Execute Remote Deployment
+        env:
+          VERSION: ${{ github.event.inputs.version || github.ref_name }}
+          SKIP_BACKUP: ${{ github.event.inputs.skip_backup || 'false' }}
+          SERVICES: ${{ github.event.inputs.services || 'api,nginx' }}
+          WINDOWS_HOST: ${{ secrets.WINDOWS_HOST }}
+          WINDOWS_USER: ${{ secrets.WINDOWS_USER }}
+        run: |
+          # 通过 SSH 远程执行 PowerShell 部署脚本
+          ssh ${WINDOWS_USER}@${WINDOWS_HOST} "
+            powershell.exe -ExecutionPolicy Bypass -Command '
+              Set-Location D:\\Lab\\Deploy\\scripts
+              .\\deploy.ps1 -Version \"${VERSION}\" -SourcePath \"D:\\Lab\\Deploy\\v${VERSION}\" ${SKIP_BACKUP}
+            '
+          "
+
+      - name: Health Check
+        run: |
+          sleep 10
+          # 检查所有服务健康状态
+          ssh ${WINDOWS_USER}@${WINDOWS_HOST} "
+            powershell.exe -ExecutionPolicy Bypass -Command '
+              Set-Lacement D:\\Lab\\Deploy\\scripts
+              .\\health-check.ps1
+            '
+          "
+
+      - name: Record Deployment
+        if: always()
+        run: |
+          # 记录部署结果到 GitHub
+          echo "部署完成: ${{ github.run_number }}"
+          echo "版本: ${{ github.event.inputs.version || github.ref_name }}"
+          
+      - name: Notify on Failure
+        if: failure()
+        run: |
+          # 发送失败通知
+          echo "部署失败，通知相关人员..."

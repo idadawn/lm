@@ -1,5 +1,13 @@
 export default {
-  footer: { onlinePreview: '在線預覽', onlineDocument: '在線文檔' },
+  footer: { 
+    onlinePreview: '在線預覽', 
+    onlineDocument: '在線文檔',
+    versionInfo: '版本資訊',
+    versionMismatch: '版本不一致',
+    webVersion: '前端版本',
+    apiVersion: '後端版本',
+    changelog: '更新日誌',
+  },
   header: {
     // user dropdown
     dropdownItemDoc: '文檔',

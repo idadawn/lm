@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MiniExcelLibs;
 using NPOI.SS.UserModel;
+using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
 using Poxiao.DependencyInjection;
 using Poxiao.DynamicApiController;
@@ -26,6 +27,7 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
 {
     private readonly IIntermediateDataService _intermediateDataService;
     private readonly IIntermediateDataColorService _colorService;
+    private readonly IIntermediateDataFormulaService _formulaService;
     private readonly ISqlSugarRepository<IntermediateDataEntity> _repository;
     private readonly ISqlSugarRepository<ProductSpecEntity> _productSpecRepository;
     private readonly ISqlSugarRepository<AppearanceFeatureCategoryEntity> _categoryRepository;
@@ -41,7 +43,8 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         ISqlSugarRepository<AppearanceFeatureLevelEntity> appearanceLevelRepository,
         IUserManager userManager,
         IIntermediateDataService intermediateDataService,
-        IIntermediateDataColorService colorService)
+        IIntermediateDataColorService colorService,
+        IIntermediateDataFormulaService formulaService)
     {
         _repository = repository;
         _productSpecRepository = productSpecRepository;
@@ -51,6 +54,7 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         _userManager = userManager;
         _intermediateDataService = intermediateDataService;
         _colorService = colorService;
+        _formulaService = formulaService;
     }
 
     /// <summary>
@@ -142,6 +146,24 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
             }
         }
 
+        // 2.8 获取公式精度映射（ColumnName -> Precision）
+        var formulaPrecisionMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            var formulas = await _formulaService.GetListAsync();
+            foreach (var formula in formulas)
+            {
+                if (!string.IsNullOrEmpty(formula.ColumnName) && formula.Precision.HasValue)
+                {
+                    formulaPrecisionMap[formula.ColumnName] = formula.Precision.Value;
+                }
+            }
+        }
+        catch
+        {
+            // 如果获取公式失败，使用默认精度
+        }
+
         // 3. 按月份+产品规格分组
         // 字典中的 key 是 camelCase: prodDate, productSpecId, productSpecCode, productSpecName
         var groupedData = dataList
@@ -227,7 +249,7 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         memoryStream.Position = 0;
 
         // Post-process with NPOI merged cells and cell fill colors
-        var finalStream = PostProcessExcel(memoryStream, sheetRowData, columnFieldNames, colorMap);
+        var finalStream = PostProcessExcel(memoryStream, sheetRowData, columnFieldNames, colorMap, formulaPrecisionMap);
 
         var fileName = $"{DateTime.Now:yyyyMMddHHmmss}.xlsx";
         return new FileStreamResult(finalStream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
@@ -314,7 +336,8 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         MemoryStream sourceStream,
         Dictionary<string, List<(string Id, string ProductSpecId)>> sheetRowData,
         List<string> columnFieldNames,
-        Dictionary<string, string> colorMap)
+        Dictionary<string, string> colorMap,
+        Dictionary<string, int> formulaPrecisionMap)
     {
         var workbook = new XSSFWorkbook(sourceStream);
         var style = workbook.CreateCellStyle();
@@ -444,29 +467,60 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
                                     var key = $"{rowId}::{fieldName}";
                                     if (colorMap.TryGetValue(key, out var colorValue) && !string.IsNullOrEmpty(colorValue))
                                     {
-                                        cell.CellStyle = GetOrCreateFillStyle(colorValue);
-                                        ConvertTextToNumericIfApplicable(r, cell, c);
+                                        var colorStyle = GetOrCreateFillStyle(colorValue);
+                                        cell.CellStyle = colorStyle;
+                                        ConvertTextToNumericIfApplicable(r, cell, c, colorStyle);
                                         continue;
                                     }
                                 }
                             }
                             cell.CellStyle = style;
-                            ConvertTextToNumericIfApplicable(r, cell, c);
+                            ConvertTextToNumericIfApplicable(r, cell, c, style);
                         }
                     }
                 }
             }
 
-            void ConvertTextToNumericIfApplicable(int rowIndex, ICell cell, int columnIndex)
+            void ConvertTextToNumericIfApplicable(int rowIndex, ICell cell, int columnIndex, ICellStyle existingStyle = null)
             {
                 if (rowIndex < 2 || columnFieldNames == null || columnIndex >= columnFieldNames.Count) return;
                 var fieldName = columnFieldNames[columnIndex];
-                if (!IsNumericExportColumn(fieldName)) return;
+                if (string.IsNullOrEmpty(fieldName)) return;
+
+                // 如果公式维护中定义了精度，则优先使用；否则使用 IsNumericExportColumn 判断
+                int precision = 0;
+                var hasPrecision = formulaPrecisionMap != null && formulaPrecisionMap.TryGetValue(fieldName, out precision);
+                if (!hasPrecision && !IsNumericExportColumn(fieldName)) return;
+
                 if (cell.CellType != CellType.String) return;
                 var s = cell.StringCellValue?.Trim();
                 if (string.IsNullOrEmpty(s)) return;
                 if (double.TryParse(s, NumberStyles.Any, CultureInfo.InvariantCulture, out var num))
+                {
+                    // 转换数值为数值类型
                     cell.SetCellValue(num);
+
+                    // 根据公式维护中的精度设置数字格式
+                    if (hasPrecision)
+                    {
+                        var format = "0." + new string('0', precision);
+                        var dataFormat = workbook.CreateDataFormat();
+                        // 复用现有样式或创建新样式
+                        ICellStyle numStyle;
+                        if (existingStyle != null)
+                        {
+                            numStyle = workbook.CreateCellStyle();
+                            numStyle.CloneStyleFrom(existingStyle);
+                        }
+                        else
+                        {
+                            numStyle = workbook.CreateCellStyle();
+                            numStyle.CloneStyleFrom(style);
+                        }
+                        numStyle.DataFormat = dataFormat.GetFormat(format);
+                        cell.CellStyle = numStyle;
+                    }
+                }
             }
 
             // 强制合并第一列 (检测日期) - Row 0 & Row 1

@@ -200,6 +200,10 @@ const props = defineProps({
     type: String as () => ImportStrategy,
     required: true,
   },
+  fileData: {
+    type: String,
+    default: '',
+  },
 });
 
 const emit = defineEmits(['next', 'prev', 'cancel', 'complete']);
@@ -577,10 +581,11 @@ async function parseData() {
   parseError.value = '';
 
   try {
-    // 调用解析接口（文件数据已在第一步保存到后端，通过 sessionId 获取）
+    // 调用解析接口（优先使用已保存的文件，如果没有则使用 fileData 作为后备）
     const result = await uploadAndParse({
       fileName: props.fileName,
       importSessionId: props.importSessionId,
+      fileData: props.fileData || undefined,
     });
 
     if (result.noChanges) {

@@ -121,11 +121,30 @@ const [registerForm, { setFieldsValue, resetFields, validate, getFieldsValue, up
       component: 'Input',
       required: true,
       componentProps: {
-        placeholder: '例如: 脆',
+        placeholder: '请输入2个汉字，例如：脆边',
       },
-      helpMessage: '必填字段，用于统计和分类，例如：脆、皱、痕等。特性名称必须唯一，不能重复。',
+      helpMessage: '必填字段，必须是2个汉字，用于统计和分类，例如：脆边、网纹。特性名称必须唯一，不能重复。',
       colProps: { span: 12 },
       rules: [
+        {
+          required: true,
+          message: '请输入特性名称',
+        },
+        {
+          validator: async (rule, value) => {
+            if (!value || !value.trim()) {
+              return Promise.resolve();
+            }
+            const trimmedValue = value.trim();
+            // 验证必须是2个汉字
+            const chineseRegex = /^[\u4e00-\u9fa5]{2}$/;
+            if (!chineseRegex.test(trimmedValue)) {
+              return Promise.reject('特性名称必须是2个汉字');
+            }
+            return Promise.resolve();
+          },
+          trigger: 'blur',
+        },
         {
           validator: async (rule, value) => {
             if (!value || !value.trim()) {

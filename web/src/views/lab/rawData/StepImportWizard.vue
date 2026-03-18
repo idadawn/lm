@@ -80,6 +80,7 @@ interface State {
   activeStep: number;
   importSessionId: string;
   fileName: string;
+  fileData: string;
   importStrategy: ImportStrategy;
   nextLoading: boolean;
   key: number;

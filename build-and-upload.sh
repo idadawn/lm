@@ -85,8 +85,7 @@ fi
 log_info "打包..."
 cd "$BUILD_DIR"
 
-# 4.1 打包后端 (只打包 dll + exe + config 等运行时文件)
-# 排除 pdb 调试文件以减小体积
+# 4.1 打包后端 (只打包根目录的 dll + exe + json + config 等运行时文件)
 mkdir -p "$BUILD_DIR/api-minimal"
 cp "$BUILD_DIR/api/"*.dll "$BUILD_DIR/api-minimal/" 2>/dev/null || true
 cp "$BUILD_DIR/api/"*.exe "$BUILD_DIR/api-minimal/" 2>/dev/null || true

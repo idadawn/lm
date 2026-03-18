@@ -1719,6 +1719,63 @@ public class RawDataImportSessionService
         }
     }
 
+    /// <summary>
+    /// 下载导入的源文件
+    /// </summary>
+    [HttpGet("download/{fileId}")]
+    public async Task<FileResult> DownloadSourceFile(string fileId)
+    {
+        if (string.IsNullOrWhiteSpace(fileId))
+        {
+            throw Oops.Oh("文件ID不能为空");
+        }
+
+        try
+        {
+            // fileId 可能是完整路径或文件名
+            string filePath = fileId;
+            if (!System.IO.File.Exists(filePath))
+            {
+                // 尝试从日志表中查找
+                var log = await _logRepository
+                    .AsQueryable()
+                    .Where(t => t.SourceFileId == fileId)
+                    .FirstAsync();
+                if (log != null && !string.IsNullOrEmpty(log.SourceFileId))
+                {
+                    filePath = log.SourceFileId;
+                }
+            }
+
+            if (!System.IO.File.Exists(filePath))
+            {
+                throw Oops.Oh("文件不存在或已被清理");
+            }
+
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+            var fileName = Path.GetFileName(filePath);
+            // 去掉时间戳前缀
+            if (fileName.Contains("_"))
+            {
+                var parts = fileName.Split('_', 2);
+                if (parts.Length > 1)
+                {
+                    fileName = parts[1];
+                }
+            }
+
+            return new FileContentResult(fileBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            {
+                FileDownloadName = fileName
+            };
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"[DownloadSourceFile] Failed: {ex.Message}");
+            throw Oops.Oh($"文件下载失败: {ex.Message}");
+        }
+    }
+
     // ================= Private Methods =================
 
     /// <summary>

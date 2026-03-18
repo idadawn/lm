@@ -45,6 +45,11 @@
         <a-input-search v-model:value="searchText" placeholder="搜索炉号或产品规格" style="width: 250px" @search="handleSearch"
           allow-clear />
       </a-space>
+      <div class="ignore-unmatched">
+        <a-checkbox v-model:checked="ignoreUnmatched" :disabled="unmatchedCount === 0">
+          忽略未匹配项，强制进入下一步（未匹配的数据将不会被导入）
+        </a-checkbox>
+      </div>
     </div>
 
     <!-- 数据表格 -->
@@ -194,6 +199,7 @@ const specList = ref<ProductSpec[]>([]);
 const filterStatus = ref('');
 const searchText = ref('');
 const selectedRowKeys = ref<string[]>([]);
+const ignoreUnmatched = ref(false);
 
 // 重试机制
 const retryCount = ref(0);
@@ -699,19 +705,20 @@ async function handlePrev() {
 }
 
 async function handleNext() {
-  if (unmatchedCount.value > 0) {
-    message.warning(`还有 ${unmatchedCount.value} 行数据未匹配产品规格，请先处理`);
+  if (unmatchedCount.value > 0 && !ignoreUnmatched.value) {
+    message.warning(`还有 ${unmatchedCount.value} 行数据未匹配产品规格，请先处理或勾选"忽略未匹配项"`);
     return;
   }
 
   try {
-    // 保存当前匹配结果
+    // 保存当前匹配结果，只保存已匹配的数据（未匹配的将被忽略）
     const updateData: Step2ProductSpecInput = {
       importSessionId: props.importSessionId,
       matches: data.value.map(row => ({
         rowId: row.id,
         productSpecId: row.productSpecId || '',
       })),
+      ignoreUnmatched: ignoreUnmatched.value, // 传递是否忽略未匹配项
     };
 
     await updateProductSpecMatches(props.importSessionId, updateData);
@@ -727,8 +734,8 @@ function handleCancel() {
 
 // 计算是否可以进入下一步
 const canGoNext = computed(() => {
-  // 所有数据都已匹配产品规格
-  return data.value.length > 0 && unmatchedCount.value === 0;
+  // 有数据且（所有数据已匹配 OR 勾选了忽略未匹配项）
+  return data.value.length > 0 && (unmatchedCount.value === 0 || ignoreUnmatched.value);
 });
 
 // 保存并进入下一步（供父组件调用）
@@ -871,5 +878,13 @@ defineExpose({
       color: #1890ff;
     }
   }
+}
+
+.ignore-unmatched {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 4px;
 }
 </style>

@@ -172,6 +172,7 @@ export interface Step2ProductSpecInput {
     rowId: string;
     productSpecId: string;
   }>;
+  ignoreUnmatched?: boolean; // 是否忽略未匹配项
 }
 
 // 第三步：特性匹配

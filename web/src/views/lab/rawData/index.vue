@@ -111,6 +111,13 @@
                     <template v-else-if="column.key === 'totalRows'">
                       {{ formatTotalRows(record) }}
                     </template>
+                    <template v-else-if="column.key === 'action'">
+                      <a-space>
+                        <a-button type="link" size="small" @click="handleDownloadFile(record)" :disabled="!record.sourceFileId">
+                          <DownloadOutlined /> 下载
+                        </a-button>
+                      </a-space>
+                    </template>
                   </template>
                 </BasicTable>
               </div>
@@ -126,7 +133,7 @@
 </template>
 <script lang="ts" setup>
 import { ref, computed, onMounted, nextTick } from 'vue';
-import { getRawDataList, getImportLogList } from '/@/api/lab/rawData';
+import { getRawDataList, getImportLogList, downloadImportFile } from '/@/api/lab/rawData';
 import { BasicTable, useTable, BasicColumn } from '/@/components/Table';
 import { useMessage } from '/@/hooks/web/useMessage';
 import { useI18n } from '/@/hooks/web/useI18n';
@@ -143,6 +150,7 @@ import {
   ExclamationCircleOutlined,
   CloseCircleOutlined,
   SolutionOutlined,
+  DownloadOutlined,
 } from '@ant-design/icons-vue';
 
 defineOptions({ name: 'labRawData' });
@@ -168,7 +176,7 @@ const sortRules = ref([
 const baseColumnsBeforeDetection: BasicColumn[] = [
   { title: '检测日期', dataIndex: 'detectionDateStr', width: 90, align: 'center', fixed: 'left' },
   // { title: '生产日期', dataIndex: 'prodDateStr', width: 100, align: 'center', fixed: 'left' },
-  { title: '炉号', dataIndex: 'furnaceNo', width: 130, align: 'center', fixed: 'left' },
+  { title: '炉号', dataIndex: 'furnaceNo', width: 140, align: 'center', fixed: 'left' },
   { title: '产品规格', dataIndex: 'productSpecName', align: 'center', key: 'productSpecName', width: 80, fixed: 'left' },
   { title: '宽度', dataIndex: 'width', width: 80, align: 'center', fixed: 'left' },
   { title: '带材重量', dataIndex: 'coilWeight', width: 80, align: 'center', fixed: 'left' },
@@ -452,6 +460,7 @@ const logColumns: BasicColumn[] = [
   { title: '操作人', dataIndex: 'operatorName', key: 'operatorName', align: 'center', width: 120 },
   { title: '总行数', dataIndex: 'totalRows', key: 'totalRows', align: 'center', width: 150 },
   { title: '状态', dataIndex: 'status', key: 'status', align: 'center', width: 120 },
+  { title: '操作', dataIndex: 'action', key: 'action', align: 'center', width: 120 },
 ];
 
 const [registerLogTable, { reload: reloadLogTable }] = useTable({
@@ -497,6 +506,41 @@ function formatTotalRows(record: any) {
   const success = record.successRows || record.totalRows || 0;
   if (total === 0) return '-';
   return `${total} / ${success} ok`;
+}
+
+// 下载导入文件
+async function handleDownloadFile(record: any) {
+  try {
+    const fileId = record.sourceFileId;
+    if (!fileId) {
+      createMessage.warning('文件不存在或已被清理');
+      return;
+    }
+
+    const response = await downloadImportFile(fileId);
+    // 从 response 中获取文件名
+    const contentDisposition = response.headers['content-disposition'];
+    let fileName = record.fileName;
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (match && match[1]) {
+        fileName = match[1].replace(/['"]/g, '');
+      }
+    }
+
+    // 创建下载链接
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('下载文件失败:', error);
+    createMessage.error('下载文件失败');
+  }
 }
 
 // ========== 导入相关方法 ==========

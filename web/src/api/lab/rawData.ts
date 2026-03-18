@@ -392,6 +392,17 @@ export function getImportLogDetail(id: string): Promise<any> {
   return defHttp.get({ url: Api.Prefix + '/import-log/' + id });
 }
 
+// 下载导入的源文件
+export function downloadImportFile(fileId: string): Promise<Blob> {
+  return defHttp.get(
+    {
+      url: Api.Prefix + '/download/' + fileId,
+      responseType: 'blob',
+    },
+    { isReturnNativeResponse: true }
+  );
+}
+
 // 删除导入日志
 export function deleteImportLog(id: string): Promise<void> {
   return defHttp.delete({ url: Api.Prefix + '/import-log/' + id });

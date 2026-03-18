@@ -54,6 +54,7 @@ public class RawDataImportSessionService
     private readonly IFileService _fileService;
     private readonly IUserManager _userManager;
     private readonly IIntermediateDataService _intermediateDataService;
+    private readonly ISqlSugarRepository<IntermediateDataEntity> _intermediateDataRepository;
     private readonly IAppearanceFeatureService _appearanceFeatureService;
     private readonly IProductSpecAttributeService _productSpecAttributeService;
     private readonly IFileManager _fileManager;
@@ -76,6 +77,7 @@ public class RawDataImportSessionService
         IFileService fileService,
         IUserManager userManager,
         IIntermediateDataService intermediateDataService,
+        ISqlSugarRepository<IntermediateDataEntity> intermediateDataRepository,
         IAppearanceFeatureService appearanceFeatureService,
         IProductSpecAttributeService productSpecAttributeService,
         IFileManager fileManager,
@@ -104,6 +106,7 @@ public class RawDataImportSessionService
         _fileService = fileService;
         _userManager = userManager;
         _intermediateDataService = intermediateDataService;
+        _intermediateDataRepository = intermediateDataRepository;
         _appearanceFeatureService = appearanceFeatureService;
         _productSpecAttributeService = productSpecAttributeService;
         _fileManager = fileManager;
@@ -1546,6 +1549,74 @@ public class RawDataImportSessionService
                     raw, spec, layers, length, density, null, batchId);
                 skeleton.CreatorUserId = _userManager.UserId;
                 intermediateEntities.Add(skeleton);
+            }
+        }
+
+        // 2.5 检查并删除已存在的炉号数据（防止重复导入）
+        var existingFurnaceNos = intermediateEntities
+            .Where(e => !string.IsNullOrEmpty(e.FurnaceNo))
+            .Select(e => e.FurnaceNo)
+            .Distinct()
+            .ToList();
+
+        int deletedCount = 0;
+        var deletedRecords = new List<string>();
+        if (existingFurnaceNos.Count > 0)
+        {
+            // 查询已存在的中间数据
+            var existingData = await _intermediateDataRepository
+                .AsQueryable()
+                .Where(it => existingFurnaceNos.Contains(it.FurnaceNo))
+                .Select(it => new { it.Id, it.FurnaceNo })
+                .ToListAsync();
+
+            if (existingData.Count > 0)
+            {
+                var existingIds = existingData.Select(e => e.Id).ToList();
+                deletedRecords = existingData.Select(e => e.FurnaceNo).Distinct().ToList();
+                deletedCount = existingIds.Count;
+
+                // 删除已存在的中间数据
+                await _intermediateDataRepository
+                    .AsSugarClient()
+                    .Deleteable<IntermediateDataEntity>()
+                    .Where(it => existingIds.Contains(it.Id))
+                    .ExecuteCommandAsync();
+
+                // 同时删除关联的原始数据（如果存在）
+                var rawDataToDelete = await _rawDataRepository
+                    .AsQueryable()
+                    .Where(r => deletedRecords.Contains(r.FurnaceNo))
+                    .Select(r => r.Id)
+                    .ToListAsync();
+                if (rawDataToDelete.Count > 0)
+                {
+                    await _sessionRepository
+                        .AsSugarClient()
+                        .Deleteable<RawDataEntity>()
+                        .Where(r => rawDataToDelete.Contains(r.Id))
+                        .ExecuteCommandAsync();
+                }
+
+                // 记录删除日志到日志表
+                foreach (var furnaceNo in deletedRecords)
+                {
+                    var logEntry = new RawDataImportLogEntity
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        FileName = session.FileName + " [重复数据清理]",
+                        SourceFileId = session.SourceFileId,
+                        TotalRows = 0,
+                        SuccessCount = 0,
+                        FailCount = deletedCount,
+                        ValidDataCount = 0,
+                        Status = "deleted",
+                        ImportTime = DateTime.Now,
+                        LastRowsCount = deletedRecords.Count,
+                        LastRowsHash = $"deleted:{string.Join(",", deletedRecords)}"
+                    };
+                    await _logRepository.InsertAsync(logEntry);
+                }
             }
         }
 

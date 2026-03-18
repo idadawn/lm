@@ -249,7 +249,7 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         memoryStream.Position = 0;
 
         // Post-process with NPOI merged cells and cell fill colors
-        var finalStream = PostProcessExcel(memoryStream, sheetRowData, columnFieldNames, colorMap, formulaPrecisionMap);
+        var finalStream = PostProcessExcel(memoryStream, sheetRowData, columnFieldNames, colorMap, formulaPrecisionMap, sortedCategories);
 
         var fileName = $"{DateTime.Now:yyyyMMddHHmmss}.xlsx";
         return new FileStreamResult(finalStream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
@@ -337,7 +337,8 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         Dictionary<string, List<(string Id, string ProductSpecId)>> sheetRowData,
         List<string> columnFieldNames,
         Dictionary<string, string> colorMap,
-        Dictionary<string, int> formulaPrecisionMap)
+        Dictionary<string, int> formulaPrecisionMap,
+        List<KeyValuePair<string, string>> sortedCategories)
     {
         var workbook = new XSSFWorkbook(sourceStream);
         var style = workbook.CreateCellStyle();
@@ -354,12 +355,20 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
             "检测日期", "喷次", "贴标", "炉号", "性能录入员",
             "一米带重(g)", "带宽 (mm)", "带厚极差",
             "密度 (g/cm³)", "叠片系数", "Hc (A/m)",
-            "韧性", "脆边", "麻点", "划痕", "网眼", "毛边", "亮线", "劈裂", "棱", "龟裂纹",
             "断头数(个)", "单卷重量(kg)", "外观检验员",
             "平均厚度", "磁性能判定", "厚度判定", "叠片系数判定",
             "四米带重(g)", "最大厚度", "最大平均厚度",
             "录入人", "带型", "一次交检", "班次"
         };
+
+        // 动态添加所有外观特性类别名称（从数据库获取）
+        if (sortedCategories != null)
+        {
+            foreach (var category in sortedCategories)
+            {
+                verticalMergedColumns.Add(category.Value);
+            }
+        }
 
         for (int i = 0; i < workbook.NumberOfSheets; i++)
         {

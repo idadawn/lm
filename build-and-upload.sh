@@ -113,12 +113,42 @@ tar -czvf "lm-web-$VERSION.tar.gz" web
 log_info "上传到 OSS..."
 
 # 上传后端
-$OSSUTIL cp "$BUILD_DIR/lm-backend-$VERSION.tar.gz" "$OSS_BUCKET/$OSS_PATH/"
+$OSSUTIL cp -f "$BUILD_DIR/lm-backend-$VERSION.tar.gz" "$OSS_BUCKET/$OSS_PATH/"
 BACKEND_URL="https://dawnlee.oss-rg-china-mainland.aliyuncs.com/lm/releases/lm-backend-$VERSION.tar.gz"
 
 # 上传前端
-$OSSUTIL cp "$BUILD_DIR/lm-web-$VERSION.tar.gz" "$OSS_BUCKET/$OSS_PATH/"
+$OSSUTIL cp -f "$BUILD_DIR/lm-web-$VERSION.tar.gz" "$OSS_BUCKET/$OSS_PATH/"
 WEB_URL="https://dawnlee.oss-rg-china-mainland.aliyuncs.com/lm/releases/lm-web-$VERSION.tar.gz"
+
+# 6. 更新版本列表
+log_info "更新版本列表..."
+
+# 下载现有版本列表
+VERSIONS_FILE="/tmp/versions-$VERSION.json"
+$OSSUTIL cp "$OSS_BUCKET/$OSS_PATH/versions.json" "$VERSIONS_FILE" 2>/dev/null || echo '{"versions":[]}' > "$VERSIONS_FILE"
+
+# 使用 Node.js 更新 JSON（如果没有则安装）
+if command -v node &> /dev/null; then
+    node -e "
+    const fs = require('fs');
+    const data = JSON.parse(fs.readFileSync('$VERSIONS_FILE', 'utf8'));
+    const newVersion = {
+        version: '$VERSION',
+        backend: '$BACKEND_URL',
+        web: '$WEB_URL',
+        date: new Date().toISOString()
+    };
+    // 插入到开头（最新在前）
+    data.versions.unshift(newVersion);
+    // 只保留最近 10 个版本
+    data.versions = data.versions.slice(0, 10);
+    fs.writeFileSync('$VERSIONS_FILE', JSON.stringify(data, null, 2));
+    "
+    
+    # 上传版本列表
+    $OSSUTIL cp -f "$VERSIONS_FILE" "$OSS_BUCKET/$OSS_PATH/versions.json"
+    VERSIONS_URL="https://dawnlee.oss-rg-china-mainland.aliyuncs.com/lm/releases/versions.json"
+fi
 
 # 清理
 log_info "清理临时文件..."
@@ -137,4 +167,6 @@ echo ""
 echo "前端包 (Web):"
 echo "  URL: $WEB_URL"
 echo "  部署到: D:\\Lab\\nginx\\html\\"
+echo ""
+echo "版本列表: $VERSIONS_URL"
 echo "================================"

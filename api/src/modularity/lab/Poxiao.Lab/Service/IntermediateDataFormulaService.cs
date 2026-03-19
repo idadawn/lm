@@ -108,7 +108,6 @@ public class IntermediateDataFormulaService
     }
 
     /// <inheritdoc />
-    [HttpGet("")]
     Task<List<IntermediateDataFormulaDto>> IIntermediateDataFormulaService.GetListAsync()
     {
         return GetListAsync((string)null);
@@ -118,6 +117,7 @@ public class IntermediateDataFormulaService
     /// 获取所有公式列表（支持按类型过滤）.
     /// </summary>
     /// <param name="formulaType">公式类型过滤</param>
+    [HttpGet("")]
     public async Task<List<IntermediateDataFormulaDto>> GetListAsync([FromQuery] string formulaType)
     {
         // 根据是否有类型过滤来构建不同的缓存键

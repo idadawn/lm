@@ -30,6 +30,11 @@ public class CalcTaskPublisher : ISingleton, IDisposable
     }
 
     /// <summary>
+    /// RabbitMQ 是否已连接且可用。
+    /// </summary>
+    public bool IsConnected => _initialized && _channel != null && _channel.IsOpen;
+
+    /// <summary>
     /// 初始化 RabbitMQ 连接（在 Startup 中调用）。
     /// </summary>
     public void Initialize(
@@ -127,7 +132,8 @@ public class CalcTaskPublisher : ISingleton, IDisposable
     /// <summary>
     /// 发布 per-item 计算任务：每条中间数据一条 MQ 消息，Worker 端并发消费。
     /// </summary>
-    public void PublishCalcItems(
+    /// <returns>true 表示消息已成功发布到 MQ；false 表示 MQ 不可用或发布失败。</returns>
+    public bool PublishCalcItems(
         string batchId,
         List<string> intermediateDataIds,
         string tenantId,
@@ -136,8 +142,8 @@ public class CalcTaskPublisher : ISingleton, IDisposable
     {
         if (!_initialized || _channel == null || !_channel.IsOpen)
         {
-            _logger.LogWarning("CalcTaskPublisher: RabbitMQ 未连接，无法发布任务");
-            return;
+            _logger.LogWarning("CalcTaskPublisher: RabbitMQ 未连接，无法发布计算任务，将由 API 进程内回退执行");
+            return false;
         }
 
         var totalCount = intermediateDataIds.Count;
@@ -177,10 +183,12 @@ public class CalcTaskPublisher : ISingleton, IDisposable
             _logger.LogInformation(
                 "CalcTaskPublisher: 已发布 {Count} 条 per-item 计算任务到 {Queue}, BatchId={BatchId}",
                 totalCount, _calcQueueName, batchId);
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "CalcTaskPublisher: 批量发布任务失败, BatchId={BatchId}", batchId);
+            return false;
         }
     }
 
@@ -208,7 +216,8 @@ public class CalcTaskPublisher : ISingleton, IDisposable
     /// 发布 per-item 磁性更新+判定任务：每条中间数据一条 MQ 消息。
     /// Worker 端并发消费，执行磁性字段局部更新 + 判定。
     /// </summary>
-    public void PublishMagneticJudgeItems(
+    /// <returns>true 表示消息已成功发布到 MQ；false 表示 MQ 不可用或发布失败。</returns>
+    public bool PublishMagneticJudgeItems(
         string batchId,
         List<MagneticDataPayload> items,
         string tenantId,
@@ -216,8 +225,8 @@ public class CalcTaskPublisher : ISingleton, IDisposable
     {
         if (!_initialized || _channel == null || !_channel.IsOpen)
         {
-            _logger.LogWarning("CalcTaskPublisher: RabbitMQ 未连接，无法发布任务");
-            return;
+            _logger.LogWarning("CalcTaskPublisher: RabbitMQ 未连接，无法发布磁性判定任务，将由 API 进程内回退执行");
+            return false;
         }
 
         var totalCount = items.Count;
@@ -255,17 +264,20 @@ public class CalcTaskPublisher : ISingleton, IDisposable
             _logger.LogInformation(
                 "CalcTaskPublisher: 已发布 {Count} 条磁性更新+判定任务到 {Queue}, BatchId={BatchId}",
                 totalCount, _judgeQueueName, batchId);
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "CalcTaskPublisher: 发布磁性更新+判定任务失败, BatchId={BatchId}", batchId);
+            return false;
         }
     }
 
     /// <summary>
     /// 发布判定任务：每条中间数据一条 MQ 消息，Worker 端逐条消费并上报进度。
     /// </summary>
-    public void PublishJudgeTask(
+    /// <returns>true 表示消息已成功发布到 MQ；false 表示 MQ 不可用或发布失败。</returns>
+    public bool PublishJudgeTask(
         List<string> ids,
         string tenantId,
         string userId,
@@ -273,7 +285,7 @@ public class CalcTaskPublisher : ISingleton, IDisposable
     {
         if (ids == null || ids.Count == 0)
         {
-            return;
+            return false;
         }
 
         var bid = batchId ?? Guid.NewGuid().ToString();
@@ -281,8 +293,8 @@ public class CalcTaskPublisher : ISingleton, IDisposable
 
         if (!_initialized || _channel == null || !_channel.IsOpen)
         {
-            _logger.LogWarning("CalcTaskPublisher: RabbitMQ 未连接，无法发布判定任务");
-            return;
+            _logger.LogWarning("CalcTaskPublisher: RabbitMQ 未连接，无法发布判定任务，将由 API 进程内回退执行");
+            return false;
         }
 
         try
@@ -315,10 +327,12 @@ public class CalcTaskPublisher : ISingleton, IDisposable
             _logger.LogInformation(
                 "CalcTaskPublisher: 已发布 {Count} 条判定任务到 {Queue}, BatchId={BatchId}",
                 totalCount, _judgeQueueName, bid);
+            return true;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "CalcTaskPublisher: 发布判定任务失败, BatchId={BatchId}", bid);
+            return false;
         }
     }
 

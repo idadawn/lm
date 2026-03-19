@@ -721,10 +721,8 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
     {
         var result = await _formulaBatchCalculator.CalculateByIdsAsync(ids);
 
-        // 重算成功后自动触发判定
         if (result.SuccessCount > 0)
         {
-            // 获取成功的 ID（排除错误列表中的 ID）
             var failedIds = result.Errors?.Select(e => e.IntermediateDataId).ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>();
             var successIds = ids
                 .Where(id => !string.IsNullOrWhiteSpace(id) && !failedIds.Contains(id))
@@ -735,7 +733,12 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             {
                 var tenantId = _userManager?.TenantId ?? "global";
                 var userId = _userManager?.UserId ?? string.Empty;
-                _calcTaskPublisher.PublishJudgeTask(successIds, tenantId, userId);
+                bool published = _calcTaskPublisher.PublishJudgeTask(successIds, tenantId, userId);
+                if (!published)
+                {
+                    var judgeResult = await _formulaBatchCalculator.JudgeByIdsAsync(successIds);
+                    Log.Information($"[Recalculate] MQ 不可用，进程内判定完成: Total={judgeResult.TotalCount}, Success={judgeResult.SuccessCount}, Failed={judgeResult.FailedCount}");
+                }
             }
         }
 
@@ -744,7 +747,7 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
 
     /// <summary>
     /// 批量执行判定逻辑（仅判定，不重新计算）。
-    /// 通过 RabbitMQ 发布 JUDGE 任务，由 Worker 消费处理并推送进度。
+    /// 优先通过 RabbitMQ 发布 JUDGE 任务由 Worker 处理，MQ 不可用时回退到进程内判定。
     /// </summary>
     [HttpPost("judge")]
     public async Task<FormulaCalculationResult> Judge([FromBody] List<string> ids)
@@ -773,13 +776,19 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         var tenantId = _userManager?.TenantId ?? "global";
         var userId = _userManager?.UserId ?? string.Empty;
 
-        _calcTaskPublisher.PublishJudgeTask(validIds, tenantId, userId);
-
-        return new FormulaCalculationResult
+        bool published = _calcTaskPublisher.PublishJudgeTask(validIds, tenantId, userId);
+        if (published)
         {
-            TotalCount = validIds.Count,
-            Message = $"判定任务已提交: {validIds.Count} 条数据，由后台服务处理。"
-        };
+            return new FormulaCalculationResult
+            {
+                TotalCount = validIds.Count,
+                Message = $"判定任务已提交: {validIds.Count} 条数据，由后台服务处理。"
+            };
+        }
+
+        var judgeResult = await _formulaBatchCalculator.JudgeByIdsAsync(validIds);
+        Log.Information($"[Judge] MQ 不可用，进程内判定完成: Total={judgeResult.TotalCount}, Success={judgeResult.SuccessCount}, Failed={judgeResult.FailedCount}");
+        return judgeResult;
     }
 
     /// <inheritdoc />

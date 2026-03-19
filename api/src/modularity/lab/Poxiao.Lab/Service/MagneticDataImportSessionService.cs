@@ -455,7 +455,11 @@ public class MagneticDataImportSessionService
             var batchId = Guid.NewGuid().ToString();
             var tenantId = _userManager?.TenantId ?? "global";
             var userId = _userManager?.UserId ?? string.Empty;
-            _calcTaskPublisher.PublishMagneticJudgeItems(batchId, magneticJudgeItems, tenantId, userId);
+            bool published = _calcTaskPublisher.PublishMagneticJudgeItems(batchId, magneticJudgeItems, tenantId, userId);
+            if (!published)
+            {
+                Log.Warning("[MagneticImport] RabbitMQ 不可用，磁性判定任务未发送。请检查 RabbitMQ 连接后手动触发判定。");
+            }
         }
         else
         {

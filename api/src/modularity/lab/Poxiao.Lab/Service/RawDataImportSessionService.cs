@@ -1,5 +1,6 @@
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using MiniExcelLibs;
 using Newtonsoft.Json;
 using Poxiao.DependencyInjection;
@@ -68,6 +69,7 @@ public class RawDataImportSessionService
     private readonly ISqlSugarRepository<DictionaryTypeEntity> _dictionaryTypeRepository;
     private readonly ISqlSugarRepository<DictionaryDataEntity> _dictionaryDataRepository;
     private readonly AppearanceFeatureRuleMatcher _featureRuleMatcher;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
     private readonly ITenant _db;
 
     public RawDataImportSessionService(
@@ -94,7 +96,8 @@ public class RawDataImportSessionService
         IDictionaryTypeService dictionaryTypeService,
         ISqlSugarRepository<DictionaryTypeEntity> dictionaryTypeRepository,
         ISqlSugarRepository<DictionaryDataEntity> dictionaryDataRepository,
-        AppearanceFeatureRuleMatcher featureRuleMatcher
+        AppearanceFeatureRuleMatcher featureRuleMatcher,
+        IServiceScopeFactory serviceScopeFactory
     )
     {
         _sessionRepository = sessionRepository;
@@ -120,6 +123,7 @@ public class RawDataImportSessionService
         _dictionaryTypeRepository = dictionaryTypeRepository;
         _dictionaryDataRepository = dictionaryDataRepository;
         _featureRuleMatcher = featureRuleMatcher;
+        _serviceScopeFactory = serviceScopeFactory;
         _db = context.AsTenant();
     }
 
@@ -1727,7 +1731,7 @@ public class RawDataImportSessionService
             }
         }
 
-        // 4. 发送 MQ 消息给 Worker：每条中间数据一条 MQ 消息，Worker 并发消费
+        // 4. 触发计算：优先通过 MQ 发送给 Worker，MQ 不可用时回退到进程内计算
         bool mqPublishSuccess = false;
         if (intermediateEntities.Count > 0)
         {
@@ -1735,21 +1739,63 @@ public class RawDataImportSessionService
             var userId = _userManager?.UserId ?? string.Empty;
             var ids = intermediateEntities.Select(e => e.Id).ToList();
 
-            try
+            mqPublishSuccess = _calcTaskPublisher.PublishCalcItems(
+                batchId,
+                ids,
+                tenantId,
+                userId,
+                unitPrecisions);
+
+            if (mqPublishSuccess)
             {
-                _calcTaskPublisher.PublishCalcItems(
-                    batchId,
-                    ids,
-                    tenantId,
-                    userId,
-                    unitPrecisions);
-                mqPublishSuccess = true;
                 Log.Information($"[CompleteImport] 已成功发送 {ids.Count} 条计算任务到 MQ");
             }
-            catch (Exception ex)
+            else
             {
-                Log.Error($"[CompleteImport] 发送 MQ 任务失败: {ex.Message}");
-                mqPublishSuccess = false;
+                Log.Warning($"[CompleteImport] MQ 不可用，将在后台执行进程内计算，BatchId={batchId}, Count={ids.Count}");
+                var capturedBatchId = batchId;
+                var capturedUnitPrecisions = unitPrecisions;
+                var capturedIds = ids.ToList();
+                var capturedTenantId = tenantId;
+                var capturedUserId = userId;
+
+                _ = Task.Run(async () =>
+                {
+                    using var scope = _serviceScopeFactory.CreateScope();
+                    var calculator = scope.ServiceProvider.GetRequiredService<IntermediateDataFormulaBatchCalculator>();
+                    calculator.CreatorUserId = capturedUserId;
+                    var publisher = scope.ServiceProvider.GetRequiredService<CalcTaskPublisher>();
+
+                    try
+                    {
+                        var calcResult = await calculator.CalculateByBatchAsync(capturedBatchId, capturedUnitPrecisions);
+                        Log.Information($"[CompleteImport-Background] 进程内计算完成: Total={calcResult.TotalCount}, Success={calcResult.SuccessCount}, Failed={calcResult.FailedCount}");
+
+                        if (calcResult.SuccessCount > 0)
+                        {
+                            var failedIds = calcResult.Errors?.Select(e => e.IntermediateDataId).ToHashSet(StringComparer.OrdinalIgnoreCase) ?? new HashSet<string>();
+                            var successIds = capturedIds
+                                .Where(id => !string.IsNullOrWhiteSpace(id) && !failedIds.Contains(id))
+                                .Distinct(StringComparer.OrdinalIgnoreCase)
+                                .ToList();
+
+                            if (successIds.Count > 0)
+                            {
+                                bool judgePublished = publisher.PublishJudgeTask(successIds, capturedTenantId, capturedUserId);
+                                if (!judgePublished)
+                                {
+                                    Log.Warning($"[CompleteImport-Background] MQ 不可用，回退到进程内判定，Count={successIds.Count}");
+                                    var judgeResult = await calculator.JudgeByIdsAsync(successIds);
+                                    Log.Information($"[CompleteImport-Background] 进程内判定完成: Total={judgeResult.TotalCount}, Success={judgeResult.SuccessCount}, Failed={judgeResult.FailedCount}");
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error($"[CompleteImport-Background] 进程内回退计算失败: {ex.Message}\n{ex.StackTrace}");
+                    }
+                });
             }
         }
 
@@ -1758,12 +1804,6 @@ public class RawDataImportSessionService
         session.TotalRows = allData.Count;
         session.ValidDataRows = validData.Count;
         await _sessionRepository.UpdateAsync(session);
-
-        // 如果 MQ 发送失败，添加警告信息到日志
-        if (!mqPublishSuccess && intermediateEntities.Count > 0)
-        {
-            Log.Warning("[CompleteImport] 数据导入成功，但计算任务未发送到 MQ。请检查 RabbitMQ 连接或手动触发计算。");
-        }
 
         // 6. Create Log
         try

@@ -143,6 +143,7 @@ public class RawDataImportSessionService
                 throw Oops.Oh($"文件数据格式错误: {ex.Message}");
             }
 
+            // 检查重复文件（仅当 ForceUpload 为 false 时）
             if (!input.ForceUpload && !string.IsNullOrWhiteSpace(fileHash))
             {
                 var existingLog = await FindDuplicateLogAsync(fileHash, fileMd5, input.FileName);
@@ -156,9 +157,19 @@ public class RawDataImportSessionService
                 {
                     var lastTime =
                         existingLog?.ImportTime ?? existingSession?.CreatorTime ?? DateTime.Now;
-                    var message =
-                        $"[DUPLICATE_UPLOAD] 文件已上传过，最近一次时间：{lastTime:yyyy-MM-dd HH:mm:ss}，是否继续上传？";
-                    throw Oops.Oh(ErrorCode.COM1026, message);
+                    var lastStatus = existingLog?.Status ?? existingSession?.Status ?? "unknown";
+                    
+                    // 如果之前导入失败了，允许重新上传
+                    if (lastStatus == "failed" || lastStatus == "cancelled")
+                    {
+                        Log.Information($"[Create] 文件 {input.FileName} 之前导入失败或取消，允许重新上传");
+                    }
+                    else
+                    {
+                        var message =
+                            $"[DUPLICATE_UPLOAD] 文件已上传过，最近一次时间：{lastTime:yyyy-MM-dd HH:mm:ss}，是否继续上传？";
+                        throw Oops.Oh(ErrorCode.COM1026, message);
+                    }
                 }
             }
         }
@@ -375,6 +386,14 @@ public class RawDataImportSessionService
         {
             // 使用 Path.Combine 确保跨平台兼容性
             parsedDataFile = Path.Combine(basePath, $"{sessionId}_parsed.json");
+
+            // 确保目录存在
+            var directory = Path.GetDirectoryName(parsedDataFile);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
             var jsonData = JsonConvert.SerializeObject(entities, Formatting.None);
             await File.WriteAllTextAsync(parsedDataFile, jsonData);
         }
@@ -755,10 +774,17 @@ public class RawDataImportSessionService
 
         // 从JSON文件加载数据
         var entities = await LoadParsedDataFromFile(sessionId);
-        var entityDict = entities.ToDictionary(e => e.Id, e => e);
+        var entityDict = entities
+            .Where(e => !string.IsNullOrEmpty(e.Id))
+            .GroupBy(e => e.Id)
+            .ToDictionary(g => g.Key, g => g.First());
 
         var productSpecList = await _productSpecService.GetList(new ProductSpecListQuery());
-        var productSpecDict = productSpecList.Cast<ProductSpecEntity>().ToDictionary(s => s.Id);
+        var productSpecDict = productSpecList
+            .Cast<ProductSpecEntity>()
+            .Where(s => !string.IsNullOrEmpty(s.Id))
+            .GroupBy(s => s.Id)
+            .ToDictionary(g => g.Key, g => g.First());
 
         foreach (var item in input.Items)
         {
@@ -1476,6 +1502,8 @@ public class RawDataImportSessionService
         var allData = await LoadParsedDataFromFile(sessionId);
         var validData = allData.Where(t => t.IsValidData == 1).ToList();
 
+        Log.Information($"[CompleteImport] SessionId={sessionId}, AllData={allData.Count}, ValidData={validData.Count}");
+
         if (validData.Count == 0)
         {
             session.Status = "failed";
@@ -1502,6 +1530,10 @@ public class RawDataImportSessionService
         var intermediateEntities = new List<IntermediateDataEntity>();
 
         var dataBySpec = validData.GroupBy(t => t.ProductSpecId);
+
+        var matchedCount = validData.Count(v => !string.IsNullOrEmpty(v.ProductSpecId));
+        var unmatchedCount = validData.Count(v => string.IsNullOrEmpty(v.ProductSpecId));
+        Log.Information($"[CompleteImport] 产品规格匹配: matched={matchedCount}, unmatched={unmatchedCount}, specGroups={dataBySpec.Count()}");
 
         foreach (var group in dataBySpec)
         {
@@ -1552,128 +1584,173 @@ public class RawDataImportSessionService
             }
         }
 
-        // 2.5 检查并删除已存在的炉号数据（防止重复导入）
+        // 2.5 预查询需要删除的重复炉号数据（仅查询，不删除；删除在事务内执行）
         var existingFurnaceNos = intermediateEntities
             .Where(e => !string.IsNullOrEmpty(e.FurnaceNo))
             .Select(e => e.FurnaceNo)
             .Distinct()
             .ToList();
 
-        int deletedCount = 0;
-        var deletedRecords = new List<string>();
-        if (existingFurnaceNos.Count > 0)
-        {
-            // 查询已存在的中间数据
-            var existingData = await _intermediateDataRepository
-                .AsQueryable()
-                .Where(it => existingFurnaceNos.Contains(it.FurnaceNo))
-                .Select(it => new { it.Id, it.FurnaceNo })
-                .ToListAsync();
+        // 也收集 validData 中的炉号（用于删除对应的原始数据）
+        var allFurnaceNos = validData
+            .Where(e => !string.IsNullOrEmpty(e.FurnaceNo))
+            .Select(e => e.FurnaceNo)
+            .Distinct()
+            .ToList();
 
-            if (existingData.Count > 0)
-            {
-                var existingIds = existingData.Select(e => e.Id).ToList();
-                deletedRecords = existingData.Select(e => e.FurnaceNo).Distinct().ToList();
-                deletedCount = existingIds.Count;
+        int deletedIntermediateCount = 0;
+        int deletedRawCount = 0;
+        var deletedFurnaceNos = new List<string>();
 
-                // 删除已存在的中间数据
-                await _intermediateDataRepository
-                    .AsSugarClient()
-                    .Deleteable<IntermediateDataEntity>()
-                    .Where(it => existingIds.Contains(it.Id))
-                    .ExecuteCommandAsync();
-
-                // 同时删除关联的原始数据（如果存在）
-                var rawDataToDelete = await _rawDataRepository
-                    .AsQueryable()
-                    .Where(r => deletedRecords.Contains(r.FurnaceNo))
-                    .Select(r => r.Id)
-                    .ToListAsync();
-                if (rawDataToDelete.Count > 0)
-                {
-                    await _sessionRepository
-                        .AsSugarClient()
-                        .Deleteable<RawDataEntity>()
-                        .Where(r => rawDataToDelete.Contains(r.Id))
-                        .ExecuteCommandAsync();
-                }
-
-                // 记录删除日志到日志表
-                foreach (var furnaceNo in deletedRecords)
-                {
-                    var logEntry = new RawDataImportLogEntity
-                    {
-                        Id = Guid.NewGuid().ToString(),
-                        FileName = session.FileName + " [重复数据清理]",
-                        SourceFileId = session.SourceFileId,
-                        TotalRows = 0,
-                        SuccessCount = 0,
-                        FailCount = deletedCount,
-                        ValidDataCount = 0,
-                        Status = "deleted",
-                        ImportTime = DateTime.Now,
-                        LastRowsCount = deletedRecords.Count,
-                        LastRowsHash = $"deleted:{string.Join(",", deletedRecords)}"
-                    };
-                    await _logRepository.InsertAsync(logEntry);
-                }
-            }
-        }
-
-        // 3. 事务：原始数据 + 骨架中间数据 同时写入，保证一致性
+        // 3. 事务：删除旧数据 + 写入新数据，保证原子性
         try
         {
             _db.BeginTran();
 
-            // 3.1 写入原始数据
-            if (validData.Count > 0)
+            // 3.1 删除已存在的中间数据（按炉号匹配）
+            if (existingFurnaceNos.Count > 0)
             {
-                var batches = validData.Chunk(1000);
-                foreach (var batch in batches)
+                var existingIntermediate = await _intermediateDataRepository
+                    .AsQueryable()
+                    .Where(it => existingFurnaceNos.Contains(it.FurnaceNo))
+                    .Select(it => new { it.Id, it.FurnaceNo })
+                    .ToListAsync();
+
+                if (existingIntermediate.Count > 0)
                 {
-                    await _sessionRepository
-                        .AsSugarClient()
-                        .Insertable(batch.ToList())
-                        .ExecuteCommandAsync();
+                    var existingIds = existingIntermediate.Select(e => e.Id).ToList();
+                    deletedFurnaceNos = existingIntermediate.Select(e => e.FurnaceNo).Distinct().ToList();
+                    deletedIntermediateCount = existingIds.Count;
+
+                    foreach (var idBatch in existingIds.Chunk(500))
+                    {
+                        var batchList = idBatch.ToList();
+                        await _intermediateDataRepository
+                            .AsSugarClient()
+                            .Deleteable<IntermediateDataEntity>()
+                            .Where(it => batchList.Contains(it.Id))
+                            .ExecuteCommandAsync();
+                    }
+
+                    Log.Information($"[CompleteImport] 已删除重复中间数据: {deletedIntermediateCount}条, 涉及炉号: {deletedFurnaceNos.Count}个");
                 }
             }
 
-            // 3.2 写入骨架中间数据（CalcStatus=PENDING，计算字段为空）
-            if (intermediateEntities.Count > 0)
+            // 3.2 删除已存在的原始数据（按炉号匹配）
+            if (allFurnaceNos.Count > 0)
             {
-                var batches = intermediateEntities.Chunk(1000);
-                foreach (var batch in batches)
+                var existingRaw = await _rawDataRepository
+                    .AsQueryable()
+                    .Where(r => allFurnaceNos.Contains(r.FurnaceNo))
+                    .Select(r => r.Id)
+                    .ToListAsync();
+
+                if (existingRaw.Count > 0)
+                {
+                    deletedRawCount = existingRaw.Count;
+                    foreach (var idBatch in existingRaw.Chunk(500))
+                    {
+                        var batchList = idBatch.ToList();
+                        await _sessionRepository
+                            .AsSugarClient()
+                            .Deleteable<RawDataEntity>()
+                            .Where(r => batchList.Contains(r.Id))
+                            .ExecuteCommandAsync();
+                    }
+
+                    Log.Information($"[CompleteImport] 已删除重复原始数据: {deletedRawCount}条");
+                }
+            }
+
+            // 3.3 写入原始数据
+            if (validData.Count > 0)
+            {
+                foreach (var batch in validData.Chunk(1000))
                 {
                     await _sessionRepository
                         .AsSugarClient()
                         .Insertable(batch.ToList())
                         .ExecuteCommandAsync();
                 }
+                Log.Information($"[CompleteImport] 已写入原始数据: {validData.Count}条");
+            }
+
+            // 3.4 写入骨架中间数据（CalcStatus=PENDING，计算字段为空）
+            if (intermediateEntities.Count > 0)
+            {
+                foreach (var batch in intermediateEntities.Chunk(1000))
+                {
+                    await _sessionRepository
+                        .AsSugarClient()
+                        .Insertable(batch.ToList())
+                        .ExecuteCommandAsync();
+                }
+                Log.Information($"[CompleteImport] 已写入中间数据: {intermediateEntities.Count}条");
             }
 
             _db.CommitTran();
+            Log.Information($"[CompleteImport] 事务提交成功: 删除旧中间数据={deletedIntermediateCount}, 删除旧原始数据={deletedRawCount}, 新原始数据={validData.Count}, 新中间数据={intermediateEntities.Count}");
         }
         catch (Exception ex)
         {
             _db.RollbackTran();
+            Log.Error($"[CompleteImport] 事务回滚: {ex.Message}\n{ex.StackTrace}");
             session.Status = "failed";
             await _sessionRepository.UpdateAsync(session);
             throw Oops.Oh($"导入失败，数据已回滚: {ex.Message}");
         }
 
+        // 删除日志记录（事务成功后记录）
+        if (deletedIntermediateCount > 0 || deletedRawCount > 0)
+        {
+            try
+            {
+                var logEntry = new RawDataImportLogEntity
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    FileName = session.FileName + " [重复数据清理]",
+                    SourceFileId = session.SourceFileId,
+                    TotalRows = 0,
+                    SuccessCount = 0,
+                    FailCount = deletedIntermediateCount + deletedRawCount,
+                    ValidDataCount = 0,
+                    Status = "deleted",
+                    ImportTime = DateTime.Now,
+                    LastRowsCount = deletedFurnaceNos.Count,
+                    LastRowsHash = $"deleted:intermediate={deletedIntermediateCount},raw={deletedRawCount}"
+                };
+                await _logRepository.InsertAsync(logEntry);
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[CompleteImport] 记录删除日志失败: {ex.Message}");
+            }
+        }
+
         // 4. 发送 MQ 消息给 Worker：每条中间数据一条 MQ 消息，Worker 并发消费
+        bool mqPublishSuccess = false;
         if (intermediateEntities.Count > 0)
         {
             var tenantId = _userManager?.TenantId ?? "global";
             var userId = _userManager?.UserId ?? string.Empty;
             var ids = intermediateEntities.Select(e => e.Id).ToList();
 
-            _calcTaskPublisher.PublishCalcItems(
-                batchId,
-                ids,
-                tenantId,
-                userId,
-                unitPrecisions);
+            try
+            {
+                _calcTaskPublisher.PublishCalcItems(
+                    batchId,
+                    ids,
+                    tenantId,
+                    userId,
+                    unitPrecisions);
+                mqPublishSuccess = true;
+                Log.Information($"[CompleteImport] 已成功发送 {ids.Count} 条计算任务到 MQ");
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"[CompleteImport] 发送 MQ 任务失败: {ex.Message}");
+                mqPublishSuccess = false;
+            }
         }
 
         // 5. Mark Session Complete
@@ -1682,37 +1759,51 @@ public class RawDataImportSessionService
         session.ValidDataRows = validData.Count;
         await _sessionRepository.UpdateAsync(session);
 
-        // 6. Create Log
-        int previousSkipRows = 0;
-        var lastLog = await _logRepository
-            .AsQueryable()
-            .Where(t => t.FileName == session.FileName && t.Status == "success")
-            .OrderByDescending(t => t.ImportTime)
-            .FirstAsync();
-        if (lastLog != null)
+        // 如果 MQ 发送失败，添加警告信息到日志
+        if (!mqPublishSuccess && intermediateEntities.Count > 0)
         {
-            previousSkipRows = lastLog.TotalRows;
+            Log.Warning("[CompleteImport] 数据导入成功，但计算任务未发送到 MQ。请检查 RabbitMQ 连接或手动触发计算。");
         }
 
-        var log = new RawDataImportLogEntity
+        // 6. Create Log
+        try
         {
-            FileName = session.FileName,
-            TotalRows = previousSkipRows + allData.Count,
-            SuccessCount = validData.Count,
-            FailCount = allData.Count - validData.Count,
-            Status = "success",
-            ImportTime = DateTime.Now,
-            ImportSessionId = sessionId,
-            SourceFileId = session.SourceFileId,
-            SourceFileHash = session.SourceFileHash,
-            SourceFileMd5 = session.SourceFileMd5,
-            ValidDataHash = session.ValidDataHash,
-            ValidDataCount = validData.Count,
-            LastRowsHash = GenerateLastRowHash(allData.LastOrDefault()),
-            LastRowsCount = 1,
-        };
-        log.Creator();
-        await _logRepository.InsertAsync(log);
+            int previousSkipRows = 0;
+            var lastLog = await _logRepository
+                .AsQueryable()
+                .Where(t => t.FileName == session.FileName && t.Status == "success")
+                .OrderByDescending(t => t.ImportTime)
+                .FirstAsync();
+            if (lastLog != null)
+            {
+                previousSkipRows = lastLog.TotalRows;
+            }
+
+            var log = new RawDataImportLogEntity
+            {
+                FileName = session.FileName,
+                TotalRows = previousSkipRows + allData.Count,
+                SuccessCount = validData.Count,
+                FailCount = allData.Count - validData.Count,
+                Status = "success",
+                ImportTime = DateTime.Now,
+                ImportSessionId = sessionId,
+                SourceFileId = session.SourceFileId,
+                SourceFileHash = session.SourceFileHash,
+                SourceFileMd5 = session.SourceFileMd5,
+                ValidDataHash = session.ValidDataHash,
+                ValidDataCount = validData.Count,
+                LastRowsHash = GenerateLastRowHash(allData.LastOrDefault()),
+                LastRowsCount = 1,
+            };
+            log.Creator();
+            await _logRepository.InsertAsync(log);
+            Log.Information($"[CompleteImport] 导入日志已创建: FileName={session.FileName}, ValidData={validData.Count}, IntermediateData={intermediateEntities.Count}");
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"[CompleteImport] 创建导入日志失败: {ex.Message}\n{ex.StackTrace}");
+        }
 
         // 7. 清理临时JSON文件
         try
@@ -3199,127 +3290,67 @@ public class RawDataImportSessionService
 
     /// <summary>
     /// 识别产品规格。
-    /// 根据原始数据中实际存在的有效检测列，与产品规格配置进行匹配。
-    /// 例如：如果产品规格配置的检测列为 20，实际存在的检测列为 3，那么数据的有效列应为 1-13（第 1-13 列有值，第 14 列开始为空）。
-    /// 判断规则：根据产品规格配置的检测列，检查数据的有效列是否连续匹配（从 1 到检测列都必须有值，检测列 + 1 开始为空）。
-    /// 使用 detection1-detection22 字段进行匹配（默认最多 22 列）。
+    /// 根据原始数据中连续有效检测列数与产品规格配置的检测列数进行匹配。
+    /// 优先精确匹配（连续列数 == 规格列数），其次宽松匹配（连续列数 >= 规格列数，选最大的）。
     /// </summary>
     private ProductSpecEntity IdentifyProductSpec(
         RawDataEntity entity,
         List<ProductSpecEntity> productSpecs
     )
     {
-        // 1. 从 detection1-detection22 字段获取检测数据
-        var detectionData = new Dictionary<int, decimal?>();
         var detectionProps = new[]
         {
-            entity.Detection1,
-            entity.Detection2,
-            entity.Detection3,
-            entity.Detection4,
-            entity.Detection5,
-            entity.Detection6,
-            entity.Detection7,
-            entity.Detection8,
-            entity.Detection9,
-            entity.Detection10,
-            entity.Detection11,
-            entity.Detection12,
-            entity.Detection13,
-            entity.Detection14,
-            entity.Detection15,
-            entity.Detection16,
-            entity.Detection17,
-            entity.Detection18,
-            entity.Detection19,
-            entity.Detection20,
-            entity.Detection21,
+            entity.Detection1,  entity.Detection2,  entity.Detection3,
+            entity.Detection4,  entity.Detection5,  entity.Detection6,
+            entity.Detection7,  entity.Detection8,  entity.Detection9,
+            entity.Detection10, entity.Detection11, entity.Detection12,
+            entity.Detection13, entity.Detection14, entity.Detection15,
+            entity.Detection16, entity.Detection17, entity.Detection18,
+            entity.Detection19, entity.Detection20, entity.Detection21,
             entity.Detection22,
         };
 
+        var validColumns = new HashSet<int>();
         for (int i = 0; i < detectionProps.Length; i++)
         {
             if (detectionProps[i].HasValue)
-            {
-                detectionData[i + 1] = detectionProps[i].Value;
-            }
+                validColumns.Add(i + 1);
         }
-
-        // 2. 获取当前行数据中所有有效（非空）的列索引集合
-        var validColumns = detectionData
-            .Where(kvp => kvp.Value.HasValue)
-            .Select(kvp => kvp.Key)
-            .ToHashSet();
 
         if (validColumns.Count == 0)
-        {
-            return null; // 没有有效检测数据，无法匹配
-        }
+            return null;
 
-        // 3. 获取连续的有效检测列数量（从1开始连续到最后一个有效列）
-        int maxValidIndex = validColumns.Max();
         int continuousCount = 0;
-        for (int i = 1; i <= maxValidIndex; i++)
+        for (int i = 1; i <= 22; i++)
         {
             if (validColumns.Contains(i))
-            {
                 continuousCount = i;
-            }
             else
-            {
                 break;
-            }
         }
 
-        // 4. 遍历规格进行匹配
-        foreach (var spec in productSpecs)
+        if (continuousCount == 0)
+            return null;
+
+        var sortedSpecs = productSpecs
+            .Where(s => s.DetectionColumns > 0)
+            .OrderByDescending(s => s.DetectionColumns)
+            .ToList();
+
+        // 精确匹配：连续有效列数恰好等于规格的检测列数
+        foreach (var spec in sortedSpecs)
         {
-            // DetectionColumns 已经从可空类型调整为非空 int，
-            // 约定：小于等于 0 表示“未配置检测列”
-            if (spec.DetectionColumns <= 0)
-                continue;
-
-            // 解析规格配置的检测列（现在是 int 类型，直接转换为列表）
-            var specColumns = new List<int> { spec.DetectionColumns };
-
-            if (specColumns.Count == 0)
-                continue;
-
-            // 5. 对每个配置的检测列进行匹配判断
-            foreach (var specColumn in specColumns)
-            {
-                // 判断数据的有效列是否正好是1到specColumn（即第1到specColumn列都有值，specColumn+1开始为空）
-                // 例如：如果specColumn=13，那么应该检查：
-                // - 第1-13列都有值（都在validColumns中）
-                // - 第14列开始为空（不在validColumns中，或者maxValidIndex <= specColumn）
-
-                bool isMatch = true;
-
-                // 检查1到specColumn列是否都有值
-                for (int i = 1; i <= specColumn; i++)
-                {
-                    if (!validColumns.Contains(i))
-                    {
-                        isMatch = false;
-                        break;
-                    }
-                }
-
-                // 如果1到specColumn列都有值，还需要检查specColumn+1列开始是否为空
-                // 即最大有效列索引应该等于specColumn
-                if (isMatch && maxValidIndex != specColumn)
-                {
-                    isMatch = false;
-                }
-
-                if (isMatch)
-                {
-                    return spec;
-                }
-            }
+            if (continuousCount == spec.DetectionColumns)
+                return spec;
         }
 
-        // 如果没有匹配到，返回 null，由外部决定错误信息
+        // 宽松匹配：连续有效列数 >= 规格检测列数，选检测列数最大且满足的规格
+        foreach (var spec in sortedSpecs)
+        {
+            if (continuousCount >= spec.DetectionColumns)
+                return spec;
+        }
+
         return null;
     }
 

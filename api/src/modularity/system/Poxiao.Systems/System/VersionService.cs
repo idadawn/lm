@@ -70,7 +70,7 @@ public class VersionService : IDynamicApiController, ITransient, IVersionService
             // 忽略读取错误
         }
 
-        return "1.0.0";
+        return "1.1.0";
     }
 
     private string GetWebVersion()
@@ -87,7 +87,7 @@ public class VersionService : IDynamicApiController, ITransient, IVersionService
         }
 
         // 从配置或环境变量获取
-        return Poxiao.App.Configuration["WebVersion"] ?? "1.0.1";
+        return Poxiao.App.Configuration["WebVersion"] ?? "1.1.0";
     }
 
     private List<ChangelogItem> ParseChangelog()

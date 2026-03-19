@@ -17,9 +17,13 @@ enum Api {
 
 /**
  * 获取公式列表
+ * @param formulaType 可选，公式类型过滤（CALC-计算公式，JUDGE-判定公式，NO-只展示）
  */
-export const getIntermediateDataFormulaList = () => {
-    return defHttp.get<IntermediateDataFormula[]>({ url: Api.Base });
+export const getIntermediateDataFormulaList = (formulaType?: string) => {
+    return defHttp.get<IntermediateDataFormula[]>({ 
+        url: Api.Base, 
+        params: formulaType ? { formulaType } : undefined 
+    });
 };
 
 /**

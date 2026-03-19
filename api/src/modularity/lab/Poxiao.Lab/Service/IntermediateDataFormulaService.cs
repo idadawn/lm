@@ -109,9 +109,19 @@ public class IntermediateDataFormulaService
 
     /// <inheritdoc />
     [HttpGet("")]
-    public async Task<List<IntermediateDataFormulaDto>> GetListAsync()
+    Task<List<IntermediateDataFormulaDto>> IIntermediateDataFormulaService.GetListAsync()
     {
-        var cacheKey = BuildFormulaCacheKey();
+        return GetListAsync((string)null);
+    }
+
+    /// <summary>
+    /// 获取所有公式列表（支持按类型过滤）.
+    /// </summary>
+    /// <param name="formulaType">公式类型过滤</param>
+    public async Task<List<IntermediateDataFormulaDto>> GetListAsync([FromQuery] string formulaType)
+    {
+        // 根据是否有类型过滤来构建不同的缓存键
+        var cacheKey = BuildFormulaCacheKey(string.IsNullOrEmpty(formulaType) ? "all" : $"type:{formulaType}");
         if (_cacheManager.Exists(cacheKey))
         {
             var cached = _cacheManager.Get<List<IntermediateDataFormulaDto>>(cacheKey);
@@ -121,9 +131,20 @@ public class IntermediateDataFormulaService
             }
         }
 
-        var list = await _repository
+        var query = _repository
             .AsQueryable()
-            .Where(t => t.DeleteMark == null)
+            .Where(t => t.DeleteMark == null);
+
+        // 如果指定了公式类型，进行过滤
+        if (!string.IsNullOrEmpty(formulaType))
+        {
+            if (Enum.TryParse<IntermediateDataFormulaType>(formulaType, true, out var formulaTypeEnum))
+            {
+                query = query.Where(t => t.FormulaType == formulaTypeEnum);
+            }
+        }
+
+        var list = await query
             .OrderBy(t => t.SortOrder)
             .OrderBy(t => t.CreatorTime)
             .ToListAsync();

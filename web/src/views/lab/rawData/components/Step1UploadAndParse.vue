@@ -432,11 +432,12 @@ async function handleNext() {
     sessionId.value = props.importSessionId;
   }
 
-  // 传递 sessionId 和文件信息到下一步（文件数据已保存在后端，不再传递 fileData）
+  // 传递 sessionId 和文件信息到下一步（同时传递 fileData 作为后备，以防后端文件保存失败）
   emit('next', {
     sessionId: currentSessionId,
     fileName: fileName.value,
     importStrategy: 'incremental', // 固定为 incremental（已废弃，但需要传递以保持兼容）
+    fileData: fileBase64.value,
   });
 }
 

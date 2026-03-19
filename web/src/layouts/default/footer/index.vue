@@ -80,7 +80,7 @@
   import { getVersion, getChangelog, type VersionOutput, type ChangelogItem } from '/@/api/system/version';
 
   // Web 版本号 - 需要与 package.json 保持一致
-  const WEB_VERSION = '1.0.1';
+  const WEB_VERSION = '1.1.0';
 
   export default defineComponent({
     name: 'LayoutFooter',

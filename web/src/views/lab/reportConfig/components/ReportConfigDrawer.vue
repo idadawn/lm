@@ -24,10 +24,11 @@ const formulaOptions = ref<any[]>([]);
 const levelOptions = ref<any[]>([]);
 const selectedFormulaId = ref<string>('');
 
-// 加载判定公式列表
+// 加载判定公式列表（只加载判定公式类型 F_FORMULA_TYPE=JUDGE）
 async function loadFormulaOptions() {
     try {
-        const res: any = await getIntermediateDataFormulaList();
+        // 通过后端接口过滤，只获取判定公式类型
+        const res: any = await getIntermediateDataFormulaList('JUDGE');
         const list = Array.isArray(res) ? res : (res.data || []);
         formulaOptions.value = list.map((item: any) => ({
             id: item.id,

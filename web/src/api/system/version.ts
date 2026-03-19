@@ -1,8 +1,8 @@
 import { defHttp } from '/@/utils/http/axios';
 
 enum Api {
-  Version = '/api/system/v1/Version',
-  Changelog = '/api/system/v1/Version/changelog',
+  Version = '/api/system/v1/Version/Version',
+  Changelog = '/api/system/v1/Version/Changelog',
 }
 
 export interface VersionOutput {

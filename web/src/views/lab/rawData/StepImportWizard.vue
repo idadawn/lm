@@ -34,7 +34,7 @@
       <!-- 第二步：数据解析与预览 -->
       <div v-show="activeStep === 1">
         <Step2DataPreview ref="step2PreviewRef" :import-session-id="importSessionId" :file-name="fileName"
-          :import-strategy="importStrategy" @next="handleStep2PreviewNext" @prev="handlePrev" @cancel="handleCancel"
+          :file-data="fileData" :import-strategy="importStrategy" @next="handleStep2PreviewNext" @prev="handlePrev" @cancel="handleCancel"
           @complete="handleNoChangesComplete" />
       </div>
 
@@ -103,6 +103,7 @@ const state = reactive<State>({
   activeStep: 0,
   importSessionId: '',
   fileName: '',
+  fileData: '',
   importStrategy: 'incremental',
   nextLoading: false,
   key: +new Date(),
@@ -118,6 +119,7 @@ const {
   activeStep,
   importSessionId,
   fileName,
+  fileData,
   importStrategy,
   nextLoading,
   key,
@@ -149,6 +151,7 @@ function init() {
   state.activeStep = 0;
   state.importSessionId = '';
   state.fileName = '';
+  state.fileData = '';
   state.importStrategy = 'incremental';
   state.nextLoading = false;
   state.key = +new Date();
@@ -161,10 +164,11 @@ function init() {
 }
 
 // 步骤1完成（文件上传，文件数据已保存到后端）
-async function handleStep1Next(data: { sessionId: string; fileName: string; importStrategy: ImportStrategy }) {
+async function handleStep1Next(data: { sessionId: string; fileName: string; importStrategy: ImportStrategy; fileData?: string }) {
   state.importSessionId = data.sessionId;
   state.fileName = data.fileName;
   state.importStrategy = data.importStrategy;
+  state.fileData = data.fileData || '';
   state.activeStep = 1;
 }
 
@@ -300,6 +304,7 @@ function handleFileCleared() {
   state.activeStep = 0;
   state.importSessionId = '';
   state.fileName = '';
+  state.fileData = '';
 }
 
 // 取消

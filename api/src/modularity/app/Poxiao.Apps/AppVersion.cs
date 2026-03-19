@@ -79,7 +79,7 @@ public class AppVersion : IDynamicApiController, ITransient
         var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
         // 获取配置文件的数据库信息
         var dbOptions = App.GetOptions<ConnectionStringsOptions>();
-        var version = "1.0.0";
+        var version = "1.1.0";
         return await Task.FromResult(new { env, dbOptions, version });
     }
     #endregion

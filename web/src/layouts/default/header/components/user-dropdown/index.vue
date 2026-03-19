@@ -1,7 +1,7 @@
 <template>
   <Dropdown placement="bottom" :overlayClassName="`${prefixCls}-dropdown-overlay`">
     <span :class="[prefixCls, `${prefixCls}--${theme}`]" class="flex">
-      <Avatar :class="`${prefixCls}__header`" :src="apiUrl + getUserInfo.headIcon" :size="26" />
+      <Avatar :class="`${prefixCls}__header`" :src="getUserInfo.headIcon ? apiUrl + getUserInfo.headIcon : undefined" :size="26" />
       <span :class="`${prefixCls}__info hidden md:block`">
         <span :class="`${prefixCls}__name truncate`"> {{ getUserInfo.userName }}</span>
       </span>
@@ -71,7 +71,7 @@
 <script lang="ts">
   import { Dropdown, Menu, Avatar } from 'ant-design-vue';
   import type { MenuInfo } from 'ant-design-vue/lib/menu/src/interface';
-  import { defineComponent, computed } from 'vue';
+  import { defineComponent, computed, ref } from 'vue';
   import { DOC_URL } from '/@/settings/siteSetting';
   import { useGlobSetting } from '/@/hooks/setting';
   import { useUserStore } from '/@/store/modules/user';
@@ -116,7 +116,7 @@
       const appStore = useAppStore();
 
       // 获取版本信息（从 API 获取）
-      const sysVersion = ref('v1.0.0');
+      const sysVersion = ref('v1.1.0');
       getVersion()
         .then((res) => {
           if (res && res.webVersion) {

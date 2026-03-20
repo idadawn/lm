@@ -159,7 +159,7 @@ async function createNewSession() {
   try {
     const sessionId = await createImportSession({
       fileName: '',
-      importStrategy: 'incremental',
+      importStrategy: 'append',
       currentStep: 0,
       status: 'pending',
     });

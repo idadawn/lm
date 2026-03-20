@@ -8,10 +8,9 @@ public class RawDataImportSessionInput
     public string FileName { get; set; }
 
     /// <summary>
-    /// 导入策略：已废弃，固定为"incremental"以保持向后兼容性
+    /// 导入策略：append = 追加导入（默认，跳过已存在数据），overwrite = 覆盖导入（更新已存在数据的带材重量、断头数、单卷重量及检测数据）
     /// </summary>
-    [Obsolete("导入策略功能已移除，此属性仅用于向后兼容")]
-    public string ImportStrategy { get; set; } = "incremental";
+    public string ImportStrategy { get; set; } = "append";
 
     /// <summary>
     /// 文件数据（Base64）- 可选，如果提供则在创建会话时保存文件

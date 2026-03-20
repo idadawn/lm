@@ -9,6 +9,23 @@
         show-icon
         style="margin-bottom: 24px" />
 
+      <!-- 导入策略选择 -->
+      <div class="strategy-section">
+        <h3 class="section-title">导入策略</h3>
+        <a-radio-group v-model:value="importStrategy" @change="handleStrategyChange">
+          <a-space direction="vertical" :size="12">
+            <a-radio value="append">
+              <span class="strategy-label">追加导入</span>
+              <span class="strategy-desc">（默认）在已有数据基础上追加新数据，数据库中已存在的炉号将被跳过</span>
+            </a-radio>
+            <a-radio value="overwrite">
+              <span class="strategy-label">覆盖导入</span>
+              <span class="strategy-desc">数据库中已存在的炉号将更新带材重量、断头数、单卷重量及检测数据，新炉号正常追加</span>
+            </a-radio>
+          </a-space>
+        </a-radio-group>
+      </div>
+
 
       <!-- 文件上传 -->
       <div class="file-upload-section">
@@ -110,10 +127,15 @@ const isDragOver = ref(false);
 const sessionId = ref<string>(props.importSessionId || '');
 const fileBase64 = ref<string>('');
 const fileName = ref<string>('');
+const importStrategy = ref<'append' | 'overwrite'>('append');
 const validationErrors = ref<string[]>([]);
 const validating = ref(false);
 const showDuplicateDialog = ref(false);
 const duplicateDialogMessage = ref('');
+
+function handleStrategyChange() {
+  // 策略变更时不需要额外操作，值已通过 v-model 更新
+}
 
 // 监听 prop 变化，同步到内部状态
 watch(
@@ -304,8 +326,8 @@ async function clearFile() {
     sessionId.value = '';
     fileBase64.value = '';
     fileName.value = '';
+    importStrategy.value = 'append';
     validationErrors.value = [];
-    // 通知父组件文件已清空，需要跳转到第一步
     emit('fileCleared');
   }
 }
@@ -336,6 +358,7 @@ async function createSession(forceUpload: boolean) {
     fileName: fileName.value,
     fileData: fileBase64.value,
     forceUpload,
+    importStrategy: importStrategy.value,
   });
 
   if (!result || (typeof result !== 'string' && !result)) {
@@ -432,11 +455,10 @@ async function handleNext() {
     sessionId.value = props.importSessionId;
   }
 
-  // 传递 sessionId 和文件信息到下一步（同时传递 fileData 作为后备，以防后端文件保存失败）
   emit('next', {
     sessionId: currentSessionId,
     fileName: fileName.value,
-    importStrategy: 'incremental', // 固定为 incremental（已废弃，但需要传递以保持兼容）
+    importStrategy: importStrategy.value,
     fileData: fileBase64.value,
   });
 }
@@ -570,6 +592,11 @@ defineExpose({
     margin-right: 8px;
     font-size: 16px;
   }
+}
+
+.strategy-label {
+  font-weight: 500;
+  color: #262626;
 }
 
 .strategy-desc {

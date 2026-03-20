@@ -207,6 +207,21 @@ public class IntermediateDataFormulaService
         if (exists)
             throw Oops.Oh(ErrorCode.COM1003, $"列 {dto.ColumnName} 的公式已存在");
 
+        // 检查公式名称是否已存在
+        if (!string.IsNullOrWhiteSpace(dto.FormulaName))
+        {
+            var formulaNameExists = await _repository
+                .AsQueryable()
+                .Where(t =>
+                    t.FormulaName == dto.FormulaName
+                    && t.DeleteMark == null
+                )
+                .AnyAsync();
+
+            if (formulaNameExists)
+                throw Oops.Oh(ErrorCode.COM1003, $"公式名称 {dto.FormulaName} 已存在");
+        }
+
         // 如果公式名称为空，使用列名
         if (string.IsNullOrWhiteSpace(dto.FormulaName))
         {

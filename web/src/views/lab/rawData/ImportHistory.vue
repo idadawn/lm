@@ -304,10 +304,8 @@
   ]);
 
   const strategyOptions = ref([
-    { label: '增量导入', value: 'incremental' },
-    { label: '全量导入', value: 'full' },
+    { label: '追加导入', value: 'append' },
     { label: '覆盖导入', value: 'overwrite' },
-    { label: '智能去重', value: 'deduplicate' },
   ]);
 
   // 表格列配置
@@ -439,20 +437,16 @@
 
   function getStrategyColor(strategy: string): string {
     switch (strategy) {
-      case 'incremental': return 'blue';
-      case 'full': return 'green';
+      case 'append': return 'blue';
       case 'overwrite': return 'orange';
-      case 'deduplicate': return 'purple';
       default: return 'default';
     }
   }
 
   function getStrategyText(strategy: string): string {
     switch (strategy) {
-      case 'incremental': return '增量导入';
-      case 'full': return '全量导入';
+      case 'append': return '追加导入';
       case 'overwrite': return '覆盖导入';
-      case 'deduplicate': return '智能去重';
       default: return strategy;
     }
   }

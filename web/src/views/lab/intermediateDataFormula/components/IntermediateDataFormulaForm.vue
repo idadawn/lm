@@ -27,6 +27,7 @@ const availableFields = ref<any[]>([]);
 const fieldsRefreshKey = ref(0); // 用于强制刷新表单
 const isFormReady = ref(false); // 跟踪表单是否已准备好
 const isUpdate = ref(true); // 是否为更新模式
+const isSubmitting = ref(false); // 防止重复提交
 
 // 监听 availableFields 变化，确保表单能响应式更新
 watch(() => availableFields.value, async (newFields) => {
@@ -447,6 +448,8 @@ const getTitle = computed(() => {
 });
 
 const handleSubmit = async () => {
+  if (isSubmitting.value) return;
+  isSubmitting.value = true;
   try {
     const values = await validate();
     setModalProps({ confirmLoading: true });
@@ -467,6 +470,7 @@ const handleSubmit = async () => {
     createMessage.error(error.message || '提交失败');
   } finally {
     setModalProps({ confirmLoading: false });
+    isSubmitting.value = false;
   }
 };
 

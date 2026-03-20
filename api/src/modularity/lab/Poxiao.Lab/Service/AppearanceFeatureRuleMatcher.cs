@@ -14,9 +14,9 @@ namespace Poxiao.Lab.Service;
 public class AppearanceFeatureRuleMatcher : ITransient
 {
     /// <summary>
-    /// 特性分隔符（用于组合特性，包含标点符号）
+    /// 特性分隔符（用于组合特性，包含标点符号和空格）
     /// </summary>
-    private static readonly string[] FeatureSeparators = { "、", "，" };
+    private static readonly string[] FeatureSeparators = { "、", "，", " " };
 
     /// <summary>
     /// 匹配结果

@@ -184,6 +184,7 @@ public class RawDataImportSessionService
             FileName = input.FileName,
             Status = "pending",
             CurrentStep = 0,
+            ImportStrategy = string.IsNullOrWhiteSpace(input.ImportStrategy) ? "append" : input.ImportStrategy,
             CreatorUserId = _userManager.UserId,
             CreatorTime = DateTime.Now,
             SourceFileHash = fileHash,
@@ -444,8 +445,8 @@ public class RawDataImportSessionService
         // 检查重复的炉号（只检查符合规则的有效数据）
         CheckDuplicateFurnaceNoForPreview(previewItems);
 
-        // 检查数据库中已存在的炉号
-        await CheckExistingFurnaceNoInDatabaseForPreview(previewItems);
+        // 检查数据库中已存在的炉号（根据导入策略决定标记方式）
+        await CheckExistingFurnaceNoInDatabaseForPreview(previewItems, existingSession.ImportStrategy ?? "append");
 
         // 6. 返回结果（返回全部数据，前端分页展示）
         var previewOutput = new RawDataPreviewOutput
@@ -1588,98 +1589,145 @@ public class RawDataImportSessionService
             }
         }
 
-        // 2.5 预查询需要删除的重复炉号数据（仅查询，不删除；删除在事务内执行）
-        var existingFurnaceNos = intermediateEntities
-            .Where(e => !string.IsNullOrEmpty(e.FurnaceNo))
-            .Select(e => e.FurnaceNo)
-            .Distinct()
-            .ToList();
+        // 2.5 根据导入策略处理已存在的炉号数据
+        var importStrategy = session.ImportStrategy ?? "append";
+        var isOverwriteMode = string.Equals(importStrategy, "overwrite", StringComparison.OrdinalIgnoreCase);
 
-        // 也收集 validData 中的炉号（用于删除对应的原始数据）
         var allFurnaceNos = validData
             .Where(e => !string.IsNullOrEmpty(e.FurnaceNo))
             .Select(e => e.FurnaceNo)
             .Distinct()
             .ToList();
 
-        int deletedIntermediateCount = 0;
-        int deletedRawCount = 0;
-        var deletedFurnaceNos = new List<string>();
+        // 查询数据库中已存在的炉号
+        var dbExistingFurnaceNos = new HashSet<string>();
+        if (allFurnaceNos.Count > 0)
+        {
+            var dbExisting = await _rawDataRepository
+                .AsQueryable()
+                .Where(r => allFurnaceNos.Contains(r.FurnaceNo) && r.IsValidData == 1)
+                .Select(r => r.FurnaceNo)
+                .ToListAsync();
+            dbExistingFurnaceNos = new HashSet<string>(dbExisting, StringComparer.OrdinalIgnoreCase);
+        }
 
-        // 3. 事务：删除旧数据 + 写入新数据，保证原子性
+        // 将 validData 分为新数据和已存在数据
+        var newData = validData.Where(e => !dbExistingFurnaceNos.Contains(e.FurnaceNo ?? "")).ToList();
+        var existingData = validData.Where(e => dbExistingFurnaceNos.Contains(e.FurnaceNo ?? "")).ToList();
+
+        Log.Information($"[CompleteImport] 策略={importStrategy}, 新数据={newData.Count}条, 已存在数据={existingData.Count}条");
+
+        // 按策略过滤中间数据：追加模式只为新数据生成，覆盖模式为所有有效数据生成
+        if (!isOverwriteMode)
+        {
+            intermediateEntities = intermediateEntities
+                .Where(ie => !dbExistingFurnaceNos.Contains(ie.FurnaceNo ?? ""))
+                .ToList();
+        }
+
+        int updatedRawCount = 0;
+        int deletedIntermediateCount = 0;
+
+        // 3. 事务：写入数据，保证原子性
         try
         {
             _db.BeginTran();
 
-            // 3.1 删除已存在的中间数据（按炉号匹配）
-            if (existingFurnaceNos.Count > 0)
+            if (isOverwriteMode && existingData.Count > 0)
             {
-                var existingIntermediate = await _intermediateDataRepository
-                    .AsQueryable()
-                    .Where(it => existingFurnaceNos.Contains(it.FurnaceNo))
-                    .Select(it => new { it.Id, it.FurnaceNo })
-                    .ToListAsync();
-
-                if (existingIntermediate.Count > 0)
+                // 覆盖模式：按炉号 UPDATE 原始数据的指定字段
+                foreach (var entity in existingData)
                 {
-                    var existingIds = existingIntermediate.Select(e => e.Id).ToList();
-                    deletedFurnaceNos = existingIntermediate.Select(e => e.FurnaceNo).Distinct().ToList();
-                    deletedIntermediateCount = existingIds.Count;
+                    if (string.IsNullOrEmpty(entity.FurnaceNo))
+                        continue;
 
-                    foreach (var idBatch in existingIds.Chunk(500))
+                    var affected = await _sessionRepository
+                        .AsSugarClient()
+                        .Updateable<RawDataEntity>()
+                        .SetColumns(r => new RawDataEntity
+                        {
+                            CoilWeight = entity.CoilWeight,
+                            BreakCount = entity.BreakCount,
+                            SingleCoilWeight = entity.SingleCoilWeight,
+                            Detection1 = entity.Detection1,
+                            Detection2 = entity.Detection2,
+                            Detection3 = entity.Detection3,
+                            Detection4 = entity.Detection4,
+                            Detection5 = entity.Detection5,
+                            Detection6 = entity.Detection6,
+                            Detection7 = entity.Detection7,
+                            Detection8 = entity.Detection8,
+                            Detection9 = entity.Detection9,
+                            Detection10 = entity.Detection10,
+                            Detection11 = entity.Detection11,
+                            Detection12 = entity.Detection12,
+                            Detection13 = entity.Detection13,
+                            Detection14 = entity.Detection14,
+                            Detection15 = entity.Detection15,
+                            Detection16 = entity.Detection16,
+                            Detection17 = entity.Detection17,
+                            Detection18 = entity.Detection18,
+                            Detection19 = entity.Detection19,
+                            Detection20 = entity.Detection20,
+                            Detection21 = entity.Detection21,
+                            Detection22 = entity.Detection22,
+                            LastModifyTime = DateTime.Now,
+                            LastModifyUserId = _userManager.UserId,
+                        })
+                        .Where(r => r.FurnaceNo == entity.FurnaceNo && r.IsValidData == 1)
+                        .ExecuteCommandAsync();
+
+                    if (affected > 0)
+                        updatedRawCount++;
+                }
+                Log.Information($"[CompleteImport] 覆盖模式：已更新原始数据 {updatedRawCount} 条");
+
+                // 覆盖模式：删除已存在炉号的中间数据（后续重建）
+                var existingFurnaceNosList = existingData
+                    .Where(e => !string.IsNullOrEmpty(e.FurnaceNo))
+                    .Select(e => e.FurnaceNo)
+                    .Distinct()
+                    .ToList();
+
+                if (existingFurnaceNosList.Count > 0)
+                {
+                    var existingIntermediateIds = await _intermediateDataRepository
+                        .AsQueryable()
+                        .Where(it => existingFurnaceNosList.Contains(it.FurnaceNo))
+                        .Select(it => it.Id)
+                        .ToListAsync();
+
+                    if (existingIntermediateIds.Count > 0)
                     {
-                        var batchList = idBatch.ToList();
-                        await _intermediateDataRepository
-                            .AsSugarClient()
-                            .Deleteable<IntermediateDataEntity>()
-                            .Where(it => batchList.Contains(it.Id))
-                            .ExecuteCommandAsync();
+                        deletedIntermediateCount = existingIntermediateIds.Count;
+                        foreach (var idBatch in existingIntermediateIds.Chunk(500))
+                        {
+                            var batchList = idBatch.ToList();
+                            await _intermediateDataRepository
+                                .AsSugarClient()
+                                .Deleteable<IntermediateDataEntity>()
+                                .Where(it => batchList.Contains(it.Id))
+                                .ExecuteCommandAsync();
+                        }
+                        Log.Information($"[CompleteImport] 覆盖模式：已删除旧中间数据 {deletedIntermediateCount} 条，将重建");
                     }
-
-                    Log.Information($"[CompleteImport] 已删除重复中间数据: {deletedIntermediateCount}条, 涉及炉号: {deletedFurnaceNos.Count}个");
                 }
             }
 
-            // 3.2 删除已存在的原始数据（按炉号匹配）
-            if (allFurnaceNos.Count > 0)
+            // 3.1 写入新的原始数据（追加模式只插入 newData，覆盖模式也只插入 newData）
+            if (newData.Count > 0)
             {
-                var existingRaw = await _rawDataRepository
-                    .AsQueryable()
-                    .Where(r => allFurnaceNos.Contains(r.FurnaceNo))
-                    .Select(r => r.Id)
-                    .ToListAsync();
-
-                if (existingRaw.Count > 0)
-                {
-                    deletedRawCount = existingRaw.Count;
-                    foreach (var idBatch in existingRaw.Chunk(500))
-                    {
-                        var batchList = idBatch.ToList();
-                        await _sessionRepository
-                            .AsSugarClient()
-                            .Deleteable<RawDataEntity>()
-                            .Where(r => batchList.Contains(r.Id))
-                            .ExecuteCommandAsync();
-                    }
-
-                    Log.Information($"[CompleteImport] 已删除重复原始数据: {deletedRawCount}条");
-                }
-            }
-
-            // 3.3 写入原始数据
-            if (validData.Count > 0)
-            {
-                foreach (var batch in validData.Chunk(1000))
+                foreach (var batch in newData.Chunk(1000))
                 {
                     await _sessionRepository
                         .AsSugarClient()
                         .Insertable(batch.ToList())
                         .ExecuteCommandAsync();
                 }
-                Log.Information($"[CompleteImport] 已写入原始数据: {validData.Count}条");
+                Log.Information($"[CompleteImport] 已写入新原始数据: {newData.Count}条");
             }
 
-            // 3.4 写入骨架中间数据（CalcStatus=PENDING，计算字段为空）
+            // 3.2 写入骨架中间数据（CalcStatus=PENDING，计算字段为空）
             if (intermediateEntities.Count > 0)
             {
                 foreach (var batch in intermediateEntities.Chunk(1000))
@@ -1693,7 +1741,7 @@ public class RawDataImportSessionService
             }
 
             _db.CommitTran();
-            Log.Information($"[CompleteImport] 事务提交成功: 删除旧中间数据={deletedIntermediateCount}, 删除旧原始数据={deletedRawCount}, 新原始数据={validData.Count}, 新中间数据={intermediateEntities.Count}");
+            Log.Information($"[CompleteImport] 事务提交成功: 策略={importStrategy}, 新原始数据={newData.Count}, 更新原始数据={updatedRawCount}, 重建中间数据={deletedIntermediateCount}, 新中间数据={intermediateEntities.Count}");
         }
         catch (Exception ex)
         {
@@ -1702,33 +1750,6 @@ public class RawDataImportSessionService
             session.Status = "failed";
             await _sessionRepository.UpdateAsync(session);
             throw Oops.Oh($"导入失败，数据已回滚: {ex.Message}");
-        }
-
-        // 删除日志记录（事务成功后记录）
-        if (deletedIntermediateCount > 0 || deletedRawCount > 0)
-        {
-            try
-            {
-                var logEntry = new RawDataImportLogEntity
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    FileName = session.FileName + " [重复数据清理]",
-                    SourceFileId = session.SourceFileId,
-                    TotalRows = 0,
-                    SuccessCount = 0,
-                    FailCount = deletedIntermediateCount + deletedRawCount,
-                    ValidDataCount = 0,
-                    Status = "deleted",
-                    ImportTime = DateTime.Now,
-                    LastRowsCount = deletedFurnaceNos.Count,
-                    LastRowsHash = $"deleted:intermediate={deletedIntermediateCount},raw={deletedRawCount}"
-                };
-                await _logRepository.InsertAsync(logEntry);
-            }
-            catch (Exception ex)
-            {
-                Log.Error($"[CompleteImport] 记录删除日志失败: {ex.Message}");
-            }
         }
 
         // 4. 触发计算：优先通过 MQ 发送给 Worker，MQ 不可用时回退到进程内计算
@@ -2113,6 +2134,11 @@ public class RawDataImportSessionService
                 continue;
 
             var row = rows[i];
+
+            // 跳过所有值都为空的行（如只有颜色格式但无数据的单元格）
+            if (row.Values.All(v => v == null || string.IsNullOrWhiteSpace(v.ToString())))
+                continue;
+
             var entity = new RawDataEntity();
 
             // 根据模板字段映射赋值
@@ -3121,9 +3147,9 @@ public class RawDataImportSessionService
 
     /// <summary>
     /// 检查数据库中已经存在的炉号（用于预览界面）。
-    /// 如果本次 Excel 导入的炉号在数据库中已经存在，则标记为将被忽略。
+    /// 根据导入策略标记：追加模式标记为将被跳过，覆盖模式标记为将被覆盖。
     /// </summary>
-    private async Task CheckExistingFurnaceNoInDatabaseForPreview(List<RawDataPreviewItem> items)
+    private async Task CheckExistingFurnaceNoInDatabaseForPreview(List<RawDataPreviewItem> items, string importStrategy = "append")
     {
         // 只检查符合规则的有效数据
         var validItems = items
@@ -3198,7 +3224,8 @@ public class RawDataImportSessionService
             }
         }
 
-        // 标记数据库中已存在的炉号
+        // 标记数据库中已存在的炉号（根据导入策略显示不同提示）
+        var isOverwrite = string.Equals(importStrategy, "overwrite", StringComparison.OrdinalIgnoreCase);
         foreach (var item in validItems)
         {
             var standardFurnaceNo = GetFurnaceNo(item);
@@ -3208,14 +3235,14 @@ public class RawDataImportSessionService
             )
             {
                 item.ExistsInDatabase = true;
-                // 如果状态还是success或duplicate，改为exists_in_db
                 if (item.Status == "success" || item.Status == "duplicate")
                 {
-                    item.Status = "exists_in_db";
+                    item.Status = isOverwrite ? "will_overwrite" : "skip_existing";
                 }
-                // 追加提示信息
-                var infoMessage =
-                    $"炉号 {standardFurnaceNo} 在数据库中已存在，将被更新并覆盖原有检测数据";
+
+                var infoMessage = isOverwrite
+                    ? $"炉号 {standardFurnaceNo} 在数据库中已存在，将覆盖带材重量、断头数、单卷重量及检测数据"
+                    : $"炉号 {standardFurnaceNo} 在数据库中已存在，将被跳过";
                 if (string.IsNullOrWhiteSpace(item.ErrorMessage))
                 {
                     item.ErrorMessage = infoMessage;

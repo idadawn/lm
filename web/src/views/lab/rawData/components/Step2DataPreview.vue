@@ -43,13 +43,14 @@
         </a-alert>
 
         <!-- 数据库中已存在炉号提示 -->
-        <a-alert v-if="hasExistingFurnaceNos" type="info" show-icon style="margin-top: 16px">
+        <a-alert v-if="hasExistingFurnaceNos" :type="props.importStrategy === 'overwrite' ? 'warning' : 'info'" show-icon style="margin-top: 16px">
           <template #message>
             <span style="font-weight: 600;">检测到数据库中已存在的炉号</span>
           </template>
           <template #description>
             <div>
-              <p style="margin-bottom: 0;">部分炉号在数据库中已存在，这些数据将被更新并覆盖原有检测数据。</p>
+              <p v-if="props.importStrategy === 'overwrite'" style="margin-bottom: 0;">当前为覆盖导入模式，已存在的炉号将更新带材重量、断头数、单卷重量及检测数据。</p>
+              <p v-else style="margin-bottom: 0;">当前为追加导入模式，已存在的炉号将被跳过，不会导入。</p>
             </div>
           </template>
         </a-alert>
@@ -125,7 +126,8 @@
                     </a-checkbox>
                   </template>
                   <template v-else-if="record.existsInDatabase">
-                    <a-tag color="orange" style="font-size: 12px; margin: 0;">数据库中已存在，将被更新</a-tag>
+                    <a-tag v-if="props.importStrategy === 'overwrite'" color="orange" style="font-size: 12px; margin: 0;">将覆盖更新</a-tag>
+                    <a-tag v-else color="default" style="font-size: 12px; margin: 0;">将跳过</a-tag>
                   </template>
                 </div>
               </template>
@@ -340,7 +342,7 @@ function getStatusColor(record: any): string {
 // 获取状态文本
 function getStatusText(record: any): string {
   if (record.existsInDatabase) {
-    return '数据库中已存在';
+    return props.importStrategy === 'overwrite' ? '将覆盖更新' : '将跳过';
   }
   if (record.isDuplicateInFile) {
     return '重复（需选择）';

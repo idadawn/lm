@@ -5,8 +5,7 @@ export interface ImportSession {
   id: string;
   fileName: string;
   sourceFileId?: string;
-  /** @deprecated 导入策略功能已移除，此字段仅用于向后兼容 */
-  importStrategy: 'incremental' | 'full' | 'overwrite' | 'deduplicate';
+  importStrategy: ImportStrategy;
   currentStep: number; // 0-3
   totalRows: number;
   validDataRows: number;
@@ -16,8 +15,8 @@ export interface ImportSession {
   creatorUserId?: string;
 }
 
-// 导入策略（已废弃，固定为 'incremental' 以保持向后兼容性）
-export type ImportStrategy = 'incremental' | 'full' | 'overwrite' | 'deduplicate';
+// 导入策略：append = 追加导入（默认，跳过已存在数据），overwrite = 覆盖导入
+export type ImportStrategy = 'append' | 'overwrite';
 
 // 原始数据行（支持动态检测列）
 export interface RawDataRow {
@@ -201,7 +200,6 @@ export interface ImportLog {
   id: string;
   fileName: string;
   sourceFileId?: string;
-  /** @deprecated 导入策略功能已移除，此字段仅用于向后兼容 */
   importStrategy: ImportStrategy;
   totalRows: number;
   successRows: number;

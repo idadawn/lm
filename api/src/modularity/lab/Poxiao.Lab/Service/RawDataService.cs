@@ -138,6 +138,10 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
                 if (row == null)
                     continue;
 
+                // 跳过所有单元格都为空的行（如只有颜色格式但无数据的单元格）
+                if (IsEmptyRow(row))
+                    continue;
+
                 // 1. 获取原始数据
                 var rawData = GetRowData(row, headerIndexes);
                 result.OriginalData.Add(rawData);
@@ -467,6 +471,10 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
             {
                 var row = sheet.GetRow(rowIndex);
                 if (row == null)
+                    continue;
+
+                // 跳过所有单元格都为空的行（如只有颜色格式但无数据的单元格）
+                if (IsEmptyRow(row))
                     continue;
 
                 var entity = new RawDataEntity();
@@ -1416,6 +1424,27 @@ public class RawDataService : IRawDataService, IDynamicApiController, ITransient
         {
             successEntities.Remove(entity);
         }
+    }
+
+    /// <summary>
+    /// 判断行是否为空（所有单元格为空或仅有格式无数据）.
+    /// </summary>
+    private bool IsEmptyRow(IRow row)
+    {
+        if (row == null)
+            return true;
+        for (int i = row.FirstCellNum; i < row.LastCellNum; i++)
+        {
+            var cell = row.GetCell(i);
+            if (cell == null)
+                continue;
+            if (cell.CellType == CellType.Blank)
+                continue;
+            if (cell.CellType == CellType.String && string.IsNullOrWhiteSpace(cell.StringCellValue))
+                continue;
+            return false;
+        }
+        return true;
     }
 
     /// <summary>

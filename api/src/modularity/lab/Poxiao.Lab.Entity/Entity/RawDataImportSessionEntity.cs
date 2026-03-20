@@ -48,11 +48,10 @@ public class RawDataImportSessionEntity : CLDEntityBase
     public string ParsedDataFile { get; set; }
 
     /// <summary>
-    /// 导入策略：已废弃，固定为"incremental"以保持向后兼容性.
+    /// 导入策略：append = 追加导入（默认），overwrite = 覆盖导入.
     /// </summary>
     [SugarColumn(ColumnName = "F_IMPORT_STRATEGY", Length = 20, IsNullable = true)]
-    [Obsolete("导入策略功能已移除，此字段仅用于向后兼容")]
-    public string ImportStrategy { get; set; } = "incremental";
+    public string ImportStrategy { get; set; } = "append";
 
     /// <summary>
     /// 当前步骤（0-第一步，1-第二步，2-第三步，3-第四步）.

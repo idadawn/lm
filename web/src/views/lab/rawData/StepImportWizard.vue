@@ -104,7 +104,7 @@ const state = reactive<State>({
   importSessionId: '',
   fileName: '',
   fileData: '',
-  importStrategy: 'incremental',
+  importStrategy: 'append',
   nextLoading: false,
   key: +new Date(),
   noChanges: false,
@@ -152,7 +152,7 @@ function init() {
   state.importSessionId = '';
   state.fileName = '';
   state.fileData = '';
-  state.importStrategy = 'incremental';
+  state.importStrategy = 'append';
   state.nextLoading = false;
   state.key = +new Date();
   state.noChanges = false;

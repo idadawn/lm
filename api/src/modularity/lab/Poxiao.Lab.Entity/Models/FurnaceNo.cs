@@ -114,9 +114,9 @@ public class FurnaceNo
         }
 
         // 正则表达式：匹配 [产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号][可能存在W或者w][可选特性汉字]
+        // 分卷号为必填（与业务规则一致）
         // 例如：1甲20251101-1-4-1W脆 或 1乙20251101-1-1-1
         // 卷号和分卷号支持小数：\d+(\.\d+)?
-        // 允许炉号、卷号、分卷号前后有空格
         // 特性描述限制为中文汉字、括号或空格：[\u4e00-\u9fa5\(\)\uff08\uff09\s]*
         var pattern =
             @"^\s*(\d+)(.*?)(\d{8})\s*-\s*(\d+)\s*-\s*(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*([Ww]?)\s*([\u4e00-\u9fa5\(\)\uff08\uff09\s]*)\s*$";
@@ -124,7 +124,7 @@ public class FurnaceNo
 
         if (!match.Success)
         {
-            result.ErrorMessage = $"炉号格式不符合规则: '{furnaceNo}'";
+            result.ErrorMessage = DiagnoseFurnaceNoFormat(furnaceNo.Trim());
             return result;
         }
 
@@ -135,7 +135,7 @@ public class FurnaceNo
             var dateStr = match.Groups[3].Value; // 日期字符串
             result.FurnaceBatchNo = match.Groups[4].Value; // 炉次号
             result.CoilNo = match.Groups[5].Value; // 卷号
-            result.SubcoilNo = match.Groups[6].Value; // 分卷号
+            result.SubcoilNo = match.Groups[6].Value; // 分卷号（必填）
             result.SpecialMarker = match.Groups[7].Value; // 特殊标记（W/w）
             result.FeatureSuffix = match.Groups[8].Value?.Trim(); // 特性描述（可选）
 
@@ -253,7 +253,7 @@ public class FurnaceNo
             OriginalFurnaceNo = null,
         };
 
-        // 验证必要字段
+        // 验证必要字段（分卷号必填）
         if (
             string.IsNullOrWhiteSpace(lineNo)
             || string.IsNullOrWhiteSpace(shift)
@@ -400,6 +400,57 @@ public class FurnaceNo
             return this;
 
         return Build(LineNo, Shift, ProdDate, FurnaceBatchNo, CoilNo, SubcoilNo, SpecialMarker, null);
+    }
+
+    /// <summary>
+    /// 对炉号格式做分步诊断，返回可读性强的错误原因。
+    /// 例如：1丙20260202-2-11 → 缺少分卷号（格式需为 炉次号-卷号-分卷号）
+    /// </summary>
+    private static string DiagnoseFurnaceNoFormat(string furnaceNo)
+    {
+        if (string.IsNullOrWhiteSpace(furnaceNo))
+            return "炉号为空";
+
+        // 1. 检查是否以数字开头（产线号）
+        if (!char.IsDigit(furnaceNo[0]))
+            return $"炉号必须以产线数字开头（如 1、2），当前开头为：'{furnaceNo[0]}'";
+
+        // 2. 提取产线号后的班次汉字
+        var lineNoEnd = 0;
+        while (lineNoEnd < furnaceNo.Length && char.IsDigit(furnaceNo[lineNoEnd]))
+            lineNoEnd++;
+
+        if (lineNoEnd >= furnaceNo.Length)
+            return "炉号缺少班次（如：甲、乙、丙）";
+
+        // 3. 检测 8 位日期
+        var dateMatch = Regex.Match(furnaceNo, @"\d{8}");
+        if (!dateMatch.Success)
+            return "炉号缺少8位生产日期（如：20260202）";
+
+        // 验证日期是否合法
+        if (!DateTime.TryParseExact(dateMatch.Value, "yyyyMMdd", null,
+                System.Globalization.DateTimeStyles.None, out _))
+            return $"日期 '{dateMatch.Value}' 不是合法日期（格式：yyyyMMdd）";
+
+        // 4. 检查日期之后的数字段（炉次号-卷号-分卷号，需要3段，用'-'分隔）
+        var afterDate = furnaceNo.Substring(dateMatch.Index + 8).TrimEnd();
+        // 移除末尾的 W/w 标记和汉字特性描述
+        afterDate = Regex.Replace(afterDate, @"[Ww]?[\u4e00-\u9fa5\(\)\uff08\uff09\s]*$", "").Trim();
+
+        if (!afterDate.StartsWith("-"))
+            return $"生产日期后应紧跟 '-炉次号-卷号-分卷号'，当前为：'{afterDate}'";
+
+        var parts = afterDate.TrimStart('-').Split('-');
+        var validParts = parts.Where(p => !string.IsNullOrWhiteSpace(p)).ToArray();
+
+        return validParts.Length switch
+        {
+            0 => "生产日期后缺少炉次号、卷号和分卷号（格式：-炉次号-卷号-分卷号）",
+            1 => $"生产日期后仅有炉次号 '{validParts[0]}'，缺少卷号和分卷号（格式：-炉次号-卷号-分卷号）",
+            2 => $"生产日期后仅有炉次号和卷号（'{validParts[0]}-{validParts[1]}'），缺少分卷号（格式：-炉次号-卷号-分卷号）",
+            _ => $"炉号格式不符合规则：'{furnaceNo}'"
+        };
     }
 
     /// <summary>

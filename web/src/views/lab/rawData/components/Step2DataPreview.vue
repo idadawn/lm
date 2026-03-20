@@ -112,10 +112,25 @@
                 {{ formatDate(record.prodDate) }}
               </template>
               <template v-else-if="column.dataIndex === 'isValidData'">
-                <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                  <a-tag :color="getStatusColor(record)" style="margin: 0;">
+                <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap; flex-wrap: wrap;">
+                  <!-- 无效数据：显示错误原因 Tooltip -->
+                  <a-tooltip v-if="!record.isValidData && record.errorMessage" :title="record.errorMessage" placement="topLeft" color="#f50">
+                    <a-tag :color="getStatusColor(record)" style="margin: 0; cursor: help;">
+                      {{ getStatusText(record) }}
+                      <ExclamationCircleOutlined style="margin-left: 3px;" />
+                    </a-tag>
+                  </a-tooltip>
+                  <!-- 其他状态：普通 tag -->
+                  <a-tag v-else :color="getStatusColor(record)" style="margin: 0;">
                     {{ getStatusText(record) }}
                   </a-tag>
+                  <!-- 无效原因文字（短文本截断，完整内容在 tooltip） -->
+                  <span v-if="!record.isValidData && record.errorMessage"
+                    style="font-size: 11px; color: #f5222d; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                    :title="record.errorMessage">
+                    {{ record.errorMessage }}
+                  </span>
+
                   <a-tag v-if="record.isIdentical" color="cyan" style="margin: 0;">
                     数据完全一致
                   </a-tag>
@@ -183,6 +198,7 @@
 <script lang="ts" setup>
 import { ref, computed, nextTick, onMounted, watch } from 'vue';
 import { message, Statistic } from 'ant-design-vue';
+import { ExclamationCircleOutlined } from '@ant-design/icons-vue';
 import { uploadAndParse, updateDuplicateSelections } from '/@/api/lab/rawData';
 import type {
   ImportStrategy,
@@ -472,9 +488,9 @@ const rightColumns = computed(() => {
     {
       title: '炉号解析状态',
       dataIndex: 'isValidData',
-      width: 250,
+      width: 360,
       fixed: 'right',
-      align: 'center'
+      align: 'left'
     }
   ];
 

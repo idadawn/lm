@@ -230,9 +230,10 @@
 
   const handleCloneToNew = (record: any) => {
     openModal(true, {
-      isUpdate: false, // 标记为新建
-      record: { ...record, name: `复制-${record.name}` }, // 预填充数据，修改名称以示区别
+      isUpdate: false,
+      record: { ...record, name: `复制-${record.name}` },
       formulaId: selectedFormulaId.value,
+      existingNames: levelList.value.map(l => l.name),
     });
   };
 
@@ -241,6 +242,7 @@
       isUpdate: true,
       record,
       formulaId: selectedFormulaId.value,
+      existingNames: levelList.value.map(l => l.name),
     });
   };
 
@@ -465,6 +467,7 @@
       isUpdate: false,
       formulaId: selectedFormulaId.value,
       productSpecId: selectedProductSpecId.value,
+      existingNames: levelList.value.map(l => l.name),
     });
   };
 

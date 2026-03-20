@@ -40,6 +40,9 @@ const { createMessage } = useMessage();
 const isUpdate = ref(true);
 const formulaId = ref('');
 const rowId = ref('');
+const existingNames = ref<string[]>([]);
+const originalName = ref('');
+const submitting = ref(false);
 
 const formState = ref({
   name: '',
@@ -76,9 +79,12 @@ const [registerModal, { setModalProps, closeModal }] = useModalInner(async (data
   setModalProps({ confirmLoading: false });
   isUpdate.value = !!data?.isUpdate;
   formulaId.value = data?.formulaId;
+  existingNames.value = data?.existingNames || [];
+  submitting.value = false;
 
   if (isUpdate.value && data.record) {
     rowId.value = data.record.id;
+    originalName.value = data.record.name;
     formState.value = {
       name: data.record.name,
       qualityStatus: data.record.qualityStatus,
@@ -92,29 +98,57 @@ const [registerModal, { setModalProps, closeModal }] = useModalInner(async (data
     };
   } else {
     rowId.value = '';
-    formState.value = {
-      name: '',
-      qualityStatus: 2,
-      priority: 0,
-      color: '',
-      isStatistic: false,
-      isDefault: false,
-      description: '',
-      condition: '',
-      productSpecId: data?.productSpecId || '',
-    };
+    originalName.value = '';
+    if (data?.record) {
+      // 拷贝模式：预填充源等级数据（含条件）
+      formState.value = {
+        name: data.record.name || '',
+        qualityStatus: data.record.qualityStatus ?? 2,
+        priority: data.record.priority ?? 0,
+        color: data.record.color || '',
+        isStatistic: data.record.isStatistic ?? false,
+        isDefault: false,
+        description: data.record.description || '',
+        condition: data.record.condition || '',
+        productSpecId: data.record.productSpecId || data?.productSpecId || '',
+      };
+    } else {
+      formState.value = {
+        name: '',
+        qualityStatus: 2,
+        priority: 0,
+        color: '',
+        isStatistic: false,
+        isDefault: false,
+        description: '',
+        condition: '',
+        productSpecId: data?.productSpecId || '',
+      };
+    }
   }
 });
 
 const getTitle = computed(() => (!unref(isUpdate) ? '新增等级' : '编辑等级'));
 
 const handleSubmit = async () => {
-  try {
-    if (!formState.value.name) {
-      createMessage.warning('请输入等级名称');
-      return;
-    }
+  if (submitting.value) return;
 
+  if (!formState.value.name) {
+    createMessage.warning('请输入等级名称');
+    return;
+  }
+
+  // 检查同名等级（编辑时排除自身原名）
+  const namesToCheck = isUpdate.value
+    ? existingNames.value.filter(n => n !== originalName.value)
+    : existingNames.value;
+  if (namesToCheck.some(n => n === formState.value.name)) {
+    createMessage.warning(`已存在名称为"${formState.value.name}"的等级，请使用其他名称`);
+    return;
+  }
+
+  submitting.value = true;
+  try {
     setModalProps({ confirmLoading: true });
 
     // Process condition if it exists (e.g. from copy)
@@ -151,6 +185,7 @@ const handleSubmit = async () => {
     console.error(error);
     createMessage.error(error.message || '保存失败');
   } finally {
+    submitting.value = false;
     setModalProps({ confirmLoading: false });
   }
 };

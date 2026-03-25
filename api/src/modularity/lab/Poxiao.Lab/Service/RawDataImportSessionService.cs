@@ -1,4 +1,4 @@
-using Mapster;
+﻿using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using MiniExcelLibs;
@@ -20,6 +20,7 @@ using Poxiao.Lab.Entity.Dto.AppearanceFeatureLevel;
 using Poxiao.Lab.Entity.Dto.ProductSpec;
 using Poxiao.Lab.Entity.Dto.RawData;
 using Poxiao.Lab.Entity.Enum;
+using Poxiao.Lab.Entity.Enums;
 using Poxiao.Lab.Entity.Models;
 using Poxiao.Lab.EventBus;
 using Poxiao.Lab.Helpers;
@@ -299,7 +300,21 @@ public class RawDataImportSessionService
         }
 
         // 导入策略已废弃，不再支持增量导入，始终从第1行开始解析
+        var importStrategy = string.IsNullOrWhiteSpace(existingSession.ImportStrategy)
+            ? "append"
+            : existingSession.ImportStrategy.Trim().ToLowerInvariant();
         int skipRows = 0;
+        if (importStrategy == "append" && !string.IsNullOrWhiteSpace(existingSession.FileName))
+        {
+            var lastSuccessfulLog = await GetLastSuccessfulLogByFileNameAsync(existingSession.FileName);
+            if (lastSuccessfulLog != null && lastSuccessfulLog.TotalRows > 0)
+            {
+                skipRows = lastSuccessfulLog.TotalRows;
+            }
+        }
+
+        int previousReadRows = skipRows;
+        int startRow = previousReadRows > 0 ? previousReadRows + 1 : 1;
 
         // 保存文件
         var sourceFileId = "";
@@ -330,7 +345,7 @@ public class RawDataImportSessionService
         var ignores = await _dictionaryDataService.GetList("FeatureIgnores");
         var ignoredSuffixes = ignores.Select(x => x.FullName).ToList();
 
-        var entities = ParseExcel(fileBytes, input.FileName, skipRows, templateConfig, productSpecs, ignoredSuffixes);
+        var (entities, originalRowCount) = ParseExcel(fileBytes, input.FileName, skipRows, templateConfig, productSpecs, ignoredSuffixes);
 
         var fileHash = ComputeFileHashSha256(fileBytes);
         var fileMd5 = ComputeFileHashMd5(fileBytes);
@@ -346,14 +361,45 @@ public class RawDataImportSessionService
         var validDataHash = ComputeValidDataHashFromRawRows(fileBytes, templateConfig);
         existingSession.ValidDataHash = validDataHash;
 
-        var lastLog = await FindDuplicateLogAsync(fileHash, fileMd5, existingSession.FileName);
+        if (importStrategy == "append" && skipRows > 0 && entities.Count == 0)
+        {
+            existingSession.Status = "completed";
+            existingSession.TotalRows = originalRowCount;
+            existingSession.ValidDataRows = 0;
+            existingSession.CurrentStep = 4;
+            existingSession.SourceFileId = sourceFileId;
+            await _sessionRepository.UpdateAsync(existingSession);
+
+            var noNewRowsMessage =
+                $"上次已读取到第 {previousReadRows} 行，本次从第 {startRow} 行开始读取，未发现新增数据。";
+
+            return new RawDataImportStep1Output
+            {
+                ImportSessionId = sessionId,
+                TotalRows = originalRowCount,
+                ValidDataRows = 0,
+                PreviousReadRows = previousReadRows,
+                StartRow = startRow,
+                PreviewData = new RawDataPreviewOutput
+                {
+                    ParsedData = new List<RawDataPreviewItem>(),
+                    SkippedRows = skipRows,
+                },
+                NoNewRows = true,
+                NoNewRowsMessage = noNewRowsMessage,
+            };
+        }
+
+        var lastLog = skipRows > 0
+            ? null
+            : await FindDuplicateLogAsync(fileHash, fileMd5, existingSession.FileName);
         if (lastLog != null && !string.IsNullOrWhiteSpace(validDataHash))
         {
             var lastValidHash = await EnsureLogValidDataHashAsync(lastLog, templateConfig);
             if (!string.IsNullOrWhiteSpace(lastValidHash) && lastValidHash == validDataHash)
             {
                 existingSession.Status = "completed";
-                existingSession.TotalRows = entities.Count;
+                existingSession.TotalRows = originalRowCount;
                 existingSession.ValidDataRows = entities.Count(x => x.IsValidData == 1);
                 existingSession.CurrentStep = 4;
                 await _sessionRepository.UpdateAsync(existingSession);
@@ -363,6 +409,8 @@ public class RawDataImportSessionService
                     ImportSessionId = sessionId,
                     TotalRows = existingSession.TotalRows ?? 0,
                     ValidDataRows = existingSession.ValidDataRows ?? 0,
+                    PreviousReadRows = previousReadRows,
+                    StartRow = startRow,
                     PreviewData = new RawDataPreviewOutput
                     {
                         ParsedData = new List<RawDataPreviewItem>(),
@@ -410,7 +458,7 @@ public class RawDataImportSessionService
 
         // 4. 更新会话（不再保存到数据库，只保存到JSON文件）
         var session = await _sessionRepository.GetFirstAsync(t => t.Id == sessionId);
-        session.TotalRows = entities.Count;
+        session.TotalRows = originalRowCount;
         session.ValidDataRows = entities.Count(x => x.IsValidData == 1);
         session.CurrentStep = 1;
         session.SourceFileId = sourceFileId;
@@ -446,7 +494,7 @@ public class RawDataImportSessionService
         CheckDuplicateFurnaceNoForPreview(previewItems);
 
         // 检查数据库中已存在的炉号（根据导入策略决定标记方式）
-        await CheckExistingFurnaceNoInDatabaseForPreview(previewItems, existingSession.ImportStrategy ?? "append");
+        await CheckExistingFurnaceNoInDatabaseForPreview(previewItems, importStrategy);
 
         // 6. 返回结果（返回全部数据，前端分页展示）
         var previewOutput = new RawDataPreviewOutput
@@ -460,6 +508,8 @@ public class RawDataImportSessionService
             ImportSessionId = sessionId,
             TotalRows = session.TotalRows ?? 0,
             ValidDataRows = session.ValidDataRows ?? 0,
+            PreviousReadRows = previousReadRows,
+            StartRow = startRow,
             PreviewData = previewOutput,
         };
     }
@@ -655,6 +705,52 @@ public class RawDataImportSessionService
         }
 
         return null;
+    }
+
+    private async Task<RawDataImportLogEntity> GetLastSuccessfulLogByFileNameAsync(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+            return null;
+
+        return await _logRepository
+            .AsQueryable()
+            .Where(t => t.FileName == fileName && t.Status == "success")
+            .OrderByDescending(t => t.ImportTime)
+            .FirstAsync();
+    }
+
+    private async Task<int> GetSessionSourceFileTotalRowsAsync(RawDataImportSessionEntity session)
+    {
+        if (session == null || string.IsNullOrWhiteSpace(session.SourceFileId))
+            return 0;
+
+        try
+        {
+            var fileBytes = await File.ReadAllBytesAsync(session.SourceFileId);
+            return GetExcelOriginalRowCount(fileBytes);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning($"[GetSessionSourceFileTotalRowsAsync] 读取源文件行数失败: {ex.Message}");
+            return 0;
+        }
+    }
+
+    private int GetExcelOriginalRowCount(byte[] fileBytes)
+    {
+        if (fileBytes == null || fileBytes.Length == 0)
+            return 0;
+
+        using var streamForCount = new MemoryStream(fileBytes);
+        try
+        {
+            var allRows = streamForCount.Query(useHeaderRow: false).ToList();
+            return allRows.Count > 0 ? allRows.Count - 1 : 0;
+        }
+        catch
+        {
+            return 0;
+        }
     }
 
     private async Task<string> EnsureLogValidDataHashAsync(
@@ -1618,24 +1714,39 @@ public class RawDataImportSessionService
         Log.Information($"[CompleteImport] 策略={importStrategy}, 新数据={newData.Count}条, 已存在数据={existingData.Count}条");
 
         // 按策略过滤中间数据：追加模式只为新数据生成，覆盖模式为所有有效数据生成
-        if (!isOverwriteMode)
+        intermediateEntities = intermediateEntities
+            .Where(ie => !dbExistingFurnaceNos.Contains(ie.FurnaceNo ?? ""))
+            .ToList();
+
+        var existingIntermediateIdMap = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        if (existingData.Count > 0)
         {
-            intermediateEntities = intermediateEntities
-                .Where(ie => !dbExistingFurnaceNos.Contains(ie.FurnaceNo ?? ""))
-                .ToList();
+            var existingIntermediateItems = await _intermediateDataRepository
+                .AsQueryable()
+                .Where(it => allFurnaceNos.Contains(it.FurnaceNo))
+                .Select(it => new { it.Id, it.FurnaceNo })
+                .ToListAsync();
+
+            existingIntermediateIdMap = existingIntermediateItems
+                .Where(it => !string.IsNullOrWhiteSpace(it.FurnaceNo))
+                .GroupBy(it => it.FurnaceNo, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(x => x.Id).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList(),
+                    StringComparer.OrdinalIgnoreCase);
         }
 
         int updatedRawCount = 0;
-        int deletedIntermediateCount = 0;
+        int updatedIntermediateCount = 0;
+        var updatedIntermediateIds = new List<string>();
 
         // 3. 事务：写入数据，保证原子性
         try
         {
             _db.BeginTran();
 
-            if (isOverwriteMode && existingData.Count > 0)
+            if (existingData.Count > 0)
             {
-                // 覆盖模式：按炉号 UPDATE 原始数据的指定字段
                 foreach (var entity in existingData)
                 {
                     if (string.IsNullOrEmpty(entity.FurnaceNo))
@@ -1646,6 +1757,8 @@ public class RawDataImportSessionService
                         .Updateable<RawDataEntity>()
                         .SetColumns(r => new RawDataEntity
                         {
+                            DetectionDate = entity.DetectionDate,
+                            Width = entity.Width,
                             CoilWeight = entity.CoilWeight,
                             BreakCount = entity.BreakCount,
                             SingleCoilWeight = entity.SingleCoilWeight,
@@ -1679,42 +1792,68 @@ public class RawDataImportSessionService
 
                     if (affected > 0)
                         updatedRawCount++;
-                }
-                Log.Information($"[CompleteImport] 覆盖模式：已更新原始数据 {updatedRawCount} 条");
 
-                // 覆盖模式：删除已存在炉号的中间数据（后续重建）
-                var existingFurnaceNosList = existingData
-                    .Where(e => !string.IsNullOrEmpty(e.FurnaceNo))
-                    .Select(e => e.FurnaceNo)
-                    .Distinct()
-                    .ToList();
-
-                if (existingFurnaceNosList.Count > 0)
-                {
-                    var existingIntermediateIds = await _intermediateDataRepository
-                        .AsQueryable()
-                        .Where(it => existingFurnaceNosList.Contains(it.FurnaceNo))
-                        .Select(it => it.Id)
-                        .ToListAsync();
-
-                    if (existingIntermediateIds.Count > 0)
+                    if (existingIntermediateIdMap.TryGetValue(entity.FurnaceNo, out var intermediateIds) && intermediateIds.Count > 0)
                     {
-                        deletedIntermediateCount = existingIntermediateIds.Count;
-                        foreach (var idBatch in existingIntermediateIds.Chunk(500))
+                        decimal? roundedWidth = entity.Width.HasValue ? Math.Round(entity.Width.Value, 2) : (decimal?)null;
+                        var intermediateAffected = await _sessionRepository
+                            .AsSugarClient()
+                            .Updateable<IntermediateDataEntity>()
+                            .SetColumns(it => new IntermediateDataEntity
+                            {
+                                DetectionDate = entity.DetectionDate,
+                                ProdDate = entity.ProdDate,
+                                Width = roundedWidth,
+                                CoilWeight = entity.CoilWeight,
+                                BreakCount = entity.BreakCount,
+                                SingleCoilWeight = entity.SingleCoilWeight,
+                                Detection1 = entity.Detection1,
+                                Detection2 = entity.Detection2,
+                                Detection3 = entity.Detection3,
+                                Detection4 = entity.Detection4,
+                                Detection5 = entity.Detection5,
+                                Detection6 = entity.Detection6,
+                                Detection7 = entity.Detection7,
+                                Detection8 = entity.Detection8,
+                                Detection9 = entity.Detection9,
+                                Detection10 = entity.Detection10,
+                                Detection11 = entity.Detection11,
+                                Detection12 = entity.Detection12,
+                                Detection13 = entity.Detection13,
+                                Detection14 = entity.Detection14,
+                                Detection15 = entity.Detection15,
+                                Detection16 = entity.Detection16,
+                                Detection17 = entity.Detection17,
+                                Detection18 = entity.Detection18,
+                                Detection19 = entity.Detection19,
+                                Detection20 = entity.Detection20,
+                                Detection21 = entity.Detection21,
+                                Detection22 = entity.Detection22,
+                                BatchId = batchId,
+                                CalcStatus = IntermediateDataCalcStatus.PENDING,
+                                CalcStatusTime = DateTime.Now,
+                                CalcErrorMessage = null,
+                                JudgeStatus = IntermediateDataCalcStatus.PENDING,
+                                JudgeStatusTime = DateTime.Now,
+                                JudgeErrorMessage = null,
+                                LastModifyTime = DateTime.Now,
+                                LastModifyUserId = _userManager.UserId,
+                            })
+                            .Where(it => intermediateIds.Contains(it.Id))
+                            .ExecuteCommandAsync();
+
+                        if (intermediateAffected > 0)
                         {
-                            var batchList = idBatch.ToList();
-                            await _intermediateDataRepository
-                                .AsSugarClient()
-                                .Deleteable<IntermediateDataEntity>()
-                                .Where(it => batchList.Contains(it.Id))
-                                .ExecuteCommandAsync();
+                            updatedIntermediateCount += intermediateAffected;
+                            updatedIntermediateIds.AddRange(intermediateIds);
                         }
-                        Log.Information($"[CompleteImport] 覆盖模式：已删除旧中间数据 {deletedIntermediateCount} 条，将重建");
                     }
                 }
+
+                Log.Information($"[CompleteImport] 已更新原始数据 {updatedRawCount} 条，已同步中间数据 {updatedIntermediateCount} 条（未修改磁数据）");
             }
 
-            // 3.1 写入新的原始数据（追加模式只插入 newData，覆盖模式也只插入 newData）
+            // 3.1 写入新的原始数据（两种策略都只插入新炉号）
             if (newData.Count > 0)
             {
                 foreach (var batch in newData.Chunk(1000))
@@ -1741,7 +1880,7 @@ public class RawDataImportSessionService
             }
 
             _db.CommitTran();
-            Log.Information($"[CompleteImport] 事务提交成功: 策略={importStrategy}, 新原始数据={newData.Count}, 更新原始数据={updatedRawCount}, 重建中间数据={deletedIntermediateCount}, 新中间数据={intermediateEntities.Count}");
+            Log.Information($"[CompleteImport] 事务提交成功: 策略={importStrategy}, 新原始数据={newData.Count}, 更新原始数据={updatedRawCount}, 更新中间数据={updatedIntermediateCount}, 新中间数据={intermediateEntities.Count}");
         }
         catch (Exception ex)
         {
@@ -1754,11 +1893,18 @@ public class RawDataImportSessionService
 
         // 4. 触发计算：优先通过 MQ 发送给 Worker，MQ 不可用时回退到进程内计算
         bool mqPublishSuccess = false;
-        if (intermediateEntities.Count > 0)
+        var calcTargetIds = intermediateEntities
+            .Select(e => e.Id)
+            .Concat(updatedIntermediateIds)
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (calcTargetIds.Count > 0)
         {
             var tenantId = _userManager?.TenantId ?? "global";
             var userId = _userManager?.UserId ?? string.Empty;
-            var ids = intermediateEntities.Select(e => e.Id).ToList();
+            var ids = calcTargetIds;
 
             mqPublishSuccess = _calcTaskPublisher.PublishCalcItems(
                 batchId,
@@ -1822,28 +1968,22 @@ public class RawDataImportSessionService
 
         // 5. Mark Session Complete
         session.Status = "completed";
-        session.TotalRows = allData.Count;
+        var currentFileTotalRows = await GetSessionSourceFileTotalRowsAsync(session);
+        if (currentFileTotalRows <= 0)
+        {
+            currentFileTotalRows = session.TotalRows.GetValueOrDefault(allData.Count);
+        }
+        session.TotalRows = currentFileTotalRows;
         session.ValidDataRows = validData.Count;
         await _sessionRepository.UpdateAsync(session);
 
         // 6. Create Log
         try
         {
-            int previousSkipRows = 0;
-            var lastLog = await _logRepository
-                .AsQueryable()
-                .Where(t => t.FileName == session.FileName && t.Status == "success")
-                .OrderByDescending(t => t.ImportTime)
-                .FirstAsync();
-            if (lastLog != null)
-            {
-                previousSkipRows = lastLog.TotalRows;
-            }
-
             var log = new RawDataImportLogEntity
             {
                 FileName = session.FileName,
-                TotalRows = previousSkipRows + allData.Count,
+                TotalRows = currentFileTotalRows,
                 SuccessCount = validData.Count,
                 FailCount = allData.Count - validData.Count,
                 Status = "success",
@@ -2096,7 +2236,7 @@ public class RawDataImportSessionService
         return NormalizeDecimal(value.Value);
     }
 
-    private List<RawDataEntity> ParseExcel(
+    private (List<RawDataEntity> entities, int originalRowCount) ParseExcel(
         byte[] fileBytes,
         string fileName,
         int skipRows,
@@ -2125,6 +2265,23 @@ public class RawDataImportSessionService
         var detectionHeaderMap = BuildDetectionHeaderMap(templateConfig, columns);
 
         // 读取数据行
+        // 先统计 Excel 真实行数（包括空行）
+        int originalRowCount = 0;
+        using (var streamForCount = new MemoryStream(fileBytes))
+        {
+            try
+            {
+                var allRows = streamForCount.Query(useHeaderRow: false).ToList();
+                // 第一行是表头，数据行从第二行开始
+                originalRowCount = allRows.Count > 0 ? allRows.Count - 1 : 0;
+            }
+            catch
+            {
+                originalRowCount = 0;
+            }
+        }
+
+        // 读取带列名的数据行用于解析
         using var stream = new MemoryStream(fileBytes);
         var rows = stream.Query(useHeaderRow: true).Cast<IDictionary<string, object>>().ToList();
 
@@ -2139,7 +2296,10 @@ public class RawDataImportSessionService
             if (row.Values.All(v => v == null || string.IsNullOrWhiteSpace(v.ToString())))
                 continue;
 
-            var entity = new RawDataEntity();
+            var entity = new RawDataEntity
+            {
+                SortCode = i + 2
+            };
 
             // 根据模板字段映射赋值
             foreach (var mapping in templateConfig.FieldMappings)
@@ -2173,19 +2333,7 @@ public class RawDataImportSessionService
                 }
             }
 
-            // 必填字段校验
-            var missingFields = GetMissingRequiredFields(entity, requiredFields, fieldLabelMap);
-            if (missingFields.Count > 0)
-            {
-                entity.ImportStatus = 1;
-                entity.ImportError =
-                    $"缺少必填字段: {string.Join("，", missingFields)}";
-                entity.IsValidData = 0;
-                entities.Add(entity);
-                continue;
-            }
-
-            // 炉号解析
+            // 炉号解析（优先，解析失败直接跳过后续必填校验）
             if (!string.IsNullOrWhiteSpace(entity.FurnaceNo))
             {
                 var furnaceNoObj = FurnaceNo.Parse(entity.FurnaceNo, ignoredSuffixes);
@@ -2214,6 +2362,8 @@ public class RawDataImportSessionService
                     entity.ImportStatus = 1;
                     entity.ImportError = "炉号解析失败: " + furnaceNoObj.ErrorMessage;
                     entity.IsValidData = 0;
+                    entities.Add(entity);
+                    continue;
                 }
             }
             else
@@ -2221,6 +2371,20 @@ public class RawDataImportSessionService
                 entity.ImportStatus = 1;
                 entity.ImportError = "炉号为空";
                 entity.IsValidData = 0;
+                entities.Add(entity);
+                continue;
+            }
+
+            // 炉号解析成功后，再校验其他必填字段（断头数、单卷重量等）
+            var missingFields = GetMissingRequiredFields(entity, requiredFields, fieldLabelMap);
+            if (missingFields.Count > 0)
+            {
+                entity.ImportStatus = 1;
+                entity.ImportError =
+                    $"缺少必填字段: {string.Join("，", missingFields)}";
+                entity.IsValidData = 0;
+                entities.Add(entity);
+                continue;
             }
 
             if (entity.IsValidData == 1)
@@ -2240,7 +2404,7 @@ public class RawDataImportSessionService
 
         CheckDuplicateFurnaceNo(entities);
 
-        return entities;
+        return (entities, entities.Count);
     }
 
     private T GetValue<T>(IDictionary<string, object> row, string key)
@@ -3237,12 +3401,10 @@ public class RawDataImportSessionService
                 item.ExistsInDatabase = true;
                 if (item.Status == "success" || item.Status == "duplicate")
                 {
-                    item.Status = isOverwrite ? "will_overwrite" : "skip_existing";
+                    item.Status = "will_overwrite";
                 }
 
-                var infoMessage = isOverwrite
-                    ? $"炉号 {standardFurnaceNo} 在数据库中已存在，将覆盖带材重量、断头数、单卷重量及检测数据"
-                    : $"炉号 {standardFurnaceNo} 在数据库中已存在，将被跳过";
+                var infoMessage = $"炉号 {standardFurnaceNo} 在数据库中已存在，将更新本次导入的数据列，不修改磁数据。";
                 if (string.IsNullOrWhiteSpace(item.ErrorMessage))
                 {
                     item.ErrorMessage = infoMessage;
@@ -3450,7 +3612,7 @@ public class RawDataImportSessionService
             var templateConfig = await LoadRawDataTemplateConfigAsync();
             var productSpecList = await _productSpecService.GetList(new ProductSpecListQuery());
             var productSpecs = productSpecList.Cast<ProductSpecEntity>().ToList();
-            var entities = ParseExcel(
+            var (entities, originalRowCount) = ParseExcel(
                 fileBytes,
                 input.FileName,
                 skipRows: 0,
@@ -3458,7 +3620,7 @@ public class RawDataImportSessionService
                 productSpecs
             );
             var validDataHash = ComputeValidDataHashFromRawRows(fileBytes, templateConfig);
-            output.TotalRows = entities.Count;
+            output.TotalRows = originalRowCount;
 
             if (entities.Count == 0)
             {

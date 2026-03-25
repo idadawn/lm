@@ -82,9 +82,9 @@
                 <span class="label">拟导入最优数:</span>
                 <span class="value">{{ bestDataCount }}</span>
               </div>
-              <div class="stat-item warning" v-if="reviewData.errors && reviewData.errors.length > 0">
+              <div class="stat-item warning" v-if="hasErrors">
                 <span class="label">解析错误数:</span>
-                <span class="value">{{ reviewData.errors.length }}</span>
+                <span class="value">{{ errorCount }}</span>
               </div>
             </a-space>
           </div>
@@ -145,24 +145,47 @@
           </a-tab-pane>
 
           <!-- 标签页 3：解析异常 (如果有) -->
-          <a-tab-pane key="error" v-if="reviewData.errors && reviewData.errors.length > 0">
+          <a-tab-pane key="error" v-if="hasErrors">
             <template #tab>
               <span style="color: #ff4d4f">
-                解析异常 ({{ reviewData.errors.length }})
+                解析异常 ({{ errorCount }})
               </span>
             </template>
             <div class="tab-content">
-              <div class="error-list">
-                <a-list size="small" bordered :data-source="reviewData.errors || []">
-                  <template #renderItem="{ item }">
-                    <a-list-item>
-                      <a-typography-text type="danger">
-                        <CloseCircleOutlined /> {{ item }}
-                      </a-typography-text>
-                    </a-list-item>
+              <!-- 优先展示结构化无效行表格 -->
+              <template v-if="invalidRows.length > 0">
+                <a-table :columns="invalidDataColumns" :data-source="invalidRows"
+                  :pagination="{ pageSize: 10, size: 'small' }" size="small" :scroll="{ y: 380 }" bordered
+                  :row-class-name="() => 'invalid-data-row'">
+                  <template #bodyCell="{ column, record }">
+                    <template v-if="column.key === 'isScratched'">
+                      <a-tag :color="record.isScratched ? 'orange' : 'blue'">
+                        {{ record.isScratched ? '刻痕后' : '正常' }}
+                      </a-tag>
+                    </template>
+                    <template v-else-if="column.key === 'detectionTime'">
+                      {{ record.detectionTime ? formatToDateTime(record.detectionTime) : '-' }}
+                    </template>
+                    <template v-else-if="column.key === 'errorMessage'">
+                      <a-typography-text type="danger">{{ record.errorMessage || '-' }}</a-typography-text>
+                    </template>
                   </template>
-                </a-list>
-              </div>
+                </a-table>
+              </template>
+              <!-- 兜底：无结构化行时展示字符串列表 -->
+              <template v-else-if="reviewData.errors && reviewData.errors.length > 0">
+                <div class="error-list">
+                  <a-list size="small" bordered :data-source="reviewData.errors">
+                    <template #renderItem="{ item }">
+                      <a-list-item>
+                        <a-typography-text type="danger">
+                          <CloseCircleOutlined /> {{ item }}
+                        </a-typography-text>
+                      </a-list-item>
+                    </template>
+                  </a-list>
+                </div>
+              </template>
             </div>
           </a-tab-pane>
         </a-tabs>
@@ -173,7 +196,8 @@
             <a-button @click="handleRefreshReview" :loading="loadingReview">
               <ReloadOutlined /> 刷新数据
             </a-button>
-            <a-button @click="handleStartImport" type="primary" size="large" :loading="importing">
+            <a-button @click="handleStartImport" type="primary" size="large" :loading="importing"
+              :disabled="bestDataCount === 0">
               <CloudUploadOutlined /> 确认并完成最终导入 ({{ bestDataCount }} 条)
             </a-button>
           </a-space>
@@ -202,6 +226,10 @@ const props = defineProps({
   importSessionId: {
     type: String,
     required: true,
+  },
+  parsedData: {
+    type: Array as () => any[],
+    default: () => [],
   },
 });
 
@@ -243,6 +271,34 @@ const bestDataCount = computed(() => {
 const bestDataList = computed(() => {
   return getValidData.value.filter((item: any) => item.isBest || item.IsBest);
 });
+
+// 无效/异常数据行（来自 step1 解析结果）
+const invalidRows = computed(() => {
+  return props.parsedData.filter((item: any) => !(item.isValid ?? item.IsValid ?? true));
+});
+
+// 异常标签页是否显示
+const hasErrors = computed(() => {
+  return invalidRows.value.length > 0 || (reviewData.value.errors && reviewData.value.errors.length > 0);
+});
+
+// 异常数量（优先用结构化无效行数）
+const errorCount = computed(() => {
+  return invalidRows.value.length || (reviewData.value.errors?.length ?? 0);
+});
+
+// 异常数据表格列
+const invalidDataColumns = [
+  { title: '行号', dataIndex: 'rowIndex', key: 'rowIndex', width: 70 },
+  { title: '原始炉号', dataIndex: 'originalFurnaceNo', key: 'originalFurnaceNo', width: 150 },
+  { title: '炉号', dataIndex: 'furnaceNo', key: 'furnaceNo', width: 120 },
+  { title: '是否刻痕', key: 'isScratched', width: 90 },
+  { title: 'Ps铁损(H)', dataIndex: 'psLoss', key: 'psLoss', width: 100 },
+  { title: 'Ss激磁功率(I)', dataIndex: 'ssPower', key: 'ssPower', width: 120 },
+  { title: 'Hc(F)', dataIndex: 'hc', key: 'hc', width: 90 },
+  { title: '检测时间(P)', key: 'detectionTime', width: 150 },
+  { title: '异常原因', dataIndex: 'errorMessage', key: 'errorMessage', width: 200 },
+];
 
 
 // 表格行类名（用于突出显示最优数据）
@@ -315,11 +371,17 @@ async function loadReviewData() {
     // 调试日志
 
     if (validCount === 0) {
-      if (totalCount > 0) {
-        importError.value = `共解析 ${totalCount} 行数据，但没有有效数据。请检查数据格式是否正确。`;
-      } else {
-        importError.value = '没有解析到任何数据，请返回第一步重新解析';
+      // 有无效行数据时，展示核对区并切到解析异常标签页
+      const hasInvalidRows = props.parsedData.some((item: any) => !(item.isValid ?? item.IsValid ?? true));
+      if (hasInvalidRows || (review.errors && review.errors.length > 0)) {
+        message.warning(`共解析 ${totalCount} 行数据，全部解析异常，请查看下方详情`);
+        hasLoadedReview.value = true;
+        activeTab.value = 'error';
+        return;
       }
+      importError.value = totalCount > 0
+        ? `共解析 ${totalCount} 行数据，但没有有效数据。请检查数据格式是否正确。`
+        : '没有解析到任何数据，请返回第一步重新解析';
       message.warning(importError.value);
       hasLoadedReview.value = false;
       return;
@@ -511,6 +573,14 @@ defineExpose({
   .error-list {
     max-height: 400px;
     overflow-y: auto;
+  }
+
+  :deep(.ant-table-tbody tr.invalid-data-row) {
+    background-color: #fff2f0;
+  }
+
+  :deep(.ant-table-tbody tr.invalid-data-row:hover) {
+    background-color: #ffebe8;
   }
 
   .valid-data-section {

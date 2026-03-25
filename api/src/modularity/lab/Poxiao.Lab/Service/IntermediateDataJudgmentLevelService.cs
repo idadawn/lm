@@ -57,10 +57,12 @@ public class IntermediateDataJudgmentLevelService
         [FromQuery] IntermediateDataJudgmentLevelListInput input
     )
     {
+        var formulaIds = await ResolveFormulaIdsAsync(input.FormulaId);
+
         // 如果有 ProductSpecId 筛选条件，跳过缓存直接查询
-        if (string.IsNullOrEmpty(input.ProductSpecId))
+        if (string.IsNullOrEmpty(input.ProductSpecId) && formulaIds.Count == 1)
         {
-            var cacheKey = BuildCacheKey(input.FormulaId);
+            var cacheKey = BuildCacheKey(formulaIds[0]);
             if (_cacheManager.Exists(cacheKey))
             {
                 var cached = _cacheManager.Get<List<IntermediateDataJudgmentLevelDto>>(cacheKey);
@@ -73,7 +75,8 @@ public class IntermediateDataJudgmentLevelService
 
         var list = await _repository
             .AsQueryable()
-            .Where(t => t.DeleteMark == null && t.FormulaId == input.FormulaId)
+            .Where(t => t.DeleteMark == null)
+            .WhereIF(formulaIds.Count > 0, t => formulaIds.Contains(t.FormulaId))
             .WhereIF(!string.IsNullOrEmpty(input.ProductSpecId), t => t.ProductSpecId == input.ProductSpecId)
             .OrderBy(t => t.Priority) // 按优先级排序
             .OrderBy(t => t.CreatorTime) // 然后按创建时间
@@ -88,9 +91,9 @@ public class IntermediateDataJudgmentLevelService
         // }
 
         // 只有无筛选条件时才缓存
-        if (string.IsNullOrEmpty(input.ProductSpecId))
+        if (string.IsNullOrEmpty(input.ProductSpecId) && formulaIds.Count == 1)
         {
-            await _cacheManager.SetAsync(BuildCacheKey(input.FormulaId), result, TimeSpan.FromHours(6));
+            await _cacheManager.SetAsync(BuildCacheKey(formulaIds[0]), result, TimeSpan.FromHours(6));
         }
 
         return result;
@@ -106,11 +109,13 @@ public class IntermediateDataJudgmentLevelService
     [HttpGet("names")]
     public async Task<List<JudgmentLevelNameDto>> GetLevelNamesAsync([FromQuery] string formulaId = null)
     {
+        var formulaIds = await ResolveFormulaIdsAsync(formulaId);
+
         // 查询等级（可选按公式筛选）
         var allLevels = await _repository
             .AsQueryable()
             .Where(t => t.DeleteMark == null)
-            .WhereIF(!string.IsNullOrEmpty(formulaId), t => t.FormulaId == formulaId)
+            .WhereIF(formulaIds.Count > 0, t => formulaIds.Contains(t.FormulaId))
             .Select(t => new { t.Name, t.ProductSpecId, t.QualityStatus, t.Color })
             .ToListAsync();
 
@@ -503,6 +508,27 @@ public class IntermediateDataJudgmentLevelService
     {
         var tenantId = _userManager?.TenantId ?? "global";
         return $"{CachePrefix}:{tenantId}:{formulaId}";
+    }
+
+    private async Task<List<string>> ResolveFormulaIdsAsync(string formulaId)
+    {
+        if (string.IsNullOrWhiteSpace(formulaId))
+        {
+            return new List<string>();
+        }
+
+        var formulas = await _formulaRepository.AsQueryable()
+            .Where(t => t.DeleteMark == null)
+            .Where(t => t.Id == formulaId || t.ColumnName == formulaId)
+            .Select(t => t.Id)
+            .ToListAsync();
+
+        if (formulas.Count > 0)
+        {
+            return formulas.Distinct().ToList();
+        }
+
+        return new List<string> { formulaId };
     }
 
     private async Task ClearCacheAsync(string formulaId)

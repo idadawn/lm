@@ -1,7 +1,0 @@
-{
-  "Tenant": {
-    "MultiTenancy": false,
-    "MultiTenancyType": "SCHEMA", //COLUMN SCHEMA
-    "MultiTenancyDBInterFace": "https://www.xxxxx.com/api/Saas/Tenant/DbContent/"
-  }
-}

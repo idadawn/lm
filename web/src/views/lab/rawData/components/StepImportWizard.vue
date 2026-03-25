@@ -74,7 +74,7 @@ import Step1UploadAndParse from './Step1UploadAndParse.vue';
 import Step2ProductSpec from './Step2ProductSpec.vue';
 import Step3AppearanceFeature from './Step3AppearanceFeature.vue';
 import Step4ReviewAndComplete from './Step4ReviewAndComplete.vue';
-import { createImportSession, updateImportSession, deleteImportSession } from '/@/api/lab/rawData';
+import { updateImportSession, deleteImportSession } from '/@/api/lab/rawData';
 
 const emit = defineEmits(['register', 'success', 'cancel']);
 
@@ -146,28 +146,17 @@ async function init(data?: any) {
     } catch (error) {
       console.error('恢复会话失败:', error);
       // 恢复失败，创建新会话
-      await createNewSession();
+      createNewSession();
     }
   } else {
-    // 创建新的导入会话
-    await createNewSession();
+    // 新导入由第一步按用户选择的导入策略创建会话
+    createNewSession();
   }
 }
 
 // 创建新会话
-async function createNewSession() {
-  try {
-    const sessionId = await createImportSession({
-      fileName: '',
-      importStrategy: 'append',
-      currentStep: 0,
-      status: 'pending',
-    });
-    importSessionId.value = sessionId;
-  } catch (error) {
-    createMessage.error('创建导入会话失败');
-    closePopup();
-  }
+function createNewSession() {
+  importSessionId.value = '';
 }
 
 async function handlePrev() {
@@ -218,6 +207,7 @@ async function handleNext() {
 async function handleStep1Next(data: any) {
   try {
     loading.value = true;
+    importSessionId.value = data.sessionId;
     // 更新会话状态
     await updateImportSession(importSessionId.value, {
       currentStep: 1,

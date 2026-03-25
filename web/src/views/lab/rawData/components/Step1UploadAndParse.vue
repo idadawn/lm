@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="step1-container">
     <!-- 文件上传区域 -->
     <div class="upload-section">
@@ -16,11 +16,11 @@
           <a-space direction="vertical" :size="12">
             <a-radio value="append">
               <span class="strategy-label">追加导入</span>
-              <span class="strategy-desc">（默认）在已有数据基础上追加新数据，数据库中已存在的炉号将被跳过</span>
+              <span class="strategy-desc">（默认）仅同名 Excel 按上次已读行续读，不同名文件从头开始；遇到同炉号时只更新本次导入列，不修改磁数据</span>
             </a-radio>
             <a-radio value="overwrite">
               <span class="strategy-label">覆盖导入</span>
-              <span class="strategy-desc">数据库中已存在的炉号将更新带材重量、断头数、单卷重量及检测数据，新炉号正常追加</span>
+              <span class="strategy-desc">始终按当前 Excel 从头读取；遇到同炉号时只更新本次导入列，不修改磁数据；同名文件会用本次 Excel 最后行重置已读记录</span>
             </a-radio>
           </a-space>
         </a-radio-group>

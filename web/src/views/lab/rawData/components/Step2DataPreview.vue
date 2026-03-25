@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="step2-preview-container">
     <!-- 步骤说明 -->
     <a-alert message="第二步：数据解析与预览" description="系统正在解析Excel文件，解析完成后将显示数据预览。请检查数据是否正确。" type="info" show-icon
@@ -28,6 +28,15 @@
         </a-row>
 
         <!-- 无有效数据警告 -->
+        <a-alert v-if="previousReadRows > 0" type="info" show-icon style="margin-top: 16px">
+          <template #message>
+            <span style="font-weight: 600;">追加导入已按上次位置续读</span>
+          </template>
+          <template #description>
+            <p style="margin-bottom: 0;">上次已读取到第 {{ previousReadRows }} 行，本次从第 {{ startRow }} 行开始读取。</p>
+          </template>
+        </a-alert>
+
         <a-alert v-if="previewData.statistics.validDataRows === 0 && previewData.statistics.totalRows > 0" type="error"
           show-icon style="margin-top: 16px">
           <template #message>
@@ -42,18 +51,6 @@
           </template>
         </a-alert>
 
-        <!-- 数据库中已存在炉号提示 -->
-        <a-alert v-if="hasExistingFurnaceNos" :type="props.importStrategy === 'overwrite' ? 'warning' : 'info'" show-icon style="margin-top: 16px">
-          <template #message>
-            <span style="font-weight: 600;">检测到数据库中已存在的炉号</span>
-          </template>
-          <template #description>
-            <div>
-              <p v-if="props.importStrategy === 'overwrite'" style="margin-bottom: 0;">当前为覆盖导入模式，已存在的炉号将更新带材重量、断头数、单卷重量及检测数据。</p>
-              <p v-else style="margin-bottom: 0;">当前为追加导入模式，已存在的炉号将被跳过，不会导入。</p>
-            </div>
-          </template>
-        </a-alert>
       </div>
 
       <!-- 筛选与统计工具栏 -->
@@ -72,6 +69,21 @@
             重复数据 ({{ duplicateCount }})
           </a-radio-button>
         </a-radio-group>
+
+        <!-- 无效原因分类筛选 -->
+        <a-select
+          v-if="filterType === 'invalid'"
+          v-model:value="filterErrorCategory"
+          style="width: 320px"
+          placeholder="按无效原因筛选"
+          allow-clear
+          @change="currentPage = 1"
+        >
+          <a-select-option v-for="cat in invalidCategoryStats" :key="cat.category" :value="cat.category">
+            {{ cat.label }}
+            <a-tag color="error" style="margin-left: 6px; font-size: 11px; line-height: 18px;">{{ cat.count }}</a-tag>
+          </a-select-option>
+        </a-select>
       </div>
 
       <!-- 数据表格预览（左右分栏） -->
@@ -113,23 +125,23 @@
               </template>
               <template v-else-if="column.dataIndex === 'isValidData'">
                 <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap; flex-wrap: wrap;">
-                  <!-- 无效数据：显示错误原因 Tooltip -->
+                  <!-- 无效数据：显示简化错误原因，hover 展示完整信息 -->
                   <a-tooltip v-if="!record.isValidData && record.errorMessage" :title="record.errorMessage" placement="topLeft" color="#f50">
                     <a-tag :color="getStatusColor(record)" style="margin: 0; cursor: help;">
-                      {{ getStatusText(record) }}
+                      {{ getStatusDisplayText(record) }}
                       <ExclamationCircleOutlined style="margin-left: 3px;" />
                     </a-tag>
                   </a-tooltip>
                   <!-- 其他状态：普通 tag -->
                   <a-tag v-else :color="getStatusColor(record)" style="margin: 0;">
-                    {{ getStatusText(record) }}
+                    {{ getStatusDisplayText(record) }}
                   </a-tag>
-                  <!-- 无效原因文字（短文本截断，完整内容在 tooltip） -->
-                  <span v-if="!record.isValidData && record.errorMessage"
-                    style="font-size: 11px; color: #f5222d; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
-                    :title="record.errorMessage">
-                    {{ record.errorMessage }}
-                  </span>
+                  <!-- 简化后的原因文字，完整原因在 tooltip -->
+                  <a-tooltip v-if="!record.isValidData && record.errorMessage" :title="record.errorMessage" placement="topLeft">
+                    <span style="font-size: 11px; color: #f5222d; cursor: default;">
+                      {{ simplifyErrorMessage(record.errorMessage) }}
+                    </span>
+                  </a-tooltip>
 
                   <a-tag v-if="record.isIdentical" color="cyan" style="margin: 0;">
                     数据完全一致
@@ -140,9 +152,8 @@
                       保留此条
                     </a-checkbox>
                   </template>
-                  <template v-else-if="record.existsInDatabase">
-                    <a-tag v-if="props.importStrategy === 'overwrite'" color="orange" style="font-size: 12px; margin: 0;">将覆盖更新</a-tag>
-                    <a-tag v-else color="default" style="font-size: 12px; margin: 0;">将跳过</a-tag>
+                  <template v-else-if="record.existsInDatabase && record.status === 'will_overwrite'">
+                    <a-tag color="orange" style="font-size: 12px; margin: 0;">将更新导入列</a-tag>
                   </template>
                 </div>
               </template>
@@ -232,6 +243,8 @@ const previewData = ref<DataPreviewResult | null>(null);
 const parseError = ref<string>('');
 // const showErrorDetails = ref(false);
 const hasParsed = ref(false);
+const previousReadRows = ref(0);
+const startRow = ref(1);
 
 const leftTableRef = ref();
 const rightTableRef = ref();
@@ -239,12 +252,14 @@ const isScrolling = ref(false);
 
 // 筛选与分页状态
 const filterType = ref<string>('all');
+const filterErrorCategory = ref<string | undefined>(undefined);
 const currentPage = ref(1);
 const pageSize = ref(20);
 
-// 监听筛选类型变化，重置分页
+// 监听筛选类型变化，重置分页和原因筛选
 watch(filterType, () => {
   currentPage.value = 1;
+  filterErrorCategory.value = undefined;
 });
 
 // 计算重复数据数量
@@ -253,18 +268,69 @@ const duplicateCount = computed(() => {
   return previewData.value.rows.filter((row: any) => row.isDuplicateInFile).length;
 });
 
+// 将详细 errorMessage 映射为简短分类标签
+function simplifyErrorMessage(msg: string): string {
+  if (!msg) return '未知原因';
+  // 前端标记的重复放弃
+  if (msg.includes('重复数据，已选择保留其他数据')) return '重复（已放弃）';
+  // 后端：炉号格式错误前缀，取内层原因
+  const inner = msg.startsWith('炉号格式错误：') ? msg.slice(7) : msg;
+  if (inner.includes('炉号为空')) return '炉号为空';
+  if (inner.includes('必须以产线数字开头')) return '产线号有误';
+  if (inner.includes('缺少班次')) return '缺少班次';
+  if (inner.includes('缺少8位生产日期')) return '缺少生产日期';
+  if (inner.includes('不是合法日期') || inner.includes('无法解析日期')) return '日期不合法';
+  if (inner.includes('仅有炉次号和卷号') || inner.includes('缺少分卷号')) return '缺少分卷号';
+  if (inner.includes('仅有炉次号') || inner.includes('缺少卷号和分卷号')) return '缺少卷号/分卷号';
+  if (inner.includes('缺少炉次号、卷号和分卷号')) return '缺少炉次/卷/分卷号';
+  if (inner.includes('应紧跟')) return '日期后格式有误';
+  if (inner.includes('格式不符合规则') || inner.includes('格式不符')) return '格式不符';
+  if (inner.includes('缺少必要的炉号组成部分') || inner.includes('炉号不完整')) return '炉号不完整';
+  if (inner.includes('炉号重复')) return '炉号重复';
+  if (msg.startsWith('缺少必填字段:') || msg.startsWith('缺少必填字段：')) {
+    const fields = msg.replace(/^缺少必填字段[:：]\s*/, '');
+    return `缺少字段: ${fields}`;
+  }
+  if (msg.startsWith('炉号解析失败:') || msg.startsWith('炉号解析失败：')) {
+    const inner = msg.replace(/^炉号解析失败[:：]\s*/, '');
+    return simplifyErrorMessage(inner);
+  }
+  if (msg.startsWith('处理异常：') || msg.startsWith('解析失败：')) return '解析异常';
+  // fallback：截取前15字
+  return inner.length > 15 ? inner.slice(0, 15) + '…' : inner;
+}
+
+// 无效原因分类统计
+const invalidCategoryStats = computed(() => {
+  if (!previewData.value?.rows) return [];
+  const invalidRows = previewData.value.rows.filter((row: any) => !row.isValidData);
+  const categoryMap = new Map<string, number>();
+  invalidRows.forEach((row: any) => {
+    const label = simplifyErrorMessage(row.errorMessage || '');
+    categoryMap.set(label, (categoryMap.get(label) || 0) + 1);
+  });
+  return Array.from(categoryMap.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([category, count]) => ({ category, label: category, count }));
+});
+
 // 过滤后的数据
 const filteredRows = computed(() => {
   if (!previewData.value?.rows) return [];
 
+  let rows = previewData.value.rows;
   if (filterType.value === 'valid') {
-    return previewData.value.rows.filter(row => row.isValidData);
+    rows = rows.filter(row => row.isValidData);
   } else if (filterType.value === 'invalid') {
-    return previewData.value.rows.filter(row => !row.isValidData);
+    rows = rows.filter(row => !row.isValidData);
+    if (filterErrorCategory.value) {
+      const cat = filterErrorCategory.value;
+      rows = rows.filter((row: any) => simplifyErrorMessage(row.errorMessage || '') === cat);
+    }
   } else if (filterType.value === 'duplicate') {
-    return previewData.value.rows.filter((row: any) => row.isDuplicateInFile);
+    rows = rows.filter((row: any) => row.isDuplicateInFile);
   }
-  return previewData.value.rows;
+  return rows;
 });
 
 // 分页配置
@@ -355,10 +421,9 @@ function getStatusColor(record: any): string {
   return 'success';
 }
 
-// 获取状态文本
-function getStatusText(record: any): string {
+function getStatusDisplayText(record: any): string {
   if (record.existsInDatabase) {
-    return props.importStrategy === 'overwrite' ? '将覆盖更新' : '将跳过';
+    return record.status === 'will_overwrite' ? '将更新导入列' : '已存在';
   }
   if (record.isDuplicateInFile) {
     return '重复（需选择）';
@@ -367,6 +432,11 @@ function getStatusText(record: any): string {
     return '无效';
   }
   return '有效';
+}
+
+// 获取状态文本
+function getStatusText(record: any): string {
+  return getStatusDisplayText(record);
 }
 
 // 处理重复炉号选择
@@ -462,6 +532,8 @@ const leftColumns = computed(() => {
     { title: '炉号', dataIndex: 'furnaceNo', width: 150 },
     { title: '宽度', dataIndex: 'width', width: 80 },
     { title: '带材重量', dataIndex: 'coilWeight', width: 100 },
+    { title: '断头数', dataIndex: 'breakCount', width: 80, align: 'right' },
+    { title: '单卷重量', dataIndex: 'singleCoilWeight', width: 90, align: 'right' },
   ];
 
   // 添加检测列1-22
@@ -488,7 +560,7 @@ const rightColumns = computed(() => {
     {
       title: '炉号解析状态',
       dataIndex: 'isValidData',
-      width: 360,
+      width: 260,
       fixed: 'right',
       align: 'left'
     }
@@ -504,11 +576,6 @@ const hasDuplicateFurnaceNos = computed(() => {
 });
 
 // 计算是否有数据库中已存在的炉号
-const hasExistingFurnaceNos = computed(() => {
-  if (!previewData.value?.rows) return false;
-  return previewData.value.rows.some((row: any) => row.existsInDatabase);
-});
-
 // 计算是否可以进入下一步（必须有有效数据，且重复的炉号都已选择）
 const canGoNext = computed(() => {
   if (previewData.value === null || parsing.value) return false;
@@ -597,6 +664,8 @@ async function parseData() {
 
   parsing.value = true;
   parseError.value = '';
+  previousReadRows.value = 0;
+  startRow.value = 1;
 
   try {
     // 调用解析接口（优先使用已保存的文件，如果没有则使用 fileData 作为后备）
@@ -605,6 +674,9 @@ async function parseData() {
       importSessionId: props.importSessionId,
       fileData: props.fileData || undefined,
     });
+
+    previousReadRows.value = Number(result.previousReadRows || 0);
+    startRow.value = Number(result.startRow || (previousReadRows.value > 0 ? previousReadRows.value + 1 : 1));
 
     if (result.noChanges) {
       const noChangesMessage = result.noChangesMessage || '数据无变化，已完成导入';
@@ -617,15 +689,26 @@ async function parseData() {
       return;
     }
 
+    if (result.noNewRows) {
+      const noNewRowsMessage =
+        result.noNewRowsMessage ||
+        `上次已读取到第 ${previousReadRows.value} 行，本次从第 ${startRow.value} 行开始读取，未发现新增数据。`;
+      message.info(noNewRowsMessage);
+      emit('complete', {
+        message: noNewRowsMessage,
+        totalRows: 0,
+        validDataRows: 0,
+      });
+      return;
+    }
+
     // 保存预览数据
     if (result.preview?.rows) {
-      // Sort rows by furnaceNo to group duplicates together
+      // 保持 Excel 原始顺序，避免前端重排后导致行号与源文件不一致
       result.preview.rows.sort((a: any, b: any) => {
-        const fa = a.furnaceNo || '';
-        const fb = b.furnaceNo || '';
-        if (fa < fb) return -1;
-        if (fa > fb) return 1;
-        return 0;
+        const rowA = Number(a.rowIndex || a.sortCode || 0);
+        const rowB = Number(b.rowIndex || b.sortCode || 0);
+        return rowA - rowB;
       });
 
       // Analyze duplicates and add rowIndex BEFORE assigning to reactive boolean
@@ -633,7 +716,7 @@ async function parseData() {
 
       const rows = result.preview.rows;
       rows.forEach((row: any, index: number) => {
-        row.rowIndex = index + 1;
+        row.rowIndex = Number(row.rowIndex || row.sortCode || index + 2);
       });
 
       // Initialize duplicate selection logic
@@ -1081,6 +1164,8 @@ defineExpose({
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .pagination-info {

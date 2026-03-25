@@ -219,7 +219,7 @@ async function handleQuickImport(file: File) {
     if (!sessionId) throw new Error('创建会话失败');
 
     // 3. 执行解析
-    await uploadAndParseMagneticData(sessionId, {
+    const parseResult = await uploadAndParseMagneticData(sessionId, {
       fileName: file.name,
       fileData: fileData,
     });
@@ -229,6 +229,7 @@ async function handleQuickImport(file: File) {
     // 4. 打开模态窗并直接显现第二步
     openQuickModal(true, {
       importSessionId: sessionId,
+      parsedData: parseResult.parsedData || [],
     });
   } catch (error: any) {
 

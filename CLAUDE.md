@@ -22,10 +22,6 @@ pnpm type:check       # TypeScript type checking
 
 ### Backend (api/)
 ```bash
-# Option 1: Use batch script (Windows)
-run_api_dev.bat
-
-# Option 2: Manual
 cd api/src/application/Poxiao.API.Entry
 set ASPNETCORE_ENVIRONMENT=dev
 dotnet watch run --launch-profile dev

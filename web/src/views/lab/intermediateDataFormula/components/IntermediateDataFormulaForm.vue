@@ -23,6 +23,8 @@ const emit = defineEmits(['register', 'reload']);
 const recordId = ref<string>('');
 const formMode = ref<'Attributes' | 'Formula'>('Attributes');
 const originalRecord = ref<IntermediateDataFormula | null>(null);
+/** 当前列表中已有公式名称（用于新增时查重，与后端 F_FORMULA_NAME 一致） */
+const existingFormulaNames = ref<string[]>([]);
 const availableFields = ref<any[]>([]);
 const fieldsRefreshKey = ref(0); // 用于强制刷新表单
 const isFormReady = ref(false); // 跟踪表单是否已准备好
@@ -97,6 +99,38 @@ async function refreshAvailableFields() {
 const [registerFormulaBuilderModal, { openModal: openFormulaBuilderModal }] = useModal();
 let currentFormulaCallback: ((formula: string) => void) | null = null;
 
+const formulaTypeOptionsAll = [
+  { label: 'CALC-计算公式', value: 'CALC' },
+  { label: 'JUDGE-判定公式', value: 'JUDGE' },
+  { label: 'NO-只展示', value: 'NO' },
+];
+
+const formulaTypeOptionsCreate = [
+  { label: 'CALC-计算公式', value: 'CALC' },
+  { label: 'NO-只展示', value: 'NO' },
+];
+
+function handleFormulaTypeChange(value: string) {
+  if (value === 'JUDGE') {
+    setFieldsValue({ formulaLanguage: 'EXCEL', defaultValue: '', formula: '' });
+  } else if (value === 'NO') {
+    setFieldsValue({ defaultValue: '', formula: '' });
+  } else {
+    setFieldsValue({ defaultValue: '0', formula: '' });
+  }
+}
+
+async function applyFormulaTypeSelectSchema() {
+  await updateSchema({
+    field: 'formulaType',
+    componentProps: {
+      options: isUpdate.value ? formulaTypeOptionsAll : formulaTypeOptionsCreate,
+      fieldNames: { label: 'label', value: 'value' },
+      onChange: handleFormulaTypeChange,
+    },
+  });
+}
+
 // 处理打开公式编辑器
 function handleOpenFormulaEditor(data: {
   currentValue: string;
@@ -150,7 +184,21 @@ const [registerForm, { setFieldsValue, resetFields, validate, getFieldsValue, up
       label: '公式名称',
       component: 'Input',
       ifShow: () => formMode.value === 'Attributes',
-      rules: [{ required: true, message: '请输入公式名称' }],
+      rules: [
+        { required: true, message: '请输入公式名称' },
+        {
+          validator: async (_rule, value) => {
+            if (isUpdate.value) return Promise.resolve();
+            const name = (value || '').trim();
+            if (!name) return Promise.resolve();
+            if (existingFormulaNames.value.includes(name)) {
+              return Promise.reject('已存在相同公式名称，请修改后再保存');
+            }
+            return Promise.resolve();
+          },
+          trigger: 'blur',
+        },
+      ],
     },
     // --- 属性 / 公式 通用字段 ---
     {
@@ -158,27 +206,23 @@ const [registerForm, { setFieldsValue, resetFields, validate, getFieldsValue, up
       label: '类型',
       component: 'Select',
       componentProps: {
-        options: [
-          { label: 'CALC-计算公式', value: 'CALC' },
-          { label: 'JUDGE-判定公式', value: 'JUDGE' },
-          { label: 'NO-只展示', value: 'NO' },
-        ],
+        options: formulaTypeOptionsAll,
         fieldNames: { label: 'label', value: 'value' },
-        onChange: (value: string) => {
-          // 当切换为判定公式时，强制使用 EXCEL 语言，并隐藏公式语言下拉
-          if (value === 'JUDGE') {
-            setFieldsValue({ formulaLanguage: 'EXCEL', defaultValue: '', formula: '' });
-          } else if (value === 'NO') {
-            // 只展示类型不需要公式
-            setFieldsValue({ defaultValue: '', formula: '' });
-          } else {
-            // 计算公式默认值为 0
-            setFieldsValue({ defaultValue: '0', formula: '' });
-          }
-        },
+        onChange: handleFormulaTypeChange,
       },
       defaultValue: 'CALC',
-      rules: [{ required: true, trigger: 'change', message: '必填' }],
+      rules: [
+        { required: true, trigger: 'change', message: '必填' },
+        {
+          validator: async (_rule, value) => {
+            if (!isUpdate.value && value === 'JUDGE') {
+              return Promise.reject('自定义公式不能选择判定类型');
+            }
+            return Promise.resolve();
+          },
+          trigger: 'change',
+        },
+      ],
       ifShow: () => formMode.value === 'Attributes',
     },
     // --- 属性模式字段 ---
@@ -386,10 +430,15 @@ const [registerModal, { setModalProps, closeModal }] = useModalInner(async (data
   recordId.value = data?.record?.id || '';
   formMode.value = data?.mode || 'Attributes';
   originalRecord.value = data?.record as IntermediateDataFormula | null;
+  existingFormulaNames.value = Array.isArray(data?.existingFormulaNames)
+    ? [...data.existingFormulaNames]
+    : [];
 
   // 标记表单已准备好（resetFields 调用后表单应该已经注册）
   await nextTick();
   isFormReady.value = true;
+
+  await applyFormulaTypeSelectSchema();
 
   // Refresh fields when modal opens
   refreshAvailableFields();
@@ -452,6 +501,17 @@ const handleSubmit = async () => {
   isSubmitting.value = true;
   try {
     const values = await validate();
+    if (!isUpdate.value) {
+      if (values.formulaType === 'JUDGE') {
+        createMessage.error('自定义公式不能保存为判定类型');
+        return;
+      }
+      const name = (values.formulaName || '').trim();
+      if (name && existingFormulaNames.value.includes(name)) {
+        createMessage.error('已存在相同公式名称，请修改后再保存');
+        return;
+      }
+    }
     setModalProps({ confirmLoading: true });
 
     if (isUpdate.value) {

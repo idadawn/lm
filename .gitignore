@@ -1,4 +1,4 @@
-﻿# Dependencies
+# Dependencies
 node_modules/
 .pnpm-store/
 
@@ -32,6 +32,7 @@ SERVICES-CONFIG.local.md
 *.swp
 *.swo
 *~
+*.bak
 
 # OS files
 .DS_Store
@@ -321,9 +322,12 @@ codeTemp
 TemporaryFile/
 
 
-# Apps deployment directories
-apps/web/
+# Apps deployment: publish output only (track apps/web Dockerfile + nginx)
 apps/api/
+apps/worker/
+# Accidental API bundle drops / zips under apps/
+apps/api_*/
+apps/*.zip
 
 # Temporary build verification files
 api/tmp_build_verify*

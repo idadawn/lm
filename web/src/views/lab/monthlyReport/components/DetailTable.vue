@@ -215,7 +215,14 @@ const detailColumns = computed(() => {
 
     const unqualifiedChildren: any[] = [];
     const unqualifiedConfig = (props.reportConfigs || []).find(c => c.name === '不合格');
-    const unqualifiedLevelNames = unqualifiedConfig?.levelNames || [];
+    void unqualifiedConfig;
+    const unqualifiedLevelNames = Array.from(
+        new Set(
+            props.unqualifiedColumns
+                .map((column) => column.name)
+                .filter((name): name is string => !!name),
+        ),
+    );
     unqualifiedLevelNames.forEach(levelName => {
         unqualifiedChildren.push({
             title: levelName,

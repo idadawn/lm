@@ -129,9 +129,16 @@ export async function uploadAndParse(data: Step1UploadAndParseInput): Promise<St
   // 转换后端返回的数据格式为前端期望的格式
   // 后端返回的字段可能是PascalCase或camelCase，需要兼容处理
   const previewDataRaw = actualData.previewData || actualData.PreviewData || response.previewData || response.PreviewData;
+  const previousReadRows = actualData.previousReadRows ?? actualData.PreviousReadRows ?? previewDataRaw?.skippedRows ?? previewDataRaw?.SkippedRows ?? 0;
+  const startRow = actualData.startRow ?? actualData.StartRow ?? (previousReadRows > 0 ? previousReadRows + 1 : 1);
   if (previewDataRaw) {
     const parsedData = previewDataRaw.parsedData || previewDataRaw.ParsedData || [];
     const headerOrder = previewDataRaw.headerOrder || previewDataRaw.HeaderOrder || [];
+
+    const validDataRows = parsedData.filter(
+      (item: any) => item.isValidData === 1 || item.IsValidData === 1,
+    ).length;
+    const totalRows = parsedData.length;
 
     // 转换为前端期望的格式
     const convertedPreview: DataPreviewResult = {
@@ -163,12 +170,15 @@ export async function uploadAndParse(data: Step1UploadAndParseInput): Promise<St
 
         return {
           id: item.id,
+          sortCode: item.sortCode ?? item.SortCode,
           prodDate: item.prodDate || item.ProdDate,
           furnaceNo: item.furnaceNo || item.FurnaceNo,
           lineNo: item.lineNo || item.LineNo,
           shift: item.shift || item.Shift,
           width: item.width || item.Width,
           coilWeight: item.coilWeight || item.CoilWeight,
+          breakCount: item.breakCount ?? item.BreakCount,
+          singleCoilWeight: item.singleCoilWeight ?? item.SingleCoilWeight,
           detectionData: detectionDataObj,
           // 同时保留detection1-detection22字段（如果存在）
           ...(item.detection1 !== undefined ? {
@@ -188,7 +198,7 @@ export async function uploadAndParse(data: Step1UploadAndParseInput): Promise<St
           featureSuffix: item.featureSuffix || item.FeatureSuffix,
           productSpecId: item.productSpecId || item.ProductSpecId,
           productSpecName: item.productSpecName || item.ProductSpecName,
-          rowIndex: 0, // 将在组件中设置
+          rowIndex: item.sortCode ?? item.SortCode ?? 0,
           // 炉号重复相关字段
           status: item.status || item.Status || (item.isValidData ? 'success' : 'failed'),
           errorMessage: item.errorMessage || item.ErrorMessage,
@@ -199,11 +209,11 @@ export async function uploadAndParse(data: Step1UploadAndParseInput): Promise<St
         };
       }),
       statistics: {
-        totalRows: actualData.totalRows || actualData.TotalRows || 0,
-        successRows: actualData.validDataRows || actualData.ValidDataRows || 0,
-        failRows: (actualData.totalRows || actualData.TotalRows || 0) - (actualData.validDataRows || actualData.ValidDataRows || 0),
-        validDataRows: actualData.validDataRows || actualData.ValidDataRows || 0,
-        invalidDataRows: (actualData.totalRows || actualData.TotalRows || 0) - (actualData.validDataRows || actualData.ValidDataRows || 0),
+        totalRows,
+        successRows: validDataRows,
+        failRows: totalRows - validDataRows,
+        validDataRows,
+        invalidDataRows: totalRows - validDataRows,
         matchedProductSpecRows: 0,
         matchedAppearanceFeatureRows: 0,
       },
@@ -223,8 +233,12 @@ export async function uploadAndParse(data: Step1UploadAndParseInput): Promise<St
     return {
       importSessionId: response.importSessionId || response.ImportSessionId,
       preview: convertedPreview,
+      previousReadRows,
+      startRow,
       noChanges: actualData.noChanges ?? actualData.NoChanges ?? false,
       noChangesMessage: actualData.noChangesMessage || actualData.NoChangesMessage,
+      noNewRows: actualData.noNewRows ?? actualData.NoNewRows ?? false,
+      noNewRowsMessage: actualData.noNewRowsMessage || actualData.NoNewRowsMessage,
     };
   }
 

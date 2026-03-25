@@ -211,10 +211,6 @@ lm/
 ### Backend Commands
 
 ```powershell
-# Option 1: Use the provided batch script (Windows)
-./run_api_dev.bat
-
-# Option 2: Manual execution
 cd api/src/application/Poxiao.API.Entry
 set ASPNETCORE_ENVIRONMENT=dev
 dotnet watch run --launch-profile dev
@@ -252,6 +248,20 @@ pnpm clean:cache
 ```
 
 Default frontend URL: `http://localhost:3000`
+
+### Deployment build（生成 `apps/api` 与 `apps/dist`）
+
+用于 [`apps/docker-compose.yml`](apps/docker-compose.yml) 构建镜像前，在仓库根目录执行：
+
+```bash
+bash scripts/rebuild.sh              # API + Web（Turbo）
+bash scripts/rebuild.sh api          # 仅 API
+bash scripts/rebuild.sh web          # 仅 Web
+bash scripts/build-api.sh            # 仅 API（单脚本）
+bash scripts/build-web-turbo.sh      # 仅 Web（单脚本）
+```
+
+Windows（PowerShell，在仓库根目录）：`.\scripts\build-api.ps1`、`.\scripts\build-web.ps1`。
 
 ### Mock Server (for frontend-only development)
 
@@ -433,6 +443,8 @@ clean:    清理代码 (cleanup)
 ---
 
 ## Testing
+
+本仓库**未配置** GitHub Actions；验证构建与测试请在本地执行下方命令。
 
 ### Backend Testing
 

@@ -228,12 +228,39 @@
     });
   };
 
-  const handleCloneToNew = (record: any) => {
+  /** 按「判定公式 + 产品规格」从接口拉取等级名称（与表格筛选一致，避免只用当前表格缓存） */
+  const fetchLevelNamesForSpec = async (formulaId: string, productSpecId?: string) => {
+    const params: Record<string, string> = { formulaId };
+    if (productSpecId) params.productSpecId = productSpecId;
+    const res: any = await getIntermediateDataJudgmentLevelList(params);
+    const list = res.data || res || [];
+    return (Array.isArray(list) ? list : []).map((l: { name: string }) => l.name).filter(Boolean);
+  };
+
+  const handleCloneToNew = async (record: any) => {
+    const targetProductSpecId = record.productSpecId || selectedProductSpecId.value;
+    let namesUnderSpec: string[] = [];
+    try {
+      namesUnderSpec = await fetchLevelNamesForSpec(selectedFormulaId.value, targetProductSpecId);
+    } catch (e) {
+      console.error(e);
+      createMessage.error('加载该产品规格下的等级列表失败，请稍后重试');
+      return;
+    }
+
+    const newName = `复制-${record.name || ''}`;
+    if (namesUnderSpec.includes(newName)) {
+      createMessage.warning(
+        `当前产品规格下已存在名为「${newName}」的等级，请打开表单后修改等级名称再保存`,
+      );
+    }
+
     openModal(true, {
       isUpdate: false,
-      record: { ...record, name: `复制-${record.name}` },
+      record: { ...record, name: newName },
       formulaId: selectedFormulaId.value,
-      existingNames: levelList.value.map(l => l.name),
+      productSpecId: targetProductSpecId,
+      existingNames: namesUnderSpec,
     });
   };
 

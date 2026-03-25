@@ -119,7 +119,7 @@ public class FurnaceNo
         // 卷号和分卷号支持小数：\d+(\.\d+)?
         // 特性描述限制为中文汉字、括号或空格：[\u4e00-\u9fa5\(\)\uff08\uff09\s]*
         var pattern =
-            @"^\s*(\d+)(.*?)(\d{8})\s*-\s*(\d+)\s*-\s*(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*([Ww]?)\s*([\u4e00-\u9fa5\(\)\uff08\uff09\s]*)\s*$";
+            @"^\s*(\d+)(.*?)(\d{8})\s*-\s*(\d+)\s*-\s*(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*([Ww]?)\s*([a-zA-Z\u4e00-\u9fa5\(\)\uff08\uff09\s]*)\s*$";
         var match = Regex.Match(furnaceNo.Trim(), pattern);
 
         if (!match.Success)

@@ -1,6 +1,6 @@
 <template>
   <BasicModal v-bind="$attrs" @register="registerModal" :title="modalTitle" @ok="handleSubmit" @cancel="handleCancel"
-    :width="1200" :minHeight="850" class="formula-builder-modal">
+    :width="'min(1420px, calc(100vw - 32px))'" :minHeight="380" :canFullscreen="true" class="formula-builder-modal">
 
     <!-- 检测是否为范围列,显示不同的编辑器 -->
     <template v-if="isRangeColumn">
@@ -279,7 +279,17 @@
               <Icon icon="ant-design:edit-outlined" :size="18" />
               <span class="panel-title">公式编辑器</span>
             </div>
-            <a-button type="link" danger size="small" @click="clearFormula">清空全部</a-button>
+            <div class="editor-header-actions">
+              <a-tooltip title="占满屏幕编辑；也可双击标题栏或点右上角最大化图标">
+                <a-button type="link" size="small" class="fullscreen-entry-btn" @click="enterFormulaFullscreen">
+                  <template #icon>
+                    <Icon icon="ant-design:fullscreen-outlined" :size="16" />
+                  </template>
+                  全屏编辑
+                </a-button>
+              </a-tooltip>
+              <a-button type="link" danger size="small" @click="clearFormula">清空全部</a-button>
+            </div>
           </div>
 
           <div class="block-editor" @drop="handleDrop" @dragover.prevent @dragleave="dragOverIndex = null"
@@ -431,7 +441,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from 'vue';
+import { ref, computed, nextTick } from 'vue';
 import { BasicModal, useModalInner } from '/@/components/Modal';
 import { Icon } from '/@/components/Icon';
 import { getAvailableColumns } from '/@/api/lab/intermediateDataFormula';
@@ -594,8 +604,8 @@ const functions = [
 const templates: any[] = [];
 
 // --- Modal Init ---
-const [registerModal, { setModalProps, closeModal }] = useModalInner(async (data) => {
-  setModalProps({ confirmLoading: false });
+const [registerModal, { setModalProps, closeModal, redoModalHeight }] = useModalInner(async (data) => {
+  setModalProps({ confirmLoading: false, defaultFullscreen: false });
   formulaId.value = data?.record?.id || '';
 
   // 检查是否为范围列
@@ -847,8 +857,15 @@ const parseFormulaToTokens = (formula: string) => {
         buffer = buffer.slice(1);
       }
     } else {
-      result.push({ type: 'text', value: char });
-      buffer = buffer.slice(1);
+      // 占位符/变量名整段作为一个 token（如 $DetectionColumns），避免逐字拆成多块难看且难拖
+      const identOrDollarVar = buffer.match(/^(?:\$[A-Za-z_][\w]*|[A-Za-z_][\w]*)/);
+      if (identOrDollarVar) {
+        result.push({ type: 'text', value: identOrDollarVar[0] });
+        buffer = buffer.slice(identOrDollarVar[0].length);
+      } else {
+        result.push({ type: 'text', value: char });
+        buffer = buffer.slice(1);
+      }
     }
   }
   tokens.value = result;
@@ -1003,6 +1020,11 @@ function handleDrop(event: DragEvent) {
 }
 function focusEditor() { }
 
+function enterFormulaFullscreen() {
+  setModalProps({ defaultFullscreen: true });
+  nextTick(() => redoModalHeight());
+}
+
 // --- 提交 ---
 function handleSubmit() {
   let formula = '';
@@ -1049,7 +1071,7 @@ function handleCancel() { closeModal(); }
 // ========== 范围列配置模式 ==========
 .range-formula-config {
   padding: 20px;
-  max-height: 600px;
+  max-height: ~'min(520px, calc(100vh - 240px))';
   overflow-y: auto;
 
   .form-hint {
@@ -1116,8 +1138,9 @@ function handleCancel() { closeModal(); }
 // ========== 普通公式编辑器 (保持原样式) ==========
 .formula-builder {
   display: flex;
-  gap: 20px;
-  height: 580px;
+  gap: 12px;
+  height: ~'min(520px, calc(100vh - 240px))';
+  min-height: 300px;
   background: white;
   padding: 0;
 }
@@ -1129,20 +1152,23 @@ function handleCancel() { closeModal(); }
 }
 
 .left-panel {
-  width: 260px;
+  width: 200px;
+  flex-shrink: 0;
   border-right: 1px solid @color-border;
-  padding-right: 16px;
+  padding-right: 10px;
 }
 
 .right-panel {
-  width: 300px;
+  width: 220px;
+  flex-shrink: 0;
   border-left: 1px solid @color-border;
-  padding-left: 16px;
+  padding-left: 10px;
 }
 
 .center-panel {
   flex: 1;
-  padding: 0 8px;
+  min-width: 0;
+  padding: 0 4px;
 }
 
 .panel-header {
@@ -1338,6 +1364,18 @@ function handleCancel() { closeModal(); }
     font-weight: bold;
     color: #333;
   }
+
+  .editor-header-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 4px;
+  }
+
+  .fullscreen-entry-btn {
+    padding: 0 6px;
+  }
 }
 
 .block-editor {
@@ -1427,6 +1465,7 @@ function handleCancel() { closeModal(); }
   background: #f5f5f5;
   color: #666;
   border: 1px solid #ddd;
+  white-space: nowrap;
 }
 
 // 条件差值公式块 - 使用特殊的渐变样式
@@ -1690,5 +1729,17 @@ function handleCancel() { closeModal(); }
       font-weight: 500;
     }
   }
+}
+</style>
+
+<style lang="less">
+/* 全屏时拉长三栏编辑区（类名由 BasicModal 挂在 .ant-modal 上，与 wrap 上的 fullscreen-modal 组合使用） */
+.fullscreen-modal .ant-modal.formula-builder-modal .formula-builder {
+  height: ~'calc(100vh - 200px)';
+  min-height: 360px;
+}
+
+.ant-modal.formula-builder-modal {
+  max-width: ~'calc(100vw - 16px)';
 }
 </style>

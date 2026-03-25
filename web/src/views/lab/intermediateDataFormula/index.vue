@@ -304,7 +304,14 @@ const handleEdit = (record: IntermediateDataFormula, mode: 'Attributes' | 'Formu
 };
 
 const handleCreate = () => {
-    openFormModal(true, { isUpdate: false, mode: 'Attributes' });
+  const existingFormulaNames = dataList.value
+    .map((r) => (r.formulaName || '').trim())
+    .filter((n) => !!n);
+  openFormModal(true, {
+    isUpdate: false,
+    mode: 'Attributes',
+    existingFormulaNames,
+  });
 };
 
 const handleDelete = async (record: IntermediateDataFormula) => {

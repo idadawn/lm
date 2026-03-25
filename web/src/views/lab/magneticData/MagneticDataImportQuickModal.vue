@@ -2,8 +2,8 @@
   <BasicModal v-bind="$attrs" @register="registerModal" title="快捷导入 - 最优数据核对" :width="1100" :minHeight="500"
     :footer="null" :destroyOnClose="true" class="magnetic-quick-import-modal">
     <div class="modal-content-wrapper">
-      <Step2ReviewAndComplete ref="step2Ref" :import-session-id="importSessionId" @complete="handleComplete"
-        @cancel="handleCancel" />
+      <Step2ReviewAndComplete ref="step2Ref" :import-session-id="importSessionId" :parsed-data="parsedData"
+        @complete="handleComplete" @cancel="handleCancel" />
     </div>
   </BasicModal>
 </template>
@@ -15,9 +15,11 @@ import Step2ReviewAndComplete from './components/Step2ReviewAndComplete.vue';
 
 const emit = defineEmits(['register', 'reload']);
 const importSessionId = ref('');
+const parsedData = ref<any[]>([]);
 
 const [registerModal, { closeModal }] = useModalInner(async (data) => {
   importSessionId.value = data.importSessionId;
+  parsedData.value = data.parsedData || [];
   await nextTick();
 });
 

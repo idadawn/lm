@@ -19,13 +19,16 @@ namespace Poxiao.Lab.Service;
 public class ReportConfigService : IDynamicApiController, ITransient
 {
     private readonly ISqlSugarRepository<ReportConfigEntity> _reportConfigRepository;
+    private readonly ISqlSugarRepository<IntermediateDataFormulaEntity> _formulaRepository;
     private readonly ISqlSugarRepository<IntermediateDataJudgmentLevelEntity> _judgmentLevelRepository;
 
     public ReportConfigService(
         ISqlSugarRepository<ReportConfigEntity> reportConfigRepository,
+        ISqlSugarRepository<IntermediateDataFormulaEntity> formulaRepository,
         ISqlSugarRepository<IntermediateDataJudgmentLevelEntity> judgmentLevelRepository)
     {
         _reportConfigRepository = reportConfigRepository;
+        _formulaRepository = formulaRepository;
         _judgmentLevelRepository = judgmentLevelRepository;
     }
 
@@ -50,6 +53,8 @@ public class ReportConfigService : IDynamicApiController, ITransient
                 .ToListAsync();
         }
 
+        var formulaLookup = await BuildFormulaLookupAsync(configs.Select(c => c.FormulaId).ToList());
+
         return configs.Select(c => new ReportConfigDto
         {
             Id = c.Id,
@@ -64,7 +69,7 @@ public class ReportConfigService : IDynamicApiController, ITransient
             IsPercentage = c.IsPercentage,
             IsShowInReport = c.IsShowInReport,
             IsShowRatio = c.IsShowRatio,
-            FormulaId = c.FormulaId
+            FormulaId = ResolveFormulaColumnName(c.FormulaId, formulaLookup)
         }).ToList();
     }
 
@@ -133,5 +138,54 @@ public class ReportConfigService : IDynamicApiController, ITransient
     private async Task InitDefaultConfigAsync()
     {
         await Task.CompletedTask;
+    }
+
+    private async Task<Dictionary<string, string>> BuildFormulaLookupAsync(List<string> formulaKeys)
+    {
+        var lookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var unresolvedKeys = formulaKeys
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (unresolvedKeys.Count == 0)
+        {
+            return lookup;
+        }
+
+        var formulas = await _formulaRepository.AsQueryable()
+            .Where(f => f.DeleteMark == null)
+            .Where(f => unresolvedKeys.Contains(f.Id) || unresolvedKeys.Contains(f.ColumnName))
+            .ToListAsync();
+
+        foreach (var formula in formulas)
+        {
+            if (!string.IsNullOrWhiteSpace(formula.Id))
+            {
+                lookup[formula.Id] = formula.ColumnName;
+            }
+
+            if (!string.IsNullOrWhiteSpace(formula.ColumnName))
+            {
+                lookup[formula.ColumnName] = formula.ColumnName;
+            }
+        }
+
+        return lookup;
+    }
+
+    private string ResolveFormulaColumnName(string formulaId, Dictionary<string, string> lookup)
+    {
+        if (string.IsNullOrWhiteSpace(formulaId))
+        {
+            return formulaId;
+        }
+
+        if (lookup.TryGetValue(formulaId, out var columnName))
+        {
+            return columnName;
+        }
+
+        return formulaId;
     }
 }

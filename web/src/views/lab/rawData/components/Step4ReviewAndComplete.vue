@@ -242,7 +242,7 @@ const previewTableData = computed(() => {
     return {
       key: id || idx,
       id,
-      index: idx + 1,
+      index: row.sortCode || row.SortCode || idx + 1,
       prodDate,
       furnaceNo: row.furnaceNo || row.FurnaceNo || '',
       lineNo: row.lineNo || row.LineNo || '',

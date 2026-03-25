@@ -259,6 +259,12 @@ public class IntermediateDataFormulaService
             entity.FormulaType = IntermediateDataFormulaType.CALC; // 默认值
         }
 
+        // 手动创建的公式均为自定义来源，不允许新建为判定类型（判定列由系统初始化）
+        if (entity.FormulaType == IntermediateDataFormulaType.JUDGE)
+        {
+            throw Oops.Oh(ErrorCode.COM1000, "自定义公式不能创建为判定类型，请选择计算公式或只展示");
+        }
+
         // 确保 Formula 不为 null，因为数据库字段 F_FORMULA 不允许为 NULL
         if (entity.Formula == null)
         {
@@ -388,7 +394,10 @@ public class IntermediateDataFormulaService
     [HttpDelete("{id}")]
     public async Task DeleteAsync(string id)
     {
-        var entity = await _repository.GetFirstAsync(u => u.Id == id);
+        // 查询时不过滤软删除数据，避免重复删除时无法找到实体
+        var entity = await _repository.AsQueryable()
+            .Where(u => u.Id == id)
+            .FirstAsync();
         if (entity == null)
             throw Oops.Oh(ErrorCode.COM1005);
 
@@ -831,7 +840,12 @@ public class IntermediateDataFormulaService
 
     private async Task ClearFormulaCacheAsync(string? id = null)
     {
-        await _cacheManager.DelAsync(BuildFormulaCacheKey("list"));
+        // 清除所有列表缓存（all、type:CALC、type:JUDGE、type:NO）
+        await _cacheManager.DelAsync(BuildFormulaCacheKey("all"));
+        await _cacheManager.DelAsync(BuildFormulaCacheKey("type:CALC"));
+        await _cacheManager.DelAsync(BuildFormulaCacheKey("type:JUDGE"));
+        await _cacheManager.DelAsync(BuildFormulaCacheKey("type:NO"));
+
         if (!string.IsNullOrEmpty(id))
         {
             await _cacheManager.DelAsync(BuildFormulaCacheKey($"info:{id}"));

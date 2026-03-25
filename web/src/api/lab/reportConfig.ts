@@ -20,6 +20,11 @@ export interface ReportConfigInput {
     levelNames: string[];
     sortOrder: number;
     description?: string;
+    isHeader?: boolean;
+    isPercentage?: boolean;
+    isShowInReport?: boolean;
+    isShowRatio?: boolean;
+    formulaId?: string;
 }
 
 enum Api {

@@ -3,6 +3,7 @@ using Poxiao.Lab.CalcWorker.Services;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.IntermediateData;
 using Poxiao.Lab.Entity.Enums;
+using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Service;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -226,11 +227,29 @@ public class JudgeTaskConsumer : BackgroundService
                 "[Judge] 磁性载荷: FurnaceNo={FurnaceNo}, IsScratched={IsScratched}, SsPower={SsPower}, PsLoss={PsLoss}, Hc={Hc}",
                 furnaceNo, payload.IsScratched, payload.SsPower, payload.PsLoss, payload.Hc);
 
-            // 2. 通过炉号查找中间数据记录（直接取实体，供更新与判定共用）
-            var entity = await sqlClient.Queryable<IntermediateDataEntity>()
+            // 2. 通过炉号查找中间数据记录；精确匹配失败时忽略炉号中的日期做回退匹配
+            var exactEntity = await sqlClient.Queryable<IntermediateDataEntity>()
                 .Where(t => t.DeleteMark == null)
                 .Where(t => t.FurnaceNoFormatted != null && t.FurnaceNoFormatted.Equals(furnaceNo))
                 .FirstAsync();
+
+            var entity = exactEntity;
+            if (entity == null)
+            {
+                var furnaceParse = FurnaceNoHelper.ParseFurnaceNo(furnaceNo);
+                if (furnaceParse.Success)
+                {
+                    var candidates = await sqlClient.Queryable<IntermediateDataEntity>()
+                        .Where(t => t.DeleteMark == null)
+                        .Where(t => t.LineNo == furnaceParse.LineNoNumeric)
+                        .Where(t => t.Shift == furnaceParse.Shift)
+                        .Where(t => t.FurnaceBatchNo == furnaceParse.FurnaceNoNumeric)
+                        .Where(t => t.CoilNo == furnaceParse.CoilNoNumeric)
+                        .Where(t => t.SubcoilNo == furnaceParse.SubcoilNoNumeric)
+                        .ToListAsync();
+                    entity = MagneticImportHelper.SelectDateAgnosticIntermediate(candidates, furnaceNo, payload.DetectionTime);
+                }
+            }
 
             if (entity == null)
             {
@@ -278,12 +297,6 @@ public class JudgeTaskConsumer : BackgroundService
                     entity.Id, payload.SsPower, payload.PsLoss, payload.Hc);
             }
 
-            if (payload.DetectionTime.HasValue)
-            {
-                updateChain = updateChain
-                    .SetColumns(e => e.DetectionDate, payload.DetectionTime.Value.Date);
-            }
-
             var updateRows = await updateChain
                 .Where(e => e.Id == entity.Id)
                 .ExecuteCommandAsync();
@@ -319,8 +332,6 @@ public class JudgeTaskConsumer : BackgroundService
                 entity.IsScratched = 0;
             }
 
-            if (payload.DetectionTime.HasValue)
-                entity.DetectionDate = payload.DetectionTime.Value.Date;
             entity.PerfEditorId = payload.EditorId;
             entity.PerfEditorName = payload.EditorName;
             entity.PerfEditTime = now;

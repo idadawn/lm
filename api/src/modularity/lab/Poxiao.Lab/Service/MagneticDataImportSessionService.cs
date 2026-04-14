@@ -278,27 +278,17 @@ public class MagneticDataImportSessionService
         var parsedData = await LoadParsedDataFromFile(sessionId);
         var validData = parsedData.Where(t => t.IsValid).ToList();
 
-        // 按炉号分组（不区分是否刻痕），每个炉号只选择一条最优数据
-        var dataByFurnaceNo = validData.GroupBy(t => t.FurnaceNo).ToList();
+        // 按炉号 + 是否刻痕分组，同一类型只保留一条导入结果
+        var dataGroups = MagneticImportHelper.GroupByFurnaceAndScratch(validData).ToList();
 
-        // 为每个炉号选择最优数据并标记
-        foreach (var group in dataByFurnaceNo)
+        foreach (var group in dataGroups)
         {
             var items = group.ToList();
-            MagneticDataImportItem bestItem;
-            if (items.Count > 1)
-            {
-                bestItem = SelectBestData(items);
-            }
-            else
-            {
-                bestItem = items[0];
-            }
+            var preferredItem = MagneticImportHelper.SelectPreferredItem(items);
 
-            // 标记最优数据
             foreach (var item in items)
             {
-                item.IsBest = item == bestItem;
+                item.IsBest = item == preferredItem;
             }
         }
 
@@ -374,17 +364,11 @@ public class MagneticDataImportSessionService
             rawDataEntities.Add(rawDataEntity);
         }
 
-        // 3. 按炉号分组，构建 MQ 消息载荷（不再逐条查询中间数据表，由 Worker 端通过炉号查找）
-        var dataByFurnaceNo = validData.GroupBy(t => t.FurnaceNo).ToList();
-        var magneticJudgeItems = new List<MagneticDataPayload>();
-
-        foreach (var group in dataByFurnaceNo)
-        {
-            var items = group.ToList();
-            MagneticDataImportItem bestItem = items.Count > 1 ? SelectBestData(items) : items[0];
-
-            // 构建磁性数据载荷（包含炉号，Worker 端用炉号查找中间数据记录）
-            var payload = new MagneticDataPayload
+        // 3. 按炉号 + 是否刻痕分组，构建 MQ 消息载荷（由 Worker 端查找对应中间数据）
+        var magneticJudgeItems = MagneticImportHelper
+            .GroupByFurnaceAndScratch(validData)
+            .Select(group => MagneticImportHelper.SelectPreferredItem(group.ToList()))
+            .Select(bestItem => new MagneticDataPayload
             {
                 FurnaceNo = bestItem.FurnaceNo,
                 OriginalFurnaceNo = bestItem.OriginalFurnaceNo,
@@ -395,10 +379,8 @@ public class MagneticDataImportSessionService
                 DetectionTime = bestItem.DetectionTime,
                 EditorId = _userManager.UserId,
                 EditorName = _userManager.RealName,
-            };
-
-            magneticJudgeItems.Add(payload);
-        }
+            })
+            .ToList();
 
         // 4. 事务：只写入磁性原始数据（不更新中间表）
         var db = _sessionRepository.AsSugarClient();

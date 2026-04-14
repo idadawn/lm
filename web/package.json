@@ -210,6 +210,9 @@
     "overrides": {
       "tsx": "3.13.0",
       "@ctrl/tinycolor": "^4.2.0"
+    },
+    "patchedDependencies": {
+      "@rys-fe/vite-plugin-theme@0.8.6": "patches/@rys-fe__vite-plugin-theme@0.8.6.patch"
     }
   }
 }

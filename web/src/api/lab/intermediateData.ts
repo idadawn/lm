@@ -1,5 +1,5 @@
 import { defHttp } from '/@/utils/http/axios';
-import type { IntermediateDataCalcLogPage, IntermediateDataCalcLogQuery } from './model/intermediateDataCalcLogModel';
+import type { IntermediateDataCalcLogPage, IntermediateDataCalcLogQuery, IntermediateDataExecutionTrace } from './model/intermediateDataCalcLogModel';
 
 enum Api {
     Prefix = '/api/lab/intermediate-data',
@@ -70,4 +70,9 @@ export function exportIntermediateData(startDate: string, endDate: string) {
         },
         { isReturnNativeResponse: true }
     );
+}
+
+// 获取中间数据计算/判定步骤详情
+export function getIntermediateDataCalcTrace(id: string) {
+    return defHttp.get<IntermediateDataExecutionTrace>({ url: Api.Prefix + '/' + id + '/calc-trace' });
 }

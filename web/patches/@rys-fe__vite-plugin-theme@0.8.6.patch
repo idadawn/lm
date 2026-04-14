@@ -1,0 +1,13 @@
+diff --git a/dist/index.js b/dist/index.js
+index 3a7903eaa3c33f5401961c2a32888dbd2b9f3f17..dfda0a6ff7997eeed27bdc6c9dc0f917e038f19a 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -11806,7 +11806,7 @@ var require_needle = __commonJS({
+     user_agent += " (Node.js " + process.version + "; " + process.platform + " " + process.arch + ")";
+     var tls_options = "agent pfx key passphrase cert ca ciphers rejectUnauthorized secureProtocol checkServerIdentity family";
+     var close_by_default = !http.Agent || http.Agent.defaultMaxSockets != Infinity;
+-    var extend = Object.assign ? Object.assign : __require("util")._extend;
++    var extend = Object.assign;
+     var redirect_codes = [301, 302, 303, 307, 308];
+     function bind_opts(fn, options) {
+       return fn.bind(null, options);

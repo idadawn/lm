@@ -420,6 +420,23 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         return PageResult<IntermediateDataCalcLogOutput>.SqlSugarPageResult(page);
     }
 
+    [HttpGet("{id}/calc-trace")]
+    public async Task<IntermediateDataExecutionTraceOutput> GetCalcTrace(string id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            throw Oops.Oh("中间数据ID不能为空");
+        }
+
+        var trace = await _formulaBatchCalculator.BuildExecutionTraceAsync(id);
+        if (trace == null)
+        {
+            throw Oops.Oh("中间数据不存在");
+        }
+
+        return trace;
+    }
+
     /// <summary>
     /// 格式化性能字段的旧值→新值（仅包含有变化的项），中文显示.
     /// </summary>

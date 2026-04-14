@@ -245,9 +245,136 @@
         </a-form>
       </a-modal>
 
-      <a-drawer v-model:visible="calcLogDrawerVisible" title="计算日志" width="720">
-        <a-table :columns="calcLogColumns" :data-source="calcLogData" :pagination="calcLogPagination"
-          :loading="calcLogLoading" row-key="id" size="small" @change="handleCalcLogTableChange" />
+      <a-drawer v-model:visible="calcLogDrawerVisible" title="计算与判定详情" width="980">
+        <a-spin :spinning="calcLogLoading">
+          <template v-if="calcTraceData">
+            <div class="trace-overview">
+              <div class="trace-status-card">
+                <div class="trace-status-label">炉号</div>
+                <div class="trace-status-value">{{ calcTraceData.furnaceNo || '-' }}</div>
+              </div>
+              <div class="trace-status-card">
+                <div class="trace-status-label">计算状态</div>
+                <div class="trace-status-value">
+                  <a-tag :color="getTraceStatusColor(calcTraceData.calcStatusText, calcTraceData.calcErrorMessage)">{{ getTraceStatusLabel(calcTraceData.calcStatusText, calcTraceData.calcErrorMessage) }}</a-tag>
+                </div>
+              </div>
+              <div class="trace-status-card">
+                <div class="trace-status-label">判定状态</div>
+                <div class="trace-status-value">
+                  <a-tag :color="getTraceStatusColor(calcTraceData.judgeStatusText, calcTraceData.judgeErrorMessage)">{{ getTraceStatusLabel(calcTraceData.judgeStatusText, calcTraceData.judgeErrorMessage) }}</a-tag>
+                </div>
+              </div>
+            </div>
+
+            <a-tabs v-model:activeKey="calcTraceTab" class="trace-tabs">
+              <a-tab-pane key="calc" tab="计算步骤">
+                <div class="trace-section trace-section--tab">
+                  <a-empty v-if="calcCalculationSteps.length === 0" description="暂无计算步骤" />
+                  <div v-else class="trace-step-list">
+                    <div
+                      v-for="step in calcCalculationSteps"
+                      :key="`calc-${step.order}-${step.columnName}`"
+                      class="trace-step-card"
+                      :class="{ 'trace-step-card--error': !step.success }"
+                    >
+                      <div class="trace-step-header">
+                        <div class="trace-step-title">步骤 {{ step.order }} · {{ step.formulaName || step.displayName || step.columnName || '-' }}</div>
+                        <a-tag :color="step.success ? 'success' : 'error'">{{ step.success ? '成功' : '失败' }}</a-tag>
+                      </div>
+                      <div class="trace-grid">
+                        <div><span class="trace-key">公式名称</span><span class="trace-value">{{ step.formulaName || '-' }}</span></div>
+                        <div><span class="trace-key">对应列名</span><span class="trace-value">{{ step.displayName || step.columnName || '-' }}</span></div>
+                        <div><span class="trace-key">公式</span><span class="trace-value trace-formula">{{ step.formula || (step.isDefaultValue ? '使用默认值' : '-') }}</span></div>
+                        <div><span class="trace-key">精度</span><span class="trace-value">{{ step.precision ?? '-' }}</span></div>
+                        <div><span class="trace-key">是否失败</span><span class="trace-value">{{ step.success ? '否' : '是' }}</span></div>
+                        <div><span class="trace-key">计算结果</span><span class="trace-value">{{ step.resultValue || step.rawResult || '-' }}</span></div>
+                      </div>
+                      <div class="trace-subtitle">参与计算的数值</div>
+                      <div v-if="step.variableValues?.length" class="trace-chip-list">
+                        <span v-for="item in step.variableValues" :key="`${step.order}-${item.name}`" class="trace-chip">{{ item.name }} = {{ item.value || '空' }}</span>
+                      </div>
+                      <div v-else class="trace-empty-text">无依赖变量</div>
+                      <div v-if="step.failureReason" class="trace-error-box">失败原因：{{ step.failureReason }}</div>
+                    </div>
+                  </div>
+                </div>
+              </a-tab-pane>
+
+              <a-tab-pane key="judge" tab="判定步骤">
+                <div class="trace-section trace-section--tab">
+                  <a-empty v-if="judgeProjectGroups.length === 0" description="暂无判定步骤" />
+                  <div v-else class="trace-judge-layout">
+                    <div class="trace-judge-nav">
+                      <button
+                        v-for="group in judgeProjectGroups"
+                        :key="group.key"
+                        type="button"
+                        class="trace-judge-nav-item"
+                        :class="{
+                          'trace-judge-nav-item--active': activeJudgeProject?.key === group.key,
+                          'trace-judge-nav-item--error': group.hasFailure,
+                          'trace-judge-nav-item--success': group.status === 'success',
+                        }"
+                        @click="activeJudgeProjectKey = group.key"
+                      >
+                        <div class="trace-judge-nav-top">
+                          <span class="trace-judge-nav-name">{{ group.projectName }}</span>
+                          <span
+                            class="trace-judge-nav-status"
+                            :class="`trace-judge-nav-status--${group.status}`"
+                          >
+                            {{ group.statusText }}
+                          </span>
+                        </div>
+                        <span class="trace-judge-nav-code">{{ group.projectCode }}</span>
+                      </button>
+                    </div>
+
+                    <div v-if="activeJudgeProject" class="trace-project-card">
+                      <div class="trace-project-header">
+                        <div>
+                          <div class="trace-project-title">{{ activeJudgeProject.projectName }}</div>
+                          <div class="trace-project-subtitle">{{ activeJudgeProject.projectCode }}</div>
+                        </div>
+                        <a-tag :color="activeJudgeProject.hitStep ? 'success' : (activeJudgeProject.hasFailure ? 'error' : 'default')">
+                          {{ activeJudgeProject.hitStep ? `命中 ${activeJudgeProject.hitStep.stepName || activeJudgeProject.hitStep.resultValue || '-'}` : (activeJudgeProject.hasFailure ? '执行异常' : '未命中') }}
+                        </a-tag>
+                      </div>
+
+                      <div class="trace-level-list">
+                        <div v-for="step in activeJudgeProject.steps" :key="`judge-${activeJudgeProject.key}-${step.order}-${step.stepName}`" class="trace-level-row">
+                          <div class="trace-level-main">
+                            <div class="trace-level-title">
+                              <span>等级 {{ step.priority ?? '-' }}</span>
+                              <span class="trace-level-name">{{ step.stepName || step.resultValue || '-' }}</span>
+                            </div>
+                            <div class="trace-level-meta">
+                              <span>结果：{{ step.resultValue || '-' }}</span>
+                              <span>默认：{{ step.isDefaultStep ? '是' : '否' }}</span>
+                            </div>
+                            <div class="trace-condition trace-condition--multiline">{{ formatJudgeConditionText(step.conditionText) }}</div>
+                            <div v-if="step.failureReason" class="trace-error-box">失败原因：{{ step.failureReason }}</div>
+                          </div>
+                          <div class="trace-level-status">
+                            <a-tag :color="step.success ? 'success' : (step.failureReason ? 'error' : 'default')">
+                              {{ step.success ? '命中' : (step.failureReason ? '失败' : '未命中') }}
+                            </a-tag>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div v-if="activeJudgeProject.hitStep" class="trace-stop-tip">
+                        已在“{{ activeJudgeProject.hitStep.stepName || activeJudgeProject.hitStep.resultValue || '-' }}”命中，后续等级不再继续判定。
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </a-tab-pane>
+            </a-tabs>
+          </template>
+          <a-empty v-else description="暂无日志详情" />
+        </a-spin>
       </a-drawer>
 
       <!-- 自定义排序编辑器 -->
@@ -272,7 +399,7 @@ import type { Dayjs } from 'dayjs';
 import {
   getIntermediateDataList,
   getProductSpecOptions,
-  getIntermediateDataCalcLogs,
+  getIntermediateDataCalcTrace,
   updatePerformance,
   updateAppearance,
   updateBaseInfo,
@@ -307,8 +434,19 @@ import { useModal } from '/@/components/Modal';
 import { UploadOutlined, ReloadOutlined, DownloadOutlined, CheckCircleOutlined, DeleteOutlined, SortAscendingOutlined } from '@ant-design/icons-vue';
 import MagneticDataImportQuickModal from '../magneticData/MagneticDataImportQuickModal.vue';
 import { createMagneticImportSession, uploadAndParseMagneticData } from '/@/api/lab/magneticData';
-import type { IntermediateDataCalcLogItem } from '/@/api/lab/model/intermediateDataCalcLogModel';
+import type { IntermediateDataExecutionTrace, IntermediateDataCalcStepItem, IntermediateDataJudgeStepItem } from '/@/api/lab/model/intermediateDataCalcLogModel';
 import FeatureSelectDialog from '../appearance/components/FeatureSelectDialog.vue';
+
+interface JudgeProjectGroup {
+  key: string;
+  projectName: string;
+  projectCode: string;
+  steps: IntermediateDataJudgeStepItem[];
+  hitStep?: IntermediateDataJudgeStepItem;
+  hasFailure: boolean;
+  status: 'success' | 'error' | 'default';
+  statusText: string;
+}
 
 
 
@@ -345,14 +483,10 @@ const selectedProductSpecId = ref<string>('');
 
 const calcLogDrawerVisible = ref<boolean>(false);
 const calcLogLoading = ref<boolean>(false);
-const calcLogData = ref<IntermediateDataCalcLogItem[]>([]);
-const calcLogPagination = ref({
-  current: 1,
-  pageSize: 20,
-  total: 0,
-  showSizeChanger: true,
-});
+const calcTraceData = ref<IntermediateDataExecutionTrace | null>(null);
 const calcLogTargetId = ref<string>('');
+const calcTraceTab = ref<'calc' | 'judge'>('calc');
+const activeJudgeProjectKey = ref<string>('');
 
 const featureSelectDialogRef = ref<any>(null);
 const currentEditRecordId = ref<string>('');
@@ -476,6 +610,27 @@ function getCalcStatusInfo(status: any) {
   return calcStatusMap[key];
 }
 
+function getTraceStatusLabel(statusText?: string, errorMessage?: string) {
+  if (errorMessage || String(statusText || '').trim().includes('失败')) {
+    return '失败';
+  }
+  return '成功';
+}
+
+function getTraceStatusColor(statusText?: string, errorMessage?: string) {
+  if (errorMessage || String(statusText || '').trim().includes('失败')) {
+    return 'error';
+  }
+  const text = String(statusText || '').trim();
+  if (text.includes('成功') || text.includes('已算') || text.includes('已判')) {
+    return 'success';
+  }
+  if (text.includes('处理')) {
+    return 'processing';
+  }
+  return 'orange';
+}
+
 
 function isCalcFailed(record: any) {
   const key = normalizeCalcStatus(record?.calcStatus);
@@ -492,20 +647,6 @@ function isNeedJudge(record: any) {
   }
   return false;
 }
-
-function formatDateTime(value: any) {
-  if (!value) return '-';
-  return dateUtil(value).format('YYYY-MM-DD HH:mm:ss');
-}
-
-const calcLogColumns = [
-  { title: '时间', dataIndex: 'creatorTime', key: 'creatorTime', width: 160, customRender: ({ text }) => formatDateTime(text) },
-  { title: '公式名称', dataIndex: 'formulaName', key: 'formulaName', width: 120, customRender: ({ record }) => record.formulaName || record.columnName },
-  { title: '公式类型', dataIndex: 'formulaType', key: 'formulaType', width: 90 },
-  { title: '错误类型', dataIndex: 'errorType', key: 'errorType', width: 110 },
-  { title: '错误消息', dataIndex: 'errorMessage', key: 'errorMessage' },
-  { title: '详情', dataIndex: 'errorDetail', key: 'errorDetail' },
-];
 
 // 加载特性列表
 async function loadFeatures() {
@@ -1230,39 +1371,96 @@ watch(selectedProductSpecId, async (newVal, oldVal) => {
   }
 });
 
-function handleCalcLogTableChange(pagination: any) {
-  loadCalcLogs(pagination?.current || 1, pagination?.pageSize || 20);
+const calcCalculationSteps = computed<IntermediateDataCalcStepItem[]>(() => calcTraceData.value?.calculationSteps || []);
+const calcJudgmentSteps = computed<IntermediateDataJudgeStepItem[]>(() => calcTraceData.value?.judgmentSteps || []);
+const judgeProjectGroups = computed<JudgeProjectGroup[]>(() => {
+  const groups = new Map<string, JudgeProjectGroup>();
+
+  calcJudgmentSteps.value.forEach((step) => {
+    const key = step.columnName || step.formulaName || step.displayName || `judge-${step.order}`;
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        projectName: step.formulaName || step.displayName || step.columnName || '-',
+        projectCode: step.displayName || step.columnName || '-',
+        steps: [],
+        hasFailure: false,
+        status: 'default',
+        statusText: '未命中',
+      });
+    }
+
+    const group = groups.get(key)!;
+    group.steps.push(step);
+    if (step.success && !group.hitStep) {
+      group.hitStep = step;
+    }
+    if (step.failureReason) {
+      group.hasFailure = true;
+    }
+  });
+
+  groups.forEach((group) => {
+    if (group.hasFailure) {
+      group.status = 'error';
+      group.statusText = '异常';
+      return;
+    }
+
+    if (group.hitStep) {
+      group.status = 'success';
+      group.statusText = '命中';
+      return;
+    }
+
+    group.status = 'default';
+    group.statusText = '未命中';
+  });
+
+  return Array.from(groups.values());
+});
+const activeJudgeProject = computed<JudgeProjectGroup | undefined>(() => {
+  if (!judgeProjectGroups.value.length) {
+    return undefined;
+  }
+
+  return judgeProjectGroups.value.find((item) => item.key === activeJudgeProjectKey.value) || judgeProjectGroups.value[0];
+});
+
+function formatJudgeConditionText(conditionText?: string) {
+  if (!conditionText) {
+    return '-';
+  }
+
+  return conditionText
+    .replace(/；\s*/g, '；\n')
+    .replace(/\s+或\s+/g, '\n或 ')
+    .replace(/\s+且\s+/g, '\n且 ');
 }
+
+watch(judgeProjectGroups, (groups) => {
+  if (!groups.length) {
+    activeJudgeProjectKey.value = '';
+    return;
+  }
+
+  if (!groups.some((item) => item.key === activeJudgeProjectKey.value)) {
+    activeJudgeProjectKey.value = groups[0].key;
+  }
+}, { immediate: true });
 
 async function openCalcLogDrawer(record: any) {
   if (!record?.id) {
     return;
   }
   calcLogTargetId.value = record.id;
+  calcTraceTab.value = 'calc';
   calcLogDrawerVisible.value = true;
-  await loadCalcLogs(1, calcLogPagination.value.pageSize);
-}
-
-async function loadCalcLogs(page = 1, pageSize = 20) {
-  if (!calcLogTargetId.value) {
-    return;
-  }
   calcLogLoading.value = true;
+  calcTraceData.value = null;
   try {
-    const res = await getIntermediateDataCalcLogs({
-      intermediateDataId: calcLogTargetId.value,
-      currentPage: page,
-      pageSize,
-    });
-    const data = (res as any)?.data ?? res;
-    const pageInfo = data?.pagination;
-    calcLogData.value = data?.list || [];
-    calcLogPagination.value = {
-      ...calcLogPagination.value,
-      current: pageInfo?.currentPage ?? page,
-      pageSize: pageInfo?.pageSize ?? pageSize,
-      total: pageInfo?.total ?? calcLogData.value.length,
-    };
+    const res = await getIntermediateDataCalcTrace(record.id);
+    calcTraceData.value = ((res as any)?.data ?? res) as IntermediateDataExecutionTrace;
   } finally {
     calcLogLoading.value = false;
   }
@@ -2621,5 +2819,389 @@ async function handleQuickImport(file: File) {
 
 .feature-list-cell.editable:hover .feature-edit-icon {
   opacity: 1;
+}
+
+.trace-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.trace-status-card {
+  padding: 16px;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+}
+
+.trace-status-label {
+  margin-bottom: 8px;
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+.trace-status-value {
+  color: #262626;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.trace-status-error {
+  margin-top: 10px;
+  color: #cf1322;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.trace-section {
+  margin-bottom: 20px;
+}
+
+.trace-section--tab {
+  margin-bottom: 0;
+}
+
+.trace-tabs {
+  margin-top: 4px;
+}
+
+.trace-tabs :deep(.ant-tabs-nav) {
+  margin-bottom: 12px;
+}
+
+.trace-section-title {
+  margin-bottom: 12px;
+  color: #262626;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.trace-step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.trace-project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.trace-judge-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.trace-judge-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.trace-judge-nav-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 14px 16px;
+  text-align: left;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.trace-judge-nav-item:hover {
+  border-color: #91caff;
+  background: #f0f7ff;
+}
+
+.trace-judge-nav-item--active {
+  border-color: #1677ff;
+  background: #e6f4ff;
+  box-shadow: inset 0 0 0 1px rgba(22, 119, 255, 0.08);
+}
+
+.trace-judge-nav-item--success {
+  border-color: #b7eb8f;
+  background: #f6ffed;
+}
+
+.trace-judge-nav-item--success:hover {
+  border-color: #95de64;
+  background: #f6ffed;
+}
+
+.trace-judge-nav-item--error {
+  border-color: #ffccc7;
+  background: #fff2f0;
+}
+
+.trace-judge-nav-item--error:hover {
+  border-color: #ff7875;
+  background: #fff1f0;
+}
+
+.trace-judge-nav-item--active.trace-judge-nav-item--error {
+  border-color: #ff4d4f;
+  background: #fff1f0;
+  box-shadow: inset 0 0 0 1px rgba(255, 77, 79, 0.12);
+}
+
+.trace-judge-nav-name {
+  color: #262626;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.trace-judge-nav-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.trace-judge-nav-status {
+  flex-shrink: 0;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.trace-judge-nav-status--success {
+  color: #389e0d;
+  background: #f6ffed;
+}
+
+.trace-judge-nav-status--error {
+  color: #cf1322;
+  background: #fff1f0;
+}
+
+.trace-judge-nav-status--default {
+  color: #8c8c8c;
+  background: #f5f5f5;
+}
+
+.trace-judge-nav-code {
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+.trace-project-card {
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+}
+
+.trace-project-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.trace-project-title {
+  color: #262626;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.trace-project-subtitle {
+  margin-top: 4px;
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+.trace-level-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.trace-level-row {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.trace-level-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.trace-level-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  color: #262626;
+  font-weight: 600;
+}
+
+.trace-level-name {
+  color: #1677ff;
+}
+
+.trace-level-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+.trace-level-status {
+  flex-shrink: 0;
+}
+
+.trace-stop-tip {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 8px;
+  color: #389e0d;
+  line-height: 1.6;
+}
+
+.trace-step-card {
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 10px;
+}
+
+.trace-step-card--error {
+  border-color: #ffccc7;
+  background: #fff2f0;
+}
+
+.trace-step-card--judge {
+  border-left: 4px solid #1677ff;
+}
+
+.trace-step-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.trace-step-title {
+  color: #262626;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.trace-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin-bottom: 12px;
+}
+
+.trace-grid > div {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.trace-key {
+  flex-shrink: 0;
+  color: #8c8c8c;
+}
+
+.trace-value {
+  color: #262626;
+  word-break: break-all;
+}
+
+.trace-formula {
+  font-family: Consolas, Monaco, monospace;
+}
+
+.trace-subtitle {
+  margin-bottom: 8px;
+  color: #595959;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.trace-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trace-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: #f5f5f5;
+  border-radius: 999px;
+  color: #262626;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.trace-empty-text {
+  color: #8c8c8c;
+  font-size: 12px;
+}
+
+.trace-condition {
+  padding: 12px;
+  background: #fafafa;
+  border-radius: 8px;
+  color: #262626;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.trace-condition--multiline {
+  white-space: pre-wrap;
+  line-height: 1.8;
+}
+
+.trace-error-box {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #fff2f0;
+  border: 1px solid #ffccc7;
+  border-radius: 8px;
+  color: #cf1322;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 900px) {
+  .trace-overview,
+  .trace-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .trace-step-header {
+    flex-direction: column;
+  }
+
+  .trace-judge-layout {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

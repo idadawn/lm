@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Poxiao.DependencyInjection;
 using Poxiao.Lab.Entity;
+using Poxiao.Lab.Entity.Attributes;
 using Poxiao.Lab.Entity.Config;
 using Poxiao.Lab.Entity.Dto.IntermediateData;
 using Poxiao.Lab.Entity.Dto.IntermediateDataFormula;
@@ -38,6 +39,9 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
     private readonly ISqlSugarRepository<UnitDefinitionEntity> _unitRepository;
     private readonly ISqlSugarRepository<IntermediateDataFormulaCalcLogEntity> _calcLogRepository;
     private readonly ISqlSugarRepository<IntermediateDataJudgmentLevelEntity> _levelRepository;
+    private readonly ISqlSugarRepository<IntermediateDataFormulaEntity> _formulaRepository;
+    private readonly ISqlSugarRepository<AppearanceFeatureCategoryEntity> _appearanceFeatureCategoryRepository;
+    private readonly ISqlSugarRepository<AppearanceFeatureLevelEntity> _appearanceFeatureLevelRepository;
     private readonly IIntermediateDataFormulaService _formulaService;
     private readonly IFormulaParser _formulaParser;
     private readonly LabOptions _labOptions;
@@ -54,6 +58,9 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         ISqlSugarRepository<UnitDefinitionEntity> unitRepository,
         ISqlSugarRepository<IntermediateDataFormulaCalcLogEntity> calcLogRepository,
         ISqlSugarRepository<IntermediateDataJudgmentLevelEntity> levelRepository,
+        ISqlSugarRepository<IntermediateDataFormulaEntity> formulaRepository,
+        ISqlSugarRepository<AppearanceFeatureCategoryEntity> appearanceFeatureCategoryRepository,
+        ISqlSugarRepository<AppearanceFeatureLevelEntity> appearanceFeatureLevelRepository,
         IIntermediateDataFormulaService formulaService,
         IFormulaParser formulaParser,
         IOptions<LabOptions> labOptions,
@@ -64,6 +71,9 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         _unitRepository = unitRepository;
         _calcLogRepository = calcLogRepository;
         _levelRepository = levelRepository;
+        _formulaRepository = formulaRepository;
+        _appearanceFeatureCategoryRepository = appearanceFeatureCategoryRepository;
+        _appearanceFeatureLevelRepository = appearanceFeatureLevelRepository;
         _formulaService = formulaService;
         _formulaParser = formulaParser;
         _labOptions = labOptions?.Value ?? new LabOptions();
@@ -531,7 +541,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
     /// </summary>
     private async Task<FormulaSet> LoadFormulasAsync(string? productSpecId = null)
     {
-        var all = await _formulaService.GetListAsync();
+        var all = await LoadFormulaDtosAsync();
 
         _logger.LogInformation(
             "[LoadFormulas] 从服务获取公式总数={Total}, ProductSpecId={ProductSpecId}",
@@ -597,6 +607,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
 
         return new FormulaSet
         {
+            AllFormulas = all.ToList(),
             CalcFormulas = calcFormulas,
             JudgeFormulas = judgeFormulas,
             Levels = levelMap,
@@ -1377,7 +1388,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
 
             // 尝试从公式服务获取公式定义
             // 公式的 ColumnName 应该与 lookupId 对应（如 VAR_1769806633591）
-            var formula = _formulaService.GetListAsync().Result
+            var formula = LoadFormulaDtos()
                 .FirstOrDefault(f =>
                     string.Equals(f.ColumnName, lookupId, StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(f.ColumnName, formulaId, StringComparison.OrdinalIgnoreCase) ||
@@ -1404,6 +1415,75 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
             _logger.LogError(ex, $"[ResolveCustomFormula] 计算公式 '{formulaId}' 时发生错误");
             return null;
         }
+    }
+
+    private async Task<List<IntermediateDataFormulaDto>> LoadFormulaDtosAsync()
+    {
+        var entities = await _formulaRepository
+            .AsQueryable()
+            .Where(t => t.DeleteMark == null)
+            .OrderBy(t => t.SortOrder)
+            .OrderBy(t => t.CreatorTime)
+            .ToListAsync();
+
+        return entities.Select(MapToFormulaDto).ToList();
+    }
+
+    private List<IntermediateDataFormulaDto> LoadFormulaDtos()
+    {
+        var entities = _formulaRepository
+            .AsQueryable()
+            .Where(t => t.DeleteMark == null)
+            .OrderBy(t => t.SortOrder)
+            .OrderBy(t => t.CreatorTime)
+            .ToList();
+
+        return entities.Select(MapToFormulaDto).ToList();
+    }
+
+    private static IntermediateDataFormulaDto MapToFormulaDto(IntermediateDataFormulaEntity entity)
+    {
+        return new IntermediateDataFormulaDto
+        {
+            Id = entity.Id,
+            SourceType = entity.SourceType,
+            TableName = entity.TableName,
+            ColumnName = entity.ColumnName,
+            DisplayName = GetIntermediateDataDisplayName(entity.ColumnName),
+            FormulaName = entity.FormulaName,
+            Formula = entity.Formula,
+            FormulaLanguage = entity.FormulaLanguage,
+            FormulaType = entity.FormulaType.ToString(),
+            UnitId = entity.UnitId,
+            UnitName = entity.UnitName,
+            Precision = entity.Precision,
+            IsEnabled = entity.IsEnabled,
+            SortOrder = entity.SortOrder,
+            DefaultValue = entity.DefaultValue,
+            Remark = entity.Remark,
+            CreatorTime = entity.CreatorTime,
+            LastModifyTime = entity.LastModifyTime,
+        };
+    }
+
+    private static string GetIntermediateDataDisplayName(string columnName)
+    {
+        if (string.IsNullOrWhiteSpace(columnName))
+        {
+            return null;
+        }
+
+        var property = typeof(IntermediateDataEntity).GetProperty(columnName);
+        if (property == null)
+        {
+            return null;
+        }
+
+        var columnAttr = property.GetCustomAttributes(typeof(IntermediateDataColumnAttribute), true)
+            .OfType<IntermediateDataColumnAttribute>()
+            .FirstOrDefault();
+
+        return !string.IsNullOrWhiteSpace(columnAttr?.DisplayName) ? columnAttr.DisplayName : null;
     }
 
     private bool TrySetJudgeValueToEntity(
@@ -1948,8 +2028,820 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         }
     }
 
+    public async Task<IntermediateDataExecutionTraceOutput> BuildExecutionTraceAsync(string intermediateDataId)
+    {
+        var entity = await _intermediateRepository
+            .AsQueryable()
+            .Where(t => t.Id == intermediateDataId && t.DeleteMark == null)
+            .FirstAsync();
+
+        if (entity == null)
+        {
+            return null;
+        }
+
+        var workingEntity = JsonConvert.DeserializeObject<IntermediateDataEntity>(JsonConvert.SerializeObject(entity)) ?? entity;
+        var formulaSet = await LoadFormulasAsync(entity.ProductSpecId);
+        var calcPlans = BuildFormulaPlans(formulaSet.CalcFormulas, out var cyclicColumns);
+        var unitIds = formulaSet.CalcFormulas
+            .Select(t => t.UnitId)
+            .Where(t => !string.IsNullOrWhiteSpace(t))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (formulaSet.UnitPrecisions != null)
+        {
+            foreach (var info in formulaSet.UnitPrecisions.Values.Where(t => t != null && !string.IsNullOrWhiteSpace(t.UnitId)))
+            {
+                unitIds.Add(info.UnitId);
+            }
+        }
+        var unitMap = await LoadUnitsAsync(unitIds);
+        var contextData = IntermediateDataFormulaCalcHelper.ExtractContextDataFromEntity(workingEntity);
+        var formulaLookup = BuildFormulaLookup(formulaSet);
+        var appearanceCategoryNameMap = await LoadAppearanceCategoryNameMapAsync();
+        var appearanceLevelNameMap = await LoadAppearanceLevelNameMapAsync();
+
+        var output = new IntermediateDataExecutionTraceOutput
+        {
+            IntermediateDataId = entity.Id,
+            FurnaceNo = entity.FurnaceNoFormatted,
+            CalcStatus = (int)entity.CalcStatus,
+            CalcStatusText = GetStatusText(entity.CalcStatus),
+            CalcErrorMessage = entity.CalcErrorMessage,
+            JudgeStatus = (int)entity.JudgeStatus,
+            JudgeStatusText = GetStatusText(entity.JudgeStatus),
+            JudgeErrorMessage = entity.JudgeErrorMessage,
+        };
+
+        var calcOrder = 1;
+        foreach (var plan in calcPlans)
+        {
+            output.CalculationSteps.Add(TraceCalculationStep(plan, workingEntity, contextData, formulaSet.UnitPrecisions, unitMap, cyclicColumns, calcOrder++));
+        }
+
+        var judgeOrder = 1;
+        foreach (var formula in formulaSet.JudgeFormulas)
+        {
+            formulaSet.Levels.TryGetValue(formula.Id, out var levels);
+            foreach (var step in TraceJudgeSteps(
+                         formula,
+                         workingEntity,
+                         contextData,
+                         levels,
+                         formulaLookup,
+                         appearanceCategoryNameMap,
+                         appearanceLevelNameMap,
+                         ref judgeOrder))
+            {
+                output.JudgmentSteps.Add(step);
+            }
+        }
+
+        return output;
+    }
+
+    private IntermediateDataCalcStepOutput TraceCalculationStep(
+        FormulaPlan plan,
+        IntermediateDataEntity entity,
+        Dictionary<string, object> contextData,
+        Dictionary<string, UnitPrecisionInfo> unitPrecisions,
+        Dictionary<string, UnitDefinitionEntity> unitMap,
+        HashSet<string> cyclicColumns,
+        int order)
+    {
+        var formula = plan.Formula;
+        var step = new IntermediateDataCalcStepOutput
+        {
+            Order = order,
+            FormulaName = formula?.FormulaName,
+            ColumnName = formula?.ColumnName,
+            DisplayName = formula?.DisplayName,
+            Formula = formula?.Formula,
+            UnitName = formula?.UnitName,
+            VariableValues = BuildTraceVariables(formula, entity, contextData),
+            Success = true,
+        };
+
+        if (formula == null || string.IsNullOrWhiteSpace(formula.ColumnName))
+        {
+            step.Success = false;
+            step.FailureReason = "公式配置缺失";
+            return step;
+        }
+
+        if (cyclicColumns.Contains(formula.ColumnName))
+        {
+            step.Success = false;
+            step.FailureReason = "公式依赖存在循环，已跳过计算";
+            return step;
+        }
+
+        decimal? calculatedValue = null;
+        step.IsDefaultValue = string.IsNullOrWhiteSpace(formula.Formula);
+
+        if (string.IsNullOrWhiteSpace(formula.Formula))
+        {
+            calculatedValue = ParseDecimalOrNull(formula.DefaultValue);
+            step.RawResult = FormatDecimalTraceValue(calculatedValue);
+        }
+        else
+        {
+            try
+            {
+                object calcContext = IsRangeFormula(formula.Formula) ? entity : contextData;
+                calculatedValue = _formulaParser.Calculate(formula.Formula, calcContext);
+                step.RawResult = FormatDecimalTraceValue(calculatedValue);
+            }
+            catch (Exception ex)
+            {
+                step.Success = false;
+                step.FailureReason = ex.Message;
+                IntermediateDataFormulaCalcHelper.SetFormulaValueToEntity(entity, formula.ColumnName, null);
+                return step;
+            }
+        }
+
+        if (!calculatedValue.HasValue)
+        {
+            calculatedValue = ParseDecimalOrNull(formula.DefaultValue);
+            if (!step.IsDefaultValue && calculatedValue.HasValue)
+            {
+                step.IsDefaultValue = true;
+            }
+        }
+
+        var tempErrors = new List<CalcErrorItem>();
+        if (calculatedValue.HasValue)
+        {
+            if (!TryApplyUnitConversion(formula, unitPrecisions, unitMap, ref calculatedValue, entity, tempErrors, "TRACE"))
+            {
+                step.Success = false;
+                step.FailureReason = BuildErrorSummary(tempErrors) ?? tempErrors.LastOrDefault()?.ErrorDetail;
+                IntermediateDataFormulaCalcHelper.SetFormulaValueToEntity(entity, formula.ColumnName, null);
+                return step;
+            }
+
+            step.Precision = GetPrecision(formula, unitPrecisions, unitMap);
+            if (step.Precision.HasValue)
+            {
+                calculatedValue = Math.Round(calculatedValue.Value, step.Precision.Value, MidpointRounding.AwayFromZero);
+            }
+        }
+
+        IntermediateDataFormulaCalcHelper.SetFormulaValueToEntity(entity, formula.ColumnName, calculatedValue);
+        if (calculatedValue.HasValue)
+        {
+            contextData[formula.ColumnName] = calculatedValue.Value;
+        }
+        step.ResultValue = FormatDecimalTraceValue(calculatedValue);
+        return step;
+    }
+
+    private List<IntermediateDataJudgeStepOutput> TraceJudgeSteps(
+        IntermediateDataFormulaDto formula,
+        IntermediateDataEntity entity,
+        Dictionary<string, object> contextData,
+        List<IntermediateDataJudgmentLevelEntity> levels,
+        Dictionary<string, string> formulaLookup,
+        Dictionary<string, string> appearanceCategoryNameMap,
+        Dictionary<string, string> appearanceLevelNameMap,
+        ref int order)
+    {
+        var result = new List<IntermediateDataJudgeStepOutput>();
+        if (formula == null || string.IsNullOrWhiteSpace(formula.ColumnName))
+        {
+            return result;
+        }
+
+        if (levels != null && levels.Count > 0)
+        {
+            IntermediateDataJudgmentLevelEntity defaultLevel = null;
+            foreach (var level in levels.OrderBy(t => t.Priority).ThenBy(t => t.CreatorTime))
+            {
+                if (level.IsDefault)
+                {
+                    defaultLevel = level;
+                    continue;
+                }
+
+                var step = new IntermediateDataJudgeStepOutput
+                {
+                    Order = order++,
+                    FormulaName = formula.FormulaName,
+                    ColumnName = formula.ColumnName,
+                    DisplayName = formula.DisplayName,
+                    StepName = level.Name,
+                    Priority = level.Priority,
+                    ResultValue = level.Name,
+                    ConditionText = BuildJudgeConditionText(
+                        level.Condition,
+                        entity,
+                        contextData,
+                        formulaLookup,
+                        appearanceCategoryNameMap,
+                        appearanceLevelNameMap),
+                };
+
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(level.Condition))
+                    {
+                        step.Success = false;
+                        step.FailureReason = "未配置判定条件";
+                    }
+                    else
+                    {
+                        var group = JObject.Parse(level.Condition);
+                        step.Success = EvaluateRuleGroup(group, entity, contextData);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    step.Success = false;
+                    step.FailureReason = ex.Message;
+                }
+
+                result.Add(step);
+                if (step.Success)
+                {
+                    return result;
+                }
+            }
+
+            if (defaultLevel != null)
+            {
+                result.Add(new IntermediateDataJudgeStepOutput
+                {
+                    Order = order++,
+                    FormulaName = formula.FormulaName,
+                    ColumnName = formula.ColumnName,
+                    DisplayName = formula.DisplayName,
+                    StepName = defaultLevel.Name,
+                    Priority = defaultLevel.Priority,
+                    IsDefaultStep = true,
+                    Success = true,
+                    ResultValue = defaultLevel.Name,
+                    ConditionText = "前序等级均未命中，使用默认等级",
+                });
+            }
+
+            return result;
+        }
+
+        if (string.IsNullOrWhiteSpace(formula.Formula))
+        {
+            result.Add(new IntermediateDataJudgeStepOutput
+            {
+                Order = order++,
+                FormulaName = formula.FormulaName,
+                ColumnName = formula.ColumnName,
+                DisplayName = formula.DisplayName,
+                StepName = "默认结果",
+                IsDefaultStep = true,
+                Success = true,
+                ResultValue = formula.DefaultValue,
+                ConditionText = "判定公式为空，直接使用默认值",
+            });
+            return result;
+        }
+
+        try
+        {
+            var rules = JArray.Parse(formula.Formula);
+            foreach (var ruleToken in rules)
+            {
+                if (ruleToken is not JObject rule)
+                {
+                    continue;
+                }
+
+                var resultValue = rule["resultValue"]?.ToString();
+                var step = new IntermediateDataJudgeStepOutput
+                {
+                    Order = order++,
+                    FormulaName = formula.FormulaName,
+                    ColumnName = formula.ColumnName,
+                    DisplayName = formula.DisplayName,
+                    StepName = resultValue,
+                    ResultValue = resultValue,
+                    ConditionText = BuildJudgeConditionText(
+                        rule["rootGroup"] ?? rule["groups"],
+                        entity,
+                        contextData,
+                        formulaLookup,
+                        appearanceCategoryNameMap,
+                        appearanceLevelNameMap),
+                };
+
+                try
+                {
+                    var matched = false;
+                    if (rule["rootGroup"] is JObject rootGroup)
+                    {
+                        matched = EvaluateRuleGroup(rootGroup, entity, contextData);
+                    }
+                    else if (rule["groups"] is JArray groups)
+                    {
+                        matched = groups.OfType<JObject>().Any(group => EvaluateRuleGroup(group, entity, contextData));
+                    }
+                    step.Success = matched;
+                }
+                catch (Exception ex)
+                {
+                    step.Success = false;
+                    step.FailureReason = ex.Message;
+                }
+
+                result.Add(step);
+                if (step.Success)
+                {
+                    return result;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            result.Add(new IntermediateDataJudgeStepOutput
+            {
+                Order = order++,
+                FormulaName = formula.FormulaName,
+                ColumnName = formula.ColumnName,
+                DisplayName = formula.DisplayName,
+                StepName = "判定解析失败",
+                Success = false,
+                FailureReason = ex.Message,
+            });
+            return result;
+        }
+
+        result.Add(new IntermediateDataJudgeStepOutput
+        {
+            Order = order++,
+            FormulaName = formula.FormulaName,
+            ColumnName = formula.ColumnName,
+            DisplayName = formula.DisplayName,
+            StepName = "默认结果",
+            IsDefaultStep = true,
+            Success = true,
+            ResultValue = formula.DefaultValue,
+            ConditionText = "未命中任何规则，使用默认值",
+        });
+        return result;
+    }
+
+    private List<IntermediateDataTraceValueOutput> BuildTraceVariables(
+        IntermediateDataFormulaDto formula,
+        IntermediateDataEntity entity,
+        Dictionary<string, object> contextData)
+    {
+        var result = new List<IntermediateDataTraceValueOutput>();
+        if (formula == null || string.IsNullOrWhiteSpace(formula.Formula))
+        {
+            return result;
+        }
+
+        foreach (var variable in _formulaParser.ExtractVariables(formula.Formula)
+                     .Where(t => !string.IsNullOrWhiteSpace(t))
+                     .Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            object value = null;
+            if (contextData.TryGetValue(variable, out var contextValue))
+            {
+                value = contextValue;
+            }
+            else
+            {
+                var property = typeof(IntermediateDataEntity).GetProperty(variable);
+                value = property?.GetValue(entity);
+            }
+
+            result.Add(new IntermediateDataTraceValueOutput
+            {
+                Name = variable,
+                Value = FormatObjectTraceValue(value),
+            });
+        }
+
+        return result;
+    }
+
+    private string BuildJudgeConditionText(
+        JToken token,
+        IntermediateDataEntity entity,
+        Dictionary<string, object> contextData,
+        Dictionary<string, string> formulaLookup,
+        Dictionary<string, string> appearanceCategoryNameMap,
+        Dictionary<string, string> appearanceLevelNameMap)
+    {
+        if (token == null)
+        {
+            return string.Empty;
+        }
+
+        if (token.Type == JTokenType.String)
+        {
+            var rawText = token.ToString().Trim();
+            if (string.IsNullOrWhiteSpace(rawText))
+            {
+                return string.Empty;
+            }
+
+            if ((rawText.StartsWith("{") && rawText.EndsWith("}")) || (rawText.StartsWith("[") && rawText.EndsWith("]")))
+            {
+                try
+                {
+                    return BuildJudgeConditionText(
+                        JToken.Parse(rawText),
+                        entity,
+                        contextData,
+                        formulaLookup,
+                        appearanceCategoryNameMap,
+                        appearanceLevelNameMap);
+                }
+                catch
+                {
+                    return ReplaceRawJudgeConditionVariables(rawText, formulaLookup);
+                }
+            }
+
+            return ReplaceRawJudgeConditionVariables(rawText, formulaLookup);
+        }
+
+        if (token is JArray array)
+        {
+            return string.Join(
+                '；',
+                array.Select(item => BuildJudgeConditionText(
+                        item,
+                        entity,
+                        contextData,
+                        formulaLookup,
+                        appearanceCategoryNameMap,
+                        appearanceLevelNameMap))
+                    .Where(t => !string.IsNullOrWhiteSpace(t)));
+        }
+
+        if (token is not JObject obj)
+        {
+            return token.ToString(Formatting.None);
+        }
+
+        if (obj["groups"] is JArray groups && groups.Count > 0)
+        {
+            return string.Join(
+                '；',
+                groups.Select(item => BuildJudgeConditionText(
+                        item,
+                        entity,
+                        contextData,
+                        formulaLookup,
+                        appearanceCategoryNameMap,
+                        appearanceLevelNameMap))
+                    .Where(t => !string.IsNullOrWhiteSpace(t)));
+        }
+
+        var logic = (obj["logic"]?.ToString() ?? "AND").Trim().ToUpperInvariant();
+        var conditionTexts = new List<string>();
+
+        if (obj["conditions"] is JArray conditions)
+        {
+            foreach (var item in conditions.OfType<JObject>())
+            {
+                var leftExpr = item["leftExpr"]?.ToString() ?? item["fieldId"]?.ToString() ?? item["leftField"]?.ToString() ?? "-";
+                var op = item["operator"]?.ToString() ?? "=";
+                var rightValue = item["rightValue"]?.ToString() ?? item["value"]?.ToString() ?? item["rightExpr"]?.ToString() ?? "";
+                var normalizedOp = NormalizeOperator(op);
+                var displayLeft = GetJudgeExpressionDisplayName(leftExpr, formulaLookup);
+                var leftCurrentValue = ResolveLeftValue(leftExpr, entity, contextData);
+                var displayLeftValue = FormatJudgeOperandValue(
+                    leftExpr,
+                    leftCurrentValue,
+                    appearanceCategoryNameMap,
+                    appearanceLevelNameMap);
+                var displayRight = FormatJudgeRightValue(
+                    leftExpr,
+                    normalizedOp,
+                    rightValue,
+                    appearanceCategoryNameMap,
+                    appearanceLevelNameMap);
+
+                conditionTexts.Add(BuildJudgeConditionSentence(
+                    displayLeft,
+                    displayLeftValue,
+                    normalizedOp,
+                    displayRight));
+            }
+        }
+
+        if (obj["subGroups"] is JArray subGroups)
+        {
+            foreach (var sub in subGroups)
+            {
+                var subText = BuildJudgeConditionText(
+                    sub,
+                    entity,
+                    contextData,
+                    formulaLookup,
+                    appearanceCategoryNameMap,
+                    appearanceLevelNameMap);
+                if (!string.IsNullOrWhiteSpace(subText))
+                {
+                    conditionTexts.Add($"({subText})");
+                }
+            }
+        }
+
+        if (conditionTexts.Count == 0)
+        {
+            return obj["name"]?.ToString() ?? string.Empty;
+        }
+
+        return string.Join(logic == "OR" ? " 或 " : " 且 ", conditionTexts);
+    }
+
+    private static string BuildJudgeConditionSentence(
+        string displayLeft,
+        string displayLeftValue,
+        string normalizedOp,
+        string displayRight)
+    {
+        var leftText = string.IsNullOrWhiteSpace(displayLeft) ? "-" : displayLeft;
+        var currentValueText = string.IsNullOrWhiteSpace(displayLeftValue) ? "空" : displayLeftValue;
+
+        return normalizedOp switch
+        {
+            "IS_NULL" => $"{leftText}(当前值: {currentValueText}) 为空",
+            "NOT_NULL" => $"{leftText}(当前值: {currentValueText}) 不为空",
+            "CONTAINS_ANY" => $"{leftText}(当前值: {currentValueText}) 包含任一项 {displayRight}",
+            "CONTAINS_ALL" => $"{leftText}(当前值: {currentValueText}) 包含全部 {displayRight}",
+            _ => $"{leftText}(当前值: {currentValueText}){TranslateJudgeOperator(normalizedOp)}{displayRight}",
+        };
+    }
+
+    private static string TranslateJudgeOperator(string op)
+    {
+        return (op ?? string.Empty).Trim().ToLowerInvariant() switch
+        {
+            "=" or "==" or "eq" => " 等于 ",
+            "!=" or "<>" or "ne" => " 不等于 ",
+            ">" or "gt" => " 大于 ",
+            ">=" or "gte" or "ge" => " 大于等于 ",
+            "<" or "lt" => " 小于 ",
+            "<=" or "lte" or "le" => " 小于等于 ",
+            "contains" => " 包含 ",
+            "notcontains" => " 不包含 ",
+            "startswith" => " 以 ... 开头 ",
+            "endswith" => " 以 ... 结尾 ",
+            "in" => " 属于 ",
+            "notin" => " 不属于 ",
+            _ => $" {op} ",
+        };
+    }
+
+    private static Dictionary<string, string> BuildFormulaLookup(FormulaSet formulaSet)
+    {
+        var lookup = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var formula in formulaSet.AllFormulas.Where(t => t != null))
+        {
+            var displayName = formula.FormulaName ?? formula.DisplayName ?? formula.ColumnName ?? formula.Id;
+            if (!string.IsNullOrWhiteSpace(formula.ColumnName))
+            {
+                lookup[formula.ColumnName] = displayName;
+                if (!formula.ColumnName.StartsWith("$", StringComparison.Ordinal))
+                {
+                    lookup["$" + formula.ColumnName] = displayName;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(formula.Id))
+            {
+                lookup[formula.Id] = displayName;
+                if (!formula.Id.StartsWith("$", StringComparison.Ordinal))
+                {
+                    lookup["$" + formula.Id] = displayName;
+                }
+            }
+        }
+
+        return lookup;
+    }
+
+    private async Task<Dictionary<string, string>> LoadAppearanceCategoryNameMapAsync()
+    {
+        var items = await _appearanceFeatureCategoryRepository
+            .AsQueryable()
+            .Where(t => t.DeleteMark == null)
+            .Select(t => new { t.Id, t.Name })
+            .ToListAsync();
+
+        return items
+            .Where(t => !string.IsNullOrWhiteSpace(t.Id))
+            .GroupBy(t => t.Id, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First().Name ?? g.Key, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private async Task<Dictionary<string, string>> LoadAppearanceLevelNameMapAsync()
+    {
+        var items = await _appearanceFeatureLevelRepository
+            .AsQueryable()
+            .Where(t => t.DeleteMark == null)
+            .Select(t => new { t.Id, t.Name })
+            .ToListAsync();
+
+        return items
+            .Where(t => !string.IsNullOrWhiteSpace(t.Id))
+            .GroupBy(t => t.Id, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First().Name ?? g.Key, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static string GetJudgeExpressionDisplayName(string expression, Dictionary<string, string> formulaLookup)
+    {
+        if (string.IsNullOrWhiteSpace(expression))
+        {
+            return "-";
+        }
+
+        var normalizedExpression = expression.Trim();
+        if (normalizedExpression.StartsWith("[") && normalizedExpression.EndsWith("]"))
+        {
+            normalizedExpression = normalizedExpression[1..^1];
+        }
+
+        if (formulaLookup != null && formulaLookup.TryGetValue(normalizedExpression, out var formulaDisplayName))
+        {
+            return formulaDisplayName;
+        }
+
+        if (formulaLookup != null && !normalizedExpression.StartsWith("$", StringComparison.Ordinal)
+            && formulaLookup.TryGetValue("$" + normalizedExpression, out formulaDisplayName))
+        {
+            return formulaDisplayName;
+        }
+
+        if (formulaLookup != null && normalizedExpression.StartsWith("$", StringComparison.Ordinal)
+            && formulaLookup.TryGetValue(normalizedExpression.TrimStart('$'), out formulaDisplayName))
+        {
+            return formulaDisplayName;
+        }
+
+        var property = typeof(IntermediateDataEntity).GetProperty(normalizedExpression);
+        if (property != null)
+        {
+            var columnAttr = property.GetCustomAttributes(typeof(IntermediateDataColumnAttribute), true)
+                .OfType<IntermediateDataColumnAttribute>()
+                .FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(columnAttr?.DisplayName))
+            {
+                return columnAttr.DisplayName;
+            }
+        }
+
+        return normalizedExpression;
+    }
+
+    private static string ReplaceRawJudgeConditionVariables(string rawText, Dictionary<string, string> formulaLookup)
+    {
+        if (string.IsNullOrWhiteSpace(rawText) || formulaLookup == null || formulaLookup.Count == 0)
+        {
+            return rawText;
+        }
+
+        return Regex.Replace(rawText, @"\[\$?VAR_[A-Za-z0-9_]+\]|\$VAR_[A-Za-z0-9_]+", match =>
+        {
+            var displayName = GetJudgeExpressionDisplayName(match.Value, formulaLookup);
+            return string.IsNullOrWhiteSpace(displayName) ? match.Value : displayName;
+        });
+    }
+
+    private static string FormatJudgeRightValue(
+        string expression,
+        string normalizedOp,
+        string rightValue,
+        Dictionary<string, string> appearanceCategoryNameMap,
+        Dictionary<string, string> appearanceLevelNameMap)
+    {
+        if (normalizedOp == "IS_NULL" || normalizedOp == "NOT_NULL")
+        {
+            return string.Empty;
+        }
+
+        if (IsAppearanceCategoryField(expression))
+        {
+            return FormatMappedListValue(ParseRightValueAsList(rightValue), appearanceCategoryNameMap);
+        }
+
+        if (IsAppearanceLevelField(expression))
+        {
+            return FormatMappedListValue(ParseRightValueAsList(rightValue), appearanceLevelNameMap);
+        }
+
+        if ((normalizedOp == "CONTAINS_ANY" || normalizedOp == "CONTAINS_ALL") && !string.IsNullOrWhiteSpace(rightValue))
+        {
+            var parsed = ParseRightValueAsList(rightValue);
+            if (parsed.Count > 0)
+            {
+                return "[" + string.Join("、", parsed) + "]";
+            }
+        }
+
+        return string.IsNullOrWhiteSpace(rightValue) ? "空" : rightValue;
+    }
+
+    private static string FormatJudgeOperandValue(
+        string expression,
+        object value,
+        Dictionary<string, string> appearanceCategoryNameMap,
+        Dictionary<string, string> appearanceLevelNameMap)
+    {
+        if (IsAppearanceCategoryField(expression))
+        {
+            return value is IEnumerable<string> values
+                ? FormatMappedListValue(values, appearanceCategoryNameMap)
+                : FormatObjectTraceValue(value);
+        }
+
+        if (IsAppearanceLevelField(expression))
+        {
+            return value is IEnumerable<string> values
+                ? FormatMappedListValue(values, appearanceLevelNameMap)
+                : FormatObjectTraceValue(value);
+        }
+
+        if (value is IEnumerable<string> stringList)
+        {
+            var list = stringList.ToList();
+            return list.Count == 0 ? "空" : "[" + string.Join("、", list) + "]";
+        }
+
+        return FormatObjectTraceValue(value);
+    }
+
+    private static bool IsAppearanceCategoryField(string expression)
+    {
+        return string.Equals(expression, nameof(IntermediateDataEntity.AppearanceFeatureCategoryIds), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsAppearanceLevelField(string expression)
+    {
+        return string.Equals(expression, nameof(IntermediateDataEntity.AppearanceFeatureLevelIds), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string FormatMappedListValue(IEnumerable<string> ids, Dictionary<string, string> nameMap)
+    {
+        if (ids == null)
+        {
+            return "空";
+        }
+
+        var list = ids.Where(t => !string.IsNullOrWhiteSpace(t)).ToList();
+        if (list.Count == 0)
+        {
+            return "空";
+        }
+
+        var names = list
+            .Select(id => nameMap != null && nameMap.TryGetValue(id, out var name) ? name : id)
+            .ToList();
+
+        return "[" + string.Join("、", names) + "]";
+    }
+
+    private static string FormatDecimalTraceValue(decimal? value)
+    {
+        return value.HasValue ? value.Value.ToString(CultureInfo.InvariantCulture) : string.Empty;
+    }
+
+    private static string FormatObjectTraceValue(object value)
+    {
+        if (value == null)
+        {
+            return "空";
+        }
+
+        return value switch
+        {
+            decimal dec => dec.ToString(CultureInfo.InvariantCulture),
+            double dbl => dbl.ToString(CultureInfo.InvariantCulture),
+            float flt => flt.ToString(CultureInfo.InvariantCulture),
+            IEnumerable<string> list => string.Join(",", list),
+            _ => value.ToString(),
+        };
+    }
+
+    private static string GetStatusText(IntermediateDataCalcStatus status)
+    {
+        return status switch
+        {
+            IntermediateDataCalcStatus.PENDING => "待处理",
+            IntermediateDataCalcStatus.PROCESSING => "处理中",
+            IntermediateDataCalcStatus.SUCCESS => "成功",
+            IntermediateDataCalcStatus.FAILED => "失败",
+            _ => "未知",
+        };
+    }
+
     private sealed class FormulaSet
     {
+        public List<IntermediateDataFormulaDto> AllFormulas { get; init; } = new();
         public List<IntermediateDataFormulaDto> CalcFormulas { get; init; } = new();
         public List<IntermediateDataFormulaDto> JudgeFormulas { get; init; } = new();
         public Dictionary<string, List<IntermediateDataJudgmentLevelEntity>> Levels { get; init; } = new();

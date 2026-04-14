@@ -10,6 +10,11 @@ overrides:
   tsx: 3.13.0
   '@ctrl/tinycolor': ^4.2.0
 
+patchedDependencies:
+  '@rys-fe/vite-plugin-theme@0.8.6':
+    hash: ft5ehqtoskxldqnkkdtmoimxwq
+    path: patches/@rys-fe__vite-plugin-theme@0.8.6.patch
+
 importers:
 
   .:
@@ -215,7 +220,7 @@ importers:
         version: 0.9.0
       '@rys-fe/vite-plugin-theme':
         specifier: ^0.8.6
-        version: 0.8.6(vite@4.5.3(@types/node@18.19.31)(less@4.2.0)(sass@1.97.2)(stylus@0.54.8)(sugarss@2.0.0)(terser@5.30.4))
+        version: 0.8.6(patch_hash=ft5ehqtoskxldqnkkdtmoimxwq)(vite@4.5.3(@types/node@18.19.31)(less@4.2.0)(sass@1.97.2)(stylus@0.54.8)(sugarss@2.0.0)(terser@5.30.4))
       '@types/codemirror':
         specifier: ^5.60.10
         version: 5.60.15
@@ -21694,7 +21699,9 @@ snapshots:
       source-map: 0.6.1
       string-length: 2.0.0
     transitivePeerDependencies:
+      - bufferutil
       - supports-color
+      - utf-8-validate
 
   '@jest/reporters@27.5.1':
     dependencies:
@@ -22331,7 +22338,7 @@ snapshots:
     optionalDependencies:
       rollup: 3.29.4
 
-  '@rys-fe/vite-plugin-theme@0.8.6(vite@4.5.3(@types/node@18.19.31)(less@4.2.0)(sass@1.97.2)(stylus@0.54.8)(sugarss@2.0.0)(terser@5.30.4))':
+  '@rys-fe/vite-plugin-theme@0.8.6(patch_hash=ft5ehqtoskxldqnkkdtmoimxwq)(vite@4.5.3(@types/node@18.19.31)(less@4.2.0)(sass@1.97.2)(stylus@0.54.8)(sugarss@2.0.0)(terser@5.30.4))':
     dependencies:
       '@types/node': 14.18.63
       '@types/tinycolor2': 1.4.6
@@ -31659,7 +31666,9 @@ snapshots:
       pretty-format: 24.9.0
       throat: 4.1.0
     transitivePeerDependencies:
+      - bufferutil
       - supports-color
+      - utf-8-validate
 
   jest-jasmine2@27.5.1:
     dependencies:

@@ -204,8 +204,7 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         var memoryStream = new MemoryStream();
         var sheets = new Dictionary<string, object>();
         var sheetRowData = new Dictionary<string, List<(string Id, string ProductSpecId)>>();
-        var firstDetectionColumns = groupedData.Count > 0 ? groupedData[0].DetectionColumns : 15;
-        var columnFieldNames = BuildColumnFieldNames(firstDetectionColumns, sortedCategories);
+        var sheetColumnFieldNames = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var group in groupedData)
         {
@@ -232,6 +231,7 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
             }
 
             sheets[safeSheetName] = dataTable;
+            sheetColumnFieldNames[safeSheetName] = BuildColumnFieldNames(group.DetectionColumns, sortedCategories);
             var rowData = group.DataList
                 .Select(d => (
                     Id: d.ContainsKey("id") ? d["id"]?.ToString() ?? "" : "",
@@ -249,7 +249,7 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         memoryStream.Position = 0;
 
         // Post-process with NPOI merged cells and cell fill colors
-        var finalStream = PostProcessExcel(memoryStream, sheetRowData, columnFieldNames, colorMap, formulaPrecisionMap, sortedCategories);
+        var finalStream = PostProcessExcel(memoryStream, sheetRowData, sheetColumnFieldNames, colorMap, formulaPrecisionMap, sortedCategories);
 
         var fileName = $"{DateTime.Now:yyyyMMddHHmmss}.xlsx";
         return new FileStreamResult(finalStream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
@@ -282,7 +282,7 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
     /// <summary>
     /// 构建列索引对应的前端字段名列表（用于颜色映射）.
     /// </summary>
-    private static List<string> BuildColumnFieldNames(int detectionColumns, List<KeyValuePair<string, string>> sortedCategories)
+    public static List<string> BuildColumnFieldNames(int detectionColumns, List<KeyValuePair<string, string>> sortedCategories)
     {
         var list = new List<string>
         {
@@ -329,13 +329,20 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         return list;
     }
 
+    public static bool ShouldConvertExportHeaderCellToNumeric(int rowIndex, string topHeaderValue, string cellText)
+    {
+        return rowIndex == 1
+            && string.Equals(topHeaderValue, "叠片系数厚度分布", StringComparison.Ordinal)
+            && double.TryParse(cellText, NumberStyles.Any, CultureInfo.InvariantCulture, out _);
+    }
+
     /// <summary>
     /// 使用 NPOI 后处理 Excel，应用合并单元格、样式和单元格填充颜色.
     /// </summary>
     private MemoryStream PostProcessExcel(
         MemoryStream sourceStream,
         Dictionary<string, List<(string Id, string ProductSpecId)>> sheetRowData,
-        List<string> columnFieldNames,
+        Dictionary<string, List<string>> sheetColumnFieldNames,
         Dictionary<string, string> colorMap,
         Dictionary<string, int> formulaPrecisionMap,
         List<KeyValuePair<string, string>> sortedCategories)
@@ -393,6 +400,8 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
             var row0 = sheet.GetRow(0); // 自定义的表头行1
             var row1 = sheet.GetRow(1); // 自定义的表头行2
             if (row0 == null) continue;
+            List<string> columnFieldNames = null;
+            sheetColumnFieldNames?.TryGetValue(sheet.SheetName, out columnFieldNames);
 
             // 注意: NPOI 的 SetAutoFilter 不支持 null 参数
             // 如果需要移除筛选，可以不调用此方法（MiniExcel默认不添加筛选）
@@ -492,7 +501,24 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
 
             void ConvertTextToNumericIfApplicable(int rowIndex, ICell cell, int columnIndex, ICellStyle existingStyle = null)
             {
-                if (rowIndex < 2 || columnFieldNames == null || columnIndex >= columnFieldNames.Count) return;
+                if (rowIndex <= 1)
+                {
+                    var topHeaderValue = row0?.GetCell(columnIndex)?.ToString()?.Trim();
+                    var headerText = cell.ToString()?.Trim();
+                    if (ShouldConvertExportHeaderCellToNumeric(rowIndex, topHeaderValue, headerText)
+                        && double.TryParse(headerText, NumberStyles.Any, CultureInfo.InvariantCulture, out var headerNum))
+                    {
+                        cell.SetCellValue(headerNum);
+                        if (existingStyle != null)
+                        {
+                            cell.CellStyle = existingStyle;
+                        }
+                    }
+
+                    return;
+                }
+
+                if (columnFieldNames == null || columnIndex >= columnFieldNames.Count) return;
                 var fieldName = columnFieldNames[columnIndex];
                 if (string.IsNullOrEmpty(fieldName)) return;
 
@@ -1008,3 +1034,5 @@ public partial class IntermediateDataExportService : IDynamicApiController, ITra
         };
     }
 }
+
+

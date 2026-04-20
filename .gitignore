@@ -332,3 +332,8 @@ apps/*.zip
 # Temporary build verification files
 api/tmp_build_verify*
 api/tmp_build_verify/
+
+# Local generated artifacts
+.playwright-cli/
+output/
+api/release/

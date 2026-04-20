@@ -70,10 +70,18 @@ export async function loadFormulaPrecision(): Promise<FormulaPrecision> {
 
     precisionCache = {};
 
+    const formulaList = Array.isArray(result)
+      ? result
+      : Array.isArray(result?.records)
+        ? result.records
+        : Array.isArray(result?.data)
+          ? result.data
+          : [];
+
     // 处理返回数据
-    if (result?.records) {
+    if (formulaList.length) {
       // 根据公式配置中的precision字段建立映射
-      result.records.forEach((item: any) => {
+      formulaList.forEach((item: any) => {
         if (item.precision !== null && item.precision !== undefined) {
           // 存储 columnName 映射
           if (item.columnName) {

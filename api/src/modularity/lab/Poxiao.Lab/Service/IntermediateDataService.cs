@@ -18,7 +18,6 @@ using Poxiao.Lab.Entity.Enums;
 using Poxiao.Lab.Entity.Extensions;
 using Poxiao.Lab.Entity.Models;
 using Poxiao.Lab.Helpers;
-using Poxiao.Lab.Helpers;
 using Poxiao.EventHandler;
 using Poxiao.Infrastructure.Net;
 using Poxiao.Infrastructure.Security;
@@ -269,10 +268,10 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             .ToListAsync();
         var userDict = users.ToDictionary(u => u.Id, u => u.RealName);
 
-        // 获取公式精度配置 - 只应用 SYSTEM 类型的公式精度
+        // 获取公式精度配置，页面显示按数据库当前配置精度格式化
         var formulas = await _formulaService.GetListAsync();
         var precisionMap = formulas
-            .Where(f => f.SourceType == "SYSTEM" && f.Precision.HasValue && !string.IsNullOrEmpty(f.ColumnName))
+            .Where(f => f.Precision.HasValue && !string.IsNullOrEmpty(f.ColumnName))
             .ToDictionary(
                 f => f.ColumnName,
                 f => f.Precision.Value,

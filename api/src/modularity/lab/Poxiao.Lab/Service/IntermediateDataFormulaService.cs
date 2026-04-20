@@ -527,10 +527,11 @@ public class IntermediateDataFormulaService
                     changed = true;
                 }
 
-                // 如果代码中定义了精度，则同步更新
-                if (col.DecimalDigits.HasValue && existing.Precision != col.DecimalDigits)
+                // 已有精度以数据库配置为准，只在数据库为空时补充默认精度
+                var syncedPrecision = ResolveInitializedPrecision(existing.Precision, col.DecimalDigits);
+                if (existing.Precision != syncedPrecision)
                 {
-                    existing.Precision = col.DecimalDigits;
+                    existing.Precision = syncedPrecision;
                     changed = true;
                 }
 
@@ -580,6 +581,11 @@ public class IntermediateDataFormulaService
         }
 
         await ClearFormulaCacheAsync();
+    }
+
+    public static int? ResolveInitializedPrecision(int? existingPrecision, int? columnDecimalDigits)
+    {
+        return existingPrecision ?? columnDecimalDigits;
     }
 
     /// <inheritdoc />

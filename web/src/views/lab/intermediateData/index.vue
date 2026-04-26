@@ -94,6 +94,9 @@
                   <DeleteOutlined /> 批量删除
                   <template v-if="selectedRowCount">({{ selectedRowCount }})</template>
                 </a-button>
+                <a-button type="default" @click="handleRepairSingleCoilWeight">
+                  修复单卷重量
+                </a-button>
                 <a-dropdown>
                   <a-button :loading="exporting"> <DownloadOutlined v-if="!exporting" /> 导出Excel </a-button>
                   <template #overlay>
@@ -145,6 +148,27 @@
                     @press-enter="handleCellSave" />
                   <span v-else @dblclick="handleCellEdit(record, 'dateMonth', record.dateMonth)" class="editable-cell">
                     {{ record.dateMonth || record.prodDateStr || '-' }}
+                  </span>
+                </div>
+              </template>
+
+              <!-- 炉号列（可编辑） -->
+              <template v-else-if="column.key === 'furnaceNoFormatted'">
+                <div
+                  :class="['cell-content', getCellClass(record.id, column.key)]"
+                  @click="handleCellColor(record.id, column.key, $event)">
+                  <a-input
+                    v-if="editingCell?.id === record.id && editingCell?.field === 'furnaceNoFormatted'"
+                    v-model:value="editingValue"
+                    size="small"
+                    style="width: 185px"
+                    @blur="handleCellBlur"
+                    @press-enter="handleCellSave" />
+                  <span
+                    v-else
+                    class="editable-cell"
+                    @dblclick="handleCellEdit(record, 'furnaceNoFormatted', record.furnaceNo || record.furnaceNoFormatted)">
+                    {{ record.furnaceNo || record.furnaceNoFormatted || '-' }}
                   </span>
                 </div>
               </template>
@@ -532,6 +556,7 @@
     updatePerformance,
     updateAppearance,
     updateBaseInfo,
+    repairIntermediateDataSingleCoilWeight,
     recalculateIntermediateData,
     judgeIntermediateData,
     exportIntermediateData,
@@ -634,7 +659,7 @@
   const { getFieldPrecision } = useFormulaPrecision();
 
   // 编辑状态
-  const editingCell = ref<{ id: string; field: string } | null>(null);
+  const editingCell = ref<{ id: string; field: string; originalValue?: any } | null>(null);
   const editingValue = ref<any>(null);
 
   // 颜色选择状态
@@ -877,7 +902,7 @@
         title: '炉号',
         dataIndex: 'furnaceNoFormatted',
         key: 'furnaceNoFormatted',
-        width: 145,
+        width: 190,
         fixed: 'left',
         align: 'center',
       },
@@ -1473,7 +1498,6 @@
       'rightPatternWidth',
       'rightPatternSpacing',
       'breakCount',
-      'singleCoilWeight',
     ];
     return editableKeys.includes(key);
   }
@@ -1639,30 +1663,110 @@
 
   // 单元格编辑
   function handleCellEdit(record: any, field: string, value: any) {
-    editingCell.value = { id: record.id, field };
+    editingCell.value = { id: record.id, field, originalValue: value };
     editingValue.value = value;
+    nextTick(() => {
+      const input = document.querySelector(
+        'input'
+        + '[style*="width: 185px"], input'
+        + '[style*="width: 155px"], input'
+        + '[style*="width: 135px"]',
+      ) as HTMLInputElement | null;
+      if (!input) return;
+      input.focus();
+      const length = input.value?.length ?? 0;
+      input.setSelectionRange(length, length);
+    });
   }
 
   function handleCellBlur() {
     handleCellSave();
   }
 
+  function confirmScratchByTrailingK(furnaceNo: string) {
+    return new Promise<boolean>((resolve) => {
+      createConfirm({
+        title: '检测到炉号末尾 K',
+        content: `输入的炉号 "${furnaceNo}" 末尾包含 K。是否按刻痕数据处理？`,
+        okText: '是，按刻痕处理',
+        cancelText: '否，保留为普通后缀',
+        onOk: async () => {
+          resolve(true);
+        },
+        onCancel: async () => {
+          resolve(false);
+        },
+      });
+    });
+  }
+
   async function handleCellSave() {
     const cell = editingCell.value;
     if (!cell) return;
+
+    const nextValue = editingValue.value;
+    const originalValue = cell.originalValue;
+    const normalize = (value: any) => (typeof value === 'string' ? value.trim() : value);
+    if (normalize(nextValue) === normalize(originalValue)) {
+      editingCell.value = null;
+      editingValue.value = null;
+      return;
+    }
+
+    let payloadValue = nextValue;
+    let scratchUpdate: number | undefined;
+    if (cell.field === 'furnaceNoFormatted' && typeof nextValue === 'string') {
+      const trimmedValue = nextValue.trim();
+      if (/k$/i.test(trimmedValue)) {
+        const isScratched = await confirmScratchByTrailingK(trimmedValue);
+        if (isScratched) {
+          payloadValue = trimmedValue.slice(0, -1).trimEnd();
+          scratchUpdate = 1;
+        } else {
+          payloadValue = trimmedValue;
+          scratchUpdate = 0;
+        }
+      }
+    }
+
     // 立即清空，避免 blur + pressEnter 重复触发导致重复请求
     editingCell.value = null;
-    const payload = { id: cell.id, [cell.field]: editingValue.value };
+    const payload: Record<string, any> = { id: cell.id, [cell.field]: payloadValue };
+    if (scratchUpdate !== undefined) {
+      payload.isScratched = scratchUpdate;
+    }
     editingValue.value = null;
 
     try {
       await updateBaseInfo(payload);
-      createMessage.success('保存成功');
-      reload();
-    } catch (error) {
-      createMessage.error('保存失败');
+      if (cell.field === 'furnaceNoFormatted') {
+        createMessage.success('保存成功，正在重新计算和判定...');
+        try {
+          await recalculateIntermediateData([cell.id]);
+        } finally {
+          setTimeout(() => {
+            reload();
+          }, 800);
+        }
+      } else {
+        createMessage.success('保存成功');
+        reload();
+      }
+    } catch (error: any) {
+      createMessage.error(error?.message || '保存失败');
       editingCell.value = cell;
       editingValue.value = payload[cell.field];
+    }
+  }
+
+  async function handleRepairSingleCoilWeight() {
+    try {
+      const res = await repairIntermediateDataSingleCoilWeight();
+      const data = (res as any)?.data ?? res ?? {};
+      createMessage.success(`修复完成，处理 ${data.scannedCount || 0} 条，更新 ${data.updatedCount || 0} 条`);
+      reload();
+    } catch (error) {
+      createMessage.error('修复失败');
     }
   }
 
@@ -1682,12 +1786,11 @@
 
   // 可编辑测量值保存（根据字段类型选择API，部分字段触发判定）
   async function handleMeasurementSave(record: any, field: string, value: any) {
-    // 需要触发判定的字段（只有断头数和单卷重量需要触发判定）
-    const judgeRequiredFields = ['breakCount', 'singleCoilWeight'];
+    // 需要触发判定的字段
+    const judgeRequiredFields = ['breakCount'];
     // 所有外观相关字段使用 updateAppearance API
     const appearanceFields = [
       'breakCount',
-      'singleCoilWeight',
       'midSiLeft',
       'midSiRight',
       'midBLeft',

@@ -10,6 +10,9 @@ namespace Poxiao.Lab.Entity.Models;
 /// </summary>
 public class FurnaceNo
 {
+    private static readonly Regex ControlCharsRegex = new(@"[\t\r\n]+", RegexOptions.Compiled);
+    private static readonly Regex TrailingNoiseRegex = new(@"[，,。；;：:、·!！?？~～""'“”‘’`|｜]+$", RegexOptions.Compiled);
+
     /// <summary>
     /// 产线数字（如：1, 2, 3等）
     /// </summary>
@@ -118,13 +121,14 @@ public class FurnaceNo
         // 例如：1甲20251101-1-4-1W脆 或 1乙20251101-1-1-1
         // 卷号和分卷号支持小数：\d+(\.\d+)?
         // 特性描述限制为中文汉字、括号或空格：[\u4e00-\u9fa5\(\)\uff08\uff09\s]*
+        var normalizedInput = NormalizeInput(furnaceNo);
         var pattern =
-            @"^\s*(\d+)(.*?)(\d{8})\s*-\s*(\d+)\s*-\s*(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*([Ww]?)\s*([a-zA-Z\u4e00-\u9fa5\(\)\uff08\uff09\s]*)\s*$";
-        var match = Regex.Match(furnaceNo.Trim(), pattern);
+            @"^\s*(\d+)(.*?)(\d{8})\s*-\s*(\d+)\s*-\s*(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*([Ww]?)\s*([a-zA-Z\u4e00-\u9fa5\(\)\uff08\uff09\s，,。；;：:、·!！?？~～]*)\s*$";
+        var match = Regex.Match(normalizedInput, pattern);
 
         if (!match.Success)
         {
-            result.ErrorMessage = DiagnoseFurnaceNoFormat(furnaceNo.Trim());
+            result.ErrorMessage = DiagnoseFurnaceNoFormat(normalizedInput);
             return result;
         }
 
@@ -137,7 +141,7 @@ public class FurnaceNo
             result.CoilNo = match.Groups[5].Value; // 卷号
             result.SubcoilNo = match.Groups[6].Value; // 分卷号（必填）
             result.SpecialMarker = match.Groups[7].Value; // 特殊标记（W/w）
-            result.FeatureSuffix = match.Groups[8].Value?.Trim(); // 特性描述（可选）
+            result.FeatureSuffix = NormalizeFeatureSuffix(match.Groups[8].Value); // 特性描述（可选）
 
             // 忽略特定的非特性后缀（如复测）
             if (!string.IsNullOrEmpty(result.FeatureSuffix))
@@ -408,6 +412,8 @@ public class FurnaceNo
     /// </summary>
     private static string DiagnoseFurnaceNoFormat(string furnaceNo)
     {
+        furnaceNo = NormalizeInput(furnaceNo);
+
         if (string.IsNullOrWhiteSpace(furnaceNo))
             return "炉号为空";
 
@@ -436,7 +442,7 @@ public class FurnaceNo
         // 4. 检查日期之后的数字段（炉次号-卷号-分卷号，需要3段，用'-'分隔）
         var afterDate = furnaceNo.Substring(dateMatch.Index + 8).TrimEnd();
         // 移除末尾的 W/w 标记和汉字特性描述
-        afterDate = Regex.Replace(afterDate, @"[Ww]?[\u4e00-\u9fa5\(\)\uff08\uff09\s]*$", "").Trim();
+        afterDate = Regex.Replace(afterDate, @"[Ww]?[\u4e00-\u9fa5\(\)\uff08\uff09\s，,。；;：:、·!！?？~～]*$", "").Trim();
 
         if (!afterDate.StartsWith("-"))
             return $"生产日期后应紧跟 '-炉次号-卷号-分卷号'，当前为：'{afterDate}'";
@@ -476,6 +482,26 @@ public class FurnaceNo
 
         // 如果无法识别，返回null
         return null;
+    }
+
+    private static string NormalizeInput(string furnaceNo)
+    {
+        if (string.IsNullOrWhiteSpace(furnaceNo))
+            return furnaceNo;
+
+        var normalized = furnaceNo.Replace('\u3000', ' ').Trim();
+        normalized = ControlCharsRegex.Replace(normalized, string.Empty);
+        return normalized.Trim();
+    }
+
+    private static string NormalizeFeatureSuffix(string featureSuffix)
+    {
+        if (string.IsNullOrWhiteSpace(featureSuffix))
+            return null;
+
+        var normalized = NormalizeInput(featureSuffix);
+        normalized = TrailingNoiseRegex.Replace(normalized, string.Empty).Trim();
+        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
     }
 
     /// <summary>

@@ -1,77 +1,153 @@
 <template>
-  <!-- Cavos聊天机器人将通过脚本自动加载，不需要模板内容 -->
+  <div class="nlq-assistant-entry">
+    <a-button type="primary" class="assistant-launcher" @click="openDock">
+      智能问数
+    </a-button>
+
+    <a-drawer
+      v-model:visible="dockVisible"
+      title="实验室智能问数"
+      placement="right"
+      :width="420"
+      :mask-closable="true"
+      :destroy-on-close="false"
+      :body-style="{ padding: '0', overflow: 'hidden' }"
+      @close="dockVisible = false"
+    >
+      <template #extra>
+        <a-button type="link" @click="openFullscreen">全屏</a-button>
+      </template>
+      <iframe
+        ref="dockFrameRef"
+        class="assistant-iframe"
+        :src="dockIframeSrc"
+        frameborder="0"
+        @load="postAuthToFrame('dock')"
+      />
+    </a-drawer>
+
+    <a-drawer
+      v-model:visible="fullscreenVisible"
+      title="实验室智能问数"
+      placement="right"
+      :width="'100%'"
+      wrap-class-name="full-drawer"
+      :mask-closable="true"
+      :destroy-on-close="false"
+      :body-style="{ padding: '0', overflow: 'hidden' }"
+      @close="fullscreenVisible = false"
+    >
+      <iframe
+        ref="fullscreenFrameRef"
+        class="assistant-iframe"
+        :src="fullscreenIframeSrc"
+        frameborder="0"
+        @load="postAuthToFrame('fullscreen')"
+      />
+    </a-drawer>
+  </div>
 </template>
 
 <script setup lang="ts">
-  import { onMounted, onUnmounted } from 'vue';
+  import { computed, nextTick, ref } from 'vue';
+  import { getToken, getAuthCache } from '/@/utils/auth';
+  import { PERMISSIONS_KEY, USER_INFO_KEY } from '/@/enums/cacheEnum';
 
-  // 扩展Window接口以支持Cavos配置
-  declare global {
-    interface Window {
-      cavosChatbotConfig?: {
-        token: string;
-        agentId: string;
-        baseUrl: string;
-        buttonStyle: string;
-        windowWidth: string;
-        windowHeight: string;
-        iframeSrc: string;
-      };
-    }
+  interface UserInfo {
+    userId?: string;
+    userAccount?: string;
+    organizeId?: string;
   }
 
-  const SCRIPT_ID = '7e908f41-55d7-47b8-aa9c-36dbb6addda7';
+  interface PermissionInfo {
+    modelId?: string;
+    moduleName?: string;
+  }
 
-  onMounted(() => {
-    // 检查是否已经加载过嵌入脚本
-    if (document.getElementById(SCRIPT_ID)) {
-      return;
-    }
+  type FrameMode = 'dock' | 'fullscreen';
 
-    // 检查是否已经加载过配置
-    if (!window.cavosChatbotConfig) {
-      // 创建配置脚本
-      const configScript = document.createElement('script');
-      configScript.setAttribute('data-cavos-config', 'true');
-      configScript.textContent = `
-        window.cavosChatbotConfig = {
-          token: '7e908f41-55d7-47b8-aa9c-36dbb6addda7',
-          agentId: '7e908f41-55d7-47b8-aa9c-36dbb6addda7',
-          baseUrl: 'https://cavos.emergen.cn',
-          buttonStyle: 'siri',
-          windowWidth: '24rem',
-          windowHeight: '40rem',
-          iframeSrc: 'https://cavos.emergen.cn/chat/7e908f41-55d7-47b8-aa9c-36dbb6addda7?shared=1&from=b8cd435d-7c64-44ab-ad1a-dc9356cd6bf6&mode=drawer&sidebar=0&embed=true'
-        }
-      `;
-      document.head.appendChild(configScript);
-    }
+  const dockVisible = ref(false);
+  const fullscreenVisible = ref(false);
+  const dockFrameRef = ref<HTMLIFrameElement | null>(null);
+  const fullscreenFrameRef = ref<HTMLIFrameElement | null>(null);
+  const assistantBaseUrl = 'http://127.0.0.1:13000';
 
-    // 创建嵌入脚本
-    const embedScript = document.createElement('script');
-    embedScript.src = 'https://cavos.emergen.cn/embed.min.js';
-    embedScript.id = SCRIPT_ID;
-    embedScript.defer = true;
-    document.head.appendChild(embedScript);
-  });
+  const dockIframeSrc = computed(() => `${assistantBaseUrl}/?embed=1&mode=dock`);
+  const fullscreenIframeSrc = computed(() => `${assistantBaseUrl}/?embed=1&mode=fullscreen`);
 
-  onUnmounted(() => {
-    // 清理脚本（可选，通常不需要）
-    const configScript = document.querySelector('script[data-cavos-config]');
-    const embedScript = document.getElementById(SCRIPT_ID);
-    if (configScript) {
-      configScript.remove();
-    }
-    if (embedScript) {
-      embedScript.remove();
-    }
-    // 清理全局配置
-    if (window.cavosChatbotConfig) {
-      delete window.cavosChatbotConfig;
-    }
-  });
+  function buildPermissions(): string[] {
+    const permissionList = (getAuthCache(PERMISSIONS_KEY) || []) as PermissionInfo[];
+    return permissionList.flatMap(item => [item.moduleName, item.modelId]).filter(Boolean) as string[];
+  }
+
+  function buildAuthPayload() {
+    const token = getToken();
+    const userInfo = (getAuthCache(USER_INFO_KEY) || {}) as UserInfo;
+
+    return {
+      access_token: token,
+      token_type: 'Bearer',
+      user_id: userInfo.userId,
+      account: userInfo.userAccount,
+      tenant_id: userInfo.organizeId,
+      origin: 'embedded',
+      permissions: buildPermissions(),
+    };
+  }
+
+  function getFrameRef(mode: FrameMode) {
+    return mode === 'dock' ? dockFrameRef.value : fullscreenFrameRef.value;
+  }
+
+  function postAuthToFrame(mode: FrameMode) {
+    const frame = getFrameRef(mode);
+    const frameWindow = frame?.contentWindow;
+    if (!frameWindow) return;
+
+    frameWindow.postMessage(
+      {
+        type: 'NLQ_AUTH_CONTEXT',
+        payload: buildAuthPayload(),
+      },
+      assistantBaseUrl,
+    );
+  }
+
+  async function openDock() {
+    dockVisible.value = true;
+    await nextTick();
+    setTimeout(() => postAuthToFrame('dock'), 300);
+  }
+
+  async function openFullscreen() {
+    dockVisible.value = false;
+    fullscreenVisible.value = true;
+    await nextTick();
+    setTimeout(() => postAuthToFrame('fullscreen'), 300);
+  }
 </script>
 
 <style lang="less" scoped>
-  /* Cavos聊天机器人使用自己的样式，不需要额外样式 */
+  .nlq-assistant-entry {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 1100;
+  }
+
+  .assistant-launcher {
+    height: 48px;
+    padding: 0 18px;
+    border-radius: 999px;
+    box-shadow: 0 14px 34px rgba(24, 144, 255, 0.28);
+    font-weight: 600;
+  }
+
+  .assistant-iframe {
+    width: 100%;
+    height: calc(100vh - 110px);
+    border: 0;
+    display: block;
+    background: #fff;
+  }
 </style>

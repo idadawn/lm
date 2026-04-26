@@ -410,7 +410,8 @@ export function getImportLogDetail(id: string): Promise<any> {
 export function downloadImportFile(fileId: string): Promise<Blob> {
   return defHttp.get(
     {
-      url: Api.Prefix + '/download/' + fileId,
+      url: Api.ImportSessionPrefix + '/download',
+      params: { fileId },
       responseType: 'blob',
     },
     { isReturnNativeResponse: true }
@@ -425,7 +426,11 @@ export function deleteImportLog(id: string): Promise<void> {
 // 下载源文件
 export async function downloadSourceFile(fileId: string, fileName: string): Promise<void> {
   const response = await defHttp.get<Blob>(
-    { url: Api.Prefix + '/import-log/' + fileId + '/source-file', responseType: 'blob' },
+    {
+      url: Api.ImportSessionPrefix + '/download',
+      params: { fileId },
+      responseType: 'blob',
+    },
     { isReturnNativeResponse: true },
   );
   downloadByData((response as any).data || response, fileName);

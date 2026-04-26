@@ -39,6 +39,14 @@ SERVICES-CONFIG.local.md
 Thumbs.db
 desktop.ini
 
+# Temporary / output files
+.omc/
+.omx/
+output-*.png
+
+# Nested project with own git repo
+nlq-agent/
+
 # Logs
 logs/
 *.log

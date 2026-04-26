@@ -30,6 +30,11 @@ export function updateBaseInfo(data) {
     return defHttp.put({ url: Api.Prefix + '/base-info', data });
 }
 
+// 修复中间数据单卷重量
+export function repairIntermediateDataSingleCoilWeight() {
+    return defHttp.post({ url: Api.Prefix + '/repair-single-coil-weight' });
+}
+
 // 删除中间数据
 export function deleteIntermediateData(id: string) {
     return defHttp.delete({ url: Api.Prefix + '/' + id });

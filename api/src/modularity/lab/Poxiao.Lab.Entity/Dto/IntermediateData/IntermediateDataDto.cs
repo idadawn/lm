@@ -350,6 +350,21 @@ public class IntermediateDataBaseUpdateInput
     public string Id { get; set; }
 
     /// <summary>
+    /// 炉号（页面显示用标准炉号）.
+    /// </summary>
+    public string FurnaceNoFormatted { get; set; }
+
+    /// <summary>
+    /// 原始炉号.
+    /// </summary>
+    public string FurnaceNo { get; set; }
+
+    /// <summary>
+    /// 是否刻痕（0-否，1-是）.
+    /// </summary>
+    public int? IsScratched { get; set; }
+
+    /// <summary>
     /// 日期月份（yyyy-MM）.
     /// </summary>
     public string DateMonth { get; set; }
@@ -373,6 +388,22 @@ public class IntermediateDataBaseUpdateInput
     /// 备注.
     /// </summary>
     public string Remark { get; set; }
+}
+
+/// <summary>
+/// 单卷重量修复结果.
+/// </summary>
+public class IntermediateDataSingleCoilWeightRepairOutput
+{
+    /// <summary>
+    /// 扫描记录数.
+    /// </summary>
+    public int ScannedCount { get; set; }
+
+    /// <summary>
+    /// 修复记录数.
+    /// </summary>
+    public int UpdatedCount { get; set; }
 }
 
 /// <summary>

@@ -45,6 +45,12 @@ public interface IIntermediateDataService
     Task UpdateBaseInfo(IntermediateDataBaseUpdateInput input);
 
     /// <summary>
+    /// 根据原始数据回填单卷重量.
+    /// </summary>
+    /// <returns>修复结果</returns>
+    Task<IntermediateDataSingleCoilWeightRepairOutput> RepairSingleCoilWeight();
+
+    /// <summary>
     /// 删除中间数据.
     /// </summary>
     /// <param name="id">数据ID</param>

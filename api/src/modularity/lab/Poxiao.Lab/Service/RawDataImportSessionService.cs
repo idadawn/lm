@@ -1689,33 +1689,79 @@ public class RawDataImportSessionService
         var importStrategy = session.ImportStrategy ?? "append";
         var isOverwriteMode = string.Equals(importStrategy, "overwrite", StringComparison.OrdinalIgnoreCase);
 
-        var allFurnaceNos = validData
-            .Where(e => !string.IsNullOrEmpty(e.FurnaceNo))
-            .Select(e => e.FurnaceNo)
+        var rawMatchKeyMap = validData
+            .Select(entity => new
+            {
+                Entity = entity,
+                MatchKey = GetIntermediateImportMatchKey(entity.FurnaceNoFormatted, entity.FurnaceNo),
+            })
+            .Where(x => !string.IsNullOrWhiteSpace(x.MatchKey))
+            .ToList();
+
+        var allFurnaceNos = rawMatchKeyMap
+            .Select(x => x.MatchKey)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var importLineNos = validData
+            .Where(e => e.LineNo.HasValue)
+            .Select(e => e.LineNo!.Value)
+            .Distinct()
+            .ToList();
+        var importBatchNos = validData
+            .Where(e => e.FurnaceBatchNo.HasValue)
+            .Select(e => e.FurnaceBatchNo!.Value)
             .Distinct()
             .ToList();
 
         // 查询数据库中已存在的炉号
         var dbExistingFurnaceNos = new HashSet<string>();
+        var existingRawIdMap = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         if (allFurnaceNos.Count > 0)
         {
             var dbExisting = await _rawDataRepository
                 .AsQueryable()
-                .Where(r => allFurnaceNos.Contains(r.FurnaceNo) && r.IsValidData == 1)
-                .Select(r => r.FurnaceNo)
+                .Where(r => r.IsValidData == 1
+                    && r.LineNo.HasValue
+                    && importLineNos.Contains(r.LineNo.Value)
+                    && r.FurnaceBatchNo.HasValue
+                    && importBatchNos.Contains(r.FurnaceBatchNo.Value))
+                .Select(r => new { r.Id, r.FurnaceNoFormatted, r.FurnaceNo })
                 .ToListAsync();
-            dbExistingFurnaceNos = new HashSet<string>(dbExisting, StringComparer.OrdinalIgnoreCase);
+            dbExistingFurnaceNos = new HashSet<string>(
+                dbExisting
+                    .Select(r => GetIntermediateImportMatchKey(r.FurnaceNoFormatted, r.FurnaceNo))
+                    .Where(key => !string.IsNullOrWhiteSpace(key)),
+                StringComparer.OrdinalIgnoreCase);
+            existingRawIdMap = dbExisting
+                .Select(r => new
+                {
+                    r.Id,
+                    MatchKey = GetIntermediateImportMatchKey(r.FurnaceNoFormatted, r.FurnaceNo),
+                })
+                .Where(r => !string.IsNullOrWhiteSpace(r.MatchKey))
+                .GroupBy(r => r.MatchKey, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(x => x.Id).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList(),
+                    StringComparer.OrdinalIgnoreCase);
         }
 
         // 将 validData 分为新数据和已存在数据
-        var newData = validData.Where(e => !dbExistingFurnaceNos.Contains(e.FurnaceNo ?? "")).ToList();
-        var existingData = validData.Where(e => dbExistingFurnaceNos.Contains(e.FurnaceNo ?? "")).ToList();
+        var newData = rawMatchKeyMap
+            .Where(x => !dbExistingFurnaceNos.Contains(x.MatchKey))
+            .Select(x => x.Entity)
+            .ToList();
+        var existingData = rawMatchKeyMap
+            .Where(x => dbExistingFurnaceNos.Contains(x.MatchKey))
+            .Select(x => x.Entity)
+            .ToList();
 
         Log.Information($"[CompleteImport] 策略={importStrategy}, 新数据={newData.Count}条, 已存在数据={existingData.Count}条");
 
         // 按策略过滤中间数据：追加模式只为新数据生成，覆盖模式为所有有效数据生成
         intermediateEntities = intermediateEntities
-            .Where(ie => !dbExistingFurnaceNos.Contains(ie.FurnaceNo ?? ""))
+            .Where(ie => !dbExistingFurnaceNos.Contains(GetIntermediateImportMatchKey(ie.FurnaceNoFormatted, ie.FurnaceNo)))
             .ToList();
 
         var existingIntermediateIdMap = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
@@ -1723,13 +1769,21 @@ public class RawDataImportSessionService
         {
             var existingIntermediateItems = await _intermediateDataRepository
                 .AsQueryable()
-                .Where(it => allFurnaceNos.Contains(it.FurnaceNo))
-                .Select(it => new { it.Id, it.FurnaceNo })
+                .Where(it => it.LineNo.HasValue
+                    && importLineNos.Contains(it.LineNo.Value)
+                    && it.FurnaceBatchNo.HasValue
+                    && importBatchNos.Contains(it.FurnaceBatchNo.Value))
+                .Select(it => new { it.Id, it.FurnaceNoFormatted, it.FurnaceNo })
                 .ToListAsync();
 
             existingIntermediateIdMap = existingIntermediateItems
-                .Where(it => !string.IsNullOrWhiteSpace(it.FurnaceNo))
-                .GroupBy(it => it.FurnaceNo, StringComparer.OrdinalIgnoreCase)
+                .Select(it => new
+                {
+                    it.Id,
+                    MatchKey = GetIntermediateImportMatchKey(it.FurnaceNoFormatted, it.FurnaceNo),
+                })
+                .Where(it => !string.IsNullOrWhiteSpace(it.MatchKey))
+                .GroupBy(it => it.MatchKey, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(
                     g => g.Key,
                     g => g.Select(x => x.Id).Where(id => !string.IsNullOrWhiteSpace(id)).Distinct().ToList(),
@@ -1749,51 +1803,55 @@ public class RawDataImportSessionService
             {
                 foreach (var entity in existingData)
                 {
-                    if (string.IsNullOrEmpty(entity.FurnaceNo))
+                    var matchKey = GetIntermediateImportMatchKey(entity.FurnaceNoFormatted, entity.FurnaceNo);
+                    if (string.IsNullOrWhiteSpace(matchKey))
                         continue;
 
-                    var affected = await _sessionRepository
-                        .AsSugarClient()
-                        .Updateable<RawDataEntity>()
-                        .SetColumns(r => new RawDataEntity
-                        {
-                            DetectionDate = entity.DetectionDate,
-                            Width = entity.Width,
-                            CoilWeight = entity.CoilWeight,
-                            BreakCount = entity.BreakCount,
-                            SingleCoilWeight = entity.SingleCoilWeight,
-                            Detection1 = entity.Detection1,
-                            Detection2 = entity.Detection2,
-                            Detection3 = entity.Detection3,
-                            Detection4 = entity.Detection4,
-                            Detection5 = entity.Detection5,
-                            Detection6 = entity.Detection6,
-                            Detection7 = entity.Detection7,
-                            Detection8 = entity.Detection8,
-                            Detection9 = entity.Detection9,
-                            Detection10 = entity.Detection10,
-                            Detection11 = entity.Detection11,
-                            Detection12 = entity.Detection12,
-                            Detection13 = entity.Detection13,
-                            Detection14 = entity.Detection14,
-                            Detection15 = entity.Detection15,
-                            Detection16 = entity.Detection16,
-                            Detection17 = entity.Detection17,
-                            Detection18 = entity.Detection18,
-                            Detection19 = entity.Detection19,
-                            Detection20 = entity.Detection20,
-                            Detection21 = entity.Detection21,
-                            Detection22 = entity.Detection22,
-                            LastModifyTime = DateTime.Now,
-                            LastModifyUserId = _userManager.UserId,
-                        })
-                        .Where(r => r.FurnaceNo == entity.FurnaceNo && r.IsValidData == 1)
-                        .ExecuteCommandAsync();
+                    if (existingRawIdMap.TryGetValue(matchKey, out var rawIds) && rawIds.Count > 0)
+                    {
+                        var affected = await _sessionRepository
+                            .AsSugarClient()
+                            .Updateable<RawDataEntity>()
+                            .SetColumns(r => new RawDataEntity
+                            {
+                                DetectionDate = entity.DetectionDate,
+                                Width = entity.Width,
+                                CoilWeight = entity.CoilWeight,
+                                BreakCount = entity.BreakCount,
+                                SingleCoilWeight = entity.SingleCoilWeight,
+                                Detection1 = entity.Detection1,
+                                Detection2 = entity.Detection2,
+                                Detection3 = entity.Detection3,
+                                Detection4 = entity.Detection4,
+                                Detection5 = entity.Detection5,
+                                Detection6 = entity.Detection6,
+                                Detection7 = entity.Detection7,
+                                Detection8 = entity.Detection8,
+                                Detection9 = entity.Detection9,
+                                Detection10 = entity.Detection10,
+                                Detection11 = entity.Detection11,
+                                Detection12 = entity.Detection12,
+                                Detection13 = entity.Detection13,
+                                Detection14 = entity.Detection14,
+                                Detection15 = entity.Detection15,
+                                Detection16 = entity.Detection16,
+                                Detection17 = entity.Detection17,
+                                Detection18 = entity.Detection18,
+                                Detection19 = entity.Detection19,
+                                Detection20 = entity.Detection20,
+                                Detection21 = entity.Detection21,
+                                Detection22 = entity.Detection22,
+                                LastModifyTime = DateTime.Now,
+                                LastModifyUserId = _userManager.UserId,
+                            })
+                            .Where(r => rawIds.Contains(r.Id))
+                            .ExecuteCommandAsync();
 
-                    if (affected > 0)
-                        updatedRawCount++;
+                        if (affected > 0)
+                            updatedRawCount++;
+                    }
 
-                    if (existingIntermediateIdMap.TryGetValue(entity.FurnaceNo, out var intermediateIds) && intermediateIds.Count > 0)
+                    if (existingIntermediateIdMap.TryGetValue(matchKey, out var intermediateIds) && intermediateIds.Count > 0)
                     {
                         decimal? roundedWidth = entity.Width.HasValue ? Math.Round(entity.Width.Value, 2) : (decimal?)null;
                         var intermediateAffected = await _sessionRepository
@@ -2085,8 +2143,22 @@ public class RawDataImportSessionService
     /// <summary>
     /// 下载导入的源文件
     /// </summary>
+    [HttpGet("download")]
+    public async Task<FileResult> DownloadSourceFileByQuery([FromQuery] string fileId)
+    {
+        return await DownloadSourceFileCore(fileId);
+    }
+
+    /// <summary>
+    /// 下载导入的源文件（兼容旧路由，文件路径包含斜杠时请使用 query 参数接口）.
+    /// </summary>
     [HttpGet("download/{fileId}")]
     public async Task<FileResult> DownloadSourceFile(string fileId)
+    {
+        return await DownloadSourceFileCore(fileId);
+    }
+
+    private async Task<FileResult> DownloadSourceFileCore(string fileId)
     {
         if (string.IsNullOrWhiteSpace(fileId))
         {
@@ -2224,6 +2296,27 @@ public class RawDataImportSessionService
         );
 
         return furnaceNoObj?.GetFurnaceNo();
+    }
+
+    private static string GetIntermediateImportMatchKey(string formattedFurnaceNo, string rawFurnaceNo)
+    {
+        var key = !string.IsNullOrWhiteSpace(formattedFurnaceNo) ? formattedFurnaceNo : rawFurnaceNo;
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return null;
+        }
+
+        var parsed = FurnaceNo.TryParse(key);
+        if (parsed?.IsValid == true)
+        {
+            return FurnaceNo
+                .Build(parsed.LineNo, parsed.Shift, parsed.ProdDate, parsed.FurnaceBatchNo, parsed.CoilNo, parsed.SubcoilNo)
+                ?.GetFurnaceNo();
+        }
+
+        return Regex
+            .Replace(key.Trim(), @"[\s\t\r\n\u3000]+", string.Empty)
+            .Trim('，', ',', '。', '；', ';', '：', ':', '、', '·', '!', '！', '?', '？', '~', '～', '"', '\'', '“', '”', '‘', '’', '`', '|', '｜');
     }
 
     private string FormatFurnaceNoPart(decimal? value, string fallback)

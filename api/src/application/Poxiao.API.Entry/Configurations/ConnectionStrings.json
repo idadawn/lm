@@ -5,21 +5,21 @@
         "ConfigId": "default",
         "DBName": "lumei",
         "DBType": "MySql",
-        "Host": "192.168.1.102",
-        "Port": "3307",
+        "Host": "47.105.59.151",
+        "Port": "8930",
         "UserName": "root",
-        "Password": "Lm@Mysql#2025App",
-        "DefaultConnection": "server=192.168.1.102;Port=3307;Database={0};Uid=root;Pwd=Lm@Mysql#2025App;AllowLoadLocalInfile=true;Charset=utf8mb4;"
+        "Password": "Lm@Mysql#2025Root",
+        "DefaultConnection": "server=47.105.59.151;Port=8930;Database={0};Uid=root;Pwd=Lm@Mysql#2025Root;AllowLoadLocalInfile=true;Charset=utf8mb4;"
       },
       {
         "ConfigId": "Poxiao-Job",
         "DBName": "lumei",
         "DBType": "MySql",
-        "Host": "192.168.1.102",
-        "Port": "3307",
+        "Host": "47.105.59.151",
+        "Port": "8930",
         "UserName": "root",
-        "Password": "Lm@Mysql#2025App",
-        "DefaultConnection": "server=192.168.1.102;Port=3307;Database={0};Uid=root;Pwd=Lm@Mysql#2025App;AllowLoadLocalInfile=true;Charset=utf8mb4;"
+        "Password": "Lm@Mysql#2025Root",
+        "DefaultConnection": "server=47.105.59.151;Port=8930;Database={0};Uid=root;Pwd=Lm@Mysql#2025Root;AllowLoadLocalInfile=true;Charset=utf8mb4;"
       }
     ]
   }

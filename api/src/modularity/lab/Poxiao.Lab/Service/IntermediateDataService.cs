@@ -656,6 +656,79 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             throw Oops.Oh("数据不存在");
         }
 
+        var previousFurnaceNoFormatted = entity.FurnaceNoFormatted;
+        var previousFurnaceNo = entity.FurnaceNo;
+        var previousIsScratched = entity.IsScratched;
+        var furnaceChanged = false;
+        var scratchChanged = false;
+        var furnaceLogMessage = string.Empty;
+
+        var furnaceInput = string.IsNullOrWhiteSpace(input.FurnaceNoFormatted)
+            ? input.FurnaceNo
+            : input.FurnaceNoFormatted;
+        if (!string.IsNullOrWhiteSpace(furnaceInput))
+        {
+            var normalizedFurnaceInput = furnaceInput.Trim();
+            var furnaceNoObj = FurnaceNo.Parse(normalizedFurnaceInput);
+            if (!furnaceNoObj.IsValid)
+            {
+                throw Oops.Oh($"炉号格式不正确：{furnaceNoObj.ErrorMessage}");
+            }
+
+            var formattedFurnaceNo = furnaceNoObj.GetFurnaceNo();
+            var duplicateExists = await _repository
+                .AsQueryable()
+                .Where(t => t.Id != entity.Id
+                    && t.DeleteMark == null
+                    && t.FurnaceNoFormatted == formattedFurnaceNo)
+                .AnyAsync();
+            if (duplicateExists)
+            {
+                throw Oops.Oh($"炉号 {formattedFurnaceNo} 已存在，不能重复");
+            }
+
+            if (!string.IsNullOrWhiteSpace(entity.RawDataId))
+            {
+                var rawDuplicateExists = await _rawDataRepository
+                    .AsQueryable()
+                    .Where(t => t.Id != entity.RawDataId
+                        && t.DeleteMark == null
+                        && t.FurnaceNoFormatted == formattedFurnaceNo)
+                    .AnyAsync();
+                if (rawDuplicateExists)
+                {
+                    throw Oops.Oh($"原始数据中已存在炉号 {formattedFurnaceNo}，不能重复");
+                }
+            }
+
+            ApplyParsedFurnaceFields(entity, normalizedFurnaceInput, furnaceNoObj);
+            furnaceChanged = !string.Equals(previousFurnaceNoFormatted, entity.FurnaceNoFormatted, StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(previousFurnaceNo, entity.FurnaceNo, StringComparison.Ordinal);
+
+            if (furnaceChanged)
+            {
+                furnaceLogMessage =
+                    $"修改炉号：{previousFurnaceNoFormatted ?? previousFurnaceNo ?? "-"} -> {entity.FurnaceNoFormatted}";
+            }
+        }
+
+        if (input.IsScratched.HasValue)
+        {
+            scratchChanged = previousIsScratched != input.IsScratched.Value;
+            entity.IsScratched = input.IsScratched.Value;
+        }
+
+        if (furnaceChanged || scratchChanged)
+        {
+            entity.CalcStatus = IntermediateDataCalcStatus.PENDING;
+            entity.CalcStatusTime = DateTime.Now;
+            entity.CalcErrorMessage = null;
+            entity.JudgeStatus = IntermediateDataCalcStatus.PENDING;
+            entity.JudgeStatusTime = DateTime.Now;
+            entity.JudgeErrorMessage = null;
+            entity.Labeling = null;
+        }
+
         entity.MagneticResult = input.MagneticResult;
         entity.ThicknessResult = input.ThicknessResult;
         entity.LaminationResult = input.LaminationResult;
@@ -663,13 +736,110 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         entity.LastModifyTime = DateTime.Now;
 
         await _repository.UpdateAsync(entity);
+
+        if (furnaceChanged && !string.IsNullOrWhiteSpace(entity.RawDataId))
+        {
+            var rawData = await _rawDataRepository
+                .AsQueryable()
+                .Where(t => t.Id == entity.RawDataId && t.DeleteMark == null)
+                .FirstAsync();
+            if (rawData != null)
+            {
+                var rawFurnaceNoObj = FurnaceNo.Parse(entity.FurnaceNo);
+                if (rawFurnaceNoObj.IsValid)
+                {
+                    rawData.FurnaceNo = entity.FurnaceNo;
+                    rawData.FurnaceNoFormatted = entity.FurnaceNoFormatted;
+                    rawData.LineNo = entity.LineNo;
+                    rawData.Shift = entity.Shift;
+                    rawData.ShiftNumeric = entity.ShiftNumeric;
+                    rawData.ProdDate = entity.ProdDate;
+                    rawData.FurnaceBatchNo = entity.FurnaceBatchNo;
+                    rawData.CoilNo = entity.CoilNo;
+                    rawData.SubcoilNo = entity.SubcoilNo;
+                    rawData.FeatureSuffix = rawFurnaceNoObj.FeatureSuffix;
+                    rawData.SpecialMarker = rawFurnaceNoObj.SpecialMarker;
+                    rawData.LastModifyUserId = _userManager.UserId;
+                    rawData.LastModifyTime = DateTime.Now;
+                    await _rawDataRepository.UpdateAsync(rawData);
+                }
+            }
+        }
+
         var furnaceNoBase = entity.FurnaceNoFormatted ?? entity.Id;
+        var baseLogAbstract = furnaceChanged
+            ? furnaceLogMessage
+            : $"编辑基础信息：炉号 {furnaceNoBase}";
+        if (furnaceChanged && scratchChanged)
+        {
+            baseLogAbstract += $"；是否刻痕 {previousIsScratched ?? 0} -> {entity.IsScratched ?? 0}";
+        }
+        else if (!furnaceChanged && scratchChanged)
+        {
+            baseLogAbstract = $"修改是否刻痕：炉号 {furnaceNoBase}，{previousIsScratched ?? 0} -> {entity.IsScratched ?? 0}";
+        }
+
+        var logParts = new List<string>();
+        if (furnaceChanged)
+        {
+            logParts.Add($"原始炉号：{previousFurnaceNo ?? "-"}；标准炉号：{previousFurnaceNoFormatted ?? "-"} -> {entity.FurnaceNoFormatted ?? "-"}");
+        }
+        if (scratchChanged)
+        {
+            logParts.Add($"是否刻痕：{previousIsScratched ?? 0} -> {entity.IsScratched ?? 0}");
+        }
+
         await PublishOpLogAsync(
-            $"编辑基础信息：炉号 {furnaceNoBase}",
+            baseLogAbstract,
             "中间数据",
             entity.Id,
-            json: null,
+            logParts.Count > 0 ? string.Join("；", logParts) : null,
             furnaceNo: furnaceNoBase);
+    }
+
+    /// <inheritdoc />
+    [HttpPost("repair-single-coil-weight")]
+    public async Task<IntermediateDataSingleCoilWeightRepairOutput> RepairSingleCoilWeight()
+    {
+        var candidates = await _repository
+            .AsSugarClient()
+            .Queryable<IntermediateDataEntity, RawDataEntity>(
+                (i, r) => new JoinQueryInfos(JoinType.Left, i.RawDataId == r.Id)
+            )
+            .Where((i, r) => i.DeleteMark == null
+                && r.DeleteMark == null
+                && (!i.SingleCoilWeight.HasValue || i.SingleCoilWeight.Value <= 0)
+                && r.SingleCoilWeight.HasValue
+                && r.SingleCoilWeight.Value > 0)
+            .Select((i, r) => new
+            {
+                i.Id,
+                Weight = r.SingleCoilWeight,
+            })
+            .ToListAsync();
+
+        foreach (var item in candidates)
+        {
+            if (string.IsNullOrWhiteSpace(item.Id) || !item.Weight.HasValue)
+            {
+                continue;
+            }
+
+            await _repository
+                .AsSugarClient()
+                .Updateable<IntermediateDataEntity>()
+                .SetColumns(i => i.SingleCoilWeight == item.Weight.Value)
+                .SetColumns(i => i.LastModifyUserId == _userManager.UserId)
+                .SetColumns(i => i.LastModifyTime == DateTime.Now)
+                .Where(i => i.Id == item.Id)
+                .ExecuteCommandAsync();
+        }
+
+        return new IntermediateDataSingleCoilWeightRepairOutput
+        {
+            ScannedCount = candidates.Count,
+            UpdatedCount = candidates.Count,
+        };
     }
 
     /// <inheritdoc />
@@ -2674,6 +2844,30 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
             .ThenBy(t => t.SubcoilNo ?? decimal.MaxValue)
             .ThenBy(t => t.LineNo ?? int.MaxValue)
             .ToList();
+    }
+
+    private static void ApplyParsedFurnaceFields(
+        IntermediateDataEntity entity,
+        string furnaceInput,
+        FurnaceNo furnaceNoObj)
+    {
+        entity.FurnaceNo = furnaceInput;
+        entity.FurnaceNoFormatted = furnaceNoObj.GetFurnaceNo();
+        entity.LineNo = furnaceNoObj.LineNoNumeric;
+        entity.Shift = furnaceNoObj.Shift;
+        entity.ShiftNumeric = furnaceNoObj.ShiftNumeric;
+        entity.ProdDate = furnaceNoObj.ProdDate ?? entity.ProdDate;
+        entity.FurnaceBatchNo = furnaceNoObj.FurnaceBatchNoNumeric;
+        entity.CoilNo = furnaceNoObj.CoilNoNumeric;
+        entity.SubcoilNo = furnaceNoObj.SubcoilNoNumeric;
+        entity.FeatureSuffix = furnaceNoObj.FeatureSuffix;
+
+        entity.SprayNo = furnaceNoObj.IsValid
+            ? furnaceNoObj.GetSprayNo()
+            : $"{entity.ProdDate:yyyyMMdd}-{entity.FurnaceBatchNo}";
+        entity.ShiftNo = furnaceNoObj.IsValid
+            ? furnaceNoObj.GetBatchNo()
+            : $"{entity.LineNo}{entity.Shift}{entity.ProdDate:yyyyMMdd}-{entity.FurnaceBatchNo}";
     }
 
     #endregion

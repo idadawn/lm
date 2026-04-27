@@ -56,18 +56,46 @@ if (-not (Test-Path -Path $ApkPath)) {
 
 # 自动读取 manifest.json 版本号（如果未手动指定）
 $manifestPath = Join-Path $PSScriptRoot "..\manifest.json"
-if (([string]::IsNullOrEmpty($BuildVersion) -or [string]::IsNullOrEmpty($BuildVersionNo)) -and (Test-Path $manifestPath)) {
+$manifestVersion = ""
+$manifestVersionCode = ""
+$manifestMtime = $null
+
+if (Test-Path $manifestPath) {
     try {
         $manifest = Get-Content -Raw -Path $manifestPath | ConvertFrom-Json
-        if ([string]::IsNullOrEmpty($BuildVersion) -and $manifest.versionName) {
-            $BuildVersion = $manifest.versionName
+        $manifestVersion = $manifest.versionName
+        $manifestVersionCode = [string]$manifest.versionCode
+        $manifestMtime = (Get-ItemProperty -Path $manifestPath).LastWriteTime
+        if ([string]::IsNullOrEmpty($BuildVersion) -and $manifestVersion) {
+            $BuildVersion = $manifestVersion
         }
-        if ([string]::IsNullOrEmpty($BuildVersionNo) -and $manifest.versionCode) {
-            $BuildVersionNo = [string]$manifest.versionCode
+        if ([string]::IsNullOrEmpty($BuildVersionNo) -and $manifestVersionCode) {
+            $BuildVersionNo = $manifestVersionCode
         }
     }
     catch {
         Write-Warning "读取 manifest.json 失败: $_"
+    }
+}
+
+# 校验 APK 是否为最新版本（对比修改时间）
+$apkMtime = (Get-ItemProperty -Path $ApkPath).LastWriteTime
+if ($manifestMtime -and $apkMtime -lt $manifestMtime) {
+    Write-Host ""
+    Write-Host "⚠️ 警告: APK 文件可能不是最新版本!" -ForegroundColor Red
+    Write-Host "   manifest.json 修改时间: $manifestMtime (版本 $manifestVersion)" -ForegroundColor Yellow
+    Write-Host "   APK 文件修改时间    : $apkMtime" -ForegroundColor Yellow
+    Write-Host "   APK 修改时间早于 manifest.json，说明这是旧版本 APK。" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "可能原因:" -ForegroundColor White
+    Write-Host "   1. 云打包尚未完成或未重新打包" -ForegroundColor White
+    Write-Host "   2. 新的 APK 生成在其他路径（如 unpackage/release/apk/）" -ForegroundColor White
+    Write-Host "   3. 使用的是之前残留的 android.apk" -ForegroundColor White
+    Write-Host ""
+    $continueUpload = Read-Host "是否仍要继续上传此旧 APK? (y/n，默认 n)"
+    if ($continueUpload -ne 'y' -and $continueUpload -ne 'Y') {
+        Write-Host "已取消上传。请确认云打包完成后再试。" -ForegroundColor Yellow
+        exit 0
     }
 }
 

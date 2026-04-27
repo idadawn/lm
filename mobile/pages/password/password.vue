@@ -67,7 +67,7 @@ import { ref, onMounted } from 'vue'
 import { updatePasswordApi } from '@/api/user.js'
 import { clearAuth } from '@/utils/storage.js'
 import { md5 } from '@/utils/md5.js'
-import { API_BASE_URL } from '@/utils/http.js'
+import { getCurrentBaseUrl } from '@/utils/http.js'
 
 const form = ref({
   oldPassword: '',
@@ -83,7 +83,7 @@ const submitting = ref(false)
 function refreshCode() {
   const ts = Date.now()
   timestamp.value = ts
-  codeImgUrl.value = API_BASE_URL + '/api/file/ImageCode/4/' + ts + '?t=' + ts
+  codeImgUrl.value = getCurrentBaseUrl() + '/api/oauth/ImageCode/4/' + ts + '?t=' + ts
 }
 
 function validate() {

@@ -35,6 +35,13 @@
           <text class="menu-label">修改密码</text>
           <text class="menu-arrow">›</text>
         </view>
+        <view class="menu-item" @click="configApi">
+          <view class="menu-icon" style="background: #e6fffb; color: #13c2c2;">
+            <text class="menu-icon-text">接</text>
+          </view>
+          <text class="menu-label">接口配置</text>
+          <text class="menu-arrow">›</text>
+        </view>
         <view class="menu-item" @click="clearCache">
           <view class="menu-icon" style="background: #f6ffed; color: #52c41a;">
             <text class="menu-icon-text">清</text>
@@ -76,7 +83,7 @@ import { onShow } from '@dcloudio/uni-app'
 import { getUserInfo, clearAuth } from '@/utils/storage.js'
 import { doLogoutApi } from '@/api/user.js'
 import { checkUpdate } from '@/utils/update.js'
-import { API_BASE_URL } from '@/utils/http.js'
+import { getCurrentBaseUrl } from '@/utils/http.js'
 
 const userInfo = ref({})
 const appVersion = ref('1.0.0')
@@ -90,7 +97,7 @@ const headIconUrl = computed(() => {
   const icon = userInfo.value.headIcon || ''
   if (!icon) return ''
   if (icon.startsWith('http')) return icon
-  return API_BASE_URL + icon
+  return getCurrentBaseUrl() + icon
 })
 
 function loadUserInfo() {
@@ -98,9 +105,19 @@ function loadUserInfo() {
   if (info) {
     userInfo.value = info
   }
+  // 获取版本号：APP-PLUS 优先用 plus.runtime.getProperty（支持 wgt 热更新后版本）
   // #ifdef APP-PLUS
-  const baseInfo = uni.getAppBaseInfo()
-  appVersion.value = baseInfo.appVersion || '1.0.0'
+  plus.runtime.getProperty(plus.runtime.appid, (wgtinfo) => {
+    appVersion.value = wgtinfo?.version || '1.0.0'
+  })
+  // #endif
+  // #ifndef APP-PLUS
+  try {
+    const baseInfo = uni.getAppBaseInfo ? uni.getAppBaseInfo() : {}
+    appVersion.value = baseInfo?.appVersion || '1.0.0'
+  } catch (e) {
+    appVersion.value = '1.0.0'
+  }
   // #endif
 }
 
@@ -110,6 +127,10 @@ function goProfile() {
 
 function goPassword() {
   uni.navigateTo({ url: '/pages/password/password' })
+}
+
+function configApi() {
+  uni.navigateTo({ url: '/pages/server/server' })
 }
 
 function clearCache() {

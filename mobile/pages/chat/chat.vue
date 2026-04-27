@@ -1,18 +1,167 @@
 <template>
   <view class="chat-page">
-    <view class="chat-empty">
-      <text class="chat-empty-title">智能对话助手</text>
-      <text class="chat-empty-desc">支持自然语言查询检测数据、分析趋势、生成报表</text>
-      <view class="chat-start-btn" @click="startChat">
-        <text>开始对话</text>
+    <!-- 消息列表 -->
+    <scroll-view
+      class="chat-list"
+      scroll-y
+      :scroll-into-view="scrollToView"
+      :scroll-with-animation="true"
+    >
+      <view class="chat-welcome" v-if="messages.length === 0">
+        <view class="welcome-icon">
+          <text class="welcome-icon-text">智</text>
+        </view>
+        <text class="welcome-title">智能对话助手</text>
+        <text class="welcome-desc">支持自然语言查询检测数据、分析趋势、生成报表</text>
+        <view class="quick-actions">
+          <view
+            class="quick-tag"
+            v-for="(tag, idx) in quickTags"
+            :key="idx"
+            @click="sendQuick(tag)"
+          >
+            <text>{{ tag }}</text>
+          </view>
+        </view>
+      </view>
+
+      <view
+        v-for="(msg, index) in messages"
+        :key="index"
+        :id="'msg-' + index"
+        class="msg-row"
+        :class="msg.role"
+      >
+        <view class="msg-avatar" v-if="msg.role === 'assistant'">
+          <text class="msg-avatar-text">AI</text>
+        </view>
+        <view class="msg-bubble">
+          <text class="msg-text">{{ msg.content }}</text>
+        </view>
+        <view class="msg-avatar user-avatar" v-if="msg.role === 'user'">
+          <text class="msg-avatar-text">我</text>
+        </view>
+      </view>
+
+      <!-- 推理链 -->
+      <view v-if="reasoningSteps.length > 0" class="reasoning-wrap">
+        <kg-reasoning-chain :steps="reasoningSteps" :default-open="false" />
+      </view>
+
+      <!-- 加载中 -->
+      <view v-if="loading" class="msg-row assistant">
+        <view class="msg-avatar">
+          <text class="msg-avatar-text">AI</text>
+        </view>
+        <view class="msg-bubble loading-bubble">
+          <view class="typing-dot"></view>
+          <view class="typing-dot"></view>
+          <view class="typing-dot"></view>
+        </view>
+      </view>
+
+      <view id="chat-bottom"></view>
+    </scroll-view>
+
+    <!-- 输入区 -->
+    <view class="input-bar">
+      <input
+        class="chat-input"
+        v-model="inputText"
+        placeholder="输入问题..."
+        :disabled="loading"
+        confirm-type="send"
+        @confirm="sendMessage"
+      />
+      <view
+        class="send-btn"
+        :class="{ active: inputText.trim() && !loading }"
+        @click="sendMessage"
+      >
+        <text class="send-btn-text">发送</text>
       </view>
     </view>
   </view>
 </template>
 
 <script setup>
-function startChat() {
-  uni.showToast({ title: '功能开发中', icon: 'none' })
+import { ref, computed, nextTick } from 'vue'
+import { streamNlqChat } from '@/utils/sse-client.js'
+import KgReasoningChain from '@/components/kg-reasoning-chain/kg-reasoning-chain.vue'
+
+const messages = ref([])
+const inputText = ref('')
+const loading = ref(false)
+const reasoningSteps = ref([])
+const scrollToView = ref('')
+
+const quickTags = [
+  '本月合格率是多少？',
+  '叠片系数趋势如何？',
+  '最近有哪些不合格项？',
+  '今天产量多少？'
+]
+
+function scrollToBottom() {
+  nextTick(() => {
+    scrollToView.value = 'chat-bottom'
+    setTimeout(() => {
+      scrollToView.value = ''
+    }, 300)
+  })
+}
+
+function sendQuick(text) {
+  inputText.value = text
+  sendMessage()
+}
+
+function sendMessage() {
+  const text = inputText.value.trim()
+  if (!text || loading.value) return
+
+  messages.value.push({ role: 'user', content: text })
+  inputText.value = ''
+  loading.value = true
+  reasoningSteps.value = []
+  scrollToBottom()
+
+  let assistantContent = ''
+  const currentIndex = messages.value.length
+
+  // 先占位
+  messages.value.push({ role: 'assistant', content: '' })
+
+  streamNlqChat(
+    {
+      messages: [{ role: 'user', content: text }],
+      session_id: `mobile-${Date.now()}`
+    },
+    {
+      onText: (chunk) => {
+        assistantContent += chunk
+        messages.value[currentIndex].content = assistantContent
+        scrollToBottom()
+      },
+      onReasoningStep: (step) => {
+        reasoningSteps.value.push(step)
+      },
+      onResponseMetadata: (payload) => {
+        if (Array.isArray(payload.reasoning_steps) && payload.reasoning_steps.length > 0) {
+          reasoningSteps.value = payload.reasoning_steps.slice()
+        }
+      },
+      onError: (err) => {
+        messages.value[currentIndex].content = '请求出错：' + (err.message || '未知错误')
+        loading.value = false
+        scrollToBottom()
+      },
+      onDone: () => {
+        loading.value = false
+        scrollToBottom()
+      }
+    }
+  )
 }
 </script>
 
@@ -21,39 +170,210 @@ function startChat() {
   min-height: 100vh;
   background: #f7f9fc;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
+  flex-direction: column;
   box-sizing: border-box;
 }
 
-.chat-empty {
+.chat-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+/* 欢迎页 */
+.chat-welcome {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
   text-align: center;
 }
 
-.chat-empty-title {
+.welcome-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1890ff, #40a9ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+}
+
+.welcome-icon-text {
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.welcome-title {
   font-size: 20px;
   font-weight: 700;
   color: #262626;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
-.chat-empty-desc {
+.welcome-desc {
   font-size: 14px;
   color: #8c8c8c;
   line-height: 1.6;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
-.chat-start-btn {
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.quick-tag {
+  background: #ffffff;
+  border: 1px solid #e4e7ed;
+  border-radius: 16px;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: #595959;
+  transition: all 0.2s;
+}
+
+.quick-tag:active {
+  background: #e6f7ff;
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+/* 消息 */
+.msg-row {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.msg-row.user {
+  justify-content: flex-end;
+}
+
+.msg-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   background: linear-gradient(135deg, #1890ff, #40a9ff);
-  color: #ffffff;
-  padding: 12px 40px;
-  border-radius: 24px;
-  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+
+.user-avatar {
+  background: linear-gradient(135deg, #52c41a, #73d13d);
+  margin-right: 0;
+  margin-left: 8px;
+}
+
+.msg-avatar-text {
+  font-size: 12px;
   font-weight: 600;
+  color: #ffffff;
+}
+
+.msg-bubble {
+  max-width: 70%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.msg-row.user .msg-bubble {
+  background: #e6f7ff;
+}
+
+.msg-text {
+  font-size: 14px;
+  color: #262626;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.loading-bubble {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 16px;
+}
+
+.typing-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #bfbfbf;
+  animation: typing-bounce 1.4s infinite ease-in-out both;
+}
+
+.typing-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes typing-bounce {
+  0%, 80%, 100% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* 推理链包裹 */
+.reasoning-wrap {
+  margin-bottom: 16px;
+  padding: 0 40px;
+}
+
+/* 输入栏 */
+.input-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px  calc(10px + env(safe-area-inset-bottom));
+  background: #ffffff;
+  border-top: 1px solid #f0f0f0;
+}
+
+.chat-input {
+  flex: 1;
+  height: 40px;
+  background: #f5f7fa;
+  border-radius: 20px;
+  padding: 0 16px;
+  font-size: 14px;
+  color: #262626;
+}
+
+.send-btn {
+  padding: 8px 18px;
+  border-radius: 20px;
+  background: #d9d9d9;
+  transition: background 0.2s;
+}
+
+.send-btn.active {
+  background: linear-gradient(135deg, #1890ff, #40a9ff);
+}
+
+.send-btn-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
 }
 </style>

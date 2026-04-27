@@ -111,6 +111,8 @@ import { getUserSettingInfoApi, updateUserInfoApi, uploadAvatarFile, updateAvata
 import { API_BASE_URL } from '@/utils/http.js'
 
 const genderOptions = ['男', '女', '保密']
+const genderMap = { '1': '男', '2': '女', '3': '保密' }
+const genderMapReverse = { '男': '1', '女': '2', '保密': '3' }
 
 const userInfo = ref({})
 const accountInfo = ref({})
@@ -125,8 +127,13 @@ const form = ref({
 })
 
 const genderIndex = computed(() => {
-  const idx = genderOptions.indexOf(form.value.gender)
-  return idx >= 0 ? idx : 0
+  const val = form.value.gender
+  const idx = genderOptions.indexOf(val)
+  if (idx >= 0) return idx
+  // 兼容数字
+  const mapped = genderMap[String(val)]
+  if (mapped) return genderOptions.indexOf(mapped)
+  return 0
 })
 
 const avatarText = computed(() => {
@@ -178,7 +185,9 @@ async function loadData() {
 
     // 填充可编辑表单
     form.value.realName = data.realName || ''
-    form.value.gender = data.gender || ''
+    // 性别兼容数字映射
+    const g = data.gender || ''
+    form.value.gender = genderMap[String(g)] || g
     form.value.mobilePhone = data.mobilePhone || ''
     form.value.email = data.email || ''
     form.value.postalAddress = data.postalAddress || ''
@@ -233,7 +242,7 @@ async function handleSave() {
   try {
     const payload = {
       realName: form.value.realName,
-      gender: form.value.gender,
+      gender: genderMapReverse[form.value.gender] || form.value.gender,
       mobilePhone: form.value.mobilePhone,
       email: form.value.email,
       postalAddress: form.value.postalAddress

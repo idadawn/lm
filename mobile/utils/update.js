@@ -1,14 +1,15 @@
 import { get } from './http.js'
+import { checkPgyerUpdate } from './update-pgyer.js'
 
 // ==================== 更新源配置 ====================
 // 支持 'backend'（自建后端）或 'pgyer'（蒲公英）
-export const UPDATE_SOURCE = 'backend'
+export const UPDATE_SOURCE = 'pgyer'
 
 // 蒲公英配置（仅在 UPDATE_SOURCE = 'pgyer' 时生效）
 // 请前往 https://www.pgyer.com 注册并获取以下 Key
 export const PGYER_CONFIG = {
-  _api_key: '',   // 蒲公英 API Key
-  appKey: ''      // 应用 Key
+  _api_key: '883505be5ccf18ad1b06a732beab5620',   // 蒲公英 API Key
+  appKey: 'b11d87be80e350458bd4734d65bcc462'      // 应用 Key
 }
 
 // ==================== 自建后端更新 ====================
@@ -16,10 +17,19 @@ const CHECK_URL = '/api/app/version'
 
 export function checkUpdate() {
   // #ifdef APP-PLUS
-  const systemInfo = uni.getAppBaseInfo()
-  const currentVersion = systemInfo.appVersion || '1.0.0'
-  const currentVersionCode = parseInt(systemInfo.appVersionCode || '100')
+  // 优先使用 plus.runtime.getProperty 获取准确版本（支持 wgt 热更新后版本）
+  plus.runtime.getProperty(plus.runtime.appid, (wgtinfo) => {
+    const currentVersion = wgtinfo?.version || '1.0.0'
+    const currentVersionCode = parseInt(wgtinfo?.versionCode || '100')
+    doCheckUpdate(currentVersion, currentVersionCode)
+  })
+  // #endif
+  // #ifndef APP-PLUS
+  uni.showToast({ title: '检查更新仅在 APP 中支持', icon: 'none' })
+  // #endif
+}
 
+function doCheckUpdate(currentVersion, currentVersionCode) {
   // 根据配置选择更新源
   if (UPDATE_SOURCE === 'pgyer' && PGYER_CONFIG._api_key && PGYER_CONFIG.appKey) {
     checkUpdateByPgyer(currentVersion, currentVersionCode)
@@ -58,7 +68,6 @@ export function checkUpdate() {
   }).catch(() => {
     uni.showToast({ title: '检查更新失败', icon: 'none' })
   })
-  // #endif
 }
 
 function doUpdate(downloadUrl) {
@@ -96,36 +105,34 @@ function doUpdate(downloadUrl) {
 // ==================== 蒲公英更新 ====================
 function checkUpdateByPgyer(currentVersion, currentVersionCode) {
   // #ifdef APP-PLUS
-  import('./update-pgyer.js').then((mod) => {
-    mod.checkPgyerUpdate({
-      currentVersion,
-      currentVersionCode,
-      config: PGYER_CONFIG,
-      onUpdate: (info) => {
-        const { latestVersion, downloadUrl, forceUpdate, updateLog } = info
-        const content = `最新版本: ${latestVersion}\n${updateLog || '发现新版本，建议立即更新。'}`
-        uni.showModal({
-          title: '发现新版本',
-          content,
-          showCancel: !forceUpdate,
-          confirmText: '立即更新',
-          cancelText: '稍后更新',
-          success: (modalRes) => {
-            if (modalRes.confirm) {
-              doUpdate(downloadUrl)
-            } else if (forceUpdate) {
-              plus.runtime.quit()
-            }
+  checkPgyerUpdate({
+    currentVersion,
+    currentVersionCode,
+    config: PGYER_CONFIG,
+    onUpdate: (info) => {
+      const { latestVersion, downloadUrl, forceUpdate, updateLog } = info
+      const content = `最新版本: ${latestVersion}\n${updateLog || '发现新版本，建议立即更新。'}`
+      uni.showModal({
+        title: '发现新版本',
+        content,
+        showCancel: !forceUpdate,
+        confirmText: '立即更新',
+        cancelText: '稍后更新',
+        success: (modalRes) => {
+          if (modalRes.confirm) {
+            doUpdate(downloadUrl)
+          } else if (forceUpdate) {
+            plus.runtime.quit()
           }
-        })
-      },
-      onNoUpdate: () => {
-        uni.showToast({ title: '当前已是最新版本', icon: 'none' })
-      },
-      onError: () => {
-        uni.showToast({ title: '检查更新失败', icon: 'none' })
-      }
-    })
+        }
+      })
+    },
+    onNoUpdate: () => {
+      uni.showToast({ title: '当前已是最新版本', icon: 'none' })
+    },
+    onError: () => {
+      uni.showToast({ title: '检查更新失败', icon: 'none' })
+    }
   })
   // #endif
 }

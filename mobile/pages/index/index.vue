@@ -34,22 +34,26 @@
     </view>
 
     <!-- KPI 卡片 -->
-    <view class="kpi-section" v-if="totalWeight > 0 || loading">
-      <view class="kpi-card">
+    <view class="kpi-section" v-if="totalWeight > 0 || loading" :class="{ 'kpi-loaded': !loading }">
+      <view class="kpi-card kpi-card--weight" @click="onKpiClick('weight')">
+        <view class="kpi-top-icon kpi-top-icon--weight"></view>
         <text class="kpi-value">{{ formatNumber(totalWeight) }}</text>
         <text class="kpi-label">检测总重量(kg)</text>
       </view>
-      <view class="kpi-card">
+      <view class="kpi-card kpi-card--check" @click="onKpiClick('check')">
+        <view class="kpi-top-icon kpi-top-icon--check"></view>
         <text class="kpi-value" :style="{ color: getRateColor(qualifiedRate) }">
           {{ qualifiedRate.toFixed(2) }}%
         </text>
         <text class="kpi-label">合格率</text>
       </view>
-      <view class="kpi-card">
+      <view class="kpi-card kpi-card--chart" @click="onKpiClick('chart')">
+        <view class="kpi-top-icon kpi-top-icon--chart"></view>
         <text class="kpi-value">{{ laminationAvg.toFixed(4) }}</text>
         <text class="kpi-label">叠片系数均值</text>
       </view>
-      <view class="kpi-card">
+      <view class="kpi-card kpi-card--trend" @click="onKpiClick('trend')">
+        <view class="kpi-top-icon kpi-top-icon--trend"></view>
         <text class="kpi-value">{{ formatNumber(todayWeight) }}</text>
         <text class="kpi-label">今日产量(kg)</text>
         <text class="kpi-change" :class="changeRate >= 0 ? 'up' : 'down'">
@@ -59,7 +63,7 @@
     </view>
 
     <!-- 质量分布 -->
-    <view class="section-card" v-if="distributionList.length > 0">
+    <view class="section-card section-card--distribution" v-if="distributionList.length > 0" :style="cardStyle(0)">
       <view class="section-header">
         <text class="section-title">质量分布</text>
       </view>
@@ -77,7 +81,7 @@
     </view>
 
     <!-- 叠片系数趋势 -->
-    <view class="section-card" v-if="laminationTrendData.length > 0">
+    <view class="section-card section-card--trend" v-if="laminationTrendData.length > 0" :style="cardStyle(1)">
       <view class="section-header">
         <text class="section-title">叠片系数趋势</text>
       </view>
@@ -91,7 +95,7 @@
     </view>
 
     <!-- 不合格 Top5 -->
-    <view class="section-card" v-if="unqualifiedTop5.length > 0">
+    <view class="section-card section-card--top5" v-if="unqualifiedTop5.length > 0" :style="cardStyle(2)">
       <view class="section-header">
         <text class="section-title">不合格原因 Top5</text>
       </view>
@@ -108,7 +112,7 @@
     </view>
 
     <!-- 班次对比 -->
-    <view class="section-card" v-if="shiftComparisonData.length > 0">
+    <view class="section-card section-card--shift" v-if="shiftComparisonData.length > 0" :style="cardStyle(3)">
       <view class="section-header">
         <text class="section-title">班次对比</text>
       </view>
@@ -124,7 +128,7 @@
     </view>
 
     <!-- 厚度-叠片系数关联 -->
-    <view class="section-card" v-if="thicknessCorrelationData.length > 0">
+    <view class="section-card section-card--correlation" v-if="thicknessCorrelationData.length > 0" :style="cardStyle(4)">
       <view class="section-header">
         <text class="section-title">厚度-叠片系数关联</text>
       </view>
@@ -270,6 +274,24 @@ function getRateColor(rate) {
   return '#f5222d'
 }
 
+const animTick = ref(0)
+
+function cardStyle(index) {
+  const delay = index * 80
+  return {
+    animation: `card-enter 0.6s ease ${delay}ms both`,
+    '--anim-tick': animTick.value
+  }
+}
+
+function onKpiClick(type) {
+  // KPI 卡片点击微交互：轻微震动反馈
+  // #ifdef APP-PLUS
+  if (uni.vibrateShort) uni.vibrateShort({ type: 'light' })
+  // #endif
+  console.log('[Dashboard] KPI clicked:', type)
+}
+
 function onStartDateChange(e) {
   const val = e.detail.value
   if (val && val !== startDate.value) {
@@ -373,6 +395,7 @@ async function fetchData(force = false) {
 
     // 请求成功后标记缓存
     cacheDateRange.value = rangeKey
+    animTick.value++
 
     nextTick(() => {
       drawTrendChart()
@@ -555,10 +578,10 @@ onPullDownRefresh(() => {
 <style lang="scss">
 .dashboard-page {
   min-height: 100vh;
-  background: #f7f9fc;
-  padding: 12px;
-  padding-bottom: constant(safe-area-inset-bottom);
-  padding-bottom: env(safe-area-inset-bottom);
+  background: linear-gradient(180deg, #e6f7ff 0%, #f7f9fc 240px);
+  padding: 16px 12px 12px;
+  padding-bottom: calc(12px + constant(safe-area-inset-bottom));
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
 
@@ -569,8 +592,8 @@ onPullDownRefresh(() => {
   background: #ffffff;
   border-radius: 12px;
   padding: 12px 16px;
-  margin-bottom: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.08);
 }
 
 .date-picker-group {
@@ -609,17 +632,77 @@ onPullDownRefresh(() => {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .kpi-card {
+  position: relative;
   background: #ffffff;
   border-radius: 12px;
   padding: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+.kpi-card--weight::before {
+  background: #1890ff;
+}
+
+.kpi-card--check::before {
+  background: #52c41a;
+}
+
+.kpi-card--chart::before {
+  background: #fa8c16;
+}
+
+.kpi-card--trend::before {
+  background: #722ed1;
+}
+
+.kpi-top-icon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  opacity: 0.12;
+}
+
+.kpi-top-icon--weight {
+  border: 2px solid #1890ff;
+  border-radius: 2px;
+}
+
+.kpi-top-icon--check {
+  border: 2px solid #52c41a;
+  border-radius: 50%;
+}
+
+.kpi-top-icon--chart {
+  background: #fa8c16;
+  border-radius: 2px;
+}
+
+.kpi-top-icon--trend {
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 14px solid #722ed1;
+  opacity: 0.12;
 }
 
 .kpi-value {
@@ -651,18 +734,53 @@ onPullDownRefresh(() => {
   background: #ffffff;
   border-radius: 12px;
   padding: 16px;
-  margin-bottom: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
 .section-header {
-  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 14px;
 }
 
 .section-title {
   font-size: 15px;
   font-weight: 600;
   color: #262626;
+  padding-left: 10px;
+  position: relative;
+}
+
+.section-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 2px;
+  bottom: 2px;
+  width: 3px;
+  border-radius: 2px;
+  background: #1890ff;
+}
+
+.section-card--distribution .section-title::before {
+  background: #1890ff;
+}
+
+.section-card--trend .section-title::before {
+  background: #fa8c16;
+}
+
+.section-card--top5 .section-title::before {
+  background: #f5222d;
+}
+
+.section-card--shift .section-title::before {
+  background: #52c41a;
+}
+
+.section-card--correlation .section-title::before {
+  background: #722ed1;
 }
 
 .distribution-list {
@@ -924,5 +1042,74 @@ onPullDownRefresh(() => {
   50% {
     opacity: 0.4;
   }
+}
+
+/* 卡片入场动画 */
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* KPI 卡片点击反馈 */
+.kpi-card {
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.kpi-card:active {
+  transform: scale(0.97);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* 进度条过渡动画 */
+.dist-bar-fill {
+  transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.top5-bar-fill {
+  transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 刷新按钮旋转 */
+.refresh-btn {
+  transition: opacity 0.2s;
+}
+
+.refresh-btn:active {
+  opacity: 0.6;
+}
+
+.refresh-rotate {
+  display: inline-block;
+  animation: refresh-spin 0.6s linear;
+}
+
+@keyframes refresh-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Section 卡片悬停/按压 */
+.section-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.section-card:active {
+  transform: scale(0.985);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+/* 日期选择器按压 */
+.date-picker {
+  transition: background 0.2s;
+}
+
+.date-picker:active {
+  background: #e4e7ed;
 }
 </style>

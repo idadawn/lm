@@ -132,20 +132,25 @@ class SSEEmitter:
         satisfied: bool,
     ) -> ReasoningStep | None:
         """
-        回填 condition 步骤的 actual 和 satisfied 值。
-        Stage 2 查询完数据后调用此方法。
+        按 field 匹配 condition 步骤，原地修改 actual/satisfied，幂等。
+
+        遍历已发射的 reasoning_steps，找到 kind=="condition" 且 field 匹配的步骤，
+        填入 actual 值和 satisfied 判定。多次调用同一 field 会覆盖前值。
 
         Args:
-            field: 条件字段名
+            field: 条件字段名（需与 Stage 1 发射时的 field 一致）
             actual: 实际查询值
             satisfied: 是否满足条件
 
         Returns:
-            更新后的 ReasoningStep（如果找到匹配的 condition 步骤）
+            更新后的 ReasoningStep；未匹配则返回 None 并记录 WARN 日志
         """
         for step in self._reasoning_steps:
             if step.kind == "condition" and step.field == field:
                 step.actual = actual
                 step.satisfied = satisfied
                 return step
+        logger.warning(
+            "update_condition_step: 未找到匹配的 condition 步骤 (field=%s)", field
+        )
         return None

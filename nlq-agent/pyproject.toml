@@ -1,0 +1,19 @@
+[project]
+name = "nlq-agent"
+version = "0.1.0"
+description = "路美实验室数据分析 — 两阶段问答微服务（语义层 + 数据层）"
+requires-python = ">=3.11"
+readme = "README.md"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E501"]

@@ -1,0 +1,110 @@
+direction: right
+
+title: 路美 nlq-agent 两阶段问答架构总览 {
+  near: top-center
+  shape: text
+  style.font-size: 18
+  style.bold: true
+}
+
+# ─── 用户端 ───
+user: 用户提问 {
+  shape: person
+  style.fill: "#EFF6FF"
+  style.stroke: "#3B82F6"
+}
+
+# ─── 前端层 ───
+frontend: 前端（Vue / UniApp）{
+  style.fill: "#F0FDF4"
+  style.stroke: "#22C55E"
+  style.border-radius: 8
+
+  chat_ui: AI 对话框\nChatAssistant.vue {
+    shape: rectangle
+    style.fill: "#DCFCE7"
+  }
+  kg_chain: KgReasoningChain\n推理链组件 {
+    shape: rectangle
+    style.fill: "#DCFCE7"
+  }
+  dashboard: monthly-dashboard\nmonthlyReport {
+    shape: rectangle
+    style.fill: "#DCFCE7"
+  }
+}
+
+# ─── nlq-agent Python 微服务 ───
+nlq: nlq-agent（FastAPI / Python）{
+  style.fill: "#FFF7ED"
+  style.stroke: "#F97316"
+  style.border-radius: 8
+
+  router: POST /api/v1/chat/stream\nSSE 流式路由 {
+    shape: rectangle
+    style.fill: "#FFEDD5"
+  }
+
+  stage1: Stage 1\nSemantic & KG Agent {
+    shape: rectangle
+    style.fill: "#FED7AA"
+    style.bold: true
+  }
+
+  stage2: Stage 2\nData & SQL Agent {
+    shape: rectangle
+    style.fill: "#FED7AA"
+    style.bold: true
+  }
+
+  ctx: AgentContext\n（业务解释 + 过滤条件）{
+    shape: document
+    style.fill: "#FEF3C7"
+  }
+}
+
+# ─── 知识层 ───
+knowledge: 知识层 {
+  style.fill: "#F5F3FF"
+  style.stroke: "#8B5CF6"
+  style.border-radius: 8
+
+  qdrant: Qdrant\n向量数据库 {
+    shape: cylinder
+    style.fill: "#EDE9FE"
+  }
+  mdl: 业务语义层（MDL）\n判定规则 / 产品规格\n/ 指标定义 {
+    shape: document
+    style.fill: "#EDE9FE"
+  }
+}
+
+# ─── 数据层 ───
+data: 数据层 {
+  style.fill: "#FFF1F2"
+  style.stroke: "#F43F5E"
+  style.border-radius: 8
+
+  mysql: MySQL\n（LAB_INTERMEDIATE_DATA\nLAB_PRODUCT_SPEC 等）{
+    shape: cylinder
+    style.fill: "#FFE4E6"
+  }
+  dotnet: .NET API\n（现有后端）{
+    shape: rectangle
+    style.fill: "#FFE4E6"
+  }
+}
+
+# ─── 连线 ───
+user -> frontend.chat_ui: 自然语言提问
+frontend.chat_ui -> nlq.router: SSE 请求\nnlqAgent.ts
+nlq.router -> nlq.stage1
+nlq.stage1 -> knowledge.qdrant: 向量检索\n业务知识
+knowledge.qdrant -> knowledge.mdl: 语义定义
+nlq.stage1 -> nlq.ctx: 输出业务解释\n+ 过滤条件
+nlq.ctx -> nlq.stage2
+nlq.stage2 -> data.mysql: 生成并执行 SQL
+data.dotnet -> knowledge.mdl: 变更时同步\n向量化
+nlq.router -> frontend.kg_chain: SSE reasoning_step\n实时推理链
+nlq.router -> frontend.chat_ui: SSE text\n最终回答
+frontend.dashboard -> data.dotnet: REST API\n统计数据

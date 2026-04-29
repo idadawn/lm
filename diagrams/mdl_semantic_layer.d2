@@ -1,0 +1,80 @@
+direction: down
+
+title: 路美业务语义层（MDL）数据模型 {
+  near: top-center
+  shape: text
+  style.font-size: 16
+  style.bold: true
+}
+
+mdl: 业务语义层（MDL）{
+  style.fill: "#F5F3FF"
+  style.stroke: "#8B5CF6"
+  style.border-radius: 8
+
+  metrics: 指标定义（Metrics）{
+    style.fill: "#EDE9FE"
+    style.border-radius: 6
+    content: |md
+      - **合格率** = qualified_weight / total_weight
+      - **A类占比** = class_a_weight / total_weight
+      - **铁损均值** = AVG(iron_loss_value)
+      - **叠片系数均值** = AVG(lamination_factor)
+    |
+  }
+
+  dimensions: 维度定义（Dimensions）{
+    style.fill: "#EDE9FE"
+    style.border-radius: 6
+    content: |md
+      - **时间维度**：prod_date, shift, shift_no
+      - **产品维度**：product_spec_code, spec_name
+      - **判定维度**：judgment_level（A/B/不合格）
+      - **设备维度**：line_no, furnace_no
+    |
+  }
+
+  rules: 判定规则（Rules）{
+    style.fill: "#EDE9FE"
+    style.border-radius: 6
+    content: |md
+      - 铁损 W15/50 ≤ 阈值 → A类
+      - 磁感 B8 ≥ 阈值 → A类
+      - 叠片系数 ≥ 0.97 → 合格
+      - 厚度偏差 ≤ ±0.01mm → 合格
+    |
+  }
+
+  joins: 表关系（Joins）{
+    style.fill: "#EDE9FE"
+    style.border-radius: 6
+    content: |md
+      - LAB_INTERMEDIATE_DATA
+        → LAB_PRODUCT_SPEC (spec_code)
+      - LAB_INTERMEDIATE_DATA
+        → LAB_JUDGMENT_LEVEL (level_id)
+      - LAB_RAW_DATA
+        → LAB_INTERMEDIATE_DATA (batch_id)
+    |
+  }
+}
+
+qdrant: Qdrant 向量存储 {
+  style.fill: "#FFF7ED"
+  style.stroke: "#F97316"
+  style.border-radius: 8
+
+  col_rules: Collection: luma_rules\n判定规则向量 {
+    style.fill: "#FFEDD5"
+  }
+  col_specs: Collection: luma_specs\n产品规格向量 {
+    style.fill: "#FFEDD5"
+  }
+  col_metrics: Collection: luma_metrics\n指标定义向量 {
+    style.fill: "#FFEDD5"
+  }
+}
+
+mdl.rules -> qdrant.col_rules: 向量化存储
+mdl.metrics -> qdrant.col_metrics: 向量化存储
+mdl.dimensions -> qdrant.col_specs: 向量化存储

@@ -44,8 +44,6 @@ desktop.ini
 .omx/
 output-*.png
 
-# Nested project with own git repo
-nlq-agent/
 
 # Logs
 logs/

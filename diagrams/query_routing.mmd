@@ -1,0 +1,37 @@
+flowchart TD
+    Q([用户提问]) --> IC{意图分类\nIntent Classifier}
+
+    IC -->|统计聚合类\n合格率/产量/趋势| ST[Stage1: 语义层检索\n获取指标定义 + 维度映射]
+    IC -->|根因分析类\n为什么不合格/异常原因| RC[Stage1: 规则检索\n获取判定规则 + 阈值]
+    IC -->|概念解释类\nA类是什么/铁损定义| KG[Stage1: 知识检索\n直接返回业务解释]
+    IC -->|超出范围| FB[Fallback\n提示无法回答]
+
+    ST --> CTX1[AgentContext\n指标SQL模板 + 时间/产品过滤]
+    RC --> CTX2[AgentContext\n规则条件 + 阈值参数]
+    KG --> ANS1[直接生成回答\n无需查询数据库]
+
+    CTX1 --> S2A[Stage2: SQL生成\nSELECT + GROUP BY + 聚合]
+    CTX2 --> S2B[Stage2: SQL生成\nWHERE 条件 + 明细查询]
+
+    S2A --> SQL1[(MySQL\nLAB_INTERMEDIATE_DATA)]
+    S2B --> SQL2[(MySQL\nLAB_INTERMEDIATE_DATA\n+ LAB_RAW_DATA)]
+
+    SQL1 --> R1[结果集 → 自然语言回答]
+    SQL2 --> R2[结果集 → 根因分析报告]
+
+    R1 --> SSE[SSE 流式输出\nreasoning_steps + text]
+    R2 --> SSE
+    ANS1 --> SSE
+    FB --> SSE
+
+    SSE --> FE[前端\nKgReasoningChain + 对话框]
+
+    style ST fill:#FFF7ED,stroke:#F97316
+    style RC fill:#FFF7ED,stroke:#F97316
+    style KG fill:#F5F3FF,stroke:#8B5CF6
+    style CTX1 fill:#FEF3C7,stroke:#D97706
+    style CTX2 fill:#FEF3C7,stroke:#D97706
+    style S2A fill:#F0FDF4,stroke:#22C55E
+    style S2B fill:#F0FDF4,stroke:#22C55E
+    style FB fill:#FFF1F2,stroke:#F43F5E
+    style SSE fill:#EFF6FF,stroke:#3B82F6

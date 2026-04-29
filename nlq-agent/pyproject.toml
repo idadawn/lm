@@ -9,6 +9,9 @@ readme = "README.md"
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = [
+    "live_llm: 真实 LLM + 真实 MySQL 端到端测试（夜间 advisory lane，非 merge-gating）",
+]
 
 [tool.ruff]
 target-version = "py311"

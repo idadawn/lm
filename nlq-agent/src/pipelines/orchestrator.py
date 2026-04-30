@@ -22,7 +22,6 @@ from src.services.database import DatabaseService
 from src.services.llm_client import LLMClient
 from src.services.qdrant_service import QdrantService
 from src.services.sse_emitter import SSEEmitter
-from src.utils.prompts import CONCEPTUAL_ANSWER_SYSTEM, CONCEPTUAL_ANSWER_USER
 
 logger = logging.getLogger(__name__)
 
@@ -32,8 +31,7 @@ class PipelineOrchestrator:
     两阶段 Pipeline 编排器。
 
     根据意图分类结果，选择不同的执行路径：
-    - statistical / root_cause → Stage 1 + Stage 2
-    - conceptual → Stage 1 only（直接回答）
+    - statistical / trend / root_cause / by_shift / conceptual → Stage 1 + Stage 2
     - out_of_scope → Fallback
     """
 
@@ -102,19 +100,8 @@ class PipelineOrchestrator:
                 yield emitter.emit_done()
                 return
 
-            elif intent_type == IntentType.CONCEPTUAL:
-                # 概念解释类：Stage 1 直接回答，跳过 Stage 2
-                answer_events = await self._conceptual_answer(
-                    question, context, emitter
-                )
-                for event in answer_events:
-                    yield event
-                yield emitter.emit_response_metadata()
-                yield emitter.emit_done()
-                return
-
             else:
-                # 统计类 / 根因类：执行 Stage 2
+                # 统计类 / 根因类 / 概念类：执行 Stage 2
                 stage2 = DataSQLAgent(self._llm, self._db, emitter)
                 stage2_events = await stage2.run(context)
 
@@ -127,38 +114,6 @@ class PipelineOrchestrator:
             logger.exception("Pipeline 执行异常: %s", e)
             yield emitter.emit_error(f"系统内部错误: {e}")
             yield emitter.emit_done()
-
-    async def _conceptual_answer(
-        self,
-        question: str,
-        context,
-        emitter: SSEEmitter,
-    ) -> list[str]:
-        """为概念解释类问题生成回答。"""
-        events = []
-
-        # 格式化检索到的文档
-        docs_text = "\n\n".join(
-            f"- {doc.get('text', '')}"
-            for doc in context.retrieved_documents
-        )
-
-        messages = [
-            {"role": "system", "content": CONCEPTUAL_ANSWER_SYSTEM},
-            {
-                "role": "user",
-                "content": CONCEPTUAL_ANSWER_USER.format(
-                    question=question,
-                    retrieved_docs=docs_text or "（未检索到相关文档）",
-                ),
-            },
-        ]
-
-        # 流式输出
-        async for chunk in self._llm.chat_stream(messages):
-            events.append(emitter.emit_text(chunk))
-
-        return events
 
     def _make_error_event(self, message: str) -> str:
         """生成错误 SSE 事件。"""

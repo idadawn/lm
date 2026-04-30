@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from typing import Any, AsyncIterator
 
 from src.core.settings import get_settings
@@ -38,6 +39,10 @@ from src.utils.prompts import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Trend 关键词 — 用于 _classify_intent 的关键词优先路由
+_TREND_KEYWORDS = frozenset({"趋势", "变化趋势", "走势", "环比", "同比"})
+_TREND_WINDOW_RE = re.compile(r"(?:近|最近)\s*(\d+)\s*(?:个?月|周|季度|年)")
 
 
 class SemanticKGAgent:
@@ -144,7 +149,22 @@ class SemanticKGAgent:
     # ── 内部方法 ─────────────────────────────────────────────
 
     async def _classify_intent(self, question: str) -> IntentClassification:
-        """调用 LLM 进行意图分类。"""
+        """调用 LLM 进行意图分类，trend 关键词优先路由。"""
+        # keyword-based pre-check for trend intent
+        if any(kw in question for kw in _TREND_KEYWORDS):
+            match = _TREND_WINDOW_RE.search(question)
+            time_window = int(match.group(1)) if match else 6
+            return IntentClassification(
+                intent=IntentType.TREND,
+                confidence=0.9,
+                extracted_entities={
+                    "time_window": time_window,
+                    "metric": "合格率",
+                    "group_by": "产品规格",
+                },
+                reasoning=f"关键词匹配趋势类查询，时间窗口={time_window}个月",
+            )
+
         try:
             result = await self._llm.chat_json([
                 {"role": "system", "content": INTENT_CLASSIFICATION_SYSTEM},

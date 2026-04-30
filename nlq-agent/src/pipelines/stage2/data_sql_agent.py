@@ -31,6 +31,8 @@ from src.services.database import DatabaseService
 from src.services.llm_client import LLMClient
 from src.services.sse_emitter import SSEEmitter
 from src.utils.prompts import (
+    CONCEPTUAL_ANSWER_SYSTEM,
+    CONCEPTUAL_ANSWER_USER,
     FINAL_ANSWER_SYSTEM,
     FINAL_ANSWER_USER,
     STAGE2_SQL_CORRECTION_SYSTEM,
@@ -136,6 +138,10 @@ class DataSQLAgent:
             sse_events: 已格式化的 SSE 事件字符串列表
         """
         sse_events: list[str] = []
+
+        # ── CONCEPTUAL intent: skip SQL, answer from retrieved docs ──
+        if context.intent.intent == IntentType.CONCEPTUAL:
+            return await self._run_conceptual(context)
 
         # ── Step 1: SQL 生成 ─────────────────────────────────
         sql_result = await self._generate_sql(context)
@@ -617,6 +623,42 @@ class DataSQLAgent:
         # 流式输出
         async for chunk in self._llm.chat_stream(messages):
             sse_events.append(self._emitter.emit_text(chunk))
+
+        return sse_events
+
+    async def _run_conceptual(self, context: AgentContext) -> list[str]:
+        """概念解释类：不执行 SQL，直接基于检索到的文档生成回答。"""
+        sse_events: list[str] = []
+
+        # 格式化检索到的文档
+        docs_text = "\n\n".join(
+            f"- {doc.get('text', '')}"
+            for doc in context.retrieved_documents
+        )
+
+        messages = [
+            {"role": "system", "content": CONCEPTUAL_ANSWER_SYSTEM},
+            {
+                "role": "user",
+                "content": CONCEPTUAL_ANSWER_USER.format(
+                    question=context.user_question,
+                    retrieved_docs=docs_text or "（未检索到相关文档）",
+                ),
+            },
+        ]
+
+        # 流式输出
+        async for chunk in self._llm.chat_stream(messages):
+            sse_events.append(self._emitter.emit_text(chunk))
+
+        # 发射 response_metadata（无 SQL）
+        sse_events.append(
+            self._emitter.emit_response_metadata({
+                "sql": None,
+                "sql_explanation": "conceptual query, no SQL",
+                "row_count": 0,
+            })
+        )
 
         return sse_events
 

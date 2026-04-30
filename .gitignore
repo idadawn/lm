@@ -345,3 +345,9 @@ api/tmp_build_verify/
 .playwright-cli/
 output/
 api/release/
+
+# -------------------------------------------------------------------------
+# mobile
+# -------------------------------------------------------------------------
+mobile/unpackage/
+mobile/scripts/.pgyer-config.ps1

@@ -43,6 +43,12 @@
       "style": {
         "navigationBarTitleText": "KG 推理链 Demo"
       }
+    },
+    {
+      "path": "pages/server/server",
+      "style": {
+        "navigationBarTitleText": "服务器设置"
+      }
     }
   ],
   "tabBar": {

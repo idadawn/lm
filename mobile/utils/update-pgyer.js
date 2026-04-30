@@ -57,11 +57,12 @@ export function checkPgyerUpdate(options) {
       const latestVersion = data.buildVersion || ''
       const latestVersionCode = parseInt(data.buildVersionNo || '0')
 
-      // 版本比较：优先比较 versionCode，若相等再比较 version 字符串
+      // 版本比较：优先比较 versionCode（如果蒲公英上有填写），否则比较 version 字符串
       let hasUpdate = false
       if (latestVersionCode > 0 && currentVersionCode > 0) {
         hasUpdate = latestVersionCode > currentVersionCode
       } else {
+        // 如果 versionCode 无效，直接比较 versionName
         hasUpdate = compareVersion(latestVersion, currentVersion) > 0
       }
 

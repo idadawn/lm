@@ -27,7 +27,9 @@
                     "<uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\" />"
                 ]
             },
-            "ios" : {},
+            "ios" : {
+                "dSYMs" : false
+            },
             "sdkConfigs" : {},
             "icons" : {
                 "android" : {

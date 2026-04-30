@@ -1,10 +1,16 @@
-export const API_BASE_URL = 'http://192.168.1.104:10089'
+import { getApiBaseUrl } from './storage.js'
+
+export const API_BASE_URL = getApiBaseUrl() || 'http://47.105.59.151:8928'
+
+export function getCurrentBaseUrl() {
+  return getApiBaseUrl() || API_BASE_URL
+}
 
 export function request(options) {
   return new Promise((resolve, reject) => {
     const token = options.needToken !== false ? uni.getStorageSync('lm_app_token') : null
 
-    let url = API_BASE_URL + options.url
+    let url = getCurrentBaseUrl() + options.url
     if (options.params) {
       const qs = Object.entries(options.params)
         .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v != null ? String(v) : '')}`)

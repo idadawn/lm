@@ -64,10 +64,9 @@
         {{ loading ? '登录中...' : '登录' }}
       </button>
 
-      <!-- 调试用：直接跳转首页 -->
-      <button class="login-btn debug-btn" @click="debugGoHome">
-        调试：直接跳转首页
-      </button>
+      <view class="server-link" @click="goServer">
+        <text class="server-link-text">切换服务器</text>
+      </view>
     </view>
 
     <view class="login-footer">
@@ -81,7 +80,8 @@ import { ref, reactive, onMounted } from 'vue'
 import { loginApi, getUserInfoApi, getConfigApi } from '@/api/user.js'
 import { setToken, setUserInfo } from '@/utils/storage.js'
 import { md5 } from '@/utils/md5.js'
-import { API_BASE_URL } from '@/utils/http.js'
+import { getCurrentBaseUrl } from '@/utils/http.js'
+import { getApiBaseUrl } from '@/utils/storage.js'
 
 const REMEMBER_KEY = 'lm_app_remember'
 
@@ -92,6 +92,7 @@ const timestamp = ref(0)
 const codeImgUrl = ref('')
 const copyright = ref('')
 const remember = ref(false)
+const serverUrl = ref(getCurrentBaseUrl())
 
 const form = reactive({
   account: '',
@@ -114,7 +115,7 @@ function loadRemember() {
 function refreshCode() {
   const ts = Date.now()
   timestamp.value = ts
-  codeImgUrl.value = API_BASE_URL + '/api/oauth/ImageCode/' + codeLength.value + '/' + ts + '?t=' + ts
+  codeImgUrl.value = getCurrentBaseUrl() + '/api/oauth/ImageCode/' + codeLength.value + '/' + ts + '?t=' + ts
 }
 
 function onAccountBlur() {
@@ -197,13 +198,8 @@ function handleLogin() {
   })
 }
 
-function debugGoHome() {
-  console.log('[Login] 调试跳转')
-  uni.switchTab({
-    url: '/pages/index/index',
-    success: () => console.log('[Login] 调试 switchTab success'),
-    fail: (err) => console.error('[Login] 调试 switchTab fail', JSON.stringify(err))
-  })
+function goServer() {
+  uni.navigateTo({ url: '/pages/server/server' })
 }
 
 onMounted(() => {
@@ -317,9 +313,17 @@ onMounted(() => {
   opacity: 0.6;
 }
 
-.debug-btn {
-  margin-top: 12px;
-  background: linear-gradient(135deg, #52c41a, #73d13d);
+.server-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 8px 0;
+}
+
+.server-link-text {
+  font-size: 14px;
+  color: #1890ff;
 }
 
 .remember-row {

@@ -1,5 +1,6 @@
 const TOKEN_KEY = 'lm_app_token'
 const USER_INFO_KEY = 'lm_app_user_info'
+const API_BASE_URL_KEY = 'lm_api_base_url'
 
 export function getToken() {
   try {
@@ -30,4 +31,17 @@ export function setUserInfo(userInfo) {
 export function clearAuth() {
   uni.removeStorageSync(TOKEN_KEY)
   uni.removeStorageSync(USER_INFO_KEY)
+}
+
+export function getApiBaseUrl() {
+  try {
+    return uni.getStorageSync(API_BASE_URL_KEY) || ''
+  } catch (e) {
+    return ''
+  }
+}
+
+export function setApiBaseUrl(url) {
+  if (url) uni.setStorageSync(API_BASE_URL_KEY, url)
+  else uni.removeStorageSync(API_BASE_URL_KEY)
 }

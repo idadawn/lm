@@ -220,7 +220,10 @@ class DataSQLAgent:
     # ── 内部方法 ─────────────────────────────────────────────
 
     async def _generate_sql(self, context: AgentContext) -> dict[str, Any]:
-        """调用 LLM 生成 SQL。"""
+        """调用 LLM 生成 SQL。Trend intent 直接使用模板。"""
+        if context.intent.intent == IntentType.TREND:
+            return self._generate_trend_sql(context)
+
         # 检查是否有匹配的预定义模板
         sql_templates_text = self._match_sql_templates(context)
 
@@ -275,6 +278,25 @@ class DataSQLAgent:
         except Exception as e:
             logger.error("SQL 修正失败: %s", e)
             return {"sql": original_sql, "explanation": f"修正失败: {e}"}
+
+    def _generate_trend_sql(self, context: AgentContext) -> dict[str, Any]:
+        """Trend intent: 直接使用合格率_趋势模板生成 SQL。"""
+        template_entry = METRIC_SQL_TEMPLATES.get("合格率_趋势")
+        if not template_entry:
+            return {"sql": "", "explanation": "合格率_趋势模板不存在"}
+
+        time_window = context.intent.extracted_entities.get("time_window", 6)
+        extra_where = ""
+
+        sql = template_entry["sql_template"].format(
+            time_window_months=time_window,
+            extra_where=extra_where,
+        )
+
+        return {
+            "sql": sql.strip(),
+            "explanation": f"近{time_window}个月按产品规格分组的合格率月度趋势",
+        }
 
     async def _backfill_conditions(
         self,
@@ -555,6 +577,29 @@ class DataSQLAgent:
         """生成 grade 步骤的摘要标签。"""
         if not query_result["rows"]:
             return "未查询到数据"
+
+        # Trend summary: show first→last rate change per spec
+        if context.intent.intent == IntentType.TREND:
+            rows = query_result["rows"]
+            by_spec: dict[str, list[dict[str, Any]]] = {}
+            for r in rows:
+                spec = r.get("product_spec_id", "unknown")
+                by_spec.setdefault(spec, []).append(r)
+
+            time_window = context.intent.extracted_entities.get("time_window", 6)
+            parts: list[str] = []
+            for spec_id, spec_rows in list(by_spec.items())[:3]:
+                sorted_rows = sorted(spec_rows, key=lambda r: r.get("month_bucket", ""))
+                if len(sorted_rows) >= 2:
+                    first_rate = sorted_rows[0].get("qualified_rate", 0)
+                    last_rate = sorted_rows[-1].get("qualified_rate", 0)
+                    parts.append(f"{spec_id}: {first_rate}%→{last_rate}%")
+                elif sorted_rows:
+                    parts.append(f"{spec_id}: {sorted_rows[0].get('qualified_rate', 0)}%")
+
+            if parts:
+                return f"近{time_window}月合格率趋势: " + "; ".join(parts)
+            return f"趋势查询完成，共{query_result['row_count']}条结果"
 
         row_count = query_result["row_count"]
         first_row = query_result["rows"][0]

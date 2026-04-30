@@ -246,4 +246,29 @@ METRIC_SQL_TEMPLATES = {
             GROUP BY {group_by_clause}
         """,
     },
+    "合格率_趋势": {
+        "name": "合格率_趋势",
+        "description": "按月+产品规格分组的合格率变化趋势",
+        "sql_template": """
+            SELECT
+                F_PRODUCT_SPEC_ID AS product_spec_id,
+                DATE_FORMAT(F_CREATORTIME, '%Y-%m') AS month_bucket,
+                COUNT(*) AS sample_count,
+                SUM(CASE WHEN F_MAGNETIC_RES = '合格'
+                         AND F_THICK_RES = '合格'
+                         AND F_LAM_FACTOR_RES = '合格'
+                    THEN 1 ELSE 0 END) AS qualified_count,
+                ROUND(
+                    SUM(CASE WHEN F_MAGNETIC_RES = '合格'
+                             AND F_THICK_RES = '合格'
+                             AND F_LAM_FACTOR_RES = '合格'
+                        THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2
+                ) AS qualified_rate
+            FROM LAB_INTERMEDIATE_DATA
+            WHERE F_CREATORTIME >= DATE_SUB(CURDATE(), INTERVAL {time_window_months} MONTH)
+                  {extra_where}
+            GROUP BY F_PRODUCT_SPEC_ID, DATE_FORMAT(F_CREATORTIME, '%Y-%m')
+            ORDER BY month_bucket ASC
+        """,
+    },
 }

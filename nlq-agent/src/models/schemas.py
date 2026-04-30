@@ -67,7 +67,8 @@ class SSEEvent(BaseModel):
 
 class IntentType(str, Enum):
     """用户意图分类。"""
-    STATISTICAL = "statistical"      # 统计聚合类：合格率、产量、趋势
+    STATISTICAL = "statistical"      # 统计聚合类：合格率、产量、均值
+    TREND = "trend"                  # 趋势分析类：按时间维度的指标变化
     ROOT_CAUSE = "root_cause"        # 根因分析类：为什么不合格、异常原因
     CONCEPTUAL = "conceptual"        # 概念解释类：A类是什么、铁损定义
     OUT_OF_SCOPE = "out_of_scope"    # 超出范围

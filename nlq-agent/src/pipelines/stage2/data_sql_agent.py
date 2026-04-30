@@ -16,13 +16,13 @@ from __future__ import annotations
 
 import json
 import logging
+from dataclasses import dataclass
 from typing import Any
 
-from src.core.settings import get_settings
 from src.models.ddl import METRIC_SQL_TEMPLATES, get_all_ddl
 from src.models.schemas import (
     AgentContext,
-    IntentType,
+    FilterCondition,
     ReasoningStep,
     ReasoningStepKind,
 )
@@ -48,11 +48,50 @@ class ConditionEvalError(ValueError):
     """条件评估类型不匹配错误。"""
 
 
-# 中文字段名 → metric CTE SQL 别名映射
-_DIAGNOSTIC_FIELD_MAP: dict[str, str] = {
-    "合格率": "qualified_rate",
-    "抽样数量": "sample_count",
+@dataclass(frozen=True)
+class DiagnosticSpec:
+    """诊断字段规格：描述一个 condition 字段在诊断 SELECT 中的映射关系。"""
+
+    metric_template: str
+    sql_expression: str
+    alias: str
+    canonical_key: str
+
+
+DIAGNOSTIC_FIELD_REGISTRY: dict[str, DiagnosticSpec] = {
+    "合格率": DiagnosticSpec(
+        metric_template="合格率",
+        sql_expression="ROUND(SUM(qualified_count) * 100.0 / NULLIF(SUM(total_count), 0), 2)",
+        alias="actual_合格率",
+        canonical_key="合格率",
+    ),
+    "抽样数量": DiagnosticSpec(
+        metric_template="合格率",
+        sql_expression="SUM(sample_count)",
+        alias="actual_抽样数量",
+        canonical_key="抽样数量",
+    ),
+    "qualified_rate": DiagnosticSpec(
+        metric_template="合格率",
+        sql_expression="ROUND(SUM(qualified_count) * 100.0 / NULLIF(SUM(total_count), 0), 2)",
+        alias="actual_合格率",
+        canonical_key="合格率",
+    ),
+    "sample_count": DiagnosticSpec(
+        metric_template="合格率",
+        sql_expression="SUM(sample_count)",
+        alias="actual_抽样数量",
+        canonical_key="抽样数量",
+    ),
 }
+
+
+def canonical_field_key(field: str) -> str | None:
+    """将字段名归一化为中文 canonical key；未注册返回 None。"""
+    spec = DIAGNOSTIC_FIELD_REGISTRY.get(field)
+    if spec is None:
+        return None
+    return spec.canonical_key
 
 
 class DataSQLAgent:
@@ -243,23 +282,15 @@ class DataSQLAgent:
         query_result: dict[str, Any],
     ) -> list[str]:
         """回填 condition 步骤的 actual 和 satisfied 值。"""
-        # 优先使用诊断 SELECT 回填
-        events = await self._diagnostic_select_for_condition(
-            context, query_result
-        )
-        if events:
-            return events
-
-        # 降级：直接从查询结果回填
         sse_events: list[str] = []
-        if not query_result["rows"]:
-            return sse_events
+        first_row = query_result["rows"][0] if query_result.get("rows") else None
 
-        first_row = query_result["rows"][0]
-
+        # F2 短路：主查询行已含字段时直接回填，不发诊断 query
+        short_circuited_keys: set[str] = set()
         for filter_cond in context.filters:
-            actual_value = first_row.get(filter_cond.field)
-            if actual_value is not None:
+            cn_key = canonical_field_key(filter_cond.display_name or filter_cond.field)
+            if cn_key and first_row and cn_key in first_row:
+                actual_value = first_row[cn_key]
                 try:
                     satisfied = self._evaluate_condition(
                         actual_value, filter_cond.operator, filter_cond.value
@@ -273,6 +304,47 @@ class DataSQLAgent:
                     sse_events.append(
                         self._emitter.emit_reasoning_step(updated)
                     )
+                logger.debug(
+                    "F2 short-circuit: field=%s actual=%s from main query row",
+                    filter_cond.field,
+                    actual_value,
+                )
+                short_circuited_keys.add(cn_key)
+
+        # 若所有注册表字段均已短路，跳过诊断 query
+        diag_needed = any(
+            canonical_field_key(f.display_name or f.field) is not None
+            and canonical_field_key(f.display_name or f.field) not in short_circuited_keys
+            for f in context.filters
+        )
+        if not diag_needed:
+            return sse_events
+
+        # 优先使用诊断 SELECT 回填剩余字段
+        events = await self._diagnostic_select_for_condition(
+            context, query_result
+        )
+        if events:
+            return sse_events + events
+
+        # 降级：直接从查询结果回填
+        if first_row:
+            for filter_cond in context.filters:
+                actual_value = first_row.get(filter_cond.field)
+                if actual_value is not None:
+                    try:
+                        satisfied = self._evaluate_condition(
+                            actual_value, filter_cond.operator, filter_cond.value
+                        )
+                    except ConditionEvalError:
+                        satisfied = False
+                    updated = self._emitter.update_condition_step(
+                        filter_cond.field, actual_value, satisfied
+                    )
+                    if updated:
+                        sse_events.append(
+                            self._emitter.emit_reasoning_step(updated)
+                        )
 
         return sse_events
 
@@ -297,75 +369,93 @@ class DataSQLAgent:
         if not spec_ids:
             return sse_events
 
-        # 仅处理包含合格率指标的场景
-        if not any(m.name == "合格率" for m in context.metrics):
-            return sse_events
-
-        # 构建 CTE（复用 F5 扩展后的合格率模板）
-        template_sql = METRIC_SQL_TEMPLATES["合格率"]["sql_template"].format(
-            group_by_clause="F_PRODUCT_SPEC_ID",
-            start_date="2020-01-01",
-            end_date="2099-12-31",
-            extra_where="",
-        )
-
-        # 外层 SELECT：聚合月度数据到规格级别
-        spec_csv = ", ".join(f"'{s}'" for s in spec_ids)
-        diagnostic_sql = (
-            f"WITH base AS ({template_sql}) "
-            f"SELECT F_PRODUCT_SPEC_ID AS product_spec_id, "
-            f"SUM(sample_count) AS actual_抽样数量, "
-            f"ROUND("
-            f"SUM(qualified_count) * 100.0 "
-            f"/ NULLIF(SUM(total_count), 0), 2"
-            f") AS actual_合格率 "
-            f"FROM base "
-            f"WHERE F_PRODUCT_SPEC_ID IN ({spec_csv}) "
-            f"GROUP BY F_PRODUCT_SPEC_ID"
-        )
-
-        # SQL 安全校验
-        is_valid, error = self._db.validate_sql(diagnostic_sql)
-        if not is_valid:
-            logger.warning("诊断 SQL 校验失败: %s", error)
-            return sse_events
-
-        # 执行诊断查询
-        try:
-            diag_result = await self._db.execute_query(diagnostic_sql)
-        except Exception as exc:
-            logger.warning("诊断 SQL 执行失败: %s", exc)
-            return sse_events
-
-        # 中文字段 display_name → FilterCondition 映射
+        # 收集注册表命中的字段，按 metric_template 分组
+        fields_by_metric: dict[str, list[DiagnosticSpec]] = {}
         name_to_filter: dict[str, FilterCondition] = {}
         for f in context.filters:
-            key = f.display_name or f.field
+            key = canonical_field_key(f.display_name or f.field)
+            if key is None:
+                continue
+            spec = DIAGNOSTIC_FIELD_REGISTRY.get(key)
+            if spec is None:
+                continue
             name_to_filter[key] = f
+            existing = fields_by_metric.setdefault(spec.metric_template, [])
+            if not any(s.canonical_key == spec.canonical_key for s in existing):
+                existing.append(spec)
 
-        # 将结果扇出到 condition 步骤
-        for row in diag_result["rows"]:
-            for cn_key, col_name in [
-                ("合格率", "actual_合格率"),
-                ("抽样数量", "actual_抽样数量"),
-            ]:
-                actual_val = row.get(col_name)
-                cond = name_to_filter.get(cn_key)
-                if actual_val is None or cond is None:
-                    continue
-                try:
-                    satisfied = self._evaluate_condition(
-                        actual_val, cond.operator, cond.value
+        if not fields_by_metric:
+            return sse_events
+
+        # 检查 metrics 中是否包含所需模板
+        available_metrics = {m.name for m in context.metrics}
+        for metric_template in list(fields_by_metric.keys()):
+            if metric_template not in available_metrics:
+                del fields_by_metric[metric_template]
+
+        if not fields_by_metric:
+            return sse_events
+
+        spec_csv = ", ".join(f"'{s}'" for s in spec_ids)
+
+        for metric_template, specs in fields_by_metric.items():
+            if metric_template not in METRIC_SQL_TEMPLATES:
+                logger.warning("诊断查询未找到 metric template: %s", metric_template)
+                continue
+
+            # 构建 CTE
+            template_sql = METRIC_SQL_TEMPLATES[metric_template]["sql_template"].format(
+                group_by_clause="F_PRODUCT_SPEC_ID",
+                start_date="2020-01-01",
+                end_date="2099-12-31",
+                extra_where="",
+            )
+
+            # 构建 SELECT 列（注册表驱动，无需 if-else）
+            projections = [f"{spec.sql_expression} AS {spec.alias}" for spec in specs]
+            projection_sql = ", ".join(projections)
+
+            diagnostic_sql = (
+                f"WITH base AS ({template_sql}) "
+                f"SELECT F_PRODUCT_SPEC_ID AS product_spec_id, {projection_sql} "
+                f"FROM base "
+                f"WHERE F_PRODUCT_SPEC_ID IN ({spec_csv}) "
+                f"GROUP BY F_PRODUCT_SPEC_ID"
+            )
+
+            # SQL 安全校验
+            is_valid, error = self._db.validate_sql(diagnostic_sql)
+            if not is_valid:
+                logger.warning("诊断 SQL 校验失败: %s", error)
+                continue
+
+            # 执行诊断查询
+            try:
+                diag_result = await self._db.execute_query(diagnostic_sql)
+            except Exception as exc:
+                logger.warning("诊断 SQL 执行失败: %s", exc)
+                continue
+
+            # 将结果扇出到 condition 步骤
+            for row in diag_result["rows"]:
+                for spec in specs:
+                    actual_val = row.get(spec.alias)
+                    cond = name_to_filter.get(spec.canonical_key)
+                    if actual_val is None or cond is None:
+                        continue
+                    try:
+                        satisfied = self._evaluate_condition(
+                            actual_val, cond.operator, cond.value
+                        )
+                    except ConditionEvalError:
+                        satisfied = False
+                    updated = self._emitter.update_condition_step(
+                        cond.field, actual_val, satisfied
                     )
-                except ConditionEvalError:
-                    satisfied = False
-                updated = self._emitter.update_condition_step(
-                    cond.field, actual_val, satisfied
-                )
-                if updated:
-                    sse_events.append(
-                        self._emitter.emit_reasoning_step(updated)
-                    )
+                    if updated:
+                        sse_events.append(
+                            self._emitter.emit_reasoning_step(updated)
+                        )
 
         return sse_events
 

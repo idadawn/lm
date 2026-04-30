@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+from pathlib import Path
 
 import pytest
 import yaml
@@ -17,8 +18,19 @@ DOCKER_AVAILABLE = shutil.which("docker") is not None
 
 
 @pytest.mark.skipif(not DOCKER_AVAILABLE, reason="Docker not available")
+@pytest.mark.skipif(
+    not Path("docker-compose.production.yml").exists()
+    or not Path(".env.production").exists(),
+    reason=".env.production absent (gitignored); structure tests below still cover the YAML",
+)
 def test_docker_compose_config_valid():
-    """`docker compose config` exits 0 for the production file."""
+    """`docker compose config` exits 0 for the production file.
+
+    Requires both docker and a populated .env.production. The latter is
+    git-ignored for security, so this test usually skips in CI/dev. The
+    sibling tests (test_compose_yaml_loads, test_nlq_agent_*) provide
+    structural coverage that runs everywhere.
+    """
     result = subprocess.run(
         [
             "docker",

@@ -9,7 +9,6 @@
         <LayoutContent />
       </Layout>
     </Layout>
-    <XiaoMeiAssistant />
   </Layout>
 </template>
 
@@ -35,7 +34,6 @@
     name: 'DefaultLayout',
     components: {
       LayoutFeatures: createAsyncComponent(() => import('/@/layouts/default/feature/index.vue')),
-      XiaoMeiAssistant: createAsyncComponent(() => import('/@/layouts/default/feature/XiaoMeiAssistant.vue')),
       LayoutHeader,
       LayoutContent,
       LayoutSideBar,

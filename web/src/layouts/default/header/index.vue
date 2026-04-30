@@ -25,6 +25,7 @@
     <!-- action  -->
     <div :class="`${prefixCls}-action`">
       <AppSearch :class="`${prefixCls}-action__item search-item`" v-if="getShowSearch" />
+      <XiaoMeiAssistant :class="`${prefixCls}-action__item`" />
 
       <ErrorAction v-if="getUseErrorHandle" :class="`${prefixCls}-action__item error-action`" />
 
@@ -84,6 +85,7 @@
       AppLocalePicker,
       FullScreen,
       AppSearch,
+      XiaoMeiAssistant: createAsyncComponent(() => import('/@/layouts/default/feature/XiaoMeiAssistant.vue')),
       ErrorAction,
       ResetPwdForm,
     },

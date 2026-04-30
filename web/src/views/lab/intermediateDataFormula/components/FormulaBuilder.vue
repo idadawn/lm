@@ -1,15 +1,24 @@
 <template>
   <BasicModal v-bind="$attrs" @register="registerModal" :title="modalTitle" @ok="handleSubmit" @cancel="handleCancel"
-    :width="'min(1420px, calc(100vw - 32px))'" :minHeight="380" :canFullscreen="true" class="formula-builder-modal">
+    :width="'min(1280px, calc(100vw - 32px))'" :minHeight="380" :canFullscreen="true" class="formula-builder-modal">
+
+    <div v-if="showRangeModeToggle" class="formula-mode-switch">
+      <a-radio-group v-model:value="editorMode" button-style="solid" size="middle">
+        <a-radio-button value="range">规格模板模式</a-radio-button>
+        <a-radio-button value="advanced">高级公式模式</a-radio-button>
+      </a-radio-group>
+    </div>
 
     <!-- 检测是否为范围列,显示不同的编辑器 -->
-    <template v-if="isRangeColumn">
+    <template v-if="editorMode === 'range'">
       <!-- 范围列配置模式 -->
       <div class="range-formula-config">
-        <a-alert message="范围计算列配置" description="此列将对多个检测列或带厚列进行统计计算,自动适配不同产品的实际列数" type="info" show-icon
-          style="margin-bottom: 20px" />
+        <a-form :model="rangeConfig" layout="vertical" class="range-formula-form">
+          <div class="range-formula-layout">
+            <div class="range-config-main">
+              <a-alert message="范围计算列配置" description="此列将对多个检测列或带厚列进行统计计算,自动适配不同产品的实际列数" type="info" show-icon
+                style="margin-bottom: 12px; padding: 8px 12px;" />
 
-        <a-form :model="rangeConfig" layout="vertical" style="padding: 0 20px">
           <!-- 列类型选择 -->
           <a-form-item label="数据列类型" required>
             <a-radio-group v-model:value="rangeConfig.prefix" button-style="solid" size="large">
@@ -26,45 +35,6 @@
                 </span>
               </a-radio-button>
             </a-radio-group>
-            <div class="form-hint">
-              检测数据列: F_DETECTION_1 ~ F_DETECTION_22<br>
-              带厚列: F_THICK_1 ~ F_THICK_22
-            </div>
-          </a-form-item>
-
-          <!-- 范围配置 -->
-          <a-form-item label="数据范围" required>
-            <a-row :gutter="16">
-              <a-col :span="12">
-                <a-input-number v-model:value="rangeConfig.start" :min="1" :max="22" size="large" style="width: 100%">
-                  <template #addonBefore>从第</template>
-                  <template #addonAfter>列</template>
-                </a-input-number>
-              </a-col>
-              <a-col :span="12">
-                <a-select v-model:value="rangeConfig.end" size="large" placeholder="选择结束列" style="width: 100%">
-                  <a-select-opt-group label="🔢 固定列号">
-                    <a-select-option v-for="i in 22" :key="i" :value="String(i)">
-                      到第{{ i }}列
-                    </a-select-option>
-                  </a-select-opt-group>
-
-                  <a-select-opt-group label="⚡ 动态引用">
-                    <a-select-option value="$DetectionColumns">
-                      <div class="dynamic-option">
-                        <Icon icon="ant-design:thunderbolt-filled" :size="14" style="color: #faad14" />
-                        <span>到检测列字段的值</span>
-                        <a-tag color="blue" size="small">推荐</a-tag>
-                      </div>
-                    </a-select-option>
-                  </a-select-opt-group>
-                </a-select>
-              </a-col>
-            </a-row>
-
-            <a-alert v-if="rangeConfig.end === '$DetectionColumns'" message="动态范围说明"
-              description="系统会根据每条数据的 DetectionColumns 字段值自动确定范围。例如: DetectionColumns=15 则计算第1-15列; DetectionColumns=22 则计算第1-22列"
-              type="success" show-icon style="margin-top: 12px" />
           </a-form-item>
 
           <!-- 操作类型 -->
@@ -112,13 +82,38 @@
                   <span>后N列差值 (DIFF_LAST)</span>
                 </div>
               </a-select-option>
-              <a-select-option value="CONDITIONAL_DIFF">
-                <div class="operation-option">
-                  <Icon icon="ant-design:branch-outlined" :size="16" />
-                  <span>条件差值 (IF判断)</span>
-                </div>
-              </a-select-option>
             </a-select>
+          </a-form-item>
+
+          <a-form-item v-if="rangeConfig.operation !== 'DIFF_FIRST' && rangeConfig.operation !== 'DIFF_LAST'" label="常用逻辑模板">
+            <a-radio-group v-model:value="activeRangePreset" button-style="solid" size="large" class="range-template-tabs">
+              <a-radio-button
+                v-for="preset in rangePresets"
+                :key="preset.key"
+                :value="preset.key"
+                @click="applyRangePreset(preset.key)"
+              >
+                {{ preset.label }}
+              </a-radio-button>
+            </a-radio-group>
+            <div v-if="activeRangePreset === 'LEFT' || activeRangePreset === 'MIDDLE' || activeRangePreset === 'RIGHT'" class="preset-count-row">
+              <span class="preset-count-label">
+                {{
+                  activeRangePreset === 'LEFT'
+                    ? '从左边开始几列'
+                    : activeRangePreset === 'MIDDLE'
+                      ? '中间取几列'
+                      : '从右边开始几列'
+                }}
+              </span>
+              <a-input-number
+                v-model:value="presetColumnCount"
+                :min="1"
+                :max="currentColumnCount"
+                size="middle"
+                class="preset-count-input"
+              />
+            </div>
           </a-form-item>
 
           <!-- DIFF_FIRST 配置 -->
@@ -141,89 +136,98 @@
             <a-alert message="后N列差值说明" description="计算范围内最后N列的差值。例如: 若DetectionColumns=22, DIFF_LAST(Detection, 2) = Detection22 - Detection21" type="info" show-icon />
           </template>
 
-          <!-- CONDITIONAL_DIFF 配置 -->
-          <template v-if="rangeConfig.operation === 'CONDITIONAL_DIFF'">
-            <a-divider>条件差值配置</a-divider>
-            <a-alert message="计算逻辑" type="info" show-icon style="margin-bottom: 16px">
-              <template #description>
-                <div>如果中间列平均值 &lt; 两边列平均值，则返回：中间列最小值 - 两边列最大值</div>
-                <div>否则返回：中间列最大值 - 两边列最小值</div>
-              </template>
-            </a-alert>
-            <a-row :gutter="16">
-              <a-col :span="12">
-                <a-form-item label="中间列起始">
-                  <a-input-number v-model:value="rangeConfig.middleStart" :min="1" :max="22" size="large" style="width: 100%" />
-                </a-form-item>
-              </a-col>
-              <a-col :span="12">
-                <a-form-item label="中间列结束">
-                  <a-input-number v-model:value="rangeConfig.middleEnd" :min="1" :max="22" size="large" style="width: 100%" />
-                </a-form-item>
-              </a-col>
-            </a-row>
-            <a-row :gutter="16">
-              <a-col :span="12">
-                <a-form-item label="左边列起始">
-                  <a-input-number v-model:value="rangeConfig.leftStart" :min="1" :max="22" size="large" style="width: 100%" />
-                </a-form-item>
-              </a-col>
-              <a-col :span="12">
-                <a-form-item label="左边列结束">
-                  <a-input-number v-model:value="rangeConfig.leftEnd" :min="1" :max="22" size="large" style="width: 100%" />
-                </a-form-item>
-              </a-col>
-            </a-row>
-            <a-row :gutter="16">
-              <a-col :span="12">
-                <a-form-item label="右边列起始">
-                  <a-input-number v-model:value="rangeConfig.rightStart" :min="1" :max="22" size="large" style="width: 100%" />
-                </a-form-item>
-              </a-col>
-              <a-col :span="12">
-                <a-form-item label="右边列结束">
-                  <a-select v-model:value="rangeConfig.rightEnd" size="large" style="width: 100%">
-                    <a-select-option value="$DetectionColumns">动态 ($DetectionColumns)</a-select-option>
-                    <a-select-option v-for="i in 22" :key="i" :value="String(i)">{{ i }}</a-select-option>
-                  </a-select>
-                </a-form-item>
-              </a-col>
-            </a-row>
-          </template>
-
-          <!-- 公式预览 -->
-          <a-divider />
-          <div class="formula-preview-card">
-            <div class="preview-header">
-              <Icon icon="ant-design:code-outlined" :size="16" />
-              <span>生成的公式</span>
             </div>
-            <!-- 条件差值使用格式化显示 -->
-            <template v-if="rangeConfig.operation === 'CONDITIONAL_DIFF'">
-              <pre class="formula-code-formatted">IF(
-  AVG({{ getMiddleRange() }}) &lt; AVG({{ getSidesRange() }}),
-  MIN({{ getMiddleRange() }}) - MAX({{ getSidesRange() }}),
-  MAX({{ getMiddleRange() }}) - MIN({{ getSidesRange() }})
-)</pre>
-              <div class="formula-logic-box">
-                <div class="logic-item">
-                  <span class="logic-label">中间列</span>
-                  <span class="logic-value">{{ rangeConfig.prefix }}{{ rangeConfig.middleStart }} ~ {{ rangeConfig.prefix }}{{ rangeConfig.middleEnd }}</span>
+
+            <div class="range-config-side">
+              <!-- 公式预览 -->
+              <div class="formula-preview-card">
+                <div class="preview-header">
+                  <Icon icon="ant-design:code-outlined" :size="16" />
+                  <span>生成的公式</span>
                 </div>
-                <div class="logic-item">
-                  <span class="logic-label">两边列</span>
-                  <span class="logic-value">{{ rangeConfig.prefix }}{{ rangeConfig.leftStart }} ~ {{ rangeConfig.prefix }}{{ rangeConfig.leftEnd }} 和 {{ rangeConfig.prefix }}{{ rangeConfig.rightStart }} ~ {{ rangeConfig.rightEnd === '$DetectionColumns' ? '动态列数' : rangeConfig.prefix + rangeConfig.rightEnd }}</span>
+                <div class="formula-code">{{ generatedFormula }}</div>
+                <div class="formula-desc">
+                  <Icon icon="ant-design:bulb-outlined" :size="14" />
+                  <span>{{ getFormulaDescription() }}</span>
                 </div>
               </div>
-            </template>
-            <template v-else>
-              <div class="formula-code">{{ generatedFormula }}</div>
-            </template>
-            <div class="formula-desc">
-              <Icon icon="ant-design:bulb-outlined" :size="14" />
-              <span>{{ getFormulaDescription() }}</span>
+
+              <div class="simulation-card">
+                <div class="preview-header">
+                  <Icon icon="ant-design:experiment-outlined" :size="16" />
+                  <span>模拟计算</span>
+                </div>
+                <div class="simulation-result-card">
+                  <div class="simulation-result-row">
+                    <span class="simulation-result-label">计算结果</span>
+                    <span class="simulation-result-value">{{ simulationResultText }}</span>
+                  </div>
+                  <div class="simulation-result-row">
+                    <span class="simulation-result-label">参与范围</span>
+                    <span class="simulation-result-text">{{ simulationRangeText }}</span>
+                  </div>
+                  <div class="simulation-result-row">
+                    <span class="simulation-result-label">参与数据</span>
+                    <span class="simulation-result-text">{{ simulationValuesText }}</span>
+                  </div>
+                  <div class="simulation-result-row">
+                    <span class="simulation-result-label">计算过程</span>
+                    <span class="simulation-result-text">{{ simulationExplainText }}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
+
+          <a-form-item label="各规格数据范围" style="margin-top: 16px;">
+            <div class="spec-range-table">
+              <div class="spec-range-table__head">
+                <span>产品规格</span>
+                <span>列数</span>
+                <span>数据范围</span>
+                <span>样例数据</span>
+              </div>
+              <button
+                v-for="spec in mockSpecs"
+                :key="spec.productSpecId"
+                type="button"
+                class="spec-range-table__row"
+                :class="{ active: spec.productSpecId === selectedMockSpecId }"
+                @click="selectedMockSpecId = spec.productSpecId"
+              >
+                <span class="cell cell-name">{{ spec.productSpecName }}</span>
+                <span class="cell cell-columns">{{ getSpecColumnCount(spec) }} 列</span>
+                <span class="cell cell-range-input">
+                  <span class="range-edit-inline">
+                    <a-input-number
+                      :value="activeRangePreset === 'CUSTOM' ? getSpecCustomRange(spec).start : getSpecPresetRange(spec).start"
+                      :min="1"
+                      :max="getSpecColumnCount(spec)"
+                      size="small"
+                      class="range-text-input"
+                      :disabled="activeRangePreset !== 'CUSTOM'"
+                      @click.stop
+                      @change="updateSpecCustomRange(spec, 'start', $event)"
+                    />
+                    <span class="range-edit-sep">-</span>
+                    <a-input-number
+                      :value="activeRangePreset === 'CUSTOM' ? getSpecCustomRange(spec).end : getSpecPresetRange(spec).end"
+                      :min="1"
+                      :max="getSpecColumnCount(spec)"
+                      size="small"
+                      class="range-text-input"
+                      :disabled="activeRangePreset !== 'CUSTOM'"
+                      @click.stop
+                      @change="updateSpecCustomRange(spec, 'end', $event)"
+                    />
+                  </span>
+                </span>
+                <span class="cell cell-sample">
+                  <span class="sample-text">{{ getSpecSampleText(spec) }}</span>
+                </span>
+              </button>
+            </div>
+          </a-form-item>
         </a-form>
       </div>
     </template>
@@ -268,11 +272,6 @@
 
         <!-- 中间面板 -->
         <div class="panel center-panel">
-          <div class="tip-box">
-            <Icon icon="ant-design:info-circle-outlined" />
-            <span>除法提示: 您可以使用标准的 <span class="code">IF(分母 &lt;&gt; 0, ...)</span> 模式。如果数据库支持,使用 <span
-                class="code">SAFE_DIVIDE</span> 或将默认值设为 1 会更简洁。</span>
-          </div>
 
           <div class="editor-header">
             <div class="title-group">
@@ -311,22 +310,6 @@
                   @dragover.prevent @dragenter="dragOverIndex = index" @dragleave="dragOverIndex = null"
                   @click.stop="removeToken(index)">
                   {{ token.value }}
-                </span>
-
-                <!-- 条件差值公式使用特殊样式 -->
-                <span v-else-if="token.type === 'function' && token.label?.startsWith('条件差值')" 
-                  class="formula-block conditional-diff-block"
-                  :class="{ 'drag-over': dragOverIndex === index }" 
-                  draggable="true"
-                  @dragstart="handleTokenDragStart($event, index)" 
-                  @drop.stop="handleTokenDrop($event, index)"
-                  @dragover.prevent 
-                  @dragenter="dragOverIndex = index" 
-                  @dragleave="dragOverIndex = null"
-                  @click.stop="removeToken(index)">
-                  <span class="conditional-icon">📊</span>
-                  {{ token.label }}
-                  <span class="remove-x">×</span>
                 </span>
 
                 <span v-else-if="token.type === 'function'" class="formula-block function-block"
@@ -418,15 +401,6 @@
             </div>
           </div>
 
-          <div class="panel-section mt-auto">
-            <div class="panel-header">
-              <span class="panel-title">常用逻辑模板</span>
-            </div>
-            <div class="template-card" v-for="temp in templates" :key="temp.name" @click="insertTemplate(temp)">
-              <div class="temp-title">{{ temp.name }}</div>
-              <div class="temp-desc">{{ temp.description }}</div>
-            </div>
-          </div>
         </div>
       </div>
     </template>
@@ -441,11 +415,12 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, nextTick } from 'vue';
+import { ref, computed, nextTick, watch } from 'vue';
 import { BasicModal, useModalInner } from '/@/components/Modal';
 import { Icon } from '/@/components/Icon';
 import { getAvailableColumns } from '/@/api/lab/intermediateDataFormula';
 import type { IntermediateDataColumnInfo } from '/@/api/lab/types/intermediateDataFormula';
+import { getProductSpecList } from '/@/api/lab/productSpec';
 
 // --- 类型定义 ---
 type TokenType = 'field' | 'operator' | 'function' | 'number' | 'text';
@@ -471,17 +446,32 @@ interface RangeConfig {
   rightEnd: string;
 }
 
+interface MockProductSpec {
+  productSpecId: string;
+  productSpecName: string;
+  productSpecCode?: string;
+  detectionColumnCount: number;
+  thicknessColumnCount: number;
+  detectionValues: number[];
+  thicknessValues: number[];
+}
+
+type RangePresetKey = 'LEFT' | 'MIDDLE' | 'RIGHT' | 'ALL' | 'CUSTOM';
+
 const emit = defineEmits(['register', 'save']);
 
 // --- 状态 ---
 const modalTitle = ref('公式构建器');
 const formulaId = ref('');
 const isRangeColumn = ref(false);  // 是否为范围列
+const editorMode = ref<'range' | 'advanced'>('advanced');
 const availableFields = ref<IntermediateDataColumnInfo[]>([]);
 const searchQuery = ref('');
 const manualNumber = ref('');
 const tokens = ref<Token[]>([]);
 const dragOverIndex = ref<number | null>(null);  // 拖拽悬停位置
+const selectedMockSpecId = ref('120');
+const activeRangePreset = ref<RangePresetKey>('ALL');
 
 // 范围列配置
 const rangeConfig = ref<RangeConfig>({
@@ -500,6 +490,18 @@ const rangeConfig = ref<RangeConfig>({
   rightEnd: '$DetectionColumns',
 });
 
+const mockSpecs = ref<MockProductSpec[]>([]);
+const customSpecRanges = ref<Record<string, { start: number; end: number }>>({});
+const presetColumnCount = ref('2');
+
+const rangePresets = [
+  { key: 'LEFT', label: '左侧区间', description: '从左边开始取 N 列' },
+  { key: 'MIDDLE', label: '中间区间', description: '从中间位置取 N 列' },
+  { key: 'RIGHT', label: '右侧区间', description: '从右边开始取 N 列' },
+  { key: 'ALL', label: '全部列', description: '使用当前规格全部列' },
+  { key: 'CUSTOM', label: '自定义区间', description: '手动指定起止列' },
+] as const;
+
 // --- 计算属性 ---
 const filteredFields = computed(() => {
   if (!searchQuery.value) return availableFields.value;
@@ -514,9 +516,226 @@ const formulaText = computed(() => {
   return tokens.value.map(t => t.value).join('');
 });
 
+const currentSpec = computed(() => {
+  return mockSpecs.value.find(spec => spec.productSpecId === selectedMockSpecId.value) || mockSpecs.value[0];
+});
+
+const currentColumnCount = computed(() => {
+  if (!currentSpec.value) return 22;
+  return rangeConfig.value.prefix === 'Detection'
+    ? currentSpec.value.detectionColumnCount
+    : currentSpec.value.thicknessColumnCount;
+});
+
+const sampleLabelPrefix = computed(() => rangeConfig.value.prefix === 'Detection' ? '检' : '厚');
+const editableSampleValues = computed(() => {
+  if (!currentSpec.value) return [];
+  const rawValues = rangeConfig.value.prefix === 'Detection'
+    ? currentSpec.value.detectionValues
+    : currentSpec.value.thicknessValues;
+  return rawValues.slice(0, currentColumnCount.value);
+});
+
+const recommendedSegments = computed(() => buildRecommendedSegments(currentColumnCount.value));
+
+function getSpecColumnCount(spec: MockProductSpec): number {
+  return rangeConfig.value.prefix === 'Detection' ? spec.detectionColumnCount : spec.thicknessColumnCount;
+}
+
+function getSpecPresetRange(spec: MockProductSpec) {
+  const columnCount = getSpecColumnCount(spec);
+  const parsedCount = Number.parseInt(String(presetColumnCount.value || '2'), 10);
+  const edgeCount = Math.min(Math.max(1, Number.isFinite(parsedCount) ? parsedCount : 2), columnCount);
+  if (activeRangePreset.value === 'LEFT') return { start: 1, end: edgeCount };
+  if (activeRangePreset.value === 'MIDDLE') {
+    const start = Math.max(1, Math.floor((columnCount - edgeCount) / 2) + 1);
+    return { start, end: Math.min(columnCount, start + edgeCount - 1) };
+  }
+  if (activeRangePreset.value === 'RIGHT') return { start: Math.max(1, columnCount - edgeCount + 1), end: columnCount };
+  return { start: 1, end: columnCount };
+}
+
+function getSpecPresetRangeText(spec: MockProductSpec): string {
+  const range = getSpecPresetRange(spec);
+  return `${range.start}-${range.end}`;
+}
+
+function getSpecSampleText(spec: MockProductSpec): string {
+  const values = (rangeConfig.value.prefix === 'Detection' ? spec.detectionValues : spec.thicknessValues)
+    .slice(0, getSpecColumnCount(spec));
+  return values.join(', ');
+}
+
+function getSpecCustomRange(spec: MockProductSpec) {
+  const key = `${rangeConfig.value.prefix}-${spec.productSpecId}`;
+  const cached = customSpecRanges.value[key];
+  if (cached) return cached;
+  const preset = getSpecPresetRange(spec);
+  customSpecRanges.value[key] = { ...preset };
+  return customSpecRanges.value[key];
+}
+
+function syncCurrentSpecRange() {
+  if (!currentSpec.value) return;
+  if (activeRangePreset.value === 'CUSTOM') {
+    const customRange = getSpecCustomRange(currentSpec.value);
+    rangeConfig.value.start = customRange.start;
+    rangeConfig.value.end = String(customRange.end);
+  } else {
+    const presetRange = getSpecPresetRange(currentSpec.value);
+    rangeConfig.value.start = presetRange.start;
+    rangeConfig.value.end = String(presetRange.end);
+  }
+}
+
+function updateSpecCustomRange(spec: MockProductSpec, field: 'start' | 'end', value: number | string | null) {
+  const raw = typeof value === 'string' ? value : String(value ?? '');
+  const numericValue = Number.parseInt(raw.replace(/[^\d]/g, ''), 10);
+  if (!Number.isFinite(numericValue)) return;
+  const max = getSpecColumnCount(spec);
+  const next = { ...getSpecCustomRange(spec) };
+  if (field === 'start') {
+    next.start = Math.min(Math.max(1, Math.floor(numericValue)), max);
+    next.end = Math.max(next.start, next.end);
+  } else {
+    next.end = Math.min(Math.max(next.start, Math.floor(numericValue)), max);
+  }
+  customSpecRanges.value[`${rangeConfig.value.prefix}-${spec.productSpecId}`] = next;
+  if (spec.productSpecId === selectedMockSpecId.value) {
+    rangeConfig.value.start = next.start;
+    rangeConfig.value.end = String(next.end);
+  }
+}
+
+const simulationRanges = computed(() => {
+  const maxEnd = currentColumnCount.value;
+  const normalizeEnd = (value: string) => value === '$DetectionColumns' ? maxEnd : Number(value);
+
+  if (rangeConfig.value.operation === 'CONDITIONAL_DIFF') {
+    return {
+      left: { start: rangeConfig.value.leftStart, end: Math.min(rangeConfig.value.leftEnd, maxEnd) },
+      middle: { start: rangeConfig.value.middleStart, end: Math.min(rangeConfig.value.middleEnd, maxEnd) },
+      right: { start: rangeConfig.value.rightStart, end: Math.min(normalizeEnd(rangeConfig.value.rightEnd), maxEnd) },
+    };
+  }
+
+  return {
+    main: {
+      start: rangeConfig.value.start,
+      end: Math.min(normalizeEnd(rangeConfig.value.end), maxEnd),
+    },
+  };
+});
+
+const simulationResult = computed(() => {
+  const values = editableSampleValues.value;
+  if (!values.length) return null;
+
+  const pickRangeValues = (start: number, end: number) => {
+    const normalizedStart = Math.max(1, start);
+    const normalizedEnd = Math.min(end, values.length);
+    if (normalizedStart > normalizedEnd) return [] as number[];
+    return values.slice(normalizedStart - 1, normalizedEnd);
+  };
+
+  const aggregate = (items: number[], operation: RangeConfig['operation']) => {
+    if (!items.length) return null;
+    switch (operation) {
+      case 'AVG':
+        return items.reduce((sum, item) => sum + item, 0) / items.length;
+      case 'MAX':
+        return Math.max(...items);
+      case 'MIN':
+        return Math.min(...items);
+      case 'SUM':
+        return items.reduce((sum, item) => sum + item, 0);
+      case 'COUNT':
+        return items.length;
+      default:
+        return null;
+    }
+  };
+
+  if (rangeConfig.value.operation === 'DIFF_FIRST') {
+    const items = pickRangeValues(rangeConfig.value.start, Number(rangeConfig.value.end === '$DetectionColumns' ? values.length : rangeConfig.value.end));
+    if (items.length < rangeConfig.value.firstN) return null;
+    const left = items[0];
+    const right = items[rangeConfig.value.firstN - 1];
+    return {
+      result: left - right,
+      rangeText: `第1列 - 第${rangeConfig.value.firstN}列`,
+      valuesText: `${left} - ${right}`,
+      explain: `${left} - ${right} = ${(left - right).toFixed(3)}`,
+    };
+  }
+
+  if (rangeConfig.value.operation === 'DIFF_LAST') {
+    const items = pickRangeValues(rangeConfig.value.start, Number(rangeConfig.value.end === '$DetectionColumns' ? values.length : rangeConfig.value.end));
+    if (items.length < rangeConfig.value.lastN) return null;
+    const left = items[items.length - 1];
+    const right = items[items.length - rangeConfig.value.lastN];
+    return {
+      result: left - right,
+      rangeText: `最后1列 - 倒数第${rangeConfig.value.lastN}列`,
+      valuesText: `${left} - ${right}`,
+      explain: `${left} - ${right} = ${(left - right).toFixed(3)}`,
+    };
+  }
+
+  if (rangeConfig.value.operation === 'CONDITIONAL_DIFF') {
+    const ranges = simulationRanges.value as {
+      left: { start: number; end: number };
+      middle: { start: number; end: number };
+      right: { start: number; end: number };
+    };
+    const middleValues = pickRangeValues(ranges.middle.start, ranges.middle.end);
+    const leftValues = pickRangeValues(ranges.left.start, ranges.left.end);
+    const rightValues = pickRangeValues(ranges.right.start, ranges.right.end);
+    const sideValues = [...leftValues, ...rightValues];
+    const middleAvg = aggregate(middleValues, 'AVG');
+    const sideAvg = aggregate(sideValues, 'AVG');
+    if (middleAvg === null || sideAvg === null) return null;
+    const useMinMinusMax = middleAvg < sideAvg;
+    const result = useMinMinusMax
+      ? Math.min(...middleValues) - Math.max(...sideValues)
+      : Math.max(...middleValues) - Math.min(...sideValues);
+    return {
+      result,
+      rangeText: `中${ranges.middle.start}-${ranges.middle.end} / 左${ranges.left.start}-${ranges.left.end} / 右${ranges.right.start}-${ranges.right.end}`,
+      valuesText: `中间[${middleValues.join(', ')}]；两侧[${sideValues.join(', ')}]`,
+      explain: useMinMinusMax
+        ? `AVG(中间)=${middleAvg.toFixed(3)} < AVG(两侧)=${sideAvg.toFixed(3)}，取 MIN(中间) - MAX(两侧) = ${result.toFixed(3)}`
+        : `AVG(中间)=${middleAvg.toFixed(3)} >= AVG(两侧)=${sideAvg.toFixed(3)}，取 MAX(中间) - MIN(两侧) = ${result.toFixed(3)}`,
+    };
+  }
+
+  const mainRange = simulationRanges.value as { main: { start: number; end: number } };
+  const mainValues = pickRangeValues(mainRange.main.start, mainRange.main.end);
+  const result = aggregate(mainValues, rangeConfig.value.operation);
+  if (result === null) return null;
+  const opNameMap: Record<string, string> = { AVG: '平均值', MAX: '最大值', MIN: '最小值', SUM: '求和', COUNT: '非空计数' };
+  return {
+    result,
+    rangeText: `${mainRange.main.start}-${mainRange.main.end}`,
+    valuesText: mainValues.join(', '),
+    explain: `${opNameMap[rangeConfig.value.operation] || rangeConfig.value.operation} = ${rangeConfig.value.operation === 'COUNT' ? result : result.toFixed(3)} (共${mainValues.length}项)`,
+  };
+});
+
+const simulationResultText = computed(() => {
+  if (!simulationResult.value) return '暂无结果';
+  return typeof simulationResult.value.result === 'number' && Number.isFinite(simulationResult.value.result)
+    ? simulationResult.value.result.toFixed(rangeConfig.value.operation === 'COUNT' ? 0 : 3)
+    : '计算异常';
+});
+
+const simulationRangeText = computed(() => simulationResult.value?.rangeText || '-');
+const simulationValuesText = computed(() => simulationResult.value?.valuesText || '-');
+const simulationExplainText = computed(() => simulationResult.value?.explain || '请先选择模板和计算类型');
+
 // 生成范围公式
 const generatedFormula = computed(() => {
-  const { operation, prefix, end, firstN, lastN, middleStart, middleEnd, leftStart, leftEnd, rightStart, rightEnd } = rangeConfig.value;
+  const { operation, prefix, start, end, firstN, lastN, middleStart, middleEnd, leftStart, leftEnd, rightStart, rightEnd } = rangeConfig.value;
 
   if (!operation) return '';
 
@@ -534,7 +753,7 @@ const generatedFormula = computed(() => {
     return `IF(AVG(${middleRange}) < AVG(${sidesRange}), MIN(${middleRange}) - MAX(${sidesRange}), MAX(${middleRange}) - MIN(${sidesRange}))`;
   }
 
-  return `${operation}(RANGE(${prefix}, 1, ${end}))`;
+  return `${operation}(RANGE(${prefix}, ${start}, ${end}))`;
 });
 
 // 公式描述
@@ -602,14 +821,76 @@ const functions = [
 ];
 
 const templates: any[] = [];
+const showRangeModeToggle = computed(() => {
+  const formulaType = currentRecord.value?.formulaType;
+  return formulaType !== 'JUDGE' && formulaType !== 'NO';
+});
+const currentRecord = ref<any>(null);
+
+function buildRecommendedSegments(columnCount: number) {
+  if (columnCount <= 4) {
+    return {
+      left: { start: 1, end: 1 },
+      middle: { start: 1, end: columnCount },
+      right: { start: columnCount, end: columnCount },
+    };
+  }
+
+  const edgeSize = columnCount <= 7 ? 2 : Math.min(4, Math.max(2, Math.floor(columnCount / 3)));
+  const left = { start: 1, end: edgeSize };
+  const right = { start: Math.max(edgeSize + 1, columnCount - edgeSize + 1), end: columnCount };
+  const middleStart = Math.min(left.end + 1, right.start - 1);
+  const middleEnd = Math.max(middleStart, right.start - 1);
+
+  return {
+    left,
+    middle: { start: middleStart, end: middleEnd },
+    right,
+  };
+}
+
+function applyRecommendedSegments() {
+  const recommended = recommendedSegments.value;
+  rangeConfig.value.middleStart = recommended.middle.start;
+  rangeConfig.value.middleEnd = recommended.middle.end;
+  rangeConfig.value.leftStart = recommended.left.start;
+  rangeConfig.value.leftEnd = recommended.left.end;
+  rangeConfig.value.rightStart = recommended.right.start;
+  rangeConfig.value.rightEnd = String(recommended.right.end);
+}
+
+function applyRangePreset(preset: RangePresetKey) {
+  activeRangePreset.value = preset;
+  applyRecommendedSegments();
+  syncCurrentSpecRange();
+}
+
+function clampRangeConfigToCurrentSpec() {
+  const max = currentColumnCount.value;
+  rangeConfig.value.start = Math.min(Math.max(1, rangeConfig.value.start), max);
+  if (rangeConfig.value.end !== '$DetectionColumns') {
+    rangeConfig.value.end = String(Math.min(Math.max(rangeConfig.value.start, Number(rangeConfig.value.end)), max));
+  }
+
+  rangeConfig.value.middleStart = Math.min(Math.max(1, rangeConfig.value.middleStart), max);
+  rangeConfig.value.middleEnd = Math.min(Math.max(rangeConfig.value.middleStart, rangeConfig.value.middleEnd), max);
+  rangeConfig.value.leftStart = Math.min(Math.max(1, rangeConfig.value.leftStart), max);
+  rangeConfig.value.leftEnd = Math.min(Math.max(rangeConfig.value.leftStart, rangeConfig.value.leftEnd), max);
+  rangeConfig.value.rightStart = Math.min(Math.max(1, rangeConfig.value.rightStart), max);
+  if (rangeConfig.value.rightEnd !== '$DetectionColumns') {
+    rangeConfig.value.rightEnd = String(Math.min(Math.max(rangeConfig.value.rightStart, Number(rangeConfig.value.rightEnd)), max));
+  }
+}
 
 // --- Modal Init ---
 const [registerModal, { setModalProps, closeModal, redoModalHeight }] = useModalInner(async (data) => {
   setModalProps({ confirmLoading: false, defaultFullscreen: false });
   formulaId.value = data?.record?.id || '';
+  currentRecord.value = data?.record || null;
 
   // 检查是否为范围列
   isRangeColumn.value = data?.record?.isRange === true;
+  editorMode.value = resolveInitialEditorMode(data?.record);
 
   if (data?.record) {
     modalTitle.value = `编辑公式:${data.record.formulaName || ''} (${data.record.columnName || ''})`;
@@ -618,12 +899,14 @@ const [registerModal, { setModalProps, closeModal, redoModalHeight }] = useModal
   }
 
   await loadAvailableFields();
+  await loadRealProductSpecs();
 
   const initFormula = data?.record?.formula || '';
 
-  if (isRangeColumn.value && initFormula) {
+  if (editorMode.value === 'range' && initFormula) {
     // 解析范围公式
     parseRangeFormula(initFormula);
+    applyRecommendedSegments();
   } else if (initFormula) {
     // 解析普通公式
     parseFormulaToTokens(initFormula);
@@ -662,8 +945,97 @@ const [registerModal, { setModalProps, closeModal, redoModalHeight }] = useModal
       rightStart: 14,
       rightEnd: '$DetectionColumns',
     };
+    applyRangePreset('ALL');
   }
 });
+
+async function loadRealProductSpecs() {
+  try {
+    const res: any = await getProductSpecList({ pageSize: 500, currentPage: 1, enabled: true });
+    const list = Array.isArray(res?.list) ? res.list : [];
+    const mapped = list
+      .map((item: any) => {
+        const columnCount = parseDetectionColumnCount(item?.detectionColumns);
+        return {
+          productSpecId: String(item?.id || item?.productSpecId || ''),
+          productSpecCode: item?.code || item?.productSpecCode || '',
+          productSpecName: item?.name || item?.productSpecName || item?.code || '未命名规格',
+          detectionColumnCount: columnCount,
+          thicknessColumnCount: columnCount,
+          detectionValues: buildSampleValues(columnCount, 'Detection', item?.code || item?.name || ''),
+          thicknessValues: buildSampleValues(columnCount, 'Thickness', item?.code || item?.name || ''),
+        } satisfies MockProductSpec;
+      })
+      .filter((item: MockProductSpec) => item.productSpecId);
+
+    mockSpecs.value = mapped.length ? mapped : buildFallbackSpecs();
+    if (!mockSpecs.value.some(item => item.productSpecId === selectedMockSpecId.value)) {
+      selectedMockSpecId.value = mockSpecs.value[0]?.productSpecId || 'default';
+    }
+  } catch {
+    mockSpecs.value = buildFallbackSpecs();
+    selectedMockSpecId.value = mockSpecs.value[0]?.productSpecId || 'default';
+  }
+}
+
+function parseDetectionColumnCount(rawValue: unknown): number {
+  if (typeof rawValue === 'number' && Number.isFinite(rawValue)) {
+    return Math.min(22, Math.max(1, Math.floor(rawValue)));
+  }
+
+  if (typeof rawValue !== 'string') return 15;
+  const values = rawValue
+    .split(',')
+    .map(item => Number(item.trim()))
+    .filter(item => Number.isFinite(item) && item > 0);
+
+  if (!values.length) return 15;
+  return Math.min(22, Math.max(1, Math.max(...values)));
+}
+
+function buildSampleValues(count: number, family: 'Detection' | 'Thickness', seedSource: string): number[] {
+  const baseSamples = [
+    566.9, 509.9, 511.9, 525.7, 507.2, 490.9, 504.4, 514.4, 520.2, 501.9, 489.5,
+    474.4, 483.2, 498.5, 491.0, 484.7, 491.1, 485.2, 496.8, 497.4, 503.9, 508.1,
+  ];
+  const seed = Array.from(seedSource).reduce((sum, char) => sum + char.charCodeAt(0), 0) % 7;
+  const offset = family === 'Thickness' ? seed * 0.1 : seed * 0.3;
+  return Array.from({ length: count }, (_, index) => {
+    if (index < baseSamples.length) {
+      return Number((baseSamples[index] + offset).toFixed(1));
+    }
+    const last = baseSamples[baseSamples.length - 1];
+    return Number((last + offset + (index - baseSamples.length + 1) * 1.7).toFixed(1));
+  });
+}
+
+function buildFallbackSpecs(): MockProductSpec[] {
+  const fallbackCounts = [13, 9, 6];
+  return fallbackCounts.map((count, index) => ({
+    productSpecId: `fallback-${index + 1}`,
+    productSpecCode: `S${index + 1}`,
+    productSpecName: `默认规格${index + 1}`,
+    detectionColumnCount: count,
+    thicknessColumnCount: count,
+    detectionValues: buildSampleValues(count, 'Detection', `fallback-${index + 1}`),
+    thicknessValues: buildSampleValues(count, 'Thickness', `fallback-${index + 1}`),
+  }));
+}
+
+function resolveInitialEditorMode(record: any): 'range' | 'advanced' {
+  if (!record) return 'advanced';
+  if (record.isRange === true) return 'range';
+
+  const formula = String(record.formula || '').toUpperCase();
+  const columnName = String(record.columnName || '').toUpperCase();
+  const formulaName = String(record.formulaName || '').toUpperCase();
+  const rangeHints = ['RANGE(', 'DIFF_FIRST(', 'DIFF_LAST(', 'CONDITIONAL_DIFF', 'DETECTION', 'THICKNESS'];
+  const columnHints = ['THICK', 'DETECTION', '带厚', '检测'];
+
+  if (rangeHints.some(hint => formula.includes(hint))) return 'range';
+  if (columnHints.some(hint => columnName.includes(hint) || formulaName.includes(hint))) return 'range';
+  return 'advanced';
+}
 
 const loadAvailableFields = async () => {
   try {
@@ -755,6 +1127,24 @@ function parseRangeFormula(formula: string) {
   // 解析失败,使用默认值
   console.warn('无法解析范围公式:', formula);
 }
+
+watch([selectedMockSpecId, () => rangeConfig.value.prefix], () => {
+  clampRangeConfigToCurrentSpec();
+  applyRecommendedSegments();
+  syncCurrentSpecRange();
+});
+
+watch(presetColumnCount, value => {
+  const digitsOnly = String(value ?? '').replace(/[^\d]/g, '');
+  const normalized = String(Math.max(1, Number.parseInt(digitsOnly || '2', 10)));
+  if (normalized !== value) {
+    presetColumnCount.value = normalized;
+    return;
+  }
+  if (activeRangePreset.value === 'LEFT' || activeRangePreset.value === 'MIDDLE' || activeRangePreset.value === 'RIGHT') {
+    syncCurrentSpecRange();
+  }
+});
 
 // --- 表达式模式操作 (保持原有逻辑) ---
 const parseFormulaToTokens = (formula: string) => {
@@ -1029,7 +1419,7 @@ function enterFormulaFullscreen() {
 function handleSubmit() {
   let formula = '';
 
-  if (isRangeColumn.value) {
+  if (editorMode.value === 'range') {
     formula = generatedFormula.value;
   } else {
     formula = formulaText.value;
@@ -1070,9 +1460,50 @@ function handleCancel() { closeModal(); }
 
 // ========== 范围列配置模式 ==========
 .range-formula-config {
-  padding: 20px;
-  max-height: ~'min(520px, calc(100vh - 240px))';
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  max-height: ~'calc(100vh - 160px)';
+  padding: 20px 20px 16px 0;
+  background: #fff;
+
+  .range-formula-form {
+    flex: 1;
+    min-height: 0;
+    overflow: visible;
+    display: flex;
+    flex-direction: column;
+    padding: 0 20px 20px 0;
+  }
+
+  .range-formula-layout {
+    display: flex;
+    gap: 20px;
+    flex: 1 1 auto;
+    min-height: auto;
+  }
+
+  .range-config-main,
+  .range-config-side {
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .range-config-main {
+    flex: 1;
+    min-width: 0;
+    padding-right: 4px;
+  }
+
+  .range-config-side {
+    width: 340px;
+    flex-shrink: 0;
+    padding-left: 20px;
+    border-left: 1px solid #eef0f5;
+  }
+
+  .range-config-side > * + * {
+    margin-top: 12px;
+  }
 
   .form-hint {
     font-size: 12px;
@@ -1098,7 +1529,7 @@ function handleCancel() { closeModal(); }
     background: #f9f9f9;
     border: 1px solid #e8e8e8;
     border-radius: 8px;
-    padding: 16px;
+    padding: 12px;
 
     .preview-header {
       display: flex;
@@ -1139,10 +1570,10 @@ function handleCancel() { closeModal(); }
 .formula-builder {
   display: flex;
   gap: 12px;
-  height: ~'min(520px, calc(100vh - 240px))';
-  min-height: 300px;
+  max-height: ~'calc(100vh - 120px)';
+  min-height: 520px;
   background: white;
-  padding: 0;
+  padding: 0 0 16px;
 }
 
 .panel {
@@ -1369,7 +1800,7 @@ function handleCancel() { closeModal(); }
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    justify-content: flex-end;
+    justify-content: flex-start;
     gap: 4px;
   }
 
@@ -1388,7 +1819,7 @@ function handleCancel() { closeModal(); }
   overflow-y: auto;
   cursor: text;
   transition: all 0.2s;
-  min-height: 200px;
+  min-height: 360px;
 
   &:hover,
   &:focus-within {
@@ -1557,7 +1988,7 @@ function handleCancel() { closeModal(); }
     color: #333;
     font-size: 13px;
     background: white;
-    min-height: 40px;
+    min-height: 80px;
     white-space: pre-wrap;
     word-break: break-all;
   }
@@ -1730,11 +2161,285 @@ function handleCancel() { closeModal(); }
     }
   }
 }
+
+.formula-mode-switch {
+  display: flex;
+  justify-content: flex-start;
+  padding: 0 0 16px;
+}
+
+.spec-range-table {
+  border: 1px solid #dbe3ef;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.spec-range-table__head,
+.spec-range-table__row {
+  display: grid;
+  grid-template-columns: 80px 56px 152px minmax(200px, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 4px 8px;
+}
+
+.spec-range-table__head {
+  background: #f5f8fc;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  border-bottom: 1px solid #e5edf8;
+}
+
+.spec-range-table__head span:nth-child(1),
+.spec-range-table__head span:nth-child(2),
+.spec-range-table__head span:nth-child(3) {
+  text-align: center;
+}
+
+.spec-range-table__row {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #eef2f7;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: #f9fbff;
+  }
+
+  &.active {
+    background: #f0f7ff;
+    box-shadow: inset 3px 0 0 #1677ff;
+  }
+}
+
+.cell {
+  color: #0f172a;
+  font-size: 13px;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.cell-name {
+  font-weight: 600;
+  text-align: center;
+}
+
+.cell-columns {
+  color: #1677ff;
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.range-edit-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: inherit;
+  width: 100%;
+}
+
+.cell-range-input,
+.cell-sample {
+  display: flex;
+  align-items: center;
+}
+
+.cell-range-input {
+  justify-content: center;
+}
+
+.range-text-input {
+  width: 100%;
+}
+
+.range-text-input :deep(.ant-input-number-input) {
+  text-align: center;
+  padding: 0 6px;
+  font-size: 12px;
+}
+
+.range-text-input {
+  max-width: 68px;
+}
+
+.range-text-input :deep(.ant-input-number-disabled .ant-input-number-input) {
+  background: #f8fafc;
+  color: #0f172a;
+  cursor: default;
+}
+
+.sample-text {
+  display: inline-block;
+  color: #334155;
+  font-size: 11px;
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.range-edit-sep {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.range-template-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.preset-count-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.preset-count-label {
+  color: #64748b;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.preset-count-input {
+  width: 120px;
+}
+
+.simulation-card {
+  border: 1px solid #e5edf8;
+  border-radius: 12px;
+  padding: 16px 18px 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbfe 100%);
+}
+
+.simulation-subtitle {
+  margin-bottom: 12px;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.simulation-values {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 4px 8px 0;
+}
+
+.sample-input-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 0 0 78px;
+}
+
+.sample-label {
+  color: #64748b;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.simulation-hint {
+  margin-top: 12px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.simulation-result-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #eef2f7;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.simulation-result-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.simulation-result-label {
+  flex-shrink: 0;
+  width: 64px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.6;
+}
+
+.simulation-result-value {
+  flex: 1;
+  color: #1677ff;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.simulation-result-text {
+  flex: 1;
+  color: #334155;
+  font-size: 12px;
+  line-height: 1.6;
+  word-break: break-all;
+}
+
+@media screen and (max-width: 1280px) {
+  .range-formula-config {
+    .range-formula-layout {
+      flex-direction: column;
+    }
+
+    .range-config-side {
+      width: 100%;
+      padding-left: 0;
+      border-left: none;
+      border-top: 1px solid #eef0f5;
+      padding-top: 16px;
+    }
+  }
+
+  .spec-range-table {
+    overflow-x: auto;
+  }
+
+  .spec-range-table__head,
+  .spec-range-table__row {
+    min-width: 680px;
+  }
+
+}
+
+@media screen and (max-width: 960px) {
+  .simulation-values {
+    gap: 8px;
+  }
+}
 </style>
 
 <style lang="less">
 /* 全屏时拉长三栏编辑区（类名由 BasicModal 挂在 .ant-modal 上，与 wrap 上的 fullscreen-modal 组合使用） */
 .fullscreen-modal .ant-modal.formula-builder-modal .formula-builder {
+  height: ~'calc(100vh - 200px)';
+  min-height: 360px;
+}
+
+.fullscreen-modal .ant-modal.formula-builder-modal .range-formula-config {
   height: ~'calc(100vh - 200px)';
   min-height: 360px;
 }

@@ -13,7 +13,8 @@ from __future__ import annotations
 import logging
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import PlainTextResponse, StreamingResponse
+from prometheus_client import generate_latest
 
 from src.api.dependencies import get_orchestrator, get_services
 from src.models.schemas import ChatRequest, HealthResponse
@@ -22,6 +23,20 @@ from src.pipelines.orchestrator import PipelineOrchestrator
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+# ═══════════════════════════════════════════════════════════════
+# Prometheus metrics
+# ═══════════════════════════════════════════════════════════════
+
+
+@router.get("/metrics", response_class=PlainTextResponse)
+async def metrics():
+    """Prometheus scrape endpoint. Exempt from rate limiting."""
+    return PlainTextResponse(
+        generate_latest(),
+        media_type="text/plain; version=0.0.4; charset=utf-8",
+    )
 
 
 # ═══════════════════════════════════════════════════════════════

@@ -21,7 +21,7 @@ from starlette.responses import JSONResponse
 
 logger = logging.getLogger(__name__)
 
-EXEMPT_PATHS = frozenset({"/health", "/docs", "/openapi.json", "/redoc"})
+EXEMPT_PATHS = frozenset({"/health", "/metrics", "/docs", "/openapi.json", "/redoc"})
 
 
 def _error_json(status_code: int, code: str, message: str) -> JSONResponse:

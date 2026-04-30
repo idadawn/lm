@@ -1,49 +1,64 @@
 # ═══════════════════════════════════════════════════════════════
-# nlq-agent Dockerfile
-# 多阶段构建：减小最终镜像体积
+# nlq-agent Dockerfile — Production Hardened
+# Multi-stage build with uv for reproducible, minimal images
 # ═══════════════════════════════════════════════════════════════
 
-# ── Stage 1: 依赖安装 ────────────────────────────────────────
-FROM python:3.11-slim AS builder
+# ── Stage 1: Builder ───────────────────────────────────────────
+FROM python:3.13-slim AS builder
 
 WORKDIR /app
 
-# 安装系统依赖
+# Install system build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     default-libmysqlclient-dev \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
-# 安装 Python 依赖
-COPY requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# ── Stage 2: 运行时镜像 ──────────────────────────────────────
-FROM python:3.11-slim
+# Copy dependency manifests
+COPY pyproject.toml uv.lock ./
+COPY src/ ./src/
+
+# Sync production dependencies into a virtual environment
+RUN uv venv /app/.venv && \
+    uv sync --frozen --no-dev --venv /app/.venv
+
+# ── Stage 2: Production runtime ────────────────────────────────
+FROM python:3.13-slim
 
 WORKDIR /app
 
-# 从 builder 复制已安装的依赖
-COPY --from=builder /install /usr/local
+# Install runtime system dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    default-libmysqlclient-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# 复制应用代码
-COPY src/ ./src/
-COPY scripts/ ./scripts/
+# Create non-root user
+RUN groupadd -g 1000 appuser && \
+    useradd -m -u 1000 -g appuser appuser && \
+    chown -R appuser:appuser /app
 
-# 创建非 root 用户
-RUN useradd -m -r nlqagent && chown -R nlqagent:nlqagent /app
-USER nlqagent
+# Copy virtual environment from builder
+COPY --from=builder --chown=appuser:appuser /app/.venv /app/.venv
 
-# 环境变量
+# Copy application code
+COPY --chown=appuser:appuser src/ ./src/
+COPY --chown=appuser:appuser scripts/ ./scripts/
+
+# Ensure Python uses the venv
+ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 
-# 暴露端口
+USER appuser
+
 EXPOSE 18100
 
-# 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-    CMD python -c "import httpx; r = httpx.get('http://localhost:18100/health'); r.raise_for_status()" || exit 1
+    CMD curl -f http://localhost:18100/health || exit 1
 
-# 启动命令
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "18100", "--workers", "2"]

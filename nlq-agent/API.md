@@ -323,6 +323,63 @@ Events follow a strict sequence:
 
 No new event types will be added without frontend coordination.
 
+---
+
+## Production Deployment
+
+### Prerequisites
+
+- Docker Engine >= 24.0 with Compose plugin
+- NVIDIA Container Toolkit (for GPU TEI profile)
+- `.env.production` file prepared from `.env.production.example`
+
+### Start
+
+```bash
+docker compose -f docker-compose.production.yml --env-file .env.production up -d
+```
+
+For CPU-only hosts (falls back to `tei-cpu`):
+
+```bash
+docker compose -f docker-compose.production.yml --env-file .env.production --profile cpu up -d
+```
+
+### Upgrade
+
+```bash
+cd nlq-agent
+docker compose -f docker-compose.production.yml pull
+docker compose -f docker-compose.production.yml up -d
+```
+
+### Logs
+
+```bash
+docker compose -f docker-compose.production.yml logs -f nlq-agent
+```
+
+### Monitoring
+
+| Endpoint | Purpose |
+|----------|---------|
+| `/health` | Health check — returns `status`, `version`, and dependency connectivity |
+| `/metrics` | Prometheus scrape endpoint — exposes counters, histograms, and gauges |
+
+Both endpoints are exempt from rate limiting and can be scraped directly by your monitoring stack.
+
+### Stop
+
+```bash
+docker compose -f docker-compose.production.yml down
+```
+
+To also remove Qdrant persistent data (use with caution):
+
+```bash
+docker compose -f docker-compose.production.yml down -v
+```
+
 ### SQL Safety
 
 All generated SQL is validated through `validate_sql()` which blocks: `INSERT`, `UPDATE`, `DELETE`, `DROP`, `CREATE`, `ALTER`, `TRUNCATE`, `GRANT`, `EXEC`, `CALL`, `SET`, `LOAD`, `INTO OUTFILE`. Results are capped at 500 rows (`sql_max_rows`).

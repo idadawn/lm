@@ -148,9 +148,9 @@ class QdrantService:
             ]
             qdrant_filter = Filter(must=must)
 
-        results = await self._client.search(
+        response = await self._client.query_points(
             collection_name=collection_name,
-            query_vector=query_vector,
+            query=query_vector,
             limit=top_k or self._top_k,
             query_filter=qdrant_filter,
             score_threshold=score_threshold,
@@ -167,7 +167,7 @@ class QdrantService:
                     if k not in ("text", "doc_id")
                 },
             }
-            for hit in results
+            for hit in response.points
         ]
 
     async def search_multi_collection(

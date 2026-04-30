@@ -11,6 +11,7 @@ testpaths = ["tests"]
 pythonpath = ["."]
 markers = [
     "live_llm: 真实 LLM + 真实 MySQL 端到端测试（夜间 advisory lane，非 merge-gating）",
+    "live_qdrant: 需要 Qdrant 服务运行的兼容性测试（CI 默认 skip）",
 ]
 
 [tool.ruff]

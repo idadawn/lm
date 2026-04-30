@@ -4,6 +4,17 @@ version = "0.1.0"
 description = "路美实验室数据分析 — 两阶段问答微服务（语义层 + 数据层）"
 requires-python = ">=3.11"
 readme = "README.md"
+dependencies = [
+    "prometheus-client>=0.19,<1.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "fastapi>=0.115",
+    "httpx>=0.28",
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

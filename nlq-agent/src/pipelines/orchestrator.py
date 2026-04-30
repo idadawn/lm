@@ -8,8 +8,15 @@ Pipeline 编排器
 from __future__ import annotations
 
 import logging
+import time
 from typing import AsyncIterator
 
+from src.core.metrics import (
+    ACTIVE_CHAT_STREAMS,
+    CHAT_STREAM_DURATION_SECONDS,
+    inc_error_count,
+    inc_intent_count,
+)
 from src.models.schemas import (
     ChatRequest,
     IntentType,
@@ -57,6 +64,11 @@ class PipelineOrchestrator:
         Yields:
             格式化后的 SSE 事件字符串
         """
+        start = time.monotonic()
+        ACTIVE_CHAT_STREAMS.inc()
+        intent_type = "unknown"
+        status = "ok"
+
         # 提取最后一条用户消息作为当前问题
         question = ""
         for msg in reversed(request.messages):
@@ -66,6 +78,10 @@ class PipelineOrchestrator:
 
         if not question:
             yield self._make_error_event("未找到用户问题")
+            ACTIVE_CHAT_STREAMS.dec()
+            elapsed = time.monotonic() - start
+            inc_intent_count("unknown", "ok")
+            CHAT_STREAM_DURATION_SECONDS.observe(elapsed)
             return
 
         # 创建 SSE 发射器（每次请求独立实例）
@@ -81,9 +97,10 @@ class PipelineOrchestrator:
                 yield event
 
             # ── 根据意图决定后续路径 ─────────────────────────
-            intent_type = context.intent.intent
+            intent_type = context.intent.intent.value
+            status = "ok"
 
-            if intent_type == IntentType.OUT_OF_SCOPE:
+            if intent_type == IntentType.OUT_OF_SCOPE.value:
                 # 超出范围：直接 fallback
                 fallback = ReasoningStep(
                     kind=ReasoningStepKind.FALLBACK,
@@ -98,7 +115,6 @@ class PipelineOrchestrator:
                 )
                 yield emitter.emit_response_metadata()
                 yield emitter.emit_done()
-                return
 
             else:
                 # 统计类 / 根因类 / 概念类：执行 Stage 2
@@ -111,9 +127,18 @@ class PipelineOrchestrator:
                 yield emitter.emit_done()
 
         except Exception as e:
+            status = "error"
+            error_code = type(e).__name__
+            inc_error_count(error_code)
             logger.exception("Pipeline 执行异常: %s", e)
             yield emitter.emit_error(f"系统内部错误: {e}")
             yield emitter.emit_done()
+
+        finally:
+            elapsed = time.monotonic() - start
+            ACTIVE_CHAT_STREAMS.dec()
+            inc_intent_count(intent_type, status)
+            CHAT_STREAM_DURATION_SECONDS.observe(elapsed)
 
     def _make_error_event(self, message: str) -> str:
         """生成错误 SSE 事件。"""

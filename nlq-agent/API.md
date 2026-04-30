@@ -196,6 +196,35 @@ curl http://localhost:18100/health
 
 ---
 
+## GET /metrics
+
+Prometheus scrape endpoint — exposes all application metrics in the standard exposition format.
+
+### Response
+
+**Content-Type:** `text/plain; version=0.0.4; charset=utf-8`
+
+Returns [Prometheus exposition format](https://prometheus.io/docs/instrumenting/exposition_formats/) text.
+
+### Exposed Metrics
+
+| Metric | Type | Labels | Description |
+|--------|------|--------|-------------|
+| `chat_stream_total` | Counter | `intent_type`, `status` | Total chat stream requests |
+| `chat_stream_errors_total` | Counter | `error_code` | Total errors by error code |
+| `stage1_duration_seconds` | Histogram | `intent_type` | Stage 1 (semantic KG) latency |
+| `stage2_sql_duration_seconds` | Histogram | — | Stage 2 (SQL gen + exec) latency |
+| `chat_stream_duration_seconds` | Histogram | — | End-to-end chat stream latency |
+| `active_chat_streams` | Gauge | — | Currently active concurrent streams |
+
+**Note:** `/metrics` is exempt from rate limiting and query length guards.
+
+```bash
+curl http://localhost:18100/metrics
+```
+
+---
+
 ## POST /api/v1/sync/rules
 
 Incremental sync of judgment rules from .NET backend to Qdrant.

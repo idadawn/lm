@@ -52,6 +52,10 @@ _ROOT_CAUSE_PERIOD_RE = re.compile(r"(?:上|前)\s*(\d+)\s*(?:个?月)")
 _SHIFT_KEYWORDS = frozenset({"班次", "白班", "晚班", "早班", "中班", "夜班", "不同班次", "各班次"})
 _SHIFT_WINDOW_RE = re.compile(r"(?:近|最近)\s*(\d+)\s*(?:个?月|周|季度|年)")
 
+# CONCEPTUAL 关键词 — 概念解释类查询优先路由
+_CONCEPTUAL_KEYWORDS = frozenset({"什么是", "如何", "定义", "含义", "怎么计算", "是什么", "什么意思", "怎么"})
+_CONCEPTUAL_RE = re.compile(r"")  # conceptual 不需要提取时间窗口
+
 
 class SemanticKGAgent:
     """
@@ -200,6 +204,15 @@ class SemanticKGAgent:
                     "metric": "合格率",
                 },
                 reasoning=f"关键词匹配班次对比类查询，时间窗口={time_window}个月",
+            )
+
+        # keyword-based pre-check for conceptual intent
+        if any(kw in question for kw in _CONCEPTUAL_KEYWORDS):
+            return IntentClassification(
+                intent=IntentType.CONCEPTUAL,
+                confidence=0.9,
+                extracted_entities={},
+                reasoning="关键词匹配概念解释类查询",
             )
 
         try:

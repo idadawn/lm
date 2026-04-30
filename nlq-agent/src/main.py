@@ -14,6 +14,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.dependencies import init_services, shutdown_services
+from src.api.middleware import QueryLengthGuard, RateLimitInMem, RequestSizeLimit
 from src.api.routes import router
 from src.core.settings import get_settings
 
@@ -70,6 +71,11 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # 请求安全中间件（执行顺序：RateLimit → QueryLength → RequestSize → handler）
+    app.add_middleware(RequestSizeLimit)
+    app.add_middleware(QueryLengthGuard)
+    app.add_middleware(RateLimitInMem)
 
     # 注册路由
     app.include_router(router)

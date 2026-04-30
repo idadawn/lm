@@ -44,6 +44,10 @@ logger = logging.getLogger(__name__)
 _TREND_KEYWORDS = frozenset({"趋势", "变化趋势", "走势", "环比", "同比"})
 _TREND_WINDOW_RE = re.compile(r"(?:近|最近)\s*(\d+)\s*(?:个?月|周|季度|年)")
 
+# Root cause 关键词 — 用于 _classify_intent 的关键词优先路由
+_ROOT_CAUSE_KEYWORDS = frozenset({"为什么", "原因", "下降", "为何", "找出原因", "不合格", "异常", "偏低"})
+_ROOT_CAUSE_PERIOD_RE = re.compile(r"(?:上|前)\s*(\d+)\s*(?:个?月)")
+
 
 class SemanticKGAgent:
     """
@@ -149,7 +153,22 @@ class SemanticKGAgent:
     # ── 内部方法 ─────────────────────────────────────────────
 
     async def _classify_intent(self, question: str) -> IntentClassification:
-        """调用 LLM 进行意图分类，trend 关键词优先路由。"""
+        """调用 LLM 进行意图分类，root_cause / trend 关键词优先路由。"""
+        # keyword-based pre-check for root_cause intent
+        if any(kw in question for kw in _ROOT_CAUSE_KEYWORDS):
+            match = _ROOT_CAUSE_PERIOD_RE.search(question)
+            time_window = int(match.group(1)) if match else 1
+            return IntentClassification(
+                intent=IntentType.ROOT_CAUSE,
+                confidence=0.9,
+                extracted_entities={
+                    "time_window": time_window,
+                    "metric": "合格率",
+                    "dimension_keys": ["F_PRODUCT_SPEC_CODE", "F_CREATORUSERID"],
+                },
+                reasoning=f"关键词匹配根因分析类查询，时间窗口={time_window}个月",
+            )
+
         # keyword-based pre-check for trend intent
         if any(kw in question for kw in _TREND_KEYWORDS):
             match = _TREND_WINDOW_RE.search(question)

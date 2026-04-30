@@ -23,6 +23,7 @@ from src.models.ddl import METRIC_SQL_TEMPLATES, get_all_ddl
 from src.models.schemas import (
     AgentContext,
     FilterCondition,
+    IntentType,
     ReasoningStep,
     ReasoningStepKind,
 )

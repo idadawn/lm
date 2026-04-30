@@ -38,7 +38,7 @@ class QdrantService:
             host=settings.qdrant_host,
             port=settings.qdrant_port,
             grpc_port=settings.qdrant_grpc_port,
-            api_key=settings.qdrant_api_key,
+            api_key=settings.qdrant_api_key or None,
         )
         self._embedding = embedding_client
         self._dim = settings.embedding_dim

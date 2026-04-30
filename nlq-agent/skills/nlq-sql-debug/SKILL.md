@@ -135,7 +135,7 @@ PREDEFINED_SQL_TEMPLATES = {
    grep -n "SQL_ERROR\|sql_error\|SQLError" nlq-agent/logs/app.log | tail -20
 
    # 或直接测试同步接口
-   curl -X POST http://localhost:18100/api/v1/query/sync \
+   curl -X POST http://localhost:18100/api/v1/chat/stream \
      -H "Content-Type: application/json" \
      -d '{"question": "本月A类合格率是多少", "context": {}}'
    ```
@@ -187,7 +187,7 @@ pkill -f "uvicorn src.main:app"
 uvicorn src.main:app --reload --port 18100 &
 
 # 测试修复后的查询
-curl -X POST http://localhost:18100/api/v1/query/sync \
+curl -X POST http://localhost:18100/api/v1/chat/stream \
   -H "Content-Type: application/json" \
   -d '{"question": "本月A类合格率是多少", "context": {"month": "2024-01"}}'
 

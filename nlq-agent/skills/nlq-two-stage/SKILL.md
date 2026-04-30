@@ -41,7 +41,7 @@ nlq-agent/
 
 **关键约定**：
 - 服务端口：`18100`（与 `.env.example` 和 `docker-compose.yml` 一致）
-- SSE 端点：`POST /api/v1/query`（流式）、`POST /api/v1/query/sync`（同步，仅测试用）
+- SSE 端点：`POST /api/v1/chat/stream`（流式）、`POST /api/v1/chat/stream`（同步，仅测试用）
 - 健康检查：`GET /health`
 - 知识库同步：`POST /api/v1/knowledge/sync`（.NET 后端回调触发）
 </Project_Structure>
@@ -150,7 +150,7 @@ data: { "type": "error", "message": "...", "code": "SQL_GENERATION_FAILED" }
 1. 检查 `src/services/sse_emitter.py` 中的事件格式
 2. 使用 `curl` 测试端点：
    ```bash
-   curl -N -X POST http://localhost:18100/api/v1/query \
+   curl -N -X POST http://localhost:18100/api/v1/chat/stream \
      -H "Content-Type: application/json" \
      -d '{"question": "本月A类合格率是多少", "context": {}}'
    ```
@@ -171,7 +171,7 @@ uvicorn src.main:app --reload --port 18100
 curl http://localhost:18100/health
 
 # 端到端测试
-curl -N -X POST http://localhost:18100/api/v1/query \
+curl -N -X POST http://localhost:18100/api/v1/chat/stream \
   -H "Content-Type: application/json" \
   -d '{"question": "本月硅钢片A类合格率是多少？", "context": {"month": "2024-01"}}'
 ```

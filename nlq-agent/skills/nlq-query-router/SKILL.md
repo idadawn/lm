@@ -67,7 +67,7 @@ async def _route_intent(self, question: str) -> IntentType:
 2. 测试当前路由效果：
    ```bash
    # 使用同步接口测试意图分类
-   curl -X POST http://localhost:18100/api/v1/query/sync \
+   curl -X POST http://localhost:18100/api/v1/chat/stream \
      -H "Content-Type: application/json" \
      -d '{"question": "本月铁损异常的批次有哪些", "context": {}}' \
      | python -m json.tool | grep '"intent"'
@@ -149,13 +149,13 @@ asyncio.run(test())
 
 ```bash
 # 验证 statistical 路由（应触发 Stage2 SQL 查询）
-curl -N -X POST http://localhost:18100/api/v1/query \
+curl -N -X POST http://localhost:18100/api/v1/chat/stream \
   -H "Content-Type: application/json" \
   -d '{"question": "本月A类合格率是多少", "context": {"month": "2024-01"}}' \
   | grep "event:"
 
 # 验证 concept 路由（应只有 Stage1，无 SQL）
-curl -N -X POST http://localhost:18100/api/v1/query \
+curl -N -X POST http://localhost:18100/api/v1/chat/stream \
   -H "Content-Type: application/json" \
   -d '{"question": "A类是什么标准", "context": {}}' \
   | grep "event:"

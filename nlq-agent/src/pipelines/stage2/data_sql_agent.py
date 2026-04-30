@@ -221,12 +221,15 @@ class DataSQLAgent:
     # ── 内部方法 ─────────────────────────────────────────────
 
     async def _generate_sql(self, context: AgentContext) -> dict[str, Any]:
-        """调用 LLM 生成 SQL。Trend / root_cause intent 直接使用模板。"""
+        """调用 LLM 生成 SQL。Trend / root_cause / by_shift intent 直接使用模板。"""
         if context.intent.intent == IntentType.TREND:
             return self._generate_trend_sql(context)
 
         if context.intent.intent == IntentType.ROOT_CAUSE:
             return self._generate_root_cause_sql(context)
+
+        if context.intent.intent == IntentType.BY_SHIFT:
+            return self._generate_by_shift_sql(context)
 
         # 检查是否有匹配的预定义模板
         sql_templates_text = self._match_sql_templates(context)
@@ -325,6 +328,25 @@ class DataSQLAgent:
         return {
             "sql": sql.strip(),
             "explanation": f"按{dimension}维度分析合格率归因",
+        }
+
+    def _generate_by_shift_sql(self, context: AgentContext) -> dict[str, Any]:
+        """ByShift intent: 直接使用合格率_班次模板生成 SQL。"""
+        template_entry = METRIC_SQL_TEMPLATES.get("合格率_班次")
+        if not template_entry:
+            return {"sql": "", "explanation": "合格率_班次模板不存在"}
+
+        time_window = context.intent.extracted_entities.get("time_window", 1)
+        extra_where = ""
+
+        sql = template_entry["sql_template"].format(
+            time_window_months=time_window,
+            extra_where=extra_where,
+        )
+
+        return {
+            "sql": sql.strip(),
+            "explanation": f"近{time_window}个月按班次分组的合格率对比",
         }
 
     async def _backfill_conditions(
@@ -644,6 +666,19 @@ class DataSQLAgent:
                     f"（低于整体 {abs(delta)}%）"
                 )
             return "归因分析完成，未查询到数据"
+
+        # ByShift summary: show qualified_rate per shift
+        if context.intent.intent == IntentType.BY_SHIFT:
+            rows = query_result["rows"]
+            time_window = context.intent.extracted_entities.get("time_window", 1)
+            shift_parts: list[str] = []
+            for r in rows:
+                shift = r.get("shift", "unknown")
+                rate = r.get("qualified_rate", 0)
+                shift_parts.append(f"{shift} {rate}%")
+            if shift_parts:
+                return f"近{time_window}月 合格率: " + " / ".join(shift_parts)
+            return f"班次查询完成，共{query_result['row_count']}条结果"
 
         row_count = query_result["row_count"]
         first_row = query_result["rows"][0]

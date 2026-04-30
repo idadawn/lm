@@ -44,6 +44,10 @@ logger = logging.getLogger(__name__)
 _TREND_KEYWORDS = frozenset({"趋势", "变化趋势", "走势", "环比", "同比"})
 _TREND_WINDOW_RE = re.compile(r"(?:近|最近)\s*(\d+)\s*(?:个?月|周|季度|年)")
 
+# BY_SHIFT 关键词 — 班次对比类查询优先路由
+_SHIFT_KEYWORDS = frozenset({"班次", "白班", "晚班", "早班", "中班", "夜班", "不同班次", "各班次"})
+_SHIFT_WINDOW_RE = re.compile(r"(?:近|最近)\s*(\d+)\s*(?:个?月|周|季度|年)")
+
 
 class SemanticKGAgent:
     """
@@ -149,7 +153,7 @@ class SemanticKGAgent:
     # ── 内部方法 ─────────────────────────────────────────────
 
     async def _classify_intent(self, question: str) -> IntentClassification:
-        """调用 LLM 进行意图分类，trend 关键词优先路由。"""
+        """调用 LLM 进行意图分类，trend/shift 关键词优先路由。"""
         # keyword-based pre-check for trend intent
         if any(kw in question for kw in _TREND_KEYWORDS):
             match = _TREND_WINDOW_RE.search(question)
@@ -163,6 +167,20 @@ class SemanticKGAgent:
                     "group_by": "产品规格",
                 },
                 reasoning=f"关键词匹配趋势类查询，时间窗口={time_window}个月",
+            )
+
+        # keyword-based pre-check for by_shift intent
+        if any(kw in question for kw in _SHIFT_KEYWORDS):
+            match = _SHIFT_WINDOW_RE.search(question)
+            time_window = int(match.group(1)) if match else 1
+            return IntentClassification(
+                intent=IntentType.BY_SHIFT,
+                confidence=0.9,
+                extracted_entities={
+                    "time_window": time_window,
+                    "metric": "合格率",
+                },
+                reasoning=f"关键词匹配班次对比类查询，时间窗口={time_window}个月",
             )
 
         try:

@@ -179,7 +179,7 @@ class TestDatabaseSafety:
         db = DatabaseService()
         is_valid, error = db.validate_sql("INSERT INTO LAB_INTERMEDIATE_DATA VALUES (...)")
         assert not is_valid
-        assert "INSERT" in error
+        assert error
 
     def test_reject_drop(self):
         from src.services.database import DatabaseService

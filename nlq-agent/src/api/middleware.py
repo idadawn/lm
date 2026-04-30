@@ -1,7 +1,8 @@
 """
 请求安全中间件
 
-提供三层请求防护：
+提供四层请求防护：
+- CorrelationIDMiddleware: 生成/复用请求追踪 ID（注入 response header 与日志上下文）
 - RequestSizeLimit: 请求体大小限制（仅检查 Content-Length 头）
 - QueryLengthGuard: 查询文本长度守卫（读取 body，检查 messages[-1].content）
 - RateLimitInMem: 内存速率限制（每 IP token bucket）
@@ -12,12 +13,15 @@ from __future__ import annotations
 import json
 import logging
 import time
+import uuid
 from collections import defaultdict
 from dataclasses import dataclass, field
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
+
+from src.core.logging_config import bind_correlation_id, get_correlation_id
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +34,34 @@ def _error_json(status_code: int, code: str, message: str) -> JSONResponse:
         status_code=status_code,
         content={"error": {"code": code, "message": message}},
     )
+
+
+class CorrelationIDMiddleware(BaseHTTPMiddleware):
+    """为每个请求生成或复用 correlation_id，注入 response header 与日志上下文。
+
+    优先级：
+    1. 客户端传入 X-Correlation-ID header → 复用
+    2. 服务端生成 UUID4 → 新建
+    """
+
+    async def dispatch(self, request: Request, call_next):
+        cid = request.headers.get("x-correlation-id")
+        if not cid:
+            cid = str(uuid.uuid4())
+
+        request.state.correlation_id = cid
+        bind_correlation_id(cid)
+
+        try:
+            response = await call_next(request)
+        except Exception:
+            # 异常时也需要重置 contextvar，避免污染后续请求
+            bind_correlation_id(None)
+            raise
+
+        response.headers["X-Correlation-ID"] = cid
+        bind_correlation_id(None)
+        return response
 
 
 class RequestSizeLimit(BaseHTTPMiddleware):

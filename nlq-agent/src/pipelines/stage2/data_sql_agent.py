@@ -221,9 +221,12 @@ class DataSQLAgent:
     # ── 内部方法 ─────────────────────────────────────────────
 
     async def _generate_sql(self, context: AgentContext) -> dict[str, Any]:
-        """调用 LLM 生成 SQL。Trend intent 直接使用模板。"""
+        """调用 LLM 生成 SQL。Trend / root_cause intent 直接使用模板。"""
         if context.intent.intent == IntentType.TREND:
             return self._generate_trend_sql(context)
+
+        if context.intent.intent == IntentType.ROOT_CAUSE:
+            return self._generate_root_cause_sql(context)
 
         # 检查是否有匹配的预定义模板
         sql_templates_text = self._match_sql_templates(context)
@@ -297,6 +300,31 @@ class DataSQLAgent:
         return {
             "sql": sql.strip(),
             "explanation": f"近{time_window}个月按产品规格分组的合格率月度趋势",
+        }
+
+    def _generate_root_cause_sql(self, context: AgentContext) -> dict[str, Any]:
+        """Root cause intent: 直接使用合格率_归因模板生成 SQL。"""
+        template_entry = METRIC_SQL_TEMPLATES.get("合格率_归因")
+        if not template_entry:
+            return {"sql": "", "explanation": "合格率_归因模板不存在"}
+
+        dimension_keys = context.intent.extracted_entities.get(
+            "dimension_keys", ["F_PRODUCT_SPEC_CODE"]
+        )
+        time_window = context.intent.extracted_entities.get("time_window", 1)
+        extra_where = ""
+
+        dimension = dimension_keys[0] if dimension_keys else "F_PRODUCT_SPEC_CODE"
+
+        sql = template_entry["sql_template"].format(
+            dimension=dimension,
+            time_window_months=time_window,
+            extra_where=extra_where,
+        )
+
+        return {
+            "sql": sql.strip(),
+            "explanation": f"按{dimension}维度分析合格率归因",
         }
 
     async def _backfill_conditions(
@@ -601,6 +629,21 @@ class DataSQLAgent:
             if parts:
                 return f"近{time_window}月合格率趋势: " + "; ".join(parts)
             return f"趋势查询完成，共{query_result['row_count']}条结果"
+
+        # Root cause summary: show worst performer
+        if context.intent.intent == IntentType.ROOT_CAUSE:
+            rows = query_result["rows"]
+            if rows:
+                worst = min(rows, key=lambda r: r.get("delta_from_overall", 0))
+                dim_key = worst.get("dimension_key", "")
+                dim_val = worst.get("dimension_value", "")
+                rate = worst.get("qualified_rate", 0)
+                delta = worst.get("delta_from_overall", 0)
+                return (
+                    f"{dim_key}={dim_val} 合格率最低: {rate}%"
+                    f"（低于整体 {abs(delta)}%）"
+                )
+            return "归因分析完成，未查询到数据"
 
         row_count = query_result["row_count"]
         first_row = query_result["rows"][0]

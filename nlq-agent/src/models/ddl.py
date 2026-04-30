@@ -271,4 +271,43 @@ METRIC_SQL_TEMPLATES = {
             ORDER BY month_bucket ASC
         """,
     },
+    "合格率_归因": {
+        "name": "合格率_归因",
+        "description": "按指定维度分组，找出合格率显著低于整体的子集",
+        "sql_template": """
+            SELECT
+                '{dimension}' AS dimension_key,
+                t.{dimension} AS dimension_value,
+                COUNT(*) AS sample_count,
+                ROUND(
+                    SUM(CASE WHEN F_MAGNETIC_RES = '合格'
+                             AND F_THICK_RES = '合格'
+                             AND F_LAM_FACTOR_RES = '合格'
+                        THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2
+                ) AS qualified_rate,
+                ROUND(
+                    SUM(CASE WHEN F_MAGNETIC_RES = '合格'
+                             AND F_THICK_RES = '合格'
+                             AND F_LAM_FACTOR_RES = '合格'
+                        THEN 1 ELSE 0 END) * 100.0 / COUNT(*)
+                    - (
+                        SELECT ROUND(
+                            SUM(CASE WHEN F_MAGNETIC_RES = '合格'
+                                     AND F_THICK_RES = '合格'
+                                     AND F_LAM_FACTOR_RES = '合格'
+                                THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2
+                        )
+                        FROM LAB_INTERMEDIATE_DATA
+                        WHERE F_CREATORTIME >= DATE_SUB(CURDATE(), INTERVAL {time_window_months} MONTH)
+                              {extra_where}
+                    ), 2
+                ) AS delta_from_overall
+            FROM LAB_INTERMEDIATE_DATA t
+            WHERE t.F_CREATORTIME >= DATE_SUB(CURDATE(), INTERVAL {time_window_months} MONTH)
+                  {extra_where}
+            GROUP BY t.{dimension}
+            ORDER BY delta_from_overall ASC
+            LIMIT 5
+        """,
+    },
 }

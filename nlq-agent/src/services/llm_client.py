@@ -62,6 +62,9 @@ class LLMClient:
 
         try:
             response = await self._client.chat.completions.create(**kwargs)
+            if not response.choices:
+                logger.error("LLM 调用返回空 choices")
+                raise RuntimeError("LLM 返回空 choices")
             return response.choices[0].message.content or ""
         except Exception as e:
             logger.error("LLM 调用失败: %s", e)
@@ -89,9 +92,15 @@ class LLMClient:
                 stream=True,
             )
             async for chunk in stream:
+                if not chunk.choices:
+                    continue
                 delta = chunk.choices[0].delta
-                if delta.content:
-                    yield delta.content
+                if not delta:
+                    continue
+                content = delta.content
+                if not content:
+                    continue
+                yield content
         except Exception as e:
             logger.error("LLM 流式调用失败: %s", e)
             raise

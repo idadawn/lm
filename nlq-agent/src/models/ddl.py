@@ -177,7 +177,9 @@ METRIC_SQL_TEMPLATES = {
         "sql_template": """
             SELECT
                 {group_by_clause},
+                DATE_FORMAT(F_CREATORTIME, '%Y-%m') AS month_bucket,
                 COUNT(*) AS total_count,
+                COUNT(*) AS sample_count,
                 SUM(CASE WHEN F_MAGNETIC_RES = '合格'
                          AND F_THICK_RES = '合格'
                          AND F_LAM_FACTOR_RES = '合格'
@@ -191,7 +193,7 @@ METRIC_SQL_TEMPLATES = {
             FROM LAB_INTERMEDIATE_DATA
             WHERE F_PROD_DATE BETWEEN '{start_date}' AND '{end_date}'
                   {extra_where}
-            GROUP BY {group_by_clause}
+            GROUP BY {group_by_clause}, DATE_FORMAT(F_CREATORTIME, '%Y-%m')
         """,
     },
     "产量统计": {

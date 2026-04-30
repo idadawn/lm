@@ -44,6 +44,17 @@ logger = logging.getLogger(__name__)
 MAX_SQL_RETRIES = 2
 
 
+class ConditionEvalError(ValueError):
+    """条件评估类型不匹配错误。"""
+
+
+# 中文字段名 → metric CTE SQL 别名映射
+_DIAGNOSTIC_FIELD_MAP: dict[str, str] = {
+    "合格率": "qualified_rate",
+    "抽样数量": "sample_count",
+}
+
+
 class DataSQLAgent:
     """
     Stage 2 Agent：数据查询与分析。
@@ -126,7 +137,7 @@ class DataSQLAgent:
 
         # ── Step 4: condition 步骤回填 ────────────────────────
         if query_result and query_result["rows"]:
-            condition_events = self._backfill_conditions(context, query_result)
+            condition_events = await self._backfill_conditions(context, query_result)
             sse_events.extend(condition_events)
 
         # ── Step 5: 生成最终回答 ──────────────────────────────
@@ -226,32 +237,132 @@ class DataSQLAgent:
             logger.error("SQL 修正失败: %s", e)
             return {"sql": original_sql, "explanation": f"修正失败: {e}"}
 
-    def _backfill_conditions(
+    async def _backfill_conditions(
         self,
         context: AgentContext,
         query_result: dict[str, Any],
     ) -> list[str]:
         """回填 condition 步骤的 actual 和 satisfied 值。"""
-        sse_events = []
+        # 优先使用诊断 SELECT 回填
+        events = await self._diagnostic_select_for_condition(
+            context, query_result
+        )
+        if events:
+            return events
+
+        # 降级：直接从查询结果回填
+        sse_events: list[str] = []
         if not query_result["rows"]:
             return sse_events
 
         first_row = query_result["rows"][0]
 
         for filter_cond in context.filters:
-            # 尝试从结果集中找到对应的值
             actual_value = first_row.get(filter_cond.field)
             if actual_value is not None:
-                # 判断是否满足条件
-                satisfied = self._evaluate_condition(
-                    actual_value, filter_cond.operator, filter_cond.value
-                )
-                # 更新 emitter 中的步骤
+                try:
+                    satisfied = self._evaluate_condition(
+                        actual_value, filter_cond.operator, filter_cond.value
+                    )
+                except ConditionEvalError:
+                    satisfied = False
                 updated = self._emitter.update_condition_step(
                     filter_cond.field, actual_value, satisfied
                 )
                 if updated:
-                    # 重新发射更新后的 condition 步骤
+                    sse_events.append(
+                        self._emitter.emit_reasoning_step(updated)
+                    )
+
+        return sse_events
+
+    async def _diagnostic_select_for_condition(
+        self,
+        context: AgentContext,
+        query_result: dict[str, Any],
+    ) -> list[str]:
+        """Per-condition diagnostic SELECT，复用 metric CTE 回填 condition 步骤。
+
+        替代 _BACKFILL_ALIASES 方案：为每个 condition 字段生成独立 SELECT，
+        复用合格率 metric CTE，使用规范中文字段键，通过 validate_sql 安全校验。
+        """
+        sse_events: list[str] = []
+
+        # 从查询结果提取 product_spec_id
+        spec_ids = sorted({
+            str(row.get("F_PRODUCT_SPEC_ID") or row.get("product_spec_id", ""))
+            for row in query_result["rows"]
+            if row.get("F_PRODUCT_SPEC_ID") or row.get("product_spec_id")
+        })
+        if not spec_ids:
+            return sse_events
+
+        # 仅处理包含合格率指标的场景
+        if not any(m.name == "合格率" for m in context.metrics):
+            return sse_events
+
+        # 构建 CTE（复用 F5 扩展后的合格率模板）
+        template_sql = METRIC_SQL_TEMPLATES["合格率"]["sql_template"].format(
+            group_by_clause="F_PRODUCT_SPEC_ID",
+            start_date="2020-01-01",
+            end_date="2099-12-31",
+            extra_where="",
+        )
+
+        # 外层 SELECT：聚合月度数据到规格级别
+        spec_csv = ", ".join(f"'{s}'" for s in spec_ids)
+        diagnostic_sql = (
+            f"WITH base AS ({template_sql}) "
+            f"SELECT F_PRODUCT_SPEC_ID AS product_spec_id, "
+            f"SUM(sample_count) AS actual_抽样数量, "
+            f"ROUND("
+            f"SUM(qualified_count) * 100.0 "
+            f"/ NULLIF(SUM(total_count), 0), 2"
+            f") AS actual_合格率 "
+            f"FROM base "
+            f"WHERE F_PRODUCT_SPEC_ID IN ({spec_csv}) "
+            f"GROUP BY F_PRODUCT_SPEC_ID"
+        )
+
+        # SQL 安全校验
+        is_valid, error = self._db.validate_sql(diagnostic_sql)
+        if not is_valid:
+            logger.warning("诊断 SQL 校验失败: %s", error)
+            return sse_events
+
+        # 执行诊断查询
+        try:
+            diag_result = await self._db.execute_query(diagnostic_sql)
+        except Exception as exc:
+            logger.warning("诊断 SQL 执行失败: %s", exc)
+            return sse_events
+
+        # 中文字段 display_name → FilterCondition 映射
+        name_to_filter: dict[str, FilterCondition] = {}
+        for f in context.filters:
+            key = f.display_name or f.field
+            name_to_filter[key] = f
+
+        # 将结果扇出到 condition 步骤
+        for row in diag_result["rows"]:
+            for cn_key, col_name in [
+                ("合格率", "actual_合格率"),
+                ("抽样数量", "actual_抽样数量"),
+            ]:
+                actual_val = row.get(col_name)
+                cond = name_to_filter.get(cn_key)
+                if actual_val is None or cond is None:
+                    continue
+                try:
+                    satisfied = self._evaluate_condition(
+                        actual_val, cond.operator, cond.value
+                    )
+                except ConditionEvalError:
+                    satisfied = False
+                updated = self._emitter.update_condition_step(
+                    cond.field, actual_val, satisfied
+                )
+                if updated:
                     sse_events.append(
                         self._emitter.emit_reasoning_step(updated)
                     )
@@ -261,23 +372,61 @@ class DataSQLAgent:
     def _evaluate_condition(
         self, actual: Any, operator: str, expected: Any
     ) -> bool:
-        """评估条件是否满足。"""
+        """评估条件是否满足，按算子类型分支处理。
+
+        算子分类：
+        - 数值比较: <=, >=, =, <, >
+        - 列表匹配: IN, NOT IN
+        - 范围匹配: BETWEEN
+        """
+        op = operator.upper()
+
+        # 列表匹配
+        if op in ("IN", "NOT IN"):
+            if not isinstance(expected, (list, tuple)):
+                raise ConditionEvalError(
+                    f"算子 {operator} 需要列表类型期望值，"
+                    f"实际得到 {type(expected).__name__}"
+                )
+            result = actual in expected
+            return not result if op == "NOT IN" else result
+
+        # 范围匹配
+        if op == "BETWEEN":
+            if not isinstance(expected, (list, tuple)) or len(expected) != 2:
+                raise ConditionEvalError(
+                    f"BETWEEN 需要包含两个元素的列表，实际得到 {expected!r}"
+                )
+            try:
+                lo, hi = float(expected[0]), float(expected[1])
+                actual_f = float(actual)
+            except (ValueError, TypeError) as exc:
+                raise ConditionEvalError(
+                    f"无法将 BETWEEN 操作数转为数值: "
+                    f"actual={actual!r}, range={expected!r}"
+                ) from exc
+            return lo <= actual_f <= hi
+
+        # 数值比较
         try:
             actual_f = float(actual)
-            expected_f = float(expected) if not isinstance(expected, list) else 0
-            if operator == "<=":
-                return actual_f <= expected_f
-            elif operator == ">=":
-                return actual_f >= expected_f
-            elif operator == "=":
-                return actual_f == expected_f
-            elif operator == "<":
-                return actual_f < expected_f
-            elif operator == ">":
-                return actual_f > expected_f
-        except (ValueError, TypeError):
-            pass
-        return True  # 无法判断时默认满足
+            expected_f = float(expected)
+        except (ValueError, TypeError) as exc:
+            raise ConditionEvalError(
+                f"无法将比较操作数转为数值: "
+                f"actual={actual!r}, expected={expected!r}"
+            ) from exc
+
+        comparisons: dict[str, bool] = {
+            "<=": actual_f <= expected_f,
+            ">=": actual_f >= expected_f,
+            "=": actual_f == expected_f,
+            "<": actual_f < expected_f,
+            ">": actual_f > expected_f,
+        }
+        if op in comparisons:
+            return comparisons[op]
+        raise ConditionEvalError(f"未知算子: {operator}")
 
     async def _generate_final_answer(
         self,

@@ -16,6 +16,10 @@ dev = [
     "httpx>=0.28",
     "pydantic-settings>=2.0",
     "openai>=1.40",
+    "qdrant-client>=1.17.1",
+    "pyyaml>=6.0.3",
+    "aiomysql>=0.3.2",
+    "uvicorn>=0.46.0",
 ]
 
 [tool.pytest.ini_options]

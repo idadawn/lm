@@ -87,4 +87,14 @@ Run `ruff check src tests` before pushing. Fix warnings or explicitly document e
 
 ## Questions?
 
+## Production Readiness
+
+Before deploying to production, review `PRODUCTION_CHECKLIST.md` and run the environment validator:
+
+```bash
+python scripts/verify_env.py --env-file .env.production
+```
+
+The checklist covers security, observability, performance, reliability, and operations. Each item includes status (✅/⚠️/❌) and remediation guidance.
+
 Check `docs/RUNBOOK_NLQ_E2E.md` for end-to-end setup details, or open an issue.

@@ -16,10 +16,11 @@
 
 ## 2. 核心特性
 
-- **三类意图智能路由**：自动区分统计聚合类、根因分析类和概念解释类问题，采取不同处理路径。
+- **五类意图智能路由**：`statistical` / `trend` / `by_shift` / `root_cause` / `conceptual`，stage1 关键词预路由 + LLM 兜底分类，conceptual 直接答不走 SQL。
 - **动态条件回填**：Stage 1 生成过滤条件（如"铁损 ≤ 0.80"），Stage 2 查询后回填实际值和满足状态，完美驱动前端渲染。
 - **SQL 安全沙箱**：内置正则表达式拦截所有写操作，强制附加 `LIMIT` 保护，结合数据库只读账号实现双重安全。
 - **自动 SQL 修正**：查询失败时自动将错误信息和 DDL 喂给 LLM 进行修正重试（最多 2 次）。
+- **生产级输入硬化**：请求大小 / 用户消息长度 / 速率（30 req/min/IP）三层中间件，配合 `correlation_id` 透传与 `/metrics` Prometheus 暴露。
 - **.NET 后端无缝集成**：提供 `/api/v1/sync/rules` 和 `/api/v1/sync/specs` 接口，支持业务规则变更时增量同步到 Qdrant。
 
 ---
@@ -155,15 +156,48 @@ data: {"type": "done"}
 
 ## 6. 开发与测试
 
-运行集成测试：
-
 ```bash
-pytest tests/ -v
+# 默认（无 live 服务，无 load）— CI 跑这个
+uv run pytest tests/ -m "not live_llm and not live_qdrant and not load"
+
+# 带真 LLM/Qdrant
+uv run pytest tests/ -m "live_llm or live_qdrant"
+
+# 并发负载
+uv run pytest tests/ -m load
 ```
+
+测试 marker 在 `pyproject.toml [tool.pytest.ini_options]` 注册。
 
 ---
 
-## 7. 架构设计参考
+## 7. 生产部署
+
+```bash
+# 启动
+docker compose -f docker-compose.production.yml --env-file .env.production up -d
+
+# 升级
+docker compose -f docker-compose.production.yml pull
+docker compose -f docker-compose.production.yml up -d
+
+# 监控
+curl http://localhost:18100/health      # 健康检查
+curl http://localhost:18100/metrics     # Prometheus 指标
+docker compose logs -f nlq-agent        # 结构化 JSON 日志（设 LOG_FORMAT=json）
+```
+
+详细参考：
+
+- [`API.md`](./API.md) — 完整 API 接口 + 错误码 + Production Deployment 段
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md) — 本地开发 + commit/branch 规范 + load test 跑法
+- [`PRODUCTION_CHECKLIST.md`](./PRODUCTION_CHECKLIST.md) — 上线前 ✅/❌/⚠️ 清单（Security / Observability / Performance / Reliability / Operations）
+- [`scripts/verify_env.py`](./scripts/verify_env.py) — `.env` / `.env.production` 配置验证 + 服务可达性 ping
+- [`../docs/RUNBOOK_NLQ_E2E.md`](../docs/RUNBOOK_NLQ_E2E.md) — 真实 E2E 跑通流程 + 8 个故障排查 recipe
+
+---
+
+## 8. 架构设计参考
 
 本项目的两阶段架构设计深度借鉴了 [WrenAI](https://github.com/Canner/WrenAI) 的 MDL（语义层）概念。详细的架构对比和时序图请参考：
 

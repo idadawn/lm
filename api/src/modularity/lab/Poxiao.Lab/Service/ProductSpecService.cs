@@ -29,6 +29,7 @@ public class ProductSpecService : IProductSpecService, IDynamicApiController, IT
     private readonly ProductSpecVersionService _versionService;
     private readonly ICacheManager _cacheManager;
     private readonly IUserManager _userManager;
+    private readonly IEventPublisher _eventPublisher;
 
     /// <summary>
     /// 缓存键前缀
@@ -41,7 +42,8 @@ public class ProductSpecService : IProductSpecService, IDynamicApiController, IT
         ISqlSugarRepository<ProductSpecPublicAttributeEntity> publicAttributeRepository,
         ProductSpecVersionService versionService,
         ICacheManager cacheManager,
-        IUserManager userManager
+        IUserManager userManager,
+        IEventPublisher eventPublisher
     )
     {
         _repository = repository;
@@ -50,6 +52,7 @@ public class ProductSpecService : IProductSpecService, IDynamicApiController, IT
         _versionService = versionService;
         _cacheManager = cacheManager;
         _userManager = userManager;
+        _eventPublisher = eventPublisher;
     }
 
     /// <summary>
@@ -232,6 +235,9 @@ public class ProductSpecService : IProductSpecService, IDynamicApiController, IT
 
         // 清除缓存
         await ClearCacheAsync();
+
+        await _eventPublisher.PublishAsync(
+            new EventBus.SpecChangedEventSource(entity.Id, EventBus.SpecChangeKind.Created, entity));
     }
 
     /// <inheritdoc />
@@ -303,6 +309,9 @@ public class ProductSpecService : IProductSpecService, IDynamicApiController, IT
 
         // 清除缓存
         await ClearCacheAsync(id);
+
+        await _eventPublisher.PublishAsync(
+            new EventBus.SpecChangedEventSource(id, EventBus.SpecChangeKind.Updated, entity));
     }
 
     /// <inheritdoc />
@@ -348,6 +357,9 @@ public class ProductSpecService : IProductSpecService, IDynamicApiController, IT
 
         // 清除缓存
         await ClearCacheAsync(id);
+
+        await _eventPublisher.PublishAsync(
+            new EventBus.SpecChangedEventSource(id, EventBus.SpecChangeKind.Deleted, null));
     }
 
     /// <summary>

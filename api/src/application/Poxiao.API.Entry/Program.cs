@@ -8,6 +8,14 @@ public class WebComponent : IWebComponent
         builder.Services.AddScoped<Poxiao.AI.Interfaces.IAiService, Poxiao.AI.Service.AiService>();
         builder.Services.AddScoped<Poxiao.AI.Interfaces.IAppearanceFeatureAnalysisService, Poxiao.AI.Service.AppearanceFeatureAnalysisService>();
 
+        // NLQ Agent 同步 HttpClient
+        builder.Services.AddHttpClient("nlq-agent", c =>
+        {
+            var baseUrl = builder.Configuration["NlqAgent:BaseUrl"] ?? "http://nlq-agent:18100";
+            c.BaseAddress = new Uri(baseUrl);
+            c.Timeout = TimeSpan.FromSeconds(builder.Configuration.GetValue("NlqAgent:TimeoutSeconds", 5));
+        });
+
         // 日志过滤
         builder.Logging.AddFilter(
             (provider, category, logLevel) =>

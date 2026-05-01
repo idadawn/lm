@@ -12,13 +12,17 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Depends, Request
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from prometheus_client import generate_latest
 
 from src.api.dependencies import get_orchestrator, get_services
+from src.core.settings import get_settings
 from src.models.schemas import ChatRequest, HealthResponse
 from src.pipelines.orchestrator import PipelineOrchestrator
+from src.services.resync_service import bulk_resync_all
 
 logger = logging.getLogger(__name__)
 
@@ -175,6 +179,24 @@ async def sync_specs(request: Request, services=Depends(get_services)):
         return {"status": "ok", "upserted": count}
 
     return {"status": "ok", "message": "no action taken"}
+
+
+# ═══════════════════════════════════════════════════════════════
+# Bulk resync（admin — 供夜间 cron / 运维手动触发）
+# ═══════════════════════════════════════════════════════════════
+
+
+@router.post("/api/v1/sync/resync-now", status_code=202)
+async def resync_now(authorization: Optional[str] = Header(None)) -> dict:
+    """
+    全量重建 Qdrant 索引。需要 Bearer token 鉴权。
+    """
+    settings = get_settings()
+    expected = settings.sync_admin_token
+    if not expected or authorization != f"Bearer {expected}":
+        raise HTTPException(status_code=401, detail="invalid_admin_token")
+    result = await bulk_resync_all()
+    return {"status": "ok", **result}
 
 
 # ── 辅助函数 ─────────────────────────────────────────────────

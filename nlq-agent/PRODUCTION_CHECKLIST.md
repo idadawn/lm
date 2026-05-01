@@ -16,6 +16,10 @@
   ❌ `QDRANT_API_KEY` 在 `.env.example` 中为空，docker-compose.production.yml 未传入。  
   修复：在 Qdrant 服务端配置 API Key 与只读角色，并在 `docker-compose.production.yml` 的 `qdrant.environment` 与 `nlq-agent.env_file` 中同步启用。
 
+- [ ] **SYNC_ADMIN_TOKEN 配置 + 季度轮换**
+  ✅ r10 已加。`src/core/settings.py` 新增 `sync_admin_token` 字段；`POST /api/v1/sync/resync-now` 端点通过 Bearer token 鉴权。
+  测试：`tests/unit/test_resync_endpoint.py`（4 tests）。
+
 - [ ] **MySQL 只读账号**（不许 INSERT/UPDATE/DELETE 权限）  
   ⚠️ `.env.example` 已建议 `nlq_readonly`，但需在部署手册中强制约束账号权限。  
   修复：在 `docs/RUNBOOK_NLQ_E2E.md` 增加 GRANT SELECT -only 的建账号脚本。
@@ -101,8 +105,11 @@
 - [ ] **文档: `nlq-agent/API.md`**  
   ✅ r5 已写，覆盖端点、SSE 事件、错误码、部署命令。
 
-- [ ] **CI/CD: `.github/workflows/nlq-agent-ci.yml`**  
+- [ ] **CI/CD: `.github/workflows/nlq-agent-ci.yml`**
   ✅ r7 已加，覆盖 lint、pytest、docker-compose config 验证。
+
+- [ ] **夜间 bulk-resync cron（curl /api/v1/sync/resync-now）**
+  ✅ r10 已加。`POST /api/v1/sync/resync-now` 端点支持全量重建 Qdrant 索引，配合 host crontab `0 2 * * *` 使用。
 
 - [ ] **dependabot config**  
   ✅ r7 已加，`.github/dependabot.yml` 已配置 pip 与 github-actions 更新。

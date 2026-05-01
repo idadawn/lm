@@ -45,7 +45,7 @@
       </div>
     </div>
 
-    <!-- AI助手已移除 -->
+    <AiAssistant />
   </div>
 </template>
 
@@ -62,6 +62,7 @@
   import DefectTop5 from './components/DefectTop5.vue';
   import ProductionHeatmap from './components/ProductionHeatmap.vue';
   import ThicknessCorrelation from './components/ThicknessCorrelation.vue';
+  import AiAssistant from './components/AiAssistant.vue';
 
   const { createMessage } = useMessage();
 

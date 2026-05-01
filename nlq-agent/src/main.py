@@ -22,6 +22,7 @@ from src.api.middleware import (
 )
 from src.api.routes import router
 from src.core.logging_config import setup_structured_logging
+from src.core.sentry_integration import init_sentry
 from src.core.settings import get_settings
 
 
@@ -34,6 +35,7 @@ async def lifespan(app: FastAPI):
 
     # Startup
     logger.info("nlq-agent 正在启动...")
+    init_sentry(settings.sentry_dsn)
     try:
         await init_services()
         logger.info("所有服务初始化完成")

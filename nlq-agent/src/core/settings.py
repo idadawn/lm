@@ -67,6 +67,9 @@ class Settings(BaseSettings):
     # ── CORS ──────────────────────────────────────────────────────
     cors_allow_origins: str = ""  # comma-separated, empty → ["*"]
 
+    # ── Error tracking ────────────────────────────────────────────
+    sentry_dsn: str | None = None  # set SENTRY_DSN to enable
+
     # ── .NET API 回调（语义层同步）────────────────────────────
     dotnet_api_base: str = "http://127.0.0.1:9530"
 

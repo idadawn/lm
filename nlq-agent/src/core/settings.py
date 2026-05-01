@@ -64,6 +64,9 @@ class Settings(BaseSettings):
     # SQL 执行超时（秒）
     sql_timeout: int = 30
 
+    # ── CORS ──────────────────────────────────────────────────────
+    cors_allow_origins: str = ""  # comma-separated, empty → ["*"]
+
     # ── .NET API 回调（语义层同步）────────────────────────────
     dotnet_api_base: str = "http://127.0.0.1:9530"
 

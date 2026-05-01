@@ -40,6 +40,7 @@ public class IntermediateDataFormulaService
     private readonly IFormulaParser _formulaParser;
     private readonly ICacheManager _cacheManager;
     private readonly IUserManager _userManager;
+    private readonly IEventPublisher _eventPublisher;
 
     private const string FormulaCachePrefix = "LAB:IntermediateDataFormula";
 
@@ -54,7 +55,8 @@ public class IntermediateDataFormulaService
         ISqlSugarRepository<UnitDefinitionEntity> unitRepository,
         IFormulaParser formulaParser,
         ICacheManager cacheManager,
-        IUserManager userManager
+        IUserManager userManager,
+        IEventPublisher eventPublisher
     )
     {
         _repository = repository;
@@ -68,6 +70,7 @@ public class IntermediateDataFormulaService
         _formulaParser = formulaParser;
         _cacheManager = cacheManager;
         _userManager = userManager;
+        _eventPublisher = eventPublisher;
     }
 
     /// <summary>
@@ -281,7 +284,11 @@ public class IntermediateDataFormulaService
 
         await ClearFormulaCacheAsync(entity.Id);
 
-        return ToDto(entity);
+        var dto = ToDto(entity);
+        await _eventPublisher.PublishAsync(
+            new EventBus.RuleChangedEventSource(entity.Id, EventBus.RuleChangeKind.Created, dto));
+
+        return dto;
     }
 
     /// <inheritdoc />
@@ -364,7 +371,11 @@ public class IntermediateDataFormulaService
 
         await ClearFormulaCacheAsync(id);
 
-        return ToDto(entity);
+        var dto = ToDto(entity);
+        await _eventPublisher.PublishAsync(
+            new EventBus.RuleChangedEventSource(id, EventBus.RuleChangeKind.Updated, dto));
+
+        return dto;
     }
 
     /// <inheritdoc />
@@ -387,7 +398,11 @@ public class IntermediateDataFormulaService
 
         await ClearFormulaCacheAsync(id);
 
-        return ToDto(entity);
+        var dto = ToDto(entity);
+        await _eventPublisher.PublishAsync(
+            new EventBus.RuleChangedEventSource(id, EventBus.RuleChangeKind.Updated, dto));
+
+        return dto;
     }
 
     /// <inheritdoc />
@@ -409,6 +424,9 @@ public class IntermediateDataFormulaService
             throw Oops.Oh(ErrorCode.COM1002);
 
         await ClearFormulaCacheAsync(id);
+
+        await _eventPublisher.PublishAsync(
+            new EventBus.RuleChangedEventSource(id, EventBus.RuleChangeKind.Deleted, null));
     }
 
     /// <summary>

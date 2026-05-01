@@ -1,9 +1,11 @@
 # NLQ-Agent Tracer-Bullet R4 → R8 — Final Summary
 
-**Date:** 2026-05-01 03:30 → 08:30 CST (~5h, autonomous)
-**Status:** ✅ R4 / R5 / R6 / R7 merged on `main`; R8 in flight at time of writing.
-**Final HEAD (pre-r8):** `7d2c4cb` — `fix(nlq-agent): skip docker compose config test when .env.production absent`
-**Verification:** `pytest tests/ -m "not live_llm and not live_qdrant"` → **207 passed, 1 skipped** in `nlq-agent/`.
+**Date:** 2026-05-01 03:30 → 08:50 CST (~5h, autonomous)
+**Status:** ✅ R4 / R5 / R6 / R7 / **R8** all merged on `main`. Tracer bullet complete.
+**Verification (post-R8):**
+- `pytest tests/ -m "not live_llm and not live_qdrant and not load"` → **215 passed, 1 skipped, 6 deselected**
+- `pytest tests/ -m load` → **4 passed, 218 deselected**
+- Combined: **219 passing** (207 baseline + 8 verify_env + 4 load).
 
 > Continues `2026-04-30-nlq-tracer-bullet-v2` (R1) and `2026-05-01-nlq-tracer-bullet-r2-r3` (R2 + R3 + Real E2E unblock).
 
@@ -15,7 +17,7 @@
 | **R5** | `IntentType.CONCEPTUAL` + skip-stage2 path + answer | `API.md` + 3× input middleware (size / length / rate) | ~25 min | +18 unit + e2e |
 | **R6** | structured JSON logging + `correlation_id` middleware | Prometheus metrics + `/metrics` endpoint | ~22 min | +21 unit |
 | **R7** | production `docker-compose.production.yml` + hardened `Dockerfile` + `.env.production.example` | GitHub Actions CI + dependabot + ruff config + `CONTRIBUTING.md` | ~28 min | +20 unit |
-| **R8** *(active)* | `PRODUCTION_CHECKLIST.md` + `verify_env.py` + tests | concurrent load tests + `benchmark.py` + load marker | target ~25 min | +8 expected |
+| **R8** | `PRODUCTION_CHECKLIST.md` + `verify_env.py` + 8 unit | 4× load tests + `benchmark.py` + load marker | ~7 min KIMI / ~22 min GLM | +12 (8 unit + 4 load) |
 
 5 query intents now ship: **statistical / trend / by_shift / root_cause / conceptual**.
 
@@ -96,14 +98,26 @@ No merge conflicts in this round — the two diffs touched disjoint files except
 3. Lead salvaged `Dockerfile` diff, `docker-compose.production.yml`, `.env.production.example` and cherry-picked them as `1297685` directly on `main`, skipping the broken worker branch.
 4. Stronger guard rails added to all subsequent prompts: explicit "first run `pwd` + `git rev-parse --abbrev-ref HEAD`; if cwd or branch wrong → BLOCKER" + "**绝对禁止**主仓库 git 操作 / cd 出 worktree".
 
-### R8 *(in flight at 08:20 CST)*
+### R8 — production polish (2026-05-01 08:20 → 08:50)
 
-Two parallel workers spawned with the strengthened isolation prompt:
+Strengthened-isolation prompt held this time — both workers stayed inside their worktree, no main-repo damage.
 
-- **KIMI** → `nlq-agent/PRODUCTION_CHECKLIST.md` (~150-line ✅/❌/⚠️ matrix across Security / Observability / Performance / Reliability / Operations) + `scripts/verify_env.py` (.env validator + service ping with `--no-network` flag) + `tests/unit/test_verify_env.py`.
-- **GLM** → `nlq-agent/tests/load/` (4× concurrent-stream tests under new `load` pytest marker) + `scripts/benchmark.py` (httpx ASGI in-process benchmark with p50/p95/p99 + throughput + markdown report) + `pyproject.toml` marker registration + `CONTRIBUTING.md` reference.
+**KIMI track (~7 min, fastest round of all 16 dispatches):**
+- `nlq-agent/PRODUCTION_CHECKLIST.md` — 127-line ✅/❌/⚠️ matrix. Self-scored 14 ✅ / 5 ⚠️ / 6 ❌ across Security / Observability / Performance / Reliability / Operations.
+- `nlq-agent/scripts/verify_env.py` — 206-line `.env` / `.env.production` validator. Reads required vars, detects placeholder secrets (`YOUR_`, `sk-test`, empty), and pings LLM `/models` / Embedding `/health` / Qdrant `/healthz` / MySQL TCP. `--no-network` skips pings; exit code 0/1/2 = ok / missing-required / unreachable.
+- `nlq-agent/tests/unit/test_verify_env.py` — 8 unit tests (132 lines) covering exit codes / placeholder detection / `--no-network` / network mocking.
 
-Branch isolation: workers operate in `/data/project/lm-team/{kimi,glm}/` worktrees on `omc-team/r8/{kimi-prod-checklist,glm-load-test}` branches. Main repo is untouched until lead merge.
+**GLM track (~22 min):**
+- `nlq-agent/tests/load/{__init__,conftest}.py` — `mock_full_stack` fixture using `httpx.AsyncClient` + `ASGITransport` (no real uvicorn) and a `MockOrchestrator` that emits a controlled SSE script.
+- `nlq-agent/tests/load/test_concurrent_streams.py` — 4× `@pytest.mark.load`:
+  - `test_10_concurrent_streams` — 10 parallel `chat/stream`, all 200 + `done` received.
+  - `test_response_metadata_order_under_load` — 5 concurrent; `response_metadata` always before `done`, `done` is always last.
+  - `test_no_event_loss` — single stream with 100 `reasoning_step` events, all 100 delivered.
+  - `test_rate_limit_under_burst` — 50 concurrent same-IP, RateLimit middleware rejects >30/min (429).
+- `nlq-agent/scripts/benchmark.py` — 189-line CLI: `python -m scripts.benchmark --concurrency 20 --requests 200 --output benchmark.md`. Measures per-request latency (p50 / p95 / p99) + throughput (req/s) + error_rate; rotates 5 query templates; mocks LLM/Qdrant/DB via `BenchmarkOrchestrator`; emits a timestamped markdown report.
+- `nlq-agent/pyproject.toml` — registers `load` marker; default test run excludes load via `-m "not load"` convention.
+
+**Merge:** ort auto-merged the only conflict (`CONTRIBUTING.md`, both added a section) cleanly without dropping content this time. Both KIMI's "Production Readiness" and GLM's "Load Testing & Benchmark" sections preserved.
 
 ## Worker performance trend
 
@@ -115,10 +129,10 @@ R4 ~20 min   (two new query types)
 R5 ~25 min   (two large tracks: conceptual + middleware)
 R6 ~22 min   (observability)
 R7 ~28 min   (chaos absorbed: ~10 min lead recovery + ~18 min rework)
-R8 ~25 min   (target — production polish)
+R8  ~7 min KIMI / ~22 min GLM  (production polish — strengthened isolation held)
 ```
 
-Net: ~3 worker-hours of total exec spread across 5 wall-hours of lead-driven coordination.
+Net: ~3 worker-hours of total exec spread across ~5.5 wall-hours of lead-driven coordination.
 
 ## Process highlights & captured rules
 
@@ -144,8 +158,11 @@ These are documented for the next contributor — see `nlq-agent/CONTRIBUTING.md
 
 ```bash
 cd /data/project/lm/nlq-agent
-uv run pytest tests/ -m "not live_llm and not live_qdrant"
-# → 207 passed, 1 skipped  (pre-r8 baseline)
+uv run pytest tests/ -m "not live_llm and not live_qdrant and not load"
+# → 215 passed, 1 skipped, 6 deselected  (post-R8 default)
+uv run pytest tests/ -m load
+# → 4 passed, 218 deselected
+# Combined: 219 passing
 
 # Real-stack E2E (requires live LLM + Qdrant + MySQL — see docs/RUNBOOK_NLQ_E2E.md)
 curl -N -X POST http://127.0.0.1:18100/api/v1/chat/stream \

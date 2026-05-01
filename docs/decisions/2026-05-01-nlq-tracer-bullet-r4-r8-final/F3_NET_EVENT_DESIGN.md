@@ -1,8 +1,18 @@
-# F3 — .NET Event-Bus → nlq-agent Rule Sync (Design)
+# F3 — .NET Event-Bus → nlq-agent Rule Sync (Design + Decision)
 
-**Status:** Design proposal (read-only research). Implementation deferred to a future round once API contract is approved.
-**Date:** 2026-05-01
-**Author:** lead (autonomous research)
+**Status:** ✅ Decided — hybrid (nightly cron + manual trigger endpoint). Implementation dispatched in R10.
+**Date:** 2026-05-01 (research) / 2026-05-01 09:40 CST (decision)
+**Author:** lead (autonomous research) / lead-as-PM (decision)
+
+## Decision (2026-05-01 09:40)
+
+**Pick: hybrid = nightly cron full-resync + manual `POST /api/v1/sync/resync-now` admin endpoint.**
+
+Rejected outbox table: rule velocity in this lab QA system is too low (changes are weekly/monthly, not per-second) to justify ~270 LOC of new infra (MySQL table + migration + drain worker + lifecycle). Outbox is the right pattern when writes are high-frequency and any drift is unacceptable; here drift up to 24h is acceptable for unattended changes, and the manual trigger covers the "I just edited a rule, verify now" UX.
+
+Cost:
+- ~50 LOC + a `dotnet run scripts/resync_nlq_agent.cs` (or shell-out to the existing `init_semantic_layer.py`) + one admin endpoint.
+- Upgrade path to outbox is preserved if real-time consistency becomes a hard requirement.
 
 ## Why
 

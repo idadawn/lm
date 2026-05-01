@@ -75,6 +75,8 @@ with mocked external services:
 uv run python -m scripts.benchmark --concurrency 20 --requests 200 --output benchmark.md
 ```
 
+The latest baseline report is at `benchmark_baseline.md` — re-run before each release to catch regressions.
+
 ## Branch Naming
 
 | Pattern | Use case |

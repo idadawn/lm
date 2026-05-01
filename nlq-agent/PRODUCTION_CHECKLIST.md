@@ -27,9 +27,9 @@
 - [ ] **`.env.production` 不入版本控制**  
   ✅ 已 `.gitignore`，且仓库中仅保留 `.env.example`。
 
-- [ ] **CORS allow_origins 白名单**（FastAPI middleware 检查）  
-  ❌ `src/main.py:66` 当前为 `["*"]`，生产环境必须收紧。  
-  修复：改为读取环境变量 `CORS_ORIGINS`（逗号分隔），默认空列表，启动时校验非空。
+- [x] **CORS allow_origins 白名单**（FastAPI middleware 检查）
+  ✅ r9 已完成。`src/main.py` 通过 `_resolve_cors_origins()` 从 `settings.cors_allow_origins`（`CORS_ALLOW_ORIGINS` env，逗号分隔）读取白名单；空值回退 `["*"]` 并输出警告日志。
+  测试：`tests/unit/test_cors_middleware.py`（7 tests）。commit: `a82d439`。
 
 - [ ] **RequestSizeLimit / QueryLengthGuard / RateLimit 中间件启用**  
   ✅ r5 已加，`src/main.py:73-76` 已注册三层中间件；`tests/unit/test_middleware.py` 已覆盖。
@@ -50,9 +50,9 @@
 - [ ] **correlation_id 注入**  
   ✅ r6 已加，`CorrelationIDMiddleware` 生成/复用 UUID，注入 response header 与日志上下文。
 
-- [ ] **Sentry / 错误追踪集成**  
-  ❌ 尚未接入。  
-  修复：新增可选依赖 `sentry-sdk[fastapi]`，在 `src/main.py` lifespan 中按 `SENTRY_DSN` 初始化。
+- [x] **Sentry / 错误追踪集成**
+  ✅ r9 已完成。`src/core/sentry_integration.py` 读取 `settings.sentry_dsn`（`SENTRY_DSN` env），有值则 `sentry_sdk.init()`，无值或 SDK 未安装则 no-op + 日志。`src/main.py` lifespan startup 调用。
+  测试：`tests/unit/test_sentry_integration.py`（3 tests）。commit: `a9c6350`。
 
 ---
 
@@ -117,11 +117,11 @@
 
 | 类别 | ✅ | ⚠️ | ❌ |
 |------|---|---|---|
-| Security | 2 | 1 | 4 |
-| Observability | 4 | 0 | 1 |
+| Security | 3 | 1 | 3 |
+| Observability | 5 | 0 | 0 |
 | Performance | 1 | 3 | 0 |
 | Reliability | 4 | 0 | 0 |
 | Operations | 3 | 1 | 1 |
-| **合计** | **14** | **5** | **6** |
+| **合计** | **16** | **5** | **4** |
 
-> 建议优先修复 ❌ 项：CORS 白名单、LLM KEY 轮换、Qdrant API Key、Sentry、容器 registry。
+> 建议优先修复 ❌ 项：LLM KEY 轮换、Qdrant API Key、validate_sql 单元测试、容器 registry。

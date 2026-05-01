@@ -16,12 +16,19 @@ import argparse
 import asyncio
 import json
 import statistics
+import sys
 import time
 from datetime import datetime, timezone
+from types import ModuleType
 from typing import AsyncIterator
+from unittest.mock import AsyncMock, MagicMock, patch
+
+# ── Stub heavy third-party deps so benchmark runs without real services ──
+for _mod in ("qdrant_client", "qdrant_client.models", "aiomysql", "uvicorn"):
+    if _mod not in sys.modules:
+        sys.modules[_mod] = MagicMock()
 
 import httpx
-from unittest.mock import AsyncMock, patch
 
 from src.api.dependencies import get_orchestrator
 from src.main import create_app

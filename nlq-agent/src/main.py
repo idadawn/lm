@@ -22,6 +22,7 @@ from src.api.middleware import (
 )
 from src.api.routes import router
 from src.core.logging_config import setup_structured_logging
+from src.core.sentry_integration import init_sentry
 from src.core.settings import get_settings
 
 
@@ -34,6 +35,7 @@ async def lifespan(app: FastAPI):
 
     # Startup
     logger.info("nlq-agent 正在启动...")
+    init_sentry(settings.sentry_dsn)
     try:
         await init_services()
         logger.info("所有服务初始化完成")
@@ -49,6 +51,15 @@ async def lifespan(app: FastAPI):
     logger.info("所有服务已关闭")
 
 
+def _resolve_cors_origins(raw: str) -> list[str]:
+    """Parse comma-separated CORS_ALLOW_ORIGINS; empty → ["*"] with warning."""
+    if not raw.strip():
+        logger = logging.getLogger(__name__)
+        logger.warning("CORS_ALLOW_ORIGINS is empty — allowing all origins (suitable for dev only)")
+        return ["*"]
+    return [o.strip() for o in raw.split(",") if o.strip()]
+
+
 def create_app() -> FastAPI:
     """创建 FastAPI 应用实例。"""
     settings = get_settings()
@@ -60,10 +71,11 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # CORS 中间件
+    # CORS 中间件（从 settings 读取白名单）
+    origins = _resolve_cors_origins(settings.cors_allow_origins)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # 生产环境应限制为具体域名
+        allow_origins=origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

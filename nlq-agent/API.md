@@ -292,6 +292,40 @@ Incremental sync of product specifications from .NET backend to Qdrant.
 
 ---
 
+## POST /api/v1/sync/resync-now (admin)
+
+全量重建 Qdrant 索引。供夜间 cron / 运维手动触发使用。
+
+**Headers:** `Authorization: Bearer <SYNC_ADMIN_TOKEN>`
+
+### Response 202
+
+```json
+{"status": "ok", "rules": 12, "specs": 5, "duration_ms": 432}
+```
+
+### Response 401
+
+```json
+{"detail": "invalid_admin_token"}
+```
+
+Token 缺失、不匹配、或 `SYNC_ADMIN_TOKEN` 配置为空时均返回 401。
+
+### 配置
+
+设置 `.env`:
+```
+SYNC_ADMIN_TOKEN=<rotate quarterly>
+```
+
+夜间 cron 示例（host crontab）:
+```
+0 2 * * * curl -fsS -X POST -H "Authorization: Bearer ${SYNC_ADMIN_TOKEN}" http://localhost:18100/api/v1/sync/resync-now
+```
+
+---
+
 ## Key Concepts
 
 ### IntentType

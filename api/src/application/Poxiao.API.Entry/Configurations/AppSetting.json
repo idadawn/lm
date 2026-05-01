@@ -9,5 +9,9 @@
             "DefaultPrecision": 6,
             "MaxPrecision": 6
         }
+    },
+    "NlqAgent": {
+        "BaseUrl": "http://localhost:18100",
+        "TimeoutSeconds": 5
     }
 }

@@ -51,8 +51,29 @@ See `docs/decisions/` for design decision records.
 
 - All PRs must pass: `pytest -m "not live_llm"` — no exceptions.
 - Tests marked `live_llm` or `live_qdrant` are advisory-only and run in nightly CI.
+- Tests marked `load` are concurrent-load tests; they are **excluded** from the default run. Run them explicitly with `pytest -m load -v`.
 - Write unit tests for new logic in `tests/unit/`.
 - Write integration tests in `tests/integration/` when multiple components interact.
+- Write load tests in `tests/load/` when testing concurrent behaviour or middleware under burst.
+
+### Running Load Tests
+
+```bash
+# Run all load tests
+uv run pytest tests/load/ -m load -v
+
+# Default CI run excludes load tests automatically
+uv run pytest tests/ -m "not live_llm and not live_qdrant and not load" -v
+```
+
+### Benchmark Script
+
+A benchmark script is available for measuring throughput and latency percentiles
+with mocked external services:
+
+```bash
+uv run python -m scripts.benchmark --concurrency 20 --requests 200 --output benchmark.md
+```
 
 ## Branch Naming
 

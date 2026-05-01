@@ -14,6 +14,8 @@ dev = [
     "pytest-asyncio>=0.24",
     "fastapi>=0.115",
     "httpx>=0.28",
+    "pydantic-settings>=2.0",
+    "openai>=1.40",
 ]
 
 [tool.pytest.ini_options]
@@ -23,6 +25,7 @@ pythonpath = ["."]
 markers = [
     "live_llm: 真实 LLM + 真实 MySQL 端到端测试（夜间 advisory lane，非 merge-gating）",
     "live_qdrant: 需要 Qdrant 服务运行的兼容性测试（CI 默认 skip）",
+    "load: 并发负载测试，可单独跑 pytest -m load",
 ]
 
 [tool.ruff]

@@ -84,6 +84,15 @@ const lab: AppRouteModule = {
                 affix: true,
             },
         },
+        {
+            path: 'dashboard',
+            name: 'LabAiDashboard',
+            component: () => import('/@/views/lab/dashboard/index.vue'),
+            meta: {
+                title: 'AI 问答驾驶舱',
+                icon: 'ion:chatbubbles-outline',
+            },
+        },
     ],
 };
 

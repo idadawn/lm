@@ -1,0 +1,37 @@
+sequenceDiagram
+    autonumber
+    participant U as 用户
+    participant FE as 前端<br/>(Vue/UniApp)
+    participant API as nlq-agent<br/>(FastAPI)
+    participant Q as Qdrant<br/>(向量库)
+    participant MDL as 业务语义层<br/>(MDL)
+    participant DB as MySQL<br/>(业务数据库)
+
+    U->>FE: "本月A类产品合格率是多少？"
+    FE->>API: POST /api/v1/chat/stream (SSE)
+
+    rect rgb(255, 237, 213)
+        Note over API,MDL: Stage 1：Semantic & KG Agent（语义解析）
+        API->>Q: 向量检索：合格率 / A类 / 判定规则
+        Q-->>API: Top-K 相关文档片段
+        API->>MDL: 加载产品规格 & 判定等级定义
+        MDL-->>API: A类定义：铁损≤X，磁感≥Y
+        API-->>FE: SSE: reasoning_step {kind:"spec", label:"A类产品规格"}
+        API-->>FE: SSE: reasoning_step {kind:"rule", label:"铁损判定规则"}
+        API-->>FE: SSE: reasoning_step {kind:"condition", expected:"铁损≤X"}
+        Note over API: 生成 AgentContext<br/>{business_explanation, filters}
+    end
+
+    rect rgb(240, 253, 244)
+        Note over API,DB: Stage 2：Data & SQL Agent（数据查询）
+        API->>DB: 生成 SQL（注入 AgentContext 过滤条件）
+        Note right of API: SELECT shift, SUM(weight),<br/>qualified_rate<br/>FROM LAB_INTERMEDIATE_DATA<br/>WHERE prod_date BETWEEN ...<br/>AND judgment_level = 'A'
+        DB-->>API: 查询结果集
+        API-->>FE: SSE: reasoning_step {kind:"condition", actual:92.3, satisfied:true}
+        API-->>FE: SSE: reasoning_step {kind:"grade", label:"本月A类合格率 92.3%"}
+        API-->>FE: SSE: text "本月A类产品合格率为 92.3%，..."
+        API-->>FE: SSE: response_metadata {reasoning_steps:[...]}
+    end
+
+    FE->>FE: KgReasoningChain 渲染推理链
+    FE->>U: 展示推理过程 + 最终回答

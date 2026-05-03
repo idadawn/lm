@@ -1,0 +1,73 @@
+direction: down
+
+title: WrenAI 架构借鉴 → 路美 nlq-agent 映射 {
+  near: top-center
+  shape: text
+  style.font-size: 16
+  style.bold: true
+}
+
+wren: WrenAI 架构 {
+  style.fill: "#EFF6FF"
+  style.stroke: "#3B82F6"
+  style.border-radius: 8
+
+  w1: wren-ui\nNext.js + GraphQL BFF {
+    style.fill: "#DBEAFE"
+  }
+  w2: wren-ai-service\nPython FastAPI\nRAG + LLM Pipeline {
+    style.fill: "#DBEAFE"
+  }
+  w3: wren-engine\nRust + DataFusion\n语义查询执行引擎 {
+    style.fill: "#DBEAFE"
+  }
+  w4: MDL 语义层\n业务定义 / 指标 / 关系 {
+    style.fill: "#BFDBFE"
+    style.bold: true
+  }
+  w5: Qdrant\n向量检索 {
+    style.fill: "#DBEAFE"
+  }
+
+  w1 -> w2: GraphQL
+  w2 -> w3: 语义 SQL
+  w2 -> w5: 向量检索
+  w4 -> w2: 注入语义上下文
+  w4 -> w3: 解析 MDL
+}
+
+luma: 路美 nlq-agent 对应实现 {
+  style.fill: "#FFF7ED"
+  style.stroke: "#F97316"
+  style.border-radius: 8
+
+  l1: Vue/UniApp 前端\nKgReasoningChain + SSE {
+    style.fill: "#FFEDD5"
+  }
+  l2: nlq-agent\nPython FastAPI\nStage1 + Stage2 Pipeline {
+    style.fill: "#FFEDD5"
+  }
+  l3: .NET API\n现有业务后端\n（直接执行 SQL）{
+    style.fill: "#FFEDD5"
+  }
+  l4: 业务语义层（MDL 简化版）\n判定规则 / 产品规格 / 指标定义\n存储于 Qdrant {
+    style.fill: "#FED7AA"
+    style.bold: true
+  }
+  l5: Qdrant\n向量检索 {
+    style.fill: "#FFEDD5"
+  }
+
+  l1 -> l2: SSE / nlqAgent.ts
+  l2 -> l3: 生成 SQL（可选）
+  l2 -> l5: Stage1 向量检索
+  l4 -> l2: 注入业务上下文
+  l4 -> l5: 向量化存储
+}
+
+# 对应关系
+wren.w1 -> luma.l1: 对应 {style.stroke-dash: 4; style.stroke: "#94A3B8"}
+wren.w2 -> luma.l2: 对应 {style.stroke-dash: 4; style.stroke: "#94A3B8"}
+wren.w3 -> luma.l3: 对应（简化）{style.stroke-dash: 4; style.stroke: "#94A3B8"}
+wren.w4 -> luma.l4: 核心借鉴 {style.stroke-dash: 4; style.stroke: "#F97316"; style.bold: true}
+wren.w5 -> luma.l5: 直接复用 {style.stroke-dash: 4; style.stroke: "#94A3B8"}

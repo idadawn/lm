@@ -1,0 +1,70 @@
+name: nlq-agent CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "nlq-agent/**"
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - "nlq-agent/**"
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install ruff
+        run: uv tool install ruff
+
+      - name: Run ruff check
+        run: ruff check nlq-agent/src nlq-agent/tests
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Cache uv lockfile and virtualenv
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            nlq-agent/.venv
+          key: uv-${{ runner.os }}-${{ hashFiles('nlq-agent/uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-
+
+      - name: Install dependencies
+        working-directory: nlq-agent
+        run: uv sync --frozen
+
+      - name: Run tests
+        working-directory: nlq-agent
+        run: uv run pytest tests/ -m "not live_llm and not live_qdrant" -v --tb=short
+
+  docker-compose-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate docker-compose.yml
+        run: docker compose -f nlq-agent/docker-compose.yml config -q
+
+      - name: Validate docker-compose.test.yml
+        run: docker compose -f nlq-agent/docker-compose.test.yml config -q
+
+      - name: Validate docker-compose.vectors.yml (may have GPU deps)
+        run: "docker compose -f nlq-agent/docker-compose.vectors.yml config -q || echo 'WARN: vectors compose has GPU deps'"
+
+      - name: Validate docker-compose.production.yml (if exists)
+        run: "docker compose -f nlq-agent/docker-compose.production.yml config -q || echo 'production compose syntax check skipped if missing'"

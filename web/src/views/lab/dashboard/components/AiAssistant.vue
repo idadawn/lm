@@ -1,7 +1,7 @@
 <template>
   <div class="ai-assistant-container">
-    <div 
-      class="ai-float-btn" 
+    <div
+      class="ai-float-btn"
       :class="{ 'active': isOpen }"
       @click="toggleChat"
     >
@@ -26,19 +26,19 @@
             </a-button>
           </div>
         </div>
-        
+
         <div class="chat-messages" ref="messagesRef">
-          <div 
-            v-for="(msg, index) in messages" 
-            :key="index" 
+          <div
+            v-for="(msg, index) in messages"
+            :key="index"
             class="message-item"
             :class="msg.role"
           >
             <div class="message-avatar">
-              <Icon 
-                :icon="msg.role === 'user' ? 'ant-design:user-outlined' : 'ant-design:robot-outlined'" 
-                :size="18" 
-                :color="msg.role === 'user' ? '#1890ff' : '#52c41a'" 
+              <Icon
+                :icon="msg.role === 'user' ? 'ant-design:user-outlined' : 'ant-design:robot-outlined'"
+                :size="18"
+                :color="msg.role === 'user' ? '#1890ff' : '#52c41a'"
               />
             </div>
             <div class="message-content">
@@ -46,8 +46,19 @@
               <div class="message-time">{{ msg.time }}</div>
             </div>
           </div>
-          
-          <div v-if="isLoading" class="message-item assistant">
+
+          <!-- 流式输出中 -->
+          <div v-if="isLoading || currentAnswerText" class="message-item assistant">
+            <div class="message-avatar">
+              <Icon icon="ant-design:robot-outlined" :size="18" color="#52c41a" />
+            </div>
+            <div class="message-content">
+              <div class="message-text" v-html="formatMessage(currentAnswerText || '思考中...')"></div>
+              <KgReasoningChain :steps="reasoningSteps" :default-open="true" />
+            </div>
+          </div>
+
+          <div v-if="isLoading && !currentAnswerText && !reasoningSteps.length" class="message-item assistant">
             <div class="message-avatar">
               <Icon icon="ant-design:robot-outlined" :size="18" color="#52c41a" />
             </div>
@@ -63,8 +74,8 @@
 
         <div class="chat-input-area">
           <div class="quick-questions">
-            <a-tag 
-              v-for="q in quickQuestions" 
+            <a-tag
+              v-for="q in quickQuestions"
               :key="q"
               class="quick-tag"
               @click="sendQuickQuestion(q)"
@@ -79,8 +90,8 @@
               :auto-size="{ minRows: 1, maxRows: 3 }"
               @pressEnter="handleSend"
             />
-            <a-button 
-              type="primary" 
+            <a-button
+              type="primary"
               class="send-btn"
               :loading="isLoading"
               @click="handleSend"
@@ -98,11 +109,17 @@
   import { ref, nextTick } from 'vue';
   import { Icon } from '/@/components/Icon';
   import dayjs from 'dayjs';
+  import { message } from 'ant-design-vue';
+  import { streamNlqChat } from '/@/api/nlqAgent';
+  import KgReasoningChain from '/@/components/KgReasoningChain/index.vue';
+  import type { ReasoningStep } from '/@/types/reasoning-protocol';
 
   const isOpen = ref(false);
   const isLoading = ref(false);
   const inputMessage = ref('');
   const messagesRef = ref<HTMLDivElement | null>(null);
+  const reasoningSteps = ref<ReasoningStep[]>([]);
+  const currentAnswerText = ref('');
 
   const quickQuestions = [
     '今日合格率趋势如何？',
@@ -135,6 +152,8 @@
       content: '对话已清空。请问有什么可以帮助您的？',
       time: dayjs().format('HH:mm'),
     }];
+    reasoningSteps.value = [];
+    currentAnswerText.value = '';
   }
 
   function formatMessage(content: string) {
@@ -145,7 +164,7 @@
     if (e && !e.shiftKey) {
       e.preventDefault();
     }
-    
+
     const msg = inputMessage.value.trim();
     if (!msg || isLoading.value) return;
 
@@ -158,46 +177,56 @@
 
     inputMessage.value = '';
     isLoading.value = true;
+    reasoningSteps.value = [];
+    currentAnswerText.value = '';
     scrollToBottom();
 
-    // 模拟AI响应
-    setTimeout(() => {
-      const response = generateResponse(msg);
-      messages.value.push({
-        role: 'assistant',
-        content: response,
-        time: dayjs().format('HH:mm'),
-      });
+    try {
+      await streamNlqChat(
+        {
+          messages: [{ role: 'user', content: msg }],
+        },
+        {
+          onText: (chunk: string) => {
+            currentAnswerText.value += chunk;
+            scrollToBottom();
+          },
+          onReasoningStep: (step: ReasoningStep) => {
+            reasoningSteps.value.push(step);
+          },
+          onResponseMetadata: (payload: Record<string, unknown>) => {
+            const canonical = payload.reasoning_steps as ReasoningStep[] | undefined;
+            if (canonical && Array.isArray(canonical)) {
+              reasoningSteps.value = canonical;
+            }
+          },
+          onError: (err: Error) => {
+            message.error(err.message || 'AI 助手请求失败');
+          },
+          onDone: () => {
+            if (currentAnswerText.value) {
+              messages.value.push({
+                role: 'assistant',
+                content: currentAnswerText.value,
+                time: dayjs().format('HH:mm'),
+              });
+            }
+            currentAnswerText.value = '';
+            reasoningSteps.value = [];
+            isLoading.value = false;
+            scrollToBottom();
+          },
+        },
+      );
+    } catch (err) {
+      message.error('请求异常，请稍后重试');
       isLoading.value = false;
-      scrollToBottom();
-    }, 1500);
+    }
   }
 
   function sendQuickQuestion(question: string) {
     inputMessage.value = question;
     handleSend();
-  }
-
-  function generateResponse(question: string): string {
-    const lowerQ = question.toLowerCase();
-    
-    if (lowerQ.includes('合格率')) {
-      return '根据今日数据，合格率为 **91.2%**，较昨日上升 **1.5%**。\n\n主要质量分布：\n• A级品：91.2% (1,257卷)\n• B级品：5.5% (76卷)\n• 不合格品：3.3% (46卷)\n\n建议关注夜班后半段的质量波动。';
-    }
-    
-    if (lowerQ.includes('缺陷')) {
-      return '当前主要缺陷排名：\n\n1. **划痕** - 320次 (33.8%)\n2. **麻点** - 256次 (27.0%)\n3. **毛边** - 180次 (19.0%)\n4. **亮线** - 110次 (11.6%)\n5. **网眼** - 74次 (7.8%)\n\n建议优先处理划痕和麻点问题，可考虑优化切割工艺参数。';
-    }
-    
-    if (lowerQ.includes('优化') || lowerQ.includes('建议')) {
-      return '基于当前数据分析，提供以下优化建议：\n\n1. **工艺窗口优化**\n   建议将厚度控制在 5.22-5.25mm 范围，可获得最佳叠片系数。\n\n2. **班次管理**\n   夜班 0:00-6:00 合格率较低，建议加强该时段巡检。\n\n3. **设备维护**\n   2号机组厚度波动较大，建议安排检修。';
-    }
-    
-    if (lowerQ.includes('异常') || lowerQ.includes('预警')) {
-      return '当前有 **3个** 活跃预警：\n\n🔴 **高优先级** (2个)\n• 2号机组-厚度超标\n• 系统异常-数据延迟\n\n🟡 **中优先级** (1个)\n• 4号机组-划痕检测\n\n建议立即处理高优先级预警。';
-    }
-    
-    return '我理解您想了解关于"' + question + '"的信息。\n\n目前我可以帮您查询：\n• 实时生产指标\n• 质量分析报告\n• 历史趋势对比\n• 异常事件追踪\n\n如需更详细的分析，请访问相应的功能模块。';
   }
 
   function scrollToBottom() {
@@ -249,8 +278,8 @@
     position: absolute;
     right: 0;
     bottom: 70px;
-    width: 380px;
-    height: 500px;
+    width: 420px;
+    height: 540px;
     background: #fff;
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);

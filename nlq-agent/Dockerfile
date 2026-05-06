@@ -24,7 +24,7 @@ COPY src/ ./src/
 
 # Sync production dependencies into a virtual environment
 RUN uv venv /app/.venv && \
-    uv sync --frozen --no-dev --venv /app/.venv
+    VIRTUAL_ENV=/app/.venv uv sync --no-dev
 
 # ── Stage 2: Production runtime ────────────────────────────────
 FROM python:3.13-slim

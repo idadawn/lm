@@ -16,17 +16,15 @@
  *   })
  */
 
-const DEFAULT_BASE = 'http://127.0.0.1:18100';
-
 function getBaseUrl() {
-  // uni.getStorageSync 在主入口存储 NLQ_AGENT_API_BASE，未设置时回落默认。
+  // uni.getStorageSync 在主入口存储 NLQ_AGENT_API_BASE，未设置时抛出错误。
   try {
     const stored = uni.getStorageSync('NLQ_AGENT_API_BASE');
     if (stored) return stored;
   } catch (e) {
     // ignore
   }
-  return DEFAULT_BASE;
+  throw new Error('NLQ_AGENT_API_BASE 未配置 — 请在 app 启动配置中设置');
 }
 
 function parseSseLine(line) {

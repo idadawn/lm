@@ -1,0 +1,116 @@
+name: web CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - "scripts/check-reasoning-protocol-sync.ps1"
+      - ".github/workflows/web-ci.yml"
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - "web/**"
+      - "scripts/check-reasoning-protocol-sync.ps1"
+      - ".github/workflows/web-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  lint-typecheck-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history for freeze gate diff
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint (eslint)
+        run: pnpm lint:eslint
+        continue-on-error: true  # legacy code base; tighten in W4
+
+      - name: Type check
+        run: pnpm type:check
+        continue-on-error: true  # pre-existing errors in unrelated files; tighten in W4
+
+      - name: Unit tests (vitest)
+        run: pnpm test:unit
+
+      - name: Build (production)
+        run: pnpm build:test  # use test build mode to avoid prod-only env vars
+        continue-on-error: true  # build may need env vars not set in CI; surface but don't block W0
+
+  reasoning-protocol-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run sync gate
+        shell: pwsh
+        run: pwsh scripts/check-reasoning-protocol-sync.ps1
+
+      - name: Freeze gate (block reasoning-protocol changes when .omc/freeze.flag present)
+        shell: bash
+        run: |
+          if [ -f .omc/freeze.flag ]; then
+            echo "Freeze flag content:"
+            cat .omc/freeze.flag
+            BASE_REF="${{ github.base_ref || 'main' }}"
+            git fetch origin "$BASE_REF" --depth=50 2>/dev/null || true
+            CHANGED=$(git diff --name-only "origin/$BASE_REF"...HEAD 2>/dev/null || git diff --name-only HEAD~1...HEAD)
+            echo "Changed files:"
+            echo "$CHANGED"
+            if echo "$CHANGED" | grep -q 'nlq-agent/packages/shared-types/src/reasoning-protocol.ts'; then
+              echo "::error::Freeze flag active but this PR modifies reasoning-protocol.ts. Coordinate with frontend wave owner before unfreezing."
+              exit 1
+            fi
+            echo "Freeze flag present but reasoning-protocol.ts unchanged — OK"
+          else
+            echo "No freeze flag; reasoning-protocol changes allowed"
+          fi
+
+  e2e-playwright:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    # Wave 0 only validates Playwright config syntax; real E2E lands in Wave 4
+    if: github.event_name == 'workflow_dispatch'  # manual-only until Wave 4
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E
+        run: pnpm test:e2e

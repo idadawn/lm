@@ -24,7 +24,7 @@
             </div>
             <div class="chatList-text">
               <div class="chatList-arrow"></div>
-              <p v-if="item.messageType == 'text'" v-html="item.message" class="chatList__msg--text"></p>
+              <p v-if="item.messageType == 'text'" v-html="sanitize(item.message)" class="chatList__msg--text"></p>
               <img
                 :src="apiUrl + item.message.path"
                 class="chatList__msg--img"
@@ -91,7 +91,7 @@
               </div>
               <div class="chatList-text">
                 <div class="chatList-arrow"></div>
-                <span v-if="item.messageType == 'text'" v-html="item.message"></span>
+                <span v-if="item.messageType == 'text'" v-html="sanitize(item.message)"></span>
                 <img
                   :src="apiUrl + item.message.path"
                   class="chatList__msg--img"
@@ -110,6 +110,7 @@
 
 <script lang="ts" setup>
   import emojiJson from './emoji.json';
+  import DOMPurify from 'dompurify';
   import { reactive, toRefs, ref, nextTick, computed } from 'vue';
   import { useWebSocket } from '/@/hooks/web/useWebSocket';
   import { useUserStore } from '/@/store/modules/user';
@@ -175,6 +176,12 @@
   });
   const { visible, userInfo, list, otherUser, historyList, showHistory, messageContent } = toRefs(state);
   const getHeaders = computed(() => ({ Authorization: getToken() as string }));
+
+  const sanitize = (html: string) =>
+    DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ['img'],
+      ALLOWED_ATTR: ['src', 'class'],
+    });
 
   defineExpose({
     getImVisible,

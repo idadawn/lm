@@ -24,7 +24,7 @@ export interface NlqAgentChatHandlers {
   signal?: AbortSignal;
 }
 
-const BASE_URL = import.meta.env?.VITE_NLQ_AGENT_API_BASE || 'http://127.0.0.1:18100';
+const BASE_URL = import.meta.env?.VITE_NLQ_AGENT_API_BASE || '';
 
 function parseEvent(line: string): Record<string, unknown> | null {
   if (!line.startsWith('data:')) return null;

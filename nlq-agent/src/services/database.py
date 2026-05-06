@@ -46,6 +46,9 @@ class DatabaseService:
             autocommit=True,
             maxsize=10,
             minsize=2,
+            # Recycle long-idle connections every hour to survive cloud
+            # firewall / load-balancer idle-timeout drops (typical 5-30 min).
+            pool_recycle=3600,
         )
         logger.info("MySQL 连接池已初始化")
 

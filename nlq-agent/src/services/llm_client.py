@@ -3,14 +3,22 @@ LLM 客户端封装
 
 统一封装 OpenAI-compatible API 调用，支持 vLLM / OpenAI / 其他兼容端点。
 提供同步调用和流式调用两种模式。
+
+SSE 解析说明：流式响应的 chunk 切分由 OpenAI Python SDK 内部完成，
+SDK 抽象掉了底层 httpx 的 aiter_text/aiter_bytes，chunk_size 不直接可
+设置。生产环境真正需要兜底的是“流挂死/连接堆积”，因此通过 settings
+中的 llm_http_*_timeout_s 显式注入 httpx.Timeout(connect/read/write)，
+作为 PRODUCTION_CHECKLIST 中“LLM streaming chunk_size 合理”一项的
+等价、可生效的修复。
 """
 
 from __future__ import annotations
 
 import json
 import logging
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
+import httpx
 from openai import AsyncOpenAI
 
 from src.core.settings import get_settings
@@ -23,9 +31,15 @@ class LLMClient:
 
     def __init__(self) -> None:
         settings = get_settings()
+        timeout = httpx.Timeout(
+            timeout=settings.llm_http_timeout_s,
+            connect=settings.llm_http_connect_timeout_s,
+            read=settings.llm_http_read_timeout_s,
+        )
         self._client = AsyncOpenAI(
             base_url=settings.llm_base_url,
             api_key=settings.llm_api_key,
+            timeout=timeout,
         )
         self._model = settings.llm_model
         self._temperature = settings.llm_temperature

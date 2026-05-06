@@ -8,7 +8,6 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from pydantic import Field
 from pydantic_settings import BaseSettings
 
 
@@ -30,6 +29,15 @@ class Settings(BaseSettings):
     llm_model: str = "Qwen2.5-7B-Instruct"
     llm_temperature: float = 0.1
     llm_max_tokens: int = 4096
+
+    # LLM HTTP 超时（防止 SSE 流挂死/连接堆积）。OpenAI SDK 1.x+ 内部封装
+    # SSE chunk 解析，chunk_size 不可直接设置；显式 timeout 是等价修复。
+    # 三个粒度对应 httpx.Timeout(connect, read, write/pool 共享)。
+    llm_http_connect_timeout_s: float = 10.0
+    llm_http_read_timeout_s: float = 300.0
+    # httpx.Timeout 中 write/pool 未显式指定时使用此值；
+    # 同时是非流式 chat() 调用的整体超时。
+    llm_http_timeout_s: float = 60.0
 
     # ── Embedding 服务（TEI / text-embeddings-inference）─────
     embedding_base_url: str = "http://127.0.0.1:8081"

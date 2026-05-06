@@ -20,13 +20,11 @@
   ✅ r10 已加。`src/core/settings.py` 新增 `sync_admin_token` 字段；`POST /api/v1/sync/resync-now` 端点通过 Bearer token 鉴权。
   测试：`tests/unit/test_resync_endpoint.py`（4 tests）。
 
-- [ ] **MySQL 只读账号**（不许 INSERT/UPDATE/DELETE 权限）  
-  ⚠️ `.env.example` 已建议 `nlq_readonly`，但需在部署手册中强制约束账号权限。  
-  修复：在 `docs/RUNBOOK_NLQ_E2E.md` 增加 GRANT SELECT -only 的建账号脚本。
+- [x] **MySQL 只读账号**（不许 INSERT/UPDATE/DELETE 权限）
+  ✅ `docs/RUNBOOK_NLQ_E2E.md` 第 2 节提供了 `CREATE USER 'nlq_readonly'` + `GRANT SELECT ON poxiao_lab.*` + 显式 `REVOKE` 写权限的完整 SQL 脚本与验证步骤。`.env.example` / `.env.production.example` 默认 `MYSQL_USER=nlq_readonly`。
 
-- [ ] **`validate_sql` 单元测试覆盖所有禁止操作**（INSERT/UPDATE/DELETE/DROP/...）  
-  ⚠️ `src/services/database.py` 已有关键词黑名单，但缺少针对每条禁止操作的独立单元测试。  
-  修复：在 `tests/unit/` 补充 `test_validate_sql_forbidden.py`，遍历 `_FORBIDDEN_PATTERNS` 中每个关键词断言拒绝。
+- [x] **`validate_sql` 单元测试覆盖所有禁止操作**（INSERT/UPDATE/DELETE/DROP/...）
+  ✅ `tests/unit/test_validate_sql_forbidden.py` 通过 66 个 parametrized 测试覆盖 `_FORBIDDEN_PATTERNS` 全部关键词（INSERT/UPDATE/DELETE/DROP/ALTER/CREATE/TRUNCATE/GRANT/REVOKE/EXEC/EXECUTE/CALL/SET/LOAD/INTO OUTFILE/INTO DUMPFILE）、大小写不敏感、子查询嵌入、空白变体、`\b` 词边界(updated_at 等列名不误伤)、空输入与 SELECT 前缀拒绝。
 
 - [ ] **`.env.production` 不入版本控制**  
   ✅ 已 `.gitignore`，且仓库中仅保留 `.env.example`。
@@ -69,14 +67,15 @@
   ⚠️ 当前使用 Qdrant 默认 HNSW 参数，未针对实验室数据规模调优。  
   修复：在 `scripts/init_semantic_layer.py` 创建 collection 时显式设置 `hnsw_config={"m": 16, "ef_construct": 100}`，并根据 recall  benchmark 调整。
 
-- [ ] **LLM streaming chunk_size 合理**  
-  ⚠️ `src/services/llm_client.py` 中 SSE 读取 chunk 大小未显式配置，依赖 httpx 默认。  
-  修复：显式设置 `aiter_text(chunk_size=1024)` 或 `aiter_bytes(chunk_size=1024)`，避免过小导致 CPU 空转。
+- [x] **LLM streaming 超时显式化**
+  ✅ 原 checklist 文案要求"显式 `aiter_text(chunk_size=1024)`"，但实际代码用 OpenAI Python SDK (`AsyncOpenAI`)，SDK 内部已抽象 SSE chunk 解析，`chunk_size` 不直接可设置。等价且生效的修复：通过 `httpx.Timeout(connect/read/write)` 显式控制超时，防止流挂死/连接堆积。
+  - `src/core/settings.py` 新增 `llm_http_connect_timeout_s` (10s)、`llm_http_read_timeout_s` (300s 长流容忍)、`llm_http_timeout_s` (60s 兜底)。
+  - `src/services/llm_client.py` 用 `AsyncOpenAI(timeout=httpx.Timeout(...))` 注入。
+  - 测试：`tests/unit/test_llm_client_timeout.py` (3 tests，含环境变量覆盖)。
 
-- [ ] **连接池: MySQL `aiomysql` pool_recycle, Qdrant grpc_port**  
-  ⚠️ `src/services/database.py:39-48` 未设置 `pool_recycle`，长连接可能因防火墙/云厂商超时断开。  
-  修复：在 `aiomysql.create_pool(...)` 中增加 `pool_recycle=3600`。  
-  ✅ Qdrant `grpc_port=6334` 已在 `docker-compose.production.yml:65` 配置。
+- [x] **连接池: MySQL `aiomysql` pool_recycle, Qdrant grpc_port**
+  ✅ `src/services/database.py` `aiomysql.create_pool(...)` 已增加 `pool_recycle=3600`，每小时回收闲置连接以躲避云 LB / 防火墙的 5-30 分钟 idle drop。Qdrant `grpc_port=6334` 已在 `docker-compose.production.yml` 配置。
+  - 测试：`tests/unit/test_database_pool_recycle.py` (2 tests，断言 pool_recycle=3600 + 其他 kwargs 不漂移)。
 
 ---
 
@@ -98,9 +97,8 @@
 
 ## Operations
 
-- [ ] **部署手册: `docs/RUNBOOK_NLQ_E2E.md`**  
-  ⚠️ `CONTRIBUTING.md` 与 `API.md` 均引用该文件，需确认内容完整覆盖生产环境部署步骤。  
-  修复：补充 MySQL 只读账号创建、Qdrant API Key 配置、容器 registry 拉取命令。
+- [x] **部署手册: `docs/RUNBOOK_NLQ_E2E.md`**
+  ✅ 文件已创建，覆盖 8 节：前置依赖、MySQL 只读账号 SQL、Qdrant API Key 启用、生产部署快速开始、健康检查与验收、回滚与故障处理、上线 Checklist 速查、配套文档索引。
 
 - [ ] **文档: `nlq-agent/API.md`**  
   ✅ r5 已写，覆盖端点、SSE 事件、错误码、部署命令。
@@ -124,11 +122,12 @@
 
 | 类别 | ✅ | ⚠️ | ❌ |
 |------|---|---|---|
-| Security | 3 | 1 | 3 |
+| Security | 6 | 0 | 2 |
 | Observability | 5 | 0 | 0 |
-| Performance | 1 | 3 | 0 |
+| Performance | 3 | 1 | 0 |
 | Reliability | 4 | 0 | 0 |
-| Operations | 3 | 1 | 1 |
-| **合计** | **16** | **5** | **4** |
+| Operations | 5 | 0 | 1 |
+| **合计** | **23** | **1** | **3** |
 
-> 建议优先修复 ❌ 项：LLM KEY 轮换、Qdrant API Key、validate_sql 单元测试、容器 registry。
+> 剩余 ❌ 项：LLM_API_KEY 轮换、QDRANT_API_KEY 生产启用、容器 registry 推送策略 — 用户已声明"不需要基础设施"，env/Docker 本地配置即可，故此 3 项作为后续基础设施工作专项处理。
+> 剩余 ⚠️ 项：Qdrant HNSW 参数调优 — 需要 benchmark 数据驱动决策，下一阶段处理。

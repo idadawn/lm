@@ -29,10 +29,29 @@ for _mod in ("qdrant_client", "qdrant_client.models", "aiomysql", "uvicorn"):
         sys.modules[_mod] = MagicMock()
 
 import httpx
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.api.dependencies import get_orchestrator
 from src.main import create_app
 from src.models.schemas import ChatRequest
+
+
+class _PassthroughMiddleware(BaseHTTPMiddleware):
+    """Bypass RateLimitInMem during benchmark.
+
+    The production rate-limit middleware (30 req/min per IP) protects against
+    abuse from a single source. Under ASGI in-process benchmark all requests
+    appear from the same "client" (request.client is None), so the bucket
+    drains in a fraction of a second and the report degenerates into a
+    measurement of token-bucket arithmetic instead of application throughput.
+
+    Replacing RateLimitInMem with this no-op middleware via patch lets the
+    benchmark measure actual end-to-end app capability. The real rate-limit
+    behaviour remains verified by tests/unit/test_middleware.py.
+    """
+
+    async def dispatch(self, request, call_next):
+        return await call_next(request)
 
 # ── Query templates (rotate across requests) ────────────────
 
@@ -100,6 +119,7 @@ async def run_benchmark(concurrency: int, num_requests: int, output: str) -> Non
     with (
         patch("src.main.init_services", new_callable=AsyncMock),
         patch("src.main.shutdown_services", new_callable=AsyncMock),
+        patch("src.main.RateLimitInMem", _PassthroughMiddleware),
     ):
         app = create_app()
         app.dependency_overrides[get_orchestrator] = lambda: BenchmarkOrchestrator()

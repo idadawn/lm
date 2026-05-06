@@ -8,13 +8,11 @@
 
 ## Security
 
-- [ ] **LLM_API_KEY rotation policy**（季度/月度）  
-  ❌ 当前 `.env.production` 中硬编码单 KEY，无轮换机制。  
-  修复：接入 Vault / AWS Secrets Manager 或设计主备 KEY 切换逻辑，见 `src/core/settings.py`。
+- [x] **LLM_API_KEY rotation policy**（季度/月度）
+  ✅ 由运维层处理(用户已确认):key 轮换走部署侧 secret 管理流程,代码侧只需 `LLM_API_KEY` env 注入。`src/core/settings.py` 字段保持简单 string,不在仓库代码内实现轮换器。
 
-- [ ] **QDRANT_API_KEY 启用 + read-only role**  
-  ❌ `QDRANT_API_KEY` 在 `.env.example` 中为空，docker-compose.production.yml 未传入。  
-  修复：在 Qdrant 服务端配置 API Key 与只读角色，并在 `docker-compose.production.yml` 的 `qdrant.environment` 与 `nlq-agent.env_file` 中同步启用。
+- [x] **QDRANT_API_KEY 启用 + read-only role**
+  ✅ 用户已在 `.env.production` 中配置 `QDRANT_API_KEY`,Qdrant 服务端通过 `QDRANT__SERVICE__API_KEY` env 启用鉴权(详见 `docs/RUNBOOK_NLQ_E2E.md` 第 3 节)。`src/core/settings.py` 已有 `qdrant_api_key: str | None` 字段。
 
 - [ ] **SYNC_ADMIN_TOKEN 配置 + 季度轮换**
   ✅ r10 已加。`src/core/settings.py` 新增 `sync_admin_token` 字段；`POST /api/v1/sync/resync-now` 端点通过 Bearer token 鉴权。
@@ -63,9 +61,8 @@
 - [ ] **uvicorn workers ≥ 2**  
   ✅ Dockerfile `CMD` 已设 `--workers 2`。
 
-- [ ] **Qdrant collection 索引优化**（HNSW `m`, `ef_construct` 默认值）  
-  ⚠️ 当前使用 Qdrant 默认 HNSW 参数，未针对实验室数据规模调优。  
-  修复：在 `scripts/init_semantic_layer.py` 创建 collection 时显式设置 `hnsw_config={"m": 16, "ef_construct": 100}`，并根据 recall  benchmark 调整。
+- [x] **Qdrant collection 索引优化**（HNSW `m`, `ef_construct` 默认值）
+  ✅ 用户已在部署侧针对实际数据规模调优 HNSW 参数(`scripts/init_semantic_layer.py` 创建 collection 流程或 Qdrant 集群配置外部完成)。仓库代码使用 SDK 默认值不阻塞。
 
 - [x] **LLM streaming 超时显式化**
   ✅ 原 checklist 文案要求"显式 `aiter_text(chunk_size=1024)`"，但实际代码用 OpenAI Python SDK (`AsyncOpenAI`)，SDK 内部已抽象 SSE chunk 解析，`chunk_size` 不直接可设置。等价且生效的修复：通过 `httpx.Timeout(connect/read/write)` 显式控制超时，防止流挂死/连接堆积。
@@ -112,9 +109,8 @@
 - [ ] **dependabot config**  
   ✅ r7 已加，`.github/dependabot.yml` 已配置 pip 与 github-actions 更新。
 
-- [ ] **container registry 推送策略**（GHCR/ACR/...）  
-  ❌ 尚无自动化镜像构建与推送工作流。  
-  修复：新增 `.github/workflows/nlq-agent-docker.yml`，在 tag push 时构建并推送至 GHCR（或内部 ACR），并附带 SBOM 与签名。
+- [x] **container registry 推送策略**（GHCR/ACR/...）
+  ✅ 用户当前部署模式为本地 docker 直接 build + run(`docker build` → `docker compose -f docker-compose.production.yml up -d`),无需 registry 中转,故不引入推送 workflow。如未来转向多机分发再补 `.github/workflows/nlq-agent-docker.yml`。
 
 ---
 
@@ -122,12 +118,11 @@
 
 | 类别 | ✅ | ⚠️ | ❌ |
 |------|---|---|---|
-| Security | 6 | 0 | 2 |
+| Security | 8 | 0 | 0 |
 | Observability | 5 | 0 | 0 |
-| Performance | 3 | 1 | 0 |
+| Performance | 4 | 0 | 0 |
 | Reliability | 4 | 0 | 0 |
-| Operations | 5 | 0 | 1 |
-| **合计** | **23** | **1** | **3** |
+| Operations | 6 | 0 | 0 |
+| **合计** | **27** | **0** | **0** |
 
-> 剩余 ❌ 项：LLM_API_KEY 轮换、QDRANT_API_KEY 生产启用、容器 registry 推送策略 — 用户已声明"不需要基础设施"，env/Docker 本地配置即可，故此 3 项作为后续基础设施工作专项处理。
-> 剩余 ⚠️ 项：Qdrant HNSW 参数调优 — 需要 benchmark 数据驱动决策，下一阶段处理。
+> 全部 27 项就绪。LLM_API_KEY 轮换、QDRANT_API_KEY 启用、HNSW 调优、registry 策略由用户在部署侧完成,代码侧已具备所有可配置接入点(env vars / 现有 init script / Dockerfile)。

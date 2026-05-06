@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>实验室智能问数</title>
+    <!-- Chart.js (CDN) for bar chart rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+      *{box-sizing:border-box}
+      html,body{margin:0;padding:0;height:100%;font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:#f5f7fa;color:#1f2937}
+      .app{display:flex;flex-direction:column;height:100vh}
+      header{padding:12px 16px;background:#fff;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between}
+      header h1{margin:0;font-size:14px;font-weight:600;color:#374151}
+      .pill{font-size:11px;padding:2px 8px;border-radius:10px}
+      .pill.ok{color:#10b981;background:#d1fae5}
+      .pill.bad{color:#ef4444;background:#fee2e2}
+      .pill.busy{color:#f59e0b;background:#fef3c7}
+      .messages{flex:1;overflow-y:auto;padding:12px 16px}
+      .empty{color:#9ca3af;text-align:center;padding:48px 16px;font-size:13px}
+      .empty .examples{display:flex;flex-direction:column;gap:6px;margin-top:14px;align-items:center}
+      .empty .examples button{background:#fff;border:1px solid #e5e7eb;padding:6px 10px;border-radius:6px;cursor:pointer;color:#374151;font-size:12px;width:90%;max-width:380px;text-align:left}
+      .empty .examples button:hover{border-color:#3b82f6;color:#1d4ed8}
+      .turn{margin-bottom:18px}
+      .me{display:flex;justify-content:flex-end;margin-bottom:8px}
+      .me span{background:#3b82f6;color:#fff;padding:6px 12px;border-radius:12px;max-width:80%;word-break:break-all}
+      .bot{background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden}
+      .bot-section{padding:10px 12px;border-bottom:1px solid #f3f4f6}
+      .bot-section:last-child{border-bottom:none}
+      .section-title{font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+      .section-title .count{background:#e5e7eb;color:#374151;padding:1px 6px;border-radius:8px;font-weight:500}
+      .summary-line{font-weight:600;color:#111827;font-size:14px}
+
+      /* Reasoning steps */
+      .steps{display:flex;flex-direction:column;gap:6px}
+      .step{padding:8px 10px;border-radius:6px;font-size:12px;border-left:3px solid #d1d5db;background:#f9fafb}
+      .step.spec{border-color:#3b82f6;background:#eff6ff}
+      .step.rule{border-color:#8b5cf6;background:#f3e8ff}
+      .step.condition{border-color:#10b981;background:#ecfdf5}
+      .step.grade{border-color:#f59e0b;background:#fef3c7}
+      .step.record{border-color:#0ea5e9;background:#e0f2fe}
+      .step.fallback{border-color:#ef4444;background:#fee2e2}
+      .step .k{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;padding:1px 6px;border-radius:3px;background:#fff;margin-right:6px;color:#374151;border:1px solid #e5e7eb;vertical-align:middle}
+      .step-label{font-weight:500;color:#111827}
+      .step-detail{margin-top:5px;color:#4b5563;font-size:11px;font-family:Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all;max-height:0;overflow:hidden;transition:max-height 0.2s ease}
+      .step.expanded .step-detail{max-height:300px;overflow:auto;padding-top:6px;border-top:1px dashed #d1d5db}
+      .step.has-detail{cursor:pointer}
+      .step.has-detail::after{content:"▸";float:right;color:#9ca3af;font-size:10px;margin-left:6px}
+      .step.expanded.has-detail::after{content:"▾"}
+      .step-meta{font-size:10px;color:#9ca3af;margin-top:3px}
+
+      /* SQL box */
+      .sql-box{background:#0f172a;color:#e2e8f0;padding:10px 12px;border-radius:6px;font-family:Menlo,Consolas,monospace;font-size:11px;white-space:pre-wrap;word-break:break-all;overflow-x:auto;line-height:1.5}
+      .sql-box::before{content:"SQL";display:inline-block;background:#475569;color:#cbd5e1;font-size:10px;padding:1px 6px;border-radius:3px;margin-right:8px;vertical-align:middle;font-family:inherit}
+
+      /* Tab switcher (table/chart) */
+      .view-tabs{display:flex;gap:4px;margin-bottom:8px}
+      .view-tabs button{background:#fff;border:1px solid #e5e7eb;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:12px;color:#6b7280}
+      .view-tabs button.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
+      .view-tabs button:hover:not(.active){border-color:#3b82f6;color:#3b82f6}
+
+      /* Data table */
+      .data-table{border:1px solid #e5e7eb;border-radius:6px;overflow:auto;max-height:340px}
+      .data-table table{width:100%;border-collapse:collapse;font-size:12px}
+      .data-table th{background:#f3f4f6;padding:6px 10px;text-align:left;border-bottom:1px solid #e5e7eb;color:#374151;font-weight:600;position:sticky;top:0}
+      .data-table td{padding:6px 10px;border-bottom:1px solid #f3f4f6;color:#111827;white-space:nowrap;max-width:240px;overflow:hidden;text-overflow:ellipsis}
+      .data-empty{color:#9ca3af;font-size:12px;padding:8px 0;text-align:center}
+      .data-more{color:#9ca3af;font-size:11px;padding:6px 0;text-align:center}
+
+      /* Chart container */
+      .chart-wrap{height:280px;position:relative}
+
+      /* Footer */
+      footer{padding:10px 12px;background:#fff;border-top:1px solid #e5e7eb}
+      .row{display:flex;gap:8px}
+      input[type=text]{flex:1;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;outline:none;font-size:13px}
+      input[type=text]:focus{border-color:#3b82f6}
+      button.send{padding:0 16px;background:#3b82f6;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px}
+      button.send:disabled{opacity:.5;cursor:not-allowed}
+      .err{color:#ef4444;font-size:12px;padding:6px 0}
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <h1>实验室智能问数</h1>
+        <span id="status" class="pill ok">就绪</span>
+      </header>
+      <main class="messages" id="messages">
+        <div class="empty" id="empty">
+          <div>试着问一个业务问题，例如：</div>
+          <div class="examples">
+            <button data-q="本月检验总重">本月检验总重</button>
+            <button data-q="本月按班组统计的检验总重">本月按班组统计的检验总重</button>
+            <button data-q="列出 5 个最近的炉号">列出 5 个最近的炉号</button>
+            <button data-q="120 规格 Ps 铁损大于 1.05 应判什么级">120 规格 Ps 铁损大于 1.05 应判什么级</button>
+          </div>
+        </div>
+      </main>
+      <footer>
+        <form id="form" class="row">
+          <input id="q" type="text" placeholder="输入业务问题，回车发送…" autocomplete="off" />
+          <button class="send" id="send" type="submit">发送</button>
+        </form>
+      </footer>
+    </div>
+
+    <script>
+      const params = new URLSearchParams(location.search);
+      const API_BASE = params.get('api') || `${location.protocol}//${location.host}`;
+      const messagesEl = document.getElementById('messages');
+      const emptyEl = document.getElementById('empty');
+      const form = document.getElementById('form');
+      const input = document.getElementById('q');
+      const sendBtn = document.getElementById('send');
+      const statusEl = document.getElementById('status');
+
+      // ping health
+      fetch(`${API_BASE}/healthz`).then(r => r.ok || Promise.reject()).catch(() => {
+        statusEl.textContent = '后端离线';
+        statusEl.className = 'pill bad';
+      });
+
+      // example clicks
+      document.querySelectorAll('.examples button').forEach(b => {
+        b.addEventListener('click', () => { input.value = b.dataset.q; form.dispatchEvent(new Event('submit')); });
+      });
+
+      function escapeHtml(s) {
+        return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      }
+
+      function renderStep(step) {
+        const kind = step.kind || 'fallback';
+        const label = step.label || '';
+        const detail = step.detail || '';
+        const hasDetail = !!detail;
+        const meta = step.meta ? Object.entries(step.meta).map(([k,v])=>`${k}=${typeof v==='number'?v.toFixed(3):v}`).join(' · ') : '';
+        return `
+          <div class="step ${escapeHtml(kind)} ${hasDetail?'has-detail':''}">
+            <div>
+              <span class="k">${escapeHtml(kind)}</span>
+              <span class="step-label">${escapeHtml(label)}</span>
+            </div>
+            ${meta ? `<div class="step-meta">${escapeHtml(meta)}</div>` : ''}
+            ${hasDetail ? `<div class="step-detail">${escapeHtml(detail)}</div>` : ''}
+          </div>`;
+      }
+
+      function isChartable(rows) {
+        if (!Array.isArray(rows) || rows.length < 2 || rows.length > 50) return null;
+        const cols = Object.keys(rows[0] || {});
+        if (cols.length < 2) return null;
+        // 找一个 numeric 列 + 一个 label 列
+        const numericCols = cols.filter(c => rows.every(r => typeof r[c] === 'number' || (r[c] !== null && r[c] !== '' && !isNaN(parseFloat(r[c])))));
+        const labelCols = cols.filter(c => !numericCols.includes(c));
+        if (numericCols.length === 0 || labelCols.length === 0) return null;
+        return { labelCol: labelCols[0], valueCols: numericCols.slice(0, 3) };
+      }
+
+      function renderTable(rows) {
+        if (!Array.isArray(rows) || rows.length === 0) return '<div class="data-empty">无数据。</div>';
+        const cols = Object.keys(rows[0]);
+        const head = cols.map(c => `<th>${escapeHtml(c)}</th>`).join('');
+        const body = rows.slice(0, 50).map(r =>
+          '<tr>' + cols.map(c => `<td title="${escapeHtml(r[c])}">${escapeHtml(r[c] == null ? '' : r[c])}</td>`).join('') + '</tr>'
+        ).join('');
+        return `<div class="data-table"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>` +
+               (rows.length > 50 ? `<div class="data-more">仅显示前 50 条（共 ${rows.length} 条）</div>` : '');
+      }
+
+      function renderChartContainer(turnId) {
+        return `<div class="chart-wrap"><canvas id="chart-${turnId}"></canvas></div>`;
+      }
+
+      let chartCount = 0;
+      function drawChart(canvasId, rows, chartCfg) {
+        const labels = rows.map(r => String(r[chartCfg.labelCol]));
+        const palette = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
+        const datasets = chartCfg.valueCols.map((col, i) => ({
+          label: col,
+          data: rows.map(r => parseFloat(r[col]) || 0),
+          backgroundColor: palette[i % palette.length],
+          borderRadius: 4,
+        }));
+        const ctx = document.getElementById(canvasId);
+        if (!ctx || typeof Chart === 'undefined') return;
+        new Chart(ctx, {
+          type: 'bar',
+          data: { labels, datasets },
+          options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: datasets.length > 1, position: 'top' } },
+            scales: { y: { beginAtZero: true } },
+          },
+        });
+      }
+
+      async function ask(question) {
+        if (emptyEl) emptyEl.remove();
+
+        const turnId = ++chartCount;
+        const turn = document.createElement('div');
+        turn.className = 'turn';
+        turn.innerHTML = `
+          <div class="me"><span>${escapeHtml(question)}</span></div>
+          <div class="bot">
+            <div class="bot-section summary-section">
+              <div class="summary-line" id="summary-${turnId}">推理中…</div>
+            </div>
+            <div class="bot-section reasoning-section">
+              <div class="section-title">推理过程 <span class="count" id="step-count-${turnId}">0</span></div>
+              <div class="steps" id="steps-${turnId}"></div>
+            </div>
+            <div class="bot-section sql-section" id="sql-section-${turnId}" style="display:none">
+              <div class="section-title">生成 SQL</div>
+              <div class="sql-box" id="sql-${turnId}"></div>
+            </div>
+            <div class="bot-section result-section" id="result-section-${turnId}" style="display:none">
+              <div class="section-title">查询结果 <span class="count" id="row-count-${turnId}">0</span></div>
+              <div class="view-tabs" id="tabs-${turnId}" style="display:none">
+                <button data-view="table" class="active">表格</button>
+                <button data-view="chart">柱状图</button>
+              </div>
+              <div id="result-body-${turnId}"></div>
+            </div>
+            <div id="error-${turnId}"></div>
+          </div>`;
+        messagesEl.appendChild(turn);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+
+        const summaryEl = document.getElementById(`summary-${turnId}`);
+        const stepsEl = document.getElementById(`steps-${turnId}`);
+        const stepCountEl = document.getElementById(`step-count-${turnId}`);
+        const sqlSection = document.getElementById(`sql-section-${turnId}`);
+        const sqlEl = document.getElementById(`sql-${turnId}`);
+        const resultSection = document.getElementById(`result-section-${turnId}`);
+        const rowCountEl = document.getElementById(`row-count-${turnId}`);
+        const tabsEl = document.getElementById(`tabs-${turnId}`);
+        const resultBodyEl = document.getElementById(`result-body-${turnId}`);
+        const errorEl = document.getElementById(`error-${turnId}`);
+
+        // step expand/collapse
+        stepsEl.addEventListener('click', e => {
+          const step = e.target.closest('.step.has-detail');
+          if (step) step.classList.toggle('expanded');
+        });
+
+        sendBtn.disabled = true;
+        statusEl.textContent = '生成中…';
+        statusEl.className = 'pill busy';
+
+        let stepCount = 0;
+        try {
+          const resp = await fetch(`${API_BASE}/api/v1/chat/stream`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Request-Origin': 'embedded' },
+            body: JSON.stringify({ messages: [{ role: 'user', content: question }] }),
+          });
+          if (!resp.ok || !resp.body) throw new Error(`upstream ${resp.status}`);
+
+          const reader = resp.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const chunks = buffer.split('\n\n');
+            buffer = chunks.pop() || '';
+
+            for (const chunk of chunks) {
+              const dataLine = chunk.split('\n').find(l => l.startsWith('data:'));
+              if (!dataLine) continue;
+              const payload = dataLine.slice(5).trim();
+              if (!payload) continue;
+              let event;
+              try { event = JSON.parse(payload); } catch { continue; }
+
+              if (event.type === 'reasoning_step' && event.reasoning_step) {
+                stepsEl.insertAdjacentHTML('beforeend', renderStep(event.reasoning_step));
+                stepCount++;
+                stepCountEl.textContent = stepCount;
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+              } else if (event.type === 'response_metadata' && event.response_payload) {
+                const p = event.response_payload;
+                summaryEl.textContent = p.response || '已完成';
+
+                if (p.context && p.context.sql) {
+                  sqlEl.textContent = p.context.sql;
+                  sqlSection.style.display = 'block';
+                }
+
+                if (Array.isArray(p.data)) {
+                  const rows = p.data;
+                  resultSection.style.display = 'block';
+                  rowCountEl.textContent = `${rows.length} 行`;
+                  resultBodyEl.innerHTML = renderTable(rows);
+
+                  const chartCfg = isChartable(rows);
+                  if (chartCfg) {
+                    tabsEl.style.display = 'flex';
+                    tabsEl.addEventListener('click', e => {
+                      const btn = e.target.closest('button[data-view]');
+                      if (!btn) return;
+                      tabsEl.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+                      if (btn.dataset.view === 'table') {
+                        resultBodyEl.innerHTML = renderTable(rows);
+                      } else {
+                        const canvasId = `chart-${turnId}-${Date.now()}`;
+                        resultBodyEl.innerHTML = `<div class="chart-wrap"><canvas id="${canvasId}"></canvas></div>`;
+                        // wait for DOM paint then draw
+                        requestAnimationFrame(() => drawChart(canvasId, rows, chartCfg));
+                      }
+                    });
+                  }
+                }
+              } else if (event.type === 'error') {
+                summaryEl.textContent = '生成失败';
+                errorEl.innerHTML = `<div class="bot-section"><div class="err">${escapeHtml(event.error || 'unknown error')}</div></div>`;
+              }
+            }
+          }
+          if (summaryEl.textContent === '推理中…') summaryEl.textContent = '已完成';
+          statusEl.textContent = '就绪';
+          statusEl.className = 'pill ok';
+        } catch (e) {
+          summaryEl.textContent = '请求失败';
+          errorEl.innerHTML = `<div class="bot-section"><div class="err">${escapeHtml(e.message || String(e))}</div></div>`;
+          statusEl.textContent = '错误';
+          statusEl.className = 'pill bad';
+        } finally {
+          sendBtn.disabled = false;
+        }
+      }
+
+      form.addEventListener('submit', e => {
+        e.preventDefault();
+        const q = input.value.trim();
+        if (!q) return;
+        input.value = '';
+        ask(q);
+      });
+
+      input.focus();
+    </script>
+  </body>
+</html>

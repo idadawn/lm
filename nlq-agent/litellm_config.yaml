@@ -1,0 +1,104 @@
+# LiteLLM Proxy 配置文件
+# 统一接入多模型提供商，对外暴露 OpenAI 兼容接口
+# 文档：https://docs.litellm.ai/docs/proxy/configs
+
+model_list:
+  # ── OpenAI ────────────────────────────────────────────────
+  - model_name: gpt-4o
+    litellm_params:
+      model: openai/gpt-4o
+      api_key: os.environ/OPENAI_API_KEY
+    model_info:
+      supports_function_calling: true
+
+  - model_name: gpt-4o-mini
+    litellm_params:
+      model: openai/gpt-4o-mini
+      api_key: os.environ/OPENAI_API_KEY
+    model_info:
+      supports_function_calling: true
+
+  # ── OpenRouter（聚合多家模型）────────────────────────────────
+  - model_name: claude-3-5-sonnet
+    litellm_params:
+      model: openrouter/anthropic/claude-3.5-sonnet
+      api_key: os.environ/OPENAI_API_KEY
+      api_base: os.environ/OPENAI_BASE_URL
+    model_info:
+      supports_function_calling: true
+
+  - model_name: qwen3-32b
+    litellm_params:
+      model: openrouter/qwen/qwen3-32b
+      api_key: os.environ/OPENAI_API_KEY
+      api_base: os.environ/OPENAI_BASE_URL
+    model_info:
+      supports_function_calling: true
+
+  - model_name: deepseek-v3
+    litellm_params:
+      model: openrouter/deepseek/deepseek-chat
+      api_key: os.environ/OPENAI_API_KEY
+      api_base: os.environ/OPENAI_BASE_URL
+    model_info:
+      supports_function_calling: true
+
+  # ── Google Gemini ─────────────────────────────────────────
+  - model_name: gemini-2.5-flash
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY
+    model_info:
+      supports_function_calling: true
+
+  - model_name: gemini-2.0-flash
+    litellm_params:
+      model: gemini/gemini-2.0-flash
+      api_key: os.environ/GEMINI_API_KEY
+    model_info:
+      supports_function_calling: true
+
+  # ── Ollama（本地部署）────────────────────────────────────────
+  - model_name: llama3.1-8b-local
+    litellm_params:
+      model: ollama/llama3.1:8b
+      api_base: os.environ/OLLAMA_BASE_URL
+    model_info:
+      supports_function_calling: false   # 注意：部分 Ollama 模型不支持
+
+  - model_name: qwen2.5-7b-local
+    litellm_params:
+      model: ollama/qwen2.5:7b
+      api_base: os.environ/OLLAMA_BASE_URL
+    model_info:
+      supports_function_calling: true
+
+  - model_name: qwen3.5-27b-local
+    litellm_params:
+      model: ollama/qwen3.5:27b
+      api_base: os.environ/OLLAMA_BASE_URL
+    model_info:
+      supports_function_calling: true
+
+  # ── vLLM（自托管）────────────────────────────────────────────
+  - model_name: vllm-custom
+    litellm_params:
+      model: openai/custom-model
+      api_base: os.environ/VLLM_BASE_URL
+      api_key: os.environ/VLLM_API_KEY
+    model_info:
+      supports_function_calling: true
+
+general_settings:
+  master_key: os.environ/LITELLM_API_KEY
+  # 仅支持 Function Calling 的模型才能用于 Agent（QueryAgent / RootCauseAgent 等）
+  # 不支持 Function Calling 的模型只能用于简单问答
+
+litellm_settings:
+  # 请求超时（秒）
+  request_timeout: 120
+  # 失败重试次数
+  num_retries: 2
+  # 回退模型（主模型失败时自动切换）
+  fallbacks:
+    - gpt-4o: ["claude-3-5-sonnet", "gemini-2.5-flash"]

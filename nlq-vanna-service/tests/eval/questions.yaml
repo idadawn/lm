@@ -1,0 +1,165 @@
+# 占位首版（Day-1 EOD 锁），等业务方 P2 提供真题后替换；schema 已固化，PR 改动需打 scope:eval-set label
+#
+# Schema 说明：
+#   id            : 唯一标识符，格式 T{tier}-{序号:03d}
+#   tier          : 1=纯 SELECT, 2=含 JSON_EXTRACT 联表判级, 3=复杂 fallback-only
+#   category      : query | judgment | complex_judgment
+#   question      : 用户自然语言提问（中文）
+#   reference_sql : 期望的参考 SQL；Tier 3 可为 null（仅验证 fallback step 出现）
+#   notes         : 备注
+#
+# TODO: 业务方提供真实 question + reference_sql 后，删除 TODO 注释并替换占位内容
+
+# ============================================================
+# Tier 1 — 纯 SELECT 查询（5 题）
+# ============================================================
+
+- id: T1-001
+  tier: 1
+  category: query
+  # TODO: 业务方提供真实 question + reference_sql
+  question: "查询最近一批次的所有检测记录"
+  reference_sql: >
+    SELECT * FROM lab_intermediate_data
+    ORDER BY F_CREATORTIME DESC
+    LIMIT 100
+  notes: "占位题：查询最新批次数据"
+
+- id: T1-002
+  tier: 1
+  category: query
+  # TODO: 业务方提供真实 question + reference_sql
+  question: "查询规格为 120 的所有产品铁损值"
+  reference_sql: >
+    SELECT F_Id, spec_name, iron_loss, F_CREATORTIME
+    FROM lab_intermediate_data
+    WHERE spec_name = '120'
+    ORDER BY F_CREATORTIME DESC
+  notes: "占位题：按规格过滤铁损"
+
+- id: T1-003
+  tier: 1
+  category: query
+  # TODO: 业务方提供真实 question + reference_sql
+  question: "查询铁损值大于 1.05 的所有记录数量"
+  reference_sql: >
+    SELECT COUNT(*) AS record_count
+    FROM lab_intermediate_data
+    WHERE iron_loss > 1.05
+  notes: "占位题：铁损超标计数"
+
+- id: T1-004
+  tier: 1
+  category: query
+  # TODO: 业务方提供真实 question + reference_sql
+  question: "列出所有不同规格型号"
+  reference_sql: >
+    SELECT DISTINCT spec_name
+    FROM lab_intermediate_data
+    ORDER BY spec_name
+  notes: "占位题：枚举规格"
+
+- id: T1-005
+  tier: 1
+  category: query
+  # TODO: 业务方提供真实 question + reference_sql
+  question: "查询今天创建的检测数据"
+  reference_sql: >
+    SELECT * FROM lab_intermediate_data
+    WHERE DATE(F_CREATORTIME) = CURDATE()
+    ORDER BY F_CREATORTIME DESC
+  notes: "占位题：按日期过滤"
+
+- id: T1-006
+  tier: 1
+  category: query
+  # TODO: 业务方提供真题
+  question: "查询 2026-04 月生产、规格 120 的所有炉号"
+  reference_sql: "SELECT DISTINCT i.F_FURNACE_NO FROM LAB_INTERMEDIATE_DATA i JOIN LAB_PRODUCT_SPEC s ON i.F_PRODUCT_SPEC_ID = s.F_Id WHERE s.F_NAME='120' AND i.F_PROD_DATE BETWEEN '2026-04-01' AND '2026-04-30' ORDER BY i.F_FURNACE_NO"
+  expected_columns: [F_FURNACE_NO]
+  notes: "占位题：按月份+规格过滤炉号"
+
+# ============================================================
+# Tier 2 — 含 JSON_EXTRACT 联表判级（4 题）
+# ============================================================
+
+- id: T2-001
+  tier: 2
+  category: judgment
+  # TODO: 业务方提供真实 question + reference_sql
+  question: "查询 120 规格铁损大于 1.05 时对应的判级结果"
+  reference_sql: >
+    SELECT
+      a.F_Id,
+      a.iron_loss,
+      JSON_EXTRACT(a.quality_attrs, '$.grade') AS grade,
+      b.spec_name
+    FROM lab_intermediate_data a
+    JOIN lab_spec b ON a.spec_id = b.F_Id
+    WHERE b.spec_name = '120'
+      AND a.iron_loss > 1.05
+    ORDER BY a.F_CREATORTIME DESC
+  notes: "占位题：JSON_EXTRACT 判级联表"
+
+- id: T2-002
+  tier: 2
+  category: judgment
+  # TODO: 业务方提供真实 question + reference_sql
+  question: "120 规格 Ps 铁损 > 1.05 的产品判什么等级"
+  reference_sql: >
+    SELECT
+      a.F_Id,
+      a.iron_loss,
+      JSON_EXTRACT(a.quality_attrs, '$.Ps_grade') AS Ps_grade
+    FROM lab_intermediate_data a
+    JOIN lab_spec b ON a.spec_id = b.F_Id
+    WHERE b.spec_name = '120'
+      AND a.iron_loss > 1.05
+    LIMIT 10
+  notes: "占位题：Ps 铁损判级"
+
+- id: T2-003
+  tier: 2
+  category: judgment
+  # TODO: 业务方提供真实 question + reference_sql
+  question: "查询叠片系数低于 0.95 时产品等级分布"
+  reference_sql: >
+    SELECT
+      JSON_EXTRACT(a.quality_attrs, '$.grade') AS grade,
+      COUNT(*) AS cnt
+    FROM lab_intermediate_data a
+    WHERE JSON_EXTRACT(a.quality_attrs, '$.stack_factor') < 0.95
+    GROUP BY grade
+    ORDER BY cnt DESC
+  notes: "占位题：叠片系数过滤 + 分组"
+
+- id: T2-004
+  tier: 2
+  category: judgment
+  # TODO: 业务方提供真实 question + reference_sql
+  question: "某批次产品的综合判级结果是什么"
+  reference_sql: >
+    SELECT
+      a.batch_no,
+      JSON_EXTRACT(a.quality_attrs, '$.final_grade') AS final_grade,
+      COUNT(*) AS product_count
+    FROM lab_intermediate_data a
+    WHERE a.batch_no IS NOT NULL
+    GROUP BY a.batch_no, final_grade
+    ORDER BY a.batch_no DESC
+    LIMIT 20
+  notes: "占位题：批次综合判级"
+
+# ============================================================
+# Tier 3 — 复杂判级（fallback-only，1 题）
+# ============================================================
+
+- id: T3-001
+  tier: 3
+  category: complex_judgment
+  # TODO: 业务方提供真实 question；reference_sql 为 null 表示仅验证 fallback step 出现
+  question: "对比不同生产线同规格产品在多个质量维度的综合判级差异及趋势分析"
+  reference_sql: null
+  notes: >
+    占位题：高复杂度多维度分析，期望系统返回 fallback step（超出当前 NLQ 能力边界）。
+    仅验证 kind=fallback 步骤出现，不验证 SQL 等价性。

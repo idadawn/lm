@@ -1,0 +1,51 @@
+[
+  {
+    "kind": "record",
+    "label": "命中检测记录：炉号 1丙20260110-1，批次 BATCH-001",
+    "meta": {
+      "furnace_no": "1丙20260110-1",
+      "batch_no": "BATCH-001"
+    }
+  },
+  {
+    "kind": "spec",
+    "label": "产品规格 120",
+    "meta": {
+      "spec_code": "120"
+    }
+  },
+  {
+    "kind": "rule",
+    "label": "判定规则：C级（优先级 1）",
+    "meta": {
+      "rule_id": "r-1",
+      "priority": 1,
+      "quality_status": "不合格"
+    }
+  },
+  {
+    "kind": "condition",
+    "label": "带宽 >= 119.5",
+    "field": "F_WIDTH",
+    "expected": ">= 119.5",
+    "actual": 119.8,
+    "satisfied": true
+  },
+  {
+    "kind": "condition",
+    "label": "Ps铁损 <= 1.30",
+    "field": "F_PERF_PS_LOSS",
+    "expected": "<= 1.30",
+    "actual": 1.46,
+    "satisfied": false
+  },
+  {
+    "kind": "grade",
+    "label": "1/2 条满足，主要差距在 Ps铁损上限；按规则归入 C 级",
+    "meta": {
+      "grade": "C",
+      "satisfied_count": 1,
+      "failed_count": 1
+    }
+  }
+]

@@ -1,0 +1,10 @@
+data: {"type":"reasoning_step","reasoning_step":{"kind":"spec","label":"检测规格核查","detail":"样品规格符合检测标准","satisfied":true,"field":"spec_code","expected":"ISO-9001","actual":"ISO-9001"}}
+
+data: {"type":"reasoning_step","reasoning_step":{"kind":"rule","label":"阈值规则判断","detail":"数值在允许误差范围内","satisfied":true,"field":"threshold","expected":"≤0.05","actual":0.03}}
+
+data: {"type":"text","content":"检测结果符合标准，中文内容验证 UTF-8 编码正确性：测试通过"}
+
+data: {"type":"response_metadata","response_payload":{"sql":"SELECT * FROM lab_results WHERE sample_id = '2024-001' AND status = 'pass'","reasoning_steps":[{"kind":"spec","label":"检测规格核查","detail":"样品规格符合检测标准","satisfied":true,"field":"spec_code","expected":"ISO-9001","actual":"ISO-9001"},{"kind":"rule","label":"阈值规则判断","detail":"数值在允许误差范围内","satisfied":true,"field":"threshold","expected":"≤0.05","actual":0.03}],"model":"nlq-agent-v1","total_tokens":512}}
+
+data: {"type":"done"}
+

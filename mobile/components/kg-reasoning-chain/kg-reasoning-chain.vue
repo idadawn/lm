@@ -36,14 +36,7 @@
 </template>
 
 <script>
-const KIND_LABEL = {
-  record: '命中记录',
-  spec: '产品规格',
-  rule: '判定规则',
-  condition: '条件评估',
-  grade: '最终结论',
-  fallback: '降级'
-};
+import { REASONING_STEP_PRESENTATION } from '@/utils/reasoning-step-presentation.js';
 
 export default {
   name: 'KgReasoningChain',
@@ -56,7 +49,9 @@ export default {
   },
   methods: {
     toggle() { this.expanded = !this.expanded; },
-    kindLabel(kind) { return KIND_LABEL[kind] || kind; }
+    kindLabel(kind) {
+      return (REASONING_STEP_PRESENTATION[kind] || REASONING_STEP_PRESENTATION.fallback).label;
+    }
   }
 };
 </script>

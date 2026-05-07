@@ -21,17 +21,24 @@
       <div class="chat-container">
         <!-- 消息列表 -->
         <div class="messages" ref="messagesRef">
-          <div v-for="msg in messages" :key="msg.id"
+          <div v-for="(msg, idx) in messages" :key="idx"
             :class="['message-item', msg.role === 'user' ? 'user-message' : 'ai-message']">
             <div class="message-avatar">
               <UserOutlined v-if="msg.role === 'user'" />
               <RobotOutlined v-else />
             </div>
             <div class="message-content">
-              <div v-if="msg.loading" class="loading-dots">
+              <div v-if="streamingIndex === idx && !msg.content" class="loading-dots">
                 <span></span><span></span><span></span>
               </div>
-              <div v-else class="message-text markdown-content" v-html="renderMarkdown(msg.content)"></div>
+              <template v-else>
+                <ReasoningChain
+                  v-if="msg.role === 'assistant' && msg.reasoningSteps && msg.reasoningSteps.length > 0"
+                  :steps="msg.reasoningSteps"
+                  :default-open="false"
+                />
+                <div class="message-text markdown-content" v-html="renderMarkdown(msg.content)"></div>
+              </template>
             </div>
           </div>
 
@@ -70,8 +77,12 @@
 import { ref, nextTick, watch, computed } from 'vue';
 import { RobotOutlined, UserOutlined, CloseOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
-import { sendChatMessage, type ChatMessage } from '/@/api/lab/ai';
+import { sendChatMessage } from '/@/api/lab/ai';
+import { streamNlqChat } from '/@/api/nlqAgent';
+import type { ReasoningStep } from '/@/types/reasoning-protocol';
+import ReasoningChain from '/@/components/ReasoningChain.vue';
 import Showdown from 'showdown';
+import { useNlqSession } from './useNlqSession';
 
 // Props
 interface Props {
@@ -82,11 +93,13 @@ const props = withDefaults(defineProps<Props>(), {
   reportData: null,
 });
 
-// 状态
+// 状态 — messages 来源于持久化的 session（跨刷新 / 多 tab 同步）
+const { messages, appendMessage, updateLastMessage, broadcastTail } = useNlqSession();
+
 const visible = ref(false);
 const inputValue = ref('');
 const isSending = ref(false);
-const messages = ref<ChatMessage[]>([]);
+const streamingIndex = ref<number>(-1);
 const messagesRef = ref<HTMLElement | null>(null);
 
 // Markdown 渲染器 (使用 showdown)
@@ -125,51 +138,77 @@ async function handleSend() {
   const text = inputValue.value.trim();
   if (!text || isSending.value) return;
 
-  // 添加用户消息
-  const userMsg: ChatMessage = {
-    id: `user-${Date.now()}`,
-    role: 'user',
-    content: text,
-    createdAt: new Date().toISOString(),
-  };
-  messages.value.push(userMsg);
+  // 用户消息：appendMessage → 持久化 + broadcast
+  appendMessage({ role: 'user', content: text });
   inputValue.value = '';
 
-  // 滚动到底部
   await scrollToBottom();
 
-  // 添加 AI 消息（loading 状态）
-  const aiMsg: ChatMessage = {
-    id: `ai-${Date.now()}`,
-    role: 'assistant',
-    content: '',
-    createdAt: new Date().toISOString(),
-    loading: true,
-  };
-  messages.value.push(aiMsg);
+  // 占位 AI 消息（流式填充期间内存更新，完成后 broadcast 完整消息）
+  appendMessage({ role: 'assistant', content: '', reasoningSteps: [] });
+  streamingIndex.value = messages.value.length - 1;
 
   isSending.value = true;
 
   try {
-    // 构建 system prompt（包含当前数据上下文）
-    const systemPrompt = buildSystemPrompt();
+    let hasStreamed = false;
+    let accumulated = '';
+    let accumulatedSteps: ReasoningStep[] = [];
 
-    // 调用 AI 接口
-    const response = await sendChatMessage({
-      message: text,
-      systemPrompt,
-    });
-
-    // 更新 AI 消息
-    aiMsg.content = response.response || '抱歉，我无法生成回复。';
-    aiMsg.loading = false;
+    await streamNlqChat(
+      {
+        messages: [
+          { role: 'system', content: buildSystemPrompt() },
+          { role: 'user', content: text },
+        ],
+      },
+      {
+        onReasoningStep(step: ReasoningStep) {
+          accumulatedSteps = [...accumulatedSteps, step];
+          updateLastMessage({ reasoningSteps: accumulatedSteps });
+        },
+        onText(chunk: string) {
+          hasStreamed = true;
+          accumulated += chunk;
+          updateLastMessage({ content: accumulated });
+          scrollToBottom();
+        },
+        onDone() {
+          if (!accumulated) {
+            updateLastMessage({ content: '抱歉，我无法生成回复。' });
+          }
+        },
+        onError(err: Error) {
+          console.warn('nlqAgent SSE error, falling back to REST:', err);
+          if (!hasStreamed) {
+            sendChatMessage({ message: text, systemPrompt: buildSystemPrompt() })
+              .then((response) => {
+                updateLastMessage({ content: response.response || '抱歉，我无法生成回复。' });
+              })
+              .catch((restErr) => {
+                console.error('AI 接口调用失败:', restErr);
+                updateLastMessage({ content: '抱歉，处理您的请求时出现错误。' });
+                message.error('AI 助手暂时无法响应，请稍后重试');
+              })
+              .finally(() => {
+                isSending.value = false;
+                streamingIndex.value = -1;
+                broadcastTail();
+                scrollToBottom();
+              });
+          }
+        },
+      },
+    );
   } catch (error) {
     console.error('AI 接口调用失败:', error);
-    aiMsg.content = `抱歉，处理您的请求时出现错误。`;
-    aiMsg.loading = false;
+    updateLastMessage({ content: '抱歉，处理您的请求时出现错误。' });
     message.error('AI 助手暂时无法响应，请稍后重试');
   } finally {
     isSending.value = false;
+    streamingIndex.value = -1;
+    // 流结束后,广播一次完整 assistant 消息让其他 tab 同步最终状态
+    broadcastTail();
     await scrollToBottom();
   }
 }
@@ -236,17 +275,18 @@ function buildSystemPrompt(): string {
   return prompt;
 }
 
-// 监听弹窗打开，初始化欢迎消息
+// 监听弹窗打开，初始化欢迎消息（仅当持久化的 session 为空时）
 watch(visible, (newVal) => {
   if (newVal && messages.value.length === 0) {
-    // delay slightly for effect
     setTimeout(() => {
-      messages.value.push({
-        id: 'welcome',
-        role: 'assistant',
-        content: '您好！我是 **AI 数据助手**。\n\n我可以帮您分析当前报表数据，回答关于合格率、产量、班次对比等问题。请问有什么可以帮助您的？',
-        createdAt: new Date().toISOString(),
-      });
+      // 再次检查 — 期间可能已有消息从 broadcast / storage 同步过来
+      if (messages.value.length === 0) {
+        appendMessage({
+          role: 'assistant',
+          content:
+            '您好！我是 **AI 数据助手**。\n\n我可以帮您分析当前报表数据，回答关于合格率、产量、班次对比等问题。请问有什么可以帮助您的？',
+        });
+      }
     }, 300);
   }
 });

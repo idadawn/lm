@@ -36,6 +36,7 @@
           <text class="msg-avatar-text">AI</text>
         </view>
         <view class="msg-bubble">
+          <!-- TODO(W1.4): markdown rendering deferred — needs marked + mp-html + DOMPurify deps + #ifdef branches -->
           <text class="msg-text">{{ msg.content }}</text>
         </view>
         <view class="msg-avatar user-avatar" v-if="msg.role === 'user'">

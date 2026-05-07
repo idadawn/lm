@@ -74,7 +74,7 @@
     </scroll-view>
 
     <!-- 输入区 -->
-    <view class="input-bar">
+    <view class="input-bar" :style="keyboardHeight > 0 ? { paddingBottom: keyboardHeight + 'px' } : {}">
       <input
         class="chat-input"
         v-model="inputText"
@@ -95,7 +95,7 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { streamNlqChat } from '@/utils/sse-client.js'
 import KgReasoningChain from '@/components/kg-reasoning-chain/kg-reasoning-chain.vue'
 import { renderMarkdown, sanitizeHtml } from '@/utils/markdown.js'
@@ -168,6 +168,20 @@ const inputText = ref('')
 const loading = ref(false)
 const reasoningSteps = ref([])
 const scrollToView = ref('')
+
+// 键盘高度:键盘弹起时上移输入栏,避免输入框被遮挡。
+// uni.onKeyboardHeightChange 在 MP-WEIXIN / APP-PLUS 有效;H5 键盘由浏览器自动处理。
+const keyboardHeight = ref(0)
+
+onMounted(() => {
+  uni.onKeyboardHeightChange((res) => {
+    keyboardHeight.value = res.height || 0
+  })
+})
+
+onUnmounted(() => {
+  uni.offKeyboardHeightChange()
+})
 
 const quickTags = [
   '本月合格率是多少？',

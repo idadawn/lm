@@ -6,7 +6,8 @@
   "scripts": {
     "test:sse": "node tests/sse-client.contract.spec.js",
     "test:markdown": "node tests/markdown.contract.spec.js",
-    "test": "npm run test:sse && npm run test:markdown"
+    "test": "npm run test:sse && npm run test:markdown",
+    "check:bundle": "node scripts/check-bundle-size.js"
   },
   "dependencies": {
     "dompurify": "^3.4.2",

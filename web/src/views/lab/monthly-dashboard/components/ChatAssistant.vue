@@ -11,72 +11,69 @@
       </a-badge>
     </div>
 
-    <!-- 对话弹窗 -->
-    <a-modal v-model:open="visible" title="AI 数据助手" :footer="null" width="600px" centered :destroyOnClose="true"
-      wrapClassName="chat-modal-wrapper" :maskClosable="false" class="ai-chat-modal">
+    <!-- 桌面端弹窗 (>= 768px) -->
+    <a-modal
+      v-if="!isMobile"
+      v-model:open="visible"
+      title="AI 数据助手"
+      :footer="null"
+      width="600px"
+      centered
+      :destroyOnClose="true"
+      wrapClassName="chat-modal-wrapper"
+      :maskClosable="false"
+      class="ai-chat-modal"
+    >
       <template #closeIcon>
         <CloseOutlined />
       </template>
-
-      <div class="chat-container">
-        <!-- 消息列表 -->
-        <div class="messages" ref="messagesRef">
-          <div v-for="(msg, idx) in messages" :key="idx"
-            :class="['message-item', msg.role === 'user' ? 'user-message' : 'ai-message']">
-            <div class="message-avatar">
-              <UserOutlined v-if="msg.role === 'user'" />
-              <RobotOutlined v-else />
-            </div>
-            <div class="message-content">
-              <div v-if="streamingIndex === idx && !msg.content" class="loading-dots">
-                <span></span><span></span><span></span>
-              </div>
-              <template v-else>
-                <ReasoningChain
-                  v-if="msg.role === 'assistant' && msg.reasoningSteps && msg.reasoningSteps.length > 0"
-                  :steps="msg.reasoningSteps"
-                  :default-open="false"
-                />
-                <div class="message-text markdown-content" v-html="renderMarkdown(msg.content)"></div>
-              </template>
-            </div>
-          </div>
-
-          <!-- 空状态 -->
-          <div v-if="messages.length === 0" class="empty-state">
-            <div class="empty-icon-wrapper">
-              <RobotOutlined class="empty-icon" />
-            </div>
-            <h3>您好，我是 AI 数据助手</h3>
-            <p>我可以帮您分析当前报表数据，回答相关问题</p>
-          </div>
-        </div>
-
-        <!-- 快捷提问 -->
-        <div v-if="messages.length === 0" class="suggestions">
-          <div class="suggestion-title">您可以问我：</div>
-          <div class="suggestion-chips">
-            <a-button v-for="q in quickQuestions" :key="q" size="small" class="suggestion-chip"
-              @click="handleQuickQuestion(q)">
-              {{ q }}
-            </a-button>
-          </div>
-        </div>
-
-        <!-- 输入框 -->
-        <div class="input-area">
-          <a-input-search v-model:value="inputValue" :loading="isSending" placeholder="请输入您的问题..." enter-button="发送"
-            size="large" @search="handleSend" :disabled="isSending" />
-        </div>
-      </div>
+      <ChatContent
+        :messages="messages"
+        :streaming-index="streamingIndex"
+        :input-value="inputValue"
+        :is-sending="isSending"
+        :quick-questions="quickQuestions"
+        :messages-ref-setter="setMessagesRef"
+        @update:input-value="inputValue = $event"
+        @send="handleSend"
+        @quick-question="handleQuickQuestion"
+      />
     </a-modal>
+
+    <!-- 移动端抽屉 (< 768px) -->
+    <a-drawer
+      v-else
+      v-model:open="visible"
+      placement="bottom"
+      height="100vh"
+      :closable="true"
+      title="AI 数据助手"
+      :destroyOnClose="true"
+      class="ai-chat-drawer"
+    >
+      <template #closeIcon>
+        <CloseOutlined />
+      </template>
+      <ChatContent
+        :messages="messages"
+        :streaming-index="streamingIndex"
+        :input-value="inputValue"
+        :is-sending="isSending"
+        :quick-questions="quickQuestions"
+        :messages-ref-setter="setMessagesRef"
+        @update:input-value="inputValue = $event"
+        @send="handleSend"
+        @quick-question="handleQuickQuestion"
+      />
+    </a-drawer>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, watch, computed } from 'vue';
+import { ref, nextTick, watch, defineComponent, h } from 'vue';
 import { RobotOutlined, UserOutlined, CloseOutlined } from '@ant-design/icons-vue';
 import { message } from 'ant-design-vue';
+import { useMediaQuery } from '@vueuse/core';
 import { sendChatMessage } from '/@/api/lab/ai';
 import { streamNlqChat } from '/@/api/nlqAgent';
 import type { ReasoningStep } from '/@/types/reasoning-protocol';
@@ -102,6 +99,12 @@ const isSending = ref(false);
 const streamingIndex = ref<number>(-1);
 const messagesRef = ref<HTMLElement | null>(null);
 
+// 响应式断点 — VueUse useMediaQuery
+const isMobile = useMediaQuery('(max-width: 767px)');
+
+// 未读消息数 — 真实计数
+const unreadCount = ref(0);
+
 // Markdown 渲染器 (使用 showdown)
 const converter = new Showdown.Converter({
   ghCodeBlocks: true,
@@ -120,12 +123,14 @@ const quickQuestions = [
   '不合格原因主要是什么？',
 ];
 
-// 未读消息数
-const unreadCount = computed(() => 0);
-
 // 渲染 Markdown (使用 showdown)
 function renderMarkdown(content: string): string {
   return converter.makeHtml(content);
+}
+
+// 设置消息列表的 DOM ref（由 ChatContent 回调）
+function setMessagesRef(el: HTMLElement | null) {
+  messagesRef.value = el;
 }
 
 // 切换聊天窗口
@@ -171,11 +176,19 @@ async function handleSend() {
           hasStreamed = true;
           accumulated += chunk;
           updateLastMessage({ content: accumulated });
+          // 收到 AI 文本且窗口未打开 → 增加未读计数
+          if (!visible.value) {
+            unreadCount.value++;
+          }
           scrollToBottom();
         },
         onDone() {
           if (!accumulated) {
             updateLastMessage({ content: '抱歉，我无法生成回复。' });
+            // 未打开时也计一次未读
+            if (!visible.value) {
+              unreadCount.value++;
+            }
           }
         },
         onError(err: Error) {
@@ -184,6 +197,9 @@ async function handleSend() {
             sendChatMessage({ message: text, systemPrompt: buildSystemPrompt() })
               .then((response) => {
                 updateLastMessage({ content: response.response || '抱歉，我无法生成回复。' });
+                if (!visible.value) {
+                  unreadCount.value++;
+                }
               })
               .catch((restErr) => {
                 console.error('AI 接口调用失败:', restErr);
@@ -238,7 +254,7 @@ function buildSystemPrompt(): string {
   const shiftComparisons = props.reportData.shiftComparisons || [];
 
   let prompt = `你是一个实验室数据分析助手，帮助用户理解月度质量报表数据。
-  
+
 【当前数据上下文】
 检验总重：${(s.totalWeight || 0).toLocaleString()} kg
 合格率：${(s.qualifiedRate || 0).toFixed(2)}%
@@ -275,41 +291,154 @@ function buildSystemPrompt(): string {
   return prompt;
 }
 
-// 监听弹窗打开，初始化欢迎消息（仅当持久化的 session 为空时）
+// 监听弹窗打开
 watch(visible, (newVal) => {
-  if (newVal && messages.value.length === 0) {
-    setTimeout(() => {
-      // 再次检查 — 期间可能已有消息从 broadcast / storage 同步过来
-      if (messages.value.length === 0) {
-        appendMessage({
-          role: 'assistant',
-          content:
-            '您好！我是 **AI 数据助手**。\n\n我可以帮您分析当前报表数据，回答关于合格率、产量、班次对比等问题。请问有什么可以帮助您的？',
-        });
-      }
-    }, 300);
+  if (newVal) {
+    // 打开时清零未读计数
+    unreadCount.value = 0;
+
+    if (messages.value.length === 0) {
+      setTimeout(() => {
+        // 再次检查 — 期间可能已有消息从 broadcast / storage 同步过来
+        if (messages.value.length === 0) {
+          appendMessage({
+            role: 'assistant',
+            content:
+              '您好！我是 **AI 数据助手**。\n\n我可以帮您分析当前报表数据，回答关于合格率、产量、班次对比等问题。请问有什么可以帮助您的？',
+          });
+        }
+      }, 300);
+    }
   }
+});
+
+// ─── 内联子组件：共享聊天内容区（消息列表 + 输入框）─────────────────────────
+// 避免重复模板，Modal 和 Drawer 共用同一内容结构
+const ChatContent = defineComponent({
+  name: 'ChatContent',
+  props: {
+    messages: { type: Array as () => any[], required: true },
+    streamingIndex: { type: Number, required: true },
+    inputValue: { type: String, required: true },
+    isSending: { type: Boolean, required: true },
+    quickQuestions: { type: Array as () => string[], required: true },
+    messagesRefSetter: { type: Function as unknown as () => (el: HTMLElement | null) => void, required: true },
+  },
+  emits: ['update:inputValue', 'send', 'quickQuestion'],
+  setup(props, { emit }) {
+    return () =>
+      h('div', { class: 'chat-container' }, [
+        // 消息列表
+        h(
+          'div',
+          {
+            class: 'messages',
+            ref: (el: any) => props.messagesRefSetter(el as HTMLElement | null),
+          },
+          [
+            ...props.messages.map((msg: any, idx: number) =>
+              h(
+                'div',
+                {
+                  key: idx,
+                  class: ['message-item', msg.role === 'user' ? 'user-message' : 'ai-message'],
+                },
+                [
+                  h('div', { class: 'message-avatar' }, [
+                    msg.role === 'user' ? h(UserOutlined) : h(RobotOutlined),
+                  ]),
+                  h('div', { class: 'message-content' }, [
+                    props.streamingIndex === idx && !msg.content
+                      ? h('div', { class: 'loading-dots' }, [
+                          h('span'),
+                          h('span'),
+                          h('span'),
+                        ])
+                      : [
+                          msg.role === 'assistant' &&
+                          msg.reasoningSteps &&
+                          msg.reasoningSteps.length > 0
+                            ? h(ReasoningChain, {
+                                steps: msg.reasoningSteps,
+                                defaultOpen: false,
+                              })
+                            : null,
+                          h('div', {
+                            class: 'message-text markdown-content',
+                            innerHTML: renderMarkdown(msg.content),
+                          }),
+                        ],
+                  ]),
+                ],
+              ),
+            ),
+            // 空状态
+            props.messages.length === 0
+              ? h('div', { class: 'empty-state' }, [
+                  h('div', { class: 'empty-icon-wrapper' }, [
+                    h(RobotOutlined, { class: 'empty-icon' }),
+                  ]),
+                  h('h3', '您好，我是 AI 数据助手'),
+                  h('p', '我可以帮您分析当前报表数据，回答相关问题'),
+                ])
+              : null,
+          ],
+        ),
+        // 快捷提问
+        props.messages.length === 0
+          ? h('div', { class: 'suggestions' }, [
+              h('div', { class: 'suggestion-title' }, '您可以问我：'),
+              h(
+                'div',
+                { class: 'suggestion-chips' },
+                props.quickQuestions.map((q: string) =>
+                  h(
+                    'button',
+                    {
+                      key: q,
+                      class: 'suggestion-chip',
+                      onClick: () => emit('quickQuestion', q),
+                    },
+                    q,
+                  ),
+                ),
+              ),
+            ])
+          : null,
+        // 输入框
+        h('div', { class: 'input-area' }, [
+          h('div', { class: 'input-inner' }, [
+            h('input', {
+              class: 'chat-input',
+              value: props.inputValue,
+              placeholder: '请输入您的问题...',
+              disabled: props.isSending,
+              onInput: (e: Event) => emit('update:inputValue', (e.target as HTMLInputElement).value),
+              onKeydown: (e: KeyboardEvent) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  emit('send');
+                }
+              },
+            }),
+            h(
+              'button',
+              {
+                class: ['send-btn', props.isSending ? 'send-btn--loading' : ''],
+                disabled: props.isSending,
+                onClick: () => emit('send'),
+              },
+              props.isSending ? '发送中...' : '发送',
+            ),
+          ]),
+        ]),
+      ]);
+  },
 });
 </script>
 
 <style lang="less">
-.ai-chat-modal {
-  .ant-modal-content {
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-  }
-
-  .ant-modal-header {
-    border-bottom: 1px solid #f0f0f0;
-    padding: 16px 24px;
-  }
-
-  .ant-modal-body {
-    padding: 0;
-  }
-}
-
+/* ── 浮动按钮 ────────────────────────────────────────── */
 .chat-float-btn-wrapper {
   position: fixed;
   right: 32px;
@@ -325,18 +454,90 @@ watch(visible, (newVal) => {
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
-  
+
   .anticon {
     font-size: 24px;
     line-height: 1;
   }
 }
 
+/* ── 桌面 Modal ──────────────────────────────────────── */
+.ai-chat-modal {
+  .ant-modal-content {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  .ant-modal-header {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 16px 24px;
+  }
+
+  .ant-modal-body {
+    padding: 0;
+  }
+
+  /* W3.3 — modal 关闭按钮触摸目标 */
+  .ant-modal-close {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ant-modal-close-x {
+    width: 44px;
+    height: 44px;
+    line-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* ── 移动端 Drawer ────────────────────────────────────── */
+.ai-chat-drawer {
+  .ant-drawer-content-wrapper {
+    border-radius: 16px 16px 0 0;
+    overflow: hidden;
+  }
+
+  .ant-drawer-header {
+    border-bottom: 1px solid #f0f0f0;
+    padding: 16px 24px;
+  }
+
+  .ant-drawer-body {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* W3.3 — drawer 关闭按钮触摸目标 */
+  .ant-drawer-close {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* ── 共享聊天内容 ─────────────────────────────────────── */
 .chat-container {
   display: flex;
   flex-direction: column;
   height: 600px;
   background: #fcfcfc;
+
+  /* Drawer 全屏时撑满 */
+  .ai-chat-drawer & {
+    height: 100%;
+    min-height: 0;
+  }
 }
 
 .messages {
@@ -344,6 +545,7 @@ watch(visible, (newVal) => {
   overflow-y: auto;
   padding: 20px;
   scroll-behavior: smooth;
+  min-height: 0;
 }
 
 .message-item {
@@ -570,11 +772,20 @@ watch(visible, (newVal) => {
     gap: 8px;
   }
 
+  /* W3.3 — 快捷提问触摸目标 */
   .suggestion-chip {
-    border-radius: 16px;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 16px;
+    border-radius: 22px;
     background: #fff;
-    border-color: #e8e8e8;
+    border: 1px solid #e8e8e8;
     color: #666;
+    cursor: pointer;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    transition: color 0.2s, border-color 0.2s;
 
     &:hover {
       color: #1890ff;
@@ -583,22 +794,65 @@ watch(visible, (newVal) => {
   }
 }
 
+/* ── 输入区域 ─────────────────────────────────────────── */
 .input-area {
   padding: 16px 20px;
   background: #fff;
   border-top: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
 
-  .ant-input-search {
-    .ant-input-group {
-      .ant-input {
-        border-radius: 20px 0 0 20px;
-        padding-left: 20px;
-      }
+.input-inner {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
 
-      .ant-input-search-button {
-        border-radius: 0 20px 20px 0;
-      }
-    }
+/* W3.3 — 输入框触摸目标 */
+.chat-input {
+  flex: 1;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid #d9d9d9;
+  border-radius: 22px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  background: #fafafa;
+
+  &:focus {
+    border-color: #1890ff;
+    background: #fff;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+/* W3.3 — 发送按钮触摸目标 */
+.send-btn {
+  min-height: 44px;
+  min-width: 72px;
+  padding: 0 20px;
+  border-radius: 22px;
+  background: #1890ff;
+  color: #fff;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) {
+    background: #40a9ff;
+  }
+
+  &:disabled,
+  &.send-btn--loading {
+    opacity: 0.7;
+    cursor: not-allowed;
   }
 }
 

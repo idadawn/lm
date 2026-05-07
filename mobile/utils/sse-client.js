@@ -98,11 +98,54 @@ export function streamNlqChat(request, handlers) {
     requestTask.onChunkReceived((res) => {
       const data = res && res.data ? res.data : null;
       if (!data) return;
+      // UTF-8 解码:静态平台分支 + 语义正确的运行时探测。
+      // 旧代码用 uni.arrayBufferToBase64 做探测是错误的 — 该 API 与 TextDecoder
+      // 是否存在没有因果关系;String.fromCharCode.apply 把每个字节当独立 code unit,
+      // 会在不支持 TextDecoder 的旧版微信小程序中把中文输出为乱码。
       let text;
       try {
-        text = uni.arrayBufferToBase64
-          ? new TextDecoder('utf-8').decode(data)
-          : String.fromCharCode.apply(null, new Uint8Array(data));
+        // #ifdef MP-WEIXIN
+        // 微信小程序:新版有 TextDecoder,旧版没有 — 用 typeof 做语义正确的探测,
+        // 不可用时 fallback 到正确处理 multi-byte 的 UTF-8 polyfill。
+        if (typeof TextDecoder !== 'undefined') {
+          text = new TextDecoder('utf-8').decode(data);
+        } else {
+          // decodeUtf8Bytes: 正确处理 1/2/3/4 字节 UTF-8 序列及 surrogate pair。
+          // 不能用 String.fromCharCode.apply(null, new Uint8Array(data)) —
+          // 那只适用于 Latin-1 范围,多字节中文会乱码。
+          const bytes = new Uint8Array(data);
+          let result = '';
+          let i = 0;
+          while (i < bytes.length) {
+            const b1 = bytes[i++];
+            if (b1 < 0x80) {
+              result += String.fromCharCode(b1);
+              continue;
+            }
+            let codepoint = 0;
+            let extraBytes = 0;
+            if ((b1 & 0xe0) === 0xc0) { codepoint = b1 & 0x1f; extraBytes = 1; }
+            else if ((b1 & 0xf0) === 0xe0) { codepoint = b1 & 0x0f; extraBytes = 2; }
+            else if ((b1 & 0xf8) === 0xf0) { codepoint = b1 & 0x07; extraBytes = 3; }
+            else { result += '�'; continue; } // 无效起始字节
+            while (extraBytes-- && i < bytes.length) {
+              codepoint = (codepoint << 6) | (bytes[i++] & 0x3f);
+            }
+            if (codepoint > 0xffff) {
+              // BMP 以外 → surrogate pair
+              const c = codepoint - 0x10000;
+              result += String.fromCharCode(0xd800 + (c >> 10), 0xdc00 + (c & 0x3ff));
+            } else {
+              result += String.fromCharCode(codepoint);
+            }
+          }
+          text = result;
+        }
+        // #endif
+        // #ifdef APP-PLUS || H5
+        // App / H5 运行时均内置 TextDecoder,直接使用。
+        text = new TextDecoder('utf-8').decode(data);
+        // #endif
       } catch (e) {
         text = '';
       }

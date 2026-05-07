@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import chat, health, kg
 from app.core.config import settings
 from app.core.database import engine
+from app.core.sentry_integration import init_sentry
 from app.knowledge_graph.manager import close_knowledge_graph, init_knowledge_graph
 from app.knowledge_graph.schema_loader import refresh_schema_cache
 
@@ -19,6 +20,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     启动时初始化资源，关闭时清理资源。
     """
+    # 启动时：初始化 Sentry（如果配置了 DSN）
+    init_sentry(settings.SENTRY_DSN)
+
     # 启动时：初始化知识图谱
     print("[START] NLQ-Agent API starting...")
 

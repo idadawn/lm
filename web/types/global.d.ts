@@ -17,6 +17,7 @@ declare global {
     };
     lastBuildTime: string;
   };
+  const __SENTRY_RELEASE__: string;
   // declare interface Window {
   //   // Global vue app instance
   //   __APP__: App<Element>;
@@ -71,6 +72,7 @@ declare global {
     VITE_USE_IMAGEMIN: boolean;
     VITE_GENERATE_UI: string;
     VITE_CDN: string;
+    VITE_SENTRY_DSN: string;
   }
 
   declare function parseInt(s: string | number, radix?: number): number;

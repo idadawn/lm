@@ -3,6 +3,7 @@ import pkg from './package.json';
 import dayjs from 'dayjs';
 import { loadEnv } from 'vite';
 import { resolve } from 'path';
+import { execSync } from 'child_process';
 import { generateModifyVars } from './build/generate/generateModifyVars';
 import { createProxy } from './build/vite/proxy';
 import { wrapperEnv } from './build/utils';
@@ -18,6 +19,14 @@ const __APP_INFO__ = {
   pkg: { dependencies, devDependencies, name, version },
   lastBuildTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
 };
+
+// 获取 git short sha 作为 Sentry release tag（回退到 version）
+let __SENTRY_RELEASE__: string;
+try {
+  __SENTRY_RELEASE__ = execSync('git rev-parse --short HEAD', { encoding: 'utf-8', cwd: __dirname }).trim();
+} catch {
+  __SENTRY_RELEASE__ = version;
+}
 
 export default ({ command, mode }: ConfigEnv): UserConfig => {
   const root = process.cwd();
@@ -110,6 +119,8 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       __APP_INFO__: JSON.stringify(__APP_INFO__),
       // Color plugin output file name
       __COLOR_PLUGIN_OUTPUT_FILE_NAME__: false,
+      // Sentry release tag（git sha 或 version）
+      __SENTRY_RELEASE__: JSON.stringify(__SENTRY_RELEASE__),
       // Define Vue global flags
       __PROD__: JSON.stringify(isBuild),
       __DEV__: JSON.stringify(!isBuild),

@@ -75,6 +75,9 @@ class Settings(BaseSettings):
     NEO4J_DATABASE: str = "neo4j"
     NEO4J_ENABLED: bool = False  # 默认关闭，需要手动启用
 
+    # Sentry 错误追踪
+    SENTRY_DSN: str = ""
+
     # CORS 配置
     CORS_ORIGINS: list[str] = ["*"]
 

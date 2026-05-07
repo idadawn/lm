@@ -17,6 +17,7 @@ import { router, setupRouter } from '/@/router';
 import { setupRouterGuard } from '/@/router/guard';
 import { setupStore } from '/@/store';
 import mitt from '/@/utils/mitt';
+import * as Sentry from '@sentry/vue';
 
 const emitter = mitt();
 
@@ -26,8 +27,24 @@ if (isDevMode()) {
   import('ant-design-vue/es/style');
 }
 
+function initSentry(app: ReturnType<typeof createApp>) {
+  const dsn = import.meta.env.VITE_SENTRY_DSN as string | undefined;
+  if (!dsn) return;
+
+  Sentry.init({
+    app,
+    dsn,
+    release: typeof __SENTRY_RELEASE__ !== 'undefined' ? __SENTRY_RELEASE__ : undefined,
+    environment: isDevMode() ? 'development' : 'production',
+    tracesSampleRate: 0.1,
+    replaysSessionSampleRate: 0,
+    replaysOnErrorSampleRate: 0,
+  });
+}
+
 async function bootstrap() {
   const app = createApp(App);
+  initSentry(app);
 
   app.provide('emitter', emitter); // 注入provider
 

@@ -83,6 +83,7 @@
     "@intlify/shared": "^9.3.0",
     "@logicflow/core": "^1.2.13",
     "@logicflow/extension": "^1.2.14",
+    "@sentry/vue": "^9.47.1",
     "@vue/runtime-core": "^3.3.4",
     "@vue/shared": "^3.3.4",
     "@vueuse/core": "^10.4.1",

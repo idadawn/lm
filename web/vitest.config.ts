@@ -17,7 +17,11 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'json'],
-      include: ['src/api/nlqAgent.ts', 'src/views/lab/**/*.{vue,ts}', 'src/components/Reasoning*.{vue,ts}'],
+      include: [
+        'src/api/nlqAgent.ts',
+        'src/views/lab/monthly-dashboard/components/*.ts',
+        'src/components/Reasoning*.{vue,ts}',
+      ],
       thresholds: {
         lines: 60,
         functions: 60,

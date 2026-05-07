@@ -344,6 +344,8 @@ api/tmp_build_verify/
 
 # Local generated artifacts
 .playwright-cli/
+playwright-report/
+test-results/
 output/
 api/release/
 

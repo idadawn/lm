@@ -1,66 +1,53 @@
-name: web CI
+name: mobile CI
 
 on:
   push:
     branches: [main]
     paths:
-      - "web/**"
+      - "mobile/**"
       - "scripts/check-reasoning-protocol-sync.ps1"
-      - ".github/workflows/web-ci.yml"
+      - ".github/workflows/mobile-ci.yml"
   pull_request:
     types: [opened, synchronize]
     paths:
-      - "web/**"
+      - "mobile/**"
       - "scripts/check-reasoning-protocol-sync.ps1"
-      - ".github/workflows/web-ci.yml"
+      - ".github/workflows/mobile-ci.yml"
   workflow_dispatch:
 
 jobs:
-  lint-typecheck-test:
+  lint-test:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: web
+        working-directory: mobile
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # full history for freeze gate diff
-
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 8
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: pnpm
-          cache-dependency-path: web/pnpm-lock.yaml
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
 
       - name: Install
-        run: pnpm install --frozen-lockfile
+        run: npm install
 
-      - name: Lint (eslint)
-        run: pnpm lint:eslint
-        continue-on-error: true  # legacy code base; tighten in W4
+      - name: Contract tests (SSE + markdown)
+        run: npm test
 
-      - name: Type check
-        run: pnpm type:check
-        continue-on-error: true  # pre-existing errors in unrelated files; tighten in W4
-
-      - name: Unit tests + coverage gate (vitest)
-        run: pnpm test:unit:coverage
-
-      - name: Build (production)
-        run: pnpm build:test  # use test build mode to avoid prod-only env vars
-        continue-on-error: true  # build may need env vars not set in CI; surface but don't block W0
+      - name: Bundle size check (skip if no build)
+        run: npm run check:bundle
+        # HBuilderX is required to produce a build; on CI the build dir is absent,
+        # so check-bundle-size.js exits 0 with a [skip] message automatically.
 
   reasoning-protocol-sync:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # full history for freeze gate diff
 
       - name: Run sync gate
         shell: pwsh
@@ -86,31 +73,15 @@ jobs:
             echo "No freeze flag; reasoning-protocol changes allowed"
           fi
 
-  e2e-playwright:
+  manifest-validation:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: web
-    # Wave 0 only validates Playwright config syntax; real E2E lands in Wave 4
-    if: github.event_name == 'workflow_dispatch'  # manual-only until Wave 4
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 8
+      - name: Validate manifest.json
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('mobile/manifest.json','utf8')); console.log('manifest.json: valid JSON')"
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 18
-          cache: pnpm
-          cache-dependency-path: web/pnpm-lock.yaml
-
-      - name: Install
-        run: pnpm install --frozen-lockfile
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: Run E2E
-        run: pnpm test:e2e
+      - name: Validate pages.json
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('mobile/pages.json','utf8')); console.log('pages.json: valid JSON')"

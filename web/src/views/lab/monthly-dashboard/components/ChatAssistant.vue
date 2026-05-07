@@ -3,7 +3,7 @@
     <!-- 浮动按钮 -->
     <div class="chat-float-btn-wrapper">
       <a-badge :count="unreadCount" :offset="[-5, 5]">
-        <a-button type="primary" shape="circle" size="large" class="chat-trigger-btn" @click="toggleChat">
+        <a-button type="primary" shape="circle" size="large" class="chat-trigger-btn" data-testid="chat-trigger" @click="toggleChat">
           <template #icon>
             <RobotOutlined />
           </template>
@@ -342,6 +342,8 @@ const ChatContent = defineComponent({
                 {
                   key: idx,
                   class: ['message-item', msg.role === 'user' ? 'user-message' : 'ai-message'],
+                  'data-testid': 'message-bubble',
+                  'data-role': msg.role,
                 },
                 [
                   h('div', { class: 'message-avatar' }, [
@@ -360,7 +362,7 @@ const ChatContent = defineComponent({
                           msg.reasoningSteps.length > 0
                             ? h(ReasoningChain, {
                                 steps: msg.reasoningSteps,
-                                defaultOpen: false,
+                                defaultOpen: props.streamingIndex === idx,
                               })
                             : null,
                           h('div', {
@@ -410,6 +412,7 @@ const ChatContent = defineComponent({
           h('div', { class: 'input-inner' }, [
             h('input', {
               class: 'chat-input',
+              'data-testid': 'chat-input',
               value: props.inputValue,
               placeholder: '请输入您的问题...',
               disabled: props.isSending,
@@ -425,6 +428,7 @@ const ChatContent = defineComponent({
               'button',
               {
                 class: ['send-btn', props.isSending ? 'send-btn--loading' : ''],
+                'data-testid': 'chat-send',
                 disabled: props.isSending,
                 onClick: () => emit('send'),
               },

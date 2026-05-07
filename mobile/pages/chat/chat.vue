@@ -36,8 +36,17 @@
           <text class="msg-avatar-text">AI</text>
         </view>
         <view class="msg-bubble">
-          <!-- TODO(W1.4): markdown rendering deferred — needs marked + mp-html + DOMPurify deps + #ifdef branches -->
-          <text class="msg-text">{{ msg.content }}</text>
+          <!-- user messages: plain text (no markdown injection vector) -->
+          <text v-if="msg.role === 'user'" class="msg-text">{{ msg.content }}</text>
+          <!-- assistant messages: markdown rendered per platform -->
+          <template v-else>
+            <!-- #ifdef MP-WEIXIN || APP-PLUS -->
+            <mp-html :content="renderMarkdown(msg.content)" class="msg-md" />
+            <!-- #endif -->
+            <!-- #ifdef H5 -->
+            <view class="msg-md" v-html="sanitizeHtml(renderMarkdown(msg.content))"></view>
+            <!-- #endif -->
+          </template>
         </view>
         <view class="msg-avatar user-avatar" v-if="msg.role === 'user'">
           <text class="msg-avatar-text">我</text>
@@ -89,8 +98,72 @@
 import { ref, computed, nextTick } from 'vue'
 import { streamNlqChat } from '@/utils/sse-client.js'
 import KgReasoningChain from '@/components/kg-reasoning-chain/kg-reasoning-chain.vue'
+import { renderMarkdown, sanitizeHtml } from '@/utils/markdown.js'
+// #ifdef MP-WEIXIN || APP-PLUS
+import MpHtml from 'mp-html/dist/uni-app/components/mp-html/mp-html.vue'
+// #endif
 
 const messages = ref([])
+
+// ── Session 持久化(plan v3 W1.5 mobile,与 web 端 schema 兼容) ──
+const STORAGE_KEY = 'nlq-sessions'
+const SCHEMA_VERSION = 1
+
+function makeId() {
+  return `mobile-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+}
+
+const currentSessionId = ref('')
+
+function loadSessions() {
+  let raw
+  try {
+    raw = uni.getStorageSync(STORAGE_KEY)
+  } catch (_) {
+    raw = ''
+  }
+  if (!raw) return
+  let parsed
+  try {
+    parsed = JSON.parse(raw)
+  } catch (_) {
+    // 数据损坏:清空
+    try { uni.removeStorageSync(STORAGE_KEY) } catch (_) {}
+    return
+  }
+  if (parsed?.schema_version !== SCHEMA_VERSION) {
+    // 老版本数据 wipe
+    try { uni.removeStorageSync(STORAGE_KEY) } catch (_) {}
+    return
+  }
+  const last = Array.isArray(parsed.sessions) ? parsed.sessions[parsed.sessions.length - 1] : null
+  if (!last) return
+  currentSessionId.value = last.id
+  messages.value = Array.isArray(last.messages) ? last.messages.slice() : []
+}
+
+function saveSessions() {
+  if (!currentSessionId.value) currentSessionId.value = makeId()
+  const payload = {
+    schema_version: SCHEMA_VERSION,
+    sessions: [
+      {
+        id: currentSessionId.value,
+        messages: messages.value.slice(),
+        updated_at: Date.now(),
+      },
+    ],
+  }
+  try {
+    uni.setStorageSync(STORAGE_KEY, JSON.stringify(payload))
+  } catch (_) {
+    // 写入失败(配额、storage disabled 等)— 静默,不破坏 UX
+  }
+}
+
+// 启动时立即恢复
+loadSessions()
+
 const inputText = ref('')
 const loading = ref(false)
 const reasoningSteps = ref([])
@@ -122,6 +195,7 @@ function sendMessage() {
   if (!text || loading.value) return
 
   messages.value.push({ role: 'user', content: text })
+  saveSessions()
   inputText.value = ''
   loading.value = true
   reasoningSteps.value = []
@@ -159,6 +233,7 @@ function sendMessage() {
       },
       onDone: () => {
         loading.value = false
+        saveSessions()
         scrollToBottom()
       }
     }

@@ -4,6 +4,13 @@
   "private": true,
   "description": "检测室数据分析系统 — uni-app mobile client",
   "scripts": {
-    "test": "node tests/sse-client.contract.spec.js"
+    "test:sse": "node tests/sse-client.contract.spec.js",
+    "test:markdown": "node tests/markdown.contract.spec.js",
+    "test": "npm run test:sse && npm run test:markdown"
+  },
+  "dependencies": {
+    "dompurify": "^3.4.2",
+    "marked": "^18.0.3",
+    "mp-html": "^2.5.2"
   }
 }

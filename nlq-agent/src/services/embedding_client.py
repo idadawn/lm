@@ -23,7 +23,10 @@ class EmbeddingClient:
         settings = get_settings()
         self._base_url = settings.embedding_base_url.rstrip("/")
         self._model = settings.embedding_model
-        self._client = httpx.AsyncClient(timeout=30.0)
+        headers: dict[str, str] = {}
+        if settings.embedding_api_key:
+            headers["Authorization"] = f"Bearer {settings.embedding_api_key}"
+        self._client = httpx.AsyncClient(timeout=30.0, headers=headers)
 
     async def embed(self, text: str) -> list[float]:
         """
@@ -51,7 +54,7 @@ class EmbeddingClient:
         try:
             # TEI 兼容 OpenAI embeddings API 格式
             response = await self._client.post(
-                f"{self._base_url}/v1/embeddings",
+                f"{self._base_url}/embeddings",
                 json={
                     "model": self._model,
                     "input": texts,

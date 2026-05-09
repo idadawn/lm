@@ -42,6 +42,9 @@ class Settings(BaseSettings):
     # ── Embedding 服务（TEI / text-embeddings-inference）─────
     embedding_base_url: str = "http://127.0.0.1:8081"
     embedding_model: str = "bge-m3"
+    # 远程 OpenAI 兼容 embedding (siliconflow / together / 等) 需要 API key；
+    # 本地 TEI 留空即可。空字符串时不会发送 Authorization header。
+    embedding_api_key: str = ""
 
     # ── Qdrant 向量数据库 ────────────────────────────────────
     qdrant_host: str = "127.0.0.1"

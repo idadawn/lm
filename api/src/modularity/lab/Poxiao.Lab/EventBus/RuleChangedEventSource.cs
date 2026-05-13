@@ -5,11 +5,11 @@ namespace Poxiao.Lab.EventBus;
 /// <summary>
 /// 判定规则变更事件源
 /// </summary>
-public sealed class RuleChangedEventSource : ChannelEventSource
+public sealed class RuleChangedEventSource : IEventSource
 {
     public RuleChangedEventSource(string ruleId, RuleChangeKind kind, object? rule)
-        : base("Rule:Changed")
     {
+        EventId = "Rule:Changed";
         RuleId = ruleId;
         Kind = kind;
         Rule = rule;
@@ -20,6 +20,14 @@ public sealed class RuleChangedEventSource : ChannelEventSource
     public RuleChangeKind Kind { get; }
 
     public object? Rule { get; }
+
+    public string EventId { get; }
+
+    public object Payload => Rule;
+
+    public CancellationToken CancellationToken { get; }
+
+    public DateTime CreatedTime { get; } = DateTime.UtcNow;
 }
 
 /// <summary>

@@ -38,7 +38,7 @@ async def load_judgment_rules(db: DatabaseService) -> list[dict]:
             jl.F_PRODUCT_SPEC_ID AS product_spec_id,
             jl.F_IS_STATISTIC AS is_statistic
         FROM LAB_INTERMEDIATE_DATA_JUDGMENT_LEVEL jl
-        WHERE jl.F_DELETE_MARK IS NULL OR jl.F_DELETE_MARK = 0
+        WHERE jl.F_DeleteMark IS NULL OR jl.F_DeleteMark = 0
         ORDER BY jl.F_PRIORITY
     """)
     return result["rows"]
@@ -53,7 +53,7 @@ async def load_product_specs(db: DatabaseService) -> list[dict]:
             ps.F_DESCRIPTION AS description,
             ps.F_DETECTION_COLUMNS AS detection_columns
         FROM LAB_PRODUCT_SPEC ps
-        WHERE ps.F_DELETE_MARK IS NULL OR ps.F_DELETE_MARK = 0
+        WHERE ps.F_DeleteMark IS NULL OR ps.F_DeleteMark = 0
         ORDER BY ps.F_SORTCODE
     """)
 
@@ -68,7 +68,7 @@ async def load_product_specs(db: DatabaseService) -> list[dict]:
                 F_VALUE_TYPE AS value_type
             FROM LAB_PRODUCT_SPEC_ATTRIBUTE
             WHERE F_PRODUCT_SPEC_ID = '{spec["id"]}'
-              AND (F_DELETE_MARK IS NULL OR F_DELETE_MARK = 0)
+              AND (F_DeleteMark IS NULL OR F_DeleteMark = 0)
             ORDER BY F_SORTCODE
         """)
         spec["attributes"] = attrs_result["rows"]
@@ -88,7 +88,7 @@ async def load_formulas(db: DatabaseService) -> list[dict]:
             F_IS_ENABLED AS is_enabled
         FROM LAB_INTERMEDIATE_DATA_FORMULA
         WHERE F_IS_ENABLED = 1
-          AND (F_DELETE_MARK IS NULL OR F_DELETE_MARK = 0)
+          AND (F_DeleteMark IS NULL OR F_DeleteMark = 0)
         ORDER BY F_SORT_ORDER
     """)
     return result["rows"]

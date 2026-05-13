@@ -88,30 +88,36 @@ class QdrantService:
         if not documents:
             return 0
 
-        texts = [doc["text"] for doc in documents]
-        vectors = await self._embedding.embed_batch(texts)
+        batch_size = 10
+        total = 0
+        for i in range(0, len(documents), batch_size):
+            batch = documents[i : i + batch_size]
+            texts = [doc["text"] for doc in batch]
+            vectors = await self._embedding.embed_batch(texts)
 
-        points = [
-            PointStruct(
-                id=idx,
-                vector=vector,
-                payload={
-                    "doc_id": doc["id"],
-                    "text": doc["text"],
-                    **doc.get("metadata", {}),
-                },
+            points = [
+                PointStruct(
+                    id=idx,
+                    vector=vector,
+                    payload={
+                        "doc_id": doc["id"],
+                        "text": doc["text"],
+                        **doc.get("metadata", {}),
+                    },
+                )
+                for idx, (doc, vector) in enumerate(zip(batch, vectors))
+            ]
+
+            await self._client.upsert(
+                collection_name=collection_name,
+                points=points,
             )
-            for idx, (doc, vector) in enumerate(zip(documents, vectors))
-        ]
+            total += len(points)
 
-        await self._client.upsert(
-            collection_name=collection_name,
-            points=points,
-        )
         logger.info(
-            "已写入 %d 条文档到 %s", len(points), collection_name
+            "已写入 %d 条文档到 %s", total, collection_name
         )
-        return len(points)
+        return total
 
     # ── 语义检索（Retrieval）─────────────────────────────────
 
@@ -196,6 +202,70 @@ class QdrantService:
                 logger.warning("检索 %s 失败: %s", name, e)
                 results[name] = []
         return results
+
+    # ── 管理接口（知识图谱 UI）─────────────────────────────────
+
+    async def list_collections_info(self) -> list[dict[str, Any]]:
+        """返回所有业务 Collection 的名称和文档数量。"""
+        settings = get_settings()
+        result = []
+        display_names = {
+            settings.collection_rules: "判定规则",
+            settings.collection_specs: "产品规格",
+            settings.collection_metrics: "指标公式",
+        }
+        for name, display in display_names.items():
+            try:
+                info = await self._client.get_collection(collection_name=name)
+                result.append({
+                    "name": name,
+                    "display_name": display,
+                    "points_count": getattr(info, "points_count", 0) or 0,
+                    "vector_count": getattr(info, "indexed_vectors_count", 0) or 0,
+                    "status": getattr(info, "status", "unknown") or "unknown",
+                })
+            except Exception as exc:
+                logger.warning("获取 Collection %s 信息失败: %s", name, exc)
+                result.append({
+                    "name": name,
+                    "display_name": display,
+                    "points_count": 0,
+                    "vector_count": 0,
+                    "status": "not_found",
+                })
+        return result
+
+    async def scroll_documents(
+        self,
+        collection_name: str,
+        limit: int = 20,
+        offset: int = 0,
+    ) -> dict[str, Any]:
+        """分页浏览指定 Collection 中的文档。"""
+        records, next_offset = await self._client.scroll(
+            collection_name=collection_name,
+            limit=limit,
+            offset=offset,
+            with_payload=True,
+            with_vectors=False,
+        )
+        documents = []
+        for point in records:
+            payload = point.payload or {}
+            documents.append({
+                "id": point.id,
+                "doc_id": payload.get("doc_id", ""),
+                "text": payload.get("text", ""),
+                "metadata": {
+                    k: v for k, v in payload.items()
+                    if k not in ("doc_id", "text")
+                },
+            })
+        return {
+            "documents": documents,
+            "next_offset": next_offset,
+            "count": len(documents),
+        }
 
     # ── 健康检查 ─────────────────────────────────────────────
 

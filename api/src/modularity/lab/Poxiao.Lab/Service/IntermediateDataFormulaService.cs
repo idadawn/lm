@@ -13,6 +13,7 @@ using Poxiao.Lab.Entity.Dto.IntermediateDataFormula;
 using Poxiao.Lab.Entity.Enums;
 using Poxiao.Lab.Helpers;
 using Poxiao.Lab.Interfaces;
+using Poxiao.EventBus;
 using SqlSugar;
 using System;
 using System.Reflection;
@@ -284,11 +285,11 @@ public class IntermediateDataFormulaService
 
         await ClearFormulaCacheAsync(entity.Id);
 
-        var dto = ToDto(entity);
+        var result = ToDto(entity);
         await _eventPublisher.PublishAsync(
-            new EventBus.RuleChangedEventSource(entity.Id, EventBus.RuleChangeKind.Created, dto));
+            new EventBus.RuleChangedEventSource(entity.Id, EventBus.RuleChangeKind.Created, result));
 
-        return dto;
+        return result;
     }
 
     /// <inheritdoc />
@@ -371,11 +372,11 @@ public class IntermediateDataFormulaService
 
         await ClearFormulaCacheAsync(id);
 
-        var dto = ToDto(entity);
+        var result = ToDto(entity);
         await _eventPublisher.PublishAsync(
-            new EventBus.RuleChangedEventSource(id, EventBus.RuleChangeKind.Updated, dto));
+            new EventBus.RuleChangedEventSource(id, EventBus.RuleChangeKind.Updated, result));
 
-        return dto;
+        return result;
     }
 
     /// <inheritdoc />

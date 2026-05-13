@@ -5,11 +5,11 @@ namespace Poxiao.Lab.EventBus;
 /// <summary>
 /// 产品规格变更事件源
 /// </summary>
-public sealed class SpecChangedEventSource : ChannelEventSource
+public sealed class SpecChangedEventSource : IEventSource
 {
     public SpecChangedEventSource(string specId, SpecChangeKind kind, object? spec)
-        : base("Spec:Changed")
     {
+        EventId = "Spec:Changed";
         SpecId = specId;
         Kind = kind;
         Spec = spec;
@@ -20,6 +20,14 @@ public sealed class SpecChangedEventSource : ChannelEventSource
     public SpecChangeKind Kind { get; }
 
     public object? Spec { get; }
+
+    public string EventId { get; }
+
+    public object Payload => Spec;
+
+    public CancellationToken CancellationToken { get; }
+
+    public DateTime CreatedTime { get; } = DateTime.UtcNow;
 }
 
 /// <summary>

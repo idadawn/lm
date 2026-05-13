@@ -93,6 +93,15 @@ const lab: AppRouteModule = {
                 icon: 'ion:chatbubbles-outline',
             },
         },
+        {
+            path: 'knowledge-graph',
+            name: 'LabKnowledgeGraph',
+            component: () => import('/@/views/lab/knowledge-graph/index.vue'),
+            meta: {
+                title: '知识图谱',
+                icon: 'ant-design:apartment-outlined',
+            },
+        },
     ],
 };
 

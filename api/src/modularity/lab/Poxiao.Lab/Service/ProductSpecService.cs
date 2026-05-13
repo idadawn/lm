@@ -12,6 +12,7 @@ using Poxiao.Lab.Entity.Dto.ProductSpec;
 using Poxiao.Lab.Entity.Extensions;
 using Poxiao.Lab.Extensions;
 using Poxiao.Lab.Interfaces;
+using Poxiao.EventBus;
 using SqlSugar;
 
 namespace Poxiao.Lab.Service;

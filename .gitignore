@@ -354,3 +354,4 @@ api/release/
 # -------------------------------------------------------------------------
 mobile/unpackage/
 mobile/scripts/.pgyer-config.ps1
+.playwright-mcp/

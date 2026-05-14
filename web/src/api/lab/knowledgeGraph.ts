@@ -2,7 +2,7 @@
  * 知识图谱管理 API — 连接 nlq-agent 的管理端点
  */
 
-import type { ReasoningStep, OntologyGraphDTO } from '/@/views/lab/knowledge-graph/types/ontology';
+import type { ReasoningStep, OntologyGraphDTO, OntologyNode, OntologyEdge, OntologyCombo } from '/@/views/lab/knowledge-graph/types/ontology';
 
 // 安全兜底：若环境变量未生效，强制使用 /nlq-agent（与 vite.config proxy 前缀一致）
 const BASE_URL = import.meta.env?.VITE_NLQ_AGENT_API_BASE || '/nlq-agent';
@@ -184,5 +184,59 @@ export async function resolveEntities(request: ResolveRequest): Promise<Resolved
     body: JSON.stringify(request),
   });
   if (!res.ok) throw new Error(`Resolve failed: ${res.status}`);
+  return res.json();
+}
+
+// ------------------------------------------------------------------
+// Phase 3 新增：带材中心图谱
+// ------------------------------------------------------------------
+
+export interface RibbonSearchResult {
+  id: string;
+  furnace_no: string;
+  furnace_no_formatted: string | null;
+  prod_date: string | null;
+  detection_date: string | null;
+  spec_code: string | null;
+  spec_name: string | null;
+  labeling: string | null;
+  detection_status: string;
+}
+
+export interface RibbonNode {
+  id: string;
+  type: string;
+  label: string;
+  furnace_no: string;
+  furnace_no_formatted: string | null;
+  prod_date: string | null;
+  detection_date: string | null;
+  spec_code: string | null;
+  spec_name: string | null;
+  labeling: string | null;
+  detection_status: string;
+  raw?: Record<string, unknown>;
+}
+
+export interface RibbonSubgraphResponse {
+  ribbon: RibbonNode;
+  nodes: OntologyNode[];
+  edges: OntologyEdge[];
+  combos: OntologyCombo[] | null;
+}
+
+export async function searchRibbon(query: string, limit = 20): Promise<RibbonSearchResult[]> {
+  const res = await fetch(
+    `${BASE_URL}/api/v1/kg/ribbon/search?q=${encodeURIComponent(query)}&limit=${limit}`,
+  );
+  if (!res.ok) throw new Error(`Search failed: ${res.status}`);
+  return res.json();
+}
+
+export async function getRibbonSubgraph(furnaceNo: string, depth = 2): Promise<RibbonSubgraphResponse> {
+  const res = await fetch(
+    `${BASE_URL}/api/v1/kg/ribbon/${encodeURIComponent(furnaceNo)}/subgraph?depth=${depth}`,
+  );
+  if (!res.ok) throw new Error(`Subgraph failed: ${res.status}`);
   return res.json();
 }

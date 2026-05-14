@@ -32,7 +32,7 @@
 
 <script lang="ts" setup>
 import { ref, watch, h } from 'vue';
-import { ReloadOutlined, SyncOutlined, AppstoreOutlined, ApartmentOutlined } from '@ant-design/icons-vue';
+import { ReloadOutlined, SyncOutlined, SearchOutlined } from '@ant-design/icons-vue';
 import type { ViewMode } from '../types/ontology';
 
 const props = defineProps<{

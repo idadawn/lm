@@ -47,6 +47,230 @@ _FIELD_LABELS: dict[str, str] = {
 # --------------------------------------------------------------------------- #
 
 
+# --------------------------------------------------------------------------- #
+# Ribbon-centric subgraph helpers
+# --------------------------------------------------------------------------- #
+
+
+async def search_ribbons(query: str, limit: int = 20) -> list[dict]:
+    """搜索带材（按炉号、规格名称、规格代码模糊匹配）."""
+    from app.core.database import AsyncSessionLocal
+    from sqlalchemy import text
+
+    async with AsyncSessionLocal() as session:
+        sql = text("""
+            SELECT F_Id, F_FURNACE_NO, F_FURNACE_NO_FORMATTED, F_PROD_DATE, F_DETECTION_DATE,
+                   F_PRODUCT_SPEC_CODE, F_PRODUCT_SPEC_NAME, F_LABELING, F_FIRST_INSPECTION
+            FROM lab_intermediate_data
+            WHERE (F_FURNACE_NO LIKE :q OR F_PRODUCT_SPEC_CODE LIKE :q OR F_PRODUCT_SPEC_NAME LIKE :q)
+              AND (F_DeleteMark = 0 OR F_DeleteMark IS NULL)
+            ORDER BY F_DETECTION_DATE DESC
+            LIMIT :limit
+        """)
+        rows = (await session.execute(sql, {"q": f"%{query}%", "limit": limit})).mappings().all()
+        return [
+            {
+                "id": str(r["F_Id"]),
+                "furnace_no": r["F_FURNACE_NO"],
+                "furnace_no_formatted": r["F_FURNACE_NO_FORMATTED"],
+                "prod_date": str(r["F_PROD_DATE"]) if r["F_PROD_DATE"] else None,
+                "detection_date": str(r["F_DETECTION_DATE"]) if r["F_DETECTION_DATE"] else None,
+                "spec_code": r["F_PRODUCT_SPEC_CODE"],
+                "spec_name": r["F_PRODUCT_SPEC_NAME"],
+                "labeling": r["F_LABELING"],
+                "detection_status": r["F_FIRST_INSPECTION"] or "待检测",
+            }
+            for r in rows
+        ]
+
+
+async def get_ribbon_subgraph(furnace_no: str, depth: int = 2) -> dict | None:
+    """构建以带材为中心的局部子图（带材 → 规格/数据/规则/公式）."""
+    from app.core.database import AsyncSessionLocal
+    from app.models.schemas import RibbonNode, OntologyNode, OntologyEdge
+    from sqlalchemy import text
+
+    async with AsyncSessionLocal() as session:
+        # 1. 带材基本信息
+        ribbon_sql = text("""
+            SELECT d.F_Id, d.F_FURNACE_NO, d.F_FURNACE_NO_FORMATTED, d.F_PROD_DATE,
+                   d.F_DETECTION_DATE, d.F_PRODUCT_SPEC_CODE, d.F_PRODUCT_SPEC_NAME,
+                   d.F_LABELING, d.F_FIRST_INSPECTION, d.F_WIDTH, d.F_AVG_THICKNESS,
+                   d.F_PERF_PS_LOSS, d.F_PERF_SS_POWER, d.F_PERF_HC,
+                   d.F_MAGNETIC_RES, d.F_THICK_RES, d.F_LAM_FACTOR_RES,
+                   d.F_APPEARANCE_FEATURE_IDS,
+                   p.F_Id as spec_id, p.F_NAME as spec_name, p.F_CODE as spec_code,
+                   p.F_DETECTION_COLUMNS
+            FROM lab_intermediate_data d
+            LEFT JOIN lab_product_spec p
+              ON d.F_PRODUCT_SPEC_ID COLLATE utf8mb4_unicode_ci = p.F_Id COLLATE utf8mb4_unicode_ci
+            WHERE d.F_FURNACE_NO_FORMATTED = :furnace_no
+              AND (d.F_DeleteMark = 0 OR d.F_DeleteMark IS NULL)
+            LIMIT 1
+        """)
+        row = (await session.execute(ribbon_sql, {"furnace_no": furnace_no})).mappings().first()
+        if not row:
+            return None
+
+        ribbon_id = f"ribbon:{row['F_Id']}"
+        nodes: list[OntologyNode] = []
+        edges: list[OntologyEdge] = []
+
+        # 带材节点
+        ribbon_node = RibbonNode(
+            id=ribbon_id,
+            label=row["F_FURNACE_NO"],
+            furnace_no=row["F_FURNACE_NO"],
+            furnace_no_formatted=row["F_FURNACE_NO_FORMATTED"],
+            prod_date=str(row["F_PROD_DATE"]) if row["F_PROD_DATE"] else None,
+            detection_date=str(row["F_DETECTION_DATE"]) if row["F_DETECTION_DATE"] else None,
+            spec_code=row["F_PRODUCT_SPEC_CODE"],
+            spec_name=row["F_PRODUCT_SPEC_NAME"],
+            labeling=row["F_LABELING"],
+            detection_status=row["F_FIRST_INSPECTION"] or "待检测",
+            raw={
+                "width": float(row["F_WIDTH"]) if row["F_WIDTH"] else None,
+                "avg_thickness": float(row["F_AVG_THICKNESS"]) if row["F_AVG_THICKNESS"] else None,
+                "ps_loss": float(row["F_PERF_PS_LOSS"]) if row["F_PERF_PS_LOSS"] else None,
+                "ss_power": float(row["F_PERF_SS_POWER"]) if row["F_PERF_SS_POWER"] else None,
+                "hc": float(row["F_PERF_HC"]) if row["F_PERF_HC"] else None,
+                "magnetic_res": row["F_MAGNETIC_RES"],
+                "thick_res": row["F_THICK_RES"],
+                "lam_factor_res": row["F_LAM_FACTOR_RES"],
+            },
+        )
+        nodes.append(OntologyNode(
+            id=ribbon_id, type="Ribbon", label=row["F_FURNACE_NO"],
+            subtitle=row["F_FURNACE_NO_FORMATTED"],
+            status="ok" if row["F_LABELING"] and row["F_LABELING"] != "C" else "warning",
+            metrics={"宽度": ribbon_node.raw.get("width"), "平均厚度": ribbon_node.raw.get("avg_thickness")},
+            raw=ribbon_node.raw,
+        ))
+
+        spec_id = row.get("spec_id")
+        spec_node_id = None
+        if spec_id:
+            spec_node_id = f"spec:{spec_id}"
+            nodes.append(OntologyNode(
+                id=spec_node_id, type="ProductSpec",
+                label=row["spec_name"] or row["spec_code"] or "未知规格",
+                subtitle=row["spec_code"], status="ok",
+                raw={"code": row["spec_code"], "name": row["spec_name"], "detection_columns": row["F_DETECTION_COLUMNS"]},
+            ))
+            edges.append(OntologyEdge(
+                id=f"{ribbon_id}-BELONGS_TO_SPEC-{spec_node_id}",
+                source=ribbon_id, target=spec_node_id,
+                relation="BELONGS_TO_SPEC", label="属于",
+            ))
+
+        # 2. 叠片数据
+        raw_sql = text("""
+            SELECT F_Id, F_FURNACE_NO, F_DETECTION_DATE, F_WIDTH, F_COIL_WEIGHT, F_BREAK_COUNT
+            FROM lab_raw_data WHERE F_FURNACE_NO = :furnace_no
+              AND (F_DeleteMark = 0 OR F_DeleteMark IS NULL) LIMIT 1
+        """)
+        raw = (await session.execute(raw_sql, {"furnace_no": furnace_no})).mappings().first()
+        if raw:
+            rid = f"lamination:{raw['F_Id']}"
+            nodes.append(OntologyNode(
+                id=rid, type="LaminationData", label="叠片数据",
+                subtitle=str(raw["F_DETECTION_DATE"]) if raw["F_DETECTION_DATE"] else None,
+                status="ok", raw={"width": float(raw["F_WIDTH"]) if raw["F_WIDTH"] else None,
+                "coil_weight": float(raw["F_COIL_WEIGHT"]) if raw["F_COIL_WEIGHT"] else None,
+                "break_count": raw["F_BREAK_COUNT"]},
+            ))
+            edges.append(OntologyEdge(
+                id=f"{ribbon_id}-HAS_LAMINATION_DATA-{rid}",
+                source=ribbon_id, target=rid,
+                relation="HAS_LAMINATION_DATA", label="叠片数据",
+            ))
+
+        # 3. 单片性能
+        mag_sql = text("""
+            SELECT F_Id, F_FURNACE_NO, F_PS_LOSS, F_SS_POWER, F_HC, F_DETECTION_TIME
+            FROM lab_magnetic_raw_data WHERE F_FURNACE_NO = :furnace_no
+              AND (F_DeleteMark = 0 OR F_DeleteMark IS NULL) LIMIT 1
+        """)
+        mag = (await session.execute(mag_sql, {"furnace_no": furnace_no})).mappings().first()
+        if mag:
+            mid = f"single_sheet:{mag['F_Id']}"
+            nodes.append(OntologyNode(
+                id=mid, type="SingleSheetPerformance", label="单片性能",
+                subtitle=str(mag["F_DETECTION_TIME"]) if mag["F_DETECTION_TIME"] else None,
+                status="ok", raw={"ps_loss": float(mag["F_PS_LOSS"]) if mag["F_PS_LOSS"] else None,
+                "ss_power": float(mag["F_SS_POWER"]) if mag["F_SS_POWER"] else None,
+                "hc": float(mag["F_HC"]) if mag["F_HC"] else None},
+            ))
+            edges.append(OntologyEdge(
+                id=f"{ribbon_id}-HAS_SINGLE_SHEET_PERF-{mid}",
+                source=ribbon_id, target=mid,
+                relation="HAS_SINGLE_SHEET_PERF", label="单片性能",
+            ))
+
+        # 4. 外观特性
+        feat_json = row.get("F_APPEARANCE_FEATURE_IDS")
+        if feat_json:
+            try:
+                feat_ids = json.loads(feat_json)
+                if feat_ids:
+                    fsql = text("""
+                        SELECT f.F_Id, f.F_NAME, c.F_NAME as cat, l.F_NAME as lvl
+                        FROM lab_appearance_feature f
+                        LEFT JOIN lab_appearance_feature_category c ON f.F_CATEGORY_ID = c.F_Id
+                        LEFT JOIN lab_appearance_feature_level l ON f.F_SEVERITY_LEVEL_ID = l.F_Id
+                        WHERE f.F_Id IN :ids AND (f.F_DeleteMark = 0 OR f.F_DeleteMark IS NULL)
+                    """)
+                    for fr in (await session.execute(fsql, {"ids": tuple(feat_ids)})).mappings().all():
+                        fid = f"appearance:{fr['F_Id']}"
+                        nodes.append(OntologyNode(
+                            id=fid, type="AppearanceFeature", label=fr["F_NAME"],
+                            subtitle=f"{fr['cat']} / {fr['lvl']}", status="warning",
+                            raw={"name": fr["F_NAME"], "category": fr["cat"], "level": fr["lvl"]},
+                        ))
+                        edges.append(OntologyEdge(
+                            id=f"{ribbon_id}-HAS_APPEARANCE-{fid}",
+                            source=ribbon_id, target=fid,
+                            relation="HAS_APPEARANCE", label="外观特性",
+                        ))
+            except Exception:
+                pass
+
+        # 5. 判定规则（depth >= 2 时展开）
+        if depth >= 2 and spec_id and spec_node_id:
+            rsql = text("""
+                SELECT j.F_Id, j.F_NAME, j.F_PRIORITY, j.F_QUALITY_STATUS,
+                       j.F_COLOR, j.F_CONDITION, f.F_FORMULA_NAME, f.F_COLUMN_NAME
+                FROM lab_intermediate_data_judgment_level j
+                LEFT JOIN lab_intermediate_data_formula f ON j.F_FORMULA_ID = f.F_Id
+                WHERE j.F_PRODUCT_SPEC_ID COLLATE utf8mb4_unicode_ci = :sid COLLATE utf8mb4_unicode_ci
+                  AND (j.F_DeleteMark = 0 OR j.F_DeleteMark IS NULL)
+                ORDER BY j.F_PRIORITY
+            """)
+            for rr in (await session.execute(rsql, {"sid": spec_id})).mappings().all():
+                rid2 = f"rule:{rr['F_Id']}"
+                nodes.append(OntologyNode(
+                    id=rid2, type="JudgementRule", label=rr["F_NAME"],
+                    subtitle=rr["F_QUALITY_STATUS"],
+                    status="ok" if rr["F_QUALITY_STATUS"] == "合格" else "warning",
+                    raw={"name": rr["F_NAME"], "priority": rr["F_PRIORITY"],
+                         "quality_status": rr["F_QUALITY_STATUS"], "color": rr["F_COLOR"],
+                         "condition": rr["F_CONDITION"], "formula_name": rr["F_FORMULA_NAME"],
+                         "column_name": rr["F_COLUMN_NAME"]},
+                ))
+                edges.append(OntologyEdge(
+                    id=f"{spec_node_id}-USES_RULE-{rid2}",
+                    source=spec_node_id, target=rid2,
+                    relation="USES_RULE", label="使用规则",
+                ))
+
+        return {
+            "ribbon": ribbon_node,
+            "nodes": [n.model_dump() for n in nodes],
+            "edges": [e.model_dump() for e in edges],
+            "combos": None,
+        }
+
+
 async def _get_record(
     furnace_no: str | None, batch_no: str | None
 ) -> dict[str, Any] | None:

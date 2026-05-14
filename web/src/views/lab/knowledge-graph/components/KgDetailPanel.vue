@@ -118,6 +118,55 @@
           </div>
         </div>
       </template>
+
+      <!-- 带材详情 -->
+      <template v-if="panel.type === 'ribbon'">
+        <div class="prop-row"><b>炉号:</b> {{ panel.raw?.furnace_no }}</div>
+        <div class="prop-row" v-if="panel.raw?.furnace_no_formatted"><b>格式化:</b> {{ panel.raw.furnace_no_formatted }}</div>
+        <div class="prop-row"><b>规格:</b> {{ panel.raw?.spec_name || panel.raw?.spec_code || '-' }}</div>
+        <div class="prop-row"><b>检测日期:</b> {{ panel.raw?.detection_date || '-' }}</div>
+        <div class="prop-row"><b>等级:</b>
+          <a-tag :color="panel.raw?.labeling === 'A' ? 'success' : panel.raw?.labeling === 'C' ? 'error' : 'processing'">
+            {{ panel.raw?.labeling || '未判定' }}
+          </a-tag>
+        </div>
+        <div class="section-title">性能数据</div>
+        <div class="attr-grid">
+          <div class="attr-row"><span class="attr-key">Ps铁损</span><span class="attr-val">{{ panel.raw?.ps_loss ?? '-' }}</span></div>
+          <div class="attr-row"><span class="attr-key">Ss激磁功率</span><span class="attr-val">{{ panel.raw?.ss_power ?? '-' }}</span></div>
+          <div class="attr-row"><span class="attr-key">Hc</span><span class="attr-val">{{ panel.raw?.hc ?? '-' }}</span></div>
+          <div class="attr-row"><span class="attr-key">宽度</span><span class="attr-val">{{ panel.raw?.width ?? '-' }}</span></div>
+          <div class="attr-row"><span class="attr-key">平均厚度</span><span class="attr-val">{{ panel.raw?.avg_thickness ?? '-' }}</span></div>
+        </div>
+        <div class="section-title">判定结果</div>
+        <div class="attr-grid">
+          <div class="attr-row"><span class="attr-key">磁性能</span><span class="attr-val">{{ panel.raw?.magnetic_res || '-' }}</span></div>
+          <div class="attr-row"><span class="attr-key">厚度</span><span class="attr-val">{{ panel.raw?.thick_res || '-' }}</span></div>
+          <div class="attr-row"><span class="attr-key">叠片系数</span><span class="attr-val">{{ panel.raw?.lam_factor_res || '-' }}</span></div>
+        </div>
+      </template>
+
+      <!-- 叠片数据详情 -->
+      <template v-if="panel.type === 'lamination'">
+        <div class="prop-row"><b>宽度:</b> {{ panel.raw?.width ?? '-' }}</div>
+        <div class="prop-row"><b>卷重:</b> {{ panel.raw?.coil_weight ?? '-' }}</div>
+        <div class="prop-row"><b>断头数:</b> {{ panel.raw?.break_count ?? '-' }}</div>
+        <div class="prop-row"><b>单卷重量:</b> {{ panel.raw?.single_coil_weight ?? '-' }}</div>
+      </template>
+
+      <!-- 单片性能详情 -->
+      <template v-if="panel.type === 'singleSheet'">
+        <div class="prop-row"><b>Ps铁损:</b> {{ panel.raw?.ps_loss ?? '-' }}</div>
+        <div class="prop-row"><b>Ss激磁功率:</b> {{ panel.raw?.ss_power ?? '-' }}</div>
+        <div class="prop-row"><b>Hc:</b> {{ panel.raw?.hc ?? '-' }}</div>
+      </template>
+
+      <!-- 外观特性详情 -->
+      <template v-if="panel.type === 'appearance'">
+        <div class="prop-row"><b>特性名称:</b> {{ panel.raw?.name }}</div>
+        <div class="prop-row"><b>大类:</b> {{ panel.raw?.category || '-' }}</div>
+        <div class="prop-row"><b>等级:</b> {{ panel.raw?.level || '-' }}</div>
+      </template>
     </div>
   </transition>
 </template>

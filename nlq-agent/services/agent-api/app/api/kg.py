@@ -26,6 +26,10 @@ from app.models.schemas import (
     ResolveRequest,
     ResolvedEntity,
     SubgraphRequest,
+    RibbonSearchResult,
+    RibbonSubgraphResponse,
+    AskRequest,
+    AskResponse,
 )
 from app.tools.graph_tools import traverse_judgment_path
 from app.core.database import AsyncSessionLocal
@@ -606,3 +610,38 @@ async def get_ontology() -> dict[str, Any]:
         ]
 
     return {"specs": specs, "rules": rules, "formulas": formulas}
+
+
+# ------------------------------------------------------------------
+# Ribbon-centric endpoints (Phase 3 — 以带材为中心的知识图谱)
+# ------------------------------------------------------------------
+
+
+@router.get("/ribbon/search")
+async def search_ribbon(q: str = "", limit: int = 20) -> list[RibbonSearchResult]:
+    """搜索带材（按炉号、规格名称、规格代码模糊匹配）."""
+    from app.tools.graph_tools import search_ribbons as _search
+    return await _search(q, limit)
+
+
+@router.get("/ribbon/{furnace_no}/subgraph")
+async def get_ribbon_subgraph(furnace_no: str, depth: int = 2) -> RibbonSubgraphResponse:
+    """查询某条带材的局部子图（带材 → 规格/数据/规则/公式）."""
+    from app.tools.graph_tools import get_ribbon_subgraph as _subgraph
+    result = await _subgraph(furnace_no, depth)
+    if result is None:
+        raise HTTPException(status_code=404, detail=f"带材 {furnace_no} 未找到")
+    return result
+
+
+@router.post("/ask", response_model=AskResponse)
+async def ask_xiaomei(request: AskRequest) -> AskResponse:
+    """小美问答（优先走知识图谱路径，再回落到 Chat2SQL）."""
+    # TODO: 实现小美问答逻辑（意图识别 → 图谱查询 → 证据链组装）
+    return AskResponse(
+        answer="小美正在学习中，暂不支持此问题的图谱问答。",
+        reasoning_steps=[],
+        subgraph=None,
+        evidence_table=[],
+        suggested_actions=[],
+    )

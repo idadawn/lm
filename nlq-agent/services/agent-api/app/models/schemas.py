@@ -258,3 +258,67 @@ class SubgraphRequest(BaseModel):
     anchor_id: str = Field(..., description="锚点ID")
     depth: int = Field(default=2, ge=1, le=4, description="查询深度")
     relation_filter: str | None = Field(default=None, description="关系过滤")
+
+
+# --------------------------------------------------------------------------- #
+# Ribbon-centric Knowledge Graph DTOs
+# --------------------------------------------------------------------------- #
+
+
+class RibbonSearchResult(BaseModel):
+    """带材搜索结果."""
+
+    id: str = Field(..., description="带材ID")
+    furnace_no: str = Field(..., description="炉号")
+    furnace_no_formatted: str | None = Field(default=None, description="格式化炉号")
+    prod_date: str | None = Field(default=None, description="生产日期")
+    detection_date: str | None = Field(default=None, description="检测日期")
+    spec_code: str | None = Field(default=None, description="规格代码")
+    spec_name: str | None = Field(default=None, description="规格名称")
+    labeling: str | None = Field(default=None, description="等级标签")
+    detection_status: str = Field(default="待检测", description="检测状态")
+
+
+class RibbonNode(BaseModel):
+    """带材节点 DTO."""
+
+    id: str = Field(..., description="节点ID")
+    type: str = Field(default="Ribbon", description="节点类型")
+    label: str = Field(..., description="显示标签")
+    furnace_no: str = Field(..., description="炉号")
+    furnace_no_formatted: str | None = Field(default=None, description="格式化炉号")
+    prod_date: str | None = Field(default=None, description="生产日期")
+    detection_date: str | None = Field(default=None, description="检测日期")
+    spec_code: str | None = Field(default=None, description="规格代码")
+    spec_name: str | None = Field(default=None, description="规格名称")
+    labeling: str | None = Field(default=None, description="等级标签")
+    detection_status: str = Field(default="待检测", description="检测状态")
+    raw: dict | None = Field(default=None, description="原始数据")
+
+
+class RibbonSubgraphResponse(BaseModel):
+    """带材局部子图响应."""
+
+    ribbon: RibbonNode = Field(..., description="中心带材节点")
+    nodes: list[OntologyNode] = Field(default_factory=list, description="节点列表")
+    edges: list[OntologyEdge] = Field(default_factory=list, description="边列表")
+    combos: list[OntologyCombo] | None = Field(default=None, description="聚合组列表")
+
+
+class AskRequest(BaseModel):
+    """小美问答请求."""
+
+    question: str = Field(..., description="用户问题")
+    session_id: str | None = Field(default=None, description="会话ID")
+    context: dict | None = Field(default=None, description="上下文")
+
+
+class AskResponse(BaseModel):
+    """小美问答响应."""
+
+    answer: str = Field(..., description="自然语言答案")
+    answer_card: dict | None = Field(default=None, description="结构化摘要卡片")
+    reasoning_steps: list[ReasoningStep] = Field(default_factory=list, description="推理链")
+    subgraph: OntologyGraphDTO | None = Field(default=None, description="相关子图")
+    evidence_table: list[dict] | None = Field(default=None, description="证据表")
+    suggested_actions: list[dict] | None = Field(default=None, description="建议动作")

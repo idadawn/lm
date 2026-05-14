@@ -159,7 +159,7 @@ export interface OntologyData {
 // 面板数据（详情面板统一 Props）
 // ------------------------------------------------------------------
 
-export type PanelType = 'spec' | 'ruleCombo' | 'rule' | 'formula';
+export type PanelType = 'spec' | 'ruleCombo' | 'rule' | 'formula' | 'ribbon' | 'lamination' | 'singleSheet' | 'appearance';
 
 export interface PanelData {
   type: PanelType;

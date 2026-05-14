@@ -34,24 +34,41 @@ let chart: echarts.ECharts | null = null;
 // ------------------------------------------------------------------
 // 配色
 // ------------------------------------------------------------------
+// 带材中心本体配色
 const NODE_COLORS: Record<string, { fill: string; stroke: string; text: string; shadow: string }> = {
+  Ribbon: { fill: '#3B82F6', stroke: '#2563EB', text: '#fff', shadow: 'rgba(59,130,246,0.5)' },
+  ProductSpec: { fill: '#1D4ED8', stroke: '#1E40AF', text: '#fff', shadow: 'rgba(29,78,216,0.5)' },
+  LaminationData: { fill: '#22C55E', stroke: '#16A34A', text: '#fff', shadow: 'rgba(34,197,94,0.5)' },
+  SingleSheetPerformance: { fill: '#F59E0B', stroke: '#D97706', text: '#fff', shadow: 'rgba(245,158,11,0.5)' },
+  AppearanceFeature: { fill: '#EF4444', stroke: '#DC2626', text: '#fff', shadow: 'rgba(239,68,68,0.5)' },
+  JudgementRule: { fill: '#A855F7', stroke: '#9333EA', text: '#fff', shadow: 'rgba(168,85,247,0.5)' },
+  // 兼容旧类型
   spec: { fill: '#3B82F6', stroke: '#2563EB', text: '#fff', shadow: 'rgba(59,130,246,0.5)' },
-  ruleQualified: { fill: '#22C55E', stroke: '#16A34A', text: '#fff', shadow: 'rgba(34,197,94,0.5)' },
-  ruleUnqualified: { fill: '#EF4444', stroke: '#DC2626', text: '#fff', shadow: 'rgba(239,68,68,0.5)' },
+  rule: { fill: '#22C55E', stroke: '#16A34A', text: '#fff', shadow: 'rgba(34,197,94,0.5)' },
   formula: { fill: '#A855F7', stroke: '#9333EA', text: '#fff', shadow: 'rgba(168,85,247,0.5)' },
 };
 
 function getNodeColor(dataType: string, rawData?: any) {
+  const c = NODE_COLORS[dataType];
+  if (c) return c;
+  // fallback for old types
   if (dataType === 'spec') return NODE_COLORS.spec;
   if (dataType === 'rule') {
     const isQualified = rawData?.quality_status === '合格';
-    return isQualified ? NODE_COLORS.ruleQualified : NODE_COLORS.ruleUnqualified;
+    return isQualified ? NODE_COLORS.LaminationData : NODE_COLORS.AppearanceFeature;
   }
   if (dataType === 'formula') return NODE_COLORS.formula;
-  return NODE_COLORS.spec;
+  return NODE_COLORS.Ribbon;
 }
 
 function getNodeSize(dataType: string) {
+  if (dataType === 'Ribbon') return 88;
+  if (dataType === 'ProductSpec') return 72;
+  if (dataType === 'LaminationData') return 56;
+  if (dataType === 'SingleSheetPerformance') return 56;
+  if (dataType === 'AppearanceFeature') return 48;
+  if (dataType === 'JudgementRule') return 56;
+  // fallback
   if (dataType === 'spec') return 72;
   if (dataType === 'rule') return 44;
   if (dataType === 'formula') return 56;
@@ -68,11 +85,12 @@ function convertToECharts(data: G6GraphData) {
 
   // 节点（combo 内的节点也扁平化）
   for (const n of data.nodes) {
-    const color = getNodeColor(n.dataType, n.rawData);
-    const size = getNodeSize(n.dataType);
+    const dataType = n.type || n.dataType || 'Ribbon';
+    const color = getNodeColor(dataType, n.raw);
+    const size = getNodeSize(dataType);
     const node = {
       name: n.id as string,
-      value: n.ruleCount || 0,
+      value: (n.metrics && Object.keys(n.metrics).length) || 0,
       symbolSize: size,
       symbol: 'circle',
       itemStyle: {
@@ -85,12 +103,12 @@ function convertToECharts(data: G6GraphData) {
       label: {
         show: true,
         color: color.text,
-        fontSize: n.dataType === 'spec' ? 13 : 10,
-        fontWeight: n.dataType === 'spec' ? 700 : 600,
+        fontSize: dataType === 'Ribbon' ? 14 : dataType === 'ProductSpec' ? 13 : 10,
+        fontWeight: dataType === 'Ribbon' || dataType === 'ProductSpec' ? 700 : 600,
         formatter: () => n.label as string,
       },
       // 自定义数据透传
-      _raw: n,
+      _raw: { ...n, dataType },
     };
     nodeMap.set(n.id as string, node);
     echartsNodes.push(node);
@@ -185,6 +203,7 @@ function initChart() {
 
 function render(data: G6GraphData) {
   if (!chart) return;
+  console.log('[KgCanvas] render called, nodes:', data.nodes.length, 'edges:', data.edges.length, 'combos:', (data.combos || []).length);
   const { nodes, links } = convertToECharts(data);
 
   const option: echarts.EChartsOption = {
@@ -199,18 +218,44 @@ function render(data: G6GraphData) {
       formatter: (p: any) => {
         const raw = p.data?._raw;
         if (!raw) return '';
-        if (raw.dataType === 'spec') {
+        const dt = raw.dataType || raw.type;
+        if (dt === 'Ribbon') {
+          const r = raw.raw || {};
+          return `<b style="color:#2563EB">🏭 ${raw.label}</b><br/>规格: ${raw.spec_name || '-'}<br/>日期: ${raw.detection_date || '-'}<br/>等级: ${raw.labeling || '未判定'}`;
+        }
+        if (dt === 'ProductSpec') {
+          const r = raw.raw || {};
+          return `<b style="color:#1D4ED8">📦 ${raw.label}</b><br/>代码: ${r.code || '-'}<br/>检测列: ${r.detection_columns || '-'}`;
+        }
+        if (dt === 'LaminationData') {
+          const r = raw.raw || {};
+          return `<b style="color:#16A34A">📊 叠片数据</b><br/>宽度: ${r.width || '-'}<br/>卷重: ${r.coil_weight || '-'}<br/>断头: ${r.break_count || '-'}`;
+        }
+        if (dt === 'SingleSheetPerformance') {
+          const r = raw.raw || {};
+          return `<b style="color:#D97706">⚡ 单片性能</b><br/>Ps铁损: ${r.ps_loss || '-'}<br/>Ss功率: ${r.ss_power || '-'}<br/>Hc: ${r.hc || '-'}`;
+        }
+        if (dt === 'AppearanceFeature') {
+          const r = raw.raw || {};
+          return `<b style="color:#DC2626">🔴 ${raw.label}</b><br/>大类: ${r.category || '-'}<br/>等级: ${r.level || '-'}`;
+        }
+        if (dt === 'JudgementRule') {
+          const r = raw.raw || {};
+          const c = r.quality_status === '合格' ? '#16A34A' : '#DC2626';
+          return `<b style="color:${c}">⚖️ ${raw.label}</b><br/>状态: ${r.quality_status || '-'}<br/>公式: ${r.formula_name || '-'}`;
+        }
+        if (dt === 'combo') {
+          return `<b style="color:#64748B">📁 ${raw.label}</b><br/>规则数: ${(raw.rules || []).length}`;
+        }
+        if (dt === 'spec') {
           return `<b style="color:#2563EB">📦 ${raw.rawData?.name || raw.rawData?.code}</b><br/>规则: ${raw.ruleCount || 0} | 公式: ${raw.formulaCount || 0}`;
         }
-        if (raw.dataType === 'rule') {
+        if (dt === 'rule') {
           const c = raw.rawData?.quality_status === '合格' ? '#16A34A' : '#DC2626';
           return `<b style="color:${c}">⚖️ ${raw.rawData?.name}</b><br/>状态: ${raw.rawData?.quality_status} | 优先级: ${raw.rawData?.priority}`;
         }
-        if (raw.dataType === 'formula') {
+        if (dt === 'formula') {
           return `<b style="color:#9333EA">🔧 ${raw.rawData?.formula_name || raw.rawData?.column_name}</b><br/>类型: ${raw.typeLabel || '-'} | 关联规则: ${raw.ruleCount || 0}`;
-        }
-        if (raw.dataType === 'combo') {
-          return `<b style="color:#64748B">📁 ${raw.label}</b><br/>规则数: ${(raw.rules || []).length}`;
         }
         return '';
       },
@@ -279,10 +324,11 @@ function handleResize() {
 // ------------------------------------------------------------------
 
 watch(() => props.data, (val) => {
+  console.log('[KgCanvas] data changed, nodes:', val?.nodes?.length);
   if (val && chart) {
-    render(val);
+    nextTick(() => render(val));
   }
-}, { deep: true });
+}, { flush: 'post' });
 
 watch(() => props.highlightNodeIds, () => {
   applyHighlights();
@@ -295,6 +341,7 @@ watch(() => props.highlightEdgeIds, () => {
 onMounted(async () => {
   await nextTick();
   initChart();
+  console.log('[KgCanvas] mounted, data nodes:', props.data?.nodes?.length);
   if (props.data && chart) {
     render(props.data);
   }

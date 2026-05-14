@@ -2,7 +2,10 @@
  * 知识图谱管理 API — 连接 nlq-agent 的管理端点
  */
 
-const BASE_URL = import.meta.env?.VITE_NLQ_AGENT_API_BASE || '';
+import type { ReasoningStep, OntologyGraphDTO } from '/@/views/lab/knowledge-graph/types/ontology';
+
+// 安全兜底：若环境变量未生效，强制使用 /nlq-agent（与 vite.config proxy 前缀一致）
+const BASE_URL = import.meta.env?.VITE_NLQ_AGENT_API_BASE || '/nlq-agent';
 
 export interface CollectionInfo {
   name: string;
@@ -110,5 +113,76 @@ export async function resyncNow(): Promise<Record<string, unknown>> {
     if (res.status === 401) throw new Error('需要管理员 Token 才能执行全量重建');
     throw new Error(`Resync failed: ${res.status}`);
   }
+  return res.json();
+}
+
+// ------------------------------------------------------------------
+// Phase 2 新增接口：问答解释、子图查询、实体解析
+// ------------------------------------------------------------------
+
+export interface ExplainRequest {
+  question: string;
+  session_id?: string;
+  context?: Record<string, unknown>;
+}
+
+export interface ExplainResponse {
+  answer: string;
+  answer_card?: Record<string, unknown>;
+  reasoning_steps: ReasoningStep[];
+  subgraph?: OntologyGraphDTO;
+  evidence_table?: Array<Record<string, unknown>>;
+  suggested_actions?: Array<{ label: string; action: string; params?: Record<string, unknown> }>;
+}
+
+export async function explainQuestion(request: ExplainRequest): Promise<ExplainResponse> {
+  const res = await fetch(`${BASE_URL}/api/v1/kg/explain`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+  if (!res.ok) throw new Error(`Explain failed: ${res.status}`);
+  return res.json();
+}
+
+export interface SubgraphRequest {
+  anchor_type: string;
+  anchor_id: string;
+  depth?: number;
+  relation_filter?: string;
+}
+
+export async function getSubgraph(request: SubgraphRequest): Promise<OntologyGraphDTO> {
+  const params = new URLSearchParams();
+  params.set('anchor_type', request.anchor_type);
+  params.set('anchor_id', request.anchor_id);
+  if (request.depth) params.set('depth', String(request.depth));
+  if (request.relation_filter) params.set('relation_filter', request.relation_filter);
+
+  const res = await fetch(`${BASE_URL}/api/v1/kg/subgraph?${params.toString()}`);
+  if (!res.ok) throw new Error(`Subgraph query failed: ${res.status}`);
+  return res.json();
+}
+
+export interface ResolveRequest {
+  phrase: string;
+  context?: Record<string, unknown>;
+}
+
+export interface ResolvedEntity {
+  type: string;
+  id: string;
+  label: string;
+  confidence: number;
+  meta?: Record<string, unknown>;
+}
+
+export async function resolveEntities(request: ResolveRequest): Promise<ResolvedEntity[]> {
+  const res = await fetch(`${BASE_URL}/api/v1/kg/resolve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+  if (!res.ok) throw new Error(`Resolve failed: ${res.status}`);
   return res.json();
 }

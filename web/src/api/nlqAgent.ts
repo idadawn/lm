@@ -24,7 +24,8 @@ export interface NlqAgentChatHandlers {
   signal?: AbortSignal;
 }
 
-const BASE_URL = import.meta.env?.VITE_NLQ_AGENT_API_BASE || '';
+// 安全兜底：若环境变量未生效，使用 /nlq-agent 走 Vite proxy
+const BASE_URL = import.meta.env?.VITE_NLQ_AGENT_API_BASE || '/nlq-agent';
 
 function parseEvent(line: string): Record<string, unknown> | null {
   if (!line.startsWith('data:')) return null;

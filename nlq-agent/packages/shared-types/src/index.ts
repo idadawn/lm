@@ -209,7 +209,100 @@ export interface QueryResult {
 }
 
 // ============================================================================
-// 前端组件类型
+// Agent Conversation Timeline 类型（新增）
+// ============================================================================
+
+/** Agent 运行状态 */
+export type AgentRunStatus =
+  | "queued"
+  | "thinking"
+  | "calling_tool"
+  | "answering"
+  | "completed"
+  | "error"
+  | "cancelled";
+
+/** Agent Block 类型 */
+export type AgentBlockType =
+  | "thinking"
+  | "tool_call"
+  | "artifact"
+  | "final_answer"
+  | "error";
+
+/** 工具调用状态 */
+export type ToolCallStatus = "running" | "success" | "error";
+
+/** 推理/思考块 */
+export interface ThinkingBlock {
+  id: string;
+  type: "thinking";
+  title: string;
+  steps: ReasoningStep[];
+  collapsed: boolean;
+}
+
+/** 工具调用块 */
+export interface ToolCallBlock {
+  id: string;
+  type: "tool_call";
+  toolCallId: string;
+  name: string;
+  displayName?: string;
+  status: ToolCallStatus;
+  input?: Record<string, unknown>;
+  output?: Record<string, unknown>;
+  summary?: string;
+  startedAt?: number;
+  endedAt?: number;
+  durationMs?: number;
+}
+
+/** 产物/结果块（图表、表格、知识图谱等） */
+export interface ArtifactBlock {
+  id: string;
+  type: "artifact";
+  kind: "chart" | "table" | "kg_subgraph" | "sql" | "file";
+  title: string;
+  payload: unknown;
+}
+
+/** 最终回答块 */
+export interface FinalAnswerBlock {
+  id: string;
+  type: "final_answer";
+  content: string;
+}
+
+/** 错误块 */
+export interface ErrorBlock {
+  id: string;
+  type: "error";
+  message: string;
+  retryable: boolean;
+}
+
+/** Agent Block 联合类型 */
+export type AgentBlock =
+  | ThinkingBlock
+  | ToolCallBlock
+  | ArtifactBlock
+  | FinalAnswerBlock
+  | ErrorBlock;
+
+/** 单轮 Agent 响应（Turn） */
+export interface AgentTurn {
+  id: string;
+  userMessageId: string;
+  assistantMessageId: string;
+  status: AgentRunStatus;
+  createdAt: number;
+  updatedAt: number;
+  blocks: AgentBlock[];
+}
+
+// ============================================================================
+// 前端组件类型（兼容旧版）
 // ============================================================================
 
 /** 工具调用状态 */

@@ -21,6 +21,7 @@ Module helpers (migrated from ``root_cause_agent.py``)
 from __future__ import annotations
 
 import json
+import uuid
 from typing import Any
 
 from langchain_core.tools import tool
@@ -254,10 +255,14 @@ async def _build_judgment_path_steps(
     if record is None:
         steps.append(
             {
+                "id": str(uuid.uuid4()),
                 "kind": "fallback",
+                "title": "未找到检测记录",
+                "summary": f"未找到标识为 {furnace_no or batch_no or '空'} 的检测记录",
                 "label": (
                     f"未找到标识为 {furnace_no or batch_no or '空'} 的检测记录"
                 ),
+                "status": "warning",
             }
         )
         return steps
@@ -270,11 +275,25 @@ async def _build_judgment_path_steps(
 
     steps.append(
         {
+            "id": str(uuid.uuid4()),
             "kind": "record",
+            "title": "命中检测记录",
+            "summary": (
+                f"炉号 {record.get('furnace_no') or furnace_no}，"
+                f"批次 {record.get('batch_no') or batch_no or '未知'}"
+            ),
             "label": (
                 f"命中检测记录：炉号 {record.get('furnace_no') or furnace_no}，"
                 f"批次 {record.get('batch_no') or batch_no or '未知'}"
             ),
+            "status": "success",
+            "ontology_refs": [
+                {
+                    "type": "InspectionRecord",
+                    "id": f"record:{furnace_no or batch_no}",
+                    "label": f"炉号 {furnace_no or batch_no}",
+                }
+            ],
             "meta": {
                 "furnace_no": record.get("furnace_no"),
                 "batch_no": record.get("batch_no"),
@@ -285,8 +304,12 @@ async def _build_judgment_path_steps(
     if not spec_code:
         steps.append(
             {
+                "id": str(uuid.uuid4()),
                 "kind": "fallback",
+                "title": "缺少规格信息",
+                "summary": "记录未关联到产品规格，无法走规则推理",
                 "label": "记录未关联到产品规格，无法走规则推理",
+                "status": "warning",
             }
         )
         return steps
@@ -294,8 +317,26 @@ async def _build_judgment_path_steps(
     # Step kind=spec — record's product spec.
     steps.append(
         {
+            "id": str(uuid.uuid4()),
             "kind": "spec",
+            "title": "关联产品规格",
+            "summary": f"产品规格 {spec_code}",
             "label": f"产品规格 {spec_code}",
+            "status": "success",
+            "ontology_refs": [
+                {
+                    "type": "ProductSpec",
+                    "id": f"spec:{spec_code}",
+                    "label": spec_code,
+                }
+            ],
+            "edge_refs": [
+                {
+                    "source": f"record:{furnace_no or batch_no}",
+                    "target": f"spec:{spec_code}",
+                    "relation": "USES_SPEC",
+                }
+            ],
             "meta": {"spec_code": spec_code},
         }
     )
@@ -303,8 +344,12 @@ async def _build_judgment_path_steps(
     if not resolved_grade:
         steps.append(
             {
+                "id": str(uuid.uuid4()),
                 "kind": "fallback",
+                "title": "缺少等级信息",
+                "summary": "问题未指定等级且记录无 F_LABELING 字段，无法定位规则",
                 "label": "问题未指定等级且记录无 F_LABELING 字段，无法定位规则",
+                "status": "warning",
             }
         )
         return steps
@@ -314,8 +359,12 @@ async def _build_judgment_path_steps(
     if graph is None:
         steps.append(
             {
+                "id": str(uuid.uuid4()),
                 "kind": "fallback",
+                "title": "知识图谱不可用",
+                "summary": "知识图谱当前不可用（KG manager 返回 None）",
                 "label": "知识图谱当前不可用（KG manager 返回 None）",
+                "status": "failed",
             }
         )
         return steps
@@ -327,9 +376,13 @@ async def _build_judgment_path_steps(
     except Exception as exc:  # noqa: BLE001 — surface to UI as fallback
         steps.append(
             {
+                "id": str(uuid.uuid4()),
                 "kind": "fallback",
+                "title": "知识图谱查询失败",
+                "summary": f"知识图谱查询失败：{type(exc).__name__}",
                 "label": f"知识图谱查询失败：{type(exc).__name__}",
                 "detail": str(exc)[:200],
+                "status": "failed",
             }
         )
         return steps
@@ -337,23 +390,49 @@ async def _build_judgment_path_steps(
     if not rules:
         steps.append(
             {
+                "id": str(uuid.uuid4()),
                 "kind": "fallback",
+                "title": "未找到判定规则",
+                "summary": (
+                    f"未在图谱中找到规格 {spec_code} 下 "
+                    f"{resolved_grade} 级的判定规则"
+                ),
                 "label": (
                     f"未在图谱中找到规格 {spec_code} 下 "
                     f"{resolved_grade} 级的判定规则"
                 ),
+                "status": "warning",
             }
         )
         return steps
 
     rule = rules[0]
     rule_name = str(rule.get("name") or resolved_grade)
+    rule_id = str(rule.get("id") or "")
     steps.append(
         {
+            "id": str(uuid.uuid4()),
             "kind": "rule",
+            "title": "命中判定规则",
+            "summary": f"判定规则：{rule_name}（优先级 {rule.get('priority', 'N/A')}）",
             "label": f"判定规则：{rule_name}（优先级 {rule.get('priority', 'N/A')}）",
+            "status": "success",
+            "ontology_refs": [
+                {
+                    "type": "JudgmentRule",
+                    "id": f"rule:{rule_id}",
+                    "label": rule_name,
+                }
+            ],
+            "edge_refs": [
+                {
+                    "source": f"spec:{spec_code}",
+                    "target": f"rule:{rule_id}",
+                    "relation": "HAS_RULE",
+                }
+            ],
             "meta": {
-                "rule_id": rule.get("id"),
+                "rule_id": rule_id,
                 "priority": rule.get("priority"),
                 "quality_status": rule.get("qualityStatus"),
             },
@@ -365,30 +444,83 @@ async def _build_judgment_path_steps(
     for detail in evaluation["satisfied"]:
         steps.append(
             {
+                "id": str(uuid.uuid4()),
                 "kind": "condition",
+                "title": f"条件满足：{detail['label']}",
+                "summary": f"{detail['condition']} — 实际值 {detail['actual']} 满足期望 {detail['expected']}",
                 "label": detail["condition"],
                 "field": detail["field"],
                 "expected": detail["expected"],
                 "actual": detail["actual"],
                 "satisfied": True,
+                "status": "success",
+                "ontology_refs": [
+                    {
+                        "type": "RuleCondition",
+                        "id": f"cond:{rule_id}:{detail['field']}",
+                        "label": detail["label"] or detail["field"],
+                    }
+                ],
+                "edge_refs": [
+                    {
+                        "source": f"rule:{rule_id}",
+                        "target": f"cond:{rule_id}:{detail['field']}",
+                        "relation": "HAS_CONDITION",
+                    }
+                ],
+                "evidence": [
+                    {
+                        "label": detail["label"] or detail["field"],
+                        "value": detail["actual"],
+                        "source": "检测记录",
+                    }
+                ],
             }
         )
     for detail in evaluation["failed"]:
         steps.append(
             {
+                "id": str(uuid.uuid4()),
                 "kind": "condition",
+                "title": f"条件不满足：{detail['label']}",
+                "summary": f"{detail['condition']} — 实际值 {detail['actual']} 不满足期望 {detail['expected']}",
                 "label": detail["condition"],
                 "field": detail["field"],
                 "expected": detail["expected"],
                 "actual": detail["actual"],
                 "satisfied": False,
+                "status": "warning",
+                "ontology_refs": [
+                    {
+                        "type": "RuleCondition",
+                        "id": f"cond:{rule_id}:{detail['field']}",
+                        "label": detail["label"] or detail["field"],
+                    }
+                ],
+                "edge_refs": [
+                    {
+                        "source": f"rule:{rule_id}",
+                        "target": f"cond:{rule_id}:{detail['field']}",
+                        "relation": "HAS_CONDITION",
+                    }
+                ],
+                "evidence": [
+                    {
+                        "label": detail["label"] or detail["field"],
+                        "value": detail["actual"],
+                        "source": "检测记录",
+                    }
+                ],
             }
         )
     unstructured = evaluation.get("unstructured", [])
     if unstructured:
         steps.append(
             {
+                "id": str(uuid.uuid4()),
                 "kind": "condition",
+                "title": "未结构化条件",
+                "summary": f"知识图谱中存在 {len(unstructured)} 条未结构化的条件，无法直接评估",
                 "label": (
                     f"知识图谱中存在 {len(unstructured)} 条未结构化的条件，"
                     f"无法直接评估（仅记录字段：{ '、'.join(unstructured) }）"
@@ -397,6 +529,7 @@ async def _build_judgment_path_steps(
                 "expected": "—",
                 "actual": "—",
                 "satisfied": None,
+                "status": "warning",
                 "meta": {"unstructured": True, "fields": unstructured},
             }
         )
@@ -425,8 +558,19 @@ async def _build_judgment_path_steps(
 
     steps.append(
         {
+            "id": str(uuid.uuid4()),
             "kind": "grade",
+            "title": f"判定结论：{resolved_grade} 级",
+            "summary": verdict,
             "label": verdict,
+            "status": "success" if failed_count == 0 else "warning",
+            "ontology_refs": [
+                {
+                    "type": "JudgmentRule",
+                    "id": f"rule:{rule_id}",
+                    "label": rule_name,
+                }
+            ],
             "meta": {
                 "grade": resolved_grade,
                 "satisfied_count": satisfied_count,
@@ -471,14 +615,20 @@ async def traverse_judgment_path(
             F_LABELING 字段回退；都拿不到时返回 fallback。
 
     Returns:
-        list[dict[str, Any]]: 有序 ReasoningStep 字典列表，每项含至少 ``kind``
-        和 ``label`` 两个字段；condition 类还含 ``field/expected/actual/satisfied``。
+        list[dict[str, Any]]: 有序 ReasoningStep 字典列表，每项含 ``id``、
+        ``kind``、``title``、``summary``、``status``、``ontology_refs``、
+        ``edge_refs``、``evidence`` 等字段；condition 类还含
+        ``field/expected/actual/satisfied``。
     """
     if not furnace_no and not batch_no:
         return [
             {
+                "id": str(uuid.uuid4()),
                 "kind": "fallback",
+                "title": "缺少查询条件",
+                "summary": "请提供炉号或批次号",
                 "label": "请提供炉号或批次号",
+                "status": "warning",
             }
         ]
     return await _build_judgment_path_steps(

@@ -35,27 +35,44 @@
         <view class="msg-avatar" v-if="msg.role === 'assistant'">
           <text class="msg-avatar-text">AI</text>
         </view>
-        <view class="msg-bubble">
-          <!-- user messages: plain text (no markdown injection vector) -->
-          <text v-if="msg.role === 'user'" class="msg-text">{{ msg.content }}</text>
-          <!-- assistant messages: markdown rendered per platform -->
-          <template v-else>
-            <!-- #ifdef MP-WEIXIN || APP-PLUS -->
-            <mp-html :content="renderMarkdown(msg.content)" class="msg-md" />
-            <!-- #endif -->
-            <!-- #ifdef H5 -->
-            <view class="msg-md" v-html="sanitizeHtml(renderMarkdown(msg.content))"></view>
-            <!-- #endif -->
-          </template>
+        <view class="msg-bubble assistant-card" v-if="msg.role === 'assistant'">
+          <!-- 推理状态条 -->
+          <view v-if="msg.reasoningSteps && msg.reasoningSteps.length > 0" class="assistant-status">
+            <text class="status-text">推理过程 · {{ msg.reasoningSteps.length }} 步</text>
+          </view>
+
+          <!-- 工具调用卡片 -->
+          <view v-if="msg.toolCalls && msg.toolCalls.length > 0" class="tool-cards">
+            <view
+              class="tool-card"
+              v-for="(tool, tidx) in msg.toolCalls"
+              :key="tidx"
+              :class="tool.status"
+            >
+              <view class="tool-header">
+                <text class="tool-dot" :class="tool.status"></text>
+                <text class="tool-name">{{ tool.displayName || tool.name }}</text>
+                <text v-if="tool.duration_ms" class="tool-duration">{{ tool.duration_ms }}ms</text>
+              </view>
+            </view>
+          </view>
+
+          <!-- Markdown 正文 -->
+          <!-- #ifdef MP-WEIXIN || APP-PLUS -->
+          <mp-html :content="renderMarkdown(msg.content)" class="msg-md" />
+          <!-- #endif -->
+          <!-- #ifdef H5 -->
+          <view class="msg-md" v-html="sanitizeHtml(renderMarkdown(msg.content))"></view>
+          <!-- #endif -->
         </view>
+
+        <view class="msg-bubble" v-else>
+          <text class="msg-text">{{ msg.content }}</text>
+        </view>
+
         <view class="msg-avatar user-avatar" v-if="msg.role === 'user'">
           <text class="msg-avatar-text">我</text>
         </view>
-      </view>
-
-      <!-- 推理链 -->
-      <view v-if="reasoningSteps.length > 0" class="reasoning-wrap">
-        <kg-reasoning-chain :steps="reasoningSteps" :default-open="false" />
       </view>
 
       <!-- 加载中 -->
@@ -85,10 +102,10 @@
       />
       <view
         class="send-btn"
-        :class="{ active: inputText.trim() && !loading }"
-        @click="sendMessage"
+        :class="{ active: inputText.trim() && !loading, stop: loading }"
+        @click="loading ? stopGeneration() : sendMessage()"
       >
-        <text class="send-btn-text">发送</text>
+        <text class="send-btn-text">{{ loading ? '停止' : '发送' }}</text>
       </view>
     </view>
   </view>
@@ -105,7 +122,7 @@ import MpHtml from 'mp-html/dist/uni-app/components/mp-html/mp-html.vue'
 
 const messages = ref([])
 
-// ── Session 持久化(plan v3 W1.5 mobile,与 web 端 schema 兼容) ──
+// ── Session 持久化 ──
 const STORAGE_KEY = 'nlq-sessions'
 const SCHEMA_VERSION = 1
 
@@ -114,6 +131,7 @@ function makeId() {
 }
 
 const currentSessionId = ref('')
+let currentRequestTask = null
 
 function loadSessions() {
   let raw
@@ -127,12 +145,10 @@ function loadSessions() {
   try {
     parsed = JSON.parse(raw)
   } catch (_) {
-    // 数据损坏:清空
     try { uni.removeStorageSync(STORAGE_KEY) } catch (_) {}
     return
   }
   if (parsed?.schema_version !== SCHEMA_VERSION) {
-    // 老版本数据 wipe
     try { uni.removeStorageSync(STORAGE_KEY) } catch (_) {}
     return
   }
@@ -156,9 +172,7 @@ function saveSessions() {
   }
   try {
     uni.setStorageSync(STORAGE_KEY, JSON.stringify(payload))
-  } catch (_) {
-    // 写入失败(配额、storage disabled 等)— 静默,不破坏 UX
-  }
+  } catch (_) {}
 }
 
 // 启动时立即恢复
@@ -166,11 +180,9 @@ loadSessions()
 
 const inputText = ref('')
 const loading = ref(false)
-const reasoningSteps = ref([])
 const scrollToView = ref('')
 
-// 键盘高度:键盘弹起时上移输入栏,避免输入框被遮挡。
-// uni.onKeyboardHeightChange 在 MP-WEIXIN / APP-PLUS 有效;H5 键盘由浏览器自动处理。
+// 键盘高度
 const keyboardHeight = ref(0)
 
 onMounted(() => {
@@ -204,6 +216,20 @@ function sendQuick(text) {
   sendMessage()
 }
 
+function stopGeneration() {
+  if (currentRequestTask && currentRequestTask.abort) {
+    currentRequestTask.abort()
+    currentRequestTask = null
+  }
+  loading.value = false
+  // 把当前 assistant 消息标记为 cancelled
+  const lastMsg = messages.value[messages.value.length - 1]
+  if (lastMsg && lastMsg.role === 'assistant') {
+    lastMsg.status = 'cancelled'
+    saveSessions()
+  }
+}
+
 function sendMessage() {
   const text = inputText.value.trim()
   if (!text || loading.value) return
@@ -212,41 +238,107 @@ function sendMessage() {
   saveSessions()
   inputText.value = ''
   loading.value = true
-  reasoningSteps.value = []
   scrollToBottom()
 
   let assistantContent = ''
   const currentIndex = messages.value.length
 
-  // 先占位
-  messages.value.push({ role: 'assistant', content: '' })
+  // assistant 消息占位，包含结构化字段
+  messages.value.push({
+    role: 'assistant',
+    content: '',
+    reasoningSteps: [],
+    toolCalls: [],
+    chartConfig: null,
+    status: 'running',
+  })
 
-  streamNlqChat(
+  // 复用 session_id
+  if (!currentSessionId.value) {
+    currentSessionId.value = makeId()
+  }
+
+  currentRequestTask = streamNlqChat(
     {
       messages: [{ role: 'user', content: text }],
-      session_id: `mobile-${Date.now()}`
+      session_id: currentSessionId.value
     },
     {
       onText: (chunk) => {
         assistantContent += chunk
-        messages.value[currentIndex].content = assistantContent
+        const msg = messages.value[currentIndex]
+        if (msg) msg.content = assistantContent
         scrollToBottom()
       },
       onReasoningStep: (step) => {
-        reasoningSteps.value.push(step)
+        const msg = messages.value[currentIndex]
+        if (msg && msg.reasoningSteps) {
+          msg.reasoningSteps.push(step)
+        }
+      },
+      onToolStart: (toolInput) => {
+        const msg = messages.value[currentIndex]
+        if (msg && msg.toolCalls) {
+          msg.toolCalls.push({
+            toolCallId: toolInput.tool_call_id || `${toolInput.name}-${Date.now()}`,
+            name: toolInput.name,
+            displayName: toolInput.display_name || toolInput.name,
+            status: 'running',
+            input: toolInput.input,
+            summary: toolInput.summary || '',
+          })
+        }
+      },
+      onToolEnd: (toolOutput) => {
+        const msg = messages.value[currentIndex]
+        if (msg && msg.toolCalls) {
+          const tc = msg.toolCalls.find(
+            (t) => t.toolCallId === toolOutput.tool_call_id || t.name === toolOutput.name
+          )
+          if (tc) {
+            tc.status = toolOutput.status === 'success' ? 'completed' : 'error'
+            tc.output = toolOutput.output
+            tc.duration_ms = toolOutput.duration_ms
+            tc.summary = toolOutput.summary || tc.summary
+          }
+        }
+      },
+      onChart: (chartSpec) => {
+        const msg = messages.value[currentIndex]
+        if (msg) msg.chartConfig = chartSpec
       },
       onResponseMetadata: (payload) => {
-        if (Array.isArray(payload.reasoning_steps) && payload.reasoning_steps.length > 0) {
-          reasoningSteps.value = payload.reasoning_steps.slice()
+        if (payload.session_id) {
+          currentSessionId.value = payload.session_id
+        }
+        const msg = messages.value[currentIndex]
+        if (msg) {
+          if (Array.isArray(payload.reasoning_steps) && payload.reasoning_steps.length > 0) {
+            msg.reasoningSteps = payload.reasoning_steps
+          }
+          if (payload.chart_config) {
+            msg.chartConfig = payload.chart_config
+          }
         }
       },
       onError: (err) => {
-        messages.value[currentIndex].content = '请求出错：' + (err.message || '未知错误')
+        const msg = messages.value[currentIndex]
+        if (msg) {
+          msg.content = '请求出错：' + (err.message || '未知错误')
+          msg.status = 'error'
+        }
         loading.value = false
+        currentRequestTask = null
+        saveSessions()
         scrollToBottom()
       },
       onDone: () => {
         loading.value = false
+        currentRequestTask = null
+        const msg = messages.value[currentIndex]
+        if (msg && msg.status === 'running') {
+          msg.status = 'completed'
+        }
         saveSessions()
         scrollToBottom()
       }
@@ -383,6 +475,13 @@ function sendMessage() {
   background: #e6f7ff;
 }
 
+.assistant-card {
+  max-width: 82%;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+}
+
 .msg-text {
   font-size: 14px;
   color: #262626;
@@ -390,6 +489,87 @@ function sendMessage() {
   word-break: break-word;
 }
 
+/* 助手状态条 */
+.assistant-status {
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  background: #f6ffed;
+  border-radius: 6px;
+  border-left: 3px solid #52c41a;
+}
+
+.status-text {
+  font-size: 12px;
+  color: #389e0d;
+}
+
+/* 工具卡片 */
+.tool-cards {
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tool-card {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+}
+
+.tool-card.running {
+  background: #fffbe6;
+  border-color: #ffd666;
+}
+
+.tool-card.completed {
+  background: #f6ffed;
+  border-color: #b7eb8f;
+}
+
+.tool-card.error {
+  background: #fff2f0;
+  border-color: #ffccc7;
+}
+
+.tool-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tool-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #bfbfbf;
+}
+
+.tool-dot.running {
+  background: #faad14;
+}
+
+.tool-dot.completed {
+  background: #52c41a;
+}
+
+.tool-dot.error {
+  background: #f5222d;
+}
+
+.tool-name {
+  font-size: 12px;
+  color: #595959;
+  flex: 1;
+}
+
+.tool-duration {
+  font-size: 11px;
+  color: #8c8c8c;
+}
+
+/* 加载动画 */
 .loading-bubble {
   display: flex;
   align-items: center;
@@ -424,18 +604,12 @@ function sendMessage() {
   }
 }
 
-/* 推理链包裹 */
-.reasoning-wrap {
-  margin-bottom: 16px;
-  padding: 0 40px;
-}
-
 /* 输入栏 */
 .input-bar {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px  calc(10px + env(safe-area-inset-bottom));
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
   background: #ffffff;
   border-top: 1px solid #f0f0f0;
 }
@@ -459,6 +633,10 @@ function sendMessage() {
 
 .send-btn.active {
   background: linear-gradient(135deg, #1890ff, #40a9ff);
+}
+
+.send-btn.stop {
+  background: linear-gradient(135deg, #ff4d4f, #ff7875);
 }
 
 .send-btn-text {

@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import chat, health, kg
+from app.api import chat, health, kg, sync
 from app.core.config import settings
 from app.core.database import engine
 from app.core.sentry_integration import init_sentry
@@ -64,6 +64,7 @@ app.add_middleware(
 app.include_router(chat.router, prefix="/api/v1")
 app.include_router(health.router, prefix="/api/v1")
 app.include_router(kg.router, prefix="/api/v1/kg")
+app.include_router(sync.router, prefix="/api/v1/sync")
 
 
 @app.get("/")

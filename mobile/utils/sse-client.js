@@ -2,18 +2,23 @@
  * uni-app SSE client backed by uni.request with enableChunked: true.
  *
  * 解析服务器端 `text/event-stream`，按 `data: <json>\n\n` 分包，回调消费方处理
- * 文本与 reasoning_step 事件。设计为不依赖 ai-sdk 或浏览器 EventSource，因为
+ * 文本、工具调用、图表与 reasoning_step 事件。设计为不依赖 ai-sdk 或浏览器 EventSource，因为
  * 微信小程序环境不支持原生 EventSource。
  *
  * 用法：
  *   import { streamNlqChat } from '@/utils/sse-client.js'
- *   streamNlqChat({ messages: [...], session_id }, {
+ *   const task = streamNlqChat({ messages: [...], session_id }, {
  *     onText: chunk => append(chunk),
  *     onReasoningStep: step => steps.push(step),
+ *     onToolStart: tool => showTool(tool),
+ *     onToolEnd: tool => updateTool(tool),
+ *     onChart: chart => renderChart(chart),
  *     onResponseMetadata: payload => commit(payload),
  *     onError: err => toast(err.message),
  *     onDone: () => loading = false,
  *   })
+ *   // 停止生成
+ *   task.abort && task.abort()
  */
 
 function getBaseUrl() {
@@ -52,6 +57,21 @@ function dispatchEvent(event, handlers) {
         handlers.onReasoningStep(event.reasoning_step);
       }
       break;
+    case 'tool_start':
+      if (event.tool_input && handlers.onToolStart) {
+        handlers.onToolStart(event.tool_input);
+      }
+      break;
+    case 'tool_end':
+      if (event.tool_output && handlers.onToolEnd) {
+        handlers.onToolEnd(event.tool_output);
+      }
+      break;
+    case 'chart':
+      if (event.chart_spec && handlers.onChart) {
+        handlers.onChart(event.chart_spec);
+      }
+      break;
     case 'response_metadata':
       if (event.response_payload && handlers.onResponseMetadata) {
         handlers.onResponseMetadata(event.response_payload);
@@ -73,21 +93,23 @@ function dispatchEvent(event, handlers) {
 export function streamNlqChat(request, handlers) {
   const handlersSafe = handlers || {};
   let buffer = '';
+  let aborted = false;
 
   const requestTask = uni.request({
     url: `${getBaseUrl()}/api/v1/chat/stream`,
     method: 'POST',
     enableChunked: true,
-    timeout: 60000,
+    timeout: 120000,
     header: {
       'Content-Type': 'application/json',
       'X-Request-Origin': 'embedded'
     },
     data: request,
     success: () => {
-      if (handlersSafe.onDone) handlersSafe.onDone();
+      if (!aborted && handlersSafe.onDone) handlersSafe.onDone();
     },
     fail: (err) => {
+      if (aborted) return;
       if (handlersSafe.onError) {
         handlersSafe.onError(new Error(err && err.errMsg ? err.errMsg : 'request failed'));
       }
@@ -96,23 +118,15 @@ export function streamNlqChat(request, handlers) {
 
   if (requestTask && requestTask.onChunkReceived) {
     requestTask.onChunkReceived((res) => {
+      if (aborted) return;
       const data = res && res.data ? res.data : null;
       if (!data) return;
-      // UTF-8 解码:静态平台分支 + 语义正确的运行时探测。
-      // 旧代码用 uni.arrayBufferToBase64 做探测是错误的 — 该 API 与 TextDecoder
-      // 是否存在没有因果关系;String.fromCharCode.apply 把每个字节当独立 code unit,
-      // 会在不支持 TextDecoder 的旧版微信小程序中把中文输出为乱码。
       let text;
       try {
         // #ifdef MP-WEIXIN
-        // 微信小程序:新版有 TextDecoder,旧版没有 — 用 typeof 做语义正确的探测,
-        // 不可用时 fallback 到正确处理 multi-byte 的 UTF-8 polyfill。
         if (typeof TextDecoder !== 'undefined') {
           text = new TextDecoder('utf-8').decode(data);
         } else {
-          // decodeUtf8Bytes: 正确处理 1/2/3/4 字节 UTF-8 序列及 surrogate pair。
-          // 不能用 String.fromCharCode.apply(null, new Uint8Array(data)) —
-          // 那只适用于 Latin-1 范围,多字节中文会乱码。
           const bytes = new Uint8Array(data);
           let result = '';
           let i = 0;
@@ -127,12 +141,11 @@ export function streamNlqChat(request, handlers) {
             if ((b1 & 0xe0) === 0xc0) { codepoint = b1 & 0x1f; extraBytes = 1; }
             else if ((b1 & 0xf0) === 0xe0) { codepoint = b1 & 0x0f; extraBytes = 2; }
             else if ((b1 & 0xf8) === 0xf0) { codepoint = b1 & 0x07; extraBytes = 3; }
-            else { result += '�'; continue; } // 无效起始字节
+            else { result += '�'; continue; }
             while (extraBytes-- && i < bytes.length) {
               codepoint = (codepoint << 6) | (bytes[i++] & 0x3f);
             }
             if (codepoint > 0xffff) {
-              // BMP 以外 → surrogate pair
               const c = codepoint - 0x10000;
               result += String.fromCharCode(0xd800 + (c >> 10), 0xdc00 + (c & 0x3ff));
             } else {
@@ -143,7 +156,6 @@ export function streamNlqChat(request, handlers) {
         }
         // #endif
         // #ifdef APP-PLUS || H5
-        // App / H5 运行时均内置 TextDecoder,直接使用。
         text = new TextDecoder('utf-8').decode(data);
         // #endif
       } catch (e) {
@@ -162,5 +174,15 @@ export function streamNlqChat(request, handlers) {
     });
   }
 
-  return requestTask;
+  // 包装 abort 方法，标记 aborted 状态避免回调泄漏
+  const originalAbort = requestTask && requestTask.abort;
+  const wrappedTask = {
+    ...requestTask,
+    abort: () => {
+      aborted = true;
+      if (originalAbort) originalAbort();
+    }
+  };
+
+  return wrappedTask;
 }

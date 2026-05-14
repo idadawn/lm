@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import { ChartRenderer } from "@/components/charts";
 import {
@@ -31,10 +31,27 @@ const MODEL_OPTIONS = [
   { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash (LiteLLM only)" },
 ];
 
+interface ToolCallItem {
+  id: string;
+  name: string;
+  displayName?: string;
+  status: "running" | "completed" | "error";
+  input?: Record<string, unknown>;
+  output?: Record<string, unknown>;
+  summary?: string;
+  durationMs?: number;
+}
+
 interface ChatMessageItem {
   id: string;
   role: "user" | "assistant";
   content: string;
+  reasoningSteps?: ReasoningStep[];
+  toolCalls?: ToolCallItem[];
+  chartConfig?: import("@nlq-agent/shared-types").ChartDescriptor | null;
+  calculationExplanation?: CalculationExplanation | null;
+  gradeJudgment?: GradeJudgment | null;
+  status?: "running" | "completed" | "error" | "cancelled";
 }
 
 type ChatPanelMode = "fullscreen" | "dock";
@@ -84,34 +101,13 @@ export function NlqChatPanel({
   const [messages, setMessages] = useState<ChatMessageItem[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [chartConfig, setChartConfig] = useState<
-    import("@nlq-agent/shared-types").ChartDescriptor | null
-  >(null);
-  const [toolCalls, setToolCalls] = useState<
-    Array<{ name: string; status: "running" | "completed" | "error" }>
-  >([]);
-  const [calculationExplanation, setCalculationExplanation] =
-    useState<CalculationExplanation | null>(null);
-  const [gradeJudgment, setGradeJudgment] = useState<GradeJudgment | null>(
-    null,
-  );
-  const [reasoningSteps, setReasoningSteps] = useState<ReasoningStep[]>([]);
   const [dockOpen, setDockOpen] = useState(mode === "fullscreen");
   const [runtimeAuthContext, setRuntimeAuthContext] = useState<AuthContext>(
     authContext ?? {},
   );
 
-  const currentMessageDataRef = useRef<{
-    calculationExplanation: CalculationExplanation | null;
-    gradeJudgment: GradeJudgment | null;
-    chartConfig: import("@nlq-agent/shared-types").ChartDescriptor | null;
-    reasoningSteps: ReasoningStep[];
-  }>({
-    calculationExplanation: null,
-    gradeJudgment: null,
-    chartConfig: null,
-    reasoningSteps: [],
-  });
+  // Abort controller for stopping generation
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     setRuntimeAuthContext(authContext ?? {});
@@ -181,22 +177,27 @@ export function NlqChatPanel({
     return headers;
   }, [runtimeAuthContext]);
 
+  const stopGeneration = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsLoading(false);
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last && last.role === "assistant" && last.status === "running") {
+        const next = prev.slice();
+        next[prev.length - 1] = { ...last, status: "cancelled" };
+        return next;
+      }
+      return prev;
+    });
+  }, []);
+
   const submitMessage = async (content: string) => {
     const trimmedContent = content.trim();
     if (!trimmedContent || isLoading) return;
 
-    currentMessageDataRef.current = {
-      calculationExplanation: null,
-      gradeJudgment: null,
-      chartConfig: null,
-      reasoningSteps: [],
-    };
-
-    setChartConfig(null);
-    setToolCalls([]);
-    setCalculationExplanation(null);
-    setGradeJudgment(null);
-    setReasoningSteps([]);
     setIsLoading(true);
     setInput("");
 
@@ -210,8 +211,21 @@ export function NlqChatPanel({
     setMessages((prev) => [
       ...prev,
       userMessage,
-      { id: assistantMessageId, role: "assistant", content: "" },
+      {
+        id: assistantMessageId,
+        role: "assistant",
+        content: "",
+        reasoningSteps: [],
+        toolCalls: [],
+        chartConfig: null,
+        calculationExplanation: null,
+        gradeJudgment: null,
+        status: "running",
+      },
     ]);
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     try {
       const response = await fetch("/api/chat", {
@@ -220,11 +234,10 @@ export function NlqChatPanel({
         body: JSON.stringify({
           messages: [{ role: "user", content: trimmedContent }],
           session_id: sessionId ?? undefined,
-          // 不再前端选择模型；后端按 .env 的 DEFAULT_MODEL_NAME 兜底。
-          // 留空让 backend resolve_model_name 走默认值。
           model_name: undefined,
           auth_context: runtimeAuthContext,
         }),
+        signal: controller.signal,
       });
 
       if (!response.ok || !response.body) {
@@ -271,26 +284,72 @@ export function NlqChatPanel({
             );
           }
 
-          if (eventData.type === "tool_start" && eventData.tool_name) {
-            const toolName = eventData.tool_name;
-            setToolCalls((prev) => [
-              ...prev,
-              { name: toolName, status: "running" },
-            ]);
+          if (eventData.type === "tool_start" && eventData.tool_input) {
+            const toolInput = eventData.tool_input as Record<string, unknown>;
+            const toolCallId = (toolInput.tool_call_id as string) || `${toolInput.name}-${Date.now()}`;
+            setMessages((prev) =>
+              prev.map((message) => {
+                if (message.id !== assistantMessageId) return message;
+                const existing = message.toolCalls ?? [];
+                return {
+                  ...message,
+                  toolCalls: [
+                    ...existing,
+                    {
+                      id: toolCallId,
+                      name: (toolInput.name as string) || eventData.tool_name || "unknown",
+                      displayName: (toolInput.display_name as string) || (toolInput.name as string) || eventData.tool_name || "unknown",
+                      status: "running" as const,
+                      input: toolInput.input as Record<string, unknown>,
+                      summary: (toolInput.summary as string) || "",
+                    },
+                  ],
+                };
+              }),
+            );
           }
 
-          if (eventData.type === "tool_end" && eventData.tool_name) {
-            setToolCalls((prev) =>
-              prev.map((tool) =>
-                tool.name === eventData.tool_name
-                  ? { ...tool, status: "completed" }
-                  : tool,
-              ),
+          if (eventData.type === "tool_end" && eventData.tool_output) {
+            const toolOutput = eventData.tool_output as Record<string, unknown>;
+            const targetId = (toolOutput.tool_call_id as string) || "";
+            const targetName = eventData.tool_name || "";
+            setMessages((prev) =>
+              prev.map((message) => {
+                if (message.id !== assistantMessageId) return message;
+                const updated = (message.toolCalls ?? []).map((tool) => {
+                  if (targetId && tool.id === targetId) {
+                    return {
+                      ...tool,
+                      status: (toolOutput.status as "completed" | "error") || "completed",
+                      output: toolOutput.output as Record<string, unknown>,
+                      durationMs: toolOutput.duration_ms as number,
+                      summary: (toolOutput.summary as string) || tool.summary,
+                    };
+                  }
+                  if (!targetId && tool.name === targetName && tool.status === "running") {
+                    return {
+                      ...tool,
+                      status: (toolOutput.status as "completed" | "error") || "completed",
+                      output: toolOutput.output as Record<string, unknown>,
+                      durationMs: toolOutput.duration_ms as number,
+                      summary: (toolOutput.summary as string) || tool.summary,
+                    };
+                  }
+                  return tool;
+                });
+                return { ...message, toolCalls: updated };
+              }),
             );
           }
 
           if (eventData.type === "chart" && eventData.chart_spec) {
-            currentMessageDataRef.current.chartConfig = eventData.chart_spec;
+            setMessages((prev) =>
+              prev.map((message) =>
+                message.id === assistantMessageId
+                  ? { ...message, chartConfig: eventData.chart_spec }
+                  : message,
+              ),
+            );
           }
 
           if (
@@ -298,12 +357,12 @@ export function NlqChatPanel({
             eventData.reasoning_step
           ) {
             const incoming = eventData.reasoning_step;
-            currentMessageDataRef.current.reasoningSteps = [
-              ...currentMessageDataRef.current.reasoningSteps,
-              incoming,
-            ];
-            setReasoningSteps(
-              currentMessageDataRef.current.reasoningSteps.slice(),
+            setMessages((prev) =>
+              prev.map((message) => {
+                if (message.id !== assistantMessageId) return message;
+                const steps = message.reasoningSteps ?? [];
+                return { ...message, reasoningSteps: [...steps, incoming] };
+              }),
             );
           }
 
@@ -318,8 +377,6 @@ export function NlqChatPanel({
             if (responsePayload.model_name) {
               setSelectedModel(responsePayload.model_name);
             }
-            // 兜底：如果 backend 没走 text 流（如 first_inspection_rate / 直接拼 markdown 的分支），
-            // 拿 response_payload.response 直接填给当前 assistant 消息。
             if (
               typeof responsePayload.response === "string" &&
               responsePayload.response.length > 0
@@ -328,32 +385,50 @@ export function NlqChatPanel({
                 prev.map((message) => {
                   if (message.id !== assistantMessageId) return message;
                   if (message.content && message.content.length > 0) {
-                    return message; // 已经从 text 流累积，保持原内容
+                    return message;
                   }
                   return { ...message, content: responsePayload.response };
                 }),
               );
             }
             if (responsePayload.calculation_explanation) {
-              currentMessageDataRef.current.calculationExplanation =
-                responsePayload.calculation_explanation;
+              setMessages((prev) =>
+                prev.map((message) =>
+                  message.id === assistantMessageId
+                    ? { ...message, calculationExplanation: responsePayload.calculation_explanation }
+                    : message,
+                ),
+              );
             }
             if (responsePayload.grade_judgment) {
-              currentMessageDataRef.current.gradeJudgment =
-                responsePayload.grade_judgment;
+              setMessages((prev) =>
+                prev.map((message) =>
+                  message.id === assistantMessageId
+                    ? { ...message, gradeJudgment: responsePayload.grade_judgment }
+                    : message,
+                ),
+              );
             }
             if (responsePayload.chart_config) {
-              currentMessageDataRef.current.chartConfig =
-                responsePayload.chart_config;
+              setMessages((prev) =>
+                prev.map((message) =>
+                  message.id === assistantMessageId
+                    ? { ...message, chartConfig: responsePayload.chart_config }
+                    : message,
+                ),
+              );
             }
             if (
               Array.isArray(responsePayload.reasoning_steps) &&
               responsePayload.reasoning_steps.length > 0
             ) {
-              // Server's state-first canonical list overrides any partial
-              // streaming accumulation (e.g. when stream reconnects mid-flight).
-              currentMessageDataRef.current.reasoningSteps =
-                responsePayload.reasoning_steps;
+              setMessages((prev) =>
+                prev.map((message) =>
+                  message.id === assistantMessageId
+                    ? { ...message, reasoningSteps: responsePayload.reasoning_steps }
+                    : message,
+                ),
+              );
             }
           }
 
@@ -363,25 +438,29 @@ export function NlqChatPanel({
         }
       }
 
-      setCalculationExplanation(
-        currentMessageDataRef.current.calculationExplanation,
-      );
-      setGradeJudgment(currentMessageDataRef.current.gradeJudgment);
-      setChartConfig(currentMessageDataRef.current.chartConfig);
-      setReasoningSteps(
-        currentMessageDataRef.current.reasoningSteps.slice(),
+      setMessages((prev) =>
+        prev.map((message) =>
+          message.id === assistantMessageId && message.status === "running"
+            ? { ...message, status: "completed" }
+            : message,
+        ),
       );
     } catch (error) {
+      if ((error as Error).name === "AbortError") {
+        // 用户主动停止，不显示错误
+        return;
+      }
       const message = error instanceof Error ? error.message : "请求失败";
       setMessages((prev) =>
         prev.map((item) =>
           item.id === assistantMessageId
-            ? { ...item, content: `请求失败：${message}` }
+            ? { ...item, content: `请求失败：${message}`, status: "error" }
             : item,
         ),
       );
     } finally {
       setIsLoading(false);
+      abortControllerRef.current = null;
     }
   };
 
@@ -459,23 +538,6 @@ export function NlqChatPanel({
                 Session: {sessionId.slice(0, 8)}
               </div>
             ) : null}
-            {/* 模型选择器已隐藏：模型由后端 .env 的 DEFAULT_MODEL_NAME 决定。
-                如需开启，把下方注释删掉即可恢复。 */}
-            {/* <label className="hidden items-center gap-2 text-sm text-gray-500 sm:flex">
-              <span>模型</span>
-              <select
-                value={selectedModel}
-                onChange={(e) => setSelectedModel(e.target.value)}
-                disabled={isLoading}
-                className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 outline-none focus:border-blue-500"
-              >
-                {MODEL_OPTIONS.map((model) => (
-                  <option key={model.value} value={model.value}>
-                    {model.label}
-                  </option>
-                ))}
-              </select>
-            </label> */}
             {mode === "dock" ? (
               <button
                 onClick={() => setDockOpen(false)}
@@ -525,36 +587,99 @@ export function NlqChatPanel({
                 }`}
               >
                 <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 ${
+                  className={`${
                     message.role === "user"
-                      ? "bg-blue-600 text-white"
-                      : "border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
+                      ? "max-w-[70%] rounded-2xl px-4 py-3 bg-blue-600 text-white"
+                      : "w-full max-w-[90%]"
                   }`}
                 >
                   {message.role === "assistant" ? (
-                    <div className="prose prose-sm max-w-none dark:prose-invert">
-                      <ReactMarkdown>{message.content}</ReactMarkdown>
-
-                      {chartConfig && index === messages.length - 1 ? (
-                        <ChartRenderer chartSpec={chartConfig} />
+                    <div className="space-y-3">
+                      {/* 推理链 */}
+                      {message.reasoningSteps && message.reasoningSteps.length > 0 ? (
+                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-gray-700 dark:bg-gray-800">
+                          <div className="mb-2 flex items-center gap-2">
+                            <span className="h-2 w-2 rounded-full bg-blue-500" />
+                            <span className="text-xs font-medium text-gray-500">
+                              推理过程 · {message.reasoningSteps.length} 步
+                            </span>
+                          </div>
+                          <KgReasoningChain steps={message.reasoningSteps} />
+                        </div>
                       ) : null}
 
-                      {calculationExplanation &&
-                      index === messages.length - 1 ? (
+                      {/* 工具调用 */}
+                      {message.toolCalls && message.toolCalls.length > 0 ? (
+                        <div className="space-y-2">
+                          {message.toolCalls.map((tool) => (
+                            <div
+                              key={tool.id}
+                              className="rounded-lg border bg-white p-3 dark:border-gray-700 dark:bg-gray-800"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`h-2 w-2 rounded-full ${
+                                    tool.status === "running"
+                                      ? "animate-pulse bg-yellow-500"
+                                      : tool.status === "completed"
+                                        ? "bg-green-500"
+                                        : "bg-red-500"
+                                  }`}
+                                />
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  {tool.displayName || tool.name}
+                                </span>
+                                <span
+                                  className={`ml-auto text-xs ${
+                                    tool.status === "running"
+                                      ? "text-yellow-600"
+                                      : tool.status === "completed"
+                                        ? "text-green-600"
+                                        : "text-red-600"
+                                  }`}
+                                >
+                                  {tool.status === "running"
+                                    ? "执行中"
+                                    : tool.status === "completed"
+                                      ? "已完成"
+                                      : "失败"}
+                                </span>
+                                {tool.durationMs ? (
+                                  <span className="text-xs text-gray-400">
+                                    {tool.durationMs}ms
+                                  </span>
+                                ) : null}
+                              </div>
+                              {tool.summary ? (
+                                <p className="mt-1 text-xs text-gray-500">
+                                  {tool.summary}
+                                </p>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+
+                      {/* 最终回答 */}
+                      <div className="prose prose-sm max-w-none rounded-2xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800 dark:prose-invert">
+                        <ReactMarkdown>{message.content}</ReactMarkdown>
+                      </div>
+
+                      {/* 图表 */}
+                      {message.chartConfig ? (
+                        <ChartRenderer chartSpec={message.chartConfig} />
+                      ) : null}
+
+                      {/* 计算解释 */}
+                      {message.calculationExplanation ? (
                         <CalculationExplanationCard
-                          explanation={calculationExplanation}
+                          explanation={message.calculationExplanation}
                         />
                       ) : null}
 
-                      {gradeJudgment &&
-                      index === messages.length - 1 &&
-                      gradeJudgment.available ? (
-                        <GradeJudgmentCard judgment={gradeJudgment} />
-                      ) : null}
-
-                      {reasoningSteps.length > 0 &&
-                      index === messages.length - 1 ? (
-                        <KgReasoningChain steps={reasoningSteps} />
+                      {/* 等级判定 */}
+                      {message.gradeJudgment && message.gradeJudgment.available ? (
+                        <GradeJudgmentCard judgment={message.gradeJudgment} />
                       ) : null}
                     </div>
                   ) : (
@@ -564,46 +689,23 @@ export function NlqChatPanel({
               </div>
             ))}
 
-            {toolCalls.length > 0 && isLoading ? (
-              <div className="mx-auto max-w-3xl">
-                <div className="space-y-2 rounded-lg border bg-white p-3 dark:bg-gray-800">
-                  <p className="text-xs font-medium uppercase text-gray-500">
-                    工具调用
-                  </p>
-                  {toolCalls.map((tool, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center gap-2 text-sm text-gray-600"
-                    >
-                      <span
-                        className={`h-2 w-2 rounded-full ${
-                          tool.status === "running"
-                            ? "bg-yellow-500 animate-pulse"
-                            : tool.status === "completed"
-                              ? "bg-green-500"
-                              : "bg-red-500"
-                        }`}
-                      />
-                      <span>{tool.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            {isLoading && toolCalls.length === 0 ? (
+            {/* 执行中状态 */}
+            {isLoading ? (
               <div className="flex justify-start">
                 <div className="rounded-2xl border bg-white px-4 py-3 dark:bg-gray-800">
-                  <div className="flex gap-1">
-                    <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400" />
-                    <span
-                      className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
-                      style={{ animationDelay: "0.1s" }}
-                    />
-                    <span
-                      className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
-                      style={{ animationDelay: "0.2s" }}
-                    />
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <div className="flex gap-1">
+                      <span className="h-2 w-2 animate-bounce rounded-full bg-gray-400" />
+                      <span
+                        className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
+                        style={{ animationDelay: "0.1s" }}
+                      />
+                      <span
+                        className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
+                        style={{ animationDelay: "0.2s" }}
+                      />
+                    </div>
+                    <span>思考中…</span>
                   </div>
                 </div>
               </div>
@@ -627,16 +729,26 @@ export function NlqChatPanel({
                 className="flex-1 rounded-lg border bg-gray-50 px-4 py-3 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700"
                 disabled={isLoading}
               />
-              <button
-                type="submit"
-                disabled={isLoading || !input.trim()}
-                className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400"
-              >
-                发送
-              </button>
+              {isLoading ? (
+                <button
+                  type="button"
+                  onClick={stopGeneration}
+                  className="rounded-lg bg-red-600 px-6 py-3 font-medium text-white transition-colors hover:bg-red-700"
+                >
+                  停止
+                </button>
+              ) : (
+                <button
+                  type="submit"
+                  disabled={!input.trim()}
+                  className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+                >
+                  发送
+                </button>
+              )}
             </form>
             <p className="mt-2 text-center text-xs text-gray-500">
-              NLQ-Agent QueryAgent MVP
+              NLQ-Agent Agent Conversation Timeline
             </p>
           </div>
         </footer>

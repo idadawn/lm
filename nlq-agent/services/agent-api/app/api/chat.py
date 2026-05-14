@@ -4,6 +4,7 @@
 """
 
 import json
+import time
 import uuid
 from collections.abc import AsyncGenerator
 from typing import Any
@@ -20,6 +21,9 @@ from app.core.config import settings as _app_settings
 
 router = APIRouter()
 _SESSION_CONTEXTS: dict[str, dict[str, Any]] = {}
+
+# 活跃工具调用跟踪：tool_call_id -> {start_time, name, input}
+_ACTIVE_TOOL_CALLS: dict[str, dict[str, Any]] = {}
 
 
 def _default_model_name() -> str:
@@ -48,6 +52,9 @@ async def chat_stream(request: ChatRequest, http_request: Request) -> StreamingR
     session_id = request.session_id or str(uuid.uuid4())
     session_context = _load_session_context(session_id)
     model_name = _resolve_model_name(session_id, request.model_name)
+
+    # 每轮对话的 turn_id，用于把事件绑定到具体 turn
+    turn_id = f"turn_{uuid.uuid4().hex[:12]}"
 
     async def event_generator() -> AsyncGenerator[str, None]:
         """生成 SSE 事件流."""
@@ -108,13 +115,27 @@ async def chat_stream(request: ChatRequest, http_request: Request) -> StreamingR
                 # 处理工具开始调用
                 elif event_type == "on_tool_start":
                     tool_input = event_data.get("input", {})
+                    tool_call_id = f"tool_{uuid.uuid4().hex[:8]}"
+                    tool_name = event_name
+                    # 保存开始时间，用于后续计算 duration
+                    _ACTIVE_TOOL_CALLS[tool_call_id] = {
+                        "start_time": time.time(),
+                        "name": tool_name,
+                        "input": tool_input,
+                    }
                     yield _format_event(
                         StreamEvent(
                             type="tool_start",
-                            tool_name=event_name,
-                            tool_input=tool_input
-                            if isinstance(tool_input, dict)
-                            else {"input": str(tool_input)},
+                            tool_name=tool_name,
+                            tool_input={
+                                "tool_call_id": tool_call_id,
+                                "turn_id": turn_id,
+                                "name": tool_name,
+                                "input": tool_input
+                                if isinstance(tool_input, dict)
+                                else {"input": str(tool_input)},
+                                "summary": _summarize_tool_input(tool_name, tool_input),
+                            },
                         )
                     )
 
@@ -129,17 +150,44 @@ async def chat_stream(request: ChatRequest, http_request: Request) -> StreamingR
                     else:
                         output_dict = {"result": str(tool_output)}
 
+                    # 尝试匹配最近开始的一个同名工具调用
+                    matched_id = None
+                    for tid, tinfo in list(_ACTIVE_TOOL_CALLS.items()):
+                        if tinfo["name"] == event_name:
+                            matched_id = tid
+                            break
+
+                    duration_ms = None
+                    if matched_id:
+                        start_time = _ACTIVE_TOOL_CALLS[matched_id].get("start_time")
+                        if start_time:
+                            duration_ms = int((time.time() - start_time) * 1000)
+                        del _ACTIVE_TOOL_CALLS[matched_id]
+
+                    # 如果没有匹配到，生成一个临时 id
+                    tool_call_id = matched_id or f"tool_{uuid.uuid4().hex[:8]}"
+
                     yield _format_event(
                         StreamEvent(
                             type="tool_end",
                             tool_name=event_name,
-                            tool_output=output_dict,
+                            tool_output={
+                                "tool_call_id": tool_call_id,
+                                "turn_id": turn_id,
+                                "name": event_name,
+                                "output": output_dict,
+                                "duration_ms": duration_ms,
+                                "summary": _summarize_tool_output(event_name, output_dict),
+                                "status": "success",
+                            },
                         )
                     )
 
                 # 处理 LangGraph node 内通过 adispatch_custom_event 推送的推理链步骤
                 elif event_type == "on_custom_event" and event_name == "reasoning_step":
                     payload = event_data if isinstance(event_data, dict) else {}
+                    # 补充 turn_id 到 reasoning_step，便于前端绑定
+                    payload["turn_id"] = turn_id
                     yield _format_event(
                         StreamEvent(
                             type="reasoning_step",
@@ -182,6 +230,7 @@ async def chat_stream(request: ChatRequest, http_request: Request) -> StreamingR
                                     "reasoning_steps": output.get(
                                         "reasoning_steps", []
                                     ),
+                                    "turn_id": turn_id,
                                 },
                             )
                         )
@@ -227,6 +276,41 @@ def _format_event(event: StreamEvent) -> str:
         return "data: [DONE]\n\n"
 
     return f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+
+# --------------------------------------------------------------------------- #
+# Tool call summary helpers
+# --------------------------------------------------------------------------- #
+
+
+def _summarize_tool_input(tool_name: str, tool_input: Any) -> str:
+    """为 tool_start 生成一句话摘要."""
+    if not isinstance(tool_input, dict):
+        return f"正在调用 {tool_name}..."
+    if tool_name == "traverse_judgment_path":
+        furnace = tool_input.get("furnace_no", "")
+        grade = tool_input.get("target_grade", "")
+        return f"正在查询炉号 {furnace} 的 {grade} 级判定根因..."
+    if tool_name in ("execute_safe_sql", "run_sql"):
+        return "正在执行数据查询..."
+    if tool_name == "query_knowledge_graph":
+        return "正在查询知识图谱..."
+    return f"正在调用 {tool_name}..."
+
+
+def _summarize_tool_output(tool_name: str, tool_output: dict[str, Any]) -> str:
+    """为 tool_end 生成一句话摘要."""
+    if tool_name == "traverse_judgment_path":
+        steps = tool_output.get("output", tool_output)
+        if isinstance(steps, list):
+            return f"完成根因分析，共 {len(steps)} 个步骤"
+        return "根因分析完成"
+    if tool_name in ("execute_safe_sql", "run_sql"):
+        result = tool_output.get("output", tool_output)
+        if isinstance(result, list):
+            return f"查询完成，返回 {len(result)} 条记录"
+        return "查询完成"
+    return f"{tool_name} 执行完成"
 
 
 @router.post("/chat")

@@ -1,362 +1,210 @@
 <template>
-  <div class="knowledge-graph-page">
-    <div class="kg-toolbar">
-      <a-space>
-        <a-button type="primary" :loading="resyncing" @click="handleResync">
-          <template #icon><ReloadOutlined /></template>
-          全量重建
+  <div class="kg-page">
+    <KgToolbar
+      :loading="loading"
+      :resyncing="resyncing"
+      :search-text="searchText"
+      :view-mode="viewMode"
+      @refresh="loadData"
+      @resync="handleResync"
+      @search="handleSearch"
+      @update:viewMode="viewMode = $event"
+    />
+
+    <!-- 问答输入栏（浏览模式下显示） -->
+    <div v-if="!questionMode" class="kg-ask-bar">
+      <a-input-search
+        v-model:value="questionInput"
+        placeholder="问一问，例如：为什么炉号 1丙20260110-1 是 C 级？"
+        enter-button="提问"
+        size="large"
+        @search="handleAsk"
+        :disabled="explainLoading"
+      />
+    </div>
+
+    <!-- 问答结果头部 -->
+    <div v-if="questionMode" class="kg-answer-header">
+      <div class="answer-breadcrumb">
+        <a-button type="link" size="small" @click="exitQuestionMode">
+          <ArrowLeftOutlined /> 返回浏览
         </a-button>
-        <a-button :loading="loading" @click="loadOntology">
-          <template #icon><SyncOutlined /></template>
-          刷新
-        </a-button>
-        <a-input-search
-          v-model:value="searchText"
-          placeholder="搜索节点..."
-          style="width: 220px"
-          @search="handleFilter"
-        />
-        <a-radio-group v-model:value="filterType" size="small" @change="handleFilter">
-          <a-radio-button value="all">全部</a-radio-button>
-          <a-radio-button value="spec">规格</a-radio-button>
-          <a-radio-button value="rule">规则</a-radio-button>
-          <a-radio-button value="formula">公式</a-radio-button>
-        </a-radio-group>
-      </a-space>
+        <span class="question-text">{{ currentQuestion }}</span>
+      </div>
+      <div v-if="explainLoading" class="answer-loading">
+        <a-spin size="small" /> 正在分析...
+      </div>
     </div>
 
     <div class="kg-main">
-      <div class="kg-canvas-wrap" ref="canvasRef">
-        <div class="kg-loading" v-if="loading">
-          <a-spin tip="加载本体数据..." />
-        </div>
-      </div>
+      <!-- ====== 浏览模式 ====== -->
+      <template v-if="!questionMode">
+        <SpecGrid
+          v-if="viewMode === 'grid' && !loading"
+          :specs="specCards"
+          @select="enterSpecView"
+          @viewAll="viewMode = 'graph'"
+        />
 
-      <transition name="slide">
-        <div class="kg-detail" v-if="detail">
-          <div class="detail-head">
-            <span class="detail-title">{{ detail.label }}</span>
-            <a-tag :color="detail.color">{{ detail.typeLabel }}</a-tag>
-            <a-button type="text" size="small" @click="detail = null" style="margin-left: auto">
-              <template #icon><CloseOutlined /></template>
-            </a-button>
-          </div>
-          <a-divider style="margin: 8px 0" />
+        <KgCanvas
+          v-else-if="viewMode === 'graph'"
+          :data="graphData"
+          :loading="loading"
+          :empty="!ontology"
+          :highlight-node-ids="highlightNodeIds"
+          :highlight-edge-ids="highlightEdgeIds"
+          @nodeClick="handleNodeClick"
+          @comboClick="handleComboClick"
+          @canvasClick="panel = null"
+        />
 
-          <!-- 规格详情 -->
-          <template v-if="detail.type === 'spec'">
-            <div class="detail-row"><strong>代码:</strong> {{ detail.raw.code }}</div>
-            <div class="detail-row"><strong>名称:</strong> {{ detail.raw.name }}</div>
-            <div class="detail-row" v-if="detail.raw.description">
-              <strong>描述:</strong> {{ detail.raw.description }}
-            </div>
-            <div class="detail-section">
-              <strong>属性 ({{ detail.raw.attributes?.length || 0 }})</strong>
-              <div class="attr-list">
-                <div class="attr-item" v-for="attr in (detail.raw.attributes || [])" :key="attr.key">
-                  <span class="attr-name">{{ attr.name }}</span>
-                  <span class="attr-val">{{ attr.value }} {{ attr.unit }}</span>
-                </div>
-              </div>
-            </div>
-          </template>
+        <KgDetailPanel
+          :panel="panel"
+          @close="panel = null"
+          @back="backToCombo"
+          @selectRule="showRuleDetail"
+          @action="handlePanelAction"
+        />
+      </template>
 
-          <!-- 规则详情 -->
-          <template v-if="detail.type === 'rule'">
-            <div class="detail-row"><strong>等级:</strong> {{ detail.raw.name }}</div>
-            <div class="detail-row"><strong>代码:</strong> {{ detail.raw.code }}</div>
-            <div class="detail-row">
-              <strong>质量状态:</strong>
-              <a-tag :color="detail.raw.quality_status === '合格' ? 'success' : detail.raw.quality_status === '不合格' ? 'error' : 'default'">
-                {{ detail.raw.quality_status }}
-              </a-tag>
-            </div>
-            <div class="detail-row"><strong>优先级:</strong> {{ detail.raw.priority }}</div>
-            <div class="detail-row" v-if="detail.raw.product_spec_name">
-              <strong>产品规格:</strong> {{ detail.raw.product_spec_name }}
-            </div>
-            <div class="detail-row" v-if="detail.raw.formula_name">
-              <strong>所属公式:</strong> {{ detail.raw.formula_name }}
-            </div>
-            <div class="detail-row" v-if="detail.raw.description">
-              <strong>说明:</strong> {{ detail.raw.description }}
-            </div>
-          </template>
+      <!-- ====== 问答模式：三栏布局 ====== -->
+      <template v-else>
+        <KgReasoningPanel
+          :steps="reasoningSteps"
+          :active-step-id="activeStepId"
+          @selectStep="handleStepSelect"
+          @highlightNode="handleHighlightNode"
+        />
 
-          <!-- 公式详情 -->
-          <template v-if="detail.type === 'formula'">
-            <div class="detail-row"><strong>名称:</strong> {{ detail.raw.formula_name }}</div>
-            <div class="detail-row"><strong>类型:</strong>
-              <a-tag>{{ detail.raw.formula_type === 'CALC' ? '计算公式' : detail.raw.formula_type === 'JUDGE' ? '判定公式' : detail.raw.formula_type }}</a-tag>
-            </div>
-            <div class="detail-row"><strong>列名:</strong> {{ detail.raw.column_name }}</div>
-            <div class="detail-row"><strong>单位:</strong> {{ detail.raw.unit_name || '-' }}</div>
-            <div class="detail-section" v-if="detail.raw.formula">
-              <strong>公式</strong>
-              <pre class="detail-code">{{ detail.raw.formula }}</pre>
-            </div>
-            <div class="detail-section">
-              <strong>关联规则 ({{ detail.ruleCount || 0 }})</strong>
-            </div>
-          </template>
-        </div>
-      </transition>
+        <KgCanvas
+          :data="graphData"
+          :loading="explainLoading"
+          :empty="false"
+          :highlight-node-ids="highlightNodeIds"
+          :highlight-edge-ids="highlightEdgeIds"
+          @nodeClick="handleNodeClick"
+          @comboClick="handleComboClick"
+          @canvasClick="panel = null"
+        />
+
+        <KgEvidencePanel
+          :answer="explainAnswer"
+          :answer-card="explainAnswerCard"
+          :evidence-table="explainEvidenceTable"
+          :suggested-actions="explainSuggestedActions"
+          @action="handleSuggestedAction"
+        />
+      </template>
     </div>
 
-    <div class="kg-legend">
-      <span class="legend-item"><span class="legend-dot" style="background:#1890ff"></span> 产品规格</span>
-      <span class="legend-item"><span class="legend-dot" style="background:#52c41a"></span> 判定规则 (合格)</span>
-      <span class="legend-item"><span class="legend-dot" style="background:#ff4d4f"></span> 判定规则 (不合格)</span>
-      <span class="legend-item"><span class="legend-dot" style="background:#722ed1"></span> 指标公式</span>
-      <span class="legend-item"><span class="legend-dot" style="background:#13c2c2"></span> 规格属性</span>
+    <div class="kg-legend" v-if="!questionMode">
+      <span class="leg"><i class="leg-dot" style="background:#2563EB"></i> 产品规格</span>
+      <span class="leg"><i class="leg-dot" style="background:#F97316"></i> 规则组</span>
+      <span class="leg"><i class="leg-dot" style="background:#7C3AED"></i> 指标公式</span>
+      <span class="leg"><i style="display:inline-block;width:24px;height:2px;background:#94A3B8;vertical-align:middle"></i> 关联关系</span>
+      <span class="leg" style="margin-left:auto;color:#999">点击节点查看详情 | 搜索定位子图 | 拖拽/缩放画布</span>
     </div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { message } from 'ant-design-vue';
-import { ReloadOutlined, SyncOutlined, CloseOutlined } from '@ant-design/icons-vue';
-import G6, { IGraph, IG6GraphEvent } from '@antv/g6';
+import { ArrowLeftOutlined } from '@ant-design/icons-vue';
 import {
   getOntology,
   resyncNow,
-  type OntologyData,
-  type OntologySpec,
-  type OntologyRule,
-  type OntologyFormula,
+  explainQuestion,
+  type ExplainResponse,
 } from '/@/api/lab/knowledgeGraph';
 
-interface DetailInfo {
-  id: string;
-  label: string;
-  type: 'spec' | 'rule' | 'formula' | 'attribute';
-  typeLabel: string;
-  color: string;
-  raw: any;
-  ruleCount?: number;
-}
+import KgToolbar from './components/KgToolbar.vue';
+import KgCanvas from './components/KgCanvas.vue';
+import KgDetailPanel from './components/KgDetailPanel.vue';
+import SpecGrid from './components/SpecGrid.vue';
+import KgReasoningPanel from './components/KgReasoningPanel.vue';
+import KgEvidencePanel from './components/KgEvidencePanel.vue';
 
-const canvasRef = ref<HTMLElement | null>(null);
+import { useGraphData } from './composables/useGraphData';
+import type { PanelData, ViewMode, ReasoningStep, OntologyRef, EdgeRef } from './types/ontology';
+import type { OntologyRule } from './types/ontology';
+
+// ── Browse Mode State ──────────────────────────────────
+
 const loading = ref(false);
 const resyncing = ref(false);
 const searchText = ref('');
-const filterType = ref('all');
-const detail = ref<DetailInfo | null>(null);
+const viewMode = ref<ViewMode>('grid');
+const panel = ref<PanelData | null>(null);
+const selectedRuleId = ref('');
 
-let graph: IGraph | null = null;
-let ontologyData: OntologyData | null = null;
+const {
+  setData,
+  buildGraphData,
+  indexes,
+} = useGraphData();
 
-function buildNodes(data: OntologyData, filter: string, search: string) {
-  const nodes: any[] = [];
-  const edges: any[] = [];
+const ontology = ref<import('/@/api/lab/knowledgeGraph').OntologyData | null>(null);
 
-  const searchLower = search.toLowerCase();
-  const matchSearch = (text: string) => !searchLower || text.toLowerCase().includes(searchLower);
+// ── Question Mode State ────────────────────────────────
 
-  // --- Product Spec nodes ---
-  for (const spec of data.specs) {
-    if (filter !== 'all' && filter !== 'spec') continue;
-    if (searchLower && !matchSearch(spec.name) && !matchSearch(spec.code)) continue;
+const questionMode = ref(false);
+const questionInput = ref('');
+const currentQuestion = ref('');
+const explainLoading = ref(false);
+const explainAnswer = ref('');
+const explainAnswerCard = ref<Record<string, unknown> | null>(null);
+const reasoningSteps = ref<ReasoningStep[]>([]);
+const explainEvidenceTable = ref<Array<Record<string, unknown>>>([]);
+const explainSuggestedActions = ref<Array<{ label: string; action: string; params?: Record<string, unknown> }>>([]);
+const activeStepId = ref('');
 
-    nodes.push({
-      id: `spec:${spec.id}`,
-      label: spec.name || spec.code,
-      nodeType: 'spec',
-      type: 'rect',
-      size: [120, 40],
-      style: {
-        fill: '#e6f7ff',
-        stroke: '#1890ff',
-        lineWidth: 2,
-        radius: 6,
-      },
-      labelCfg: { style: { fill: '#1890ff', fontSize: 12, fontWeight: 600 } },
-      rawData: spec,
-    });
+// ── Highlight State ────────────────────────────────────
 
-    // Attribute nodes
-    for (const attr of spec.attributes || []) {
-      if (searchLower && !matchSearch(attr.name) && !matchSearch(attr.value)) continue;
-      const attrId = `attr:${spec.id}:${attr.key}`;
-      nodes.push({
-        id: attrId,
-        label: `${attr.name}: ${attr.value}${attr.unit ? ' ' + attr.unit : ''}`,
-        nodeType: 'attribute',
-        type: 'rect',
-        size: [100, 24],
-        style: {
-          fill: '#e6fffb',
-          stroke: '#13c2c2',
-          lineWidth: 1,
-          radius: 4,
-        },
-        labelCfg: { style: { fill: '#13c2c2', fontSize: 10 } },
-      });
-      edges.push({
-        source: `spec:${spec.id}`,
-        target: attrId,
-        label: '属性',
-        style: { stroke: '#b5f5ec', lineWidth: 1, lineDash: [4, 2] },
-        labelCfg: { style: { fill: '#999', fontSize: 8 } },
-      });
-    }
-  }
+const highlightNodeIds = ref<string[]>([]);
+const highlightEdgeIds = ref<string[]>([]);
 
-  // --- Formula nodes ---
-  for (const f of data.formulas) {
-    if (filter !== 'all' && filter !== 'formula') continue;
-    if (searchLower && !matchSearch(f.formula_name) && !matchSearch(f.column_name)) continue;
+// ── Computed ───────────────────────────────────────────
 
-    nodes.push({
-      id: `formula:${f.id}`,
-      label: f.formula_name || f.column_name,
-      nodeType: 'formula',
-      type: 'diamond',
-      size: [80, 50],
-      style: {
-        fill: '#f9f0ff',
-        stroke: '#722ed1',
-        lineWidth: 2,
-      },
-      labelCfg: { style: { fill: '#722ed1', fontSize: 11 } },
-      rawData: f,
-    });
-  }
-
-  // --- Rule nodes ---
-  const specIds = new Set(data.specs.map((s) => s.id));
-  for (const r of data.rules) {
-    if (filter !== 'all' && filter !== 'rule') continue;
-    if (searchLower && !matchSearch(r.name) && !matchSearch(r.code) && !matchSearch(r.quality_status)) continue;
-
-    const isQualified = r.quality_status === '合格';
-    const fillColor = isQualified ? '#f6ffed' : '#fff2f0';
-    const strokeColor = isQualified ? '#52c41a' : '#ff4d4f';
-
-    nodes.push({
-      id: `rule:${r.id}`,
-      label: r.name || r.code,
-      nodeType: 'rule',
-      type: 'circle',
-      size: 28,
-      style: { fill: fillColor, stroke: strokeColor, lineWidth: 2 },
-      labelCfg: { style: { fill: strokeColor, fontSize: 10 } },
-      rawData: r,
-    });
-
-    // Rule → Spec edge
-    if (r.product_spec_id && specIds.has(r.product_spec_id)) {
-      edges.push({
-        source: `rule:${r.id}`,
-        target: `spec:${r.product_spec_id}`,
-        style: { stroke: '#91d5ff', lineWidth: 1 },
-      });
-    }
-
-    // Rule → Formula edge
-    if (r.formula_id) {
-      edges.push({
-        source: `rule:${r.id}`,
-        target: `formula:${r.formula_id}`,
-        label: '判定依据',
-        style: { stroke: '#d3adf7', lineWidth: 1, endArrow: true },
-        labelCfg: { style: { fill: '#999', fontSize: 8 } },
-      });
-    }
-  }
-
-  return { nodes, edges };
-}
-
-function initGraph() {
-  if (!canvasRef.value) return;
-  const container = canvasRef.value;
-
-  graph = new G6.Graph({
-    container,
-    width: container.offsetWidth,
-    height: container.offsetHeight,
-    fitView: true,
-    fitViewPadding: 30,
-    animate: true,
-    minZoom: 0.3,
-    maxZoom: 3,
-    modes: {
-      default: ['drag-canvas', 'zoom-canvas', 'drag-node'],
-    },
-    layout: {
-      type: 'gForce',
-      preventOverlap: true,
-      nodeSize: 40,
-      linkDistance: 100,
-      nodeStrength: -200,
-      edgeStrength: 0.1,
-      gravity: 10,
-    },
-    defaultEdge: {
-      style: { stroke: '#e8e8e8', lineWidth: 1 },
-    },
-  });
-
-  graph.on('node:click', (evt: IG6GraphEvent) => {
-    const model = evt.item?.getModel();
-    if (!model) return;
-    const raw = model.rawData;
-    if (!raw) { detail.value = null; return; }
-
-    const typeMap: Record<string, { type: DetailInfo['type']; label: string; color: string }> = {
-      spec: { type: 'spec', label: '产品规格', color: '#1890ff' },
-      rule: { type: 'rule', label: '判定规则', color: raw.quality_status === '合格' ? '#52c41a' : '#ff4d4f' },
-      formula: { type: 'formula', label: '指标公式', color: '#722ed1' },
-      attribute: { type: 'attribute', label: '属性', color: '#13c2c2' },
-    };
-    const info = typeMap[model.nodeType as string];
-    if (!info) return;
-
-    const ruleCount = model.nodeType === 'formula' && ontologyData
-      ? ontologyData.rules.filter((r) => r.formula_id === raw.id).length
-      : undefined;
-
-    detail.value = {
-      id: model.id as string,
-      label: (model.label as string) || '',
-      type: info.type,
-      typeLabel: info.label,
-      color: info.color,
-      raw,
-      ruleCount,
+const specCards = computed(() => {
+  if (!ontology.value) return [];
+  const { rulesBySpec } = indexes.value;
+  return ontology.value.specs.map((spec) => {
+    const rules = rulesBySpec[spec.id] || [];
+    const formulaIds = new Set(rules.map((r) => r.formula_id).filter(Boolean));
+    const qualifiedCount = rules.filter((r) => r.quality_status === '合格').length;
+    const unqualifiedCount = rules.filter((r) => r.quality_status !== '合格').length;
+    return {
+      ...spec,
+      ruleCount: rules.length,
+      formulaCount: formulaIds.size,
+      qualifiedCount,
+      unqualifiedCount,
     };
   });
+});
 
-  graph.on('canvas:click', () => { detail.value = null; });
-}
+const graphData = computed(() => {
+  if (!ontology.value) return { nodes: [], edges: [], combos: [] };
+  if (searchText.value) {
+    return buildGraphData(searchText.value);
+  }
+  return buildGraphData();
+});
 
-function renderGraph() {
-  if (!graph || !ontologyData) return;
-  const { nodes, edges } = buildNodes(ontologyData, filterType.value, searchText.value);
-  graph.data({ nodes, edges });
-  graph.render();
-}
+// ── Data loading ───────────────────────────────────────
 
-async function loadOntology() {
+async function loadData() {
   loading.value = true;
   try {
-    ontologyData = await getOntology();
-    if (!graph) {
-      await nextTick();
-      initGraph();
-    }
-    renderGraph();
+    const data = await getOntology();
+    ontology.value = data;
+    setData(data);
   } catch (e: unknown) {
-    message.error('加载本体数据失败: ' + (e instanceof Error ? e.message : String(e)));
+    message.error('加载失败: ' + (e instanceof Error ? e.message : String(e)));
   } finally {
     loading.value = false;
   }
-}
-
-function handleFilter() {
-  renderGraph();
 }
 
 async function handleResync() {
@@ -364,7 +212,7 @@ async function handleResync() {
   try {
     const result = await resyncNow();
     message.success(`重建完成！规则: ${result.rules}, 规格: ${result.specs}`);
-    await loadOntology();
+    await loadData();
   } catch (e: unknown) {
     message.error('重建失败: ' + (e instanceof Error ? e.message : String(e)));
   } finally {
@@ -372,35 +220,267 @@ async function handleResync() {
   }
 }
 
-function handleResize() {
-  if (!graph || !canvasRef.value) return;
-  graph.changeSize(canvasRef.value.offsetWidth, canvasRef.value.offsetHeight);
+// ── Browse Mode Handlers ───────────────────────────────
+
+function enterSpecView(specId: string) {
+  viewMode.value = 'graph';
 }
 
-onMounted(() => {
-  loadOntology();
-  window.addEventListener('resize', handleResize);
-});
+function handleSearch(value: string) {
+  searchText.value = value;
+  if (value && viewMode.value === 'grid') {
+    viewMode.value = 'graph';
+  }
+}
 
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', handleResize);
-  if (graph) { graph.destroy(); graph = null; }
+// ── Question Mode Handlers ─────────────────────────────
+
+async function handleAsk(question: string) {
+  const q = question.trim();
+  if (!q) return;
+
+  currentQuestion.value = q;
+  questionMode.value = true;
+  explainLoading.value = true;
+  explainAnswer.value = '';
+  explainAnswerCard.value = null;
+  reasoningSteps.value = [];
+  explainEvidenceTable.value = [];
+  explainSuggestedActions.value = [];
+  highlightNodeIds.value = [];
+  highlightEdgeIds.value = [];
+  activeStepId.value = '';
+
+  try {
+    const result: ExplainResponse = await explainQuestion({ question: q });
+
+    explainAnswer.value = result.answer || '';
+    explainAnswerCard.value = result.answer_card || null;
+    reasoningSteps.value = result.reasoning_steps || [];
+    explainEvidenceTable.value = result.evidence_table || [];
+    explainSuggestedActions.value = result.suggested_actions || [];
+
+    // 从 reasoning_steps 提取高亮节点和边
+    const nodeIds = new Set<string>();
+    const edgeIds = new Set<string>();
+
+    for (const step of result.reasoning_steps || []) {
+      for (const ref of step.ontologyRefs || []) {
+        nodeIds.add(ref.id);
+      }
+      for (const er of step.edgeRefs || []) {
+        edgeIds.add(`${er.source}-${er.relation}-${er.target}`);
+      }
+    }
+
+    highlightNodeIds.value = Array.from(nodeIds);
+    highlightEdgeIds.value = Array.from(edgeIds);
+
+    // 自动切换到图谱视图以便高亮
+    if (viewMode.value === 'grid') {
+      viewMode.value = 'graph';
+    }
+  } catch (e: unknown) {
+    message.error('问答失败: ' + (e instanceof Error ? e.message : String(e)));
+  } finally {
+    explainLoading.value = false;
+  }
+}
+
+function exitQuestionMode() {
+  questionMode.value = false;
+  currentQuestion.value = '';
+  questionInput.value = '';
+  reasoningSteps.value = [];
+  explainEvidenceTable.value = [];
+  highlightNodeIds.value = [];
+  highlightEdgeIds.value = [];
+  activeStepId.value = '';
+}
+
+function handleStepSelect(step: ReasoningStep) {
+  activeStepId.value = step.id;
+
+  // 高亮该步骤关联的节点和边
+  const nodeIds = new Set<string>();
+  const edgeIds = new Set<string>();
+
+  for (const ref of step.ontologyRefs || []) {
+    nodeIds.add(ref.id);
+  }
+  for (const er of step.edgeRefs || []) {
+    edgeIds.add(`${er.source}-${er.relation}-${er.target}`);
+  }
+
+  highlightNodeIds.value = Array.from(nodeIds);
+  highlightEdgeIds.value = Array.from(edgeIds);
+}
+
+function handleHighlightNode(nodeId: string) {
+  highlightNodeIds.value = [nodeId];
+  highlightEdgeIds.value = [];
+}
+
+function handleSuggestedAction(action: { label: string; action: string; params?: Record<string, unknown> }) {
+  message.info(`动作「${action.label}」待实现`);
+}
+
+// ── Panel handlers ─────────────────────────────────────
+
+function handleNodeClick(model: any) {
+  if (model.dataType === 'spec') {
+    panel.value = {
+      type: 'spec',
+      typeLabel: '产品规格',
+      label: model.rawData?.name || model.rawData?.code,
+      color: '#2563EB',
+      raw: model.rawData,
+      ruleCount: model.ruleCount,
+      formulaCount: model.formulaCount,
+    };
+  } else if (model.dataType === 'rule') {
+    selectedRuleId.value = model.rawData?.id || '';
+    const specName = model.rawData?.product_spec_name || '通用';
+    const specId = model.rawData?.product_spec_id;
+    const status = model.rawData?.quality_status;
+    const comboRules = (specId && indexes.value.rulesBySpec[specId])
+      ? indexes.value.rulesBySpec[specId].filter((r) => r.quality_status === status)
+      : [];
+    panel.value = {
+      type: 'rule',
+      typeLabel: '判定规则',
+      label: model.rawData?.name || '',
+      color: status === '合格' ? '#16A34A' : '#DC2626',
+      raw: model.rawData,
+      specName,
+      qualityStatus: status,
+      rules: comboRules,
+    };
+  } else if (model.dataType === 'formula') {
+    const fId = model.rawData?.id;
+    const linkedRules = fId ? (indexes.value.rulesByFormula[fId] || []) : [];
+    panel.value = {
+      type: 'formula',
+      typeLabel: '指标公式',
+      label: model.rawData?.formula_name || '',
+      color: '#7C3AED',
+      raw: model.rawData,
+      ruleCount: linkedRules.length,
+      linkedRules,
+    };
+  }
+}
+
+function handleComboClick(model: any) {
+  panel.value = {
+    type: 'ruleCombo',
+    typeLabel: '规则组',
+    label: `${model.specName} · ${model.qualityStatus}`,
+    color: model.qualityStatus === '合格' ? '#16A34A' : '#DC2626',
+    raw: null,
+    specName: model.specName,
+    qualityStatus: model.qualityStatus,
+    rules: model.rules || [],
+  };
+}
+
+function showRuleDetail(r: OntologyRule) {
+  selectedRuleId.value = r.id;
+  panel.value = {
+    type: 'rule',
+    typeLabel: '判定规则',
+    label: r.name,
+    color: r.quality_status === '合格' ? '#16A34A' : '#DC2626',
+    raw: r,
+    specName: r.product_spec_name,
+    qualityStatus: r.quality_status,
+    rules: (indexes.value.rulesBySpec[r.product_spec_id || ''] || []).filter(
+      (x) => x.quality_status === r.quality_status
+    ),
+  };
+}
+
+function backToCombo() {
+  if (!panel.value || panel.value.type !== 'rule') return;
+  const r = panel.value.raw as OntologyRule;
+  const specName = r.product_spec_name || '通用';
+  const status = r.quality_status;
+  const comboRules = (indexes.value.rulesBySpec[r.product_spec_id || ''] || []).filter(
+    (x) => x.quality_status === status
+  );
+  panel.value = {
+    type: 'ruleCombo',
+    typeLabel: '规则组',
+    label: `${specName} · ${status}`,
+    color: status === '合格' ? '#16A34A' : '#DC2626',
+    raw: null,
+    specName,
+    qualityStatus: status,
+    rules: comboRules,
+  };
+}
+
+function handlePanelAction(payload: Record<string, unknown>) {
+  const actionType = payload.type as string;
+  if (actionType === 'explore') {
+    viewMode.value = 'graph';
+    message.info('已在图谱中定位');
+  } else if (actionType === 'records') {
+    message.info('跳转检测记录（待实现）');
+  }
+}
+
+// ── Lifecycle ──────────────────────────────────────────
+
+onMounted(() => {
+  loadData();
 });
 </script>
 
 <style lang="less" scoped>
-.knowledge-graph-page {
+.kg-page {
   height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: #fff;
 }
 
-.kg-toolbar {
-  padding: 10px 16px;
-  background: #fff;
-  border-bottom: 1px solid #f0f0f0;
+.kg-ask-bar {
+  padding: 12px 16px;
+  border-bottom: 1px solid #F1F5F9;
+  background: #FAFBFC;
   flex-shrink: 0;
+}
+
+.kg-answer-header {
+  padding: 10px 16px;
+  border-bottom: 1px solid #F1F5F9;
+  background: #FAFBFC;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.answer-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.question-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1E293B;
+}
+
+.answer-loading {
+  font-size: 13px;
+  color: #64748B;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .kg-main {
@@ -409,135 +489,26 @@ onBeforeUnmount(() => {
   overflow: hidden;
 }
 
-.kg-canvas-wrap {
-  flex: 1;
-  background: linear-gradient(135deg, #f5f7fa 0%, #f0f2f5 100%);
-  position: relative;
-}
-
-.kg-loading {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 10;
-}
-
-.kg-detail {
-  width: 340px;
-  background: #fff;
-  border-left: 1px solid #f0f0f0;
-  padding: 16px;
-  overflow-y: auto;
-  flex-shrink: 0;
-}
-
-.detail-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.detail-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #333;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.detail-row {
-  font-size: 13px;
-  color: #555;
-  margin-bottom: 6px;
-  line-height: 1.6;
-}
-
-.detail-section {
-  margin-top: 12px;
-
-  strong {
-    display: block;
-    margin-bottom: 6px;
-    font-size: 13px;
-    color: #333;
-  }
-}
-
-.detail-code {
-  background: #f5f5f5;
-  border-radius: 6px;
-  padding: 10px;
-  font-size: 12px;
-  font-family: 'SFMono-Regular', Consolas, monospace;
-  color: #333;
-  white-space: pre-wrap;
-  word-break: break-all;
-  max-height: 200px;
-  overflow-y: auto;
-  margin: 0;
-}
-
-.attr-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.attr-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: #fafafa;
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 12px;
-}
-
-.attr-name {
-  color: #666;
-}
-
-.attr-val {
-  color: #333;
-  font-weight: 500;
-}
-
 .kg-legend {
   padding: 6px 16px;
-  background: #fff;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid #F1F5F9;
   display: flex;
   gap: 16px;
   flex-shrink: 0;
+  font-size: 12px;
+  color: #94A3B8;
 }
 
-.legend-item {
-  font-size: 12px;
-  color: #888;
+.leg {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
-.legend-dot {
+.leg-dot {
   width: 10px;
   height: 10px;
-  border-radius: 50%;
+  border-radius: 3px;
   display: inline-block;
-}
-
-.slide-enter-active,
-.slide-leave-active {
-  transition: transform 0.25s ease, opacity 0.25s ease;
-}
-.slide-enter-from {
-  transform: translateX(100%);
-  opacity: 0;
-}
-.slide-leave-to {
-  transform: translateX(100%);
-  opacity: 0;
 }
 </style>

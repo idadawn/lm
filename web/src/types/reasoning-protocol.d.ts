@@ -1,4 +1,4 @@
-// upstream-sha: 50a305743d29f7d774f9b4c0a3b3faf91396bf25debbf28890adf5df2d9c7913
+// upstream-sha: 49d11d2205d55a4b97adffa7d316bd81b8bec04933302965ede39fbbbbfc55f0
 //
 // 自动同步自 nlq-agent/packages/shared-types/src/reasoning-protocol.ts。
 // 修改请同步上游并通过 `pwsh scripts/check-reasoning-protocol-sync.ps1` 验证。

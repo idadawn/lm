@@ -115,6 +115,7 @@
     "print-js": "^1.6.0",
     "qrcode": "^1.5.3",
     "qs": "^6.11.2",
+    "relation-graph-vue3": "^2.2.11",
     "resize-observer-polyfill": "^1.5.1",
     "showdown": "^2.1.0",
     "sortablejs": "^1.15.0",

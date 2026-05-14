@@ -14,7 +14,7 @@
 ## For AI Agents
 
 ### Working in this directory
-- 这是 reasoning-protocol 的唯一真相源；修改后必须同步 `web/src/types/reasoning-protocol.d.ts` 和 `nlq-agent/src/models/schemas.py`。
+- 这是 reasoning-protocol 的唯一真相源；修改后必须同步 `web/src/types/reasoning-protocol.d.ts` 和 `nlq-agent/services/agent-api/app/models/schemas.py`。
 - `condition` 类型的步骤具有 `expected` / `actual` / `satisfied` 字段——Stage 1 仅填 `expected`，Stage 2 查询后回填 `actual`/`satisfied`。
 - `meta` 字段是任意键值对（`Record<string, unknown>`），用于扩展元数据（如 score、source）；优先在该字段扩展，避免顶层字段膨胀。
 
@@ -24,7 +24,7 @@
 
 ## Dependencies
 ### Internal
-- 同步目标：`web/src/types/reasoning-protocol.d.ts`、`nlq-agent/src/models/schemas.py`
-- 校验脚本：`scripts/check-reasoning-protocol-sync.ps1`
+- 同步目标：`web/src/types/reasoning-protocol.d.ts`、`nlq-agent/services/agent-api/app/models/schemas.py`
+- 校验脚本：待迁移到 `services/agent-api/tests` 或仓库级工具目录；旧脚本若需要参考，可在 `legacy/two-stage-service/scripts` 中查找。
 
 <!-- MANUAL: Add manual notes below this line; they are preserved on regeneration -->

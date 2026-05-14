@@ -4,7 +4,7 @@
 # docs
 
 ## Purpose
-项目长期文档。`PRD.md` / `TDD.md` 是产品需求与技术设计的全量来源；`changes/` 是逐功能的实施提案（"开发前必读"）；`KNOWLEDGE_GRAPH.md` / `knowledge-graph.md` 描述 Neo4j 节点/关系 schema。
+项目长期文档。`PRD.md` / `TDD.md` 是产品需求与技术设计的全量来源；`changes/` 是逐功能的实施提案（"开发前必读"）；`kg-validation-guide.md` 与 `kg-neo4j-design.md` 分别描述知识图谱验证流程和 Neo4j 节点/关系 schema。
 
 ## Key Files
 
@@ -12,8 +12,8 @@
 |------|-------------|
 | `PRD.md` | 产品需求文档：业务目标、用户故事、四类问题（查询/归因/洞察/假设）、验收标准 |
 | `TDD.md` | 技术设计：完整目录结构、API 设计、Agent 状态机、SQL 安全策略、SSE 协议 |
-| `KNOWLEDGE_GRAPH.md` | KG 节点/关系/Cypher 示例（顶层版） |
-| `knowledge-graph.md` | KG 详细字段说明（小写 alias，与上方互补） |
+| `kg-validation-guide.md` | 知识图谱接口、前端浏览和验证步骤 |
+| `kg-neo4j-design.md` | KG 节点/关系/Cypher 示例与字段说明 |
 
 ## Subdirectories
 
@@ -28,7 +28,7 @@
 - `changes/` 单文件命名 `NNN-feature.md`（递增编号），完成后状态由 `草稿/评审中/开发中` 改为 `已完成`，不要删文件。
 
 ### Testing Requirements
-- 文档无自动化测试。如改了 KG schema，建议手工跑 `scripts/test_kg_api.py` 验证 Cypher 语句仍可用。
+- 文档无自动化测试。如改了 KG schema，建议在 `services/agent-api` 中运行相关 KG API 测试，并按 `kg-validation-guide.md` 做接口验证。
 
 ### Common Patterns
 - 中文为主、英文术语保留（如 `LangGraph`、`SSE`、`F_FORMULA_ID`），不要翻译。

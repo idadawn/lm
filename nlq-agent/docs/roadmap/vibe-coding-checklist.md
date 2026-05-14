@@ -272,7 +272,7 @@ docs/specs/
 ├── agents.md          # 四类 Agent 的规格说明
 ├── api-contracts.md   # API 接口契约（请求/响应格式）
 ├── data-models.md     # 数据模型（Pydantic Schema）
-├── knowledge-graph.md # 知识图谱结构说明
+├── kg-neo4j-design.md # 知识图谱结构说明
 └── chart-protocol.md  # 通用图表描述协议（JSON Schema）
 ```
 

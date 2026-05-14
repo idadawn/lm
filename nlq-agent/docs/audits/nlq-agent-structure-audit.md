@@ -7,36 +7,36 @@
 
 基于已经迁移到 `docs/architecture/legacy-two-stage-architecture.md`、`docs/development-guide.md` 与 `docs/architecture/langgraph-agent-api-architecture.md` 的三份文档对 `nlq-agent` 目录进行检查后，可以明确判断：**现在目录确实处于“旧两阶段 FastAPI 服务、新 LangGraph Agent 服务、独立 Next.js 前端工作区、共享类型包、历史文档与计划文档并存”的过渡态**。代码并不是完全不可用，但缺少一个清晰的主线入口和废弃边界，因此看起来会非常乱。
 
-目前实际运行主线更偏向 `services/agent-api/app` 下的新服务，它使用 FastAPI + LangGraph，提供 `/api/v1/chat/*`、`/api/v1/kg/*`、健康检查、知识图谱浏览、带材子图、QueryAgent、RootCauseAgent 和 Chat2SQL 等能力。[1] 相比之下，旧版两阶段编排器和旧 FastAPI 路由已经归档到 `legacy/two-stage-service/src`，其历史能力曾经也暴露 `/api/v1/chat/stream`、`/api/v1/sync/*`、`/api/v1/kg/*`，这是本次整理前形成**双后端并存**的主要来源。[2]
+目前实际运行主线更偏向 `services/agent-api/app` 下的新服务，它使用 FastAPI + LangGraph，提供 `/api/v1/chat/*`、`/api/v1/kg/*`、健康检查、知识图谱浏览、带材子图、QueryAgent、RootCauseAgent 和 Chat2SQL 等能力。[1] 相比之下，旧版两阶段编排器和旧 FastAPI 路由已经从主分支删除，其历史能力曾经也暴露 `/api/v1/chat/stream`、`/api/v1/sync/*`、`/api/v1/kg/*`，这是本次整理前形成**双后端并存**的主要来源。[2]
 
 文档中的“知识图谱作为业务语义层，先做 Stage 1 语义/图谱检索，再做 Stage 2 SQL 查询”的思想已经被部分落地，但落地方式已经从早期 `src/pipelines/orchestrator.py` 的两阶段 Pipeline，演进成 `services/agent-api/app/agents/graph.py` 的 LangGraph 多 Agent 路由。[3] 这意味着文档与代码之间存在版本漂移：旧文档描述的是两阶段编排器，新代码实现的是意图分类后路由到 QueryAgent、RootCauseAgent、Chat2SQL 或回退响应的图工作流。
 
 ## 二、目录现状盘点
 
-从整理前的文件数量和入口分布看，`nlq-agent` 不是单一 Python 服务，而是混合了两个 Python 后端栈和一个前端 monorepo 雏形。旧版 `src` 目录包含 29 个 Python 文件，旧测试目录包含 41 个 Python 测试文件；新版 `services/agent-api/app` 包含 31 个 Python 文件，新测试目录包含 13 个测试文件；同时 `apps` 与 `packages` 下还有 Next.js 前端和共享类型包。[4] 本次整理后，旧版 `src` 与旧测试已经统一移动到 `legacy/two-stage-service`。
+从整理前的文件数量和入口分布看，`nlq-agent` 不是单一 Python 服务，而是混合了两个 Python 后端栈和一个前端 monorepo 雏形。旧版 `src` 目录包含 29 个 Python 文件，旧测试目录包含 41 个 Python 测试文件；新版 `services/agent-api/app` 包含 31 个 Python 文件，新测试目录包含 13 个测试文件；同时 `apps` 与 `packages` 下还有 Next.js 前端和共享类型包。[4] 当前整理后，旧版 `src`、旧测试、旧脚本和旧部署资产已经从主分支删除；如需追溯历史实现，应通过 Git 历史查看删除前提交。
 
 | 区域 | 当前角色 | 状态判断 | 主要问题 |
 |---|---|---|---|
-| `nlq-agent/legacy/two-stage-service/src` | 旧版 FastAPI + 两阶段 Pipeline | **已归档，只作历史参考** | 与新服务重复暴露 chat、sync、kg 能力，本次整理后不再作为默认入口。 |
+| 已删除：旧版 `src` 两阶段服务 | 旧版 FastAPI + 两阶段 Pipeline | **已从主分支移除** | 与新服务重复暴露 chat、sync、kg 能力，不再保留运行入口。 |
 | `nlq-agent/services/agent-api/app` | 新版 FastAPI + LangGraph Agent API | **当前最像主服务** | 功能最完整，但仍有 TODO、占位接口和 Neo4j/MySQL 双路径并存。 |
 | `nlq-agent/apps/web` | 独立 Next.js NLQ 前端 | **像实验/独立控制台** | 与仓库根目录既有 `web` Vue 前端并列，集成边界不明确。 |
 | `nlq-agent/packages/shared-types` | 共享 TypeScript 类型 | **结构合理但归属待定** | 如果主前端仍是根目录 `web`，需要决定是否继续保留此 monorepo。 |
-| `nlq-agent/legacy/two-stage-service/tests` 与 `services/agent-api/tests` | 旧/新两套测试 | **旧测试已归档，新测试为主线** | 测试命令、依赖、覆盖对象需要继续收敛。 |
+| `services/agent-api/tests` | 主线测试 | **唯一后端测试入口** | 旧测试已随旧两阶段服务删除，测试命令、依赖、覆盖对象后续围绕主线继续收敛。 |
 | 根目录文档与计划文件 | 架构说明与开发计划 | **文档价值高但版本混杂** | 三份架构文档没有明确“最新版/废弃版”标识。 |
 
 ## 三、文档要求与代码实现对照
 
-三份文档的核心要求可以归纳为：使用知识图谱作为业务语义层，先解释业务语义和规则，再生成或执行数据查询；前端继续接收标准化推理链事件；同时保留与 .NET 后端的数据同步和知识图谱浏览能力。[5] 实际代码已经实现了一部分，但实现路径分为旧实现和新实现两条线。
+三份文档的核心要求可以归纳为：使用知识图谱作为业务语义层，先解释业务语义和规则，再生成或执行数据查询；前端继续接收标准化推理链事件；同时保留与 .NET 后端的数据同步和知识图谱浏览能力。[5] 实际代码已经实现了一部分，当前主分支只保留 `services/agent-api` 新实现主线。
 
 | 文档期望 | 代码位置 | 实现情况 | 审查判断 |
 |---|---|---|---|
-| Stage 1 语义解析与知识图谱检索 | `legacy/two-stage-service/src/pipelines/orchestrator.py`、`services/agent-api/app/agents/graph.py` | 旧版有显式两阶段编排，新版改为 LangGraph 路由 | **部分实现，但架构形态已变化**。 |
-| Stage 2 SQL 生成与执行 | `legacy/two-stage-service/src` 旧 Pipeline、`services/agent-api/app/agents/chat2sql_agent.py` | 新版 Chat2SQL 有 schema_pick、column_pick、sql_draft、validate、execute、summary 六步链路 | **新版实现更接近实际可用 Chat2SQL**。 |
+| Stage 1 语义解析与知识图谱检索 | `services/agent-api/app/agents/graph.py` | 当前采用 LangGraph 路由 | **部分实现，但架构形态已变化**。 |
+| Stage 2 SQL 生成与执行 | `services/agent-api/app/agents/chat2sql_agent.py` | Chat2SQL 有 schema_pick、column_pick、sql_draft、validate、execute、summary 六步链路 | **主线实现更接近实际可用 Chat2SQL**。 |
 | 高频指标查询模板/工具 | `services/agent-api/app/agents/query_agent.py`、`app/tools/query_tools.py` | QueryAgent 直接根据实体调用工具，不完全依赖 LLM function calling | **已有业务查询 MVP**。 |
 | 根因解释 | `services/agent-api/app/agents/root_cause_agent.py`、`app/api/kg.py` | `/kg/explain` 和 Agent 路由均能走根因路径 | **已有 MVP，但接口之间有重复入口**。 |
 | 知识图谱浏览与子图 | `services/agent-api/app/api/kg.py`、`app/tools/graph_tools.py` | `ontology` 直接查 MySQL，`ribbon/subgraph` 查带材子图，部分 Neo4j 查询也存在 | **可用，但 MySQL/Neo4j 双轨需要明确主次**。 |
 | 小美问答 Ask API | `services/agent-api/app/api/kg.py` | `/ask` 返回“正在学习中，暂不支持” | **未完成，占位接口**。 |
-| .NET 同步回调 | `legacy/two-stage-service/src/api/routes.py` | 旧版保留 `/api/v1/sync/rules`、`/api/v1/sync/specs`、`resync-now` | **新服务中未看到等价完整迁移**。 |
+| .NET 同步回调 | 主线服务暂无完整等价实现 | 旧版 `/api/v1/sync/rules`、`/api/v1/sync/specs`、`resync-now` 已随旧服务删除 | **如仍需要同步能力，应在 `services/agent-api/app/api` 重新实现**。 |
 | 前端推理链兼容 | `apps/web`、根目录 `web` | `apps/web` 有独立 Next.js 推理链；根目录 Vue 前端也在使用知识图谱接口 | **前端路线分裂**。 |
 
 ## 四、核心实现完成度判断
@@ -84,11 +84,11 @@
 
 ## 七、建议的整理方向
 
-我建议不要立即大规模删除文件，而是先做一次**主线冻结**：明确 `services/agent-api` 是当前唯一后端主线，`src` 进入 `legacy` 或 `archive`，并在 README 中写清楚“旧两阶段 Pipeline 仅作为参考，不再接新功能”。这样可以避免开发者继续在两个后端之间来回加功能。
+我建议不要立即大规模删除文件，而是先做一次**主线冻结**：明确 `services/agent-api` 是当前唯一后端主线，旧 `src` 已经从主分支删除，并在 README 中明确当前唯一后端入口。这样可以避免开发者继续在两个后端之间来回加功能。
 
 | 优先级 | 建议动作 | 目标效果 | 风险控制 |
 |---|---|---|---|
-| P0 | 确认 `services/agent-api` 为唯一主服务入口 | 统一启动、部署和接口开发位置 | 保留旧目录但改名为 `legacy-src` 或增加弃用说明。 |
+| P0 | 确认 `services/agent-api` 为唯一主服务入口 | 统一启动、部署和接口开发位置 | 已删除旧目录，后续只维护主线服务。 |
 | P0 | 梳理 `/api/v1/sync/*` 是否需要迁移到新服务 | 避免旧服务因为同步接口而无法下线 | 先迁移接口壳，再接 Qdrant/缓存刷新逻辑。 |
 | P0 | 更新 README 和三份文档状态 | 让开发者知道哪份是最新版 | 在旧文档顶部加“历史版本，仅供参考”。 |
 | P1 | 合并测试命令和依赖安装方式 | 实现一条命令验证新主线 | 在 `services/agent-api` 固化 `pytest` 依赖和 test 命令。 |
@@ -99,23 +99,20 @@
 
 ## 八、推荐的目标目录形态
 
-如果目标是尽快让项目看起来清晰，我建议采用“主服务 + 归档旧实现 + 可选控制台”的形态，而不是继续保持现在的混合布局。一个可落地的目标结构如下：
+如果目标是让项目保持清晰，应采用“主服务 + 文档集中 + 可选控制台”的形态，而不是继续保持混合布局。当前落地后的目标结构如下：
 
 ```text
 nlq-agent/
   README.md                         # 唯一入口说明：如何启动、如何测试、主接口在哪里
   docs/
     architecture-current.md          # 当前 LangGraph + KG + Chat2SQL 架构
-    architecture-legacy-stage.md     # 旧两阶段设计归档
+    legacy-two-stage-architecture.md # 历史两阶段设计记录
     dev-guide.md                     # 当前开发指南
   services/
     agent-api/                       # 唯一 Python 主服务
       app/
       tests/
       pyproject.toml
-  legacy/
-    stage-pipeline-src/              # 原 src 归档，只读参考
-    old-tests/                       # 原旧测试归档
   packages/
     shared-types/                    # 若继续维护 Next.js 或跨前端类型，则保留
   apps/
@@ -126,21 +123,21 @@ nlq-agent/
 
 ## 九、建议的下一步执行计划
 
-下一步可以分两步走。第一步是低风险整理，不改变业务逻辑，只增加说明、标记废弃边界、统一启动命令和测试命令。第二步再做代码迁移，把旧 `src/api/routes.py` 中仍有价值的 sync 能力迁到 `services/agent-api/app/api`，然后把旧目录移动到 `legacy`。
+下一步应围绕主线继续收敛：第一步保持 `services/agent-api` 为唯一运行入口，统一启动命令和测试命令；第二步如果仍需要旧同步能力，应在 `services/agent-api/app/api` 重新实现，而不是恢复旧目录。
 
 | 阶段 | 工作内容 | 是否改业务逻辑 | 建议提交粒度 |
 |---|---|---:|---|
 | 第 1 步 | 新增/更新 README，标注当前主线和历史文档状态 | 否 | 1 个提交。 |
 | 第 2 步 | 给旧 `src` 加弃用说明，禁止继续新增功能 | 否 | 1 个提交。 |
 | 第 3 步 | 迁移 `/api/v1/sync/*` 到新服务 | 是 | 1 个提交，附测试。 |
-| 第 4 步 | 将旧 `src` 与旧测试移动到 `legacy` | 否或极低 | 1 个提交，避免与功能修改混在一起。 |
+| 第 4 步 | 删除旧 `src` 与旧测试 | 否或极低 | 1 个提交，避免与功能修改混在一起。 |
 | 第 5 步 | 清理 `/kg/ask` 占位或实现小美问答主链路 | 是 | 单独提交。 |
 | 第 6 步 | 统一前端类型和推理链协议 | 是 | 单独提交。 |
 
 ## References
 
 [1]: nlq-agent/services/agent-api/app/main.py "新版 FastAPI 主入口"
-[2]: ../../legacy/two-stage-service/src/main.py "旧版 FastAPI 主入口" 
+[2]: ../../../README.md "当前 nlq-agent 主入口" 
 [3]: nlq-agent/services/agent-api/app/agents/graph.py "新版 LangGraph 工作流"
 [4]: nlq-agent/services/agent-api/tests "新版测试目录" 
 [5]: ../architecture/langgraph-agent-api-architecture.md "知识图谱到数据查询两阶段问答架构设计"

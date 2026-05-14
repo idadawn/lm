@@ -25,6 +25,6 @@
 ## Dependencies
 ### Internal
 - 同步目标：`web/src/types/reasoning-protocol.d.ts`、`nlq-agent/services/agent-api/app/models/schemas.py`
-- 校验脚本：待迁移到 `services/agent-api/tests` 或仓库级工具目录；旧脚本若需要参考，可在 `legacy/two-stage-service/scripts` 中查找。
+- 校验脚本：待迁移到 `services/agent-api/tests` 或仓库级工具目录；不要再依赖已删除的旧脚本目录。
 
 <!-- MANUAL: Add manual notes below this line; they are preserved on regeneration -->

@@ -6,7 +6,7 @@
 
 | 分区 | 内容 | 维护建议 |
 |---|---|---|
-| `architecture/` | 当前架构与历史架构说明。 | 新架构以 `langgraph-agent-api-architecture.md` 为准，旧两阶段文档仅作参考。 |
+| `architecture/` | 当前架构与历史设计记录。 | 新架构以 `langgraph-agent-api-architecture.md` 为准，旧两阶段文档仅用于理解演进背景。 |
 | `audits/` | 项目结构审查、知识图谱建议、前端体验建议和调研材料。 | 审查类文档统一放这里，不再放仓库根目录。 |
 | `changes/` | 增量变更记录和 MVP 交付说明。 | 每个较大功能建议增加一份变更记录。 |
 | `roadmap/` | 开发计划、Vibe coding 检查清单和后续路线图。 | 保持计划与实际主线一致。 |

@@ -27,9 +27,9 @@ export interface G6GraphData {
   meta?: Record<string, any>;
 }
 
-const MAX_FULL_SPECS = 14;
-const MAX_RULES_PER_SPEC = 8;
-const MAX_FOCUS_RULES = 36;
+const MAX_FULL_SPECS = 8;
+const MAX_RULES_PER_SPEC = 3;
+const MAX_FOCUS_RULES = 20;
 
 export function useGraphData() {
   const ontology = ref<OntologyData | null>(null);
@@ -117,10 +117,10 @@ function addEdge(edges: any[], source: string, target: string, label: string, re
 
 function addBusinessObjectNodes(nodes: any[], edges: any[], rootId: string) {
   const objects = [
-    { id: 'domain:lamination', type: 'LaminationData', label: '叠片数据', subtitle: '导入后计算检测明细', x: 290, y: 90 },
-    { id: 'domain:single-sheet', type: 'SingleSheetPerformance', label: '单片性能', subtitle: 'Ps / Ss / Hc', x: 290, y: 180 },
-    { id: 'domain:appearance', type: 'AppearanceFeature', label: '外观特性', subtitle: '缺陷、等级、分类', x: 290, y: 270 },
-    { id: 'domain:metric-judge', type: 'MetricJudgement', label: '指标判定', subtitle: '统计计算与等级结果', x: 820, y: 150 },
+    { id: 'domain:lamination', type: 'LaminationData', label: '叠片数据', subtitle: '导入后计算检测明细', x: 100, y: 80 },
+    { id: 'domain:single-sheet', type: 'SingleSheetPerformance', label: '单片性能', subtitle: 'Ps / Ss / Hc', x: 100, y: 150 },
+    { id: 'domain:appearance', type: 'AppearanceFeature', label: '外观特性', subtitle: '缺陷、等级、分类', x: 100, y: 220 },
+    { id: 'domain:metric-judge', type: 'MetricJudgement', label: '指标判定', subtitle: '统计计算与等级结果', x: 520, y: 200 },
   ];
   for (const obj of objects) {
     nodes.push({
@@ -181,7 +181,7 @@ function buildFormulaNode(formula: OntologyFormula, x: number, y: number, linked
   };
 }
 
-function distributeY(index: number, total: number, min = 360, gap = 86) {
+function distributeY(index: number, total: number, min = 360, gap = 32) {
   const centerOffset = (total - 1) / 2;
   return min + (index - centerOffset) * gap;
 }
@@ -262,8 +262,8 @@ function _buildFullGraph(
     subtitle: '检测中心业务根节点',
     type: 'Ribbon',
     dataType: 'Ribbon',
-    x: 80,
-    y: 300,
+    x: 60,
+    y: 260,
     isDomainNode: true,
     rawData: {
       name: '带材',
@@ -280,13 +280,13 @@ function _buildFullGraph(
   specList.forEach((spec, i) => {
     const specRules = (rulesBySpec[spec.id] || []).filter((r) => focus.ruleIds.has(r.id));
     const formulaIds = new Set<string>(specRules.map((r) => r.formula_id).filter((id): id is string => Boolean(id)));
-    nodes.push(buildSpecNode(spec, 290, distributeY(i, specList.length, 420, 92), specRules.length, formulaIds.size));
+    nodes.push(buildSpecNode(spec, 180, distributeY(i, specList.length, 300, 32), specRules.length, formulaIds.size));
     addEdge(edges, rootId, `spec:${spec.id}`, '适用规格', 'BELONGS_TO_SPEC');
   });
 
   const ruleList = (data.rules || []).filter((r) => focus.ruleIds.has(r.id));
   ruleList.forEach((rule, i) => {
-    nodes.push(buildRuleNode(rule, 560, distributeY(i, ruleList.length, 380, 74)));
+    nodes.push(buildRuleNode(rule, 340, distributeY(i, ruleList.length, 180, 34)));
     if (rule.product_spec_id && focus.specIds.has(rule.product_spec_id)) {
       addEdge(edges, `spec:${rule.product_spec_id}`, `rule:${rule.id}`, '判定规则', 'USES_RULE');
     } else {
@@ -298,7 +298,7 @@ function _buildFullGraph(
     .map((id) => formulaMap[id])
     .filter(Boolean);
   formulaList.forEach((formula, i) => {
-    nodes.push(buildFormulaNode(formula, 830, distributeY(i, formulaList.length, 380, 82), rulesByFormula[formula.id]?.length || 0));
+    nodes.push(buildFormulaNode(formula, 520, distributeY(i, formulaList.length, 220, 30), rulesByFormula[formula.id]?.length || 0));
   });
 
   for (const rule of ruleList) {
@@ -352,22 +352,22 @@ function _buildSpecCentricGraph(
     subtitle: '业务根节点',
     type: 'Ribbon',
     dataType: 'Ribbon',
-    x: 80,
-    y: 320,
+    x: 60,
+    y: 260,
     isDomainNode: true,
     rawData: { name: '带材' },
   });
-  nodes.push(buildSpecNode(spec, 300, 320, specRules.length, formulaIds.size));
+  nodes.push(buildSpecNode(spec, 180, 260, specRules.length, formulaIds.size));
   addEdge(edges, rootId, `spec:${spec.id}`, '适用规格', 'BELONGS_TO_SPEC');
 
   specRules.forEach((rule, i) => {
-    nodes.push(buildRuleNode(rule, 560, distributeY(i, specRules.length, 320, 68)));
+    nodes.push(buildRuleNode(rule, 340, distributeY(i, specRules.length, 180, 34)));
     addEdge(edges, `spec:${spec.id}`, `rule:${rule.id}`, '判定规则', 'USES_RULE');
   });
 
   const formulas = Array.from(formulaIds).map((fid) => formulaMap[fid]).filter(Boolean);
   formulas.forEach((formula, i) => {
-    nodes.push(buildFormulaNode(formula, 830, distributeY(i, formulas.length, 320, 82), rulesByFormula[formula.id]?.length || 0));
+    nodes.push(buildFormulaNode(formula, 520, distributeY(i, formulas.length, 220, 30), rulesByFormula[formula.id]?.length || 0));
   });
 
   for (const rule of specRules) {

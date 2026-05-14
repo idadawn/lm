@@ -32,17 +32,17 @@ const canvasRef = ref<HTMLElement | null>(null);
 let chart: echarts.ECharts | null = null;
 
 const NODE_STYLES: Record<string, { fill: string; stroke: string; text: string; size: number; symbol: string }> = {
-  Ribbon: { fill: '#E6F4FF', stroke: '#1677FF', text: '#0958D9', size: 88, symbol: 'roundRect' },
-  ProductSpec: { fill: '#F0F5FF', stroke: '#2F54EB', text: '#1D39C4', size: 74, symbol: 'roundRect' },
-  spec: { fill: '#F0F5FF', stroke: '#2F54EB', text: '#1D39C4', size: 74, symbol: 'roundRect' },
-  LaminationData: { fill: '#F6FFED', stroke: '#52C41A', text: '#237804', size: 68, symbol: 'roundRect' },
-  SingleSheetPerformance: { fill: '#FFF7E6', stroke: '#FA8C16', text: '#AD4E00', size: 68, symbol: 'roundRect' },
-  AppearanceFeature: { fill: '#FFF1F0', stroke: '#FF4D4F', text: '#A8071A', size: 64, symbol: 'roundRect' },
-  JudgementRule: { fill: '#F9F0FF', stroke: '#722ED1', text: '#391085', size: 58, symbol: 'roundRect' },
-  rule: { fill: '#F9F0FF', stroke: '#722ED1', text: '#391085', size: 58, symbol: 'roundRect' },
-  Formula: { fill: '#E6FFFB', stroke: '#13C2C2', text: '#006D75', size: 62, symbol: 'roundRect' },
-  formula: { fill: '#E6FFFB', stroke: '#13C2C2', text: '#006D75', size: 62, symbol: 'roundRect' },
-  MetricJudgement: { fill: '#FFFBE6', stroke: '#FAAD14', text: '#AD6800', size: 68, symbol: 'roundRect' },
+  Ribbon: { fill: '#E6F4FF', stroke: '#1677FF', text: '#0958D9', size: 40, symbol: 'roundRect' },
+  ProductSpec: { fill: '#F0F5FF', stroke: '#2F54EB', text: '#1D39C4', size: 34, symbol: 'roundRect' },
+  spec: { fill: '#F0F5FF', stroke: '#2F54EB', text: '#1D39C4', size: 34, symbol: 'roundRect' },
+  LaminationData: { fill: '#F6FFED', stroke: '#52C41A', text: '#237804', size: 30, symbol: 'roundRect' },
+  SingleSheetPerformance: { fill: '#FFF7E6', stroke: '#FA8C16', text: '#AD4E00', size: 30, symbol: 'roundRect' },
+  AppearanceFeature: { fill: '#FFF1F0', stroke: '#FF4D4F', text: '#A8071A', size: 28, symbol: 'roundRect' },
+  JudgementRule: { fill: '#F9F0FF', stroke: '#722ED1', text: '#391085', size: 26, symbol: 'roundRect' },
+  rule: { fill: '#F9F0FF', stroke: '#722ED1', text: '#391085', size: 26, symbol: 'roundRect' },
+  Formula: { fill: '#E6FFFB', stroke: '#13C2C2', text: '#006D75', size: 28, symbol: 'roundRect' },
+  formula: { fill: '#E6FFFB', stroke: '#13C2C2', text: '#006D75', size: 28, symbol: 'roundRect' },
+  MetricJudgement: { fill: '#FFFBE6', stroke: '#FAAD14', text: '#AD6800', size: 30, symbol: 'roundRect' },
 };
 
 const EDGE_COLORS: Record<string, string> = {
@@ -66,10 +66,12 @@ function truncateLabel(label: string, max = 14) {
 }
 
 function getNodePosition(node: any, index: number, total: number) {
-  if (typeof node.x === 'number' && typeof node.y === 'number') return [node.x, node.y];
+  if (typeof node.x === 'number' && typeof node.y === 'number' && !Number.isNaN(node.x) && !Number.isNaN(node.y)) {
+    return [node.x, node.y];
+  }
   const angle = (Math.PI * 2 * index) / Math.max(total, 1);
-  const radius = 260;
-  return [460 + Math.cos(angle) * radius, 320 + Math.sin(angle) * radius];
+  const radius = 320;
+  return [640 + Math.cos(angle) * radius, 420 + Math.sin(angle) * radius];
 }
 
 function convertToECharts(data: G6GraphData) {
@@ -90,7 +92,7 @@ function convertToECharts(data: G6GraphData) {
       y,
       fixed: true,
       symbol: style.symbol,
-      symbolSize: [Math.max(style.size + truncateLabel(n.label, 18).length * 4, 116), style.size],
+      symbolSize: [Math.max(style.size + truncateLabel(n.label, 18).length * 2, 48), style.size],
       itemStyle: {
         color: style.fill,
         borderColor: n.statusColor || style.stroke,
@@ -100,10 +102,10 @@ function convertToECharts(data: G6GraphData) {
       label: {
         show: true,
         color: style.text,
-        fontSize: dataType === 'Ribbon' ? 15 : 12,
+        fontSize: dataType === 'Ribbon' ? 14 : 11,
         fontWeight: dataType === 'Ribbon' || dataType === 'ProductSpec' || dataType === 'spec' ? 700 : 600,
-        lineHeight: 16,
-        formatter: () => truncateLabel(n.label, dataType === 'JudgementRule' || dataType === 'rule' ? 12 : 16),
+        lineHeight: 14,
+        formatter: () => truncateLabel(n.label, dataType === 'JudgementRule' || dataType === 'rule' ? 10 : 14),
       },
       _raw: { ...n, dataType },
     };
@@ -205,7 +207,7 @@ function render(data: G6GraphData) {
         links,
         roam: true,
         draggable: true,
-        scaleLimit: { min: 0.35, max: 2.2 },
+        scaleLimit: { min: 0.2, max: 2.5 },
         emphasis: {
           focus: 'adjacency',
           blurScope: 'coordinateSystem',

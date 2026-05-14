@@ -69,8 +69,17 @@
       </div>
     </template>
 
+    <!-- ====== 网格视图 ====== -->
+    <div class="kg-main" v-if="!questionMode && viewMode === 'grid'">
+      <SpecGrid
+        :specs="gridSpecs"
+        @select="handleSpecSelect"
+        @viewAll="viewMode = 'graph'"
+      />
+    </div>
+
     <!-- ====== 主图谱区域（始终显示，问答模式除外） ====== -->
-    <div class="kg-main" v-if="!questionMode">
+    <div class="kg-main" v-if="!questionMode && viewMode === 'graph'">
       <KgCanvas
         v-if="graphData.nodes.length > 0"
         :key="graphData.nodes.length"
@@ -163,9 +172,10 @@ import KgCanvas from './components/KgCanvas.vue';
 import KgDetailPanel from './components/KgDetailPanel.vue';
 import KgReasoningPanel from './components/KgReasoningPanel.vue';
 import KgEvidencePanel from './components/KgEvidencePanel.vue';
+import SpecGrid from './components/SpecGrid.vue';
 
 import type { PanelData, PanelType, ViewMode, ReasoningStep } from './types/ontology';
-import { useGraphData, type G6GraphData } from './composables/useGraphData';
+import { useGraphData, buildIndexes, type G6GraphData } from './composables/useGraphData';
 
 // ── State ──────────────────────────────────────────────
 
@@ -176,7 +186,7 @@ const viewMode = ref<ViewMode>('graph');
 const panel = ref<PanelData | null>(null);
 
 // 全量图谱
-const { setData: setOntologyData, buildGraphData: buildFullGraph } = useGraphData();
+const { setData: setOntologyData, buildGraphData: buildFullGraph, buildSpecSubgraph } = useGraphData();
 const fullGraphData = shallowRef<G6GraphData>({ nodes: [], edges: [], combos: [] });
 
 // 带材搜索
@@ -210,6 +220,30 @@ const graphData = computed(() => {
   return markRaw(fullGraphData.value);
 });
 
+// 为了网格视图能访问索引，保留一份原始 ontology
+const ontologyData = ref<OntologyData | null>(null);
+const indexes = computed(() => {
+  if (!ontologyData.value) return { rulesBySpec: {}, rulesByFormula: {}, formulaMap: {}, specMap: {} };
+  return buildIndexes(ontologyData.value);
+});
+
+// 网格数据
+const gridSpecs = computed(() => {
+  if (!ontologyData.value) return [];
+  const idx = indexes.value;
+  return (ontologyData.value.specs || []).map((spec) => {
+    const rules = idx.rulesBySpec[spec.id] || [];
+    const qualifiedCount = rules.filter((r) => r.quality_status === '合格').length;
+    return {
+      ...spec,
+      ruleCount: rules.length,
+      formulaCount: new Set(rules.map((r) => r.formula_id).filter(Boolean)).size,
+      qualifiedCount,
+      unqualifiedCount: rules.length - qualifiedCount,
+    };
+  });
+});
+
 function typeRank(type: string) {
   const order: Record<string, number> = {
     Ribbon: 0,
@@ -241,14 +275,14 @@ function buildRibbonGraphData(response: RibbonSubgraphResponse): G6GraphData {
       ? { ...(response.ribbon as any), ...((response.ribbon as any)?.raw || {}), ...baseRaw }
       : baseRaw;
     const pos = (() => {
-      if (t === 'Ribbon') return { x: 90, y: 300 };
-      if (t === 'ProductSpec') return { x: 300, y: 300 };
-      if (t === 'LaminationData') return { x: 300, y: 110 };
-      if (t === 'SingleSheetPerformance') return { x: 300, y: 205 };
-      if (t === 'AppearanceFeature') return { x: 300, y: 410 + index * 76 };
-      if (t === 'JudgementRule') return { x: 560, y: 220 + (index - (total - 1) / 2) * 72 };
-      if (t === 'Formula') return { x: 830, y: 240 + (index - (total - 1) / 2) * 88 };
-      return { x: 560, y: 480 + index * 68 };
+      if (t === 'Ribbon') return { x: 60, y: 260 };
+      if (t === 'ProductSpec') return { x: 180, y: 260 };
+      if (t === 'LaminationData') return { x: 100, y: 80 };
+      if (t === 'SingleSheetPerformance') return { x: 100, y: 150 };
+      if (t === 'AppearanceFeature') return { x: 180, y: 360 + index * 32 };
+      if (t === 'JudgementRule') return { x: 340, y: 200 + (index - (total - 1) / 2) * 28 };
+      if (t === 'Formula') return { x: 520, y: 220 + (index - (total - 1) / 2) * 30 };
+      return { x: 340, y: 400 + index * 28 };
     })();
 
     return {
@@ -318,6 +352,7 @@ async function loadData() {
   loading.value = true;
   try {
     const data = await getOntology();
+    ontologyData.value = data as OntologyData;
     setOntologyData(data as OntologyData);
     fullGraphData.value = markRaw(buildFullGraph(searchText.value));
     message.success(`图谱加载完成！规格: ${data.specs.length}, 规则: ${data.rules.length}, 公式: ${data.formulas.length}`);
@@ -326,6 +361,12 @@ async function loadData() {
   } finally {
     loading.value = false;
   }
+}
+
+function handleSpecSelect(specId: string) {
+  viewMode.value = 'graph';
+  fullGraphData.value = markRaw(buildSpecSubgraph(specId));
+  message.success('已切换到规格子图');
 }
 
 async function handleResync() {

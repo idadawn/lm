@@ -59,6 +59,8 @@ const emit = defineEmits<{
 .spec-grid {
   padding: 20px;
   overflow-y: auto;
+  flex: 1;
+  width: 100%;
 }
 
 .grid {

@@ -164,7 +164,7 @@ import KgDetailPanel from './components/KgDetailPanel.vue';
 import KgReasoningPanel from './components/KgReasoningPanel.vue';
 import KgEvidencePanel from './components/KgEvidencePanel.vue';
 
-import type { PanelData, ViewMode, ReasoningStep } from './types/ontology';
+import type { PanelData, PanelType, ViewMode, ReasoningStep } from './types/ontology';
 import { useGraphData, type G6GraphData } from './composables/useGraphData';
 
 // ── State ──────────────────────────────────────────────
@@ -205,14 +205,67 @@ const highlightEdgeIds = ref<string[]>([]);
 
 const graphData = computed(() => {
   if (ribbonSubgraph.value) {
-    return markRaw({
-      nodes: ribbonSubgraph.value.nodes || [],
-      edges: ribbonSubgraph.value.edges || [],
-      combos: ribbonSubgraph.value.combos || [],
-    });
+    return markRaw(buildRibbonGraphData(ribbonSubgraph.value));
   }
   return markRaw(fullGraphData.value);
 });
+
+function typeRank(type: string) {
+  const order: Record<string, number> = {
+    Ribbon: 0,
+    ProductSpec: 1,
+    LaminationData: 2,
+    SingleSheetPerformance: 3,
+    AppearanceFeature: 4,
+    JudgementRule: 5,
+    Formula: 6,
+  };
+  return order[type] ?? 9;
+}
+
+function buildRibbonGraphData(response: RibbonSubgraphResponse): G6GraphData {
+  const nodes = [...(response.nodes || [])].sort((a: any, b: any) => typeRank(a.type) - typeRank(b.type));
+  const typeCounters: Record<string, number> = {};
+  const typeTotals = nodes.reduce((acc: Record<string, number>, n: any) => {
+    acc[n.type] = (acc[n.type] || 0) + 1;
+    return acc;
+  }, {});
+
+  const positioned = nodes.map((node: any) => {
+    const t = node.type || node.dataType;
+    const index = typeCounters[t] || 0;
+    typeCounters[t] = index + 1;
+    const total = typeTotals[t] || 1;
+    const baseRaw = node.raw || {};
+    const enrichedRaw = t === 'Ribbon'
+      ? { ...(response.ribbon as any), ...((response.ribbon as any)?.raw || {}), ...baseRaw }
+      : baseRaw;
+    const pos = (() => {
+      if (t === 'Ribbon') return { x: 90, y: 300 };
+      if (t === 'ProductSpec') return { x: 300, y: 300 };
+      if (t === 'LaminationData') return { x: 300, y: 110 };
+      if (t === 'SingleSheetPerformance') return { x: 300, y: 205 };
+      if (t === 'AppearanceFeature') return { x: 300, y: 410 + index * 76 };
+      if (t === 'JudgementRule') return { x: 560, y: 220 + (index - (total - 1) / 2) * 72 };
+      if (t === 'Formula') return { x: 830, y: 240 + (index - (total - 1) / 2) * 88 };
+      return { x: 560, y: 480 + index * 68 };
+    })();
+
+    return {
+      ...node,
+      ...pos,
+      dataType: t,
+      rawData: enrichedRaw,
+    };
+  });
+
+  return {
+    nodes: positioned,
+    edges: response.edges || [],
+    combos: response.combos || [],
+    meta: { layout: 'business-flow', mode: 'ribbon', furnaceNo: response.ribbon?.furnace_no },
+  };
+}
 
 // ── Helpers ────────────────────────────────────────────
 
@@ -302,15 +355,21 @@ function handleNodeClick(model: any) {
     LaminationData: '#22C55E',
     SingleSheetPerformance: '#F59E0B',
     AppearanceFeature: '#EF4444',
-    JudgementRule: '#A855F7',
+    JudgementRule: '#722ED1',
+    Formula: '#13C2C2',
+    formula: '#13C2C2',
+    MetricJudgement: '#FAAD14',
   };
-  const typeMap: Record<string, string> = {
+  const typeMap: Record<string, PanelType> = {
     Ribbon: 'ribbon',
     ProductSpec: 'spec',
     LaminationData: 'lamination',
     SingleSheetPerformance: 'singleSheet',
     AppearanceFeature: 'appearance',
-    JudgementRule: 'ruleCombo',
+    JudgementRule: 'rule',
+    Formula: 'formula',
+    formula: 'formula',
+    MetricJudgement: 'spec',
   };
   panel.value = {
     type: typeMap[type] || 'spec',

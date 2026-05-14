@@ -239,7 +239,8 @@ async def get_ribbon_subgraph(furnace_no: str, depth: int = 2) -> dict | None:
         if depth >= 2 and spec_id and spec_node_id:
             rsql = text("""
                 SELECT j.F_Id, j.F_NAME, j.F_PRIORITY, j.F_QUALITY_STATUS,
-                       j.F_COLOR, j.F_CONDITION, f.F_FORMULA_NAME, f.F_COLUMN_NAME
+                       j.F_COLOR, j.F_CONDITION, j.F_FORMULA_ID,
+                       f.F_FORMULA_NAME, f.F_COLUMN_NAME, f.F_FORMULA_TYPE, f.F_FORMULA
                 FROM lab_intermediate_data_judgment_level j
                 LEFT JOIN lab_intermediate_data_formula f ON j.F_FORMULA_ID = f.F_Id
                 WHERE j.F_PRODUCT_SPEC_ID COLLATE utf8mb4_unicode_ci = :sid COLLATE utf8mb4_unicode_ci
@@ -254,14 +255,30 @@ async def get_ribbon_subgraph(furnace_no: str, depth: int = 2) -> dict | None:
                     status="ok" if rr["F_QUALITY_STATUS"] == "合格" else "warning",
                     raw={"name": rr["F_NAME"], "priority": rr["F_PRIORITY"],
                          "quality_status": rr["F_QUALITY_STATUS"], "color": rr["F_COLOR"],
-                         "condition": rr["F_CONDITION"], "formula_name": rr["F_FORMULA_NAME"],
-                         "column_name": rr["F_COLUMN_NAME"]},
+                         "condition": rr["F_CONDITION"], "conditionJson": rr["F_CONDITION"], "formula_id": rr["F_FORMULA_ID"],
+                         "formula_name": rr["F_FORMULA_NAME"], "column_name": rr["F_COLUMN_NAME"]},
                 ))
                 edges.append(OntologyEdge(
                     id=f"{spec_node_id}-USES_RULE-{rid2}",
                     source=spec_node_id, target=rid2,
                     relation="USES_RULE", label="使用规则",
                 ))
+                if rr.get("F_FORMULA_ID"):
+                    fid2 = f"formula:{rr['F_FORMULA_ID']}"
+                    if not any(n.id == fid2 for n in nodes):
+                        nodes.append(OntologyNode(
+                            id=fid2, type="Formula",
+                            label=rr["F_FORMULA_NAME"] or rr["F_COLUMN_NAME"] or "检测公式",
+                            subtitle=rr["F_COLUMN_NAME"], status="ok",
+                            raw={"id": rr["F_FORMULA_ID"], "formula_name": rr["F_FORMULA_NAME"],
+                                 "column_name": rr["F_COLUMN_NAME"], "formula_type": rr["F_FORMULA_TYPE"],
+                                 "formula": rr["F_FORMULA"]},
+                        ))
+                    edges.append(OntologyEdge(
+                        id=f"{rid2}-USES_FORMULA-{fid2}",
+                        source=rid2, target=fid2,
+                        relation="USES_FORMULA", label="依据公式",
+                    ))
 
         return {
             "ribbon": ribbon_node,

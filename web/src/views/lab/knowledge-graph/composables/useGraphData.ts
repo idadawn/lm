@@ -1,8 +1,9 @@
 /**
  * 知识图谱数据转换 Composable
  *
- * 把后端 OntologyData 转成 G6 可用的 { nodes, edges, combos }
- * 支持：全量图、搜索子图、以规格为中心的局部子图
+ * 把后端 OntologyData 转成前端图谱可用的 { nodes, edges, combos }。
+ * 重点目标不是“把所有节点撒开”，而是围绕检测中心真实业务主线组织关系：
+ * 带材 → 产品规格 → 判定规则 → 公式/指标依据，并保留叠片、单片、外观等检测对象入口。
  */
 
 import { computed, ref } from 'vue';
@@ -16,54 +17,26 @@ export interface GraphIndexes {
   rulesBySpec: Record<string, OntologyRule[]>;
   rulesByFormula: Record<string, OntologyRule[]>;
   formulaMap: Record<string, OntologyFormula>;
+  specMap: Record<string, any>;
 }
 
 export interface G6GraphData {
   nodes: any[];
   edges: any[];
   combos: any[];
+  meta?: Record<string, any>;
 }
 
-// ------------------------------------------------------------------
-// 配色方案（参考金融图谱的鲜艳配色）
-// ------------------------------------------------------------------
-const COLORS = {
-  spec: {
-    fill: '#DBEAFE',
-    stroke: '#2563EB',
-    text: '#1E3A8A',
-    shadow: '#60A5FA',
-  },
-  ruleQualified: {
-    fill: '#DCFCE7',
-    stroke: '#16A34A',
-    text: '#14532D',
-    shadow: '#4ADE80',
-  },
-  ruleUnqualified: {
-    fill: '#FEE2E2',
-    stroke: '#DC2626',
-    text: '#7F1D1D',
-    shadow: '#F87171',
-  },
-  formula: {
-    fill: '#F3E8FF',
-    stroke: '#9333EA',
-    text: '#581C87',
-    shadow: '#C084FC',
-  },
-  edge: {
-    specRule: '#94A3B8',
-    ruleFormula: '#A78BFA',
-  },
-};
+const MAX_FULL_SPECS = 14;
+const MAX_RULES_PER_SPEC = 8;
+const MAX_FOCUS_RULES = 36;
 
 export function useGraphData() {
   const ontology = ref<OntologyData | null>(null);
 
   const indexes = computed<GraphIndexes>(() => {
     if (!ontology.value) {
-      return { rulesBySpec: {}, rulesByFormula: {}, formulaMap: {} };
+      return { rulesBySpec: {}, rulesByFormula: {}, formulaMap: {}, specMap: {} };
     }
     return buildIndexes(ontology.value);
   });
@@ -72,19 +45,13 @@ export function useGraphData() {
     ontology.value = data;
   }
 
-  /**
-   * 构建全量图数据（支持搜索过滤）
-   */
   function buildGraphData(search?: string): G6GraphData {
-    if (!ontology.value) return { nodes: [], edges: [], combos: [] };
+    if (!ontology.value) return { nodes: [], edges: [], combos: [], meta: { layout: 'business-flow' } };
     return _buildFullGraph(ontology.value, indexes.value, search);
   }
 
-  /**
-   * 构建以某个规格为中心的局部子图
-   */
   function buildSpecSubgraph(specId: string): G6GraphData {
-    if (!ontology.value) return { nodes: [], edges: [], combos: [] };
+    if (!ontology.value) return { nodes: [], edges: [], combos: [], meta: { layout: 'business-flow' } };
     return _buildSpecCentricGraph(ontology.value, indexes.value, specId);
   }
 
@@ -105,11 +72,11 @@ export function buildIndexes(data: OntologyData): GraphIndexes {
   const rulesBySpec: Record<string, OntologyRule[]> = {};
   const rulesByFormula: Record<string, OntologyRule[]> = {};
   const formulaMap: Record<string, OntologyFormula> = {};
+  const specMap: Record<string, any> = {};
 
-  for (const f of data.formulas) {
-    formulaMap[f.id] = f;
-  }
-  for (const r of data.rules) {
+  for (const s of data.specs || []) specMap[s.id] = s;
+  for (const f of data.formulas || []) formulaMap[f.id] = f;
+  for (const r of data.rules || []) {
     const specKey = r.product_spec_id || '_none';
     if (!rulesBySpec[specKey]) rulesBySpec[specKey] = [];
     rulesBySpec[specKey].push(r);
@@ -119,11 +86,162 @@ export function buildIndexes(data: OntologyData): GraphIndexes {
     }
   }
 
-  return { rulesBySpec, rulesByFormula, formulaMap };
+  Object.values(rulesBySpec).forEach((rules) => {
+    rules.sort((a, b) => Number(a.priority || 0) - Number(b.priority || 0));
+  });
+
+  return { rulesBySpec, rulesByFormula, formulaMap, specMap };
+}
+
+function textIncludes(value: unknown, q: string) {
+  return String(value || '').toLowerCase().includes(q);
+}
+
+function formulaTypeLabel(f?: OntologyFormula) {
+  if (!f) return '';
+  if (f.formula_type === 'CALC' || f.formula_type === '1') return '计算公式';
+  if (f.formula_type === 'JUDGE' || f.formula_type === '2') return '判定公式';
+  return '公式';
+}
+
+function ruleStatusColor(status?: string) {
+  return status === '合格' ? '#52C41A' : '#FA8C16';
+}
+
+function addEdge(edges: any[], source: string, target: string, label: string, relation: string) {
+  if (!source || !target || source === target) return;
+  const id = `${source}-${relation}-${target}`;
+  if (edges.some((e) => e.id === id)) return;
+  edges.push({ id, source, target, label, relation, dataType: relation });
+}
+
+function addBusinessObjectNodes(nodes: any[], edges: any[], rootId: string) {
+  const objects = [
+    { id: 'domain:lamination', type: 'LaminationData', label: '叠片数据', subtitle: '导入后计算检测明细', x: 290, y: 90 },
+    { id: 'domain:single-sheet', type: 'SingleSheetPerformance', label: '单片性能', subtitle: 'Ps / Ss / Hc', x: 290, y: 180 },
+    { id: 'domain:appearance', type: 'AppearanceFeature', label: '外观特性', subtitle: '缺陷、等级、分类', x: 290, y: 270 },
+    { id: 'domain:metric-judge', type: 'MetricJudgement', label: '指标判定', subtitle: '统计计算与等级结果', x: 820, y: 150 },
+  ];
+  for (const obj of objects) {
+    nodes.push({
+      ...obj,
+      dataType: obj.type,
+      rawData: { name: obj.label, description: obj.subtitle },
+      isDomainNode: true,
+    });
+  }
+  addEdge(edges, rootId, 'domain:lamination', '检测形成', 'HAS_LAMINATION_DATA');
+  addEdge(edges, rootId, 'domain:single-sheet', '检测形成', 'HAS_SINGLE_SHEET_PERF');
+  addEdge(edges, rootId, 'domain:appearance', '记录外观', 'HAS_APPEARANCE');
+  addEdge(edges, 'domain:lamination', 'domain:metric-judge', '参与统计', 'FEEDS_METRIC');
+  addEdge(edges, 'domain:single-sheet', 'domain:metric-judge', '参与统计', 'FEEDS_METRIC');
+}
+
+function buildSpecNode(spec: any, x: number, y: number, ruleCount: number, formulaCount: number) {
+  return {
+    id: `spec:${spec.id}`,
+    label: spec.name || spec.code || '产品规格',
+    subtitle: spec.code,
+    type: 'ProductSpec',
+    dataType: 'spec',
+    x,
+    y,
+    rawData: spec,
+    ruleCount,
+    formulaCount,
+  };
+}
+
+function buildRuleNode(rule: OntologyRule, x: number, y: number) {
+  return {
+    id: `rule:${rule.id}`,
+    label: rule.name || rule.quality_status || '判定规则',
+    subtitle: rule.quality_status || '规则',
+    type: 'JudgementRule',
+    dataType: 'rule',
+    x,
+    y,
+    rawData: rule,
+    statusColor: ruleStatusColor(rule.quality_status),
+  };
+}
+
+function buildFormulaNode(formula: OntologyFormula, x: number, y: number, linkedRuleCount: number) {
+  return {
+    id: `formula:${formula.id}`,
+    label: formula.formula_name || formula.column_name || '公式',
+    subtitle: formulaTypeLabel(formula),
+    type: 'Formula',
+    dataType: 'formula',
+    x,
+    y,
+    rawData: formula,
+    typeLabel: formulaTypeLabel(formula),
+    ruleCount: linkedRuleCount,
+  };
+}
+
+function distributeY(index: number, total: number, min = 360, gap = 86) {
+  const centerOffset = (total - 1) / 2;
+  return min + (index - centerOffset) * gap;
+}
+
+function collectFocusSets(data: OntologyData, idx: GraphIndexes, search?: string) {
+  const q = (search || '').trim().toLowerCase();
+  const specIds = new Set<string>();
+  const ruleIds = new Set<string>();
+  const formulaIds = new Set<string>();
+
+  if (!q) {
+    const rankedSpecs = [...(data.specs || [])]
+      .map((s) => ({ spec: s, rules: idx.rulesBySpec[s.id] || [] }))
+      .filter((item) => item.rules.length > 0)
+      .sort((a, b) => b.rules.length - a.rules.length)
+      .slice(0, MAX_FULL_SPECS);
+
+    for (const item of rankedSpecs) {
+      specIds.add(item.spec.id);
+      for (const r of item.rules.slice(0, MAX_RULES_PER_SPEC)) {
+        ruleIds.add(r.id);
+        if (r.formula_id) formulaIds.add(r.formula_id);
+      }
+    }
+    return { specIds, ruleIds, formulaIds, mode: 'overview' };
+  }
+
+  for (const s of data.specs || []) {
+    if (textIncludes(s.name, q) || textIncludes(s.code, q)) {
+      specIds.add(s.id);
+      for (const r of (idx.rulesBySpec[s.id] || []).slice(0, MAX_FOCUS_RULES)) {
+        ruleIds.add(r.id);
+        if (r.formula_id) formulaIds.add(r.formula_id);
+      }
+    }
+  }
+
+  for (const r of data.rules || []) {
+    if (textIncludes(r.name, q) || textIncludes(r.quality_status, q) || textIncludes(r.conditionJson, q)) {
+      ruleIds.add(r.id);
+      if (r.product_spec_id) specIds.add(r.product_spec_id);
+      if (r.formula_id) formulaIds.add(r.formula_id);
+    }
+  }
+
+  for (const f of data.formulas || []) {
+    if (textIncludes(f.formula_name, q) || textIncludes(f.column_name, q) || textIncludes(f.formula, q)) {
+      formulaIds.add(f.id);
+      for (const r of (idx.rulesByFormula[f.id] || []).slice(0, MAX_FOCUS_RULES)) {
+        ruleIds.add(r.id);
+        if (r.product_spec_id) specIds.add(r.product_spec_id);
+      }
+    }
+  }
+
+  return { specIds, ruleIds, formulaIds, mode: 'focus' };
 }
 
 // ------------------------------------------------------------------
-// 全量图（搜索过滤版）
+// 全量/搜索图：带材业务主线，而非星爆块状图
 // ------------------------------------------------------------------
 
 function _buildFullGraph(
@@ -131,239 +249,84 @@ function _buildFullGraph(
   idx: GraphIndexes,
   search?: string
 ): G6GraphData {
-  const { rulesBySpec, rulesByFormula, formulaMap } = idx;
+  const { rulesBySpec, rulesByFormula, formulaMap, specMap } = idx;
   const nodes: any[] = [];
   const edges: any[] = [];
   const combos: any[] = [];
-  const searchLower = (search || '').toLowerCase();
-  const hasSearch = !!searchLower;
+  const focus = collectFocusSets(data, idx, search);
 
-  // 搜索匹配
-  const matchedSpecs = new Set<string>();
-  const matchedFormulas = new Set<string>();
-  const matchedRules = new Set<string>();
+  const rootId = 'domain:ribbon';
+  nodes.push({
+    id: rootId,
+    label: '带材',
+    subtitle: '检测中心业务根节点',
+    type: 'Ribbon',
+    dataType: 'Ribbon',
+    x: 80,
+    y: 300,
+    isDomainNode: true,
+    rawData: {
+      name: '带材',
+      description: '以炉号为业务入口，连接规格、检测数据、公式和判定规则。',
+    },
+  });
 
-  if (hasSearch) {
-    for (const s of data.specs) {
-      if (
-        s.name.toLowerCase().includes(searchLower) ||
-        s.code.toLowerCase().includes(searchLower)
-      )
-        matchedSpecs.add(s.id);
+  addBusinessObjectNodes(nodes, edges, rootId);
+
+  const specList = Array.from(focus.specIds)
+    .map((id) => specMap[id])
+    .filter(Boolean);
+
+  specList.forEach((spec, i) => {
+    const specRules = (rulesBySpec[spec.id] || []).filter((r) => focus.ruleIds.has(r.id));
+    const formulaIds = new Set<string>(specRules.map((r) => r.formula_id).filter((id): id is string => Boolean(id)));
+    nodes.push(buildSpecNode(spec, 290, distributeY(i, specList.length, 420, 92), specRules.length, formulaIds.size));
+    addEdge(edges, rootId, `spec:${spec.id}`, '适用规格', 'BELONGS_TO_SPEC');
+  });
+
+  const ruleList = (data.rules || []).filter((r) => focus.ruleIds.has(r.id));
+  ruleList.forEach((rule, i) => {
+    nodes.push(buildRuleNode(rule, 560, distributeY(i, ruleList.length, 380, 74)));
+    if (rule.product_spec_id && focus.specIds.has(rule.product_spec_id)) {
+      addEdge(edges, `spec:${rule.product_spec_id}`, `rule:${rule.id}`, '判定规则', 'USES_RULE');
+    } else {
+      addEdge(edges, rootId, `rule:${rule.id}`, '判定规则', 'USES_RULE');
     }
-    for (const f of data.formulas) {
-      if (
-        (f.formula_name || '').toLowerCase().includes(searchLower) ||
-        (f.column_name || '').toLowerCase().includes(searchLower)
-      )
-        matchedFormulas.add(f.id);
-    }
-    for (const r of data.rules) {
-      if (
-        (r.name || '').toLowerCase().includes(searchLower) ||
-        (r.quality_status || '').toLowerCase().includes(searchLower)
-      )
-        matchedRules.add(r.id);
-    }
-  }
+  });
 
-  // 可见性计算
-  const visibleSpecIds = new Set<string>();
-  const visibleFormulaIds = new Set<string>();
+  const formulaList = Array.from(focus.formulaIds)
+    .map((id) => formulaMap[id])
+    .filter(Boolean);
+  formulaList.forEach((formula, i) => {
+    nodes.push(buildFormulaNode(formula, 830, distributeY(i, formulaList.length, 380, 82), rulesByFormula[formula.id]?.length || 0));
+  });
 
-  if (hasSearch) {
-    for (const r of data.rules) {
-      if (matchedRules.has(r.id)) {
-        if (r.product_spec_id) visibleSpecIds.add(r.product_spec_id);
-        if (r.formula_id) visibleFormulaIds.add(r.formula_id);
-      }
-    }
-    for (const id of matchedSpecs) visibleSpecIds.add(id);
-    for (const id of matchedFormulas) visibleFormulaIds.add(id);
-  }
-
-  // --- Spec nodes（大圆，蓝色） ---
-  for (const spec of data.specs) {
-    if (hasSearch && !visibleSpecIds.has(spec.id)) continue;
-
-    const specRules = rulesBySpec[spec.id] || [];
-    const ruleCount = specRules.length;
-    const formulaIds = new Set(specRules.map((r) => r.formula_id).filter(Boolean));
-
-    nodes.push({
-      id: `spec:${spec.id}`,
-      label: spec.name || spec.code,
-      type: 'circle',
-      size: 72,
-      style: {
-        fill: COLORS.spec.fill,
-        stroke: COLORS.spec.stroke,
-        lineWidth: 3,
-        shadowColor: COLORS.spec.shadow,
-        shadowBlur: 12,
-        cursor: 'pointer',
-      },
-      labelCfg: {
-        position: 'center',
-        style: {
-          fill: COLORS.spec.text,
-          fontSize: 14,
-          fontWeight: 700,
-        },
-      },
-      dataType: 'spec',
-      rawData: spec,
-      ruleCount,
-      formulaCount: formulaIds.size,
-    });
-
-    // 按状态分组创建 Combo
-    const statusGroups: Record<string, OntologyRule[]> = {};
-    for (const r of specRules) {
-      const key = r.quality_status || '未知';
-      if (!statusGroups[key]) statusGroups[key] = [];
-      statusGroups[key].push(r);
-    }
-
-    for (const [status, rules] of Object.entries(statusGroups)) {
-      if (hasSearch && !rules.some((r) => matchedRules.has(r.id))) continue;
-
-      const comboId = `combo:${spec.id}:${status}`;
-      const isQualified = status === '合格';
-      const c = isQualified ? COLORS.ruleQualified : COLORS.ruleUnqualified;
-
-      combos.push({
-        id: comboId,
-        label: `${status} (${rules.length})`,
-        style: {
-          fill: 'rgba(255,255,255,0.6)',
-          stroke: c.stroke,
-          lineWidth: 2,
-          lineDash: [4, 2],
-          radius: 16,
-        },
-        labelCfg: {
-          position: 'top',
-          style: { fill: c.stroke, fontSize: 12, fontWeight: 600 },
-        },
-        dataType: 'ruleCombo',
-        specId: spec.id,
-        specName: spec.name || spec.code,
-        qualityStatus: status,
-        rules,
-      });
-
-      // 规格 → Combo 的边
-      edges.push({
-        source: `spec:${spec.id}`,
-        target: comboId,
-        label: '包含',
-        style: {
-          stroke: COLORS.edge.specRule,
-          lineWidth: 1.5,
-          endArrow: { path: 'M 0,0 L 8,4 L 8,-4 Z', fill: COLORS.edge.specRule },
-        },
-        labelCfg: {
-          style: { fill: '#64748B', fontSize: 10, background: '#fff' },
-        },
-        dataType: 'spec-combo',
-      });
-
-      for (const r of rules) {
-        nodes.push({
-          id: `rule:${r.id}`,
-          label: r.name,
-          comboId: comboId,
-          type: 'circle',
-          size: 44,
-          style: {
-            fill: c.fill,
-            stroke: c.stroke,
-            lineWidth: 2,
-            shadowColor: c.shadow,
-            shadowBlur: 6,
-            cursor: 'pointer',
-          },
-          labelCfg: {
-            position: 'center',
-            style: {
-              fill: c.text,
-              fontSize: 10,
-              fontWeight: 600,
-            },
-          },
-          dataType: 'rule',
-          rawData: r,
-        });
-
-        if (r.formula_id) {
-          const showFormula = !hasSearch || visibleFormulaIds.has(r.formula_id);
-          if (showFormula) {
-            edges.push({
-              source: `rule:${r.id}`,
-              target: `formula:${r.formula_id}`,
-              label: '使用',
-              style: {
-                stroke: COLORS.edge.ruleFormula,
-                lineWidth: 1.5,
-                endArrow: { path: 'M 0,0 L 8,4 L 8,-4 Z', fill: COLORS.edge.ruleFormula },
-              },
-              labelCfg: {
-                style: { fill: '#7C3AED', fontSize: 10, background: '#fff' },
-              },
-              dataType: 'rule-formula',
-            });
-          }
-        }
-      }
+  for (const rule of ruleList) {
+    if (rule.formula_id && focus.formulaIds.has(rule.formula_id)) {
+      addEdge(edges, `rule:${rule.id}`, `formula:${rule.formula_id}`, '依据公式', 'USES_FORMULA');
+      addEdge(edges, `formula:${rule.formula_id}`, 'domain:metric-judge', '输出判定', 'PRODUCES_RESULT');
     }
   }
 
-  // --- Formula nodes（大圆，紫色） ---
-  for (const f of data.formulas) {
-    if (hasSearch && !visibleFormulaIds.has(f.id)) continue;
-
-    const linkedRuleCount = rulesByFormula[f.id]?.length || 0;
-    const typeLabel =
-      f.formula_type === 'CALC'
-        ? '计算'
-        : f.formula_type === 'JUDGE' || f.formula_type === '2'
-          ? '判定'
-          : '';
-
-    nodes.push({
-      id: `formula:${f.id}`,
-      label: f.formula_name || f.column_name,
-      type: 'circle',
-      size: 56,
-      style: {
-        fill: COLORS.formula.fill,
-        stroke: COLORS.formula.stroke,
-        lineWidth: 3,
-        shadowColor: COLORS.formula.shadow,
-        shadowBlur: 10,
-        cursor: 'pointer',
+  return {
+    nodes,
+    edges,
+    combos,
+    meta: {
+      layout: 'business-flow',
+      mode: focus.mode,
+      search: search || '',
+      summary: {
+        specs: specList.length,
+        rules: ruleList.length,
+        formulas: formulaList.length,
       },
-      labelCfg: {
-        position: 'center',
-        style: {
-          fill: COLORS.formula.text,
-          fontSize: 11,
-          fontWeight: 600,
-        },
-      },
-      dataType: 'formula',
-      rawData: f,
-      ruleCount: linkedRuleCount,
-      typeLabel,
-    });
-  }
-
-  return { nodes, edges, combos };
+    },
+  };
 }
 
 // ------------------------------------------------------------------
-// 规格中心子图（局部展开）
+// 规格中心子图：保持接口，改为有方向的“规格 → 规则 → 公式”链路
 // ------------------------------------------------------------------
 
 function _buildSpecCentricGraph(
@@ -377,183 +340,41 @@ function _buildSpecCentricGraph(
   const combos: any[] = [];
 
   const spec = data.specs.find((s) => s.id === specId);
-  if (!spec) return { nodes: [], edges: [], combos: [] };
+  if (!spec) return { nodes: [], edges: [], combos: [], meta: { layout: 'business-flow' } };
 
-  const specRules = rulesBySpec[specId] || [];
-  const formulaIds = new Set(specRules.map((r) => r.formula_id).filter(Boolean));
+  const specRules = (rulesBySpec[specId] || []).slice(0, 48);
+  const formulaIds = new Set<string>(specRules.map((r) => r.formula_id).filter((id): id is string => Boolean(id)));
+  const rootId = 'domain:ribbon';
 
-  // Spec 节点（中心大圆）
   nodes.push({
-    id: `spec:${spec.id}`,
-    label: spec.name || spec.code,
-    type: 'circle',
-    size: 88,
-    style: {
-      fill: COLORS.spec.fill,
-      stroke: COLORS.spec.stroke,
-      lineWidth: 4,
-      shadowColor: COLORS.spec.shadow,
-      shadowBlur: 16,
-      cursor: 'pointer',
-    },
-    labelCfg: {
-      position: 'center',
-      style: {
-        fill: COLORS.spec.text,
-        fontSize: 16,
-        fontWeight: 700,
-      },
-    },
-    dataType: 'spec',
-    rawData: spec,
-    ruleCount: specRules.length,
-    formulaCount: formulaIds.size,
+    id: rootId,
+    label: '带材',
+    subtitle: '业务根节点',
+    type: 'Ribbon',
+    dataType: 'Ribbon',
+    x: 80,
+    y: 320,
+    isDomainNode: true,
+    rawData: { name: '带材' },
+  });
+  nodes.push(buildSpecNode(spec, 300, 320, specRules.length, formulaIds.size));
+  addEdge(edges, rootId, `spec:${spec.id}`, '适用规格', 'BELONGS_TO_SPEC');
+
+  specRules.forEach((rule, i) => {
+    nodes.push(buildRuleNode(rule, 560, distributeY(i, specRules.length, 320, 68)));
+    addEdge(edges, `spec:${spec.id}`, `rule:${rule.id}`, '判定规则', 'USES_RULE');
   });
 
-  // 按 formula_id + quality_status 二级 Combo 聚合
-  const groupKey = (r: OntologyRule) => `${r.formula_id || '_none'}|${r.quality_status || '未知'}`;
-  const groups: Record<string, { formulaId: string; status: string; rules: OntologyRule[] }> = {};
+  const formulas = Array.from(formulaIds).map((fid) => formulaMap[fid]).filter(Boolean);
+  formulas.forEach((formula, i) => {
+    nodes.push(buildFormulaNode(formula, 830, distributeY(i, formulas.length, 320, 82), rulesByFormula[formula.id]?.length || 0));
+  });
 
-  for (const r of specRules) {
-    const key = groupKey(r);
-    if (!groups[key]) {
-      groups[key] = { formulaId: r.formula_id || '_none', status: r.quality_status || '未知', rules: [] };
-    }
-    groups[key].rules.push(r);
-  }
-
-  for (const [, group] of Object.entries(groups)) {
-    const isQualified = group.status === '合格';
-    const c = isQualified ? COLORS.ruleQualified : COLORS.ruleUnqualified;
-    const formulaName = group.formulaId !== '_none'
-      ? (formulaMap[group.formulaId]?.formula_name || formulaMap[group.formulaId]?.column_name || group.formulaId)
-      : '通用';
-    const comboId = `combo:${specId}:${group.formulaId}:${group.status}`;
-
-    combos.push({
-      id: comboId,
-      label: `${formulaName} · ${group.status}`,
-      style: {
-        fill: 'rgba(255,255,255,0.5)',
-        stroke: c.stroke,
-        lineWidth: 2,
-        lineDash: [4, 2],
-        radius: 16,
-      },
-      labelCfg: {
-        position: 'top',
-        style: { fill: c.stroke, fontSize: 12, fontWeight: 600 },
-      },
-      dataType: 'ruleCombo',
-      specId,
-      specName: spec.name || spec.code,
-      qualityStatus: group.status,
-      rules: group.rules,
-      collapsed: true,
-    });
-
-    edges.push({
-      source: `spec:${spec.id}`,
-      target: comboId,
-      label: '包含',
-      style: {
-        stroke: COLORS.edge.specRule,
-        lineWidth: 2,
-        endArrow: { path: 'M 0,0 L 8,4 L 8,-4 Z', fill: COLORS.edge.specRule },
-      },
-      labelCfg: {
-        style: { fill: '#64748B', fontSize: 10, background: '#fff' },
-      },
-      dataType: 'spec-combo',
-    });
-
-    // 只展开前 5 个规则作为预览
-    const previewRules = group.rules.slice(0, 5);
-    for (const r of previewRules) {
-      nodes.push({
-        id: `rule:${r.id}`,
-        label: r.name,
-        comboId,
-        type: 'circle',
-        size: 40,
-        style: {
-          fill: c.fill,
-          stroke: c.stroke,
-          lineWidth: 2,
-          shadowColor: c.shadow,
-          shadowBlur: 6,
-          cursor: 'pointer',
-        },
-        labelCfg: {
-          position: 'center',
-          style: {
-            fill: c.text,
-            fontSize: 10,
-            fontWeight: 600,
-          },
-        },
-        dataType: 'rule',
-        rawData: r,
-      });
-
-      if (r.formula_id) {
-        edges.push({
-          source: `rule:${r.id}`,
-          target: `formula:${r.formula_id}`,
-          label: '使用',
-          style: {
-            stroke: COLORS.edge.ruleFormula,
-            lineWidth: 1.5,
-            endArrow: { path: 'M 0,0 L 8,4 L 8,-4 Z', fill: COLORS.edge.ruleFormula },
-          },
-          labelCfg: {
-            style: { fill: '#7C3AED', fontSize: 10, background: '#fff' },
-          },
-          dataType: 'rule-formula',
-        });
-      }
+  for (const rule of specRules) {
+    if (rule.formula_id && formulaMap[rule.formula_id]) {
+      addEdge(edges, `rule:${rule.id}`, `formula:${rule.formula_id}`, '依据公式', 'USES_FORMULA');
     }
   }
 
-  // Formula 节点（只显示该规格相关的）
-  for (const fid of formulaIds) {
-    const f = formulaMap[fid];
-    if (!f) continue;
-    const linkedRuleCount = rulesByFormula[fid]?.length || 0;
-    const typeLabel =
-      f.formula_type === 'CALC'
-        ? '计算'
-        : f.formula_type === 'JUDGE' || f.formula_type === '2'
-          ? '判定'
-          : '';
-
-    nodes.push({
-      id: `formula:${f.id}`,
-      label: f.formula_name || f.column_name,
-      type: 'circle',
-      size: 56,
-      style: {
-        fill: COLORS.formula.fill,
-        stroke: COLORS.formula.stroke,
-        lineWidth: 3,
-        shadowColor: COLORS.formula.shadow,
-        shadowBlur: 10,
-        cursor: 'pointer',
-      },
-      labelCfg: {
-        position: 'center',
-        style: {
-          fill: COLORS.formula.text,
-          fontSize: 11,
-          fontWeight: 600,
-        },
-      },
-      dataType: 'formula',
-      rawData: f,
-      ruleCount: linkedRuleCount,
-      typeLabel,
-    });
-  }
-
-  return { nodes, edges, combos };
+  return { nodes, edges, combos, meta: { layout: 'business-flow', mode: 'spec', specId } };
 }

@@ -1,10 +1,10 @@
 <template>
   <div class="kg-canvas" ref="canvasRef">
     <div class="kg-loading-mask" v-if="loading">
-      <a-spin tip="加载本体数据..." />
+      <a-spin tip="加载图谱数据..." />
     </div>
     <div class="kg-empty" v-if="!loading && empty">
-      <a-empty description="暂无数据，点击全量重建初始化" />
+      <a-empty description="暂无数据，请先搜索带材或重建知识图谱" />
     </div>
   </div>
 </template>
@@ -31,138 +31,110 @@ const emit = defineEmits<{
 const canvasRef = ref<HTMLElement | null>(null);
 let chart: echarts.ECharts | null = null;
 
-// ------------------------------------------------------------------
-// 配色
-// ------------------------------------------------------------------
-// 带材中心本体配色
-const NODE_COLORS: Record<string, { fill: string; stroke: string; text: string; shadow: string }> = {
-  Ribbon: { fill: '#3B82F6', stroke: '#2563EB', text: '#fff', shadow: 'rgba(59,130,246,0.5)' },
-  ProductSpec: { fill: '#1D4ED8', stroke: '#1E40AF', text: '#fff', shadow: 'rgba(29,78,216,0.5)' },
-  LaminationData: { fill: '#22C55E', stroke: '#16A34A', text: '#fff', shadow: 'rgba(34,197,94,0.5)' },
-  SingleSheetPerformance: { fill: '#F59E0B', stroke: '#D97706', text: '#fff', shadow: 'rgba(245,158,11,0.5)' },
-  AppearanceFeature: { fill: '#EF4444', stroke: '#DC2626', text: '#fff', shadow: 'rgba(239,68,68,0.5)' },
-  JudgementRule: { fill: '#A855F7', stroke: '#9333EA', text: '#fff', shadow: 'rgba(168,85,247,0.5)' },
-  // 兼容旧类型
-  spec: { fill: '#3B82F6', stroke: '#2563EB', text: '#fff', shadow: 'rgba(59,130,246,0.5)' },
-  rule: { fill: '#22C55E', stroke: '#16A34A', text: '#fff', shadow: 'rgba(34,197,94,0.5)' },
-  formula: { fill: '#A855F7', stroke: '#9333EA', text: '#fff', shadow: 'rgba(168,85,247,0.5)' },
+const NODE_STYLES: Record<string, { fill: string; stroke: string; text: string; size: number; symbol: string }> = {
+  Ribbon: { fill: '#E6F4FF', stroke: '#1677FF', text: '#0958D9', size: 88, symbol: 'roundRect' },
+  ProductSpec: { fill: '#F0F5FF', stroke: '#2F54EB', text: '#1D39C4', size: 74, symbol: 'roundRect' },
+  spec: { fill: '#F0F5FF', stroke: '#2F54EB', text: '#1D39C4', size: 74, symbol: 'roundRect' },
+  LaminationData: { fill: '#F6FFED', stroke: '#52C41A', text: '#237804', size: 68, symbol: 'roundRect' },
+  SingleSheetPerformance: { fill: '#FFF7E6', stroke: '#FA8C16', text: '#AD4E00', size: 68, symbol: 'roundRect' },
+  AppearanceFeature: { fill: '#FFF1F0', stroke: '#FF4D4F', text: '#A8071A', size: 64, symbol: 'roundRect' },
+  JudgementRule: { fill: '#F9F0FF', stroke: '#722ED1', text: '#391085', size: 58, symbol: 'roundRect' },
+  rule: { fill: '#F9F0FF', stroke: '#722ED1', text: '#391085', size: 58, symbol: 'roundRect' },
+  Formula: { fill: '#E6FFFB', stroke: '#13C2C2', text: '#006D75', size: 62, symbol: 'roundRect' },
+  formula: { fill: '#E6FFFB', stroke: '#13C2C2', text: '#006D75', size: 62, symbol: 'roundRect' },
+  MetricJudgement: { fill: '#FFFBE6', stroke: '#FAAD14', text: '#AD6800', size: 68, symbol: 'roundRect' },
 };
 
-function getNodeColor(dataType: string, rawData?: any) {
-  const c = NODE_COLORS[dataType];
-  if (c) return c;
-  // fallback for old types
-  if (dataType === 'spec') return NODE_COLORS.spec;
-  if (dataType === 'rule') {
-    const isQualified = rawData?.quality_status === '合格';
-    return isQualified ? NODE_COLORS.LaminationData : NODE_COLORS.AppearanceFeature;
-  }
-  if (dataType === 'formula') return NODE_COLORS.formula;
-  return NODE_COLORS.Ribbon;
+const EDGE_COLORS: Record<string, string> = {
+  BELONGS_TO_SPEC: '#1677FF',
+  HAS_LAMINATION_DATA: '#52C41A',
+  HAS_SINGLE_SHEET_PERF: '#FA8C16',
+  HAS_APPEARANCE: '#FF4D4F',
+  USES_RULE: '#722ED1',
+  USES_FORMULA: '#13C2C2',
+  PRODUCES_RESULT: '#FAAD14',
+  FEEDS_METRIC: '#8C8C8C',
+};
+
+function styleFor(dataType: string) {
+  return NODE_STYLES[dataType] || NODE_STYLES.Ribbon;
 }
 
-function getNodeSize(dataType: string) {
-  if (dataType === 'Ribbon') return 88;
-  if (dataType === 'ProductSpec') return 72;
-  if (dataType === 'LaminationData') return 56;
-  if (dataType === 'SingleSheetPerformance') return 56;
-  if (dataType === 'AppearanceFeature') return 48;
-  if (dataType === 'JudgementRule') return 56;
-  // fallback
-  if (dataType === 'spec') return 72;
-  if (dataType === 'rule') return 44;
-  if (dataType === 'formula') return 56;
-  return 50;
+function truncateLabel(label: string, max = 14) {
+  const text = String(label || '');
+  return text.length > max ? `${text.slice(0, max)}…` : text;
 }
 
-// ------------------------------------------------------------------
-// 数据转换：G6GraphData → ECharts graph
-// ------------------------------------------------------------------
+function getNodePosition(node: any, index: number, total: number) {
+  if (typeof node.x === 'number' && typeof node.y === 'number') return [node.x, node.y];
+  const angle = (Math.PI * 2 * index) / Math.max(total, 1);
+  const radius = 260;
+  return [460 + Math.cos(angle) * radius, 320 + Math.sin(angle) * radius];
+}
+
 function convertToECharts(data: G6GraphData) {
   const nodeMap = new Map<string, any>();
   const echartsNodes: any[] = [];
   const echartsLinks: any[] = [];
+  const total = data.nodes.length;
 
-  // 节点（combo 内的节点也扁平化）
-  for (const n of data.nodes) {
-    const dataType = n.type || n.dataType || 'Ribbon';
-    const color = getNodeColor(dataType, n.raw);
-    const size = getNodeSize(dataType);
+  data.nodes.forEach((n, index) => {
+    const dataType = n.dataType || n.type || 'Ribbon';
+    const style = styleFor(dataType);
+    const [x, y] = getNodePosition(n, index, total);
     const node = {
+      id: n.id,
       name: n.id as string,
-      value: (n.metrics && Object.keys(n.metrics).length) || 0,
-      symbolSize: size,
-      symbol: 'circle',
+      value: n.label as string,
+      x,
+      y,
+      fixed: true,
+      symbol: style.symbol,
+      symbolSize: [Math.max(style.size + truncateLabel(n.label, 18).length * 4, 116), style.size],
       itemStyle: {
-        color: color.fill,
-        borderColor: color.stroke,
-        borderWidth: 3,
-        shadowBlur: 12,
-        shadowColor: color.shadow,
+        color: style.fill,
+        borderColor: n.statusColor || style.stroke,
+        borderWidth: n.isDomainNode ? 1.8 : 2,
+        shadowBlur: 0,
       },
       label: {
         show: true,
-        color: color.text,
-        fontSize: dataType === 'Ribbon' ? 14 : dataType === 'ProductSpec' ? 13 : 10,
-        fontWeight: dataType === 'Ribbon' || dataType === 'ProductSpec' ? 700 : 600,
-        formatter: () => n.label as string,
+        color: style.text,
+        fontSize: dataType === 'Ribbon' ? 15 : 12,
+        fontWeight: dataType === 'Ribbon' || dataType === 'ProductSpec' || dataType === 'spec' ? 700 : 600,
+        lineHeight: 16,
+        formatter: () => truncateLabel(n.label, dataType === 'JudgementRule' || dataType === 'rule' ? 12 : 16),
       },
-      // 自定义数据透传
       _raw: { ...n, dataType },
     };
     nodeMap.set(n.id as string, node);
     echartsNodes.push(node);
-  }
+  });
 
-  // combo 也作为大节点展示（用圆角矩形区分）
-  for (const c of data.combos || []) {
-    const comboNode = {
-      name: c.id as string,
-      value: (c.rules || []).length,
-      symbolSize: 60 + ((c.rules || []).length * 2),
-      symbol: 'roundRect',
-      itemStyle: {
-        color: 'rgba(255,255,255,0.85)',
-        borderColor: '#94A3B8',
-        borderWidth: 2,
-        borderType: 'dashed',
-        shadowBlur: 6,
-        shadowColor: 'rgba(148,163,184,0.3)',
-      },
-      label: {
-        show: true,
-        color: '#475569',
-        fontSize: 11,
-        fontWeight: 600,
-        formatter: () => c.label as string,
-      },
-      _raw: { ...c, dataType: 'combo' },
-    };
-    nodeMap.set(c.id as string, comboNode);
-    echartsNodes.push(comboNode);
-  }
-
-  // 边
-  for (const e of data.edges) {
+  for (const e of data.edges || []) {
     const source = e.source as string;
     const target = e.target as string;
     if (!nodeMap.has(source) || !nodeMap.has(target)) continue;
-
-    const isSpecCombo = (e.dataType as string) === 'spec-combo';
+    const color = EDGE_COLORS[e.relation || e.dataType] || '#BFBFBF';
     echartsLinks.push({
       source,
       target,
-      relation: (e.label as string) || '',
+      relation: e.label || '',
       lineStyle: {
-        color: isSpecCombo ? '#94A3B8' : '#A78BFA',
-        width: isSpecCombo ? 1.5 : 2,
-        curveness: 0.15,
+        color,
+        width: e.relation === 'USES_FORMULA' ? 1.8 : 2,
+        opacity: 0.76,
+        curveness: 0.06,
       },
       label: {
-        show: !!e.label,
-        color: isSpecCombo ? '#64748B' : '#7C3AED',
+        show: false,
+        color: '#595959',
         fontSize: 10,
         formatter: (p: any) => p.data.relation,
+      },
+      emphasis: {
+        label: { show: true },
+        lineStyle: { width: 3, opacity: 1 },
       },
       _raw: e,
     });
@@ -171,10 +143,6 @@ function convertToECharts(data: G6GraphData) {
   return { nodes: echartsNodes, links: echartsLinks };
 }
 
-// ------------------------------------------------------------------
-// 初始化
-// ------------------------------------------------------------------
-
 function initChart() {
   if (!canvasRef.value) return;
   chart = echarts.init(canvasRef.value, undefined, { renderer: 'canvas' });
@@ -182,20 +150,15 @@ function initChart() {
   chart.on('click', (params: any) => {
     if (params.dataType === 'node') {
       const raw = params.data?._raw;
-      if (raw?.dataType === 'combo') {
-        emit('comboClick', raw);
-      } else {
-        emit('nodeClick', raw);
-      }
+      if (raw?.dataType === 'combo') emit('comboClick', raw);
+      else emit('nodeClick', raw);
     } else {
       emit('canvasClick');
     }
   });
 
   chart.on('zr:click', (params: any) => {
-    if (!params.target) {
-      emit('canvasClick');
-    }
+    if (!params.target) emit('canvasClick');
   });
 
   window.addEventListener('resize', handleResize);
@@ -203,148 +166,92 @@ function initChart() {
 
 function render(data: G6GraphData) {
   if (!chart) return;
-  console.log('[KgCanvas] render called, nodes:', data.nodes.length, 'edges:', data.edges.length, 'combos:', (data.combos || []).length);
   const { nodes, links } = convertToECharts(data);
 
   const option: echarts.EChartsOption = {
     backgroundColor: 'transparent',
     tooltip: {
       trigger: 'item',
-      backgroundColor: 'rgba(255,255,255,0.95)',
-      borderColor: '#E2E8F0',
+      backgroundColor: 'rgba(255,255,255,0.98)',
+      borderColor: '#D9D9D9',
       borderWidth: 1,
-      textStyle: { color: '#334155', fontSize: 12 },
-      extraCssText: 'box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-radius: 8px; padding: 10px 14px;',
+      textStyle: { color: '#262626', fontSize: 12 },
+      extraCssText: 'box-shadow: 0 6px 16px rgba(0,0,0,0.08); border-radius: 8px; padding: 10px 14px;',
       formatter: (p: any) => {
         const raw = p.data?._raw;
         if (!raw) return '';
+        if (p.dataType === 'edge') return raw.label || raw.relation || '';
         const dt = raw.dataType || raw.type;
-        if (dt === 'Ribbon') {
-          const r = raw.raw || {};
-          return `<b style="color:#2563EB">🏭 ${raw.label}</b><br/>规格: ${raw.spec_name || '-'}<br/>日期: ${raw.detection_date || '-'}<br/>等级: ${raw.labeling || '未判定'}`;
-        }
-        if (dt === 'ProductSpec') {
-          const r = raw.raw || {};
-          return `<b style="color:#1D4ED8">📦 ${raw.label}</b><br/>代码: ${r.code || '-'}<br/>检测列: ${r.detection_columns || '-'}`;
-        }
-        if (dt === 'LaminationData') {
-          const r = raw.raw || {};
-          return `<b style="color:#16A34A">📊 叠片数据</b><br/>宽度: ${r.width || '-'}<br/>卷重: ${r.coil_weight || '-'}<br/>断头: ${r.break_count || '-'}`;
-        }
-        if (dt === 'SingleSheetPerformance') {
-          const r = raw.raw || {};
-          return `<b style="color:#D97706">⚡ 单片性能</b><br/>Ps铁损: ${r.ps_loss || '-'}<br/>Ss功率: ${r.ss_power || '-'}<br/>Hc: ${r.hc || '-'}`;
-        }
-        if (dt === 'AppearanceFeature') {
-          const r = raw.raw || {};
-          return `<b style="color:#DC2626">🔴 ${raw.label}</b><br/>大类: ${r.category || '-'}<br/>等级: ${r.level || '-'}`;
-        }
-        if (dt === 'JudgementRule') {
-          const r = raw.raw || {};
-          const c = r.quality_status === '合格' ? '#16A34A' : '#DC2626';
-          return `<b style="color:${c}">⚖️ ${raw.label}</b><br/>状态: ${r.quality_status || '-'}<br/>公式: ${r.formula_name || '-'}`;
-        }
-        if (dt === 'combo') {
-          return `<b style="color:#64748B">📁 ${raw.label}</b><br/>规则数: ${(raw.rules || []).length}`;
-        }
-        if (dt === 'spec') {
-          return `<b style="color:#2563EB">📦 ${raw.rawData?.name || raw.rawData?.code}</b><br/>规则: ${raw.ruleCount || 0} | 公式: ${raw.formulaCount || 0}`;
-        }
-        if (dt === 'rule') {
-          const c = raw.rawData?.quality_status === '合格' ? '#16A34A' : '#DC2626';
-          return `<b style="color:${c}">⚖️ ${raw.rawData?.name}</b><br/>状态: ${raw.rawData?.quality_status} | 优先级: ${raw.rawData?.priority}`;
-        }
-        if (dt === 'formula') {
-          return `<b style="color:#9333EA">🔧 ${raw.rawData?.formula_name || raw.rawData?.column_name}</b><br/>类型: ${raw.typeLabel || '-'} | 关联规则: ${raw.ruleCount || 0}`;
-        }
-        return '';
+        const payload = raw.rawData || raw.raw || {};
+        const subtitle = raw.subtitle ? `<br/><span style="color:#8C8C8C">${raw.subtitle}</span>` : '';
+        if (dt === 'Ribbon') return `<b style="color:#0958D9">${raw.label}</b>${subtitle}<br/>规格: ${raw.spec_name || payload.spec_name || '-'}<br/>等级: ${raw.labeling || payload.labeling || '未判定'}`;
+        if (dt === 'ProductSpec' || dt === 'spec') return `<b style="color:#1D39C4">${raw.label}</b>${subtitle}<br/>规则数: ${raw.ruleCount || 0}<br/>公式数: ${raw.formulaCount || 0}`;
+        if (dt === 'LaminationData') return `<b style="color:#237804">${raw.label}</b>${subtitle}<br/>宽度: ${payload.width ?? '-'}<br/>卷重: ${payload.coil_weight ?? '-'}`;
+        if (dt === 'SingleSheetPerformance') return `<b style="color:#AD4E00">${raw.label}</b>${subtitle}<br/>Ps铁损: ${payload.ps_loss ?? '-'}<br/>Ss功率: ${payload.ss_power ?? '-'}<br/>Hc: ${payload.hc ?? '-'}`;
+        if (dt === 'AppearanceFeature') return `<b style="color:#A8071A">${raw.label}</b>${subtitle}<br/>大类: ${payload.category || '-'}<br/>等级: ${payload.level || '-'}`;
+        if (dt === 'JudgementRule' || dt === 'rule') return `<b style="color:#391085">${raw.label}</b>${subtitle}<br/>状态: ${payload.quality_status || '-'}<br/>公式: ${payload.formula_name || '-'}`;
+        if (dt === 'Formula' || dt === 'formula') return `<b style="color:#006D75">${raw.label}</b>${subtitle}<br/>类型: ${raw.typeLabel || '-'}<br/>关联规则: ${raw.ruleCount || 0}`;
+        return `<b>${raw.label || raw.name}</b>${subtitle}`;
       },
     },
-    animationDuration: 800,
-    animationEasingUpdate: 'quinticInOut',
+    grid: { left: 24, right: 24, top: 24, bottom: 24 },
+    animationDuration: 500,
+    animationEasingUpdate: 'cubicOut',
     series: [
       {
         type: 'graph',
-        layout: 'force',
+        layout: 'none',
         data: nodes,
-        links: links,
+        links,
         roam: true,
         draggable: true,
-        force: {
-          repulsion: 500,
-          gravity: 0.05,
-          edgeLength: [100, 200],
-          layoutAnimation: true,
-        },
+        scaleLimit: { min: 0.35, max: 2.2 },
         emphasis: {
           focus: 'adjacency',
-          lineStyle: { width: 4, opacity: 1 },
-          itemStyle: {
-            shadowBlur: 24,
-            shadowColor: 'rgba(245,158,11,0.6)',
-          },
+          blurScope: 'coordinateSystem',
+          label: { show: true },
+          itemStyle: { borderWidth: 3 },
+          lineStyle: { width: 3, opacity: 1 },
         },
-        lineStyle: {
-          opacity: 0.7,
-          curveness: 0.15,
+        blur: {
+          itemStyle: { opacity: 0.18 },
+          lineStyle: { opacity: 0.08 },
+          label: { opacity: 0.2 },
         },
+        lineStyle: { opacity: 0.72, curveness: 0.06 },
         edgeSymbol: ['none', 'arrow'],
-        edgeSymbolSize: [0, 10],
-        edgeLabel: {
-          show: true,
-          fontSize: 10,
-          color: '#64748B',
-        },
+        edgeSymbolSize: [0, 8],
+        edgeLabel: { show: false, fontSize: 10, color: '#595959', backgroundColor: '#fff' },
       },
-    ],
+    ] as any,
   };
 
   chart.setOption(option, true);
+  window.setTimeout(() => chart?.dispatchAction({ type: 'restore' }), 0);
 }
 
 function applyHighlights() {
   if (!chart) return;
   const nodeIds = new Set(props.highlightNodeIds || []);
-  const edgeIds = new Set(props.highlightEdgeIds || []);
-
-  // 通过 downplay / highlight 实现
   chart.dispatchAction({ type: 'downplay', seriesIndex: 0 });
-
-  for (const id of nodeIds) {
-    chart.dispatchAction({ type: 'highlight', seriesIndex: 0, name: id });
-  }
+  for (const id of nodeIds) chart.dispatchAction({ type: 'highlight', seriesIndex: 0, name: id });
 }
 
 function handleResize() {
   chart?.resize();
 }
 
-// ------------------------------------------------------------------
-// 生命周期
-// ------------------------------------------------------------------
-
 watch(() => props.data, (val) => {
-  console.log('[KgCanvas] data changed, nodes:', val?.nodes?.length);
-  if (val && chart) {
-    nextTick(() => render(val));
-  }
+  if (val && chart) nextTick(() => render(val));
 }, { flush: 'post' });
 
-watch(() => props.highlightNodeIds, () => {
-  applyHighlights();
-}, { deep: true });
-
-watch(() => props.highlightEdgeIds, () => {
-  applyHighlights();
-}, { deep: true });
+watch(() => props.highlightNodeIds, () => applyHighlights(), { deep: true });
+watch(() => props.highlightEdgeIds, () => applyHighlights(), { deep: true });
 
 onMounted(async () => {
   await nextTick();
   initChart();
-  console.log('[KgCanvas] mounted, data nodes:', props.data?.nodes?.length);
-  if (props.data && chart) {
-    render(props.data);
-  }
+  if (props.data && chart) render(props.data);
 });
 
 onBeforeUnmount(() => {
@@ -359,7 +266,7 @@ onBeforeUnmount(() => {
 <style lang="less" scoped>
 .kg-canvas {
   flex: 1;
-  background: #FAFBFC;
+  background: linear-gradient(180deg, #ffffff 0%, #fafafa 100%);
   position: relative;
   min-height: 0;
 }

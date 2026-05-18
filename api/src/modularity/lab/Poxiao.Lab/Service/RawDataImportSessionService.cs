@@ -2432,6 +2432,9 @@ public class RawDataImportSessionService
                 var furnaceNoObj = FurnaceNo.Parse(entity.FurnaceNo, ignoredSuffixes);
                 if (furnaceNoObj.IsValid)
                 {
+                    // ★ 入库前把原始炉号的字母部分统一转大写（中文/数字/连字符不受影响）
+                    // 数据库里只存一种形态：dedup / 对话 / 导出都不用做大小写处理
+                    entity.FurnaceNo = (entity.FurnaceNo ?? string.Empty).Trim().ToUpperInvariant();
                     entity.LineNo = furnaceNoObj.LineNoNumeric;
                     entity.Shift = furnaceNoObj.Shift;
                     entity.ShiftNumeric = furnaceNoObj.ShiftNumeric;
@@ -2448,6 +2451,19 @@ public class RawDataImportSessionService
                         entity.ProdDate = entity.DetectionDate;
                     }
                     entity.FurnaceNoFormatted = furnaceNoObj.GetFurnaceNo();
+
+                    // ★ 业务规则：叠片数据导入禁止炉号含 K/k 标记
+                    // K 是单片性能（lab/magneticData）的刻痕标识，混在叠片数据里会污染单片性能匹配
+                    var sm = (furnaceNoObj.SpecialMarker ?? string.Empty).Trim();
+                    if (sm.Equals("K", StringComparison.OrdinalIgnoreCase))
+                    {
+                        entity.ImportStatus = 1;
+                        entity.ImportError = "叠片数据炉号不应含 K 标记（K 是单片性能数据的刻痕标识，请检查录入数据来源）";
+                        entity.IsValidData = 0;
+                        entities.Add(entity);
+                        continue;
+                    }
+
                     entity.IsValidData = 1;
                 }
                 else

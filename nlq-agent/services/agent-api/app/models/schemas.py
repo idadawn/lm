@@ -166,7 +166,7 @@ class OntologyNode(BaseModel):
 
     id: str = Field(..., description="节点全局唯一ID")
     type: str = Field(
-        ..., description="对象类型: ProductSpec/JudgmentRule/Metric/RuleCondition/..."
+        ..., description="对象类型: Ribbon/ProductSpec/JudgmentRule/Formula/LaminationData/SingleSheetPerf/AppearanceFeature/AppearanceCategory/AppearanceLevel/ReportConfig/SpecAttribute"
     )
     label: str = Field(..., description="显示标签")
     subtitle: str | None = Field(default=None, description="副标题")

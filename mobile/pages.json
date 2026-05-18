@@ -21,6 +21,13 @@
       }
     },
     {
+      "path": "pages/report/report",
+      "style": {
+        "navigationBarTitleText": "月度报表",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
       "path": "pages/mine/mine",
       "style": {
         "navigationBarTitleText": "我的"
@@ -68,6 +75,12 @@
         "text": "对话",
         "iconPath": "static/tabbar/chat.png",
         "selectedIconPath": "static/tabbar/chat-active.png"
+      },
+      {
+        "pagePath": "pages/report/report",
+        "text": "报表",
+        "iconPath": "static/tabbar/home.png",
+        "selectedIconPath": "static/tabbar/home-active.png"
       },
       {
         "pagePath": "pages/mine/mine",

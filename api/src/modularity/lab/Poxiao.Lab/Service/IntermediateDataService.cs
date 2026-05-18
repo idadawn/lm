@@ -2851,7 +2851,8 @@ public class IntermediateDataService : IIntermediateDataService, IDynamicApiCont
         string furnaceInput,
         FurnaceNo furnaceNoObj)
     {
-        entity.FurnaceNo = furnaceInput;
+        // ★ 入库前把原始炉号的字母部分统一转大写（与 RawDataImport 保持一致）
+        entity.FurnaceNo = (furnaceInput ?? string.Empty).Trim().ToUpperInvariant();
         entity.FurnaceNoFormatted = furnaceNoObj.GetFurnaceNo();
         entity.LineNo = furnaceNoObj.LineNoNumeric;
         entity.Shift = furnaceNoObj.Shift;

@@ -19,6 +19,7 @@ export interface NlqAgentChatHandlers {
   onText?: (chunk: string) => void;
   onReasoningStep?: (step: ReasoningStep) => void;
   onResponseMetadata?: (payload: Record<string, unknown>) => void;
+  onChart?: (chartSpec: Record<string, unknown>) => void;
   onError?: (err: Error) => void;
   onDone?: () => void;
   signal?: AbortSignal;
@@ -86,6 +87,8 @@ export async function streamNlqChat(
           handlers.onResponseMetadata?.(
             event.response_payload as Record<string, unknown>,
           );
+        } else if (eventType === 'chart' && event.chart_spec) {
+          handlers.onChart?.(event.chart_spec as Record<string, unknown>);
         } else if (eventType === 'error') {
           handlers.onError?.(new Error(String(event.error ?? 'unknown error')));
         } else if (eventType === 'done') {

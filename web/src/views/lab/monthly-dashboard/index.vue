@@ -5,8 +5,8 @@
         <h1 class="page-title">生产驾驶舱</h1>
       </div>
       <div class="header-right">
-        <a-range-picker v-model:value="dateRange" :format="dateFormat" :placeholder="['开始日期', '结束日期']"
-          @change="onDateChange" style="margin-right: 12px" />
+        <a-range-picker v-model:value="dateRange" :format="dateFormat" :ranges="rangePresets"
+          :placeholder="['开始日期', '结束日期']" @change="onDateChange" style="margin-right: 12px" />
         <a-button type="primary" :loading="loading" @click="handleRefresh">
           <template #icon>
             <ReloadOutlined />
@@ -103,6 +103,25 @@ const dateFormat = 'YYYY-MM-DD';
 const today = dayjs();
 const startOfMonth = today.startOf('month');
 const dateRange = ref<[Dayjs, Dayjs]>([startOfMonth, today]);
+
+function getWeekStart(value: Dayjs) {
+  return value.subtract((value.day() + 6) % 7, 'day').startOf('day');
+}
+
+const rangePresets = computed<Record<string, [Dayjs, Dayjs]>>(() => {
+  const current = dayjs();
+  const currentWeekStart = getWeekStart(current);
+  const lastWeekStart = currentWeekStart.subtract(7, 'day');
+  const lastMonth = current.subtract(1, 'month');
+
+  return {
+    今日: [current, current],
+    本周: [currentWeekStart, current],
+    本月: [current.startOf('month'), current],
+    上月: [lastMonth.startOf('month'), lastMonth.endOf('month')],
+    上周: [lastWeekStart, lastWeekStart.add(6, 'day').endOf('day')],
+  };
+});
 
 const validDetails = computed(() => {
   return (data.value?.details || []).filter((d: any) => !d?.isSummaryRow && !!d?.prodDate);

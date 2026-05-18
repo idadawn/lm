@@ -27,7 +27,7 @@
               </a-col>
               <a-col :span="12">
                 <a-form-item label="系统版本">
-                  <a-input v-model:value="baseForm.sysVersion" placeholder="系统版本" allowClear readonly />
+                  <a-input v-model:value="baseForm.sysVersion" placeholder="系统版本" allowClear />
                 </a-form-item>
               </a-col>
               <a-col :span="12">

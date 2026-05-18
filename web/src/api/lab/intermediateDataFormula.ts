@@ -50,10 +50,10 @@ export const updateIntermediateDataFormula = (id: string, params: IntermediateDa
 /**
  * 仅更新公式内容
  */
-export const updateFormula = (id: string, formula: string) => {
+export const updateFormula = (id: string, formula: string, editorMode?: 'advanced' | 'range') => {
     return defHttp.put<IntermediateDataFormula>({
         url: `${Api.Base}/${id}/formula`,
-        data: { formula } // 会作为 JSON Body 发送: { "formula": "..." }
+        data: { formula, editorMode } // 会作为 JSON Body 发送: { "formula": "..." }
     });
 };
 

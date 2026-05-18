@@ -1,0 +1,6707 @@
+{
+  "Furnace Number Format<SEP>Production Line Number": {
+    "chunk_ids": [
+      "chunk-2a685b81b536bb4eba928bee1eb8329d"
+    ],
+    "count": 1,
+    "create_time": 1778985114,
+    "update_time": 1778985114,
+    "_id": "Furnace Number Format<SEP>Production Line Number"
+  },
+  "Furnace Number Format<SEP>Shift": {
+    "chunk_ids": [
+      "chunk-2a685b81b536bb4eba928bee1eb8329d"
+    ],
+    "count": 1,
+    "create_time": 1778985114,
+    "update_time": 1778985114,
+    "_id": "Furnace Number Format<SEP>Shift"
+  },
+  "Furnace Number Format<SEP>Production Date": {
+    "chunk_ids": [
+      "chunk-2a685b81b536bb4eba928bee1eb8329d"
+    ],
+    "count": 1,
+    "create_time": 1778985114,
+    "update_time": 1778985114,
+    "_id": "Furnace Number Format<SEP>Production Date"
+  },
+  "F_FURNACE_NO<SEP>F_FURNACE_NO_FORMATTED": {
+    "chunk_ids": [
+      "chunk-2a685b81b536bb4eba928bee1eb8329d",
+      "chunk-517383c70d6bd091e78ad3ca4a0d73e0"
+    ],
+    "count": 2,
+    "update_time": 1778985879,
+    "_id": "F_FURNACE_NO<SEP>F_FURNACE_NO_FORMATTED"
+  },
+  "Furnace Number Component<SEP>Furnace Number Format": {
+    "chunk_ids": [
+      "chunk-2a685b81b536bb4eba928bee1eb8329d"
+    ],
+    "count": 1,
+    "create_time": 1778985114,
+    "update_time": 1778985114,
+    "_id": "Furnace Number Component<SEP>Furnace Number Format"
+  },
+  "Coil Number<SEP>Furnace Number Format": {
+    "chunk_ids": [
+      "chunk-2a685b81b536bb4eba928bee1eb8329d"
+    ],
+    "count": 1,
+    "create_time": 1778985114,
+    "update_time": 1778985114,
+    "_id": "Coil Number<SEP>Furnace Number Format"
+  },
+  "Furnace Number Format<SEP>Sub-Coil Number": {
+    "chunk_ids": [
+      "chunk-2a685b81b536bb4eba928bee1eb8329d"
+    ],
+    "count": 1,
+    "create_time": 1778985114,
+    "update_time": 1778985114,
+    "_id": "Furnace Number Format<SEP>Sub-Coil Number"
+  },
+  "Appearance Characteristic<SEP>Furnace Number Format": {
+    "chunk_ids": [
+      "chunk-2a685b81b536bb4eba928bee1eb8329d"
+    ],
+    "count": 1,
+    "create_time": 1778985114,
+    "update_time": 1778985114,
+    "_id": "Appearance Characteristic<SEP>Furnace Number Format"
+  },
+  "Example Furnace Number<SEP>Furnace Number Format": {
+    "chunk_ids": [
+      "chunk-2a685b81b536bb4eba928bee1eb8329d"
+    ],
+    "count": 1,
+    "create_time": 1778985114,
+    "update_time": 1778985114,
+    "_id": "Example Furnace Number<SEP>Furnace Number Format"
+  },
+  "Example Furnace Number<SEP>F_FURNACE_NO": {
+    "chunk_ids": [
+      "chunk-2a685b81b536bb4eba928bee1eb8329d"
+    ],
+    "count": 1,
+    "create_time": 1778985114,
+    "update_time": 1778985114,
+    "_id": "Example Furnace Number<SEP>F_FURNACE_NO"
+  },
+  "Example Furnace Number<SEP>Production Line Number": {
+    "chunk_ids": [
+      "chunk-2a685b81b536bb4eba928bee1eb8329d"
+    ],
+    "count": 1,
+    "create_time": 1778985114,
+    "update_time": 1778985114,
+    "_id": "Example Furnace Number<SEP>Production Line Number"
+  },
+  "F_FURNACE_NO<SEP>Furnace Number Format": {
+    "chunk_ids": [
+      "chunk-2a685b81b536bb4eba928bee1eb8329d"
+    ],
+    "count": 1,
+    "create_time": 1778985114,
+    "update_time": 1778985114,
+    "_id": "F_FURNACE_NO<SEP>Furnace Number Format"
+  },
+  "Example Furnace Number<SEP>Shift": {
+    "chunk_ids": [
+      "chunk-2a685b81b536bb4eba928bee1eb8329d"
+    ],
+    "count": 1,
+    "create_time": 1778985114,
+    "update_time": 1778985114,
+    "_id": "Example Furnace Number<SEP>Shift"
+  },
+  "F_FURNACE_NO_FORMATTED<SEP>Furnace Number Format": {
+    "chunk_ids": [
+      "chunk-2a685b81b536bb4eba928bee1eb8329d"
+    ],
+    "count": 1,
+    "create_time": 1778985114,
+    "update_time": 1778985114,
+    "_id": "F_FURNACE_NO_FORMATTED<SEP>Furnace Number Format"
+  },
+  "Example Furnace Number<SEP>Production Date": {
+    "chunk_ids": [
+      "chunk-2a685b81b536bb4eba928bee1eb8329d"
+    ],
+    "count": 1,
+    "create_time": 1778985114,
+    "update_time": 1778985114,
+    "_id": "Example Furnace Number<SEP>Production Date"
+  },
+  "Furnace Number<SEP>Furnace Number Format": {
+    "chunk_ids": [
+      "chunk-2a685b81b536bb4eba928bee1eb8329d"
+    ],
+    "count": 1,
+    "create_time": 1778985114,
+    "update_time": 1778985114,
+    "_id": "Furnace Number<SEP>Furnace Number Format"
+  },
+  "Example Furnace Number<SEP>Furnace Number Component": {
+    "chunk_ids": [
+      "chunk-2a685b81b536bb4eba928bee1eb8329d"
+    ],
+    "count": 1,
+    "create_time": 1778985114,
+    "update_time": 1778985114,
+    "_id": "Example Furnace Number<SEP>Furnace Number Component"
+  },
+  "Coil Number<SEP>Example Furnace Number": {
+    "chunk_ids": [
+      "chunk-2a685b81b536bb4eba928bee1eb8329d"
+    ],
+    "count": 1,
+    "create_time": 1778985114,
+    "update_time": 1778985114,
+    "_id": "Coil Number<SEP>Example Furnace Number"
+  },
+  "Example Furnace Number<SEP>Sub-Coil Number": {
+    "chunk_ids": [
+      "chunk-2a685b81b536bb4eba928bee1eb8329d"
+    ],
+    "count": 1,
+    "create_time": 1778985114,
+    "update_time": 1778985114,
+    "_id": "Example Furnace Number<SEP>Sub-Coil Number"
+  },
+  "Appearance Characteristic<SEP>Example Furnace Number": {
+    "chunk_ids": [
+      "chunk-2a685b81b536bb4eba928bee1eb8329d"
+    ],
+    "count": 1,
+    "create_time": 1778985114,
+    "update_time": 1778985114,
+    "_id": "Appearance Characteristic<SEP>Example Furnace Number"
+  },
+  "Appearance Characteristic<SEP>F_FURNACE_NO": {
+    "chunk_ids": [
+      "chunk-2a685b81b536bb4eba928bee1eb8329d"
+    ],
+    "count": 1,
+    "create_time": 1778985114,
+    "update_time": 1778985114,
+    "_id": "Appearance Characteristic<SEP>F_FURNACE_NO"
+  },
+  "First Inspection Column<SEP>First Inspection Pass Rate": {
+    "chunk_ids": [
+      "chunk-f2504a9381d2837c8dd322280d321c43"
+    ],
+    "count": 1,
+    "create_time": 1778985158,
+    "update_time": 1778985158,
+    "_id": "First Inspection Column<SEP>First Inspection Pass Rate"
+  },
+  "Lab Report Configuration<SEP>Level Names Field": {
+    "chunk_ids": [
+      "chunk-f2504a9381d2837c8dd322280d321c43"
+    ],
+    "count": 1,
+    "create_time": 1778985158,
+    "update_time": 1778985158,
+    "_id": "Lab Report Configuration<SEP>Level Names Field"
+  },
+  "A Grade Coil Weight<SEP>Labeling Column": {
+    "chunk_ids": [
+      "chunk-f2504a9381d2837c8dd322280d321c43"
+    ],
+    "count": 1,
+    "create_time": 1778985158,
+    "update_time": 1778985158,
+    "_id": "A Grade Coil Weight<SEP>Labeling Column"
+  },
+  "F_PROD_DATE<SEP>Lab Intermediate Data": {
+    "chunk_ids": [
+      "chunk-f2504a9381d2837c8dd322280d321c43"
+    ],
+    "count": 1,
+    "create_time": 1778985158,
+    "update_time": 1778985158,
+    "_id": "F_PROD_DATE<SEP>Lab Intermediate Data"
+  },
+  "First Inspection Pass Rate<SEP>Single Coil Weight": {
+    "chunk_ids": [
+      "chunk-f2504a9381d2837c8dd322280d321c43"
+    ],
+    "count": 1,
+    "create_time": 1778985158,
+    "update_time": 1778985158,
+    "_id": "First Inspection Pass Rate<SEP>Single Coil Weight"
+  },
+  "First Inspection Column<SEP>Labeling Column": {
+    "chunk_ids": [
+      "chunk-f2504a9381d2837c8dd322280d321c43"
+    ],
+    "count": 1,
+    "create_time": 1778985158,
+    "update_time": 1778985158,
+    "_id": "First Inspection Column<SEP>Labeling Column"
+  },
+  "First Inspection Pass Rate<SEP>Lab Intermediate Data": {
+    "chunk_ids": [
+      "chunk-f2504a9381d2837c8dd322280d321c43"
+    ],
+    "count": 1,
+    "create_time": 1778985158,
+    "update_time": 1778985158,
+    "_id": "First Inspection Pass Rate<SEP>Lab Intermediate Data"
+  },
+  "Delete Mark<SEP>First Inspection Pass Rate": {
+    "chunk_ids": [
+      "chunk-f2504a9381d2837c8dd322280d321c43"
+    ],
+    "count": 1,
+    "create_time": 1778985158,
+    "update_time": 1778985158,
+    "_id": "Delete Mark<SEP>First Inspection Pass Rate"
+  },
+  "First Inspection Pass Rate<SEP>SQL Query": {
+    "chunk_ids": [
+      "chunk-f2504a9381d2837c8dd322280d321c43"
+    ],
+    "count": 1,
+    "create_time": 1778985158,
+    "update_time": 1778985158,
+    "_id": "First Inspection Pass Rate<SEP>SQL Query"
+  },
+  "A Grade Coil Weight<SEP>First Inspection Pass Rate": {
+    "chunk_ids": [
+      "chunk-f2504a9381d2837c8dd322280d321c43"
+    ],
+    "count": 1,
+    "create_time": 1778985158,
+    "update_time": 1778985158,
+    "_id": "A Grade Coil Weight<SEP>First Inspection Pass Rate"
+  },
+  "F_FIRST_INSPECTION<SEP>F_LABELING": {
+    "chunk_ids": [
+      "chunk-1d48176026da03bdf3116a649b995b85"
+    ],
+    "count": 1,
+    "create_time": 1778985218,
+    "update_time": 1778985218,
+    "_id": "F_FIRST_INSPECTION<SEP>F_LABELING"
+  },
+  "F_LABELING<SEP>Quality Grade Distribution": {
+    "chunk_ids": [
+      "chunk-1d48176026da03bdf3116a649b995b85",
+      "chunk-957813961c6bd225bcd390b432783050"
+    ],
+    "count": 2,
+    "update_time": 1778985337,
+    "_id": "F_LABELING<SEP>Quality Grade Distribution"
+  },
+  "F_FIRST_INSPECTION<SEP>First Inspection Pass Rate": {
+    "chunk_ids": [
+      "chunk-1d48176026da03bdf3116a649b995b85"
+    ],
+    "count": 1,
+    "create_time": 1778985218,
+    "update_time": 1778985218,
+    "_id": "F_FIRST_INSPECTION<SEP>First Inspection Pass Rate"
+  },
+  "Reinspection<SEP>Rework": {
+    "chunk_ids": [
+      "chunk-1d48176026da03bdf3116a649b995b85"
+    ],
+    "count": 1,
+    "create_time": 1778985218,
+    "update_time": 1778985218,
+    "_id": "Reinspection<SEP>Rework"
+  },
+  "F_LABELING<SEP>Final Shipment Grade": {
+    "chunk_ids": [
+      "chunk-1d48176026da03bdf3116a649b995b85"
+    ],
+    "count": 1,
+    "create_time": 1778985218,
+    "update_time": 1778985218,
+    "_id": "F_LABELING<SEP>Final Shipment Grade"
+  },
+  "F_FIRST_INSPECTION<SEP>Production Process": {
+    "chunk_ids": [
+      "chunk-1d48176026da03bdf3116a649b995b85"
+    ],
+    "count": 1,
+    "create_time": 1778985218,
+    "update_time": 1778985218,
+    "_id": "F_FIRST_INSPECTION<SEP>Production Process"
+  },
+  "F_LABELING<SEP>Rework": {
+    "chunk_ids": [
+      "chunk-1d48176026da03bdf3116a649b995b85"
+    ],
+    "count": 1,
+    "create_time": 1778985218,
+    "update_time": 1778985218,
+    "_id": "F_LABELING<SEP>Rework"
+  },
+  "F_FIRST_INSPECTION<SEP>Nonconformity Reason Analysis": {
+    "chunk_ids": [
+      "chunk-1d48176026da03bdf3116a649b995b85"
+    ],
+    "count": 1,
+    "create_time": 1778985218,
+    "update_time": 1778985218,
+    "_id": "F_FIRST_INSPECTION<SEP>Nonconformity Reason Analysis"
+  },
+  "F_LABELING<SEP>Reinspection": {
+    "chunk_ids": [
+      "chunk-1d48176026da03bdf3116a649b995b85"
+    ],
+    "count": 1,
+    "create_time": 1778985218,
+    "update_time": 1778985218,
+    "_id": "F_LABELING<SEP>Reinspection"
+  },
+  "F_FIRST_INSPECTION<SEP>一次交检": {
+    "chunk_ids": [
+      "chunk-1d48176026da03bdf3116a649b995b85"
+    ],
+    "count": 1,
+    "create_time": 1778985218,
+    "update_time": 1778985218,
+    "_id": "F_FIRST_INSPECTION<SEP>一次交检"
+  },
+  "F_LABELING<SEP>贴标": {
+    "chunk_ids": [
+      "chunk-1d48176026da03bdf3116a649b995b85",
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 2,
+    "update_time": 1778985698,
+    "_id": "F_LABELING<SEP>贴标"
+  },
+  "检测中心<SEP>生产排班": {
+    "chunk_ids": [
+      "chunk-713b0902d3dd2473d8a7b6fc79cb8f47"
+    ],
+    "count": 1,
+    "create_time": 1778985251,
+    "update_time": 1778985251,
+    "_id": "检测中心<SEP>生产排班"
+  },
+  "F_SHIFT<SEP>甲": {
+    "chunk_ids": [
+      "chunk-713b0902d3dd2473d8a7b6fc79cb8f47"
+    ],
+    "count": 1,
+    "create_time": 1778985251,
+    "update_time": 1778985251,
+    "_id": "F_SHIFT<SEP>甲"
+  },
+  "F_SHIFT_NUMERIC<SEP>甲": {
+    "chunk_ids": [
+      "chunk-713b0902d3dd2473d8a7b6fc79cb8f47"
+    ],
+    "count": 1,
+    "create_time": 1778985251,
+    "update_time": 1778985251,
+    "_id": "F_SHIFT_NUMERIC<SEP>甲"
+  },
+  "生产排班<SEP>甲": {
+    "chunk_ids": [
+      "chunk-713b0902d3dd2473d8a7b6fc79cb8f47"
+    ],
+    "count": 1,
+    "create_time": 1778985251,
+    "update_time": 1778985251,
+    "_id": "生产排班<SEP>甲"
+  },
+  "乙<SEP>生产排班": {
+    "chunk_ids": [
+      "chunk-713b0902d3dd2473d8a7b6fc79cb8f47"
+    ],
+    "count": 1,
+    "create_time": 1778985251,
+    "update_time": 1778985251,
+    "_id": "乙<SEP>生产排班"
+  },
+  "丙<SEP>生产排班": {
+    "chunk_ids": [
+      "chunk-713b0902d3dd2473d8a7b6fc79cb8f47"
+    ],
+    "count": 1,
+    "create_time": 1778985251,
+    "update_time": 1778985251,
+    "_id": "丙<SEP>生产排班"
+  },
+  "F_SHIFT<SEP>乙": {
+    "chunk_ids": [
+      "chunk-713b0902d3dd2473d8a7b6fc79cb8f47"
+    ],
+    "count": 1,
+    "create_time": 1778985251,
+    "update_time": 1778985251,
+    "_id": "F_SHIFT<SEP>乙"
+  },
+  "F_SHIFT_NUMERIC<SEP>乙": {
+    "chunk_ids": [
+      "chunk-713b0902d3dd2473d8a7b6fc79cb8f47"
+    ],
+    "count": 1,
+    "create_time": 1778985251,
+    "update_time": 1778985251,
+    "_id": "F_SHIFT_NUMERIC<SEP>乙"
+  },
+  "F_SHIFT<SEP>丙": {
+    "chunk_ids": [
+      "chunk-713b0902d3dd2473d8a7b6fc79cb8f47"
+    ],
+    "count": 1,
+    "create_time": 1778985251,
+    "update_time": 1778985251,
+    "_id": "F_SHIFT<SEP>丙"
+  },
+  "F_SHIFT_NUMERIC<SEP>丙": {
+    "chunk_ids": [
+      "chunk-713b0902d3dd2473d8a7b6fc79cb8f47"
+    ],
+    "count": 1,
+    "create_time": 1778985251,
+    "update_time": 1778985251,
+    "_id": "F_SHIFT_NUMERIC<SEP>丙"
+  },
+  "Detection Center<SEP>Production Line": {
+    "chunk_ids": [
+      "chunk-d3d4d26638ad601f83b0ed6c5e5d559c"
+    ],
+    "count": 1,
+    "create_time": 1778985297,
+    "update_time": 1778985297,
+    "_id": "Detection Center<SEP>Production Line"
+  },
+  "F_LINE_NO<SEP>Production Line": {
+    "chunk_ids": [
+      "chunk-d3d4d26638ad601f83b0ed6c5e5d559c"
+    ],
+    "count": 1,
+    "create_time": 1778985297,
+    "update_time": 1778985297,
+    "_id": "F_LINE_NO<SEP>Production Line"
+  },
+  "Furnace Number<SEP>Production Line": {
+    "chunk_ids": [
+      "chunk-d3d4d26638ad601f83b0ed6c5e5d559c"
+    ],
+    "count": 1,
+    "create_time": 1778985297,
+    "update_time": 1778985297,
+    "_id": "Furnace Number<SEP>Production Line"
+  },
+  "Production Line<SEP>Shift/Team": {
+    "chunk_ids": [
+      "chunk-d3d4d26638ad601f83b0ed6c5e5d559c"
+    ],
+    "count": 1,
+    "create_time": 1778985297,
+    "update_time": 1778985297,
+    "_id": "Production Line<SEP>Shift/Team"
+  },
+  "Furnace Number<SEP>Shift A": {
+    "chunk_ids": [
+      "chunk-d3d4d26638ad601f83b0ed6c5e5d559c"
+    ],
+    "count": 1,
+    "create_time": 1778985297,
+    "update_time": 1778985297,
+    "_id": "Furnace Number<SEP>Shift A"
+  },
+  "Furnace<SEP>Production Line": {
+    "chunk_ids": [
+      "chunk-d3d4d26638ad601f83b0ed6c5e5d559c"
+    ],
+    "count": 1,
+    "create_time": 1778985297,
+    "update_time": 1778985297,
+    "_id": "Furnace<SEP>Production Line"
+  },
+  "Furnace<SEP>Furnace Number": {
+    "chunk_ids": [
+      "chunk-d3d4d26638ad601f83b0ed6c5e5d559c"
+    ],
+    "count": 1,
+    "create_time": 1778985297,
+    "update_time": 1778985297,
+    "_id": "Furnace<SEP>Furnace Number"
+  },
+  "Furnace<SEP>Shift A": {
+    "chunk_ids": [
+      "chunk-d3d4d26638ad601f83b0ed6c5e5d559c"
+    ],
+    "count": 1,
+    "create_time": 1778985297,
+    "update_time": 1778985297,
+    "_id": "Furnace<SEP>Shift A"
+  },
+  "F_SINGLE_COIL_WEIGHT<SEP>Quality Grade Distribution": {
+    "chunk_ids": [
+      "chunk-957813961c6bd225bcd390b432783050"
+    ],
+    "count": 1,
+    "create_time": 1778985337,
+    "update_time": 1778985337,
+    "_id": "F_SINGLE_COIL_WEIGHT<SEP>Quality Grade Distribution"
+  },
+  "F_LABELING<SEP>Unlabeled": {
+    "chunk_ids": [
+      "chunk-957813961c6bd225bcd390b432783050"
+    ],
+    "count": 1,
+    "create_time": 1778985337,
+    "update_time": 1778985337,
+    "_id": "F_LABELING<SEP>Unlabeled"
+  },
+  "F_DeleteMark<SEP>Quality Grade Distribution": {
+    "chunk_ids": [
+      "chunk-957813961c6bd225bcd390b432783050"
+    ],
+    "count": 1,
+    "create_time": 1778985337,
+    "update_time": 1778985337,
+    "_id": "F_DeleteMark<SEP>Quality Grade Distribution"
+  },
+  "F_PROD_DATE<SEP>Quality Grade Distribution": {
+    "chunk_ids": [
+      "chunk-957813961c6bd225bcd390b432783050"
+    ],
+    "count": 1,
+    "create_time": 1778985337,
+    "update_time": 1778985337,
+    "_id": "F_PROD_DATE<SEP>Quality Grade Distribution"
+  },
+  "Quality Grade Distribution<SEP>lab_intermediate_data": {
+    "chunk_ids": [
+      "chunk-957813961c6bd225bcd390b432783050"
+    ],
+    "count": 1,
+    "create_time": 1778985337,
+    "update_time": 1778985337,
+    "_id": "Quality Grade Distribution<SEP>lab_intermediate_data"
+  },
+  "First Inspection Pass Rate<SEP>Quality Grade Distribution": {
+    "chunk_ids": [
+      "chunk-957813961c6bd225bcd390b432783050"
+    ],
+    "count": 1,
+    "create_time": 1778985337,
+    "update_time": 1778985337,
+    "_id": "First Inspection Pass Rate<SEP>Quality Grade Distribution"
+  },
+  "F_SINGLE_COIL_WEIGHT<SEP>卷重": {
+    "chunk_ids": [
+      "chunk-c9efcc420de21e9c640026bda07d01c3"
+    ],
+    "count": 1,
+    "create_time": 1778985373,
+    "update_time": 1778985373,
+    "_id": "F_SINGLE_COIL_WEIGHT<SEP>卷重"
+  },
+  "单条带材<SEP>卷重": {
+    "chunk_ids": [
+      "chunk-c9efcc420de21e9c640026bda07d01c3"
+    ],
+    "count": 1,
+    "create_time": 1778985373,
+    "update_time": 1778985373,
+    "_id": "单条带材<SEP>卷重"
+  },
+  "F_SINGLE_COIL_WEIGHT<SEP>lab_intermediate_data": {
+    "chunk_ids": [
+      "chunk-c9efcc420de21e9c640026bda07d01c3",
+      "chunk-a89346ef582d2491429fb4a619ba0c4b",
+      "chunk-1ffe127439929c413f3cda62f238993b"
+    ],
+    "count": 3,
+    "update_time": 1778986086,
+    "_id": "F_SINGLE_COIL_WEIGHT<SEP>lab_intermediate_data"
+  },
+  "单卷重<SEP>卷重": {
+    "chunk_ids": [
+      "chunk-c9efcc420de21e9c640026bda07d01c3"
+    ],
+    "count": 1,
+    "create_time": 1778985373,
+    "update_time": 1778985373,
+    "_id": "单卷重<SEP>卷重"
+  },
+  "卷重<SEP>重量字段": {
+    "chunk_ids": [
+      "chunk-c9efcc420de21e9c640026bda07d01c3"
+    ],
+    "count": 1,
+    "create_time": 1778985373,
+    "update_time": 1778985373,
+    "_id": "卷重<SEP>重量字段"
+  },
+  "单卷重量<SEP>卷重": {
+    "chunk_ids": [
+      "chunk-c9efcc420de21e9c640026bda07d01c3"
+    ],
+    "count": 1,
+    "create_time": 1778985373,
+    "update_time": 1778985373,
+    "_id": "单卷重量<SEP>卷重"
+  },
+  "F_COIL_WEIGHT<SEP>卷重": {
+    "chunk_ids": [
+      "chunk-c9efcc420de21e9c640026bda07d01c3"
+    ],
+    "count": 1,
+    "create_time": 1778985373,
+    "update_time": 1778985373,
+    "_id": "F_COIL_WEIGHT<SEP>卷重"
+  },
+  "产量<SEP>卷重": {
+    "chunk_ids": [
+      "chunk-c9efcc420de21e9c640026bda07d01c3"
+    ],
+    "count": 1,
+    "create_time": 1778985373,
+    "update_time": 1778985373,
+    "_id": "产量<SEP>卷重"
+  },
+  "卷重<SEP>合格重量": {
+    "chunk_ids": [
+      "chunk-c9efcc420de21e9c640026bda07d01c3"
+    ],
+    "count": 1,
+    "create_time": 1778985373,
+    "update_time": 1778985373,
+    "_id": "卷重<SEP>合格重量"
+  },
+  "不合格重量<SEP>卷重": {
+    "chunk_ids": [
+      "chunk-c9efcc420de21e9c640026bda07d01c3"
+    ],
+    "count": 1,
+    "create_time": 1778985373,
+    "update_time": 1778985373,
+    "_id": "不合格重量<SEP>卷重"
+  },
+  "卷重<SEP>各等级重量": {
+    "chunk_ids": [
+      "chunk-c9efcc420de21e9c640026bda07d01c3"
+    ],
+    "count": 1,
+    "create_time": 1778985373,
+    "update_time": 1778985373,
+    "_id": "卷重<SEP>各等级重量"
+  },
+  "Batch Number<SEP>F_FURNACE_BATCH_NO": {
+    "chunk_ids": [
+      "chunk-60d113a19c7939fa4f4a548b3cc1eba5"
+    ],
+    "count": 1,
+    "create_time": 1778985408,
+    "update_time": 1778985408,
+    "_id": "Batch Number<SEP>F_FURNACE_BATCH_NO"
+  },
+  "F_FURNACE_NO_FORMATTED<SEP>Furnace Number": {
+    "chunk_ids": [
+      "chunk-60d113a19c7939fa4f4a548b3cc1eba5"
+    ],
+    "count": 1,
+    "create_time": 1778985408,
+    "update_time": 1778985408,
+    "_id": "F_FURNACE_NO_FORMATTED<SEP>Furnace Number"
+  },
+  "Coil<SEP>Furnace Number": {
+    "chunk_ids": [
+      "chunk-60d113a19c7939fa4f4a548b3cc1eba5"
+    ],
+    "count": 1,
+    "create_time": 1778985408,
+    "update_time": 1778985408,
+    "_id": "Coil<SEP>Furnace Number"
+  },
+  "Batch Number<SEP>Furnace Number": {
+    "chunk_ids": [
+      "chunk-60d113a19c7939fa4f4a548b3cc1eba5"
+    ],
+    "count": 1,
+    "create_time": 1778985408,
+    "update_time": 1778985408,
+    "_id": "Batch Number<SEP>Furnace Number"
+  },
+  "Coil<SEP>Furnace Run": {
+    "chunk_ids": [
+      "chunk-60d113a19c7939fa4f4a548b3cc1eba5"
+    ],
+    "count": 1,
+    "create_time": 1778985408,
+    "update_time": 1778985408,
+    "_id": "Coil<SEP>Furnace Run"
+  },
+  "Batch Number<SEP>Coil": {
+    "chunk_ids": [
+      "chunk-60d113a19c7939fa4f4a548b3cc1eba5"
+    ],
+    "count": 1,
+    "create_time": 1778985408,
+    "update_time": 1778985408,
+    "_id": "Batch Number<SEP>Coil"
+  },
+  "Batch Number<SEP>Furnace Run": {
+    "chunk_ids": [
+      "chunk-60d113a19c7939fa4f4a548b3cc1eba5"
+    ],
+    "count": 1,
+    "create_time": 1778985408,
+    "update_time": 1778985408,
+    "_id": "Batch Number<SEP>Furnace Run"
+  },
+  "Appearance Feature<SEP>Brittle": {
+    "chunk_ids": [
+      "chunk-03f8b5b2f4b11326c72d680e9f3f0c64"
+    ],
+    "count": 1,
+    "create_time": 1778985452,
+    "update_time": 1778985452,
+    "_id": "Appearance Feature<SEP>Brittle"
+  },
+  "Appearance Feature<SEP>Scratch": {
+    "chunk_ids": [
+      "chunk-03f8b5b2f4b11326c72d680e9f3f0c64"
+    ],
+    "count": 1,
+    "create_time": 1778985452,
+    "update_time": 1778985452,
+    "_id": "Appearance Feature<SEP>Scratch"
+  },
+  "Appearance Feature<SEP>Pitting": {
+    "chunk_ids": [
+      "chunk-03f8b5b2f4b11326c72d680e9f3f0c64"
+    ],
+    "count": 1,
+    "create_time": 1778985452,
+    "update_time": 1778985452,
+    "_id": "Appearance Feature<SEP>Pitting"
+  },
+  "Appearance Feature<SEP>Dent": {
+    "chunk_ids": [
+      "chunk-03f8b5b2f4b11326c72d680e9f3f0c64"
+    ],
+    "count": 1,
+    "create_time": 1778985452,
+    "update_time": 1778985452,
+    "_id": "Appearance Feature<SEP>Dent"
+  },
+  "Appearance Feature<SEP>Ridge": {
+    "chunk_ids": [
+      "chunk-03f8b5b2f4b11326c72d680e9f3f0c64"
+    ],
+    "count": 1,
+    "create_time": 1778985452,
+    "update_time": 1778985452,
+    "_id": "Appearance Feature<SEP>Ridge"
+  },
+  "Appearance Feature<SEP>White Edge": {
+    "chunk_ids": [
+      "chunk-03f8b5b2f4b11326c72d680e9f3f0c64"
+    ],
+    "count": 1,
+    "create_time": 1778985452,
+    "update_time": 1778985452,
+    "_id": "Appearance Feature<SEP>White Edge"
+  },
+  "Appearance Feature<SEP>Brittle Edge": {
+    "chunk_ids": [
+      "chunk-03f8b5b2f4b11326c72d680e9f3f0c64"
+    ],
+    "count": 1,
+    "create_time": 1778985452,
+    "update_time": 1778985452,
+    "_id": "Appearance Feature<SEP>Brittle Edge"
+  },
+  "Appearance Feature<SEP>Bright Line": {
+    "chunk_ids": [
+      "chunk-03f8b5b2f4b11326c72d680e9f3f0c64"
+    ],
+    "count": 1,
+    "create_time": 1778985452,
+    "update_time": 1778985452,
+    "_id": "Appearance Feature<SEP>Bright Line"
+  },
+  "Appearance Feature<SEP>Labeling Grade": {
+    "chunk_ids": [
+      "chunk-03f8b5b2f4b11326c72d680e9f3f0c64"
+    ],
+    "count": 1,
+    "create_time": 1778985452,
+    "update_time": 1778985452,
+    "_id": "Appearance Feature<SEP>Labeling Grade"
+  },
+  "Appearance Feature<SEP>First Inspection Pass Rate": {
+    "chunk_ids": [
+      "chunk-03f8b5b2f4b11326c72d680e9f3f0c64"
+    ],
+    "count": 1,
+    "create_time": 1778985452,
+    "update_time": 1778985452,
+    "_id": "Appearance Feature<SEP>First Inspection Pass Rate"
+  },
+  "Appearance Feature<SEP>Database Table Lab Appearance Feature": {
+    "chunk_ids": [
+      "chunk-03f8b5b2f4b11326c72d680e9f3f0c64"
+    ],
+    "count": 1,
+    "create_time": 1778985452,
+    "update_time": 1778985452,
+    "_id": "Appearance Feature<SEP>Database Table Lab Appearance Feature"
+  },
+  "Appearance Feature<SEP>Furnace Number": {
+    "chunk_ids": [
+      "chunk-03f8b5b2f4b11326c72d680e9f3f0c64"
+    ],
+    "count": 1,
+    "create_time": 1778985452,
+    "update_time": 1778985452,
+    "_id": "Appearance Feature<SEP>Furnace Number"
+  },
+  "PsLoss<SEP>铁损": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985549,
+    "update_time": 1778985549,
+    "_id": "PsLoss<SEP>铁损"
+  },
+  "SsPower<SEP>激磁功率": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985549,
+    "update_time": 1778985549,
+    "_id": "SsPower<SEP>激磁功率"
+  },
+  "PsLoss<SEP>磁损": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "PsLoss<SEP>磁损"
+  },
+  "SsPower<SEP>视在功率": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "SsPower<SEP>视在功率"
+  },
+  "PsLoss<SEP>比铁损": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "PsLoss<SEP>比铁损"
+  },
+  "SsPower<SEP>磁化功率": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "SsPower<SEP>磁化功率"
+  },
+  "Hc<SEP>矫顽力": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Hc<SEP>矫顽力"
+  },
+  "PsLoss<SEP>比损": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "PsLoss<SEP>比损"
+  },
+  "Ss<SEP>SsPower": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Ss<SEP>SsPower"
+  },
+  "Hc<SEP>磁矫顽": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Hc<SEP>磁矫顽"
+  },
+  "Thickness<SEP>厚度": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Thickness<SEP>厚度"
+  },
+  "Ps<SEP>PsLoss": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Ps<SEP>PsLoss"
+  },
+  "S<SEP>SsPower": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "S<SEP>SsPower"
+  },
+  "Thickness<SEP>带厚": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Thickness<SEP>带厚"
+  },
+  "Width<SEP>宽度": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Width<SEP>宽度"
+  },
+  "P<SEP>PsLoss": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "P<SEP>PsLoss"
+  },
+  "CoilWeight<SEP>卷重": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "CoilWeight<SEP>卷重"
+  },
+  "Thickness<SEP>带材厚度": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Thickness<SEP>带材厚度"
+  },
+  "Width<SEP>带宽": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Width<SEP>带宽"
+  },
+  "LamFactor<SEP>叠片系数": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "LamFactor<SEP>叠片系数"
+  },
+  "CoilWeight<SEP>单卷重量": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "CoilWeight<SEP>单卷重量"
+  },
+  "Thickness<SEP>平均厚度": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Thickness<SEP>平均厚度"
+  },
+  "Width<SEP>带材宽度": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Width<SEP>带材宽度"
+  },
+  "LamFactor<SEP>叠系数": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "LamFactor<SEP>叠系数"
+  },
+  "Density<SEP>密度": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Density<SEP>密度"
+  },
+  "CoilWeight<SEP>重量": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "CoilWeight<SEP>重量"
+  },
+  "FirstInspection<SEP>一次交检": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "FirstInspection<SEP>一次交检"
+  },
+  "LamFactor<SEP>叠片率": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "LamFactor<SEP>叠片率"
+  },
+  "MagneticRes<SEP>磁性能判定": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "MagneticRes<SEP>磁性能判定"
+  },
+  "FirstInspection<SEP>一交": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "FirstInspection<SEP>一交"
+  },
+  "LamFactor<SEP>Lamination Factor": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "LamFactor<SEP>Lamination Factor"
+  },
+  "MagneticRes<SEP>磁性能结果": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "MagneticRes<SEP>磁性能结果"
+  },
+  "FirstInspection<SEP>一次检验": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "FirstInspection<SEP>一次检验"
+  },
+  "ThickRes<SEP>厚度判定": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "ThickRes<SEP>厚度判定"
+  },
+  "MagneticRes<SEP>磁性判级": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "MagneticRes<SEP>磁性判级"
+  },
+  "FirstInspection<SEP>首检": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "FirstInspection<SEP>首检"
+  },
+  "LamFactorRes<SEP>叠片系数判定": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "LamFactorRes<SEP>叠片系数判定"
+  },
+  "ThickRes<SEP>厚度结果": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "ThickRes<SEP>厚度结果"
+  },
+  "Labeling<SEP>贴标": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Labeling<SEP>贴标"
+  },
+  "FirstInspection<SEP>首次交检": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "FirstInspection<SEP>首次交检"
+  },
+  "LamFactorRes<SEP>叠片系数结果": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "LamFactorRes<SEP>叠片系数结果"
+  },
+  "ThickRes<SEP>厚度判级": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "ThickRes<SEP>厚度判级"
+  },
+  "Labeling<SEP>标签": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Labeling<SEP>标签"
+  },
+  "Formulas and Indicators Synonym Dictionary<SEP>PsLoss": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Formulas and Indicators Synonym Dictionary<SEP>PsLoss"
+  },
+  "Labeling<SEP>等级标签": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Labeling<SEP>等级标签"
+  },
+  "Formulas and Indicators Synonym Dictionary<SEP>SsPower": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Formulas and Indicators Synonym Dictionary<SEP>SsPower"
+  },
+  "Labeling<SEP>总判定": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Labeling<SEP>总判定"
+  },
+  "Formulas and Indicators Synonym Dictionary<SEP>Hc": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Formulas and Indicators Synonym Dictionary<SEP>Hc"
+  },
+  "Labeling<SEP>最终等级": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Labeling<SEP>最终等级"
+  },
+  "Formulas and Indicators Synonym Dictionary<SEP>Thickness": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Formulas and Indicators Synonym Dictionary<SEP>Thickness"
+  },
+  "Formulas and Indicators Synonym Dictionary<SEP>Width": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Formulas and Indicators Synonym Dictionary<SEP>Width"
+  },
+  "CoilWeight<SEP>Formulas and Indicators Synonym Dictionary": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "CoilWeight<SEP>Formulas and Indicators Synonym Dictionary"
+  },
+  "Formulas and Indicators Synonym Dictionary<SEP>LamFactor": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Formulas and Indicators Synonym Dictionary<SEP>LamFactor"
+  },
+  "Density<SEP>Formulas and Indicators Synonym Dictionary": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Density<SEP>Formulas and Indicators Synonym Dictionary"
+  },
+  "FirstInspection<SEP>Formulas and Indicators Synonym Dictionary": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "FirstInspection<SEP>Formulas and Indicators Synonym Dictionary"
+  },
+  "Formulas and Indicators Synonym Dictionary<SEP>MagneticRes": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Formulas and Indicators Synonym Dictionary<SEP>MagneticRes"
+  },
+  "Formulas and Indicators Synonym Dictionary<SEP>ThickRes": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Formulas and Indicators Synonym Dictionary<SEP>ThickRes"
+  },
+  "Formulas and Indicators Synonym Dictionary<SEP>LamFactorRes": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Formulas and Indicators Synonym Dictionary<SEP>LamFactorRes"
+  },
+  "Formulas and Indicators Synonym Dictionary<SEP>Labeling": {
+    "chunk_ids": [
+      "chunk-d0a625cc09639410176fb4712f0e96c6"
+    ],
+    "count": 1,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "Formulas and Indicators Synonym Dictionary<SEP>Labeling"
+  },
+  "一交合格率<SEP>一次交检合格率": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "一交合格率<SEP>一次交检合格率"
+  },
+  "合格比例<SEP>合格率": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "合格比例<SEP>合格率"
+  },
+  "一次交检合格率<SEP>一次合格率": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "一次交检合格率<SEP>一次合格率"
+  },
+  "合格率<SEP>通过率": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "合格率<SEP>通过率"
+  },
+  "不合格<SEP>不达标": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "不合格<SEP>不达标"
+  },
+  "一次交检合格率<SEP>首检合格率": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "一次交检合格率<SEP>首检合格率"
+  },
+  "合格率<SEP>达标率": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "合格率<SEP>达标率"
+  },
+  "不合格<SEP>废品": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "不合格<SEP>废品"
+  },
+  "A<SEP>A类": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "A<SEP>A类"
+  },
+  "一交率<SEP>一次交检合格率": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "一交率<SEP>一次交检合格率"
+  },
+  "qualified rate<SEP>合格率": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "qualified rate<SEP>合格率"
+  },
+  "不合格<SEP>次品": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "不合格<SEP>次品"
+  },
+  "A<SEP>A级": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "A<SEP>A级"
+  },
+  "B<SEP>B类": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "B<SEP>B类"
+  },
+  "不合格<SEP>不合格率": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "不合格<SEP>不合格率"
+  },
+  "A<SEP>一级": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "A<SEP>一级"
+  },
+  "B<SEP>B级": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "B<SEP>B级"
+  },
+  "aliases.json<SEP>业务术语同义词词典": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "aliases.json<SEP>业务术语同义词词典"
+  },
+  "A<SEP>优等品": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "A<SEP>优等品"
+  },
+  "B<SEP>二级": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "B<SEP>二级"
+  },
+  "一次交检合格率<SEP>业务术语同义词词典": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "一次交检合格率<SEP>业务术语同义词词典"
+  },
+  "B<SEP>良等品": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "B<SEP>良等品"
+  },
+  "业务术语同义词词典<SEP>合格率": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "业务术语同义词词典<SEP>合格率"
+  },
+  "不合格<SEP>业务术语同义词词典": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "不合格<SEP>业务术语同义词词典"
+  },
+  "A<SEP>业务术语同义词词典": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "A<SEP>业务术语同义词词典"
+  },
+  "B<SEP>业务术语同义词词典": {
+    "chunk_ids": [
+      "chunk-6900462780de65c55e3be3030bb1b492"
+    ],
+    "count": 1,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "B<SEP>业务术语同义词词典"
+  },
+  "易脆<SEP>脆": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "易脆<SEP>脆"
+  },
+  "划<SEP>划伤": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "划<SEP>划伤"
+  },
+  "麻点<SEP>麻面": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "麻点<SEP>麻面"
+  },
+  "脆<SEP>脆性": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "脆<SEP>脆性"
+  },
+  "划<SEP>划痕": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "划<SEP>划痕"
+  },
+  "凹<SEP>凹陷": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "凹<SEP>凹陷"
+  },
+  "麻坑<SEP>麻点": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "麻坑<SEP>麻点"
+  },
+  "发脆<SEP>脆": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "发脆<SEP>脆"
+  },
+  "划<SEP>刮痕": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "划<SEP>刮痕"
+  },
+  "凹<SEP>凹坑": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "凹<SEP>凹坑"
+  },
+  "棱<SEP>棱角": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "棱<SEP>棱角"
+  },
+  "斑点<SEP>麻点": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "斑点<SEP>麻点"
+  },
+  "白边<SEP>白边缘": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "白边<SEP>白边缘"
+  },
+  "凹<SEP>凹缺": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "凹<SEP>凹缺"
+  },
+  "棱<SEP>棱边": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "棱<SEP>棱边"
+  },
+  "脆边<SEP>边脆": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "脆边<SEP>边脆"
+  },
+  "亮线<SEP>光亮线": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "亮线<SEP>光亮线"
+  },
+  "白边<SEP>边白": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "白边<SEP>边白"
+  },
+  "棱<SEP>起棱": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "棱<SEP>起棱"
+  },
+  "韧性<SEP>韧性差": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "韧性<SEP>韧性差"
+  },
+  "脆边<SEP>边缘脆": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "脆边<SEP>边缘脆"
+  },
+  "亮纹<SEP>亮线": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "亮纹<SEP>亮线"
+  },
+  "韧度<SEP>韧性": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "韧度<SEP>韧性"
+  },
+  "脆韧性<SEP>韧性": {
+    "chunk_ids": [
+      "chunk-382193d9c90a96e333b33be0c0bcfd36"
+    ],
+    "count": 1,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "脆韧性<SEP>韧性"
+  },
+  "F_PS_LOSS<SEP>铁损": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 1,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "F_PS_LOSS<SEP>铁损"
+  },
+  "F_SS_POWER<SEP>激磁功率": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 1,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "F_SS_POWER<SEP>激磁功率"
+  },
+  "F_HC<SEP>矫顽力": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 1,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "F_HC<SEP>矫顽力"
+  },
+  "F_FURNACE_NO<SEP>炉号": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 1,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "F_FURNACE_NO<SEP>炉号"
+  },
+  "F_PS_LOSS<SEP>磁损": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 1,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "F_PS_LOSS<SEP>磁损"
+  },
+  "F_SS_POWER<SEP>Ss": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 1,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "F_SS_POWER<SEP>Ss"
+  },
+  "F_HC<SEP>Hc": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 1,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "F_HC<SEP>Hc"
+  },
+  "F_FURNACE_NO<SEP>炉号字符串": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 1,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "F_FURNACE_NO<SEP>炉号字符串"
+  },
+  "F_FURNACE_NO_FORMATTED<SEP>格式化炉号": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 1,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "F_FURNACE_NO_FORMATTED<SEP>格式化炉号"
+  },
+  "F_PS_LOSS<SEP>Ps": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 1,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "F_PS_LOSS<SEP>Ps"
+  },
+  "F_PROD_DATE<SEP>生产日期": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc",
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 2,
+    "update_time": 1778985759,
+    "_id": "F_PROD_DATE<SEP>生产日期"
+  },
+  "F_FURNACE_NO<SEP>原始炉号": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 1,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "F_FURNACE_NO<SEP>原始炉号"
+  },
+  "F_SHIFT<SEP>班次": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 1,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "F_SHIFT<SEP>班次"
+  },
+  "F_FURNACE_NO_FORMATTED<SEP>标准炉号": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 1,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "F_FURNACE_NO_FORMATTED<SEP>标准炉号"
+  },
+  "F_LINE_NO<SEP>产线": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 1,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "F_LINE_NO<SEP>产线"
+  },
+  "F_PROD_DATE<SEP>生产日": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 1,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "F_PROD_DATE<SEP>生产日"
+  },
+  "F_SHIFT<SEP>班次汉字": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 1,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "F_SHIFT<SEP>班次汉字"
+  },
+  "F_COIL_NO<SEP>卷号": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 1,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "F_COIL_NO<SEP>卷号"
+  },
+  "F_LABELING<SEP>最终等级": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 1,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "F_LABELING<SEP>最终等级"
+  },
+  "F_LINE_NO<SEP>产线号": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 1,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "F_LINE_NO<SEP>产线号"
+  },
+  "F_LABELING<SEP>总判定": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 1,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "F_LABELING<SEP>总判定"
+  },
+  "F_LINE_NO<SEP>生产线": {
+    "chunk_ids": [
+      "chunk-5e6e25c9fd58e9924568e84459192dcc"
+    ],
+    "count": 1,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "F_LINE_NO<SEP>生产线"
+  },
+  "F_PROD_DATE<SEP>Time": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "F_PROD_DATE<SEP>Time"
+  },
+  "Time<SEP>今日": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "Time<SEP>今日"
+  },
+  "Time<SEP>昨日": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "Time<SEP>昨日"
+  },
+  "Time<SEP>近7天": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "Time<SEP>近7天"
+  },
+  "Time<SEP>近30天": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "Time<SEP>近30天"
+  },
+  "Time<SEP>本周": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "Time<SEP>本周"
+  },
+  "F_PROD_DATE<SEP>日期": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "F_PROD_DATE<SEP>日期"
+  },
+  "Time<SEP>上周": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "Time<SEP>上周"
+  },
+  "今天<SEP>今日": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "今天<SEP>今日"
+  },
+  "F_PROD_DATE<SEP>prod_date": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "F_PROD_DATE<SEP>prod_date"
+  },
+  "Time<SEP>本月": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "Time<SEP>本月"
+  },
+  "今日<SEP>当天": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "今日<SEP>当天"
+  },
+  "昨天<SEP>昨日": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "昨天<SEP>昨日"
+  },
+  "Time<SEP>上月": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "Time<SEP>上月"
+  },
+  "今<SEP>今日": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "今<SEP>今日"
+  },
+  "最近一周<SEP>近7天": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "最近一周<SEP>近7天"
+  },
+  "昨<SEP>昨日": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "昨<SEP>昨日"
+  },
+  "Time<SEP>本年": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "Time<SEP>本年"
+  },
+  "最近一个月<SEP>近30天": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "最近一个月<SEP>近30天"
+  },
+  "近7天<SEP>近一周": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "近7天<SEP>近一周"
+  },
+  "本周<SEP>这周": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "本周<SEP>这周"
+  },
+  "Time<SEP>去年": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "Time<SEP>去年"
+  },
+  "近30天<SEP>近一个月": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "近30天<SEP>近一个月"
+  },
+  "过去7天<SEP>近7天": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "过去7天<SEP>近7天"
+  },
+  "上一周<SEP>上周": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "上一周<SEP>上周"
+  },
+  "本月<SEP>这个月": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "本月<SEP>这个月"
+  },
+  "本周<SEP>本周内": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985759,
+    "update_time": 1778985759,
+    "_id": "本周<SEP>本周内"
+  },
+  "过去30天<SEP>近30天": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985760,
+    "update_time": 1778985760,
+    "_id": "过去30天<SEP>近30天"
+  },
+  "上个月<SEP>上月": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985760,
+    "update_time": 1778985760,
+    "_id": "上个月<SEP>上月"
+  },
+  "当月<SEP>本月": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985760,
+    "update_time": 1778985760,
+    "_id": "当月<SEP>本月"
+  },
+  "今年<SEP>本年": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985760,
+    "update_time": 1778985760,
+    "_id": "今年<SEP>本年"
+  },
+  "上年<SEP>去年": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985760,
+    "update_time": 1778985760,
+    "_id": "上年<SEP>去年"
+  },
+  "上一个月<SEP>上月": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985760,
+    "update_time": 1778985760,
+    "_id": "上一个月<SEP>上月"
+  },
+  "本月<SEP>本月内": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985760,
+    "update_time": 1778985760,
+    "_id": "本月<SEP>本月内"
+  },
+  "当年<SEP>本年": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985760,
+    "update_time": 1778985760,
+    "_id": "当年<SEP>本年"
+  },
+  "上一年<SEP>去年": {
+    "chunk_ids": [
+      "chunk-e53f732c8785683f40dd43eb1120bf26"
+    ],
+    "count": 1,
+    "create_time": 1778985760,
+    "update_time": 1778985760,
+    "_id": "上一年<SEP>去年"
+  },
+  "F_SHIFT<SEP>Shift": {
+    "chunk_ids": [
+      "chunk-dff975756a76316c5e10fbb37961c3f7"
+    ],
+    "count": 1,
+    "create_time": 1778985796,
+    "update_time": 1778985796,
+    "_id": "F_SHIFT<SEP>Shift"
+  },
+  "Shift<SEP>甲": {
+    "chunk_ids": [
+      "chunk-dff975756a76316c5e10fbb37961c3f7"
+    ],
+    "count": 1,
+    "create_time": 1778985796,
+    "update_time": 1778985796,
+    "_id": "Shift<SEP>甲"
+  },
+  "Shift<SEP>乙": {
+    "chunk_ids": [
+      "chunk-dff975756a76316c5e10fbb37961c3f7"
+    ],
+    "count": 1,
+    "create_time": 1778985796,
+    "update_time": 1778985796,
+    "_id": "Shift<SEP>乙"
+  },
+  "Shift<SEP>丙": {
+    "chunk_ids": [
+      "chunk-dff975756a76316c5e10fbb37961c3f7"
+    ],
+    "count": 1,
+    "create_time": 1778985796,
+    "update_time": 1778985796,
+    "_id": "Shift<SEP>丙"
+  },
+  "F_LINE_NO<SEP>Line": {
+    "chunk_ids": [
+      "chunk-6b05797e8ba81c1568b31788d8ed70c2"
+    ],
+    "count": 1,
+    "create_time": 1778985827,
+    "update_time": 1778985827,
+    "_id": "F_LINE_NO<SEP>Line"
+  },
+  "F_PRODUCT_SPEC_CODE<SEP>product_spec": {
+    "chunk_ids": [
+      "chunk-c2aa457d66f6f75d648df7d97ed18491"
+    ],
+    "count": 1,
+    "create_time": 1778985848,
+    "update_time": 1778985848,
+    "_id": "F_PRODUCT_SPEC_CODE<SEP>product_spec"
+  },
+  "product_spec<SEP>规格": {
+    "chunk_ids": [
+      "chunk-c2aa457d66f6f75d648df7d97ed18491"
+    ],
+    "count": 1,
+    "create_time": 1778985848,
+    "update_time": 1778985848,
+    "_id": "product_spec<SEP>规格"
+  },
+  "product_spec<SEP>产品规格": {
+    "chunk_ids": [
+      "chunk-c2aa457d66f6f75d648df7d97ed18491"
+    ],
+    "count": 1,
+    "create_time": 1778985848,
+    "update_time": 1778985848,
+    "_id": "product_spec<SEP>产品规格"
+  },
+  "product_spec<SEP>牌号": {
+    "chunk_ids": [
+      "chunk-c2aa457d66f6f75d648df7d97ed18491"
+    ],
+    "count": 1,
+    "create_time": 1778985848,
+    "update_time": 1778985848,
+    "_id": "product_spec<SEP>牌号"
+  },
+  "F_FURNACE_NO_FORMATTED<SEP>Furnace_No": {
+    "chunk_ids": [
+      "chunk-517383c70d6bd091e78ad3ca4a0d73e0"
+    ],
+    "count": 1,
+    "create_time": 1778985879,
+    "update_time": 1778985879,
+    "_id": "F_FURNACE_NO_FORMATTED<SEP>Furnace_No"
+  },
+  "F_FURNACE_NO<SEP>Furnace_No": {
+    "chunk_ids": [
+      "chunk-517383c70d6bd091e78ad3ca4a0d73e0"
+    ],
+    "count": 1,
+    "create_time": 1778985879,
+    "update_time": 1778985879,
+    "_id": "F_FURNACE_NO<SEP>Furnace_No"
+  },
+  "ReportConfig<SEP>SQL Template": {
+    "chunk_ids": [
+      "chunk-a89346ef582d2491429fb4a619ba0c4b"
+    ],
+    "count": 1,
+    "create_time": 1778985917,
+    "update_time": 1778985917,
+    "_id": "ReportConfig<SEP>SQL Template"
+  },
+  "SQL Template<SEP>lab_intermediate_data": {
+    "chunk_ids": [
+      "chunk-a89346ef582d2491429fb4a619ba0c4b",
+      "chunk-eaa469fa109e3da0e7694dbe4aa14741"
+    ],
+    "count": 2,
+    "update_time": 1778985968,
+    "_id": "SQL Template<SEP>lab_intermediate_data"
+  },
+  "F_DeleteMark<SEP>lab_intermediate_data": {
+    "chunk_ids": [
+      "chunk-a89346ef582d2491429fb4a619ba0c4b",
+      "chunk-1ffe127439929c413f3cda62f238993b"
+    ],
+    "count": 2,
+    "update_time": 1778986086,
+    "_id": "F_DeleteMark<SEP>lab_intermediate_data"
+  },
+  "F_SINGLE_COIL_WEIGHT<SEP>SQL Template": {
+    "chunk_ids": [
+      "chunk-a89346ef582d2491429fb4a619ba0c4b",
+      "chunk-eaa469fa109e3da0e7694dbe4aa14741"
+    ],
+    "count": 2,
+    "update_time": 1778985968,
+    "_id": "F_SINGLE_COIL_WEIGHT<SEP>SQL Template"
+  },
+  "F_PROD_DATE<SEP>lab_intermediate_data": {
+    "chunk_ids": [
+      "chunk-a89346ef582d2491429fb4a619ba0c4b",
+      "chunk-1ffe127439929c413f3cda62f238993b"
+    ],
+    "count": 2,
+    "update_time": 1778986086,
+    "_id": "F_PROD_DATE<SEP>lab_intermediate_data"
+  },
+  "SQL Template<SEP>startDate": {
+    "chunk_ids": [
+      "chunk-a89346ef582d2491429fb4a619ba0c4b",
+      "chunk-eaa469fa109e3da0e7694dbe4aa14741"
+    ],
+    "count": 2,
+    "update_time": 1778985968,
+    "_id": "SQL Template<SEP>startDate"
+  },
+  "SQL Template<SEP>endDate": {
+    "chunk_ids": [
+      "chunk-a89346ef582d2491429fb4a619ba0c4b",
+      "chunk-eaa469fa109e3da0e7694dbe4aa14741"
+    ],
+    "count": 2,
+    "update_time": 1778985968,
+    "_id": "SQL Template<SEP>endDate"
+  },
+  "SQL Template<SEP>levelList": {
+    "chunk_ids": [
+      "chunk-a89346ef582d2491429fb4a619ba0c4b",
+      "chunk-eaa469fa109e3da0e7694dbe4aa14741"
+    ],
+    "count": 2,
+    "update_time": 1778985968,
+    "_id": "SQL Template<SEP>levelList"
+  },
+  "SQL Template<SEP>judgeColumn": {
+    "chunk_ids": [
+      "chunk-a89346ef582d2491429fb4a619ba0c4b",
+      "chunk-eaa469fa109e3da0e7694dbe4aa14741"
+    ],
+    "count": 2,
+    "update_time": 1778985968,
+    "_id": "SQL Template<SEP>judgeColumn"
+  },
+  "LLM<SEP>SQL Template": {
+    "chunk_ids": [
+      "chunk-a89346ef582d2491429fb4a619ba0c4b"
+    ],
+    "count": 1,
+    "create_time": 1778985917,
+    "update_time": 1778985917,
+    "_id": "LLM<SEP>SQL Template"
+  },
+  "SQL Template<SEP>Single Metric Proportion": {
+    "chunk_ids": [
+      "chunk-eaa469fa109e3da0e7694dbe4aa14741"
+    ],
+    "count": 1,
+    "create_time": 1778985968,
+    "update_time": 1778985968,
+    "_id": "SQL Template<SEP>Single Metric Proportion"
+  },
+  "SQL Skeleton<SEP>SQL Template": {
+    "chunk_ids": [
+      "chunk-eaa469fa109e3da0e7694dbe4aa14741"
+    ],
+    "count": 1,
+    "create_time": 1778985968,
+    "update_time": 1778985968,
+    "_id": "SQL Skeleton<SEP>SQL Template"
+  },
+  "One-Time Inspection Pass Rate<SEP>Single Metric Proportion": {
+    "chunk_ids": [
+      "chunk-eaa469fa109e3da0e7694dbe4aa14741"
+    ],
+    "count": 1,
+    "create_time": 1778985968,
+    "update_time": 1778985968,
+    "_id": "One-Time Inspection Pass Rate<SEP>Single Metric Proportion"
+  },
+  "Class A Proportion<SEP>Single Metric Proportion": {
+    "chunk_ids": [
+      "chunk-eaa469fa109e3da0e7694dbe4aa14741"
+    ],
+    "count": 1,
+    "create_time": 1778985968,
+    "update_time": 1778985968,
+    "_id": "Class A Proportion<SEP>Single Metric Proportion"
+  },
+  "Nonconformity Rate<SEP>Single Metric Proportion": {
+    "chunk_ids": [
+      "chunk-eaa469fa109e3da0e7694dbe4aa14741"
+    ],
+    "count": 1,
+    "create_time": 1778985968,
+    "update_time": 1778985968,
+    "_id": "Nonconformity Rate<SEP>Single Metric Proportion"
+  },
+  "One-Time Inspection Pass Rate<SEP>Typical User Queries": {
+    "chunk_ids": [
+      "chunk-eaa469fa109e3da0e7694dbe4aa14741"
+    ],
+    "count": 1,
+    "create_time": 1778985968,
+    "update_time": 1778985968,
+    "_id": "One-Time Inspection Pass Rate<SEP>Typical User Queries"
+  },
+  "Class A Proportion<SEP>Typical User Queries": {
+    "chunk_ids": [
+      "chunk-eaa469fa109e3da0e7694dbe4aa14741"
+    ],
+    "count": 1,
+    "create_time": 1778985968,
+    "update_time": 1778985968,
+    "_id": "Class A Proportion<SEP>Typical User Queries"
+  },
+  "LLM<SEP>SQL Skeleton": {
+    "chunk_ids": [
+      "chunk-eaa469fa109e3da0e7694dbe4aa14741"
+    ],
+    "count": 1,
+    "create_time": 1778985968,
+    "update_time": 1778985968,
+    "_id": "LLM<SEP>SQL Skeleton"
+  },
+  "Nonconformity Rate<SEP>Typical User Queries": {
+    "chunk_ids": [
+      "chunk-eaa469fa109e3da0e7694dbe4aa14741"
+    ],
+    "count": 1,
+    "create_time": 1778985968,
+    "update_time": 1778985968,
+    "_id": "Nonconformity Rate<SEP>Typical User Queries"
+  },
+  "SQL Skeleton<SEP>matched_weight": {
+    "chunk_ids": [
+      "chunk-eaa469fa109e3da0e7694dbe4aa14741"
+    ],
+    "count": 1,
+    "create_time": 1778985968,
+    "update_time": 1778985968,
+    "_id": "SQL Skeleton<SEP>matched_weight"
+  },
+  "SQL Skeleton<SEP>total_weight": {
+    "chunk_ids": [
+      "chunk-eaa469fa109e3da0e7694dbe4aa14741"
+    ],
+    "count": 1,
+    "create_time": 1778985968,
+    "update_time": 1778985968,
+    "_id": "SQL Skeleton<SEP>total_weight"
+  },
+  "F_DeleteMark<SEP>SQL Template": {
+    "chunk_ids": [
+      "chunk-eaa469fa109e3da0e7694dbe4aa14741"
+    ],
+    "count": 1,
+    "create_time": 1778985968,
+    "update_time": 1778985968,
+    "_id": "F_DeleteMark<SEP>SQL Template"
+  },
+  "SQL Skeleton<SEP>matched_rate": {
+    "chunk_ids": [
+      "chunk-eaa469fa109e3da0e7694dbe4aa14741"
+    ],
+    "count": 1,
+    "create_time": 1778985968,
+    "update_time": 1778985968,
+    "_id": "SQL Skeleton<SEP>matched_rate"
+  },
+  "F_PROD_DATE<SEP>SQL Template": {
+    "chunk_ids": [
+      "chunk-eaa469fa109e3da0e7694dbe4aa14741"
+    ],
+    "count": 1,
+    "create_time": 1778985968,
+    "update_time": 1778985968,
+    "_id": "F_PROD_DATE<SEP>SQL Template"
+  },
+  "SQL Template (Shift Comparison)<SEP>lab_intermediate_data": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "SQL Template (Shift Comparison)<SEP>lab_intermediate_data"
+  },
+  "F_SHIFT<SEP>SQL Template (Shift Comparison)": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "F_SHIFT<SEP>SQL Template (Shift Comparison)"
+  },
+  "SQL Template (Shift Comparison)<SEP>total_weight": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "SQL Template (Shift Comparison)<SEP>total_weight"
+  },
+  "SQL Template (Shift Comparison)<SEP>matched_weight": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "SQL Template (Shift Comparison)<SEP>matched_weight"
+  },
+  "SQL Template (Shift Comparison)<SEP>matched_rate": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "SQL Template (Shift Comparison)<SEP>matched_rate"
+  },
+  "judgeColumn<SEP>levelList": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "judgeColumn<SEP>levelList"
+  },
+  "F_PROD_DATE<SEP>SQL Template (Shift Comparison)": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "F_PROD_DATE<SEP>SQL Template (Shift Comparison)"
+  },
+  "F_DeleteMark<SEP>SQL Template (Shift Comparison)": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "F_DeleteMark<SEP>SQL Template (Shift Comparison)"
+  },
+  "F_PROD_DATE<SEP>startDate": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "F_PROD_DATE<SEP>startDate"
+  },
+  "F_SINGLE_COIL_WEIGHT<SEP>total_weight": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "F_SINGLE_COIL_WEIGHT<SEP>total_weight"
+  },
+  "SQL Template (Shift Comparison)<SEP>startDate": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "SQL Template (Shift Comparison)<SEP>startDate"
+  },
+  "F_PROD_DATE<SEP>endDate": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "F_PROD_DATE<SEP>endDate"
+  },
+  "F_SINGLE_COIL_WEIGHT<SEP>matched_weight": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "F_SINGLE_COIL_WEIGHT<SEP>matched_weight"
+  },
+  "SQL Template (Shift Comparison)<SEP>endDate": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "SQL Template (Shift Comparison)<SEP>endDate"
+  },
+  "matched_rate<SEP>matched_weight": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "matched_rate<SEP>matched_weight"
+  },
+  "三班(Three Shifts)<SEP>甲班(Shift A)": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "三班(Three Shifts)<SEP>甲班(Shift A)"
+  },
+  "SQL Template (Shift Comparison)<SEP>levelList": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "SQL Template (Shift Comparison)<SEP>levelList"
+  },
+  "matched_rate<SEP>total_weight": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "matched_rate<SEP>total_weight"
+  },
+  "三班(Three Shifts)<SEP>乙班(Shift B)": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "三班(Three Shifts)<SEP>乙班(Shift B)"
+  },
+  "SQL Template (Shift Comparison)<SEP>judgeColumn": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "SQL Template (Shift Comparison)<SEP>judgeColumn"
+  },
+  "total_weight<SEP>总产量(Total Production)": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "total_weight<SEP>总产量(Total Production)"
+  },
+  "matched_rate<SEP>指标占比(Indicator Ratio)": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "matched_rate<SEP>指标占比(Indicator Ratio)"
+  },
+  "三班(Three Shifts)<SEP>丙班(Shift C)": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "三班(Three Shifts)<SEP>丙班(Shift C)"
+  },
+  "SQL Template (Shift Comparison)<SEP>三班(Three Shifts)": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "SQL Template (Shift Comparison)<SEP>三班(Three Shifts)"
+  },
+  "SQL Template (Shift Comparison)<SEP>总产量(Total Production)": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "SQL Template (Shift Comparison)<SEP>总产量(Total Production)"
+  },
+  "SQL Template (Shift Comparison)<SEP>指标占比(Indicator Ratio)": {
+    "chunk_ids": [
+      "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+    ],
+    "count": 1,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "SQL Template (Shift Comparison)<SEP>指标占比(Indicator Ratio)"
+  },
+  "Daily Trend SQL Template<SEP>startDate": {
+    "chunk_ids": [
+      "chunk-1ffe127439929c413f3cda62f238993b"
+    ],
+    "count": 1,
+    "create_time": 1778986086,
+    "update_time": 1778986086,
+    "_id": "Daily Trend SQL Template<SEP>startDate"
+  },
+  "Daily Trend SQL Template<SEP>endDate": {
+    "chunk_ids": [
+      "chunk-1ffe127439929c413f3cda62f238993b"
+    ],
+    "count": 1,
+    "create_time": 1778986086,
+    "update_time": 1778986086,
+    "_id": "Daily Trend SQL Template<SEP>endDate"
+  },
+  "Daily Trend SQL Template<SEP>levelList": {
+    "chunk_ids": [
+      "chunk-1ffe127439929c413f3cda62f238993b"
+    ],
+    "count": 1,
+    "create_time": 1778986086,
+    "update_time": 1778986086,
+    "_id": "Daily Trend SQL Template<SEP>levelList"
+  },
+  "Daily Trend SQL Template<SEP>judgeColumn": {
+    "chunk_ids": [
+      "chunk-1ffe127439929c413f3cda62f238993b"
+    ],
+    "count": 1,
+    "create_time": 1778986086,
+    "update_time": 1778986086,
+    "_id": "Daily Trend SQL Template<SEP>judgeColumn"
+  },
+  "Daily Trend SQL Template<SEP>lab_intermediate_data": {
+    "chunk_ids": [
+      "chunk-1ffe127439929c413f3cda62f238993b"
+    ],
+    "count": 1,
+    "create_time": 1778986086,
+    "update_time": 1778986086,
+    "_id": "Daily Trend SQL Template<SEP>lab_intermediate_data"
+  },
+  "Daily Trend SQL Template<SEP>Pass Rate": {
+    "chunk_ids": [
+      "chunk-1ffe127439929c413f3cda62f238993b"
+    ],
+    "count": 1,
+    "create_time": 1778986086,
+    "update_time": 1778986086,
+    "_id": "Daily Trend SQL Template<SEP>Pass Rate"
+  },
+  "Daily Trend SQL Template<SEP>First-Time Pass Rate": {
+    "chunk_ids": [
+      "chunk-1ffe127439929c413f3cda62f238993b"
+    ],
+    "count": 1,
+    "create_time": 1778986087,
+    "update_time": 1778986087,
+    "_id": "Daily Trend SQL Template<SEP>First-Time Pass Rate"
+  },
+  "lab_intermediate_data<SEP>不合格分类统计": {
+    "chunk_ids": [
+      "chunk-d8158b31ac0e5f48421ac68e0c0b5873"
+    ],
+    "count": 1,
+    "create_time": 1778986125,
+    "update_time": 1778986125,
+    "_id": "lab_intermediate_data<SEP>不合格分类统计"
+  },
+  "F_FIRST_INSPECTION<SEP>不合格分类统计": {
+    "chunk_ids": [
+      "chunk-d8158b31ac0e5f48421ac68e0c0b5873"
+    ],
+    "count": 1,
+    "create_time": 1778986125,
+    "update_time": 1778986125,
+    "_id": "F_FIRST_INSPECTION<SEP>不合格分类统计"
+  },
+  "F_SINGLE_COIL_WEIGHT<SEP>不合格分类统计": {
+    "chunk_ids": [
+      "chunk-d8158b31ac0e5f48421ac68e0c0b5873"
+    ],
+    "count": 1,
+    "create_time": 1778986125,
+    "update_time": 1778986125,
+    "_id": "F_SINGLE_COIL_WEIGHT<SEP>不合格分类统计"
+  },
+  "F_PROD_DATE<SEP>不合格分类统计": {
+    "chunk_ids": [
+      "chunk-d8158b31ac0e5f48421ac68e0c0b5873"
+    ],
+    "count": 1,
+    "create_time": 1778986125,
+    "update_time": 1778986125,
+    "_id": "F_PROD_DATE<SEP>不合格分类统计"
+  },
+  "F_DeleteMark<SEP>不合格分类统计": {
+    "chunk_ids": [
+      "chunk-d8158b31ac0e5f48421ac68e0c0b5873"
+    ],
+    "count": 1,
+    "create_time": 1778986125,
+    "update_time": 1778986125,
+    "_id": "F_DeleteMark<SEP>不合格分类统计"
+  },
+  "startDate<SEP>不合格分类统计": {
+    "chunk_ids": [
+      "chunk-d8158b31ac0e5f48421ac68e0c0b5873"
+    ],
+    "count": 1,
+    "create_time": 1778986125,
+    "update_time": 1778986125,
+    "_id": "startDate<SEP>不合格分类统计"
+  },
+  "endDate<SEP>不合格分类统计": {
+    "chunk_ids": [
+      "chunk-d8158b31ac0e5f48421ac68e0c0b5873"
+    ],
+    "count": 1,
+    "create_time": 1778986125,
+    "update_time": 1778986125,
+    "_id": "endDate<SEP>不合格分类统计"
+  },
+  "qualifiedLevels<SEP>不合格分类统计": {
+    "chunk_ids": [
+      "chunk-d8158b31ac0e5f48421ac68e0c0b5873"
+    ],
+    "count": 1,
+    "create_time": 1778986125,
+    "update_time": 1778986125,
+    "_id": "qualifiedLevels<SEP>不合格分类统计"
+  },
+  "limit<SEP>不合格分类统计": {
+    "chunk_ids": [
+      "chunk-d8158b31ac0e5f48421ac68e0c0b5873"
+    ],
+    "count": 1,
+    "create_time": 1778986125,
+    "update_time": 1778986125,
+    "_id": "limit<SEP>不合格分类统计"
+  },
+  "SQL Template: 明细查询<SEP>startDate": {
+    "chunk_ids": [
+      "chunk-d010e203b3992b96293c58447c8a1796"
+    ],
+    "count": 1,
+    "create_time": 1778986177,
+    "update_time": 1778986177,
+    "_id": "SQL Template: 明细查询<SEP>startDate"
+  },
+  "SQL Template: 明细查询<SEP>endDate": {
+    "chunk_ids": [
+      "chunk-d010e203b3992b96293c58447c8a1796"
+    ],
+    "count": 1,
+    "create_time": 1778986177,
+    "update_time": 1778986177,
+    "_id": "SQL Template: 明细查询<SEP>endDate"
+  },
+  "SQL Template: 明细查询<SEP>levelList": {
+    "chunk_ids": [
+      "chunk-d010e203b3992b96293c58447c8a1796"
+    ],
+    "count": 1,
+    "create_time": 1778986177,
+    "update_time": 1778986177,
+    "_id": "SQL Template: 明细查询<SEP>levelList"
+  },
+  "SQL Template: 明细查询<SEP>judgeColumn": {
+    "chunk_ids": [
+      "chunk-d010e203b3992b96293c58447c8a1796"
+    ],
+    "count": 1,
+    "create_time": 1778986177,
+    "update_time": 1778986177,
+    "_id": "SQL Template: 明细查询<SEP>judgeColumn"
+  },
+  "SQL Template: 明细查询<SEP>limit": {
+    "chunk_ids": [
+      "chunk-d010e203b3992b96293c58447c8a1796"
+    ],
+    "count": 1,
+    "create_time": 1778986177,
+    "update_time": 1778986177,
+    "_id": "SQL Template: 明细查询<SEP>limit"
+  },
+  "SQL Template: 明细查询<SEP>lab_intermediate_data": {
+    "chunk_ids": [
+      "chunk-d010e203b3992b96293c58447c8a1796"
+    ],
+    "count": 1,
+    "create_time": 1778986177,
+    "update_time": 1778986177,
+    "_id": "SQL Template: 明细查询<SEP>lab_intermediate_data"
+  },
+  "nlq-agent<SEP>路美实验室": {
+    "chunk_ids": [
+      "chunk-23fbb1625c90dbe70868caa81d311301"
+    ],
+    "count": 1,
+    "create_time": 1778986211,
+    "update_time": 1778986211,
+    "_id": "nlq-agent<SEP>路美实验室"
+  },
+  "Backend Agent Architecture<SEP>nlq-agent": {
+    "chunk_ids": [
+      "chunk-23fbb1625c90dbe70868caa81d311301"
+    ],
+    "count": 1,
+    "create_time": 1778986211,
+    "update_time": 1778986211,
+    "_id": "Backend Agent Architecture<SEP>nlq-agent"
+  },
+  "Neo4j Knowledge Graph<SEP>nlq-agent": {
+    "chunk_ids": [
+      "chunk-23fbb1625c90dbe70868caa81d311301"
+    ],
+    "count": 1,
+    "create_time": 1778986211,
+    "update_time": 1778986211,
+    "_id": "Neo4j Knowledge Graph<SEP>nlq-agent"
+  },
+  "Backend Agent Architecture<SEP>nlq-agent Development Guide": {
+    "chunk_ids": [
+      "chunk-23fbb1625c90dbe70868caa81d311301"
+    ],
+    "count": 1,
+    "create_time": 1778986211,
+    "update_time": 1778986211,
+    "_id": "Backend Agent Architecture<SEP>nlq-agent Development Guide"
+  },
+  "Frontend Ontology Visualization<SEP>nlq-agent": {
+    "chunk_ids": [
+      "chunk-23fbb1625c90dbe70868caa81d311301"
+    ],
+    "count": 1,
+    "create_time": 1778986211,
+    "update_time": 1778986211,
+    "_id": "Frontend Ontology Visualization<SEP>nlq-agent"
+  },
+  "Neo4j Knowledge Graph<SEP>nlq-agent Development Guide": {
+    "chunk_ids": [
+      "chunk-23fbb1625c90dbe70868caa81d311301"
+    ],
+    "count": 1,
+    "create_time": 1778986211,
+    "update_time": 1778986211,
+    "_id": "Neo4j Knowledge Graph<SEP>nlq-agent Development Guide"
+  },
+  "nlq-agent<SEP>nlq-agent Development Guide": {
+    "chunk_ids": [
+      "chunk-23fbb1625c90dbe70868caa81d311301"
+    ],
+    "count": 1,
+    "create_time": 1778986211,
+    "update_time": 1778986211,
+    "_id": "nlq-agent<SEP>nlq-agent Development Guide"
+  },
+  "Frontend Ontology Visualization<SEP>nlq-agent Development Guide": {
+    "chunk_ids": [
+      "chunk-23fbb1625c90dbe70868caa81d311301"
+    ],
+    "count": 1,
+    "create_time": 1778986211,
+    "update_time": 1778986211,
+    "_id": "Frontend Ontology Visualization<SEP>nlq-agent Development Guide"
+  },
+  "Core Architecture Concepts<SEP>Development Guide": {
+    "chunk_ids": [
+      "chunk-2ada7c81c3f419df3d442f219646b1e3"
+    ],
+    "count": 1,
+    "create_time": 1778986234,
+    "update_time": 1778986234,
+    "_id": "Core Architecture Concepts<SEP>Development Guide"
+  },
+  "Development Guide<SEP>Two-Stage Q&A Architecture": {
+    "chunk_ids": [
+      "chunk-2ada7c81c3f419df3d442f219646b1e3"
+    ],
+    "count": 1,
+    "create_time": 1778986234,
+    "update_time": 1778986234,
+    "_id": "Development Guide<SEP>Two-Stage Q&A Architecture"
+  },
+  "Development Guide<SEP>Intelligent Routing for Statistical Questions": {
+    "chunk_ids": [
+      "chunk-2ada7c81c3f419df3d442f219646b1e3"
+    ],
+    "count": 1,
+    "create_time": 1778986234,
+    "update_time": 1778986234,
+    "_id": "Development Guide<SEP>Intelligent Routing for Statistical Questions"
+  },
+  "Development Guide<SEP>Semantic Layer Data Model": {
+    "chunk_ids": [
+      "chunk-2ada7c81c3f419df3d442f219646b1e3"
+    ],
+    "count": 1,
+    "create_time": 1778986234,
+    "update_time": 1778986234,
+    "_id": "Development Guide<SEP>Semantic Layer Data Model"
+  },
+  "Development Guide<SEP>Frontend Ontology Visualization": {
+    "chunk_ids": [
+      "chunk-2ada7c81c3f419df3d442f219646b1e3"
+    ],
+    "count": 1,
+    "create_time": 1778986235,
+    "update_time": 1778986235,
+    "_id": "Development Guide<SEP>Frontend Ontology Visualization"
+  },
+  "Development Guide<SEP>Project Directory Structure": {
+    "chunk_ids": [
+      "chunk-2ada7c81c3f419df3d442f219646b1e3"
+    ],
+    "count": 1,
+    "create_time": 1778986235,
+    "update_time": 1778986235,
+    "_id": "Development Guide<SEP>Project Directory Structure"
+  },
+  "Detailed Key Code Design<SEP>Development Guide": {
+    "chunk_ids": [
+      "chunk-2ada7c81c3f419df3d442f219646b1e3"
+    ],
+    "count": 1,
+    "create_time": 1778986235,
+    "update_time": 1778986235,
+    "_id": "Detailed Key Code Design<SEP>Development Guide"
+  },
+  "Development Guide<SEP>Neo4j Knowledge Graph": {
+    "chunk_ids": [
+      "chunk-2ada7c81c3f419df3d442f219646b1e3"
+    ],
+    "count": 1,
+    "create_time": 1778986235,
+    "update_time": 1778986235,
+    "_id": "Development Guide<SEP>Neo4j Knowledge Graph"
+  },
+  "Deployment and Operations<SEP>Development Guide": {
+    "chunk_ids": [
+      "chunk-2ada7c81c3f419df3d442f219646b1e3"
+    ],
+    "count": 1,
+    "create_time": 1778986235,
+    "update_time": 1778986235,
+    "_id": "Deployment and Operations<SEP>Development Guide"
+  },
+  "Development Guide<SEP>Implementation Roadmap": {
+    "chunk_ids": [
+      "chunk-2ada7c81c3f419df3d442f219646b1e3",
+      "chunk-f8edf294b6528b8f83373cbb8e01283d"
+    ],
+    "count": 2,
+    "update_time": 1778986838,
+    "_id": "Development Guide<SEP>Implementation Roadmap"
+  },
+  "Development Guide<SEP>Integration Points with Existing Codebase": {
+    "chunk_ids": [
+      "chunk-2ada7c81c3f419df3d442f219646b1e3"
+    ],
+    "count": 1,
+    "create_time": 1778986235,
+    "update_time": 1778986235,
+    "_id": "Development Guide<SEP>Integration Points with Existing Codebase"
+  },
+  "知识图谱<SEP>路美项目": {
+    "chunk_ids": [
+      "chunk-3e7b2af007d32a6e2000a0941bbd36f4"
+    ],
+    "count": 1,
+    "create_time": 1778986327,
+    "update_time": 1778986327,
+    "_id": "知识图谱<SEP>路美项目"
+  },
+  "WrenAI<SEP>语义层": {
+    "chunk_ids": [
+      "chunk-3e7b2af007d32a6e2000a0941bbd36f4"
+    ],
+    "count": 1,
+    "create_time": 1778986327,
+    "update_time": 1778986327,
+    "_id": "WrenAI<SEP>语义层"
+  },
+  "判定规则<SEP>知识图谱": {
+    "chunk_ids": [
+      "chunk-3e7b2af007d32a6e2000a0941bbd36f4"
+    ],
+    "count": 1,
+    "create_time": 1778986327,
+    "update_time": 1778986327,
+    "_id": "判定规则<SEP>知识图谱"
+  },
+  "LLM<SEP>语义层": {
+    "chunk_ids": [
+      "chunk-3e7b2af007d32a6e2000a0941bbd36f4"
+    ],
+    "count": 1,
+    "create_time": 1778986327,
+    "update_time": 1778986327,
+    "_id": "LLM<SEP>语义层"
+  },
+  "产品规格<SEP>知识图谱": {
+    "chunk_ids": [
+      "chunk-3e7b2af007d32a6e2000a0941bbd36f4"
+    ],
+    "count": 1,
+    "create_time": 1778986327,
+    "update_time": 1778986327,
+    "_id": "产品规格<SEP>知识图谱"
+  },
+  "luma_rules<SEP>判定规则": {
+    "chunk_ids": [
+      "chunk-3e7b2af007d32a6e2000a0941bbd36f4"
+    ],
+    "count": 1,
+    "create_time": 1778986327,
+    "update_time": 1778986327,
+    "_id": "luma_rules<SEP>判定规则"
+  },
+  "LLM<SEP>SQL": {
+    "chunk_ids": [
+      "chunk-3e7b2af007d32a6e2000a0941bbd36f4"
+    ],
+    "count": 1,
+    "create_time": 1778986327,
+    "update_time": 1778986327,
+    "_id": "LLM<SEP>SQL"
+  },
+  "WrenAI三层Pipeline<SEP>路美两阶段架构": {
+    "chunk_ids": [
+      "chunk-3e7b2af007d32a6e2000a0941bbd36f4"
+    ],
+    "count": 1,
+    "create_time": 1778986327,
+    "update_time": 1778986327,
+    "_id": "WrenAI三层Pipeline<SEP>路美两阶段架构"
+  },
+  "指标定义<SEP>知识图谱": {
+    "chunk_ids": [
+      "chunk-3e7b2af007d32a6e2000a0941bbd36f4"
+    ],
+    "count": 1,
+    "create_time": 1778986327,
+    "update_time": 1778986327,
+    "_id": "指标定义<SEP>知识图谱"
+  },
+  "luma_specs<SEP>产品规格": {
+    "chunk_ids": [
+      "chunk-3e7b2af007d32a6e2000a0941bbd36f4"
+    ],
+    "count": 1,
+    "create_time": 1778986327,
+    "update_time": 1778986327,
+    "_id": "luma_specs<SEP>产品规格"
+  },
+  "DDL<SEP>LLM": {
+    "chunk_ids": [
+      "chunk-3e7b2af007d32a6e2000a0941bbd36f4"
+    ],
+    "count": 1,
+    "create_time": 1778986327,
+    "update_time": 1778986327,
+    "_id": "DDL<SEP>LLM"
+  },
+  "Indexing<SEP>WrenAI三层Pipeline": {
+    "chunk_ids": [
+      "chunk-3e7b2af007d32a6e2000a0941bbd36f4"
+    ],
+    "count": 1,
+    "create_time": 1778986327,
+    "update_time": 1778986327,
+    "_id": "Indexing<SEP>WrenAI三层Pipeline"
+  },
+  "路美两阶段架构<SEP>路美项目": {
+    "chunk_ids": [
+      "chunk-3e7b2af007d32a6e2000a0941bbd36f4"
+    ],
+    "count": 1,
+    "create_time": 1778986327,
+    "update_time": 1778986327,
+    "_id": "路美两阶段架构<SEP>路美项目"
+  },
+  "luma_metrics<SEP>指标定义": {
+    "chunk_ids": [
+      "chunk-3e7b2af007d32a6e2000a0941bbd36f4"
+    ],
+    "count": 1,
+    "create_time": 1778986327,
+    "update_time": 1778986327,
+    "_id": "luma_metrics<SEP>指标定义"
+  },
+  "Retrieval<SEP>WrenAI三层Pipeline": {
+    "chunk_ids": [
+      "chunk-3e7b2af007d32a6e2000a0941bbd36f4"
+    ],
+    "count": 1,
+    "create_time": 1778986327,
+    "update_time": 1778986327,
+    "_id": "Retrieval<SEP>WrenAI三层Pipeline"
+  },
+  "合格率<SEP>指标定义": {
+    "chunk_ids": [
+      "chunk-3e7b2af007d32a6e2000a0941bbd36f4"
+    ],
+    "count": 1,
+    "create_time": 1778986327,
+    "update_time": 1778986327,
+    "_id": "合格率<SEP>指标定义"
+  },
+  "Generation<SEP>WrenAI三层Pipeline": {
+    "chunk_ids": [
+      "chunk-3e7b2af007d32a6e2000a0941bbd36f4"
+    ],
+    "count": 1,
+    "create_time": 1778986327,
+    "update_time": 1778986327,
+    "_id": "Generation<SEP>WrenAI三层Pipeline"
+  },
+  "WrenAI<SEP>WrenAI三层Pipeline": {
+    "chunk_ids": [
+      "chunk-3e7b2af007d32a6e2000a0941bbd36f4"
+    ],
+    "count": 1,
+    "create_time": 1778986327,
+    "update_time": 1778986327,
+    "_id": "WrenAI<SEP>WrenAI三层Pipeline"
+  },
+  "FastAPI Microservice<SEP>Two-Stage QA Architecture": {
+    "chunk_ids": [
+      "chunk-5d695d3fbc263cc41744db3771835422"
+    ],
+    "count": 1,
+    "create_time": 1778986371,
+    "update_time": 1778986371,
+    "_id": "FastAPI Microservice<SEP>Two-Stage QA Architecture"
+  },
+  "QueryAgent<SEP>RootCause Agent": {
+    "chunk_ids": [
+      "chunk-5d695d3fbc263cc41744db3771835422",
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 2,
+    "update_time": 1778986665,
+    "_id": "QueryAgent<SEP>RootCause Agent"
+  },
+  "KgReasoningPanel<SEP>SSE Event Stream": {
+    "chunk_ids": [
+      "chunk-5d695d3fbc263cc41744db3771835422"
+    ],
+    "count": 1,
+    "create_time": 1778986371,
+    "update_time": 1778986371,
+    "_id": "KgReasoningPanel<SEP>SSE Event Stream"
+  },
+  "Overall Architecture Diagram<SEP>Two-Stage QA Architecture": {
+    "chunk_ids": [
+      "chunk-5d695d3fbc263cc41744db3771835422"
+    ],
+    "count": 1,
+    "create_time": 1778986371,
+    "update_time": 1778986371,
+    "_id": "Overall Architecture Diagram<SEP>Two-Stage QA Architecture"
+  },
+  "FastAPI Microservice<SEP>QueryAgent": {
+    "chunk_ids": [
+      "chunk-5d695d3fbc263cc41744db3771835422"
+    ],
+    "count": 1,
+    "create_time": 1778986371,
+    "update_time": 1778986371,
+    "_id": "FastAPI Microservice<SEP>QueryAgent"
+  },
+  "QueryAgent<SEP>QueryAgent File": {
+    "chunk_ids": [
+      "chunk-5d695d3fbc263cc41744db3771835422"
+    ],
+    "count": 1,
+    "create_time": 1778986371,
+    "update_time": 1778986371,
+    "_id": "QueryAgent<SEP>QueryAgent File"
+  },
+  "Chat2SQL Agent<SEP>FastAPI Microservice": {
+    "chunk_ids": [
+      "chunk-5d695d3fbc263cc41744db3771835422"
+    ],
+    "count": 1,
+    "create_time": 1778986371,
+    "update_time": 1778986371,
+    "_id": "Chat2SQL Agent<SEP>FastAPI Microservice"
+  },
+  "RootCause Agent<SEP>RootCause Agent File": {
+    "chunk_ids": [
+      "chunk-5d695d3fbc263cc41744db3771835422"
+    ],
+    "count": 1,
+    "create_time": 1778986371,
+    "update_time": 1778986371,
+    "_id": "RootCause Agent<SEP>RootCause Agent File"
+  },
+  "Chat2SQL Agent<SEP>QueryAgent": {
+    "chunk_ids": [
+      "chunk-5d695d3fbc263cc41744db3771835422",
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 2,
+    "update_time": 1778986665,
+    "_id": "Chat2SQL Agent<SEP>QueryAgent"
+  },
+  "FastAPI Microservice<SEP>RootCause Agent": {
+    "chunk_ids": [
+      "chunk-5d695d3fbc263cc41744db3771835422"
+    ],
+    "count": 1,
+    "create_time": 1778986371,
+    "update_time": 1778986371,
+    "_id": "FastAPI Microservice<SEP>RootCause Agent"
+  },
+  "Chat2SQL Agent<SEP>Chat2SQL Agent File": {
+    "chunk_ids": [
+      "chunk-5d695d3fbc263cc41744db3771835422"
+    ],
+    "count": 1,
+    "create_time": 1778986371,
+    "update_time": 1778986371,
+    "_id": "Chat2SQL Agent<SEP>Chat2SQL Agent File"
+  },
+  "FastAPI Microservice<SEP>SSE Event Stream": {
+    "chunk_ids": [
+      "chunk-5d695d3fbc263cc41744db3771835422"
+    ],
+    "count": 1,
+    "create_time": 1778986371,
+    "update_time": 1778986371,
+    "_id": "FastAPI Microservice<SEP>SSE Event Stream"
+  },
+  "QueryAgent<SEP>Statistical Intent": {
+    "chunk_ids": [
+      "chunk-b513d8cfa9a77ed8608044d037739e9f"
+    ],
+    "count": 1,
+    "create_time": 1778986406,
+    "update_time": 1778986406,
+    "_id": "QueryAgent<SEP>Statistical Intent"
+  },
+  "Knowledge Graph<SEP>RootCauseAgent": {
+    "chunk_ids": [
+      "chunk-b513d8cfa9a77ed8608044d037739e9f"
+    ],
+    "count": 1,
+    "create_time": 1778986406,
+    "update_time": 1778986406,
+    "_id": "Knowledge Graph<SEP>RootCauseAgent"
+  },
+  "app/agents/query_agent.py<SEP>query_agent_node": {
+    "chunk_ids": [
+      "chunk-b513d8cfa9a77ed8608044d037739e9f"
+    ],
+    "count": 1,
+    "create_time": 1778986406,
+    "update_time": 1778986406,
+    "_id": "app/agents/query_agent.py<SEP>query_agent_node"
+  },
+  "QueryAgent<SEP>Root Cause Intent": {
+    "chunk_ids": [
+      "chunk-b513d8cfa9a77ed8608044d037739e9f"
+    ],
+    "count": 1,
+    "create_time": 1778986406,
+    "update_time": 1778986406,
+    "_id": "QueryAgent<SEP>Root Cause Intent"
+  },
+  "Conceptual Intent<SEP>QueryAgent": {
+    "chunk_ids": [
+      "chunk-b513d8cfa9a77ed8608044d037739e9f"
+    ],
+    "count": 1,
+    "create_time": 1778986406,
+    "update_time": 1778986406,
+    "_id": "Conceptual Intent<SEP>QueryAgent"
+  },
+  "Out of Scope Intent<SEP>QueryAgent": {
+    "chunk_ids": [
+      "chunk-b513d8cfa9a77ed8608044d037739e9f"
+    ],
+    "count": 1,
+    "create_time": 1778986406,
+    "update_time": 1778986406,
+    "_id": "Out of Scope Intent<SEP>QueryAgent"
+  },
+  "Chat2SQL<SEP>QueryAgent": {
+    "chunk_ids": [
+      "chunk-b513d8cfa9a77ed8608044d037739e9f"
+    ],
+    "count": 1,
+    "create_time": 1778986406,
+    "update_time": 1778986406,
+    "_id": "Chat2SQL<SEP>QueryAgent"
+  },
+  "QueryAgent<SEP>RootCauseAgent": {
+    "chunk_ids": [
+      "chunk-b513d8cfa9a77ed8608044d037739e9f"
+    ],
+    "count": 1,
+    "create_time": 1778986406,
+    "update_time": 1778986406,
+    "_id": "QueryAgent<SEP>RootCauseAgent"
+  },
+  "QueryAgent<SEP>query_agent_node": {
+    "chunk_ids": [
+      "chunk-b513d8cfa9a77ed8608044d037739e9f"
+    ],
+    "count": 1,
+    "create_time": 1778986406,
+    "update_time": 1778986406,
+    "_id": "QueryAgent<SEP>query_agent_node"
+  },
+  "Schema Loader Python Script<SEP>Semantic Layer Data Model": {
+    "chunk_ids": [
+      "chunk-6a6cdc66d52ec10ea8f88d70678018b0"
+    ],
+    "count": 1,
+    "create_time": 1778986447,
+    "update_time": 1778986447,
+    "_id": "Schema Loader Python Script<SEP>Semantic Layer Data Model"
+  },
+  "Semantic Layer Data Model<SEP>Yield Rate": {
+    "chunk_ids": [
+      "chunk-6a6cdc66d52ec10ea8f88d70678018b0"
+    ],
+    "count": 1,
+    "create_time": 1778986447,
+    "update_time": 1778986447,
+    "_id": "Semantic Layer Data Model<SEP>Yield Rate"
+  },
+  "MySQL<SEP>Schema Loader Python Script": {
+    "chunk_ids": [
+      "chunk-6a6cdc66d52ec10ea8f88d70678018b0"
+    ],
+    "count": 1,
+    "create_time": 1778986447,
+    "update_time": 1778986447,
+    "_id": "MySQL<SEP>Schema Loader Python Script"
+  },
+  "Output<SEP>Semantic Layer Data Model": {
+    "chunk_ids": [
+      "chunk-6a6cdc66d52ec10ea8f88d70678018b0"
+    ],
+    "count": 1,
+    "create_time": 1778986447,
+    "update_time": 1778986447,
+    "_id": "Output<SEP>Semantic Layer Data Model"
+  },
+  "Decision Rules<SEP>Schema Loader Python Script": {
+    "chunk_ids": [
+      "chunk-6a6cdc66d52ec10ea8f88d70678018b0"
+    ],
+    "count": 1,
+    "create_time": 1778986447,
+    "update_time": 1778986447,
+    "_id": "Decision Rules<SEP>Schema Loader Python Script"
+  },
+  "Iron Loss<SEP>Semantic Layer Data Model": {
+    "chunk_ids": [
+      "chunk-6a6cdc66d52ec10ea8f88d70678018b0"
+    ],
+    "count": 1,
+    "create_time": 1778986447,
+    "update_time": 1778986447,
+    "_id": "Iron Loss<SEP>Semantic Layer Data Model"
+  },
+  "Product Specifications<SEP>Schema Loader Python Script": {
+    "chunk_ids": [
+      "chunk-6a6cdc66d52ec10ea8f88d70678018b0"
+    ],
+    "count": 1,
+    "create_time": 1778986447,
+    "update_time": 1778986447,
+    "_id": "Product Specifications<SEP>Schema Loader Python Script"
+  },
+  "Lamination Factor<SEP>Semantic Layer Data Model": {
+    "chunk_ids": [
+      "chunk-6a6cdc66d52ec10ea8f88d70678018b0"
+    ],
+    "count": 1,
+    "create_time": 1778986447,
+    "update_time": 1778986447,
+    "_id": "Lamination Factor<SEP>Semantic Layer Data Model"
+  },
+  "Formula Definitions<SEP>Schema Loader Python Script": {
+    "chunk_ids": [
+      "chunk-6a6cdc66d52ec10ea8f88d70678018b0"
+    ],
+    "count": 1,
+    "create_time": 1778986447,
+    "update_time": 1778986447,
+    "_id": "Formula Definitions<SEP>Schema Loader Python Script"
+  },
+  "Average Thickness<SEP>Semantic Layer Data Model": {
+    "chunk_ids": [
+      "chunk-6a6cdc66d52ec10ea8f88d70678018b0"
+    ],
+    "count": 1,
+    "create_time": 1778986447,
+    "update_time": 1778986447,
+    "_id": "Average Thickness<SEP>Semantic Layer Data Model"
+  },
+  "Qdrant<SEP>Schema Loader Python Script": {
+    "chunk_ids": [
+      "chunk-6a6cdc66d52ec10ea8f88d70678018b0"
+    ],
+    "count": 1,
+    "create_time": 1778986447,
+    "update_time": 1778986447,
+    "_id": "Qdrant<SEP>Schema Loader Python Script"
+  },
+  "ProductSpec<SEP>Ribbon": {
+    "chunk_ids": [
+      "chunk-fe1d7f2b5553bd10b4f9332b9a99b2ef",
+      "chunk-c5c50f730a0f56b891af722a89e9a544",
+      "chunk-a57a8741ef32619b74072e5c073f6eab"
+    ],
+    "count": 3,
+    "update_time": 1778987121,
+    "_id": "ProductSpec<SEP>Ribbon"
+  },
+  "RawDataImport<SEP>Ribbon": {
+    "chunk_ids": [
+      "chunk-fe1d7f2b5553bd10b4f9332b9a99b2ef",
+      "chunk-c5c50f730a0f56b891af722a89e9a544",
+      "chunk-a57a8741ef32619b74072e5c073f6eab"
+    ],
+    "count": 3,
+    "update_time": 1778987121,
+    "_id": "RawDataImport<SEP>Ribbon"
+  },
+  "ProductSpec<SEP>lab_product_spec": {
+    "chunk_ids": [
+      "chunk-fe1d7f2b5553bd10b4f9332b9a99b2ef",
+      "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+    ],
+    "count": 2,
+    "update_time": 1778987010,
+    "_id": "ProductSpec<SEP>lab_product_spec"
+  },
+  "MagneticDataImport<SEP>Ribbon": {
+    "chunk_ids": [
+      "chunk-fe1d7f2b5553bd10b4f9332b9a99b2ef",
+      "chunk-c5c50f730a0f56b891af722a89e9a544",
+      "chunk-a57a8741ef32619b74072e5c073f6eab"
+    ],
+    "count": 3,
+    "update_time": 1778987121,
+    "_id": "MagneticDataImport<SEP>Ribbon"
+  },
+  "RawDataImport<SEP>lab_raw_data": {
+    "chunk_ids": [
+      "chunk-fe1d7f2b5553bd10b4f9332b9a99b2ef",
+      "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+    ],
+    "count": 2,
+    "update_time": 1778987010,
+    "_id": "RawDataImport<SEP>lab_raw_data"
+  },
+  "SpecAttribute<SEP>lab_product_spec_attribute": {
+    "chunk_ids": [
+      "chunk-fe1d7f2b5553bd10b4f9332b9a99b2ef",
+      "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+    ],
+    "count": 2,
+    "update_time": 1778987010,
+    "_id": "SpecAttribute<SEP>lab_product_spec_attribute"
+  },
+  "FurnaceNoInput<SEP>Ribbon": {
+    "chunk_ids": [
+      "chunk-fe1d7f2b5553bd10b4f9332b9a99b2ef",
+      "chunk-c5c50f730a0f56b891af722a89e9a544",
+      "chunk-a57a8741ef32619b74072e5c073f6eab"
+    ],
+    "count": 3,
+    "update_time": 1778987121,
+    "_id": "FurnaceNoInput<SEP>Ribbon"
+  },
+  "MagneticDataImport<SEP>lab_magnetic_raw_data": {
+    "chunk_ids": [
+      "chunk-fe1d7f2b5553bd10b4f9332b9a99b2ef",
+      "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+    ],
+    "count": 2,
+    "update_time": 1778987010,
+    "_id": "MagneticDataImport<SEP>lab_magnetic_raw_data"
+  },
+  "INFORMATION_SCHEMA.COLUMNS<SEP>TemplateField": {
+    "chunk_ids": [
+      "chunk-fe1d7f2b5553bd10b4f9332b9a99b2ef",
+      "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+    ],
+    "count": 2,
+    "update_time": 1778987010,
+    "_id": "INFORMATION_SCHEMA.COLUMNS<SEP>TemplateField"
+  },
+  "IntermediateData<SEP>lab_intermediate_data": {
+    "chunk_ids": [
+      "chunk-fe1d7f2b5553bd10b4f9332b9a99b2ef",
+      "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+    ],
+    "count": 2,
+    "update_time": 1778987010,
+    "_id": "IntermediateData<SEP>lab_intermediate_data"
+  },
+  "FurnaceNoField<SEP>FurnaceNumberRegexGroup": {
+    "chunk_ids": [
+      "chunk-fe1d7f2b5553bd10b4f9332b9a99b2ef"
+    ],
+    "count": 1,
+    "create_time": 1778986508,
+    "update_time": 1778986508,
+    "_id": "FurnaceNoField<SEP>FurnaceNumberRegexGroup"
+  },
+  "FurnaceNoParsed<SEP>Ribbon": {
+    "chunk_ids": [
+      "chunk-fe1d7f2b5553bd10b4f9332b9a99b2ef"
+    ],
+    "count": 1,
+    "create_time": 1778986508,
+    "update_time": 1778986508,
+    "_id": "FurnaceNoParsed<SEP>Ribbon"
+  },
+  "FurnaceNoInput<SEP>FurnaceNumberParsingRules": {
+    "chunk_ids": [
+      "chunk-fe1d7f2b5553bd10b4f9332b9a99b2ef"
+    ],
+    "count": 1,
+    "create_time": 1778986508,
+    "update_time": 1778986508,
+    "_id": "FurnaceNoInput<SEP>FurnaceNumberParsingRules"
+  },
+  "Front-End Knowledge Graph<SEP>relation-graph-vue3": {
+    "chunk_ids": [
+      "chunk-fe1d7f2b5553bd10b4f9332b9a99b2ef"
+    ],
+    "count": 1,
+    "create_time": 1778986508,
+    "update_time": 1778986508,
+    "_id": "Front-End Knowledge Graph<SEP>relation-graph-vue3"
+  },
+  "Ribbon<SEP>VirtualNode": {
+    "chunk_ids": [
+      "chunk-fe1d7f2b5553bd10b4f9332b9a99b2ef"
+    ],
+    "count": 1,
+    "create_time": 1778986508,
+    "update_time": 1778986508,
+    "_id": "Ribbon<SEP>VirtualNode"
+  },
+  "FurnaceNoParsed<SEP>FurnaceNumberParsingRules": {
+    "chunk_ids": [
+      "chunk-fe1d7f2b5553bd10b4f9332b9a99b2ef"
+    ],
+    "count": 1,
+    "create_time": 1778986508,
+    "update_time": 1778986508,
+    "_id": "FurnaceNoParsed<SEP>FurnaceNumberParsingRules"
+  },
+  "Force-Directed Layout<SEP>Front-End Knowledge Graph": {
+    "chunk_ids": [
+      "chunk-fe1d7f2b5553bd10b4f9332b9a99b2ef"
+    ],
+    "count": 1,
+    "create_time": 1778986508,
+    "update_time": 1778986508,
+    "_id": "Force-Directed Layout<SEP>Front-End Knowledge Graph"
+  },
+  "Front-End Knowledge Graph<SEP>nlq-agent/docs/kg-frontend-ontology.md": {
+    "chunk_ids": [
+      "chunk-fe1d7f2b5553bd10b4f9332b9a99b2ef"
+    ],
+    "count": 1,
+    "create_time": 1778986508,
+    "update_time": 1778986508,
+    "_id": "Front-End Knowledge Graph<SEP>nlq-agent/docs/kg-frontend-ontology.md"
+  },
+  "Agent-API<SEP>NLQ-Agent": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Agent-API<SEP>NLQ-Agent"
+  },
+  "Chat2SQL Agent<SEP>SQL Tools": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Chat2SQL Agent<SEP>SQL Tools"
+  },
+  "NLQ-Agent<SEP>Shared Types Package": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "NLQ-Agent<SEP>Shared Types Package"
+  },
+  "Query Tools<SEP>QueryAgent": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Query Tools<SEP>QueryAgent"
+  },
+  "Agent-API<SEP>Chat2SQL Agent": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Agent-API<SEP>Chat2SQL Agent"
+  },
+  "Graph Tools<SEP>RootCauseAgent": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Graph Tools<SEP>RootCauseAgent"
+  },
+  "Knowledge Graph Module<SEP>Neo4j": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Knowledge Graph Module<SEP>Neo4j"
+  },
+  "Agent-API<SEP>QueryAgent": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Agent-API<SEP>QueryAgent"
+  },
+  "NLQ-Agent<SEP>Qdrant": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "NLQ-Agent<SEP>Qdrant"
+  },
+  "Agent-API<SEP>RootCauseAgent": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Agent-API<SEP>RootCauseAgent"
+  },
+  "Qdrant<SEP>docker-compose.yml": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Qdrant<SEP>docker-compose.yml"
+  },
+  "NLQ-Agent<SEP>TEI": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "NLQ-Agent<SEP>TEI"
+  },
+  "Agent-API<SEP>LangGraph": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Agent-API<SEP>LangGraph"
+  },
+  "Neo4j<SEP>docker-compose.yml": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Neo4j<SEP>docker-compose.yml"
+  },
+  "Frontend<SEP>reasoning-protocol.ts": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Frontend<SEP>reasoning-protocol.ts"
+  },
+  "Agent-API<SEP>Knowledge Graph Module": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Agent-API<SEP>Knowledge Graph Module"
+  },
+  "TEI<SEP>docker-compose.yml": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "TEI<SEP>docker-compose.yml"
+  },
+  "NLQ-Agent<SEP>Neo4j": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "NLQ-Agent<SEP>Neo4j"
+  },
+  "Agent-API<SEP>Dockerfile": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Agent-API<SEP>Dockerfile"
+  },
+  "Agent-API<SEP>main.py": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Agent-API<SEP>main.py"
+  },
+  "Agent-API<SEP>chat.py": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Agent-API<SEP>chat.py"
+  },
+  "Agent-API<SEP>health.py": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Agent-API<SEP>health.py"
+  },
+  "Agent-API<SEP>kg.py": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Agent-API<SEP>kg.py"
+  },
+  "Agent-API<SEP>sync.py": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Agent-API<SEP>sync.py"
+  },
+  "Agent-API<SEP>config.py": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Agent-API<SEP>config.py"
+  },
+  "Agent-API<SEP>database.py": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Agent-API<SEP>database.py"
+  },
+  "LangGraph<SEP>graph.py": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "LangGraph<SEP>graph.py"
+  },
+  "Agent-API<SEP>llm_factory.py": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Agent-API<SEP>llm_factory.py"
+  },
+  "Agent-API<SEP>logger.py": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Agent-API<SEP>logger.py"
+  },
+  "Agent-API<SEP>auth.py": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Agent-API<SEP>auth.py"
+  },
+  "Agent-API<SEP>sentry_integration.py": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Agent-API<SEP>sentry_integration.py"
+  },
+  "Agent-API<SEP>schemas.py": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Agent-API<SEP>schemas.py"
+  },
+  "Agent-API<SEP>graph.py": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Agent-API<SEP>graph.py"
+  },
+  "Agent-API<SEP>manager.py": {
+    "chunk_ids": [
+      "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+    ],
+    "count": 1,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "Agent-API<SEP>manager.py"
+  },
+  "QueryAgent<SEP>User Question": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "QueryAgent<SEP>User Question"
+  },
+  "LangGraph State Machine<SEP>app/agents/graph.py": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "LangGraph State Machine<SEP>app/agents/graph.py"
+  },
+  "SQL Security Mechanism<SEP>app/tools/sql_tools.py": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "SQL Security Mechanism<SEP>app/tools/sql_tools.py"
+  },
+  "Direct Answer<SEP>QueryAgent": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "Direct Answer<SEP>QueryAgent"
+  },
+  "Regular Expression Whitelist<SEP>SQL Security Mechanism": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "Regular Expression Whitelist<SEP>SQL Security Mechanism"
+  },
+  "LLM<SEP>SQL Correction Loop": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "LLM<SEP>SQL Correction Loop"
+  },
+  "AST Validation<SEP>SQL Security Mechanism": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "AST Validation<SEP>SQL Security Mechanism"
+  },
+  "DDL<SEP>SQL Correction Loop": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "DDL<SEP>SQL Correction Loop"
+  },
+  "Automatic LIMIT<SEP>SQL Security Mechanism": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "Automatic LIMIT<SEP>SQL Security Mechanism"
+  },
+  "SSE Event Stream<SEP>app/api/chat.py": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "SSE Event Stream<SEP>app/api/chat.py"
+  },
+  "Chat2SQL Agent<SEP>SQL Correction Loop": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "Chat2SQL Agent<SEP>SQL Correction Loop"
+  },
+  "SSE Event Stream<SEP>reasoning_step": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "SSE Event Stream<SEP>reasoning_step"
+  },
+  "OutOfScope Response<SEP>QueryAgent": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "OutOfScope Response<SEP>QueryAgent"
+  },
+  "Iron Loss Threshold<SEP>Two-Stage Filling": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "Iron Loss Threshold<SEP>Two-Stage Filling"
+  },
+  "SSE Event Stream<SEP>text": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "SSE Event Stream<SEP>text"
+  },
+  "Fallback<SEP>SQL Correction Loop": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "Fallback<SEP>SQL Correction Loop"
+  },
+  "F_PERF_PS_LOSS<SEP>Iron Loss Threshold": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "F_PERF_PS_LOSS<SEP>Iron Loss Threshold"
+  },
+  "OnReasoningStep<SEP>reasoning_step": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "OnReasoningStep<SEP>reasoning_step"
+  },
+  "OnText<SEP>text": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "OnText<SEP>text"
+  },
+  "SSE Event Stream<SEP>response_metadata": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "SSE Event Stream<SEP>response_metadata"
+  },
+  "OnError<SEP>error": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "OnError<SEP>error"
+  },
+  "OnDone<SEP>done": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "OnDone<SEP>done"
+  },
+  "Error Message<SEP>SQL Correction Loop": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "Error Message<SEP>SQL Correction Loop"
+  },
+  "OnResponseMetadata<SEP>response_metadata": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "OnResponseMetadata<SEP>response_metadata"
+  },
+  "SSE Event Stream<SEP>error": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986665,
+    "update_time": 1778986665,
+    "_id": "SSE Event Stream<SEP>error"
+  },
+  "SSE Event Stream<SEP>done": {
+    "chunk_ids": [
+      "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+    ],
+    "count": 1,
+    "create_time": 1778986666,
+    "update_time": 1778986666,
+    "_id": "SSE Event Stream<SEP>done"
+  },
+  "JudgmentRule<SEP>ProductSpec": {
+    "chunk_ids": [
+      "chunk-f9301c28a60e02d9a6907aada6663783",
+      "chunk-49c808df8cd65618a6d171acea6fbbda"
+    ],
+    "count": 2,
+    "update_time": 1778987430,
+    "_id": "JudgmentRule<SEP>ProductSpec"
+  },
+  "Knowledge Graph<SEP>Neo4j": {
+    "chunk_ids": [
+      "chunk-f9301c28a60e02d9a6907aada6663783"
+    ],
+    "count": 1,
+    "update_time": 1778986709,
+    "_id": "Knowledge Graph<SEP>Neo4j"
+  },
+  "ProductSpec<SEP>SpecAttribute": {
+    "chunk_ids": [
+      "chunk-f9301c28a60e02d9a6907aada6663783",
+      "chunk-c5c50f730a0f56b891af722a89e9a544",
+      "chunk-a57a8741ef32619b74072e5c073f6eab"
+    ],
+    "count": 3,
+    "update_time": 1778987121,
+    "_id": "ProductSpec<SEP>SpecAttribute"
+  },
+  "Formula<SEP>JudgmentRule": {
+    "chunk_ids": [
+      "chunk-f9301c28a60e02d9a6907aada6663783",
+      "chunk-49c808df8cd65618a6d171acea6fbbda"
+    ],
+    "count": 2,
+    "update_time": 1778987430,
+    "_id": "Formula<SEP>JudgmentRule"
+  },
+  ".env File<SEP>Neo4j": {
+    "chunk_ids": [
+      "chunk-f9301c28a60e02d9a6907aada6663783"
+    ],
+    "count": 1,
+    "update_time": 1778986709,
+    "_id": ".env File<SEP>Neo4j"
+  },
+  "Knowledge Graph<SEP>Knowledge Graph API": {
+    "chunk_ids": [
+      "chunk-f9301c28a60e02d9a6907aada6663783"
+    ],
+    "count": 1,
+    "update_time": 1778986709,
+    "_id": "Knowledge Graph<SEP>Knowledge Graph API"
+  },
+  "Docker<SEP>Neo4j": {
+    "chunk_ids": [
+      "chunk-f9301c28a60e02d9a6907aada6663783"
+    ],
+    "count": 1,
+    "update_time": 1778986709,
+    "_id": "Docker<SEP>Neo4j"
+  },
+  "MySQL<SEP>Neo4j": {
+    "chunk_ids": [
+      "chunk-f9301c28a60e02d9a6907aada6663783"
+    ],
+    "count": 1,
+    "update_time": 1778986709,
+    "_id": "MySQL<SEP>Neo4j"
+  },
+  "Neo4j<SEP>Neo4j 5.15-community": {
+    "chunk_ids": [
+      "chunk-f9301c28a60e02d9a6907aada6663783"
+    ],
+    "count": 1,
+    "update_time": 1778986709,
+    "_id": "Neo4j<SEP>Neo4j 5.15-community"
+  },
+  "Knowledge Graph<SEP>MySQL": {
+    "chunk_ids": [
+      "chunk-f9301c28a60e02d9a6907aada6663783"
+    ],
+    "count": 1,
+    "update_time": 1778986709,
+    "_id": "Knowledge Graph<SEP>MySQL"
+  },
+  "Knowledge Graph API<SEP>Neo4j": {
+    "chunk_ids": [
+      "chunk-f9301c28a60e02d9a6907aada6663783"
+    ],
+    "count": 1,
+    "update_time": 1778986709,
+    "_id": "Knowledge Graph API<SEP>Neo4j"
+  },
+  "Knowledge Graph API<SEP>MySQL": {
+    "chunk_ids": [
+      "chunk-f9301c28a60e02d9a6907aada6663783"
+    ],
+    "count": 1,
+    "update_time": 1778986709,
+    "_id": "Knowledge Graph API<SEP>MySQL"
+  },
+  "Daily Refresh<SEP>Knowledge Graph API": {
+    "chunk_ids": [
+      "chunk-f9301c28a60e02d9a6907aada6663783"
+    ],
+    "count": 1,
+    "update_time": 1778986709,
+    "_id": "Daily Refresh<SEP>Knowledge Graph API"
+  },
+  "Docker Compose<SEP>Qdrant": {
+    "chunk_ids": [
+      "chunk-6843787e11e2044bc19a86eed509efbc"
+    ],
+    "count": 1,
+    "create_time": 1778986774,
+    "update_time": 1778986774,
+    "_id": "Docker Compose<SEP>Qdrant"
+  },
+  "Schema Loader<SEP>Semantic Layer Initialization": {
+    "chunk_ids": [
+      "chunk-6843787e11e2044bc19a86eed509efbc"
+    ],
+    "count": 1,
+    "create_time": 1778986774,
+    "update_time": 1778986774,
+    "_id": "Schema Loader<SEP>Semantic Layer Initialization"
+  },
+  ".NET Backend<SEP>Knowledge Graph Synchronization": {
+    "chunk_ids": [
+      "chunk-6843787e11e2044bc19a86eed509efbc"
+    ],
+    "count": 1,
+    "create_time": 1778986774,
+    "update_time": 1778986774,
+    "_id": ".NET Backend<SEP>Knowledge Graph Synchronization"
+  },
+  "HTTP Callback<SEP>nlq-agent": {
+    "chunk_ids": [
+      "chunk-6843787e11e2044bc19a86eed509efbc"
+    ],
+    "count": 1,
+    "create_time": 1778986774,
+    "update_time": 1778986774,
+    "_id": "HTTP Callback<SEP>nlq-agent"
+  },
+  "Docker Compose<SEP>TEI": {
+    "chunk_ids": [
+      "chunk-6843787e11e2044bc19a86eed509efbc"
+    ],
+    "count": 1,
+    "create_time": 1778986774,
+    "update_time": 1778986774,
+    "_id": "Docker Compose<SEP>TEI"
+  },
+  "Neo4j<SEP>Neo4j HTTP": {
+    "chunk_ids": [
+      "chunk-6843787e11e2044bc19a86eed509efbc"
+    ],
+    "count": 1,
+    "create_time": 1778986774,
+    "update_time": 1778986774,
+    "_id": "Neo4j<SEP>Neo4j HTTP"
+  },
+  ".NET Backend<SEP>Rule Synchronization": {
+    "chunk_ids": [
+      "chunk-6843787e11e2044bc19a86eed509efbc"
+    ],
+    "count": 1,
+    "create_time": 1778986774,
+    "update_time": 1778986774,
+    "_id": ".NET Backend<SEP>Rule Synchronization"
+  },
+  "FastAPI<SEP>nlq-agent": {
+    "chunk_ids": [
+      "chunk-6843787e11e2044bc19a86eed509efbc"
+    ],
+    "count": 1,
+    "create_time": 1778986774,
+    "update_time": 1778986774,
+    "_id": "FastAPI<SEP>nlq-agent"
+  },
+  "Qdrant<SEP>Qdrant REST": {
+    "chunk_ids": [
+      "chunk-6843787e11e2044bc19a86eed509efbc"
+    ],
+    "count": 1,
+    "create_time": 1778986774,
+    "update_time": 1778986774,
+    "_id": "Qdrant<SEP>Qdrant REST"
+  },
+  "Neo4j<SEP>Neo4j Bolt": {
+    "chunk_ids": [
+      "chunk-6843787e11e2044bc19a86eed509efbc"
+    ],
+    "count": 1,
+    "create_time": 1778986774,
+    "update_time": 1778986774,
+    "_id": "Neo4j<SEP>Neo4j Bolt"
+  },
+  "Agent API<SEP>Schema Loader": {
+    "chunk_ids": [
+      "chunk-6843787e11e2044bc19a86eed509efbc"
+    ],
+    "count": 1,
+    "create_time": 1778986774,
+    "update_time": 1778986774,
+    "_id": "Agent API<SEP>Schema Loader"
+  },
+  "NEO4J_ENABLED<SEP>nlq-agent": {
+    "chunk_ids": [
+      "chunk-6843787e11e2044bc19a86eed509efbc"
+    ],
+    "count": 1,
+    "create_time": 1778986774,
+    "update_time": 1778986774,
+    "_id": "NEO4J_ENABLED<SEP>nlq-agent"
+  },
+  "Qdrant<SEP>Qdrant gRPC": {
+    "chunk_ids": [
+      "chunk-6843787e11e2044bc19a86eed509efbc"
+    ],
+    "count": 1,
+    "create_time": 1778986774,
+    "update_time": 1778986774,
+    "_id": "Qdrant<SEP>Qdrant gRPC"
+  },
+  "Docker Compose<SEP>Neo4j": {
+    "chunk_ids": [
+      "chunk-6843787e11e2044bc19a86eed509efbc"
+    ],
+    "count": 1,
+    "create_time": 1778986774,
+    "update_time": 1778986774,
+    "_id": "Docker Compose<SEP>Neo4j"
+  },
+  "Schema Loader<SEP>Semantic Layer": {
+    "chunk_ids": [
+      "chunk-6843787e11e2044bc19a86eed509efbc"
+    ],
+    "count": 1,
+    "create_time": 1778986774,
+    "update_time": 1778986774,
+    "_id": "Schema Loader<SEP>Semantic Layer"
+  },
+  "Phase 1<SEP>Qdrant": {
+    "chunk_ids": [
+      "chunk-f8edf294b6528b8f83373cbb8e01283d"
+    ],
+    "count": 1,
+    "create_time": 1778986838,
+    "update_time": 1778986838,
+    "_id": "Phase 1<SEP>Qdrant"
+  },
+  "Phase 2<SEP>QueryAgent": {
+    "chunk_ids": [
+      "chunk-f8edf294b6528b8f83373cbb8e01283d"
+    ],
+    "count": 1,
+    "create_time": 1778986838,
+    "update_time": 1778986838,
+    "_id": "Phase 2<SEP>QueryAgent"
+  },
+  "Chat2SQL Agent<SEP>Phase 3": {
+    "chunk_ids": [
+      "chunk-f8edf294b6528b8f83373cbb8e01283d"
+    ],
+    "count": 1,
+    "create_time": 1778986838,
+    "update_time": 1778986838,
+    "_id": "Chat2SQL Agent<SEP>Phase 3"
+  },
+  "Phase 4<SEP>RootCause Agent": {
+    "chunk_ids": [
+      "chunk-f8edf294b6528b8f83373cbb8e01283d"
+    ],
+    "count": 1,
+    "create_time": 1778986838,
+    "update_time": 1778986838,
+    "_id": "Phase 4<SEP>RootCause Agent"
+  },
+  "Phase 5<SEP>SSE Protocol": {
+    "chunk_ids": [
+      "chunk-f8edf294b6528b8f83373cbb8e01283d"
+    ],
+    "count": 1,
+    "create_time": 1778986838,
+    "update_time": 1778986838,
+    "_id": "Phase 5<SEP>SSE Protocol"
+  },
+  "Phase 1<SEP>TEI": {
+    "chunk_ids": [
+      "chunk-f8edf294b6528b8f83373cbb8e01283d"
+    ],
+    "count": 1,
+    "create_time": 1778986838,
+    "update_time": 1778986838,
+    "_id": "Phase 1<SEP>TEI"
+  },
+  "Frontend Knowledge Graph Visualization<SEP>Phase 5": {
+    "chunk_ids": [
+      "chunk-f8edf294b6528b8f83373cbb8e01283d"
+    ],
+    "count": 1,
+    "create_time": 1778986838,
+    "update_time": 1778986838,
+    "_id": "Frontend Knowledge Graph Visualization<SEP>Phase 5"
+  },
+  "Phase 7<SEP>Prompt Tuning": {
+    "chunk_ids": [
+      "chunk-f8edf294b6528b8f83373cbb8e01283d"
+    ],
+    "count": 1,
+    "create_time": 1778986838,
+    "update_time": 1778986838,
+    "_id": "Phase 7<SEP>Prompt Tuning"
+  },
+  "Neo4j<SEP>Phase 1": {
+    "chunk_ids": [
+      "chunk-f8edf294b6528b8f83373cbb8e01283d"
+    ],
+    "count": 1,
+    "create_time": 1778986838,
+    "update_time": 1778986838,
+    "_id": "Neo4j<SEP>Phase 1"
+  },
+  "Frontend Knowledge Graph Visualization<SEP>Phase 6": {
+    "chunk_ids": [
+      "chunk-f8edf294b6528b8f83373cbb8e01283d"
+    ],
+    "count": 1,
+    "create_time": 1778986838,
+    "update_time": 1778986838,
+    "_id": "Frontend Knowledge Graph Visualization<SEP>Phase 6"
+  },
+  "Phase 7<SEP>Predefined Template Expansion": {
+    "chunk_ids": [
+      "chunk-f8edf294b6528b8f83373cbb8e01283d"
+    ],
+    "count": 1,
+    "create_time": 1778986838,
+    "update_time": 1778986838,
+    "_id": "Phase 7<SEP>Predefined Template Expansion"
+  },
+  "Frontend<SEP>Phase 5": {
+    "chunk_ids": [
+      "chunk-f8edf294b6528b8f83373cbb8e01283d"
+    ],
+    "count": 1,
+    "create_time": 1778986838,
+    "update_time": 1778986838,
+    "_id": "Frontend<SEP>Phase 5"
+  },
+  "Phase 1<SEP>Semantic Layer Initialization": {
+    "chunk_ids": [
+      "chunk-f8edf294b6528b8f83373cbb8e01283d"
+    ],
+    "count": 1,
+    "create_time": 1778986838,
+    "update_time": 1778986838,
+    "_id": "Phase 1<SEP>Semantic Layer Initialization"
+  },
+  "Frontend Knowledge Graph Visualization<SEP>relation-graph-vue3": {
+    "chunk_ids": [
+      "chunk-f8edf294b6528b8f83373cbb8e01283d"
+    ],
+    "count": 1,
+    "create_time": 1778986838,
+    "update_time": 1778986838,
+    "_id": "Frontend Knowledge Graph Visualization<SEP>relation-graph-vue3"
+  },
+  "Performance Optimization<SEP>Phase 7": {
+    "chunk_ids": [
+      "chunk-f8edf294b6528b8f83373cbb8e01283d"
+    ],
+    "count": 1,
+    "create_time": 1778986838,
+    "update_time": 1778986838,
+    "_id": "Performance Optimization<SEP>Phase 7"
+  },
+  "Frontend<SEP>Frontend Knowledge Graph Visualization": {
+    "chunk_ids": [
+      "chunk-f8edf294b6528b8f83373cbb8e01283d"
+    ],
+    "count": 1,
+    "create_time": 1778986838,
+    "update_time": 1778986838,
+    "_id": "Frontend<SEP>Frontend Knowledge Graph Visualization"
+  },
+  ".NET AI Controller<SEP>nlq-agent": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986912,
+    "update_time": 1778986912,
+    "_id": ".NET AI Controller<SEP>nlq-agent"
+  },
+  "Environment Variables Configuration<SEP>NLQ_AGENT_URL": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986912,
+    "update_time": 1778986912,
+    "_id": "Environment Variables Configuration<SEP>NLQ_AGENT_URL"
+  },
+  "Frontend SSE Client<SEP>web/src/api/nlqAgent.ts": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986912,
+    "update_time": 1778986912,
+    "_id": "Frontend SSE Client<SEP>web/src/api/nlqAgent.ts"
+  },
+  "Frontend Reasoning Chain Component<SEP>web/src/components/KgReasoningChain/": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986912,
+    "update_time": 1778986912,
+    "_id": "Frontend Reasoning Chain Component<SEP>web/src/components/KgReasoningChain/"
+  },
+  "Frontend Knowledge Graph<SEP>web/src/views/lab/knowledge-graph/": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986912,
+    "update_time": 1778986912,
+    "_id": "Frontend Knowledge Graph<SEP>web/src/views/lab/knowledge-graph/"
+  },
+  "Mobile SSE Client<SEP>mobile/utils/sse-client.js": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986912,
+    "update_time": 1778986912,
+    "_id": "Mobile SSE Client<SEP>mobile/utils/sse-client.js"
+  },
+  "Docker Compose Configuration<SEP>nlq-agent": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986913,
+    "update_time": 1778986913,
+    "_id": "Docker Compose Configuration<SEP>nlq-agent"
+  },
+  "Type Definitions<SEP>web/src/types/reasoning-protocol.d.ts": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986913,
+    "update_time": 1778986913,
+    "_id": "Type Definitions<SEP>web/src/types/reasoning-protocol.d.ts"
+  },
+  ".NET AI Controller<SEP>api/src/modularity/ai/": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986913,
+    "update_time": 1778986913,
+    "_id": ".NET AI Controller<SEP>api/src/modularity/ai/"
+  },
+  ".NET Rule Service<SEP>api/src/modularity/lab/": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986913,
+    "update_time": 1778986913,
+    "_id": ".NET Rule Service<SEP>api/src/modularity/lab/"
+  },
+  ".env.example<SEP>Environment Variables Configuration": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986913,
+    "update_time": 1778986913,
+    "_id": ".env.example<SEP>Environment Variables Configuration"
+  },
+  "Development Guide Chapter 11: Integration Points with Existing Codebase<SEP>Frontend SSE Client": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986913,
+    "update_time": 1778986913,
+    "_id": "Development Guide Chapter 11: Integration Points with Existing Codebase<SEP>Frontend SSE Client"
+  },
+  "Docker Compose Configuration<SEP>Neo4j": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986913,
+    "update_time": 1778986913,
+    "_id": "Docker Compose Configuration<SEP>Neo4j"
+  },
+  "Frontend Reasoning Chain Component<SEP>No Modification Required": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986913,
+    "update_time": 1778986913,
+    "_id": "Frontend Reasoning Chain Component<SEP>No Modification Required"
+  },
+  ".NET AI Controller<SEP>Development Guide Chapter 11: Integration Points with Existing Codebase": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986913,
+    "update_time": 1778986913,
+    "_id": ".NET AI Controller<SEP>Development Guide Chapter 11: Integration Points with Existing Codebase"
+  },
+  "Frontend Knowledge Graph<SEP>Ongoing Iteration": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986913,
+    "update_time": 1778986913,
+    "_id": "Frontend Knowledge Graph<SEP>Ongoing Iteration"
+  },
+  "Docker Compose Configuration<SEP>docker-compose.yml": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986913,
+    "update_time": 1778986913,
+    "_id": "Docker Compose Configuration<SEP>docker-compose.yml"
+  },
+  "Mobile SSE Client<SEP>No Modification Required": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986913,
+    "update_time": 1778986913,
+    "_id": "Mobile SSE Client<SEP>No Modification Required"
+  },
+  ".NET Rule Service<SEP>Add Changed HTTP Callback": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986913,
+    "update_time": 1778986913,
+    "_id": ".NET Rule Service<SEP>Add Changed HTTP Callback"
+  },
+  ".NET AI Controller<SEP>Add Nlq-Agent Proxy Route": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986913,
+    "update_time": 1778986913,
+    "_id": ".NET AI Controller<SEP>Add Nlq-Agent Proxy Route"
+  },
+  "Add Nlq-Agent Service Definition<SEP>Docker Compose Configuration": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986913,
+    "update_time": 1778986913,
+    "_id": "Add Nlq-Agent Service Definition<SEP>Docker Compose Configuration"
+  },
+  "Add NLQ_AGENT_URL Configuration<SEP>Environment Variables Configuration": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986913,
+    "update_time": 1778986913,
+    "_id": "Add NLQ_AGENT_URL Configuration<SEP>Environment Variables Configuration"
+  },
+  "Frontend SSE Client<SEP>No Modification Required": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986913,
+    "update_time": 1778986913,
+    "_id": "Frontend SSE Client<SEP>No Modification Required"
+  },
+  "Add Neo4j Service Definition<SEP>Docker Compose Configuration": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986913,
+    "update_time": 1778986913,
+    "_id": "Add Neo4j Service Definition<SEP>Docker Compose Configuration"
+  },
+  "No Modification Required<SEP>Type Definitions": {
+    "chunk_ids": [
+      "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+    ],
+    "count": 1,
+    "create_time": 1778986913,
+    "update_time": 1778986913,
+    "_id": "No Modification Required<SEP>Type Definitions"
+  },
+  "Node Types<SEP>kg-frontend-ontology": {
+    "chunk_ids": [
+      "chunk-9e6fbeee96d870f3f22dbe7072d90982"
+    ],
+    "count": 1,
+    "create_time": 1778986951,
+    "update_time": 1778986951,
+    "_id": "Node Types<SEP>kg-frontend-ontology"
+  },
+  "Data Sources<SEP>kg-frontend-ontology": {
+    "chunk_ids": [
+      "chunk-9e6fbeee96d870f3f22dbe7072d90982"
+    ],
+    "count": 1,
+    "create_time": 1778986951,
+    "update_time": 1778986951,
+    "_id": "Data Sources<SEP>kg-frontend-ontology"
+  },
+  "Connection Relationships<SEP>kg-frontend-ontology": {
+    "chunk_ids": [
+      "chunk-9e6fbeee96d870f3f22dbe7072d90982"
+    ],
+    "count": 1,
+    "create_time": 1778986951,
+    "update_time": 1778986951,
+    "_id": "Connection Relationships<SEP>kg-frontend-ontology"
+  },
+  "Panel Display Rules<SEP>kg-frontend-ontology": {
+    "chunk_ids": [
+      "chunk-9e6fbeee96d870f3f22dbe7072d90982"
+    ],
+    "count": 1,
+    "create_time": 1778986951,
+    "update_time": 1778986951,
+    "_id": "Panel Display Rules<SEP>kg-frontend-ontology"
+  },
+  "kg-frontend-ontology<SEP>relation-graph-vue3": {
+    "chunk_ids": [
+      "chunk-9e6fbeee96d870f3f22dbe7072d90982"
+    ],
+    "count": 1,
+    "create_time": 1778986951,
+    "update_time": 1778986951,
+    "_id": "kg-frontend-ontology<SEP>relation-graph-vue3"
+  },
+  "GET /api/v1/kg/ontology<SEP>kg-frontend-ontology": {
+    "chunk_ids": [
+      "chunk-9e6fbeee96d870f3f22dbe7072d90982"
+    ],
+    "count": 1,
+    "create_time": 1778986951,
+    "update_time": 1778986951,
+    "_id": "GET /api/v1/kg/ontology<SEP>kg-frontend-ontology"
+  },
+  "Ribbon<SEP>kg-frontend-ontology": {
+    "chunk_ids": [
+      "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+    ],
+    "count": 1,
+    "create_time": 1778987010,
+    "update_time": 1778987010,
+    "_id": "Ribbon<SEP>kg-frontend-ontology"
+  },
+  "ProductSpec<SEP>kg-frontend-ontology": {
+    "chunk_ids": [
+      "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+    ],
+    "count": 1,
+    "create_time": 1778987010,
+    "update_time": 1778987010,
+    "_id": "ProductSpec<SEP>kg-frontend-ontology"
+  },
+  "SpecAttribute<SEP>kg-frontend-ontology": {
+    "chunk_ids": [
+      "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+    ],
+    "count": 1,
+    "create_time": 1778987010,
+    "update_time": 1778987010,
+    "_id": "SpecAttribute<SEP>kg-frontend-ontology"
+  },
+  "RawDataImport<SEP>kg-frontend-ontology": {
+    "chunk_ids": [
+      "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+    ],
+    "count": 1,
+    "create_time": 1778987010,
+    "update_time": 1778987010,
+    "_id": "RawDataImport<SEP>kg-frontend-ontology"
+  },
+  "MagneticDataImport<SEP>kg-frontend-ontology": {
+    "chunk_ids": [
+      "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+    ],
+    "count": 1,
+    "create_time": 1778987010,
+    "update_time": 1778987010,
+    "_id": "MagneticDataImport<SEP>kg-frontend-ontology"
+  },
+  "Ribbon<SEP>Virtual Root Node": {
+    "chunk_ids": [
+      "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+    ],
+    "count": 1,
+    "create_time": 1778987010,
+    "update_time": 1778987010,
+    "_id": "Ribbon<SEP>Virtual Root Node"
+  },
+  "IntermediateData<SEP>kg-frontend-ontology": {
+    "chunk_ids": [
+      "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+    ],
+    "count": 1,
+    "create_time": 1778987010,
+    "update_time": 1778987010,
+    "_id": "IntermediateData<SEP>kg-frontend-ontology"
+  },
+  "TemplateField<SEP>kg-frontend-ontology": {
+    "chunk_ids": [
+      "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+    ],
+    "count": 1,
+    "create_time": 1778987010,
+    "update_time": 1778987010,
+    "_id": "TemplateField<SEP>kg-frontend-ontology"
+  },
+  "FurnaceNoInput<SEP>kg-frontend-ontology": {
+    "chunk_ids": [
+      "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+    ],
+    "count": 1,
+    "create_time": 1778987010,
+    "update_time": 1778987010,
+    "_id": "FurnaceNoInput<SEP>kg-frontend-ontology"
+  },
+  "FurnaceNoParsed<SEP>kg-frontend-ontology": {
+    "chunk_ids": [
+      "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+    ],
+    "count": 1,
+    "create_time": 1778987010,
+    "update_time": 1778987010,
+    "_id": "FurnaceNoParsed<SEP>kg-frontend-ontology"
+  },
+  "Furnace Number Parsing Rules<SEP>FurnaceNoInput": {
+    "chunk_ids": [
+      "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+    ],
+    "count": 1,
+    "create_time": 1778987010,
+    "update_time": 1778987010,
+    "_id": "Furnace Number Parsing Rules<SEP>FurnaceNoInput"
+  },
+  "FurnaceNoField<SEP>kg-frontend-ontology": {
+    "chunk_ids": [
+      "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+    ],
+    "count": 1,
+    "create_time": 1778987010,
+    "update_time": 1778987010,
+    "_id": "FurnaceNoField<SEP>kg-frontend-ontology"
+  },
+  "Furnace Number Parsing Rules<SEP>FurnaceNoParsed": {
+    "chunk_ids": [
+      "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+    ],
+    "count": 1,
+    "create_time": 1778987010,
+    "update_time": 1778987010,
+    "_id": "Furnace Number Parsing Rules<SEP>FurnaceNoParsed"
+  },
+  "Force-Directed Layout<SEP>kg-frontend-ontology": {
+    "chunk_ids": [
+      "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+    ],
+    "count": 1,
+    "create_time": 1778987010,
+    "update_time": 1778987010,
+    "_id": "Force-Directed Layout<SEP>kg-frontend-ontology"
+  },
+  "Furnace Number Parsing Rules<SEP>FurnaceNoField": {
+    "chunk_ids": [
+      "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+    ],
+    "count": 1,
+    "create_time": 1778987010,
+    "update_time": 1778987010,
+    "_id": "Furnace Number Parsing Rules<SEP>FurnaceNoField"
+  },
+  "LabProductSpecAttribute<SEP>SpecAttribute": {
+    "chunk_ids": [
+      "chunk-c5c50f730a0f56b891af722a89e9a544"
+    ],
+    "count": 1,
+    "create_time": 1778987080,
+    "update_time": 1778987080,
+    "_id": "LabProductSpecAttribute<SEP>SpecAttribute"
+  },
+  "LabProductSpecVersion<SEP>SpecAttribute": {
+    "chunk_ids": [
+      "chunk-c5c50f730a0f56b891af722a89e9a544"
+    ],
+    "count": 1,
+    "create_time": 1778987080,
+    "update_time": 1778987080,
+    "_id": "LabProductSpecVersion<SEP>SpecAttribute"
+  },
+  "LAB_EXCEL_IMPORT_TEMP<SEP>RawDataImport": {
+    "chunk_ids": [
+      "chunk-c5c50f730a0f56b891af722a89e9a544"
+    ],
+    "count": 1,
+    "create_time": 1778987080,
+    "update_time": 1778987080,
+    "_id": "LAB_EXCEL_IMPORT_TEMP<SEP>RawDataImport"
+  },
+  "LabRawData<SEP>RawDataImport": {
+    "chunk_ids": [
+      "chunk-c5c50f730a0f56b891af722a89e9a544"
+    ],
+    "count": 1,
+    "create_time": 1778987080,
+    "update_time": 1778987080,
+    "_id": "LabRawData<SEP>RawDataImport"
+  },
+  "LabProductSpec<SEP>ProductSpec": {
+    "chunk_ids": [
+      "chunk-c5c50f730a0f56b891af722a89e9a544"
+    ],
+    "count": 1,
+    "create_time": 1778987080,
+    "update_time": 1778987080,
+    "_id": "LabProductSpec<SEP>ProductSpec"
+  },
+  "TemplateField<SEP>导入模板/中间数据": {
+    "chunk_ids": [
+      "chunk-a57a8741ef32619b74072e5c073f6eab"
+    ],
+    "count": 1,
+    "create_time": 1778987121,
+    "update_time": 1778987121,
+    "_id": "TemplateField<SEP>导入模板/中间数据"
+  },
+  "字段<SEP>炉号节点": {
+    "chunk_ids": [
+      "chunk-a57a8741ef32619b74072e5c073f6eab"
+    ],
+    "count": 1,
+    "create_time": 1778987121,
+    "update_time": 1778987121,
+    "_id": "字段<SEP>炉号节点"
+  },
+  "FurnaceNoField<SEP>FurnaceNoParsed": {
+    "chunk_ids": [
+      "chunk-a57a8741ef32619b74072e5c073f6eab"
+    ],
+    "count": 1,
+    "create_time": 1778987121,
+    "update_time": 1778987121,
+    "_id": "FurnaceNoField<SEP>FurnaceNoParsed"
+  },
+  "IntermediateData<SEP>RawDataImport": {
+    "chunk_ids": [
+      "chunk-a57a8741ef32619b74072e5c073f6eab"
+    ],
+    "count": 1,
+    "create_time": 1778987121,
+    "update_time": 1778987121,
+    "_id": "IntermediateData<SEP>RawDataImport"
+  },
+  "MagneticDataImport<SEP>炉号节点": {
+    "chunk_ids": [
+      "chunk-a57a8741ef32619b74072e5c073f6eab"
+    ],
+    "count": 1,
+    "create_time": 1778987121,
+    "update_time": 1778987121,
+    "_id": "MagneticDataImport<SEP>炉号节点"
+  },
+  "FurnaceNoInput<SEP>FurnaceNoParsed": {
+    "chunk_ids": [
+      "chunk-a57a8741ef32619b74072e5c073f6eab"
+    ],
+    "count": 1,
+    "create_time": 1778987121,
+    "update_time": 1778987121,
+    "_id": "FurnaceNoInput<SEP>FurnaceNoParsed"
+  },
+  "Ribbon<SEP>RibbonRoot": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "Ribbon<SEP>RibbonRoot"
+  },
+  "ProductSpec<SEP>Spec": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "ProductSpec<SEP>Spec"
+  },
+  "FurnaceNo<SEP>FurnaceNoInput": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "FurnaceNo<SEP>FurnaceNoInput"
+  },
+  "RawDataImport<SEP>Spec": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "RawDataImport<SEP>Spec"
+  },
+  "RuleCombo<SEP>RuleGroup": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "RuleCombo<SEP>RuleGroup"
+  },
+  "FurnaceNo<SEP>FurnaceNoParsed": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "FurnaceNo<SEP>FurnaceNoParsed"
+  },
+  "JudgmentRule<SEP>Rule": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "JudgmentRule<SEP>Rule"
+  },
+  "MagneticDataImport<SEP>Spec": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "MagneticDataImport<SEP>Spec"
+  },
+  "ProductSpecList<SEP>RibbonRoot": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "ProductSpecList<SEP>RibbonRoot"
+  },
+  "FurnaceNo<SEP>FurnaceNoField": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "FurnaceNo<SEP>FurnaceNoField"
+  },
+  "IntermediateData<SEP>Spec": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "IntermediateData<SEP>Spec"
+  },
+  "ExtendedAttributes<SEP>RibbonRoot": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "ExtendedAttributes<SEP>RibbonRoot"
+  },
+  "Spec<SEP>TemplateField": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "Spec<SEP>TemplateField"
+  },
+  "LaminationDataFields<SEP>RibbonRoot": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "LaminationDataFields<SEP>RibbonRoot"
+  },
+  "FurnaceNo<SEP>RawFurnaceNumber": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "FurnaceNo<SEP>RawFurnaceNumber"
+  },
+  "CodeNameTargetTable<SEP>Spec": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "CodeNameTargetTable<SEP>Spec"
+  },
+  "RibbonRoot<SEP>SingleSheetPerformanceFields": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "RibbonRoot<SEP>SingleSheetPerformanceFields"
+  },
+  "FurnaceNo<SEP>FurnaceNumber": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "FurnaceNo<SEP>FurnaceNumber"
+  },
+  "RuleCombo<SEP>SpecStatusRuleList": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "RuleCombo<SEP>SpecStatusRuleList"
+  },
+  "GradeCodeQualityStatusPriorityConditionTable<SEP>Rule": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "GradeCodeQualityStatusPriorityConditionTable<SEP>Rule"
+  },
+  "Spec<SEP>TableFieldList": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "Spec<SEP>TableFieldList"
+  },
+  "Formula<SEP>NameTypeColumnNameUnitFormulaRelatedRules": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "Formula<SEP>NameTypeColumnNameUnitFormulaRelatedRules"
+  },
+  "FieldDisplay<SEP>FurnaceNo": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "FieldDisplay<SEP>FurnaceNo"
+  },
+  "ImportTemplateFieldMapping<SEP>Spec": {
+    "chunk_ids": [
+      "chunk-36916be8986716ed209d412539919743"
+    ],
+    "count": 1,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "ImportTemplateFieldMapping<SEP>Spec"
+  },
+  "/api/v1/kg/ontology<SEP>kg-frontend-ontology": {
+    "chunk_ids": [
+      "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05"
+    ],
+    "count": 1,
+    "create_time": 1778987285,
+    "update_time": 1778987285,
+    "_id": "/api/v1/kg/ontology<SEP>kg-frontend-ontology"
+  },
+  "Lab_Product_Spec<SEP>Specs": {
+    "chunk_ids": [
+      "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05"
+    ],
+    "count": 1,
+    "create_time": 1778987285,
+    "update_time": 1778987285,
+    "_id": "Lab_Product_Spec<SEP>Specs"
+  },
+  "Lab_Intermediate_Data_Judgment_Level<SEP>Rules": {
+    "chunk_ids": [
+      "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05"
+    ],
+    "count": 1,
+    "create_time": 1778987285,
+    "update_time": 1778987285,
+    "_id": "Lab_Intermediate_Data_Judgment_Level<SEP>Rules"
+  },
+  "/api/v1/kg/ontology<SEP>Specs": {
+    "chunk_ids": [
+      "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05"
+    ],
+    "count": 1,
+    "create_time": 1778987285,
+    "update_time": 1778987285,
+    "_id": "/api/v1/kg/ontology<SEP>Specs"
+  },
+  "Lab_Product_Spec<SEP>Rules": {
+    "chunk_ids": [
+      "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05"
+    ],
+    "count": 1,
+    "create_time": 1778987285,
+    "update_time": 1778987285,
+    "_id": "Lab_Product_Spec<SEP>Rules"
+  },
+  "Formulas<SEP>Lab_Intermediate_Data_Formula": {
+    "chunk_ids": [
+      "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05"
+    ],
+    "count": 1,
+    "create_time": 1778987285,
+    "update_time": 1778987285,
+    "_id": "Formulas<SEP>Lab_Intermediate_Data_Formula"
+  },
+  "Lab_Product_Spec_Attribute<SEP>Spec_attributes": {
+    "chunk_ids": [
+      "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05"
+    ],
+    "count": 1,
+    "create_time": 1778987285,
+    "update_time": 1778987285,
+    "_id": "Lab_Product_Spec_Attribute<SEP>Spec_attributes"
+  },
+  "/api/v1/kg/ontology<SEP>Rules": {
+    "chunk_ids": [
+      "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05"
+    ],
+    "count": 1,
+    "create_time": 1778987285,
+    "update_time": 1778987285,
+    "_id": "/api/v1/kg/ontology<SEP>Rules"
+  },
+  "Excel_templates<SEP>LAB_EXCEL_IMPORT_TEMPLATE": {
+    "chunk_ids": [
+      "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05"
+    ],
+    "count": 1,
+    "create_time": 1778987285,
+    "update_time": 1778987285,
+    "_id": "Excel_templates<SEP>LAB_EXCEL_IMPORT_TEMPLATE"
+  },
+  "Lab_Product_Spec_Version<SEP>Spec_attributes": {
+    "chunk_ids": [
+      "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05"
+    ],
+    "count": 1,
+    "create_time": 1778987285,
+    "update_time": 1778987285,
+    "_id": "Lab_Product_Spec_Version<SEP>Spec_attributes"
+  },
+  "INFORMATION_SCHEMA.COLUMNS<SEP>Table_fields": {
+    "chunk_ids": [
+      "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05"
+    ],
+    "count": 1,
+    "create_time": 1778987285,
+    "update_time": 1778987285,
+    "_id": "INFORMATION_SCHEMA.COLUMNS<SEP>Table_fields"
+  },
+  "/api/v1/kg/ontology<SEP>Formulas": {
+    "chunk_ids": [
+      "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05"
+    ],
+    "count": 1,
+    "create_time": 1778987285,
+    "update_time": 1778987285,
+    "_id": "/api/v1/kg/ontology<SEP>Formulas"
+  },
+  "Lab_Raw_Data<SEP>Table_fields": {
+    "chunk_ids": [
+      "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05"
+    ],
+    "count": 1,
+    "create_time": 1778987285,
+    "update_time": 1778987285,
+    "_id": "Lab_Raw_Data<SEP>Table_fields"
+  },
+  "F_CONFIG_JSON<SEP>LAB_EXCEL_IMPORT_TEMPLATE": {
+    "chunk_ids": [
+      "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05"
+    ],
+    "count": 1,
+    "create_time": 1778987285,
+    "update_time": 1778987285,
+    "_id": "F_CONFIG_JSON<SEP>LAB_EXCEL_IMPORT_TEMPLATE"
+  },
+  "/api/v1/kg/ontology<SEP>Spec_attributes": {
+    "chunk_ids": [
+      "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05"
+    ],
+    "count": 1,
+    "create_time": 1778987285,
+    "update_time": 1778987285,
+    "_id": "/api/v1/kg/ontology<SEP>Spec_attributes"
+  },
+  "Lab_Magnetic_Raw_Data<SEP>Table_fields": {
+    "chunk_ids": [
+      "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05"
+    ],
+    "count": 1,
+    "create_time": 1778987285,
+    "update_time": 1778987285,
+    "_id": "Lab_Magnetic_Raw_Data<SEP>Table_fields"
+  },
+  "Excel_templates<SEP>F_CONFIG_JSON": {
+    "chunk_ids": [
+      "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05"
+    ],
+    "count": 1,
+    "create_time": 1778987285,
+    "update_time": 1778987285,
+    "_id": "Excel_templates<SEP>F_CONFIG_JSON"
+  },
+  "Lab_Intermediate_Data<SEP>Table_fields": {
+    "chunk_ids": [
+      "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05"
+    ],
+    "count": 1,
+    "create_time": 1778987285,
+    "update_time": 1778987285,
+    "_id": "Lab_Intermediate_Data<SEP>Table_fields"
+  },
+  "/api/v1/kg/ontology<SEP>Excel_templates": {
+    "chunk_ids": [
+      "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05"
+    ],
+    "count": 1,
+    "create_time": 1778987285,
+    "update_time": 1778987285,
+    "_id": "/api/v1/kg/ontology<SEP>Excel_templates"
+  },
+  "/api/v1/kg/ontology<SEP>Table_fields": {
+    "chunk_ids": [
+      "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05"
+    ],
+    "count": 1,
+    "create_time": 1778987285,
+    "update_time": 1778987285,
+    "_id": "/api/v1/kg/ontology<SEP>Table_fields"
+  },
+  "ACTIVE_NODE_TYPES<SEP>Ribbon": {
+    "chunk_ids": [
+      "chunk-c891a5798f8f62f082839f1a25296489"
+    ],
+    "count": 1,
+    "create_time": 1778987333,
+    "update_time": 1778987333,
+    "_id": "ACTIVE_NODE_TYPES<SEP>Ribbon"
+  },
+  "ACTIVE_NODE_TYPES<SEP>ProductSpec": {
+    "chunk_ids": [
+      "chunk-c891a5798f8f62f082839f1a25296489"
+    ],
+    "count": 1,
+    "create_time": 1778987333,
+    "update_time": 1778987333,
+    "_id": "ACTIVE_NODE_TYPES<SEP>ProductSpec"
+  },
+  "ACTIVE_NODE_TYPES<SEP>SpecAttribute": {
+    "chunk_ids": [
+      "chunk-c891a5798f8f62f082839f1a25296489"
+    ],
+    "count": 1,
+    "create_time": 1778987333,
+    "update_time": 1778987333,
+    "_id": "ACTIVE_NODE_TYPES<SEP>SpecAttribute"
+  },
+  "ACTIVE_NODE_TYPES<SEP>RawDataImport": {
+    "chunk_ids": [
+      "chunk-c891a5798f8f62f082839f1a25296489"
+    ],
+    "count": 1,
+    "create_time": 1778987333,
+    "update_time": 1778987333,
+    "_id": "ACTIVE_NODE_TYPES<SEP>RawDataImport"
+  },
+  "ACTIVE_NODE_TYPES<SEP>MagneticDataImport": {
+    "chunk_ids": [
+      "chunk-c891a5798f8f62f082839f1a25296489"
+    ],
+    "count": 1,
+    "create_time": 1778987333,
+    "update_time": 1778987333,
+    "_id": "ACTIVE_NODE_TYPES<SEP>MagneticDataImport"
+  },
+  "ACTIVE_NODE_TYPES<SEP>IntermediateData": {
+    "chunk_ids": [
+      "chunk-c891a5798f8f62f082839f1a25296489"
+    ],
+    "count": 1,
+    "create_time": 1778987333,
+    "update_time": 1778987333,
+    "_id": "ACTIVE_NODE_TYPES<SEP>IntermediateData"
+  },
+  "ACTIVE_NODE_TYPES<SEP>TemplateField": {
+    "chunk_ids": [
+      "chunk-c891a5798f8f62f082839f1a25296489"
+    ],
+    "count": 1,
+    "create_time": 1778987333,
+    "update_time": 1778987333,
+    "_id": "ACTIVE_NODE_TYPES<SEP>TemplateField"
+  },
+  "ACTIVE_NODE_TYPES<SEP>FurnaceNoInput": {
+    "chunk_ids": [
+      "chunk-c891a5798f8f62f082839f1a25296489"
+    ],
+    "count": 1,
+    "create_time": 1778987333,
+    "update_time": 1778987333,
+    "_id": "ACTIVE_NODE_TYPES<SEP>FurnaceNoInput"
+  },
+  "ACTIVE_NODE_TYPES<SEP>FurnaceNoParsed": {
+    "chunk_ids": [
+      "chunk-c891a5798f8f62f082839f1a25296489"
+    ],
+    "count": 1,
+    "create_time": 1778987333,
+    "update_time": 1778987333,
+    "_id": "ACTIVE_NODE_TYPES<SEP>FurnaceNoParsed"
+  },
+  "ACTIVE_NODE_TYPES<SEP>FurnaceNoField": {
+    "chunk_ids": [
+      "chunk-c891a5798f8f62f082839f1a25296489"
+    ],
+    "count": 1,
+    "create_time": 1778987333,
+    "update_time": 1778987333,
+    "_id": "ACTIVE_NODE_TYPES<SEP>FurnaceNoField"
+  },
+  "ACTIVE_NODE_TYPES<SEP>JudgmentRule": {
+    "chunk_ids": [
+      "chunk-c891a5798f8f62f082839f1a25296489",
+      "chunk-49c808df8cd65618a6d171acea6fbbda"
+    ],
+    "count": 2,
+    "update_time": 1778987430,
+    "_id": "ACTIVE_NODE_TYPES<SEP>JudgmentRule"
+  },
+  "ACTIVE_NODE_TYPES<SEP>Formula": {
+    "chunk_ids": [
+      "chunk-c891a5798f8f62f082839f1a25296489",
+      "chunk-49c808df8cd65618a6d171acea6fbbda"
+    ],
+    "count": 2,
+    "update_time": 1778987430,
+    "_id": "ACTIVE_NODE_TYPES<SEP>Formula"
+  },
+  "ACTIVE_NODE_TYPES<SEP>get_ontology()": {
+    "chunk_ids": [
+      "chunk-c891a5798f8f62f082839f1a25296489"
+    ],
+    "count": 1,
+    "create_time": 1778987333,
+    "update_time": 1778987333,
+    "_id": "ACTIVE_NODE_TYPES<SEP>get_ontology()"
+  },
+  "Kg Frontend Ontology<SEP>Layout Configuration": {
+    "chunk_ids": [
+      "chunk-0f450d3e6c8db30c31dad3a0e07cf19f"
+    ],
+    "count": 1,
+    "create_time": 1778987390,
+    "update_time": 1778987390,
+    "_id": "Kg Frontend Ontology<SEP>Layout Configuration"
+  },
+  "GraphOptions<SEP>Layout Configuration": {
+    "chunk_ids": [
+      "chunk-0f450d3e6c8db30c31dad3a0e07cf19f"
+    ],
+    "count": 1,
+    "create_time": 1778987390,
+    "update_time": 1778987390,
+    "_id": "GraphOptions<SEP>Layout Configuration"
+  },
+  "Default Node Shape<SEP>GraphOptions": {
+    "chunk_ids": [
+      "chunk-0f450d3e6c8db30c31dad3a0e07cf19f"
+    ],
+    "count": 1,
+    "create_time": 1778987390,
+    "update_time": 1778987390,
+    "_id": "Default Node Shape<SEP>GraphOptions"
+  },
+  "Layout<SEP>Layout Name": {
+    "chunk_ids": [
+      "chunk-0f450d3e6c8db30c31dad3a0e07cf19f"
+    ],
+    "count": 1,
+    "create_time": 1778987390,
+    "update_time": 1778987390,
+    "_id": "Layout<SEP>Layout Name"
+  },
+  "Default Line Shape<SEP>GraphOptions": {
+    "chunk_ids": [
+      "chunk-0f450d3e6c8db30c31dad3a0e07cf19f"
+    ],
+    "count": 1,
+    "create_time": 1778987390,
+    "update_time": 1778987390,
+    "_id": "Default Line Shape<SEP>GraphOptions"
+  },
+  "Force<SEP>Layout Name": {
+    "chunk_ids": [
+      "chunk-0f450d3e6c8db30c31dad3a0e07cf19f"
+    ],
+    "count": 1,
+    "create_time": 1778987390,
+    "update_time": 1778987390,
+    "_id": "Force<SEP>Layout Name"
+  },
+  "Default Junction Point<SEP>GraphOptions": {
+    "chunk_ids": [
+      "chunk-0f450d3e6c8db30c31dad3a0e07cf19f"
+    ],
+    "count": 1,
+    "create_time": 1778987390,
+    "update_time": 1778987390,
+    "_id": "Default Junction Point<SEP>GraphOptions"
+  },
+  "GraphOptions<SEP>Layout": {
+    "chunk_ids": [
+      "chunk-0f450d3e6c8db30c31dad3a0e07cf19f"
+    ],
+    "count": 1,
+    "create_time": 1778987390,
+    "update_time": 1778987390,
+    "_id": "GraphOptions<SEP>Layout"
+  },
+  "GraphOptions<SEP>Move To Center When Refresh": {
+    "chunk_ids": [
+      "chunk-0f450d3e6c8db30c31dad3a0e07cf19f"
+    ],
+    "count": 1,
+    "create_time": 1778987390,
+    "update_time": 1778987390,
+    "_id": "GraphOptions<SEP>Move To Center When Refresh"
+  },
+  "GraphOptions<SEP>Zoom To Fit When Refresh": {
+    "chunk_ids": [
+      "chunk-0f450d3e6c8db30c31dad3a0e07cf19f"
+    ],
+    "count": 1,
+    "create_time": 1778987390,
+    "update_time": 1778987390,
+    "_id": "GraphOptions<SEP>Zoom To Fit When Refresh"
+  },
+  "GraphOptions<SEP>Use Animation When Refresh": {
+    "chunk_ids": [
+      "chunk-0f450d3e6c8db30c31dad3a0e07cf19f"
+    ],
+    "count": 1,
+    "create_time": 1778987390,
+    "update_time": 1778987390,
+    "_id": "GraphOptions<SEP>Use Animation When Refresh"
+  },
+  "GraphOptions<SEP>RGOptions": {
+    "chunk_ids": [
+      "chunk-0f450d3e6c8db30c31dad3a0e07cf19f"
+    ],
+    "count": 1,
+    "create_time": 1778987390,
+    "update_time": 1778987390,
+    "_id": "GraphOptions<SEP>RGOptions"
+  },
+  "AppearanceFeature<SEP>Ribbon": {
+    "chunk_ids": [
+      "chunk-49c808df8cd65618a6d171acea6fbbda"
+    ],
+    "count": 1,
+    "create_time": 1778987430,
+    "update_time": 1778987430,
+    "_id": "AppearanceFeature<SEP>Ribbon"
+  },
+  "LaminationData<SEP>MetricJudge": {
+    "chunk_ids": [
+      "chunk-49c808df8cd65618a6d171acea6fbbda"
+    ],
+    "count": 1,
+    "create_time": 1778987430,
+    "update_time": 1778987430,
+    "_id": "LaminationData<SEP>MetricJudge"
+  },
+  "AppearanceFeature<SEP>get_ontology()": {
+    "chunk_ids": [
+      "chunk-49c808df8cd65618a6d171acea6fbbda"
+    ],
+    "count": 1,
+    "create_time": 1778987430,
+    "update_time": 1778987430,
+    "_id": "AppearanceFeature<SEP>get_ontology()"
+  },
+  "MetricJudge<SEP>SingleSheetPerf": {
+    "chunk_ids": [
+      "chunk-49c808df8cd65618a6d171acea6fbbda"
+    ],
+    "count": 1,
+    "create_time": 1778987430,
+    "update_time": 1778987430,
+    "_id": "MetricJudge<SEP>SingleSheetPerf"
+  },
+  "MetricJudge<SEP>get_ontology()": {
+    "chunk_ids": [
+      "chunk-49c808df8cd65618a6d171acea6fbbda"
+    ],
+    "count": 1,
+    "create_time": 1778987430,
+    "update_time": 1778987430,
+    "_id": "MetricJudge<SEP>get_ontology()"
+  },
+  "JudgmentRule<SEP>get_ontology()": {
+    "chunk_ids": [
+      "chunk-49c808df8cd65618a6d171acea6fbbda"
+    ],
+    "count": 1,
+    "create_time": 1778987430,
+    "update_time": 1778987430,
+    "_id": "JudgmentRule<SEP>get_ontology()"
+  },
+  "Formula<SEP>get_ontology()": {
+    "chunk_ids": [
+      "chunk-49c808df8cd65618a6d171acea6fbbda"
+    ],
+    "count": 1,
+    "create_time": 1778987430,
+    "update_time": 1778987430,
+    "_id": "Formula<SEP>get_ontology()"
+  },
+  "ACTIVE_NODE_TYPES<SEP>AppearanceFeature": {
+    "chunk_ids": [
+      "chunk-49c808df8cd65618a6d171acea6fbbda"
+    ],
+    "count": 1,
+    "create_time": 1778987430,
+    "update_time": 1778987430,
+    "_id": "ACTIVE_NODE_TYPES<SEP>AppearanceFeature"
+  },
+  "ACTIVE_NODE_TYPES<SEP>MetricJudge": {
+    "chunk_ids": [
+      "chunk-49c808df8cd65618a6d171acea6fbbda"
+    ],
+    "count": 1,
+    "create_time": 1778987430,
+    "update_time": 1778987430,
+    "_id": "ACTIVE_NODE_TYPES<SEP>MetricJudge"
+  },
+  "Code 120<SEP>detectionColumns": {
+    "chunk_ids": [
+      "chunk-ca7a7d353eb9402c9f355e9541b4b7a6"
+    ],
+    "count": 1,
+    "create_time": 1779045152,
+    "update_time": 1779045152,
+    "_id": "Code 120<SEP>detectionColumns"
+  },
+  "Code<SEP>Detection Columns": {
+    "chunk_ids": [
+      "chunk-c0c20caaf3864c264374b5296186c3cb"
+    ],
+    "count": 1,
+    "create_time": 1779045197,
+    "update_time": 1779045197,
+    "_id": "Code<SEP>Detection Columns"
+  },
+  "Detection Columns<SEP>Record 170": {
+    "chunk_ids": [
+      "chunk-c0c20caaf3864c264374b5296186c3cb"
+    ],
+    "count": 1,
+    "create_time": 1779045197,
+    "update_time": 1779045197,
+    "_id": "Detection Columns<SEP>Record 170"
+  },
+  "Code<SEP>Record 170": {
+    "chunk_ids": [
+      "chunk-c0c20caaf3864c264374b5296186c3cb"
+    ],
+    "count": 1,
+    "create_time": 1779045197,
+    "update_time": 1779045197,
+    "_id": "Code<SEP>Record 170"
+  },
+  "Code 213<SEP>DetectionColumns 22": {
+    "chunk_ids": [
+      "chunk-3aa2c19d3a58f78269ae2435ca745ffc"
+    ],
+    "count": 1,
+    "create_time": 1779045218,
+    "update_time": 1779045218,
+    "_id": "Code 213<SEP>DetectionColumns 22"
+  },
+  "g/cm³<SEP>密度": {
+    "chunk_ids": [
+      "chunk-9c0b50710e5d60f22e828a8c24e76e0d"
+    ],
+    "count": 1,
+    "update_time": 1779045260,
+    "_id": "g/cm³<SEP>密度"
+  },
+  "Decimal<SEP>密度": {
+    "chunk_ids": [
+      "chunk-9c0b50710e5d60f22e828a8c24e76e0d"
+    ],
+    "count": 1,
+    "update_time": 1779045260,
+    "_id": "Decimal<SEP>密度"
+  },
+  "Layers<SEP>Precision": {
+    "chunk_ids": [
+      "chunk-7b34cbed54ccdc6320b47429f9d69f4c"
+    ],
+    "count": 1,
+    "update_time": 1779045260,
+    "_id": "Layers<SEP>Precision"
+  },
+  "Layers<SEP>ValueType": {
+    "chunk_ids": [
+      "chunk-7b34cbed54ccdc6320b47429f9d69f4c"
+    ],
+    "count": 1,
+    "update_time": 1779045260,
+    "_id": "Layers<SEP>ValueType"
+  },
+  "Layers<SEP>Version": {
+    "chunk_ids": [
+      "chunk-7b34cbed54ccdc6320b47429f9d69f4c"
+    ],
+    "count": 1,
+    "update_time": 1779045260,
+    "_id": "Layers<SEP>Version"
+  },
+  "Length<SEP>Length Precision": {
+    "chunk_ids": [
+      "chunk-065426025b46d13158c3007050cec784"
+    ],
+    "count": 1,
+    "create_time": 1779045287,
+    "update_time": 1779045287,
+    "_id": "Length<SEP>Length Precision"
+  },
+  "Length<SEP>Meter Unit": {
+    "chunk_ids": [
+      "chunk-065426025b46d13158c3007050cec784"
+    ],
+    "count": 1,
+    "create_time": 1779045287,
+    "update_time": 1779045287,
+    "_id": "Length<SEP>Meter Unit"
+  },
+  "Decimal Value Type<SEP>Length": {
+    "chunk_ids": [
+      "chunk-065426025b46d13158c3007050cec784"
+    ],
+    "count": 1,
+    "create_time": 1779045287,
+    "update_time": 1779045287,
+    "_id": "Decimal Value Type<SEP>Length"
+  },
+  "Length<SEP>Length Version": {
+    "chunk_ids": [
+      "chunk-065426025b46d13158c3007050cec784"
+    ],
+    "count": 1,
+    "create_time": 1779045287,
+    "update_time": 1779045287,
+    "_id": "Length<SEP>Length Version"
+  },
+  "layers<SEP>层数": {
+    "chunk_ids": [
+      "chunk-feabb5c69083b439efed0cdd794ddd28"
+    ],
+    "count": 1,
+    "create_time": 1779045344,
+    "update_time": 1779045344,
+    "_id": "layers<SEP>层数"
+  },
+  "2 (precision)<SEP>层数": {
+    "chunk_ids": [
+      "chunk-feabb5c69083b439efed0cdd794ddd28"
+    ],
+    "count": 1,
+    "create_time": 1779045344,
+    "update_time": 1779045344,
+    "_id": "2 (precision)<SEP>层数"
+  },
+  "int<SEP>层数": {
+    "chunk_ids": [
+      "chunk-feabb5c69083b439efed0cdd794ddd28"
+    ],
+    "count": 1,
+    "create_time": 1779045344,
+    "update_time": 1779045344,
+    "_id": "int<SEP>层数"
+  },
+  "2 (version)<SEP>层数": {
+    "chunk_ids": [
+      "chunk-feabb5c69083b439efed0cdd794ddd28"
+    ],
+    "count": 1,
+    "create_time": 1779045344,
+    "update_time": 1779045344,
+    "_id": "2 (version)<SEP>层数"
+  },
+  "Density<SEP>Gram Per Cubic Centimeter": {
+    "chunk_ids": [
+      "chunk-508cc4d18b9486eebfd7edc91c8d86c7"
+    ],
+    "count": 1,
+    "create_time": 1779045374,
+    "update_time": 1779045374,
+    "_id": "Density<SEP>Gram Per Cubic Centimeter"
+  },
+  "Decimal<SEP>Density": {
+    "chunk_ids": [
+      "chunk-508cc4d18b9486eebfd7edc91c8d86c7"
+    ],
+    "count": 1,
+    "create_time": 1779045374,
+    "update_time": 1779045374,
+    "_id": "Decimal<SEP>Density"
+  },
+  "Density<SEP>Version 2": {
+    "chunk_ids": [
+      "chunk-508cc4d18b9486eebfd7edc91c8d86c7"
+    ],
+    "count": 1,
+    "create_time": 1779045374,
+    "update_time": 1779045374,
+    "_id": "Density<SEP>Version 2"
+  },
+  "DIFF_FIRST ( Thickness , 2 )<SEP>最左侧差值": {
+    "chunk_ids": [
+      "chunk-0d38c813d65d921fdc47047da8bea580"
+    ],
+    "count": 1,
+    "create_time": 1779045404,
+    "update_time": 1779045404,
+    "_id": "DIFF_FIRST ( Thickness , 2 )<SEP>最左侧差值"
+  },
+  "$VAR_1769806633591<SEP>最左侧差值": {
+    "chunk_ids": [
+      "chunk-0d38c813d65d921fdc47047da8bea580"
+    ],
+    "count": 1,
+    "create_time": 1779045404,
+    "update_time": 1779045404,
+    "_id": "$VAR_1769806633591<SEP>最左侧差值"
+  },
+  "CUSTOM<SEP>最左侧差值": {
+    "chunk_ids": [
+      "chunk-0d38c813d65d921fdc47047da8bea580"
+    ],
+    "count": 1,
+    "create_time": 1779045404,
+    "update_time": 1779045404,
+    "_id": "CUSTOM<SEP>最左侧差值"
+  },
+  "μm<SEP>最左侧差值": {
+    "chunk_ids": [
+      "chunk-0d38c813d65d921fdc47047da8bea580"
+    ],
+    "count": 1,
+    "create_time": 1779045404,
+    "update_time": 1779045404,
+    "_id": "μm<SEP>最左侧差值"
+  },
+  "Thickness<SEP>最左侧差值": {
+    "chunk_ids": [
+      "chunk-0d38c813d65d921fdc47047da8bea580"
+    ],
+    "count": 1,
+    "create_time": 1779045404,
+    "update_time": 1779045404,
+    "_id": "Thickness<SEP>最左侧差值"
+  },
+  "DIFF_LAST<SEP>Rightmost Difference": {
+    "chunk_ids": [
+      "chunk-b5e71c3c828b1794cd7ab677f8e4186b"
+    ],
+    "count": 1,
+    "create_time": 1779045437,
+    "update_time": 1779045437,
+    "_id": "DIFF_LAST<SEP>Rightmost Difference"
+  },
+  "Rightmost Difference<SEP>μm": {
+    "chunk_ids": [
+      "chunk-b5e71c3c828b1794cd7ab677f8e4186b"
+    ],
+    "count": 1,
+    "create_time": 1779045437,
+    "update_time": 1779045437,
+    "_id": "Rightmost Difference<SEP>μm"
+  },
+  "DIFF_LAST<SEP>Thickness": {
+    "chunk_ids": [
+      "chunk-b5e71c3c828b1794cd7ab677f8e4186b"
+    ],
+    "count": 1,
+    "create_time": 1779045437,
+    "update_time": 1779045437,
+    "_id": "DIFF_LAST<SEP>Thickness"
+  },
+  "$VAR_1769806687604<SEP>Rightmost Difference": {
+    "chunk_ids": [
+      "chunk-b5e71c3c828b1794cd7ab677f8e4186b"
+    ],
+    "count": 1,
+    "create_time": 1779045437,
+    "update_time": 1779045437,
+    "_id": "$VAR_1769806687604<SEP>Rightmost Difference"
+  },
+  "DIFF_LAST<SEP>Offset 2": {
+    "chunk_ids": [
+      "chunk-b5e71c3c828b1794cd7ab677f8e4186b"
+    ],
+    "count": 1,
+    "create_time": 1779045437,
+    "update_time": 1779045437,
+    "_id": "DIFF_LAST<SEP>Offset 2"
+  },
+  "CUSTOM<SEP>Rightmost Difference": {
+    "chunk_ids": [
+      "chunk-b5e71c3c828b1794cd7ab677f8e4186b"
+    ],
+    "count": 1,
+    "create_time": 1779045437,
+    "update_time": 1779045437,
+    "_id": "CUSTOM<SEP>Rightmost Difference"
+  },
+  "Formula Type 1<SEP>Rightmost Difference": {
+    "chunk_ids": [
+      "chunk-b5e71c3c828b1794cd7ab677f8e4186b"
+    ],
+    "count": 1,
+    "create_time": 1779045437,
+    "update_time": 1779045437,
+    "_id": "Formula Type 1<SEP>Rightmost Difference"
+  },
+  "$VAR_1769807946074<SEP>MIN(RANGE(Detection, 1, 5))": {
+    "chunk_ids": [
+      "chunk-032a1a4ee358fe216b673a5d8fdf4694"
+    ],
+    "count": 1,
+    "create_time": 1779045465,
+    "update_time": 1779045465,
+    "_id": "$VAR_1769807946074<SEP>MIN(RANGE(Detection, 1, 5))"
+  },
+  "Detection<SEP>MIN(RANGE(Detection, 1, 5))": {
+    "chunk_ids": [
+      "chunk-032a1a4ee358fe216b673a5d8fdf4694"
+    ],
+    "count": 1,
+    "create_time": 1779045465,
+    "update_time": 1779045465,
+    "_id": "Detection<SEP>MIN(RANGE(Detection, 1, 5))"
+  },
+  "$VAR_1769807946074<SEP>μm": {
+    "chunk_ids": [
+      "chunk-032a1a4ee358fe216b673a5d8fdf4694"
+    ],
+    "count": 1,
+    "create_time": 1779045465,
+    "update_time": 1779045465,
+    "_id": "$VAR_1769807946074<SEP>μm"
+  },
+  "$VAR_1769807946074<SEP>CUSTOM": {
+    "chunk_ids": [
+      "chunk-032a1a4ee358fe216b673a5d8fdf4694"
+    ],
+    "count": 1,
+    "create_time": 1779045465,
+    "update_time": 1779045465,
+    "_id": "$VAR_1769807946074<SEP>CUSTOM"
+  },
+  "$VAR_1769807946074<SEP>前部最小值": {
+    "chunk_ids": [
+      "chunk-032a1a4ee358fe216b673a5d8fdf4694"
+    ],
+    "count": 1,
+    "create_time": 1779045465,
+    "update_time": 1779045465,
+    "_id": "$VAR_1769807946074<SEP>前部最小值"
+  },
+  "Front Maximum<SEP>MAX Function": {
+    "chunk_ids": [
+      "chunk-9bb2feeb0b6ec752ec572f96dc466ee7"
+    ],
+    "count": 1,
+    "create_time": 1779045490,
+    "update_time": 1779045490,
+    "_id": "Front Maximum<SEP>MAX Function"
+  },
+  "Detection<SEP>RANGE Function": {
+    "chunk_ids": [
+      "chunk-9bb2feeb0b6ec752ec572f96dc466ee7"
+    ],
+    "count": 1,
+    "create_time": 1779045490,
+    "update_time": 1779045490,
+    "_id": "Detection<SEP>RANGE Function"
+  },
+  "MAX Function<SEP>RANGE Function": {
+    "chunk_ids": [
+      "chunk-9bb2feeb0b6ec752ec572f96dc466ee7"
+    ],
+    "count": 1,
+    "create_time": 1779045490,
+    "update_time": 1779045490,
+    "_id": "MAX Function<SEP>RANGE Function"
+  },
+  "Front Maximum<SEP>RANGE Function": {
+    "chunk_ids": [
+      "chunk-9bb2feeb0b6ec752ec572f96dc466ee7"
+    ],
+    "count": 1,
+    "create_time": 1779045490,
+    "update_time": 1779045490,
+    "_id": "Front Maximum<SEP>RANGE Function"
+  },
+  "Front Maximum<SEP>Micrometer": {
+    "chunk_ids": [
+      "chunk-9bb2feeb0b6ec752ec572f96dc466ee7"
+    ],
+    "count": 1,
+    "create_time": 1779045490,
+    "update_time": 1779045490,
+    "_id": "Front Maximum<SEP>Micrometer"
+  },
+  "$VAR_1769807966188<SEP>Front Maximum": {
+    "chunk_ids": [
+      "chunk-9bb2feeb0b6ec752ec572f96dc466ee7"
+    ],
+    "count": 1,
+    "create_time": 1779045490,
+    "update_time": 1779045490,
+    "_id": "$VAR_1769807966188<SEP>Front Maximum"
+  },
+  "Average Formula<SEP>前部平均值": {
+    "chunk_ids": [
+      "chunk-3ac45d7fbc81903cad80d3a7a95f7065"
+    ],
+    "count": 1,
+    "create_time": 1779045531,
+    "update_time": 1779045531,
+    "_id": "Average Formula<SEP>前部平均值"
+  },
+  "Detection<SEP>RANGE": {
+    "chunk_ids": [
+      "chunk-3ac45d7fbc81903cad80d3a7a95f7065"
+    ],
+    "count": 1,
+    "create_time": 1779045531,
+    "update_time": 1779045531,
+    "_id": "Detection<SEP>RANGE"
+  },
+  "μm<SEP>前部平均值": {
+    "chunk_ids": [
+      "chunk-3ac45d7fbc81903cad80d3a7a95f7065"
+    ],
+    "count": 1,
+    "create_time": 1779045531,
+    "update_time": 1779045531,
+    "_id": "μm<SEP>前部平均值"
+  },
+  "Average Formula<SEP>Detection": {
+    "chunk_ids": [
+      "chunk-3ac45d7fbc81903cad80d3a7a95f7065"
+    ],
+    "count": 1,
+    "create_time": 1779045531,
+    "update_time": 1779045531,
+    "_id": "Average Formula<SEP>Detection"
+  },
+  "$VAR_1769808034938<SEP>前部平均值": {
+    "chunk_ids": [
+      "chunk-3ac45d7fbc81903cad80d3a7a95f7065"
+    ],
+    "count": 1,
+    "create_time": 1779045531,
+    "update_time": 1779045531,
+    "_id": "$VAR_1769808034938<SEP>前部平均值"
+  },
+  "Average Formula<SEP>RANGE": {
+    "chunk_ids": [
+      "chunk-3ac45d7fbc81903cad80d3a7a95f7065"
+    ],
+    "count": 1,
+    "create_time": 1779045531,
+    "update_time": 1779045531,
+    "_id": "Average Formula<SEP>RANGE"
+  },
+  "CUSTOM<SEP>前部平均值": {
+    "chunk_ids": [
+      "chunk-3ac45d7fbc81903cad80d3a7a95f7065"
+    ],
+    "count": 1,
+    "create_time": 1779045531,
+    "update_time": 1779045531,
+    "_id": "CUSTOM<SEP>前部平均值"
+  },
+  "$VAR_1769808081515<SEP>Minimum Of Middle 4 Positions": {
+    "chunk_ids": [
+      "chunk-793dc28add8634f1fe7cf84b5a846318"
+    ],
+    "count": 1,
+    "create_time": 1779045572,
+    "update_time": 1779045572,
+    "_id": "$VAR_1769808081515<SEP>Minimum Of Middle 4 Positions"
+  },
+  "Min Of Range Formula<SEP>Minimum Of Middle 4 Positions": {
+    "chunk_ids": [
+      "chunk-793dc28add8634f1fe7cf84b5a846318"
+    ],
+    "count": 1,
+    "create_time": 1779045572,
+    "update_time": 1779045572,
+    "_id": "Min Of Range Formula<SEP>Minimum Of Middle 4 Positions"
+  },
+  "CUSTOM<SEP>Minimum Of Middle 4 Positions": {
+    "chunk_ids": [
+      "chunk-793dc28add8634f1fe7cf84b5a846318"
+    ],
+    "count": 1,
+    "create_time": 1779045572,
+    "update_time": 1779045572,
+    "_id": "CUSTOM<SEP>Minimum Of Middle 4 Positions"
+  },
+  "Min Of Range Formula<SEP>Thickness": {
+    "chunk_ids": [
+      "chunk-793dc28add8634f1fe7cf84b5a846318"
+    ],
+    "count": 1,
+    "create_time": 1779045572,
+    "update_time": 1779045572,
+    "_id": "Min Of Range Formula<SEP>Thickness"
+  },
+  "Minimum Of Middle 4 Positions<SEP>μm": {
+    "chunk_ids": [
+      "chunk-793dc28add8634f1fe7cf84b5a846318"
+    ],
+    "count": 1,
+    "create_time": 1779045572,
+    "update_time": 1779045572,
+    "_id": "Minimum Of Middle 4 Positions<SEP>μm"
+  },
+  "$VAR_1769808115859<SEP>MAX(RANGE(Thickness, 5, 8))": {
+    "chunk_ids": [
+      "chunk-9b9dd172ddf40c0bdd07bbae68d11796"
+    ],
+    "count": 1,
+    "create_time": 1779045608,
+    "update_time": 1779045608,
+    "_id": "$VAR_1769808115859<SEP>MAX(RANGE(Thickness, 5, 8))"
+  },
+  "MAX(RANGE(Thickness, 5, 8))<SEP>Thickness": {
+    "chunk_ids": [
+      "chunk-9b9dd172ddf40c0bdd07bbae68d11796"
+    ],
+    "count": 1,
+    "create_time": 1779045608,
+    "update_time": 1779045608,
+    "_id": "MAX(RANGE(Thickness, 5, 8))<SEP>Thickness"
+  },
+  "$VAR_1769808115859<SEP>μm": {
+    "chunk_ids": [
+      "chunk-9b9dd172ddf40c0bdd07bbae68d11796"
+    ],
+    "count": 1,
+    "create_time": 1779045608,
+    "update_time": 1779045608,
+    "_id": "$VAR_1769808115859<SEP>μm"
+  },
+  "$VAR_1769808115859<SEP>CUSTOM": {
+    "chunk_ids": [
+      "chunk-9b9dd172ddf40c0bdd07bbae68d11796"
+    ],
+    "count": 1,
+    "create_time": 1779045608,
+    "update_time": 1779045608,
+    "_id": "$VAR_1769808115859<SEP>CUSTOM"
+  },
+  "$VAR_1769808115859<SEP>Middle 4 Digits Maximum": {
+    "chunk_ids": [
+      "chunk-9b9dd172ddf40c0bdd07bbae68d11796"
+    ],
+    "count": 1,
+    "create_time": 1779045608,
+    "update_time": 1779045608,
+    "_id": "$VAR_1769808115859<SEP>Middle 4 Digits Maximum"
+  },
+  "$VAR_1769808115859<SEP>Formula Type 1": {
+    "chunk_ids": [
+      "chunk-9b9dd172ddf40c0bdd07bbae68d11796"
+    ],
+    "count": 1,
+    "create_time": 1779045609,
+    "update_time": 1779045609,
+    "_id": "$VAR_1769808115859<SEP>Formula Type 1"
+  },
+  "$VAR_1769808132998<SEP>中间4位平均值": {
+    "chunk_ids": [
+      "chunk-1a5fff8a9a17a09937473ac956f254b2"
+    ],
+    "count": 1,
+    "create_time": 1779045650,
+    "update_time": 1779045650,
+    "_id": "$VAR_1769808132998<SEP>中间4位平均值"
+  },
+  "AVG(RANGE(Thickness, 5, 8))<SEP>Thickness": {
+    "chunk_ids": [
+      "chunk-1a5fff8a9a17a09937473ac956f254b2"
+    ],
+    "count": 1,
+    "create_time": 1779045650,
+    "update_time": 1779045650,
+    "_id": "AVG(RANGE(Thickness, 5, 8))<SEP>Thickness"
+  },
+  "CUSTOM<SEP>sourceType": {
+    "chunk_ids": [
+      "chunk-1a5fff8a9a17a09937473ac956f254b2"
+    ],
+    "count": 1,
+    "create_time": 1779045650,
+    "update_time": 1779045650,
+    "_id": "CUSTOM<SEP>sourceType"
+  },
+  "AVG(RANGE(Thickness, 5, 8))<SEP>μm": {
+    "chunk_ids": [
+      "chunk-1a5fff8a9a17a09937473ac956f254b2"
+    ],
+    "count": 1,
+    "create_time": 1779045650,
+    "update_time": 1779045650,
+    "_id": "AVG(RANGE(Thickness, 5, 8))<SEP>μm"
+  },
+  "$VAR_1769808132998<SEP>AVG(RANGE(Thickness, 5, 8))": {
+    "chunk_ids": [
+      "chunk-1a5fff8a9a17a09937473ac956f254b2"
+    ],
+    "count": 1,
+    "create_time": 1779045650,
+    "update_time": 1779045650,
+    "_id": "$VAR_1769808132998<SEP>AVG(RANGE(Thickness, 5, 8))"
+  },
+  "$VAR_1769808132998<SEP>formulaType": {
+    "chunk_ids": [
+      "chunk-1a5fff8a9a17a09937473ac956f254b2"
+    ],
+    "count": 1,
+    "create_time": 1779045650,
+    "update_time": 1779045650,
+    "_id": "$VAR_1769808132998<SEP>formulaType"
+  },
+  "$VAR_1769808132998<SEP>sourceType": {
+    "chunk_ids": [
+      "chunk-1a5fff8a9a17a09937473ac956f254b2"
+    ],
+    "count": 1,
+    "create_time": 1779045650,
+    "update_time": 1779045650,
+    "_id": "$VAR_1769808132998<SEP>sourceType"
+  },
+  "$VAR_1769808183872<SEP>MIN(RANGE(Thickness, 10, 13))": {
+    "chunk_ids": [
+      "chunk-24c82aa0157addf5eedfe661109c1996"
+    ],
+    "count": 1,
+    "create_time": 1779045693,
+    "update_time": 1779045693,
+    "_id": "$VAR_1769808183872<SEP>MIN(RANGE(Thickness, 10, 13))"
+  },
+  "MIN(RANGE(Thickness, 10, 13))<SEP>Thickness": {
+    "chunk_ids": [
+      "chunk-24c82aa0157addf5eedfe661109c1996"
+    ],
+    "count": 1,
+    "create_time": 1779045694,
+    "update_time": 1779045694,
+    "_id": "MIN(RANGE(Thickness, 10, 13))<SEP>Thickness"
+  },
+  "$VAR_1769808183872<SEP>右侧4位最小值": {
+    "chunk_ids": [
+      "chunk-24c82aa0157addf5eedfe661109c1996"
+    ],
+    "count": 1,
+    "create_time": 1779045694,
+    "update_time": 1779045694,
+    "_id": "$VAR_1769808183872<SEP>右侧4位最小值"
+  },
+  "$VAR_1769808183872<SEP>CUSTOM": {
+    "chunk_ids": [
+      "chunk-24c82aa0157addf5eedfe661109c1996"
+    ],
+    "count": 1,
+    "create_time": 1779045694,
+    "update_time": 1779045694,
+    "_id": "$VAR_1769808183872<SEP>CUSTOM"
+  },
+  "$VAR_1769808183872<SEP>μm": {
+    "chunk_ids": [
+      "chunk-24c82aa0157addf5eedfe661109c1996"
+    ],
+    "count": 1,
+    "create_time": 1779045694,
+    "update_time": 1779045694,
+    "_id": "$VAR_1769808183872<SEP>μm"
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "_comment": "时间/班次/产线/规格维度的语义化元数据 — NLQ Agent 用它做自然语言到 SQL 条件的解析。结构: 每个维度含字段名 + 别名 + 表达式映射。业务专家可直接编辑扩充。",
+
+  "time": {
+    "field": "F_PROD_DATE",
+    "aliases": ["生产日期", "日期", "prod_date"],
+    "format": "yyyy-MM-dd",
+    "common_ranges": [
+      { "expr": "今日", "aliases": ["今天", "当天", "今"], "start": "today", "end": "today" },
+      { "expr": "昨日", "aliases": ["昨天", "昨"], "start": "today-1d", "end": "today-1d" },
+      { "expr": "近7天", "aliases": ["最近一周", "近一周", "过去 7 天"], "start": "today-7d", "end": "today" },
+      { "expr": "近30天", "aliases": ["最近一个月", "近一个月", "过去 30 天"], "start": "today-30d", "end": "today" },
+      { "expr": "本周", "aliases": ["这周", "本周内"], "start": "week_start", "end": "today" },
+      { "expr": "上周", "aliases": ["上一周"], "start": "prev_week_start", "end": "prev_week_end" },
+      { "expr": "本月", "aliases": ["这个月", "当月", "本月内"], "start": "month_start", "end": "today" },
+      { "expr": "上月", "aliases": ["上个月", "上一个月"], "start": "prev_month_start", "end": "prev_month_end" },
+      { "expr": "本年", "aliases": ["今年", "当年"], "start": "year_start", "end": "today" },
+      { "expr": "去年", "aliases": ["上年", "上一年"], "start": "prev_year_start", "end": "prev_year_end" }
+    ],
+    "sql_helpers": {
+      "_comment": "MySQL 端的占位符语义，便于 NLQ Agent 生成时直接套用",
+      "today": "CURDATE()",
+      "today-Nd": "DATE_SUB(CURDATE(), INTERVAL N DAY)",
+      "week_start": "DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY)",
+      "month_start": "DATE_FORMAT(CURDATE(), '%Y-%m-01')",
+      "prev_month_start": "DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 MONTH), '%Y-%m-01')",
+      "prev_month_end": "LAST_DAY(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))",
+      "year_start": "DATE_FORMAT(CURDATE(), '%Y-01-01')",
+      "prev_year_start": "DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 YEAR), '%Y-01-01')",
+      "prev_year_end": "DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL 1 YEAR), '%Y-12-31')"
+    }
+  },
+
+  "shift": {
+    "field": "F_SHIFT",
+    "secondary_field": "F_SHIFT_NUMERIC",
+    "aliases": ["班次", "班"],
+    "values": [
+      { "code": "甲", "numeric": 1, "aliases": ["甲班", "1班", "一班", "早班"] },
+      { "code": "乙", "numeric": 2, "aliases": ["乙班", "2班", "二班", "中班"] },
+      { "code": "丙", "numeric": 3, "aliases": ["丙班", "3班", "三班", "夜班", "晚班"] }
+    ]
+  },
+
+  "line": {
+    "field": "F_LINE_NO",
+    "aliases": ["产线", "产线号", "生产线", "线号"],
+    "value_aliases": {
+      "1": ["1线", "一线", "1号线", "一号线"],
+      "2": ["2线", "二线", "2号线", "二号线"],
+      "3": ["3线", "三线", "3号线", "三号线"],
+      "4": ["4线", "四线", "4号线", "四号线"]
+    }
+  },
+
+  "product_spec": {
+    "field": "F_PRODUCT_SPEC_CODE",
+    "aliases": ["规格", "产品规格", "牌号"],
+    "kg_ref": "domain:product-spec"
+  },
+
+  "furnace_no": {
+    "field": "F_FURNACE_NO_FORMATTED",
+    "aliases": ["炉号", "标准炉号", "格式化炉号"],
+    "raw_field": "F_FURNACE_NO",
+    "raw_aliases": ["原始炉号", "炉号字符串"]
+  }
+}

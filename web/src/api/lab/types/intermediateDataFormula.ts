@@ -16,6 +16,7 @@ export interface IntermediateDataFormula {
     formulaName: string;
     formula: string;
     formulaType?: string;
+    editorMode?: 'advanced' | 'range';
     formulaLanguage?: string;
     unitId?: string;
     unitName?: string;
@@ -61,6 +62,7 @@ export interface IntermediateDataFormulaInput {
     formulaName: string;
     formula: string;
     formulaType?: string;
+    editorMode?: 'advanced' | 'range';
     formulaLanguage?: string;
     unitId?: string;
     precision?: number;

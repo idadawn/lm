@@ -71,13 +71,12 @@
 <script lang="ts">
   import { Dropdown, Menu, Avatar } from 'ant-design-vue';
   import type { MenuInfo } from 'ant-design-vue/lib/menu/src/interface';
-  import { defineComponent, computed, ref } from 'vue';
+  import { defineComponent, computed } from 'vue';
   import { DOC_URL } from '/@/settings/siteSetting';
   import { useGlobSetting } from '/@/hooks/setting';
   import { useUserStore } from '/@/store/modules/user';
   import { useLockStore } from '/@/store/modules/lock';
   import { useAppStore } from '/@/store/modules/app';
-  import { getVersion } from '/@/api/system/version';
   import { useHeaderSetting } from '/@/hooks/setting/useHeaderSetting';
   import { useI18n } from '/@/hooks/web/useI18n';
   import { useMessage } from '/@/hooks/web/useMessage';
@@ -115,17 +114,10 @@
       const lockStore = useLockStore();
       const appStore = useAppStore();
 
-      // 获取版本信息（从 API 获取）
-      const sysVersion = ref('v1.1.0');
-      getVersion()
-        .then((res) => {
-          if (res && res.webVersion) {
-            sysVersion.value = 'v' + res.webVersion;
-          }
-        })
-        .catch(() => {
-          // 获取失败使用默认值
-        });
+      const sysVersion = computed(() => {
+        const version = appStore.getSysConfigInfo?.sysVersion || '';
+        return version ? (version.startsWith('v') || version.startsWith('V') ? version : `v${version}`) : '';
+      });
       const [registerAboutModal, { openModal: openAboutModal }] = useModal();
       const [registerStatementModal, { openModal: openStatementModal }] = useModal();
 

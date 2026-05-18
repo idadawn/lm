@@ -44,8 +44,8 @@ class Neo4jKnowledgeGraph(BaseKnowledgeGraph):
             # 1. 创建产品规格节点
             await self._build_product_specs(session)
 
-            # 2. 创建指标节点
-            await self._build_metrics(session)
+            # 2. 创建公式/指标节点
+            await self._build_formulas(session)
 
             # 3. 创建判定规则节点及关系
             await self._build_judgment_rules(session)
@@ -93,8 +93,11 @@ class Neo4jKnowledgeGraph(BaseKnowledgeGraph):
                 },
             )
 
-    async def _build_metrics(self, session: Any) -> None:
-        """构建指标节点."""
+    async def _build_formulas(self, session: Any) -> None:
+        """构建公式/指标节点.
+
+        节点标签统一为 Formula，对应前端 OntologyNodeType = 'Formula'。
+        """
         sql = """
             SELECT F_Id as id, F_FORMULA_NAME as name,
                    F_COLUMN_NAME as column_name, F_FORMULA as formula,
@@ -108,7 +111,7 @@ class Neo4jKnowledgeGraph(BaseKnowledgeGraph):
         for r in results:
             await session.run(
                 """
-                CREATE (m:Metric {
+                CREATE (f:Formula {
                     id: $id,
                     name: $name,
                     columnName: $column_name,
@@ -185,12 +188,12 @@ class Neo4jKnowledgeGraph(BaseKnowledgeGraph):
                     {"spec_code": str(r["spec_code"]), "rule_id": str(r["id"])},
                 )
 
-            # 关联到指标（通过 formulaId 匹配 Metric.name）
+            # 关联到公式/指标（通过 formulaId 匹配 Formula.name）
             await session.run(
                 """
-                MATCH (m:Metric {name: $formula_id})
+                MATCH (f:Formula {name: $formula_id})
                 MATCH (r:JudgmentRule {id: $rule_id})
-                CREATE (r)-[:EVALUATES]->(m)
+                CREATE (r)-[:USES_FORMULA]->(f)
             """,
                 {"formula_id": r["formula_id"], "rule_id": str(r["id"])},
             )
@@ -239,10 +242,10 @@ class Neo4jKnowledgeGraph(BaseKnowledgeGraph):
                    a.F_UNIT as unit, a.F_PRECISION as precision_val,
                    a.F_VERSION as version
             FROM lab_product_spec_attribute a
-            INNER JOIN lab_product_spec_version v 
-                ON a.F_PRODUCT_SPEC_ID = v.F_PRODUCT_SPEC_ID 
-                AND a.F_VERSION = v.F_VERSION
-            WHERE v.F_IS_CURRENT = 1 
+            INNER JOIN lab_product_spec_version v
+                ON a.F_PRODUCT_SPEC_ID COLLATE utf8mb4_unicode_ci = v.F_PRODUCT_SPEC_ID COLLATE utf8mb4_unicode_ci
+                AND a.F_VERSION COLLATE utf8mb4_unicode_ci = v.F_VERSION COLLATE utf8mb4_unicode_ci
+            WHERE v.F_IS_CURRENT = 1
               AND (a.F_DeleteMark IS NULL OR a.F_DeleteMark = 0)
               AND (v.F_DELETE_MARK IS NULL OR v.F_DELETE_MARK = 0)
         """
@@ -293,7 +296,7 @@ class Neo4jKnowledgeGraph(BaseKnowledgeGraph):
         for r in level_results:
             await session.run(
                 """
-                CREATE (l:AppearanceFeatureLevel {
+                CREATE (l:AppearanceLevel {
                     id: $id,
                     name: $name,
                     description: $description
@@ -314,7 +317,7 @@ class Neo4jKnowledgeGraph(BaseKnowledgeGraph):
         for r in category_results:
             await session.run(
                 """
-                CREATE (c:AppearanceFeatureCategory {
+                CREATE (c:AppearanceCategory {
                     id: $id,
                     name: $name,
                     description: $description,
@@ -343,15 +346,15 @@ class Neo4jKnowledgeGraph(BaseKnowledgeGraph):
         for r in feature_results:
             await session.run(
                 """
-                MATCH (c:AppearanceFeatureCategory {id: $category_id})
-                MATCH (l:AppearanceFeatureLevel {id: $level_id})
+                MATCH (c:AppearanceCategory {id: $category_id})
+                MATCH (l:AppearanceLevel {id: $level_id})
                 CREATE (f:AppearanceFeature {
                     id: $id,
                     name: $name,
                     keywords: $keywords,
                     description: $description
                 })
-                CREATE (f)-[:BELONGS_TO]->(c)
+                CREATE (f)-[:BELONGS_TO_CATEGORY]->(c)
                 CREATE (f)-[:HAS_LEVEL]->(l)
             """,
                 {
@@ -426,14 +429,14 @@ class Neo4jKnowledgeGraph(BaseKnowledgeGraph):
                 },
             )
 
-            # 关联到判定公式（Metric）
+            # 关联到判定公式（Formula）
             if r["formula_id"]:
                 await session.run(
                     """
                     MATCH (c:ReportConfig {id: $config_id})
-                    MATCH (m:Metric)
-                    WHERE m.columnName = $formula_id OR m.name = $formula_id
-                    CREATE (c)-[:USES_FORMULA]->(m)
+                    MATCH (f:Formula)
+                    WHERE f.columnName = $formula_id OR f.name = $formula_id
+                    CREATE (c)-[:USES_FORMULA_CONFIG]->(f)
                 """,
                     {"config_id": str(r["id"]), "formula_id": r["formula_id"]},
                 )

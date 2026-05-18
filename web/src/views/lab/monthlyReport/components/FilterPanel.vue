@@ -5,6 +5,7 @@
             <div class="filter-item">
                 <span class="filter-label">生产日期</span>
                 <a-range-picker v-model:value="dateRangeValue" format="YYYY-MM-DD"
+                    :ranges="dateRangeShortcuts"
                     :placeholder="['开始日期', '结束日期']" :allow-clear="false" style="width: 280px"
                     @change="handleDateChange" />
             </div>
@@ -53,7 +54,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, watch, onMounted, computed } from 'vue';
 import dayjs, { Dayjs } from 'dayjs';
 import { Icon } from '/@/components/Icon';
 import { getProductSpecOptions } from '/@/api/lab/intermediateData';
@@ -84,6 +85,25 @@ const shiftValue = ref<string>('');
 const shiftNoValue = ref<string>('');
 const productSpecCodeValue = ref<string>('');
 const productSpecOptions = ref<any[]>([]);
+
+function getWeekStart(value: Dayjs) {
+    return value.subtract((value.day() + 6) % 7, 'day').startOf('day');
+}
+
+const dateRangeShortcuts = computed<Record<string, RangeValue>>(() => {
+    const current = dayjs();
+    const currentWeekStart = getWeekStart(current);
+    const lastWeekStart = currentWeekStart.subtract(7, 'day');
+    const lastMonth = current.subtract(1, 'month');
+
+    return {
+        今日: [current, current],
+        本周: [currentWeekStart, current],
+        本月: [current.startOf('month'), current],
+        上月: [lastMonth.startOf('month'), lastMonth.endOf('month')],
+        上周: [lastWeekStart, lastWeekStart.add(6, 'day').endOf('day')],
+    };
+});
 
 // 初始化
 onMounted(async () => {

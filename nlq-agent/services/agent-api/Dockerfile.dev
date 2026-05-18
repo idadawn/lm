@@ -1,7 +1,31 @@
 FROM python:3.11-slim
+
+# 构建参数：是否预下载 BGE embedding 模型（默认 true，容器一启动就能离线用 LightRAG）
+ARG PREFETCH_EMBEDDING=true
+
 WORKDIR /app
+
+# uv 包管理器
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
-COPY pyproject.toml ./
+
+# 系统依赖：sentence-transformers 需要 git（下载模型）+ 编译工具
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# 先装依赖（利用 Docker layer cache，pyproject 不变时这层不重跑）
+COPY pyproject.toml uv.lock* ./
 RUN uv sync --extra dev
+
+# ★ LightRAG 预下载 embedding 模型到镜像里（~100MB），生产环境无外网时也能跑
+RUN if [ "$PREFETCH_EMBEDDING" = "true" ]; then \
+        uv run python -c "from sentence_transformers import SentenceTransformer; \
+        SentenceTransformer('BAAI/bge-small-zh-v1.5')"; \
+    fi
+
 COPY . .
+
+# LightRAG 持久化目录（在 docker-compose 里用 volume 挂载，跨容器重启保留索引）
+RUN mkdir -p /app/data/lightrag
+
 CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

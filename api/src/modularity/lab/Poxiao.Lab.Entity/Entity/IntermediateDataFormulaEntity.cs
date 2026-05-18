@@ -53,6 +53,14 @@ public class IntermediateDataFormulaEntity : CLDEntityBase
     )]
     public IntermediateDataFormulaType FormulaType { get; set; } = IntermediateDataFormulaType.CALC;
 
+    [SugarColumn(
+        ColumnName = "F_EDITOR_MODE",
+        Length = 20,
+        DefaultValue = "advanced",
+        IsNullable = true
+    )]
+    public string EditorMode { get; set; } = "advanced";
+
     /// <summary>
     /// 单位ID（关联单位定义表）.
     /// </summary>

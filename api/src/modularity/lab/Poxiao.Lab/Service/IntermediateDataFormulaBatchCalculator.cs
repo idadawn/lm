@@ -78,6 +78,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
         _formulaParser = formulaParser;
         _labOptions = labOptions?.Value ?? new LabOptions();
         _logger = logger;
+        IntermediateDataFormulaSchemaHelper.EnsureEditorModeColumn(_formulaRepository.AsSugarClient());
 
         // Web API 场景：尝试从当前用户上下文获取 CreatorUserId
         // Worker 场景：App.User 不可用，CreatorUserId 保持 null，由调用方通过属性设置
@@ -1454,6 +1455,7 @@ public class IntermediateDataFormulaBatchCalculator : ITransient
             Formula = entity.Formula,
             FormulaLanguage = entity.FormulaLanguage,
             FormulaType = entity.FormulaType.ToString(),
+            EditorMode = IntermediateDataFormulaSchemaHelper.NormalizeEditorMode(entity.EditorMode),
             UnitId = entity.UnitId,
             UnitName = entity.UnitName,
             Precision = entity.Precision,

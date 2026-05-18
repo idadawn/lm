@@ -299,8 +299,8 @@ export const COMMON_ROUTE: AppRouteRecordRaw = {
       component: () => import('/@/views/lab/intermediateData/index.vue'),
       name: 'labSubTable',
       meta: {
-        title: '中间数据表',
-        defaultTitle: '中间数据表',
+        title: '带材检测明细表',
+        defaultTitle: '带材检测明细表',
         icon: 'icon-ym icon-ym-webDesign',
         affix: false,
         modelId: '779743700858175429',

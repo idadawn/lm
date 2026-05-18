@@ -21,7 +21,7 @@ async def get_spec_judgment_rules(graph: "Neo4jKnowledgeGraph", spec_code: str) 
     """
     query = """
         MATCH (s:ProductSpec {code: $spec_code})-[:HAS_RULE]->(r:JudgmentRule)
-        OPTIONAL MATCH (m:Metric)
+        OPTIONAL MATCH (m:Formula)
         WHERE m.columnName = r.formulaId OR m.name = r.formulaId
         RETURN r {
             .id, .formulaId, .name, .priority,
@@ -51,7 +51,7 @@ async def get_metric_formulas(
     """
     if metric_name:
         query = """
-            MATCH (m:Metric)
+            MATCH (m:Formula)
             WHERE m.name = $metric_name OR m.columnName = $metric_name
             RETURN m {
                 .id, .name, .columnName, .formula,
@@ -61,7 +61,7 @@ async def get_metric_formulas(
         results = await graph.query_async(query, metric_name=metric_name)
     else:
         query = """
-            MATCH (m:Metric)
+            MATCH (m:Formula)
             RETURN m {
                 .id, .name, .columnName, .formula,
                 .unit, .formulaType, .description
@@ -87,7 +87,7 @@ async def get_related_metrics_by_spec(graph: "Neo4jKnowledgeGraph", spec_code: s
     """
     query = """
         MATCH (s:ProductSpec {code: $spec_code})-[:HAS_RULE]->(r:JudgmentRule)
-              -[:EVALUATES]->(m:Metric)
+              -[:USES_FORMULA]->(m:Formula)
         RETURN DISTINCT m {
             .id, .name, .columnName, .formula, .unit
         } as metric
@@ -109,7 +109,7 @@ async def get_judgment_types_for_spec(graph: "Neo4jKnowledgeGraph", spec_code: s
     """
     query = """
         MATCH (s:ProductSpec {code: $spec_code})-[:HAS_RULE]->(r:JudgmentRule)
-        OPTIONAL MATCH (m:Metric)
+        OPTIONAL MATCH (m:Formula)
         WHERE m.columnName = r.formulaId OR m.name = r.formulaId
         RETURN DISTINCT r.formulaId as formula_id,
                count(r) as rule_count,
@@ -344,7 +344,7 @@ async def get_report_configs(graph: "Neo4jKnowledgeGraph") -> list[dict]:
     """
     query = """
         MATCH (c:ReportConfig)
-        OPTIONAL MATCH (c)-[:USES_FORMULA]->(m:Metric)
+        OPTIONAL MATCH (c)-[:USES_FORMULA]->(m:Formula)
         RETURN c {
             .id, .name, .description, .formulaId, .levelNames,
             .isSystem, .sortOrder, .isHeader, .isPercentage,
@@ -371,7 +371,7 @@ async def get_report_config_by_formula(graph: "Neo4jKnowledgeGraph", formula_id:
         报表配置列表
     """
     query = """
-        MATCH (c:ReportConfig)-[:USES_FORMULA]->(m:Metric)
+        MATCH (c:ReportConfig)-[:USES_FORMULA]->(m:Formula)
         WHERE m.columnName = $formula_id OR m.name = $formula_id
         RETURN c {
             .id, .name, .description, .formulaId, .levelNames,

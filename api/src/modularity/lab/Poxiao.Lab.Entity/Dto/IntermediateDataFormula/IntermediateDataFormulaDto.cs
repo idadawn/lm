@@ -61,6 +61,9 @@ public class IntermediateDataFormulaDto
     [JsonPropertyName("formulaType")]
     public string FormulaType { get; set; } = "CALC";
 
+    [JsonPropertyName("editorMode")]
+    public string EditorMode { get; set; } = "advanced";
+
     /// <summary>
     /// 单位ID.
     /// </summary>

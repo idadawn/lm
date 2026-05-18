@@ -26,8 +26,9 @@
       >
         <div
           v-for="(step, index) in steps"
-          :key="index"
+          :key="(step as any)?.id || `idx-${index}`"
           class="reasoning-chain__row"
+          :class="{ 'reasoning-chain__row--running': (step as any)?.status === 'running' }"
           :data-testid="`reasoning-step`"
         >
           <span class="reasoning-chain__index">{{ index + 1 }}</span>
@@ -43,7 +44,7 @@
                 class="reasoning-chain__kind-tag"
               >{{ step.satisfied ? '满足' : '不满足' }}</a-tag>
             </div>
-            <div class="reasoning-chain__label">{{ step.label }}</div>
+            <div class="reasoning-chain__label">{{ stepLabel(step) }}</div>
             <div v-if="step.kind === 'condition'" class="reasoning-chain__meta">
               <span v-if="step.expected !== undefined" class="reasoning-chain__meta-item">
                 期望：{{ step.expected }}
@@ -52,7 +53,7 @@
                 实际：{{ step.actual }}
               </span>
             </div>
-            <div v-else-if="step.detail" class="reasoning-chain__detail">{{ step.detail }}</div>
+            <div v-else-if="stepDetail(step)" class="reasoning-chain__detail">{{ stepDetail(step) }}</div>
           </div>
         </div>
       </div>
@@ -61,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { BulbOutlined, DownOutlined } from '@ant-design/icons-vue';
 import type { ReasoningStep } from '/@/types/reasoning-protocol';
 import { REASONING_STEP_PRESENTATION } from '/@/types/reasoning-step-presentation';
@@ -76,13 +77,35 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const expanded = ref(props.defaultOpen);
+// 跟踪用户是否手动展开/收起过——如果用户手动开过，不要再被自动收起逻辑覆盖。
+const userToggled = ref(false);
 
 function toggle() {
   expanded.value = !expanded.value;
+  userToggled.value = true;
 }
 
+// 推理过程在流式期间默认展开（defaultOpen=true），流式结束后 ChatAssistant 会把
+// defaultOpen 切回 false → 自动收起，让用户看到的是干净的最终答案。
+watch(
+  () => props.defaultOpen,
+  (open) => {
+    if (userToggled.value) return; // 尊重用户的手动选择
+    expanded.value = open;
+  },
+);
+
 function getPresentation(kind: string) {
-  return REASONING_STEP_PRESENTATION[kind] ?? { label: kind, color: '#475569', icon: 'question-circle' };
+  return REASONING_STEP_PRESENTATION[kind] ?? { label: '推理步骤', color: '#475569', icon: 'question-circle' };
+}
+
+// 兼容两种字段名：传统 reasoning-protocol 用 label/detail；
+// nlq-agent 通过 adispatch_custom_event 推送的事件用 title/summary。
+function stepLabel(step: any): string {
+  return step?.label || step?.title || '';
+}
+function stepDetail(step: any): string {
+  return step?.detail || step?.summary || '';
 }
 </script>
 
@@ -160,10 +183,36 @@ function getPresentation(kind: string) {
     border-left: 3px solid #e2e8f0;
     margin: 0 0 0 0;
     transition: border-color 0.15s;
+    /* 新增：每条新步骤入场时的轻量滑入动画，配合前端节流队列形成"一条条往上冒"的效果 */
+    animation: reasoningRowIn 0.32s cubic-bezier(0.2, 0.7, 0.3, 1) both;
 
     &:not(:last-child) {
       border-bottom: 1px solid #f1f5f9;
     }
+
+    /* status=running 的占位行：左边框换成动态色 + 文字微脉冲，提示"进行中" */
+    &--running {
+      border-left-color: #6366f1;
+      animation:
+        reasoningRowIn 0.32s cubic-bezier(0.2, 0.7, 0.3, 1) both,
+        reasoningRowPulse 1.4s ease-in-out 0.32s infinite;
+    }
+  }
+
+  @keyframes reasoningRowIn {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes reasoningRowPulse {
+    0%, 100% { background: transparent; }
+    50% { background: rgba(99, 102, 241, 0.04); }
   }
 
   &__index {

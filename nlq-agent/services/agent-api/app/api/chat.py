@@ -4,6 +4,7 @@
 """
 
 import json
+import logging
 import time
 import uuid
 from collections.abc import AsyncGenerator
@@ -11,7 +12,7 @@ from typing import Any
 
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 from app.agents.graph import create_agent_graph
 from app.core.auth import validate_chat_auth
@@ -19,6 +20,7 @@ from app.models.schemas import ChatRequest, StreamEvent
 
 from app.core.config import settings as _app_settings
 
+logger = logging.getLogger("nlq-agent")
 router = APIRouter()
 _SESSION_CONTEXTS: dict[str, dict[str, Any]] = {}
 
@@ -56,13 +58,27 @@ async def chat_stream(request: ChatRequest, http_request: Request) -> StreamingR
     # 每轮对话的 turn_id，用于把事件绑定到具体 turn
     turn_id = f"turn_{uuid.uuid4().hex[:12]}"
 
+    user_msg_preview = ""
+    for m in reversed(request.messages):
+        if m.role == "user":
+            user_msg_preview = (m.content or "")[:80]
+            break
+    logger.info(
+        "[chat.stream] start | session=%s | turn=%s | model=%s | history=%d | user=%r",
+        session_id, turn_id, model_name, len(request.messages), user_msg_preview,
+    )
+
     async def event_generator() -> AsyncGenerator[str, None]:
         """生成 SSE 事件流."""
-        # 转换消息格式
+        # 转换消息格式 — 保留 user + assistant + system 完整历史，让 LangGraph agent 看到上下文
         messages = []
         for msg in request.messages:
             if msg.role == "user":
                 messages.append(HumanMessage(content=msg.content))
+            elif msg.role == "assistant":
+                messages.append(AIMessage(content=msg.content))
+            elif msg.role == "system":
+                messages.append(SystemMessage(content=msg.content))
 
         # 初始状态 - 使用字典形式
         initial_state = {
@@ -94,14 +110,16 @@ async def chat_stream(request: ChatRequest, http_request: Request) -> StreamingR
                 # （JSON 分类、SQL JSON 草稿、列选 plan 等）都不能漏到聊天正文里。
                 if event_type == "on_chat_model_stream":
                     metadata = event.get("metadata", {}) or {}
+                    tags = event.get("tags", []) or []
                     source_node = metadata.get("langgraph_node", "")
                     INTERNAL_LLM_NODES = {
                         "intent_classifier",
                         # chat2sql 内部 4-5 次 LLM call（schema_pick/column_pick/sql_draft/sql_fix）
-                        # 都是中间产物，最终 narrative 通过 response_metadata 一次性下发。
+                        # 都是中间产物，不能漏到正文；但最后的 result_summary 标记了
+                        # ``tags=["narrative"]``，让它走流式打字机效果。
                         "chat2sql_agent",
                     }
-                    if source_node in INTERNAL_LLM_NODES:
+                    if "narrative" not in tags and source_node in INTERNAL_LLM_NODES:
                         continue
                     chunk = event_data.get("chunk")
                     if chunk and hasattr(chunk, "content") and chunk.content:
@@ -199,6 +217,21 @@ async def chat_stream(request: ChatRequest, http_request: Request) -> StreamingR
                     output = event_data.get("output", {})
                     if isinstance(output, dict):
                         chart_config = output.get("chart_config")
+                        resp_text = output.get("response", "") or ""
+                        logger.info(
+                            "[chat.stream] response_formatter done | turn=%s | intent=%s | response_len=%d | chart=%s",
+                            turn_id,
+                            output.get("intent"),
+                            len(resp_text),
+                            bool(chart_config),
+                        )
+                        if not resp_text:
+                            logger.warning(
+                                "[chat.stream] EMPTY response | turn=%s | entities=%s | context=%s",
+                                turn_id,
+                                output.get("entities"),
+                                output.get("context"),
+                            )
                         _store_session_state(
                             session_id,
                             output.get("context"),
@@ -230,6 +263,10 @@ async def chat_stream(request: ChatRequest, http_request: Request) -> StreamingR
                                     "reasoning_steps": output.get(
                                         "reasoning_steps", []
                                     ),
+                                    # ★ citations 透传（来自 query_agent KB 命中路径）
+                                    # 前端用它渲染"📎 来源"按钮
+                                    "citations": output.get("citations", []),
+                                    "kb_confidence": output.get("kb_confidence"),
                                     "turn_id": turn_id,
                                 },
                             )
@@ -240,8 +277,10 @@ async def chat_stream(request: ChatRequest, http_request: Request) -> StreamingR
 
         except Exception as e:
             # 发送错误事件 - 转成中文友好提示
-            import traceback as _tb
-            _tb.print_exc()
+            logger.exception(
+                "[chat.stream] unhandled exception | turn=%s | type=%s",
+                turn_id, type(e).__name__,
+            )
             yield _format_event(
                 StreamEvent(
                     type="error",
@@ -333,11 +372,15 @@ async def chat(request: ChatRequest, http_request: Request) -> dict[str, Any]:
     session_context = _load_session_context(session_id)
     model_name = _resolve_model_name(session_id, request.model_name)
 
-    # 转换消息格式
+    # 转换消息格式 — 保留 user + assistant + system 完整历史
     messages = []
     for msg in request.messages:
         if msg.role == "user":
             messages.append(HumanMessage(content=msg.content))
+        elif msg.role == "assistant":
+            messages.append(AIMessage(content=msg.content))
+        elif msg.role == "system":
+            messages.append(SystemMessage(content=msg.content))
 
     # 初始状态
     initial_state = {
@@ -368,6 +411,9 @@ async def chat(request: ChatRequest, http_request: Request) -> dict[str, Any]:
         "calculation_explanation": result.get("calculation_explanation"),
         "grade_judgment": result.get("grade_judgment"),
         "reasoning_steps": result.get("reasoning_steps", []),
+        # ★ citations 透传给非流式调用方
+        "citations": result.get("citations", []),
+        "kb_confidence": result.get("kb_confidence"),
     }
 
 
@@ -401,6 +447,11 @@ _ERROR_PATTERNS_ZH: list[tuple[str, str]] = [
     ("ReadTimeout", "LLM 响应超时，请稍后重试或更换模型。"),
     ("Rate limit", "LLM 调用被限流，请稍后再试。"),
     ("rate_limit_exceeded", "LLM 调用被限流，请稍后再试。"),
+    # DeepSeek/SiliconFlow 在过载时返回 503 + code 50508 “System is too busy now”
+    ("System is too busy", "模型服务当前过载，请稍后再试（DeepSeek 高峰期常见，通常 10-30 秒后恢复）。"),
+    ("Service Unavailable", "模型服务当前过载，请稍后再试。"),
+    ("Error code: 503", "模型服务当前过载，请稍后再试（DeepSeek 高峰期常见，通常 10-30 秒后恢复）。"),
+    ("50508", "模型服务当前过载，请稍后再试（DeepSeek 高峰期常见，通常 10-30 秒后恢复）。"),
     ("Insufficient", "LLM 账户余额不足。"),
     ("insufficient", "LLM 账户余额不足。"),
     ("OperationalError", "数据库查询出错，请联系管理员。"),

@@ -94,9 +94,6 @@
                   <DeleteOutlined /> 批量删除
                   <template v-if="selectedRowCount">({{ selectedRowCount }})</template>
                 </a-button>
-                <a-button type="default" @click="handleRepairSingleCoilWeight">
-                  修复单卷重量
-                </a-button>
                 <a-dropdown>
                   <a-button :loading="exporting"> <DownloadOutlined v-if="!exporting" /> 导出Excel </a-button>
                   <template #overlay>
@@ -136,9 +133,7 @@
 
               <!-- 日期列 (dateMonth - 可编辑) -->
               <template v-else-if="column.key === 'dateMonth'">
-                <div
-                  :class="['cell-content', getCellClass(record.id, column.key)]"
-                  @click="handleCellColor(record.id, column.key, $event)">
+                <div :class="['cell-content', getCellClass(record.id, column.key)]">
                   <a-input
                     v-if="editingCell?.id === record.id && editingCell?.field === 'dateMonth'"
                     v-model:value="editingValue"
@@ -146,29 +141,40 @@
                     style="width: 100px"
                     @blur="handleCellBlur"
                     @press-enter="handleCellSave" />
-                  <span v-else @dblclick="handleCellEdit(record, 'dateMonth', record.dateMonth)" class="editable-cell">
-                    {{ record.dateMonth || record.prodDateStr || '-' }}
+                  <span
+                    v-else
+                    class="editable-cell editable-cell--inline"
+                    @mousedown.prevent="handleEditableCellClick($event, record, 'dateMonth', record.dateMonth)"
+                  >
+                    <span class="inline-text">{{ record.dateMonth || record.prodDateStr || '-' }}</span>
+                    <EditOutlined class="inline-edit-icon" />
                   </span>
                 </div>
               </template>
 
-              <!-- 炉号列（可编辑） -->
-              <template v-else-if="column.key === 'furnaceNoFormatted'">
-                <div
-                  :class="['cell-content', getCellClass(record.id, column.key)]"
-                  @click="handleCellColor(record.id, column.key, $event)">
-                  <a-input
-                    v-if="editingCell?.id === record.id && editingCell?.field === 'furnaceNoFormatted'"
-                    v-model:value="editingValue"
-                    size="small"
-                    style="width: 185px"
-                    @blur="handleCellBlur"
-                    @press-enter="handleCellSave" />
+              <!-- 炉号列（编辑限制：前缀=物料唯一码只读，只能改末尾后缀） -->
+              <template v-else-if="column.key === 'furnaceNo'">
+                <div :class="['cell-content', getCellClass(record.id, column.key)]">
+                  <div
+                    v-if="editingCell?.id === record.id && editingCell?.field === 'furnaceNo'"
+                    class="furnace-edit-group"
+                  >
+                    <span class="furnace-edit-prefix" :title="editingCell?.prefix">{{ editingCell?.prefix }}</span>
+                    <input
+                      v-model="editingValue"
+                      class="furnace-edit-suffix"
+                      placeholder="后缀"
+                      @blur="handleCellBlur"
+                      @keydown.enter="handleCellSave"
+                    />
+                  </div>
                   <span
                     v-else
-                    class="editable-cell"
-                    @dblclick="handleCellEdit(record, 'furnaceNoFormatted', record.furnaceNo || record.furnaceNoFormatted)">
-                    {{ record.furnaceNo || record.furnaceNoFormatted || '-' }}
+                    class="editable-cell editable-cell--furnace"
+                    @mousedown.prevent="handleEditableCellClick($event, record, 'furnaceNo', record.furnaceNo || record.furnaceNoFormatted, record.furnaceNoFormatted)"
+                  >
+                    <span class="furnace-text">{{ record.furnaceNo || record.furnaceNoFormatted || '-' }}</span>
+                    <EditOutlined class="furnace-edit-icon" />
                   </span>
                 </div>
               </template>
@@ -556,7 +562,6 @@
     updatePerformance,
     updateAppearance,
     updateBaseInfo,
-    repairIntermediateDataSingleCoilWeight,
     recalculateIntermediateData,
     judgeIntermediateData,
     exportIntermediateData,
@@ -589,6 +594,7 @@
     CheckCircleOutlined,
     DeleteOutlined,
     SortAscendingOutlined,
+    EditOutlined,
   } from '@ant-design/icons-vue';
   import MagneticDataImportQuickModal from '../magneticData/MagneticDataImportQuickModal.vue';
   import { createMagneticImportSession, uploadAndParseMagneticData } from '/@/api/lab/magneticData';
@@ -898,13 +904,16 @@
       { title: '喷次', dataIndex: 'sprayNo', key: 'sprayNo', width: 120, fixed: 'left', align: 'center' },
       { title: '贴标', dataIndex: 'labeling', key: 'labeling', width: 100, fixed: 'left', align: 'center' },
       // --- 炉号与成分区（蓝色背景组） ---
+      // 前端展示原始炉号 furnaceNo（含末尾业务标签 W/G/K/汉字）
+      // 编辑时锁定前缀（= furnaceNoFormatted 物料唯一码），只允许改后缀
+      // 唯一性判定走 furnaceNoFormatted（后端 dedup）
       {
         title: '炉号',
-        dataIndex: 'furnaceNoFormatted',
-        key: 'furnaceNoFormatted',
-        width: 190,
+        dataIndex: 'furnaceNo',
+        key: 'furnaceNo',
+        width: 220,
         fixed: 'left',
-        align: 'center',
+        align: 'left',
       },
       // --- 性能区 ---
       {
@@ -1662,16 +1671,49 @@
   }
 
   // 单元格编辑
-  function handleCellEdit(record: any, field: string, value: any) {
-    editingCell.value = { id: record.id, field, originalValue: value };
-    editingValue.value = value;
+  // 可编辑单元格的统一点击入口：根据当前模式分流（着色 vs 编辑）
+  // 解决以前 inner span 用 @click.stop 嵌套不稳定的问题（双击有效单击无效）
+  function handleEditableCellClick(
+    e: MouseEvent,
+    record: any,
+    field: string,
+    value: any,
+    prefix?: string,
+  ) {
+    // 处于"颜色填充/清除"模式时走着色逻辑（保留原行为）
+    if (selectedColor.value || isClearMode.value) {
+      handleCellColor(record.id, field, e);
+      return;
+    }
+    // 默认模式 → 直接进入编辑
+    handleCellEdit(record, field, value, prefix);
+  }
+
+  function handleCellEdit(record: any, field: string, value: any, prefix?: string) {
+    // 炉号编辑：拆成"前缀(只读) + 后缀(可编辑)"。前缀来自 furnaceNoFormatted（物料唯一码），
+    // editingValue 只存"后缀"部分，保存时拼回 prefix + suffix 发给后端。
+    let initialEditValue = value;
+    if (field === 'furnaceNo' && prefix && typeof value === 'string') {
+      initialEditValue = value.startsWith(prefix) ? value.slice(prefix.length) : value;
+    }
+    editingCell.value = {
+      id: record.id,
+      field,
+      // 炉号编辑时 originalValue 也只存"后缀"，跟 editingValue 同维度，blur 时相等判断才生效
+      originalValue: field === 'furnaceNo' && prefix !== undefined ? initialEditValue : value,
+      prefix: prefix ?? '',
+    };
+    editingValue.value = initialEditValue;
     nextTick(() => {
-      const input = document.querySelector(
-        'input'
-        + '[style*="width: 185px"], input'
-        + '[style*="width: 155px"], input'
-        + '[style*="width: 135px"]',
-      ) as HTMLInputElement | null;
+      // 炉号编辑用自定义 class 选；其他列保留旧选择器（按 inline style 宽度找）
+      const input = (field === 'furnaceNo'
+        ? document.querySelector('.furnace-edit-suffix')
+        : document.querySelector(
+            'input'
+            + '[style*="width: 185px"], input'
+            + '[style*="width: 155px"], input'
+            + '[style*="width: 135px"]',
+          )) as HTMLInputElement | null;
       if (!input) return;
       input.focus();
       const length = input.value?.length ?? 0;
@@ -1715,17 +1757,24 @@
 
     let payloadValue = nextValue;
     let scratchUpdate: number | undefined;
-    if (cell.field === 'furnaceNoFormatted' && typeof nextValue === 'string') {
-      const trimmedValue = nextValue.trim();
-      if (/k$/i.test(trimmedValue)) {
-        const isScratched = await confirmScratchByTrailingK(trimmedValue);
+    if (cell.field === 'furnaceNo' && typeof nextValue === 'string') {
+      // 炉号编辑：editingValue 只是"后缀"，要拼回前缀（= furnaceNoFormatted 物料唯一码）
+      const prefix = cell.prefix || '';
+      const suffix = nextValue.trim();
+      const fullValue = prefix + suffix;
+      // K 后缀检测：识别为单片性能刻痕标志（仅在后缀里出现 K 时弹确认）
+      if (/k$/i.test(suffix)) {
+        const isScratched = await confirmScratchByTrailingK(fullValue);
         if (isScratched) {
-          payloadValue = trimmedValue.slice(0, -1).trimEnd();
+          // 用户确认按刻痕处理：剥去末尾 K，同时把 isScratched 标记打开
+          payloadValue = prefix + suffix.slice(0, -1).trimEnd();
           scratchUpdate = 1;
         } else {
-          payloadValue = trimmedValue;
+          payloadValue = fullValue;
           scratchUpdate = 0;
         }
+      } else {
+        payloadValue = fullValue;
       }
     }
 
@@ -1739,7 +1788,7 @@
 
     try {
       await updateBaseInfo(payload);
-      if (cell.field === 'furnaceNoFormatted') {
+      if (cell.field === 'furnaceNo') {
         createMessage.success('保存成功，正在重新计算和判定...');
         try {
           await recalculateIntermediateData([cell.id]);
@@ -1756,17 +1805,6 @@
       createMessage.error(error?.message || '保存失败');
       editingCell.value = cell;
       editingValue.value = payload[cell.field];
-    }
-  }
-
-  async function handleRepairSingleCoilWeight() {
-    try {
-      const res = await repairIntermediateDataSingleCoilWeight();
-      const data = (res as any)?.data ?? res ?? {};
-      createMessage.success(`修复完成，处理 ${data.scannedCount || 0} 条，更新 ${data.updatedCount || 0} 条`);
-      reload();
-    } catch (error) {
-      createMessage.error('修复失败');
     }
   }
 
@@ -2793,6 +2831,100 @@
 
   .editable-cell:hover {
     background: #f0f0f0;
+  }
+
+  /* 炉号编辑：前缀(锁定) + 后缀(可编辑) 单一容器，看起来像一个完整输入框 */
+  .furnace-edit-group {
+    display: inline-flex;
+    align-items: stretch;
+    width: 100%;
+    max-width: 220px;
+    height: 28px;
+    border: 1px solid #4096ff;
+    border-radius: 4px;
+    background: #fff;
+    overflow: hidden;
+    box-shadow: 0 0 0 2px rgba(64, 150, 255, 0.12);
+  }
+
+  .furnace-edit-prefix {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 8px;
+    background: #f5f7fa;
+    color: #64748b;
+    font-size: 12px;
+    line-height: 1;
+    border-right: 1px solid #e2e8f0;
+    user-select: none;
+    cursor: not-allowed;
+    flex: 0 0 auto;
+    max-width: 145px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  .furnace-edit-suffix {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    padding: 0 8px;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 12px;
+    color: #1f2937;
+  }
+
+  .furnace-edit-suffix::placeholder {
+    color: #94a3b8;
+    font-size: 11px;
+  }
+
+  /* 通用：可编辑单元格的非编辑态外观 —— 左对齐 + 单击编辑 + 鼠标经过显示编辑图标 */
+  .editable-cell--inline,
+  .editable-cell--furnace {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    width: 100%;
+    text-align: left;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+
+  .editable-cell--inline .inline-text,
+  .editable-cell--furnace .furnace-text {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .editable-cell--inline .inline-edit-icon,
+  .editable-cell--furnace .furnace-edit-icon {
+    flex: 0 0 auto;
+    color: #6366f1;
+    font-size: 13px;
+    opacity: 0;
+    transition: opacity 0.15s, transform 0.15s;
+    /* 让点击事件穿过图标传到父 span 的 @click 处理器，避免点图标"无响应" */
+    pointer-events: none;
+  }
+
+  .editable-cell--inline:hover,
+  .editable-cell--furnace:hover {
+    background: rgba(99, 102, 241, 0.08);
+  }
+
+  .editable-cell--inline:hover .inline-edit-icon,
+  .editable-cell--furnace:hover .furnace-edit-icon {
+    opacity: 1;
+    transform: translateX(-1px);
   }
 
   /* 产品规格 Tab 放在查询下方，紧凑布局 */

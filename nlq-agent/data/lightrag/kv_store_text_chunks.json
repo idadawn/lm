@@ -1,0 +1,912 @@
+{
+  "chunk-2a685b81b536bb4eba928bee1eb8329d": {
+    "tokens": 362,
+    "content": "炉号是怎么组成的（也叫：炉号是怎么组成的、炉号组成、炉号格式、炉号怎么解析、炉号是什么样的）\n\n**炉号格式**：`[产线数字][班次汉字][8 位日期]-[炉号]-[卷号]-[分卷号][可选外观特性]`\n\n**示例**：`1甲20251101-1-4-1脆`\n\n| 位置 | 含义 | 示例 | 说明 |\n|------|------|------|------|\n| 第 1 位 | 产线号 | `1` | 1～4 号生产线 |\n| 第 2 位 | 班次 | `甲` | 甲 / 乙 / 丙 |\n| 第 3-10 位 | 生产日期 | `20251101` | YYYYMMDD 8 位 |\n| `-1` | 炉号 | 第 1 炉 | 当班当日第几炉 |\n| `-4` | 卷号 | 第 4 卷 | 该炉第几卷 |\n| `-1` | 分卷号 | 第 1 段 | 该卷拆分后的第几段 |\n| 末尾汉字 | 外观特性 | `脆` | 可选；如「脆」「划」「麻点」等 |\n\n**数据库存储**：\n- `F_FURNACE_NO`：原始炉号字符串（用户录入的，包含特性汉字）\n- `F_FURNACE_NO_FORMATTED`：格式化后的标准炉号（去掉特性汉字，统一格式，用于关联查询）",
+    "chunk_order_index": 0,
+    "full_doc_id": "kb:furnace_no_format",
+    "file_path": "knowledge_base.json#furnace_no_format",
+    "llm_cache_list": [
+      "default:extract:cb0eade21b8484e4b6569e74abb335bd",
+      "default:extract:e29cdd79bab3deb1acd21a5b39cf0be7"
+    ],
+    "create_time": 1778985017,
+    "update_time": 1778985113,
+    "_id": "chunk-2a685b81b536bb4eba928bee1eb8329d"
+  },
+  "chunk-f2504a9381d2837c8dd322280d321c43": {
+    "tokens": 388,
+    "content": "一次交检合格率是怎么算的（也叫：一次交检合格率是什么、一次交检合格率怎么算、一次交检合格率定义、一次交检合格率口径、一次交检合格率公式）\n\n**一次交检合格率** = 一次检验为合格等级的卷重合计 ÷ 总卷重 × 100%\n\n**口径要点**：\n1. **判定列**：`F_FIRST_INSPECTION`（一次检验列），**不是** `F_LABELING`（贴标 / 最终等级）。\n2. **合格等级**：由 `lab_report_config` 中「一次交检合格率」一行的 `F_LEVEL_NAMES` 字段配置（通常只算 `A`，业务方可调整）。\n3. **重量字段**：只取 `F_SINGLE_COIL_WEIGHT`（单卷重），不含其他重量列。\n4. **过滤**：`F_DeleteMark IS NULL OR F_DeleteMark = 0`（排除软删除）。\n\n**SQL 骨架**：\n```sql\nSELECT \n  SUM(CASE WHEN F_FIRST_INSPECTION IN ('A') THEN F_SINGLE_COIL_WEIGHT ELSE 0 END) AS pass_weight,\n  SUM(F_SINGLE_COIL_WEIGHT) AS total_weight,\n  ROUND(pass_weight / NULLIF(total_weight, 0) * 100, 2) AS pass_rate\nFROM lab_intermediate_data\nWHERE F_PROD_DATE BETWEEN <start> AND <end>\n```\n\n**⚠️ 常见误区**：「A 类卷重 ÷ 总卷重」**不等于**一次交检合格率，前者按 `F_LABELING` 算的是**质量等级分布**（最终贴标占比），两个列完全不同。",
+    "chunk_order_index": 0,
+    "full_doc_id": "kb:first_inspection_rate",
+    "file_path": "knowledge_base.json#first_inspection_rate",
+    "llm_cache_list": [
+      "default:extract:8c986e7453678ca88c15a82ab995a02d",
+      "default:extract:df3f53d70a600aac342724fd0d2045eb"
+    ],
+    "create_time": 1778985114,
+    "update_time": 1778985158,
+    "_id": "chunk-f2504a9381d2837c8dd322280d321c43"
+  },
+  "chunk-1d48176026da03bdf3116a649b995b85": {
+    "tokens": 296,
+    "content": "F_LABELING 和 F_FIRST_INSPECTION 有什么区别（也叫：labeling 和 first_inspection 区别、F_LABELING 和 F_FIRST_INSPECTION 区别、F_LABELING 和 F_FIRST_INSPECTION 的区别、labeling 和 first inspection 的区别、贴标和一次交检的区别）\n\n这两列**业务含义完全不同，不能互换使用**：\n\n| 列名 | 中文 | 含义 | 用途 |\n|------|------|------|------|\n| `F_FIRST_INSPECTION` | 一次检验 | 首次检验时的判定结果（A/性能不合/极差不合 等） | 计算**一次交检合格率**、不合格原因分析 |\n| `F_LABELING` | 贴标 / 最终等级 | 经过返修/复检后的最终贴标等级（A/B/未标注 等） | 计算**质量等级分布**、对外发货等级统计 |\n\n**关键差异**：\n- 一次检验是「**生产过程**」的成绩（不可改）\n- 贴标是「**最终出厂**」的等级（可能因返修升级）\n\n所以「上月各班组质量分布」用 `F_LABELING`；「上月一次交检合格率」用 `F_FIRST_INSPECTION`。",
+    "chunk_order_index": 0,
+    "full_doc_id": "kb:labeling_vs_first_inspection",
+    "file_path": "knowledge_base.json#labeling_vs_first_inspection",
+    "llm_cache_list": [
+      "default:extract:40b08b1efa08458efcbcd5ed9f924107",
+      "default:extract:dff89b50836e4ae9e6edbbe90533f8a2"
+    ],
+    "create_time": 1778985158,
+    "update_time": 1778985217,
+    "_id": "chunk-1d48176026da03bdf3116a649b995b85"
+  },
+  "chunk-713b0902d3dd2473d8a7b6fc79cb8f47": {
+    "tokens": 221,
+    "content": "班次都有哪些（也叫：班次是什么、有哪些班次、甲乙丙是什么班次、班次代号、班次定义）\n\n检测中心生产排班分为 3 个班次：\n\n| 班次 | 别名 | 数字代号 | 说明 |\n|------|------|---------|------|\n| 甲 | 甲班 / 1班 / 一班 / 早班 | 1 | 通常 8:00 ~ 16:00 |\n| 乙 | 乙班 / 2班 / 二班 / 中班 | 2 | 通常 16:00 ~ 24:00 |\n| 丙 | 丙班 / 3班 / 三班 / 夜班 / 晚班 | 3 | 通常 0:00 ~ 8:00 |\n\n**数据库字段**：\n- `F_SHIFT`：汉字（`甲` / `乙` / `丙`）\n- `F_SHIFT_NUMERIC`：数字（1 / 2 / 3）",
+    "chunk_order_index": 0,
+    "full_doc_id": "kb:shift_dimension",
+    "file_path": "knowledge_base.json#shift_dimension",
+    "llm_cache_list": [
+      "default:extract:747c336c8a5a673d7b72fbaf65aee363",
+      "default:extract:d7472a85fb14007ea6bfd8d8754b4769"
+    ],
+    "create_time": 1778985218,
+    "update_time": 1778985251,
+    "_id": "chunk-713b0902d3dd2473d8a7b6fc79cb8f47"
+  },
+  "chunk-d3d4d26638ad601f83b0ed6c5e5d559c": {
+    "tokens": 148,
+    "content": "有几条生产线（也叫：产线是什么、有几条产线、生产线编号、有几条生产线、有多少条产线）\n\n检测中心共 4 条生产线，**字段 `F_LINE_NO` 取值 1~4**。\n\n炉号的第 1 位就是产线号，例如 `1甲20251101-1-4-1` 表示**第 1 条产线**、甲班、2025-11-01 生产的炉。\n\n各产线产品规格、产能配置可能不同，质量对比应当**先按产线再按班组**拆分，避免跨产线混合统计造成偏差。",
+    "chunk_order_index": 0,
+    "full_doc_id": "kb:line_dimension",
+    "file_path": "knowledge_base.json#line_dimension",
+    "llm_cache_list": [
+      "default:extract:51d1c9e950dfd153f12082d057d00cf1",
+      "default:extract:f544acd0808ed7fdf382971881c53a47"
+    ],
+    "create_time": 1778985251,
+    "update_time": 1778985297,
+    "_id": "chunk-d3d4d26638ad601f83b0ed6c5e5d559c"
+  },
+  "chunk-957813961c6bd225bcd390b432783050": {
+    "tokens": 325,
+    "content": "质量等级分布是怎么算的（也叫：质量等级分布、等级分布、质量分布、labeling 分布、标签分布）\n\n**质量等级分布** = 按贴标列 `F_LABELING` 分组，统计每个等级的卷重和占比。\n\n**口径**：\n- **分组列**：`F_LABELING`（**不是** `F_FIRST_INSPECTION`）\n- **重量字段**：`F_SINGLE_COIL_WEIGHT`\n- **过滤**：`F_DeleteMark IS NULL OR F_DeleteMark = 0`\n- **空值处理**：`F_LABELING` 为空显示为「未标注」\n- **排序**：按重量倒序\n\n**SQL 骨架**：\n```sql\nSELECT\n  COALESCE(NULLIF(TRIM(F_LABELING), ''), '未标注') AS level,\n  SUM(F_SINGLE_COIL_WEIGHT) AS weight,\n  ROUND(SUM(F_SINGLE_COIL_WEIGHT) / SUM(SUM(F_SINGLE_COIL_WEIGHT)) OVER () * 100, 2) AS rate\nFROM lab_intermediate_data\nWHERE F_PROD_DATE BETWEEN <start> AND <end>\nGROUP BY F_LABELING\n```\n\n**⚠️ 不是合格率**：本指标只描述**贴标后**的等级构成（A 类卷重多少、B 类多少、不合多少），不要叫它「合格率」——后者口径不同（见「一次交检合格率」条目）。",
+    "chunk_order_index": 0,
+    "full_doc_id": "kb:quality_level_distribution",
+    "file_path": "knowledge_base.json#quality_level_distribution",
+    "llm_cache_list": [
+      "default:extract:1eaca22ea56fe25ab4a4d1212dc24b08",
+      "default:extract:5ad7992071dd2f3cfc1b630aec941e19"
+    ],
+    "create_time": 1778985297,
+    "update_time": 1778985337,
+    "_id": "chunk-957813961c6bd225bcd390b432783050"
+  },
+  "chunk-c9efcc420de21e9c640026bda07d01c3": {
+    "tokens": 105,
+    "content": "卷重是什么（也叫：卷重是什么、单卷重、重量字段、F_SINGLE_COIL_WEIGHT、单卷重量）\n\n**卷重** = 单条带材卷起来的重量（kg），数据库字段 `F_SINGLE_COIL_WEIGHT`，存在 `lab_intermediate_data` 表里。\n\n所有重量类统计（产量、合格重量、不合格重量、各等级重量）**都只用这一个字段**，不要用 `F_COIL_WEIGHT` 等历史字段。",
+    "chunk_order_index": 0,
+    "full_doc_id": "kb:single_coil_weight",
+    "file_path": "knowledge_base.json#single_coil_weight",
+    "llm_cache_list": [
+      "default:extract:6dafc1f7b1f8e3809420bc93931d6971",
+      "default:extract:d5ac58af81372d765266d8e7622d0ecc"
+    ],
+    "create_time": 1778985337,
+    "update_time": 1778985373,
+    "_id": "chunk-c9efcc420de21e9c640026bda07d01c3"
+  },
+  "chunk-60d113a19c7939fa4f4a548b3cc1eba5": {
+    "tokens": 150,
+    "content": "批次号是什么（也叫：批次号是什么、炉次号、F_FURNACE_BATCH_NO、什么是批次、批次和炉号区别）\n\n**批次号** = 同一炉次内多个卷的统一标识，存在 `F_FURNACE_BATCH_NO` 字段。\n\n**炉号 vs 批次号**：\n- **炉号**（`F_FURNACE_NO_FORMATTED`）：一卷一个，全局唯一，包含产线/班次/日期/分卷信息\n- **批次号**（`F_FURNACE_BATCH_NO`）：一炉一个，同一炉里几个卷共用同一批次号，用于关联同炉数据",
+    "chunk_order_index": 0,
+    "full_doc_id": "kb:furnace_batch_no",
+    "file_path": "knowledge_base.json#furnace_batch_no",
+    "llm_cache_list": [
+      "default:extract:74ef67f66ce55edbc004f3edcbe85ee9",
+      "default:extract:da8b7996b0e07ca1625df195a5d21dce"
+    ],
+    "create_time": 1778985373,
+    "update_time": 1778985408,
+    "_id": "chunk-60d113a19c7939fa4f4a548b3cc1eba5"
+  },
+  "chunk-03f8b5b2f4b11326c72d680e9f3f0c64": {
+    "tokens": 314,
+    "content": "外观特性有哪些（也叫：外观特性是什么、外观缺陷、外观分类、外观特性有哪些、外观特性都有什么）\n\n**外观特性**指带材在生产中被肉眼或仪器识别出的表面特征/缺陷，通常以汉字写在炉号末尾，例如 `1甲20251101-1-4-1脆` 末尾的「脆」。\n\n**常见外观特性**（数据库表 `lab_appearance_feature_*`）：\n\n| 特性 | 同义词 | 含义 |\n|------|--------|------|\n| 脆 | 易脆、发脆 | 易折易裂 |\n| 划 | 划伤、划痕、刮痕 | 表面有划伤 |\n| 麻点 | 麻面、麻坑、斑点 | 点状缺陷 |\n| 凹 | 凹陷、凹坑 | 表面下陷 |\n| 棱 | 起棱、棱角 | 不平直 |\n| 白边 | 边白 | 边缘发白 |\n| 脆边 | 边脆、边缘脆 | 边缘易脆 |\n| 亮线 | 光亮线、亮纹 | 表面亮条 |\n\n外观特性会影响最终贴标等级，但不直接进入「一次交检合格率」的合格判定。",
+    "chunk_order_index": 0,
+    "full_doc_id": "kb:appearance_features",
+    "file_path": "knowledge_base.json#appearance_features",
+    "llm_cache_list": [
+      "default:extract:06a6fd33b089765c25cfba4e2d308f03",
+      "default:extract:6bee096d52545e1cf3a99027a5517797"
+    ],
+    "create_time": 1778985409,
+    "update_time": 1778985452,
+    "_id": "chunk-03f8b5b2f4b11326c72d680e9f3f0c64"
+  },
+  "chunk-d0a625cc09639410176fb4712f0e96c6": {
+    "tokens": 305,
+    "content": "# 公式 / 指标同义词词典（来自 aliases.json）\n\n- **PsLoss**：铁损, 磁损, 比铁损, 比损, Ps, P\n- **SsPower**：激磁功率, 视在功率, 磁化功率, Ss, S\n- **Hc**：矫顽力, 磁矫顽, Hc\n- **Thickness**：厚度, 带厚, 带材厚度, 平均厚度\n- **Width**：宽度, 带宽, 带材宽度\n- **CoilWeight**：卷重, 单卷重量, 重量\n- **LamFactor**：叠片系数, 叠系数, 叠片率, lamination factor\n- **Density**：密度\n- **FirstInspection**：一次交检, 一交, 一次检验, 首检, 首次交检\n- **MagneticRes**：磁性能判定, 磁性能结果, 磁性判级\n- **ThickRes**：厚度判定, 厚度结果, 厚度判级\n- **LamFactorRes**：叠片系数判定, 叠片系数结果\n- **Labeling**：贴标, 标签, 等级标签, 总判定, 最终等级",
+    "chunk_order_index": 0,
+    "full_doc_id": "aliases:formula",
+    "file_path": "aliases.json#formula",
+    "llm_cache_list": [
+      "default:extract:0f1db20ec675df4ff45d9689db39b6ca",
+      "default:extract:1f9b616216b4a6c0b4eeaa83091d3e99"
+    ],
+    "create_time": 1778985452,
+    "update_time": 1778985549,
+    "_id": "chunk-d0a625cc09639410176fb4712f0e96c6"
+  },
+  "chunk-6900462780de65c55e3be3030bb1b492": {
+    "tokens": 127,
+    "content": "# 业务术语同义词词典（来自 aliases.json）\n\n- **一次交检合格率**：一交合格率, 一次合格率, 首检合格率, 一交率\n- **合格率**：合格比例, 通过率, 达标率, qualified rate\n- **不合格**：不达标, 废品, 次品, 不合格率\n- **A**：A类, A级, 一级, 优等品\n- **B**：B类, B级, 二级, 良等品",
+    "chunk_order_index": 0,
+    "full_doc_id": "aliases:metric",
+    "file_path": "aliases.json#metric",
+    "llm_cache_list": [
+      "default:extract:c2340efcc25ca233c5d2b726c3600bb0",
+      "default:extract:9f25f3f4a6235306d90573edef554e7f"
+    ],
+    "create_time": 1778985550,
+    "update_time": 1778985605,
+    "_id": "chunk-6900462780de65c55e3be3030bb1b492"
+  },
+  "chunk-382193d9c90a96e333b33be0c0bcfd36": {
+    "tokens": 172,
+    "content": "# 外观特性同义词词典（来自 aliases.json）\n\n- **脆**：易脆, 脆性, 发脆\n- **划**：划伤, 划痕, 刮痕\n- **麻点**：麻面, 麻坑, 斑点\n- **凹**：凹陷, 凹坑, 凹缺\n- **棱**：棱角, 棱边, 起棱\n- **白边**：白边缘, 边白\n- **脆边**：边脆, 边缘脆\n- **亮线**：光亮线, 亮纹\n- **韧性**：韧性差, 韧度, 脆韧性",
+    "chunk_order_index": 0,
+    "full_doc_id": "aliases:appearance",
+    "file_path": "aliases.json#appearance",
+    "llm_cache_list": [
+      "default:extract:a98933c30584db12294085f23bceecac",
+      "default:extract:dd3b706651ce3c9c159547a26ef20518"
+    ],
+    "create_time": 1778985605,
+    "update_time": 1778985649,
+    "_id": "chunk-382193d9c90a96e333b33be0c0bcfd36"
+  },
+  "chunk-5e6e25c9fd58e9924568e84459192dcc": {
+    "tokens": 182,
+    "content": "# 数据库字段同义词词典（来自 aliases.json）\n\n- **F_PS_LOSS**：铁损, 磁损, Ps\n- **F_SS_POWER**：激磁功率, Ss\n- **F_HC**：矫顽力, Hc\n- **F_FURNACE_NO**：炉号, 炉号字符串, 原始炉号\n- **F_FURNACE_NO_FORMATTED**：格式化炉号, 标准炉号\n- **F_PROD_DATE**：生产日期, 生产日\n- **F_SHIFT**：班次, 班次汉字\n- **F_LINE_NO**：产线, 产线号, 生产线\n- **F_COIL_NO**：卷号\n- **F_LABELING**：最终等级, 总判定, 贴标",
+    "chunk_order_index": 0,
+    "full_doc_id": "aliases:field",
+    "file_path": "aliases.json#field",
+    "llm_cache_list": [
+      "default:extract:588c607e13ec2f3f338e86f1c8bbaba9",
+      "default:extract:a2c1e6601f235338269e8ccb8a2ad09f"
+    ],
+    "create_time": 1778985650,
+    "update_time": 1778985697,
+    "_id": "chunk-5e6e25c9fd58e9924568e84459192dcc"
+  },
+  "chunk-e53f732c8785683f40dd43eb1120bf26": {
+    "tokens": 206,
+    "content": "# 维度：time\n主字段：`F_PROD_DATE`\n中文别名：生产日期, 日期, prod_date\n\n**支持的快速时间区间**：\n- `今日`（别名：今天, 当天, 今）\n- `昨日`（别名：昨天, 昨）\n- `近7天`（别名：最近一周, 近一周, 过去 7 天）\n- `近30天`（别名：最近一个月, 近一个月, 过去 30 天）\n- `本周`（别名：这周, 本周内）\n- `上周`（别名：上一周）\n- `本月`（别名：这个月, 当月, 本月内）\n- `上月`（别名：上个月, 上一个月）\n- `本年`（别名：今年, 当年）\n- `去年`（别名：上年, 上一年）",
+    "chunk_order_index": 0,
+    "full_doc_id": "dim:time",
+    "file_path": "dimensions_meta.json#time",
+    "llm_cache_list": [
+      "default:extract:ee649457f35fd7bf53b8db5f3c018891",
+      "default:extract:12d0bb1975a8319da4f251f934150c12"
+    ],
+    "create_time": 1778985698,
+    "update_time": 1778985759,
+    "_id": "chunk-e53f732c8785683f40dd43eb1120bf26"
+  },
+  "chunk-dff975756a76316c5e10fbb37961c3f7": {
+    "tokens": 111,
+    "content": "# 维度：shift\n主字段：`F_SHIFT`\n中文别名：班次, 班\n\n**取值**：\n- `甲`（数字 1，别名：甲班, 1班, 一班, 早班）\n- `乙`（数字 2，别名：乙班, 2班, 二班, 中班）\n- `丙`（数字 3，别名：丙班, 3班, 三班, 夜班, 晚班）",
+    "chunk_order_index": 0,
+    "full_doc_id": "dim:shift",
+    "file_path": "dimensions_meta.json#shift",
+    "llm_cache_list": [
+      "default:extract:92e8f7e262be4d654cca2804bd959947",
+      "default:extract:67b7906155e45e186152c0fd6ae6779d"
+    ],
+    "create_time": 1778985760,
+    "update_time": 1778985796,
+    "_id": "chunk-dff975756a76316c5e10fbb37961c3f7"
+  },
+  "chunk-6b05797e8ba81c1568b31788d8ed70c2": {
+    "tokens": 120,
+    "content": "# 维度：line\n主字段：`F_LINE_NO`\n中文别名：产线, 产线号, 生产线, 线号\n\n**取值别名**：\n- `1`：1线, 一线, 1号线, 一号线\n- `2`：2线, 二线, 2号线, 二号线\n- `3`：3线, 三线, 3号线, 三号线\n- `4`：4线, 四线, 4号线, 四号线",
+    "chunk_order_index": 0,
+    "full_doc_id": "dim:line",
+    "file_path": "dimensions_meta.json#line",
+    "llm_cache_list": [
+      "default:extract:46144f504207b7fa654807e926833379",
+      "default:extract:e67ef9a830de2c3875d017f898b55953"
+    ],
+    "create_time": 1778985796,
+    "update_time": 1778985827,
+    "_id": "chunk-6b05797e8ba81c1568b31788d8ed70c2"
+  },
+  "chunk-c2aa457d66f6f75d648df7d97ed18491": {
+    "tokens": 29,
+    "content": "# 维度：product_spec\n主字段：`F_PRODUCT_SPEC_CODE`\n中文别名：规格, 产品规格, 牌号",
+    "chunk_order_index": 0,
+    "full_doc_id": "dim:product_spec",
+    "file_path": "dimensions_meta.json#product_spec",
+    "llm_cache_list": [
+      "default:extract:924761c38fb322119557ecb1386ad817",
+      "default:extract:52998143b48fc1743ac10a9093c84f75"
+    ],
+    "create_time": 1778985827,
+    "update_time": 1778985848,
+    "_id": "chunk-c2aa457d66f6f75d648df7d97ed18491"
+  },
+  "chunk-517383c70d6bd091e78ad3ca4a0d73e0": {
+    "tokens": 68,
+    "content": "# 维度：furnace_no\n主字段：`F_FURNACE_NO_FORMATTED`\n中文别名：炉号, 标准炉号, 格式化炉号\n\n原始字段：`F_FURNACE_NO`（格式化前），别名：原始炉号, 炉号字符串",
+    "chunk_order_index": 0,
+    "full_doc_id": "dim:furnace_no",
+    "file_path": "dimensions_meta.json#furnace_no",
+    "llm_cache_list": [
+      "default:extract:cfe0094c89957bb4ed03401d87f33f2c",
+      "default:extract:af40d864c00c3b51e0472a400e127ed5"
+    ],
+    "create_time": 1778985848,
+    "update_time": 1778985879,
+    "_id": "chunk-517383c70d6bd091e78ad3ca4a0d73e0"
+  },
+  "chunk-a89346ef582d2491429fb4a619ba0c4b": {
+    "tokens": 174,
+    "content": "# SQL 模板：单指标重量聚合\n用途：按时间窗 + 等级筛选，统计满足条件的检测重量合计。适用于任意 ReportConfig 指标。\n参数：startDate(date), endDate(date), levelList(string[]), judgeColumn(column)\n典型用户问法：本月一次交检 A 类的重量是多少？、上周甲班 B 级总产量？\n\nSQL 骨架（用于 LLM 生成时参考）：\n```sql\nSELECT SUM(F_SINGLE_COIL_WEIGHT) AS matched_weight\nFROM lab_intermediate_data\nWHERE F_DeleteMark IS NULL\n  AND F_PROD_DATE >= '{startDate}'\n  AND F_PROD_DATE < DATE_ADD('{endDate}', INTERVAL 1 DAY)\n  AND {judgeColumn} IN ({levelList:in})\n```",
+    "chunk_order_index": 0,
+    "full_doc_id": "sql_tpl:metric_aggregate",
+    "file_path": "sql_templates.json#metric_aggregate",
+    "llm_cache_list": [
+      "default:extract:cd6b488176baa052d81e35cffd57fa89",
+      "default:extract:80b0c7baa340c1db0b658baa82d9af4d"
+    ],
+    "create_time": 1778985879,
+    "update_time": 1778985917,
+    "_id": "chunk-a89346ef582d2491429fb4a619ba0c4b"
+  },
+  "chunk-eaa469fa109e3da0e7694dbe4aa14741": {
+    "tokens": 253,
+    "content": "# SQL 模板：单指标占比\n用途：命中等级重量 / 总重量 = 占比。一次交检合格率、A 类占比等都走这个模板。\n参数：startDate(date), endDate(date), levelList(string[]), judgeColumn(column)\n典型用户问法：本月一次交检合格率？、上月 A 类占比多少？、本月不合格率？\n\nSQL 骨架（用于 LLM 生成时参考）：\n```sql\nSELECT \n  SUM(CASE WHEN {judgeColumn} IN ({levelList:in}) THEN F_SINGLE_COIL_WEIGHT ELSE 0 END) AS matched_weight,\n  SUM(F_SINGLE_COIL_WEIGHT) AS total_weight,\n  ROUND(SUM(CASE WHEN {judgeColumn} IN ({levelList:in}) THEN F_SINGLE_COIL_WEIGHT ELSE 0 END)\n        / NULLIF(SUM(F_SINGLE_COIL_WEIGHT), 0) * 100, 2) AS matched_rate\nFROM lab_intermediate_data\nWHERE F_DeleteMark IS NULL\n  AND F_PROD_DATE >= '{startDate}'\n  AND F_PROD_DATE < DATE_ADD('{endDate}', INTERVAL 1 DAY)\n```",
+    "chunk_order_index": 0,
+    "full_doc_id": "sql_tpl:metric_rate",
+    "file_path": "sql_templates.json#metric_rate",
+    "llm_cache_list": [
+      "default:extract:00da1ae37ba7e963cf0bee6aee231d81",
+      "default:extract:7b15a3c76372f6b720a324b012d2eba1"
+    ],
+    "create_time": 1778985917,
+    "update_time": 1778985968,
+    "_id": "chunk-eaa469fa109e3da0e7694dbe4aa14741"
+  },
+  "chunk-985990948d7ec4a2a0aaa3d3376e6d0b": {
+    "tokens": 256,
+    "content": "# SQL 模板：班次对比\n用途：按 F_SHIFT 分组，对比甲/乙/丙三班的总产量和指标占比。\n参数：startDate(date), endDate(date), levelList(string[]), judgeColumn(column)\n典型用户问法：本月三班合格率对比、上周哪个班次合格率最高？\n\nSQL 骨架（用于 LLM 生成时参考）：\n```sql\nSELECT F_SHIFT AS shift,\n  SUM(F_SINGLE_COIL_WEIGHT) AS total_weight,\n  SUM(CASE WHEN {judgeColumn} IN ({levelList:in}) THEN F_SINGLE_COIL_WEIGHT ELSE 0 END) AS matched_weight,\n  ROUND(SUM(CASE WHEN {judgeColumn} IN ({levelList:in}) THEN F_SINGLE_COIL_WEIGHT ELSE 0 END)\n        / NULLIF(SUM(F_SINGLE_COIL_WEIGHT), 0) * 100, 2) AS matched_rate\nFROM lab_intermediate_data\nWHERE F_DeleteMark IS NULL\n  AND F_PROD_DATE >= '{startDate}'\n  AND F_PROD_DATE < DATE_ADD('{endDate}', INTERVAL 1 DAY)\nGROUP BY F_SHIFT\nORDER BY F_SHIFT\n```",
+    "chunk_order_index": 0,
+    "full_doc_id": "sql_tpl:shift_comparison",
+    "file_path": "sql_templates.json#shift_comparison",
+    "llm_cache_list": [
+      "default:extract:dd24bd28c01f25c88b90fc2c578126fd",
+      "default:extract:9e105ae2e221e7815a5c824e5a8065e3"
+    ],
+    "create_time": 1778985968,
+    "update_time": 1778986047,
+    "_id": "chunk-985990948d7ec4a2a0aaa3d3376e6d0b"
+  },
+  "chunk-1ffe127439929c413f3cda62f238993b": {
+    "tokens": 228,
+    "content": "# SQL 模板：日趋势\n用途：按 DATE(F_PROD_DATE) 分组的日度指标占比，用于绘制趋势线。\n参数：startDate(date), endDate(date), levelList(string[]), judgeColumn(column)\n典型用户问法：近 7 天合格率走势、本月每天的一次交检合格率\n\nSQL 骨架（用于 LLM 生成时参考）：\n```sql\nSELECT DATE(F_PROD_DATE) AS prod_date,\n  SUM(F_SINGLE_COIL_WEIGHT) AS total_weight,\n  ROUND(SUM(CASE WHEN {judgeColumn} IN ({levelList:in}) THEN F_SINGLE_COIL_WEIGHT ELSE 0 END)\n        / NULLIF(SUM(F_SINGLE_COIL_WEIGHT), 0) * 100, 2) AS matched_rate\nFROM lab_intermediate_data\nWHERE F_DeleteMark IS NULL\n  AND F_PROD_DATE >= '{startDate}'\n  AND F_PROD_DATE < DATE_ADD('{endDate}', INTERVAL 1 DAY)\nGROUP BY DATE(F_PROD_DATE)\nORDER BY prod_date\n```",
+    "chunk_order_index": 0,
+    "full_doc_id": "sql_tpl:daily_trend",
+    "file_path": "sql_templates.json#daily_trend",
+    "llm_cache_list": [
+      "default:extract:37af88403726d5f303fb13c419cb9b1f",
+      "default:extract:9594918cecca857330d037cab086891b"
+    ],
+    "create_time": 1778986047,
+    "update_time": 1778986084,
+    "_id": "chunk-1ffe127439929c413f3cda62f238993b"
+  },
+  "chunk-d8158b31ac0e5f48421ac68e0c0b5873": {
+    "tokens": 276,
+    "content": "# SQL 模板：不合格分类统计\n用途：按 F_FIRST_INSPECTION 分组统计每种不合格类型的重量与占比（Top N）。\n参数：startDate(date), endDate(date), qualifiedLevels(string[]), limit(int)\n典型用户问法：本月不合格类型 Top 5、上月哪种缺陷重量最多？\n\nSQL 骨架（用于 LLM 生成时参考）：\n```sql\nSELECT F_FIRST_INSPECTION AS category,\n  SUM(F_SINGLE_COIL_WEIGHT) AS weight,\n  ROUND(SUM(F_SINGLE_COIL_WEIGHT) / NULLIF((\n    SELECT SUM(F_SINGLE_COIL_WEIGHT) FROM lab_intermediate_data\n    WHERE F_DeleteMark IS NULL\n      AND F_PROD_DATE >= '{startDate}'\n      AND F_PROD_DATE < DATE_ADD('{endDate}', INTERVAL 1 DAY)\n  ), 0) * 100, 2) AS rate\nFROM lab_intermediate_data\nWHERE F_DeleteMark IS NULL\n  AND F_PROD_DATE >= '{startDate}'\n  AND F_PROD_DATE < DATE_ADD('{endDate}', INTERVAL 1 DAY)\n  AND F_FIRST_INSPECTION NOT IN ({qualifiedLevels:in})\nGROUP BY F_FIRST_INSPECTION\nORDER BY weight DESC\nLIMIT {limit}\n```",
+    "chunk_order_index": 0,
+    "full_doc_id": "sql_tpl:unqualified_breakdown",
+    "file_path": "sql_templates.json#unqualified_breakdown",
+    "llm_cache_list": [
+      "default:extract:84533a5b580e7d7bcdf548c006e8a441",
+      "default:extract:e809788b69dd645a13a3f3e089e61db7"
+    ],
+    "create_time": 1778986087,
+    "update_time": 1778986125,
+    "_id": "chunk-d8158b31ac0e5f48421ac68e0c0b5873"
+  },
+  "chunk-d010e203b3992b96293c58447c8a1796": {
+    "tokens": 268,
+    "content": "# SQL 模板：明细查询\n用途：按指定条件返回原始明细，常用于「找出所有 X 级炉号」这类问题。\n参数：startDate(date), endDate(date), levelList(string[]), judgeColumn(column), limit(int)\n典型用户问法：本月所有 C 级炉号、上周甲班的不合格明细\n\nSQL 骨架（用于 LLM 生成时参考）：\n```sql\nSELECT F_FURNACE_NO_FORMATTED AS furnace_no,\n  F_PROD_DATE AS prod_date,\n  F_SHIFT AS shift,\n  F_FURNACE_BATCH_NO AS furnace_batch_no,\n  F_PRODUCT_SPEC_CODE AS product_spec_code,\n  F_SINGLE_COIL_WEIGHT AS single_coil_weight,\n  F_FIRST_INSPECTION AS first_inspection,\n  F_LABELING AS labeling\nFROM lab_intermediate_data\nWHERE F_DeleteMark IS NULL\n  AND F_PROD_DATE >= '{startDate}'\n  AND F_PROD_DATE < DATE_ADD('{endDate}', INTERVAL 1 DAY)\n  AND ('{levelList:csv}' = '' OR {judgeColumn} IN ({levelList:in}))\nORDER BY F_PROD_DATE DESC, F_SHIFT, F_FURNACE_BATCH_NO\nLIMIT {limit}\n```",
+    "chunk_order_index": 0,
+    "full_doc_id": "sql_tpl:detail_list",
+    "file_path": "sql_templates.json#detail_list",
+    "llm_cache_list": [
+      "default:extract:cb0e032ffa12a3722ab1b4d9425b3f80",
+      "default:extract:6986a494993f63bf811bcc814c39bcd7"
+    ],
+    "create_time": 1778986125,
+    "update_time": 1778986173,
+    "_id": "chunk-d010e203b3992b96293c58447c8a1796"
+  },
+  "chunk-23fbb1625c90dbe70868caa81d311301": {
+    "tokens": 92,
+    "content": "# development-guide · nlq-agent 开发指南\n\n> **版本**: v2.0 | **日期**: 2026-05-16\n>\n> 本文档是路美实验室\"知识图谱 + 自然语言问数\"系统的开发与运维指南，涵盖后端 Agent 架构、Neo4j 知识图谱、前端 Ontology 可视化三个层面。\n\n---",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:development-guide:0",
+    "file_path": "docs/development-guide.md#nlq-agent 开发指南",
+    "llm_cache_list": [
+      "default:extract:bfbed3808fd52be9dccefc9243990bf7",
+      "default:extract:3eaf29b10ba8b61a4c9cdf4502da9f52"
+    ],
+    "create_time": 1778986177,
+    "update_time": 1778986211,
+    "_id": "chunk-23fbb1625c90dbe70868caa81d311301"
+  },
+  "chunk-2ada7c81c3f419df3d442f219646b1e3": {
+    "tokens": 216,
+    "content": "# development-guide · 目录\n\n1. [架构核心思想](#1-架构核心思想)\n2. [两阶段问答架构](#2-两阶段问答架构)\n3. [统计问题的智能路由](#3-统计问题的智能路由)\n4. [语义层数据模型](#4-语义层数据模型)\n5. [前端 Ontology 可视化](#5-前端-ontology-可视化)\n6. [项目目录结构](#6-项目目录结构)\n7. [关键代码设计详解](#7-关键代码设计详解)\n8. [Neo4j 知识图谱](#8-neo4j-知识图谱)\n9. [部署与运维](#9-部署与运维)\n10. [实施路线图](#10-实施路线图)\n11. [与现有代码库的集成点](#11-与现有代码库的集成点)\n\n---",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:development-guide:1",
+    "file_path": "docs/development-guide.md#目录",
+    "llm_cache_list": [
+      "default:extract:40b85089510b3cf3dc7e5c1914e00bea",
+      "default:extract:e72acca0360004b667dc827ee8ceb400"
+    ],
+    "create_time": 1778986211,
+    "update_time": 1778986234,
+    "_id": "chunk-2ada7c81c3f419df3d442f219646b1e3"
+  },
+  "chunk-3e7b2af007d32a6e2000a0941bbd36f4": {
+    "tokens": 367,
+    "content": "# development-guide · 1. 架构核心思想\n\n### 1.1 知识图谱的不可替代性\n\n用户的统计问题看似简单（如\"本月合格率是多少？\"），但 LLM 直接面对数据库 DDL 时，并不知道什么是\"合格率\"、什么是\"A 类产品\"。WrenAI 项目（GitHub 15k+ Star）的核心设计理念正是**语义层（Semantic Layer / MDL）**——在生成 SQL 之前，必须先让 LLM \"懂业务\"。\n\n在路美项目中，知识图谱存储的正是这些业务定义：\n\n| 语义组件 | 存储内容 | 示例 | 向量库 Collection |\n| :--- | :--- | :--- | :--- |\n| **判定规则** | A/B/不合格的阈值条件 | 铁损 ≤ 0.80 W/kg → A类 | `luma_rules` |\n| **产品规格** | 各牌号的参数标准 | 120 规格：标准厚度 0.23mm | `luma_specs` |\n| **指标定义** | 统计指标的计算公式 | 合格率 = 三项全合格数/总数 | `luma_metrics` |\n\n### 1.2 WrenAI 架构映射\n\n![WrenAI 与路美架构映射](../diagrams/wrenai_vs_luma.png)\n\nWrenAI 的三层 Pipeline（Indexing → Retrieval → Generation）被映射到路美的两阶段架构中。当 SQL 执行失败时，自动将错误信息喂给 LLM 进行修正重试。\n\n---",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:development-guide:2",
+    "file_path": "docs/development-guide.md#1. 架构核心思想",
+    "llm_cache_list": [
+      "default:extract:9076d8d8424f692b14afaa4ba88cafb7",
+      "default:extract:5184005cf3fbbc6ae85629e02883ccd0"
+    ],
+    "create_time": 1778986235,
+    "update_time": 1778986326,
+    "_id": "chunk-3e7b2af007d32a6e2000a0941bbd36f4"
+  },
+  "chunk-5d695d3fbc263cc41744db3771835422": {
+    "tokens": 233,
+    "content": "# development-guide · 2. 两阶段问答架构\n\n![整体架构图](../diagrams/overall_architecture.png)\n\n整个系统由 FastAPI 微服务（`services/agent-api`）承载，内部串联三个 Agent：\n\n| Agent | 职责 | 对应文件 |\n|-------|------|---------|\n| **QueryAgent** | 意图分类 + 路由（统计查询 / 根因分析 / 概念解释 / 超出范围） | `app/agents/query_agent.py` |\n| **Chat2SQL Agent** | Schema 选取 → 列选取 → SQL 起草 → 验证 → 执行 → 结果总结 | `app/agents/chat2sql_agent.py` |\n| **RootCause Agent** | 单条记录的判等级根因解释（炉号 → 检测指标 → 判定公式 → 阈值 → 规格 → 等级） | `app/agents/root_cause_agent.py` |\n\n三个阶段通过 SSE 事件流实时推送推理步骤到前端 `<KgReasoningPanel>` 组件。\n\n---",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:development-guide:3",
+    "file_path": "docs/development-guide.md#2. 两阶段问答架构",
+    "llm_cache_list": [
+      "default:extract:3a9d2168e58be401ce13d700d990f9e6",
+      "default:extract:b63041d64e153dad96da169def0ec733"
+    ],
+    "create_time": 1778986327,
+    "update_time": 1778986370,
+    "_id": "chunk-5d695d3fbc263cc41744db3771835422"
+  },
+  "chunk-b513d8cfa9a77ed8608044d037739e9f": {
+    "tokens": 195,
+    "content": "# development-guide · 3. 统计问题的智能路由\n\n![查询路由分类图](../diagrams/query_routing.png)\n\n| 意图类型 | 典型问题 | Agent 行为 |\n| :--- | :--- | :--- |\n| **statistical** | 本月合格率/各班次产量对比 | QueryAgent → Chat2SQL（生成 GROUP BY 聚合 SQL） |\n| **root_cause** | 为什么昨天合格率低/哪些炉号超标 | QueryAgent → RootCauseAgent（遍历 KG 判定路径） |\n| **conceptual** | A类是什么/铁损定义 | QueryAgent 直接返回知识（**跳过** SQL 查询） |\n| **out_of_scope** | 天气怎么样 | 返回\"超出范围\"提示 |\n\n路由逻辑实现在 `app/agents/query_agent.py` 的 `query_agent_node` 中。\n\n---",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:development-guide:4",
+    "file_path": "docs/development-guide.md#3. 统计问题的智能路由",
+    "llm_cache_list": [
+      "default:extract:233081572b0729e075bf7012f1479da5",
+      "default:extract:da588c0af38c002958b03f778edf9fdb"
+    ],
+    "create_time": 1778986371,
+    "update_time": 1778986406,
+    "_id": "chunk-b513d8cfa9a77ed8608044d037739e9f"
+  },
+  "chunk-6a6cdc66d52ec10ea8f88d70678018b0": {
+    "tokens": 113,
+    "content": "# development-guide · 4. 语义层数据模型\n\n![MDL 语义层数据模型](../diagrams/mdl_semantic_layer.png)\n\n语义层的初始化由 `app/knowledge_graph/schema_loader.py` 完成。该脚本从 MySQL 中读取判定规则、产品规格和公式定义，格式化为自然语言文本后向量化写入 Qdrant。此外，还包含预定义指标（合格率、产量、铁损、叠片系数、平均厚度）。\n\n---",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:development-guide:5",
+    "file_path": "docs/development-guide.md#4. 语义层数据模型",
+    "llm_cache_list": [
+      "default:extract:1315d9d3782138d1ddaf123585c30934",
+      "default:extract:3de2d0360100129d1d0c1ec039ba05e3"
+    ],
+    "create_time": 1778986406,
+    "update_time": 1778986447,
+    "_id": "chunk-6a6cdc66d52ec10ea8f88d70678018b0"
+  },
+  "chunk-fe1d7f2b5553bd10b4f9332b9a99b2ef": {
+    "tokens": 294,
+    "content": "# development-guide · 5. 前端 Ontology 可视化\n\n前端知识图谱使用 `relation-graph-vue3` 渲染，以**带材(Ribbon)**为根节点，力导向布局展开产品规格、检测数据、炉号解析等业务节点。\n\n**独立文档**：`nlq-agent/docs/kg-frontend-ontology.md`\n\n| 节点层级 | 节点类型 | 数据来源 |\n|---------|---------|---------|\n| L1 根节点 | Ribbon（带材） | 虚拟节点 |\n| L2 产品层 | ProductSpec（产品规格） | `lab_product_spec` |\n| L2 数据层 | RawDataImport（叠片数据） | `lab_raw_data` |\n| L2 数据层 | MagneticDataImport（单片性能） | `lab_magnetic_raw_data` |\n| L2 标识层 | FurnaceNoInput / FurnaceNoParsed | 炉号解析规则 |\n| L3 属性层 | SpecAttribute（扩展属性） | `lab_product_spec_attribute` |\n| L3 字段层 | TemplateField（表字段） | `INFORMATION_SCHEMA.COLUMNS` |\n| L3 计算层 | IntermediateData（中间数据） | `lab_intermediate_data` |\n| L3 解析层 | FurnaceNoField（炉号字段） | 炉号正则分组 |\n\n---",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:development-guide:6",
+    "file_path": "docs/development-guide.md#5. 前端 Ontology 可视化",
+    "llm_cache_list": [
+      "default:extract:bde0e47409b6202eef81aa791c166a6f",
+      "default:extract:cfd26f3817ef44ff03140f41238890a5"
+    ],
+    "create_time": 1778986447,
+    "update_time": 1778986508,
+    "_id": "chunk-fe1d7f2b5553bd10b4f9332b9a99b2ef"
+  },
+  "chunk-7e80d481ff647b3ede0a2d805c8c73b3": {
+    "tokens": 779,
+    "content": "# development-guide · 6. 项目目录结构\n\n```text\nnlq-agent/\n├── docker-compose.yml          # 服务编排（Agent + Qdrant + TEI + Neo4j）\n├── Dockerfile                  # Agent 镜像构建\n├── .env.example                # 环境变量模板\n├── pyproject.toml              # Python 项目配置（uv 管理依赖）\n├── uv.lock                     # 依赖锁定文件\n├── README.md\n│\n├── packages/\n│   └── shared-types/\n│       └── src/\n│           └── reasoning-protocol.ts  # 与前端共享的类型定义\n│\n├── services/\n│   └── agent-api/              # FastAPI 后端服务\n│       ├── pyproject.toml\n│       ├── app/\n│       │   ├── main.py         # FastAPI 入口 + 生命周期管理\n│       │   │\n│       │   ├── api/            # HTTP 路由层\n│       │   │   ├── chat.py     # /chat/stream SSE 端点\n│       │   │   ├── health.py   # /health 健康检查\n│       │   │   ├── kg.py       # /kg/* 知识图谱 API（含 getOntology）\n│       │   │   └── sync.py     # /sync/* 数据同步\n│       │   │\n│       │   ├── core/           # 核心基础设施\n│       │   │   ├── config.py   # Pydantic Settings（环境变量）\n│       │   │   ├── database.py # SQLAlchemy 异步 MySQL 连接池\n│       │   │   ├── llm_factory.py   # LLM 工厂（LiteLLM 网关统一接入）\n│       │   │   ├── logger.py   # 结构化日志\n│       │   │   ├── auth.py     # JWT / 上游认证校验\n│       │   │   └── sentry_integration.py\n│       │   │\n│       │   ├── models/         # 数据模型\n│       │   │   └── schemas.py  # Pydantic 数据模型\n│       │   │\n│       │   ├── agents/         # LangGraph Agent\n│       │   │   ├── chat2sql_agent.py   # Chat2SQL：schema → SQL → 执行 → 总结\n│       │   │   ├── query_agent.py      # QueryAgent：意图分类 + 路由 + 指标查询\n│       │   │   ├── root_cause_agent.py # RootCauseAgent：单条记录判等级根因\n│       │   │   └── graph.py            # LangGraph 编排（串联各 Agent）\n│       │   │\n│       │   ├── tools/          # Agent 工具集\n│       │   │   ├── sql_tools.py   # SQL 安全执行（白名单 + AST 校验）\n│       │   │   ├── graph_tools.py # KG 遍历工具（炉号 → 指标 → 规则 → 阈值）\n│       │   │   └── query_tools.py # 查询工具（指标定义、规则获取、交检配置）\n│       │   │\n│       │   └── knowledge_graph/    # Neo4j 知识图谱模块\n│       │       ├── manager.py      #",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:development-guide:7",
+    "file_path": "docs/development-guide.md#6. 项目目录结构",
+    "llm_cache_list": [
+      "default:extract:df212391de5aac6f0c118635769ce873",
+      "default:extract:98fac44374606f25563e58a691ebf489"
+    ],
+    "create_time": 1778986508,
+    "update_time": 1778986595,
+    "_id": "chunk-7e80d481ff647b3ede0a2d805c8c73b3"
+  },
+  "chunk-e376f7f6a81dd4706f50d07a152fe75d": {
+    "tokens": 644,
+    "content": "# development-guide · 7. 关键代码设计详解\n\n### 7.1 Agent 编排流程\n\n`app/agents/graph.py` 定义了 LangGraph 状态机和 Agent 编排逻辑：\n\n```\n用户提问\n    ↓\nQueryAgent（意图分类）\n    ├── conceptual → 直接回答（跳过 SQL）\n    ├── statistical → Chat2SQL Agent\n    ├── root_cause → RootCause Agent\n    └── out_of_scope → 拒绝回答\n```\n\n### 7.2 SQL 安全机制\n\n`app/tools/sql_tools.py` 实现了三层安全防护：\n\n1. **正则白名单**：只允许 `SELECT` 开头的语句，拦截所有 `INSERT/UPDATE/DELETE/DROP/ALTER` 等写操作。\n2. **AST 校验**：解析 SQL AST，禁止子查询中的写操作和危险函数。\n3. **自动 LIMIT**：如果 SQL 中没有 `LIMIT` 子句，自动追加 `LIMIT 501`（超过 500 行截断）。\n\n### 7.3 SQL 修正循环\n\n当 SQL 执行失败时，Chat2SQL Agent 会自动进入修正循环（最多 2 次）：\n\n```\nSQL 生成 → 执行 → 失败？\n                    ↓ 是\n              将原始 SQL + 错误信息 + DDL 喂给 LLM\n                    ↓\n              LLM 输出修正后的 SQL\n                    ↓\n              重新执行 → 再次失败？→ 再修正一次\n                                        ↓\n                                   最终失败 → fallback\n```\n\n### 7.4 SSE 事件流\n\n`app/api/chat.py` 的 `/chat/stream` 端点通过 SSE 实时推送推理步骤：\n\n| SSE 事件类型 | 前端回调 | 触发阶段 |\n| :--- | :--- | :--- |\n| `reasoning_step` | `onReasoningStep(step)` | 任意阶段 |\n| `text` | `onText(chunk)` | 最终回答 |\n| `response_metadata` | `onResponseMetadata(payload)` | 结束 |\n| `error` | `onError(msg)` | 错误 |\n| `done` | `onDone()` | 完成 |\n\n### 7.5 条件步骤的两阶段填充\n\n以\"铁损是否达标？\"为例：\n\n**Stage 1 发射**（只有 expected，无 actual）：\n```json\n{\"kind\": \"condition\", \"label\": \"铁损阈值\", \"field\": \"F_PERF_PS_LOSS\", \"expected\": \"<= 0.80\"}\n```\n\n**Stage 2 回填**（查询后补充 actual 和 satisfied）：\n```json\n{\"kind\": \"condition\", \"label\": \"铁损阈值\", \"field\": \"F_PERF_PS_LOSS\", \"expected\": \"<= 0.80\", \"actual\": 0.75, \"satisfied\": true}\n```\n\n---",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:development-guide:8",
+    "file_path": "docs/development-guide.md#7. 关键代码设计详解",
+    "llm_cache_list": [
+      "default:extract:e90181b53591fa05e11eea08a83774fa",
+      "default:extract:538b7f27179a0a0d37c42982aa412610"
+    ],
+    "create_time": 1778986596,
+    "update_time": 1778986665,
+    "_id": "chunk-e376f7f6a81dd4706f50d07a152fe75d"
+  },
+  "chunk-f9301c28a60e02d9a6907aada6663783": {
+    "tokens": 803,
+    "content": "# development-guide · 8. Neo4j 知识图谱\n\n### 8.1 数据模型\n\n| 实体类型 | 说明 | 来源表 |\n|---------|------|--------|\n| ProductSpec | 产品规格 | `lab_product_spec` |\n| Formula | 指标公式 | `lab_intermediate_data_formula` |\n| JudgmentRule | 判定规则 | `lab_intermediate_data_judgment_level` |\n| SpecAttribute | 规格扩展属性 | `lab_product_spec_attribute` |\n| ReportConfig | 报表配置 | `lab_report_config` |\n\n| 关系类型 | 说明 | 示例 |\n|---------|------|------|\n| `HAS_RULE` | 规格拥有判定规则 | `(ProductSpec)-[:HAS_RULE]->(JudgmentRule)` |\n| `EVALUATES` | 规则评估指标 | `(JudgmentRule)-[:EVALUATES]->(Formula)` |\n| `HAS_ATTRIBUTE` | 规格有扩展属性 | `(ProductSpec)-[:HAS_ATTRIBUTE]->(SpecAttribute)` |\n\n### 8.2 配置\n\n```bash\n# .env 文件（位于 nlq-agent/.env）\nNEO4J_URI=bolt://localhost:7687\nNEO4J_USER=neo4j\nNEO4J_PASSWORD=password\nNEO4J_DATABASE=neo4j\nNEO4J_ENABLED=true   # 启用知识图谱（默认 false，避免启动时全量构建超时）\n```\n\n> **注意**：`NEO4J_ENABLED=false` 时，`getOntology()` 接口仍可正常工作（直接查 MySQL）。仅在需要 Neo4j 图谱重建时设为 `true`。\n\n### 8.3 Docker 部署 Neo4j\n\n```bash\ndocker run -d \\\n  --name neo4j-lm \\\n  -p 7474:7474 -p 7687:7687 \\\n  -e NEO4J_AUTH=neo4j/password \\\n  -v neo4j_data:/data \\\n  neo4j:5.15-community\n```\n\n### 8.4 知识图谱 API\n\n```bash\n# 健康检查\nGET /api/v1/kg/health\n\n# 获取本体数据（供前端可视化初始化，直接查 MySQL，不依赖 Neo4j）\nGET /api/v1/kg/ontology\n\n# 刷新知识图谱（Neo4j 全量重建）\nPOST /api/v1/kg/refresh\n\n# 获取所有产品规格\nGET /api/v1/kg/specs\n\n# 获取规格详情\nGET /api/v1/kg/specs/{spec_code}\n\n# 获取规格判定规则\nGET /api/v1/kg/specs/{spec_code}/rules\n\n# 获取所有指标\nGET /api/v1/kg/metrics\n\n# 搜索判定规则\nGET /api/v1/kg/rules/search?keyword=带厚\n```\n\n### 8.5 使用示例\n\n```python\nfrom app.knowledge_graph.manager import get_knowledge_graph\nfrom app.knowledge_graph.queries import get_spec_judgment_rules\n\ngraph = get_knowledge_graph()\nrules = await get_spec_judgment_rules(graph, \"120\")\nprint(rules)\n```\n\n### 8.6 维护与故障排查\n\n**每日刷新：**\n```bash\ncurl -X POST http://localhost:18100/api/v1/kg/refresh\n```\n\n**监控项：**\n- Neo4j 内存使用\n- 图谱构建日志\n- 数据一致性\n\n**知识图谱未初始化：**\n检查日志中的错误信息，确认 Neo4j 连接配置正确。若 Neo4j 初始化超时，可临时设置 `NEO4J_ENABLED=false` 启动服务。\n\n---",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:development-guide:9",
+    "file_path": "docs/development-guide.md#8. Neo4j 知识图谱",
+    "llm_cache_list": [
+      "default:extract:bbdc3bbe41ab3735c164db18fc126df1",
+      "default:extract:a52dd7eda0ba277c9cd9cd8a894e35c6"
+    ],
+    "update_time": 1778986708,
+    "_id": "chunk-f9301c28a60e02d9a6907aada6663783",
+    "create_time": 0
+  },
+  "chunk-6843787e11e2044bc19a86eed509efbc": {
+    "tokens": 376,
+    "content": "# development-guide · 9. 部署与运维\n\n### 9.1 Docker Compose 一键部署\n\n```bash\n# 1. 配置环境变量\ncp .env.example .env\nvim .env  # 填入 LLM_API_KEY, MYSQL_PASSWORD 等\n\n# 2. 启动基础设施\ndocker compose up -d qdrant tei neo4j\n\n# 3. 初始化语义层\ncd services/agent-api\nuv run python -m app.knowledge_graph.schema_loader\n\n# 4. 启动 Agent（跳过 Neo4j 初始化，避免超时）\nNEO4J_ENABLED=false uv run uvicorn app.main:app --host 0.0.0.0 --port 18100\n```\n\n### 9.2 服务端口规划\n\n| 服务 | 端口 | 说明 |\n| :--- | :--- | :--- |\n| nlq-agent | 18100 | FastAPI 问答微服务 |\n| Qdrant REST | 6333 | 向量数据库 REST API |\n| Qdrant gRPC | 6334 | 向量数据库 gRPC |\n| TEI | 8001 | Embedding 服务 |\n| Neo4j HTTP | 7474 | Neo4j Browser |\n| Neo4j Bolt | 7687 | Neo4j 驱动协议 |\n\n### 9.3 .NET 后端集成\n\n在 .NET 后端的判定规则或产品规格 CRUD 操作中，添加 HTTP 回调触发知识图谱同步：\n\n```csharp\nawait _httpClient.PostAsJsonAsync(\n    $\"{nlqAgentUrl}/api/v1/sync/rules\",\n    new { action = \"upsert\", data = changedRules }\n);\n```\n\n---",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:development-guide:10",
+    "file_path": "docs/development-guide.md#9. 部署与运维",
+    "llm_cache_list": [
+      "default:extract:538decd3e0d5807bcb3cda27f44a100c",
+      "default:extract:66b16e22b22a4bfb45c1476cdff71aa2"
+    ],
+    "create_time": 1778986708,
+    "update_time": 1778986773,
+    "_id": "chunk-6843787e11e2044bc19a86eed509efbc"
+  },
+  "chunk-f8edf294b6528b8f83373cbb8e01283d": {
+    "tokens": 216,
+    "content": "# development-guide · 10. 实施路线图\n\n| 阶段 | 工作内容 | 状态 |\n| :--- | :--- | :--- |\n| **Phase 1** | 部署 Qdrant + TEI + Neo4j，运行语义层初始化 | ✅ |\n| **Phase 2** | 开发 QueryAgent（意图分类 + 路由 + 指标查询） | ✅ |\n| **Phase 3** | 开发 Chat2SQL Agent（SQL 生成 + 执行 + 修正） | ✅ |\n| **Phase 4** | 开发 RootCause Agent（单条记录根因分析） | ✅ |\n| **Phase 5** | SSE 协议对接，与前端联调 | ✅ |\n| **Phase 6** | 前端知识图谱可视化（relation-graph-vue3） | ✅ 进行中 |\n| **Phase 7** | Prompt 调优 + 预定义模板扩充 + 性能优化 | 持续 |\n\n---",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:development-guide:11",
+    "file_path": "docs/development-guide.md#10. 实施路线图",
+    "llm_cache_list": [
+      "default:extract:5c1f3f64a7150d499fa6ae4e293957ed",
+      "default:extract:bdaa5fc415eb53c3ca3be049bd79c586"
+    ],
+    "create_time": 1778986774,
+    "update_time": 1778986837,
+    "_id": "chunk-f8edf294b6528b8f83373cbb8e01283d"
+  },
+  "chunk-c6d48945e22b6b6690ee5e93cb583f76": {
+    "tokens": 276,
+    "content": "# development-guide · 11. 与现有代码库的集成点\n\n| 集成点 | 现有文件 | 改动说明 |\n| :--- | :--- | :--- |\n| 前端 SSE 客户端 | `web/src/api/nlqAgent.ts` | **无需改动**，协议完全兼容 |\n| 前端推理链组件 | `web/src/components/KgReasoningChain/` | **无需改动** |\n| 前端知识图谱 | `web/src/views/lab/knowledge-graph/` | 持续迭代中 |\n| 移动端 SSE 客户端 | `mobile/utils/sse-client.js` | **无需改动** |\n| 类型定义 | `web/src/types/reasoning-protocol.d.ts` | **无需改动**（由 shared-types 同步） |\n| .NET AI Controller | `api/src/modularity/ai/` | 添加 nlq-agent 代理路由 |\n| .NET 规则 Service | `api/src/modularity/lab/` | 添加变更后的 HTTP 回调 |\n| Docker Compose | 项目根目录 `docker-compose.yml` | 添加 nlq-agent / Neo4j 服务定义 |\n| 环境变量 | `.env.example` | 添加 `NLQ_AGENT_URL` 等配置 |",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:development-guide:12",
+    "file_path": "docs/development-guide.md#11. 与现有代码库的集成点",
+    "llm_cache_list": [
+      "default:extract:59c99be57f713834a60ec2d3619a819d",
+      "default:extract:feb7c3cdc267d20c74c31c4578f1040c"
+    ],
+    "create_time": 1778986839,
+    "update_time": 1778986912,
+    "_id": "chunk-c6d48945e22b6b6690ee5e93cb583f76"
+  },
+  "chunk-9e6fbeee96d870f3f22dbe7072d90982": {
+    "tokens": 85,
+    "content": "# kg-frontend-ontology · 知识图谱前端 Ontology 规格文档\n\n> 本文档描述前端知识图谱（relation-graph-vue3）中所有节点类型、数据来源、连接关系及面板展示规则。\n> 对应后端接口：`GET /api/v1/kg/ontology`\n> 最后更新：2026-05-16\n\n---",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:kg-frontend-ontology:0",
+    "file_path": "docs/kg-frontend-ontology.md#知识图谱前端 Ontology 规格文档",
+    "llm_cache_list": [
+      "default:extract:68ede26594aa632134a8e26dbb1aebd8",
+      "default:extract:bc69934169514036cbfc2546c911adce"
+    ],
+    "create_time": 1778986913,
+    "update_time": 1778986951,
+    "_id": "chunk-9e6fbeee96d870f3f22dbe7072d90982"
+  },
+  "chunk-037e2efb477dee7fd7769bfe6e4b0ea3": {
+    "tokens": 507,
+    "content": "# kg-frontend-ontology · 1. 节点类型总览\n\n| 节点类型 | 显示名称 | 数据来源 | 节点形状 | 尺寸(wh) | 颜色 |\n|---------|---------|---------|---------|---------|------|\n| Ribbon | 带材 | 虚拟根节点 | 圆形 | 110×110 | `#E6F4FF` / `#1677FF` |\n| ProductSpec | 产品规格 | `lab_product_spec` | 圆形 | 90×90 | `#F0F5FF` / `#2F54EB` |\n| SpecAttribute | 产品属性 | `lab_product_spec_attribute` | 圆形 | 85×85 | `#FFF0F6` / `#EB2F96` |\n| RawDataImport | 叠片数据 | `lab_raw_data` | 圆形 | 95×95 | `#ECFDF5` / `#10B981` |\n| MagneticDataImport | 单片性能 | `lab_magnetic_raw_data` | 圆形 | 95×95 | `#FEF3C7` / `#F59E0B` |\n| IntermediateData | 中间数据 | `lab_intermediate_data` | 圆形 | 90×90 | `#E0F2FE` / `#0EA5E9` |\n| TemplateField | 字段映射 | 各表 `INFORMATION_SCHEMA.COLUMNS` | 圆形 | 70×70 | `#F3F4F6` / `#9CA3AF` |\n| FurnaceNoInput | 原始炉号 | 炉号解析规则 | 圆形 | 90×90 | `#FEF3C7` / `#D97706` |\n| FurnaceNoParsed | 炉号 | 炉号解析规则 | 圆形 | 85×85 | `#ECFDF5` / `#059669` |\n| FurnaceNoField | 炉号字段 | 炉号解析规则 | 圆形 | 70×70 | `#EFF6FF` / `#3B82F6` |\n\n> 所有节点 `nodeShape: 0`，`borderRadius: 50%`，使用力导向布局（`layoutName: 'force'`）。\n\n---",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:kg-frontend-ontology:1",
+    "file_path": "docs/kg-frontend-ontology.md#1. 节点类型总览",
+    "llm_cache_list": [
+      "default:extract:ce539571337de9cfe1a232e92bd543c9",
+      "default:extract:ec3171ed1e7405525fba3c02b6a58209"
+    ],
+    "create_time": 1778986951,
+    "update_time": 1778987009,
+    "_id": "chunk-037e2efb477dee7fd7769bfe6e4b0ea3"
+  },
+  "chunk-c5c50f730a0f56b891af722a89e9a544": {
+    "tokens": 764,
+    "content": "# kg-frontend-ontology · 2. 节点详细规格\n\n### 2.1 Ribbon（带材）— 业务根节点\n\n| 属性 | 值 |\n|-----|-----|\n| ID | `domain:ribbon` |\n| 显示文本 | 带材 |\n| subtitle | 检测中心业务根节点 |\n| rawData | `{ name: '带材', description: '以炉号为业务入口，连接规格、检测数据、公式和判定规则。' }` |\n\n**子节点连线：**\n- `contains` → ProductSpec（包含产品）\n- `importsVia` → RawDataImport（叠片导入）\n- `importsVia` → MagneticDataImport（单片导入）\n- `hasIdentifier` → FurnaceNoInput（原始炉号）\n\n**面板类型：** `ribbonRoot`\n- 折叠面板：产品规格列表 + 产品扩展信息 + 叠片数据字段 + 单片性能字段\n\n---\n\n### 2.2 ProductSpec（产品规格）\n\n| 属性 | 值 |\n|-----|-----|\n| ID | `spec:{F_Id}` |\n| 显示文本 | `F_NAME` 或 `F_CODE` |\n| subtitle | `F_CODE` |\n| rawData | 完整 `lab_product_spec` 行数据 |\n\n**数据来源：**\n```sql\nSELECT F_Id as id, F_CODE as code, F_NAME as name, F_DETECTION_COLUMNS as detection_columns\nFROM lab_product_spec\nWHERE (F_DeleteMark IS NULL OR F_DeleteMark = 0) AND F_ENABLEDMARK = 1\n```\n\n**父级：** Ribbon（`contains`）\n\n**子节点连线：**\n- `hasAttribute` → SpecAttribute（扩展信息）\n\n**面板类型：** `spec`\n- 编码/名称 + 扩展信息列表（来自 `lab_product_spec_attribute`）\n\n---\n\n### 2.3 SpecAttribute（产品属性 / 扩展属性）\n\n| 属性 | 值 |\n|-----|-----|\n| ID | `attr:{F_ATTRIBUTE_KEY}` 或 `attr:{F_ATTRIBUTE_NAME}` |\n| 显示文本 | `F_ATTRIBUTE_NAME` 或 `F_ATTRIBUTE_KEY` |\n| subtitle | `F_VALUE_TYPE` |\n| rawData | 完整 `lab_product_spec_attribute` 行数据 |\n\n**数据来源：**\n```sql\nSELECT a.*, v.F_IS_CURRENT\nFROM lab_product_spec_attribute a\nINNER JOIN lab_product_spec_version v\n  ON a.F_PRODUCT_SPEC_ID = v.F_PRODUCT_SPEC_ID AND a.F_VERSION = v.F_VERSION\nWHERE v.F_IS_CURRENT = 1\n  AND (a.F_DeleteMark IS NULL OR a.F_DeleteMark = 0)\n  AND (v.F_DELETE_MARK IS NULL OR v.F_DELETE_MARK = 0)\n```\n\n**去重策略：** 全局按 `name || attr_key` 去重，同名属性复用同一节点。\n\n**父级：** ProductSpec（`hasAttribute`）\n\n> 旧版本直接连到 Ribbon，现已调整为 ProductSpec 的子节点。\n\n---\n\n### 2.4 RawDataImport（叠片数据）\n\n| 属性 | 值 |\n|-----|-----|\n| ID | `tmpl:{F_Id}`（模板ID） |\n| 显示文本 | **叠片数据**（中文业务名） |\n| subtitle | `F_TEMPLATE_NAME` |\n| rawData.targetTable | `lab_raw_data` |\n\n**数据来源：**\n```sql\nSELECT F_Id, F_TEMPLATE_NAME, F_TEMPLATE_CODE, F_CONFIG_JSON\nFROM LAB_EXCEL_IMPORT_TEMP",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:kg-frontend-ontology:2",
+    "file_path": "docs/kg-frontend-ontology.md#2. 节点详细规格",
+    "llm_cache_list": [
+      "default:extract:f563bcecf8a9fb87136dfeda2c8bbb53",
+      "default:extract:c79d2a26a97d00009c0bce9bedf7fa30"
+    ],
+    "create_time": 1778987010,
+    "update_time": 1778987080,
+    "_id": "chunk-c5c50f730a0f56b891af722a89e9a544"
+  },
+  "chunk-a57a8741ef32619b74072e5c073f6eab": {
+    "tokens": 305,
+    "content": "# kg-frontend-ontology · 3. 连接关系（Palantir Ontology 命名）\n\n| 关系名 | 颜色 | 说明 | 示例 |\n|--------|------|------|------|\n| `contains` | `#1677FF` | 包含 | Ribbon → ProductSpec |\n| `hasAttribute` | `#EB2F96` | 拥有属性 | ProductSpec → SpecAttribute |\n| `importsVia` | `#10B981` | 通过...导入 | Ribbon → RawDataImport / MagneticDataImport |\n| `hasField` | `#9CA3AF` | 包含字段 | 导入模板/中间数据 → TemplateField |\n| `derivedFrom` | `#3B82F6` | 派生自 | 字段 → 炉号节点 |\n| `references` | `#D97706` | 引用 | MagneticDataImport → 炉号节点 |\n| `hasIdentifier` | `#D97706` | 拥有标识符 | Ribbon → FurnaceNoInput |\n| `parsesTo` | `#059669` | 解析为 | FurnaceNoInput → FurnaceNoParsed |\n| `hasComponent` | `#3B82F6` | 包含组件 | FurnaceNoParsed → FurnaceNoField |\n| `produces` | `#0EA5E9` | 计算产生 | RawDataImport → IntermediateData |\n\n---",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:kg-frontend-ontology:3",
+    "file_path": "docs/kg-frontend-ontology.md#3. 连接关系（Palantir Ontology 命名）",
+    "llm_cache_list": [
+      "default:extract:41b3d574ebd2115c3af7817690ced48a",
+      "default:extract:0c075018203098513d13231746c981e0"
+    ],
+    "create_time": 1778987080,
+    "update_time": 1778987121,
+    "_id": "chunk-a57a8741ef32619b74072e5c073f6eab"
+  },
+  "chunk-36916be8986716ed209d412539919743": {
+    "tokens": 261,
+    "content": "# kg-frontend-ontology · 4. 面板类型规格\n\n| 面板类型 | 触发节点 | 展示内容 |\n|---------|---------|---------|\n| `ribbonRoot` | Ribbon | 折叠面板：产品规格列表 + 扩展属性 + 叠片数据字段 + 单片性能字段 |\n| `spec` | ProductSpec / RawDataImport / MagneticDataImport / IntermediateData / TemplateField | 编码/名称/目标表 + 表字段列表（数据库字段 \\| C#属性 \\| 中文注释）+ 导入模板字段映射 |\n| `furnaceNo` | FurnaceNoInput / FurnaceNoParsed / FurnaceNoField | 原始炉号：格式规则+正则+分组+数据库字段；炉号：组成部分+字符含义+方法+数据库字段；字段：中文/C#属性/示例/分组+数据库字段 |\n| `ruleCombo` | 规则组 | 规格/状态/规则列表 |\n| `rule` | JudgmentRule | 等级/代码/质量状态/优先级/条件表格 |\n| `formula` | Formula | 名称/类型/列名/单位/公式/关联规则 |\n\n---",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:kg-frontend-ontology:4",
+    "file_path": "docs/kg-frontend-ontology.md#4. 面板类型规格",
+    "llm_cache_list": [
+      "default:extract:57a10f65a09625ab7a3950652530824f",
+      "default:extract:8a248d5fe4551b7de8c33310e7cbea6b"
+    ],
+    "create_time": 1778987122,
+    "update_time": 1778987203,
+    "_id": "chunk-36916be8986716ed209d412539919743"
+  },
+  "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05": {
+    "tokens": 281,
+    "content": "# kg-frontend-ontology · 5. 后端数据接口\n\n### 5.1 主接口\n\n```\nGET /api/v1/kg/ontology\n```\n\n**返回结构：**\n```json\n{\n  \"specs\": [...],\n  \"rules\": [...],\n  \"formulas\": [...],\n  \"spec_attributes\": [...],\n  \"excel_templates\": [...],\n  \"table_fields\": {\n    \"lab_raw_data\": [...],\n    \"lab_magnetic_raw_data\": [...],\n    \"lab_intermediate_data\": [...]\n  }\n}\n```\n\n### 5.2 数据来源说明\n\n| 返回字段 | 来源表 | 说明 |\n|---------|--------|------|\n| `specs` | `lab_product_spec` | 产品规格 |\n| `rules` | `lab_intermediate_data_judgment_level` + `lab_product_spec` | 判定规则 |\n| `formulas` | `lab_intermediate_data_formula` | 公式/指标 |\n| `spec_attributes` | `lab_product_spec_attribute` + `lab_product_spec_version` | 扩展属性（当前版本） |\n| `excel_templates` | `LAB_EXCEL_IMPORT_TEMPLATE` | Excel导入模板（解析 `F_CONFIG_JSON`） |\n| `table_fields` | `INFORMATION_SCHEMA.COLUMNS` | 各表字段及注释 |\n\n---",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:kg-frontend-ontology:5",
+    "file_path": "docs/kg-frontend-ontology.md#5. 后端数据接口",
+    "llm_cache_list": [
+      "default:extract:6b2cfca2fdfd3b52f2aa964ceea64dbd",
+      "default:extract:d2524bbc5222ecd8e84d08ae46cc5c2d"
+    ],
+    "create_time": 1778987204,
+    "update_time": 1778987285,
+    "_id": "chunk-80ce63a4f0eed6e06bad7bdd88ec9a05"
+  },
+  "chunk-c891a5798f8f62f082839f1a25296489": {
+    "tokens": 153,
+    "content": "# kg-frontend-ontology · 6. 前端渲染白名单\n\n通过 `ACTIVE_NODE_TYPES` Set 控制当前渲染的节点类型：\n\n```ts\nexport const ACTIVE_NODE_TYPES = new Set([\n  'Ribbon',\n  'ProductSpec',\n  'SpecAttribute',\n  'RawDataImport',\n  'MagneticDataImport',\n  'IntermediateData',\n  'TemplateField',\n  'FurnaceNoInput',\n  'FurnaceNoParsed',\n  'FurnaceNoField',\n]);\n```\n\n> 未在此白名单中的节点类型（如 `JudgmentRule`、`Formula`）不会渲染，但数据已随 `get_ontology()` 返回，可随时启用。\n\n---",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:kg-frontend-ontology:6",
+    "file_path": "docs/kg-frontend-ontology.md#6. 前端渲染白名单",
+    "llm_cache_list": [
+      "default:extract:626766101b97fdc6649c7296b91d6598",
+      "default:extract:829ac9a78e9b1670eba75105ca822e43"
+    ],
+    "create_time": 1778987286,
+    "update_time": 1778987329,
+    "_id": "chunk-c891a5798f8f62f082839f1a25296489"
+  },
+  "chunk-0f450d3e6c8db30c31dad3a0e07cf19f": {
+    "tokens": 109,
+    "content": "# kg-frontend-ontology · 7. 布局配置\n\n```ts\nconst graphOptions: RGOptions = {\n  defaultNodeShape: 0,        // 0=圆形\n  defaultLineShape: 1,\n  defaultJunctionPoint: 'ltrb',\n  layout: { layoutName: 'force' },  // 力导向布局\n  moveToCenterWhenRefresh: true,\n  zoomToFitWhenRefresh: true,\n  useAnimationWhenRefresh: true,\n};\n```\n\n---",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:kg-frontend-ontology:7",
+    "file_path": "docs/kg-frontend-ontology.md#7. 布局配置",
+    "llm_cache_list": [
+      "default:extract:456c470c2eebd199fb72539f328f6319",
+      "default:extract:89d02ad8cd20a758124be08c936c0336"
+    ],
+    "create_time": 1778987333,
+    "update_time": 1778987390,
+    "_id": "chunk-0f450d3e6c8db30c31dad3a0e07cf19f"
+  },
+  "chunk-49c808df8cd65618a6d171acea6fbbda": {
+    "tokens": 175,
+    "content": "# kg-frontend-ontology · 8. 待构建节点（后续步骤）\n\n以下节点类型数据已随 `get_ontology()` 返回，但尚未加入 `ACTIVE_NODE_TYPES`：\n\n| 节点类型 | 数据来源 | 计划连接关系 |\n|---------|---------|------------|\n| `JudgmentRule` | `lab_intermediate_data_judgment_level` | ProductSpec → JudgmentRule（`HAS_RULE`） |\n| `Formula` | `lab_intermediate_data_formula` | JudgmentRule → Formula（`USES_FORMULA`） |\n| `AppearanceFeature` | `lab_appearance_feature` | Ribbon → AppearanceFeature（`HAS_APPEARANCE`） |\n| `MetricJudge` | 虚拟节点 | LaminationData/SingleSheetPerf → MetricJudge（`FEEDS_METRIC`） |",
+    "chunk_order_index": 0,
+    "full_doc_id": "docs:kg-frontend-ontology:8",
+    "file_path": "docs/kg-frontend-ontology.md#8. 待构建节点（后续步骤）",
+    "llm_cache_list": [
+      "default:extract:18f0b047cf9871d3a8be0b2283db4979",
+      "default:extract:42c56dd1d17071fd98aabee7abd666da"
+    ],
+    "create_time": 1778987390,
+    "update_time": 1778987429,
+    "_id": "chunk-49c808df8cd65618a6d171acea6fbbda"
+  },
+  "chunk-ca7a7d353eb9402c9f355e9541b4b7a6": {
+    "tokens": 19,
+    "content": "# 120\n- **code**：120\n- **detectionColumns**：13",
+    "chunk_order_index": 0,
+    "full_doc_id": "neo4j:ProductSpec:780818476708134853",
+    "file_path": "Neo4j:ProductSpec:780818476708134853",
+    "llm_cache_list": [
+      "default:extract:41c63d87f525d65085a98fd62131c454",
+      "default:extract:d1e4c6cc50b35a080a19f884a972916c"
+    ],
+    "create_time": 1779045097,
+    "update_time": 1779045152,
+    "_id": "chunk-ca7a7d353eb9402c9f355e9541b4b7a6"
+  },
+  "chunk-0525c93a1c5717ccd3234c845f5bd277": {
+    "tokens": 19,
+    "content": "# 142\n- **code**：142\n- **detectionColumns**：15",
+    "chunk_order_index": 0,
+    "full_doc_id": "neo4j:ProductSpec:780818714487422917",
+    "file_path": "Neo4j:ProductSpec:780818714487422917",
+    "llm_cache_list": [
+      "default:extract:df6a532637e28504dbd2035cae7ffd12",
+      "default:extract:cd6c7d427039ed2a7a01e08eb8965ff8"
+    ],
+    "create_time": 1779045152,
+    "update_time": 1779045169,
+    "_id": "chunk-0525c93a1c5717ccd3234c845f5bd277"
+  },
+  "chunk-c0c20caaf3864c264374b5296186c3cb": {
+    "tokens": 19,
+    "content": "# 170\n- **code**：170\n- **detectionColumns**：18",
+    "chunk_order_index": 0,
+    "full_doc_id": "neo4j:ProductSpec:780818754094235589",
+    "file_path": "Neo4j:ProductSpec:780818754094235589",
+    "llm_cache_list": [
+      "default:extract:cff396feb268c36df0f79bb6539164ca",
+      "default:extract:57d948df386b6dad1a7918cc94ecdf03"
+    ],
+    "create_time": 1779045169,
+    "update_time": 1779045197,
+    "_id": "chunk-c0c20caaf3864c264374b5296186c3cb"
+  },
+  "chunk-3aa2c19d3a58f78269ae2435ca745ffc": {
+    "tokens": 19,
+    "content": "# 213\n- **code**：213\n- **detectionColumns**：22",
+    "chunk_order_index": 0,
+    "full_doc_id": "neo4j:ProductSpec:780818794812538821",
+    "file_path": "Neo4j:ProductSpec:780818794812538821",
+    "llm_cache_list": [
+      "default:extract:cf85085d5cde2f3cc31e0ed11ab59453",
+      "default:extract:f3f4c0b682523f77ca6be77078e41bd2"
+    ],
+    "create_time": 1779045197,
+    "update_time": 1779045218,
+    "_id": "chunk-3aa2c19d3a58f78269ae2435ca745ffc"
+  },
+  "chunk-10d434e8dbcc316ac110b6e8463946f0": {
+    "tokens": 40,
+    "content": "# 长度\n- **attrKey**：length\n- **precision**：2\n- **unit**：m\n- **valueType**：decimal\n- **version**：3",
+    "chunk_order_index": 0,
+    "full_doc_id": "neo4j:SpecAttribute:784013041652989893",
+    "file_path": "Neo4j:SpecAttribute:784013041652989893",
+    "llm_cache_list": [
+      "default:extract:d354b98c1ebf5f18495caafec92e3a1b",
+      "default:extract:695fda71997cc38ca477deb36cf58f05"
+    ],
+    "update_time": 1779045259,
+    "_id": "chunk-10d434e8dbcc316ac110b6e8463946f0",
+    "create_time": 0
+  },
+  "chunk-7b34cbed54ccdc6320b47429f9d69f4c": {
+    "tokens": 34,
+    "content": "# 层数\n- **attrKey**：layers\n- **precision**：0\n- **valueType**：int\n- **version**：3",
+    "chunk_order_index": 0,
+    "full_doc_id": "neo4j:SpecAttribute:784013041652989894",
+    "file_path": "Neo4j:SpecAttribute:784013041652989894",
+    "llm_cache_list": [
+      "default:extract:2583793a7eaa33e406b2e5e58603ce40",
+      "default:extract:5f9489d1cd5a8e37a5aa2a776fa855f4"
+    ],
+    "update_time": 1779045259,
+    "_id": "chunk-7b34cbed54ccdc6320b47429f9d69f4c",
+    "create_time": 0
+  },
+  "chunk-9c0b50710e5d60f22e828a8c24e76e0d": {
+    "tokens": 42,
+    "content": "# 密度\n- **attrKey**：density\n- **precision**：2\n- **unit**：g/cm³\n- **valueType**：decimal\n- **version**：3",
+    "chunk_order_index": 0,
+    "full_doc_id": "neo4j:SpecAttribute:784013041652989895",
+    "file_path": "Neo4j:SpecAttribute:784013041652989895",
+    "llm_cache_list": [
+      "default:extract:2ebd74d3b687b94570e358c6349b8ed7",
+      "default:extract:aff31fe21b059750916c97224e4ccee0"
+    ],
+    "update_time": 1779045260,
+    "_id": "chunk-9c0b50710e5d60f22e828a8c24e76e0d",
+    "create_time": 0
+  },
+  "chunk-065426025b46d13158c3007050cec784": {
+    "tokens": 40,
+    "content": "# 长度\n- **attrKey**：length\n- **precision**：2\n- **unit**：m\n- **valueType**：decimal\n- **version**：2",
+    "chunk_order_index": 0,
+    "full_doc_id": "neo4j:SpecAttribute:784013106480152517",
+    "file_path": "Neo4j:SpecAttribute:784013106480152517",
+    "llm_cache_list": [
+      "default:extract:c4520dadcc7496f98964706fa085feb9",
+      "default:extract:95f2dc627b6830a5754cf617bdd0a742"
+    ],
+    "create_time": 1779045260,
+    "update_time": 1779045287,
+    "_id": "chunk-065426025b46d13158c3007050cec784"
+  },
+  "chunk-feabb5c69083b439efed0cdd794ddd28": {
+    "tokens": 34,
+    "content": "# 层数\n- **attrKey**：layers\n- **precision**：2\n- **valueType**：int\n- **version**：2",
+    "chunk_order_index": 0,
+    "full_doc_id": "neo4j:SpecAttribute:784013106480152518",
+    "file_path": "Neo4j:SpecAttribute:784013106480152518",
+    "llm_cache_list": [
+      "default:extract:653ce9f64865ea306c7ed3158f11367c",
+      "default:extract:ffcaf4cfaaff0be2dd854dcc1b1d6798"
+    ],
+    "create_time": 1779045287,
+    "update_time": 1779045344,
+    "_id": "chunk-feabb5c69083b439efed0cdd794ddd28"
+  },
+  "chunk-508cc4d18b9486eebfd7edc91c8d86c7": {
+    "tokens": 42,
+    "content": "# 密度\n- **attrKey**：density\n- **precision**：2\n- **unit**：g/cm³\n- **valueType**：decimal\n- **version**：2",
+    "chunk_order_index": 0,
+    "full_doc_id": "neo4j:SpecAttribute:784013106480152519",
+    "file_path": "Neo4j:SpecAttribute:784013106480152519",
+    "llm_cache_list": [
+      "default:extract:19d4c63de5fc5c21ae375d17d95d98ca",
+      "default:extract:d9c725252fe75205ebbcdebb5fc75582"
+    ],
+    "create_time": 1779045344,
+    "update_time": 1779045374,
+    "_id": "chunk-508cc4d18b9486eebfd7edc91c8d86c7"
+  },
+  "chunk-0d38c813d65d921fdc47047da8bea580": {
+    "tokens": 59,
+    "content": "# 最左侧差值\n- **columnName**：$VAR_1769806633591\n- **formula**：DIFF_FIRST ( Thickness , 2 )\n- **formulaType**：1\n- **sourceType**：CUSTOM\n- **unit**：μm",
+    "chunk_order_index": 0,
+    "full_doc_id": "neo4j:Formula:787025213026992069",
+    "file_path": "Neo4j:Formula:787025213026992069",
+    "llm_cache_list": [
+      "default:extract:6381268bca78c7f2adf4413a4ca8544f",
+      "default:extract:3f8e45602f51514ee3f587185d171cf3"
+    ],
+    "create_time": 1779045375,
+    "update_time": 1779045404,
+    "_id": "chunk-0d38c813d65d921fdc47047da8bea580"
+  },
+  "chunk-b5e71c3c828b1794cd7ab677f8e4186b": {
+    "tokens": 59,
+    "content": "# 最右侧差值\n- **columnName**：$VAR_1769806687604\n- **formula**：DIFF_LAST ( Thickness , 2 )\n- **formulaType**：1\n- **sourceType**：CUSTOM\n- **unit**：μm",
+    "chunk_order_index": 0,
+    "full_doc_id": "neo4j:Formula:787025434377191365",
+    "file_path": "Neo4j:Formula:787025434377191365",
+    "llm_cache_list": [
+      "default:extract:59b5cf81ed676174181dc574d5b1da13",
+      "default:extract:ef9fbf88bfcf2ea47c35a6e3b6381ebd"
+    ],
+    "create_time": 1779045404,
+    "update_time": 1779045437,
+    "_id": "chunk-b5e71c3c828b1794cd7ab677f8e4186b"
+  },
+  "chunk-032a1a4ee358fe216b673a5d8fdf4694": {
+    "tokens": 64,
+    "content": "# 前部最小值\n- **columnName**：$VAR_1769807946074\n- **formula**：MIN ( RANGE ( Detection , 1 , 5 )  )\n- **formulaType**：1\n- **sourceType**：CUSTOM\n- **unit**：μm",
+    "chunk_order_index": 0,
+    "full_doc_id": "neo4j:Formula:787030712749391813",
+    "file_path": "Neo4j:Formula:787030712749391813",
+    "llm_cache_list": [
+      "default:extract:47ca1ed4e7c61a4e46b056122b964a3e",
+      "default:extract:868dee20222c3d5b0a0626231cc115d9"
+    ],
+    "create_time": 1779045437,
+    "update_time": 1779045465,
+    "_id": "chunk-032a1a4ee358fe216b673a5d8fdf4694"
+  },
+  "chunk-9bb2feeb0b6ec752ec572f96dc466ee7": {
+    "tokens": 63,
+    "content": "# 前部最大值\n- **columnName**：$VAR_1769807966188\n- **formula**：MAX ( RANGE ( Detection , 1 , 5 )  )\n- **formulaType**：1\n- **sourceType**：CUSTOM\n- **unit**：μm",
+    "chunk_order_index": 0,
+    "full_doc_id": "neo4j:Formula:787030797155565509",
+    "file_path": "Neo4j:Formula:787030797155565509",
+    "llm_cache_list": [
+      "default:extract:f657e62be6d0c9c4a5a653a0dcfa9d72",
+      "default:extract:7af7435f8d8c069ccd71bdee2060a97a"
+    ],
+    "create_time": 1779045465,
+    "update_time": 1779045490,
+    "_id": "chunk-9bb2feeb0b6ec752ec572f96dc466ee7"
+  },
+  "chunk-3ac45d7fbc81903cad80d3a7a95f7065": {
+    "tokens": 63,
+    "content": "# 前部平均值\n- **columnName**：$VAR_1769808034938\n- **formula**：AVG ( RANGE ( Detection , 1 , 5 )  )\n- **formulaType**：1\n- **sourceType**：CUSTOM\n- **unit**：μm",
+    "chunk_order_index": 0,
+    "full_doc_id": "neo4j:Formula:787031085417496517",
+    "file_path": "Neo4j:Formula:787031085417496517",
+    "llm_cache_list": [
+      "default:extract:1615864d0ab3c2efadb0e3952c1589b2",
+      "default:extract:f650e8c5fb03a931823810469250e463"
+    ],
+    "create_time": 1779045490,
+    "update_time": 1779045531,
+    "_id": "chunk-3ac45d7fbc81903cad80d3a7a95f7065"
+  },
+  "chunk-793dc28add8634f1fe7cf84b5a846318": {
+    "tokens": 64,
+    "content": "# 中间4位最小值\n- **columnName**：$VAR_1769808081515\n- **formula**：MIN(RANGE(Thickness, 5, 8))\n- **formulaType**：1\n- **sourceType**：CUSTOM\n- **unit**：μm",
+    "chunk_order_index": 0,
+    "full_doc_id": "neo4j:Formula:787031280893034437",
+    "file_path": "Neo4j:Formula:787031280893034437",
+    "llm_cache_list": [
+      "default:extract:cda692149b851d3ac937285b63285965",
+      "default:extract:758805114abad3c5a35ec7cb327be335"
+    ],
+    "create_time": 1779045531,
+    "update_time": 1779045572,
+    "_id": "chunk-793dc28add8634f1fe7cf84b5a846318"
+  },
+  "chunk-9b9dd172ddf40c0bdd07bbae68d11796": {
+    "tokens": 63,
+    "content": "# 中间4位最大值\n- **columnName**：$VAR_1769808115859\n- **formula**：MAX(RANGE(Thickness, 5, 8))\n- **formulaType**：1\n- **sourceType**：CUSTOM\n- **unit**：μm",
+    "chunk_order_index": 0,
+    "full_doc_id": "neo4j:Formula:787031424921239493",
+    "file_path": "Neo4j:Formula:787031424921239493",
+    "llm_cache_list": [
+      "default:extract:388fb8c2ba955b9bf2dde5779372de3f",
+      "default:extract:0aa0b35f3a41bfd449ce09e32253d634"
+    ],
+    "create_time": 1779045572,
+    "update_time": 1779045608,
+    "_id": "chunk-9b9dd172ddf40c0bdd07bbae68d11796"
+  },
+  "chunk-1a5fff8a9a17a09937473ac956f254b2": {
+    "tokens": 63,
+    "content": "# 中间4位平均值\n- **columnName**：$VAR_1769808132998\n- **formula**：AVG(RANGE(Thickness, 5, 8))\n- **formulaType**：1\n- **sourceType**：CUSTOM\n- **unit**：μm",
+    "chunk_order_index": 0,
+    "full_doc_id": "neo4j:Formula:787031496698363845",
+    "file_path": "Neo4j:Formula:787031496698363845",
+    "llm_cache_list": [
+      "default:extract:2439345e3c9b5ae54844e86accca7dba",
+      "default:extract:2f3a166a5b948857294b53865bcbe8ac"
+    ],
+    "create_time": 1779045609,
+    "update_time": 1779045650,
+    "_id": "chunk-1a5fff8a9a17a09937473ac956f254b2"
+  },
+  "chunk-24c82aa0157addf5eedfe661109c1996": {
+    "tokens": 65,
+    "content": "# 右侧4位最小值\n- **columnName**：$VAR_1769808183872\n- **formula**：MIN(RANGE(Thickness, 10, 13))\n- **formulaType**：1\n- **sourceType**：CUSTOM\n- **unit**：μm",
+    "chunk_order_index": 0,
+    "full_doc_id": "neo4j:Formula:787031710205214661",
+    "file_path": "Neo4j:Formula:787031710205214661",
+    "llm_cache_list": [
+      "default:extract:a1c1e440fe16a809c0a4ede994f2dcc8",
+      "default:extract:846900b38cbab565c964a4a771a8eea0"
+    ],
+    "create_time": 1779045651,
+    "update_time": 1779045690,
+    "_id": "chunk-24c82aa0157addf5eedfe661109c1996"
+  }
+}

@@ -9,6 +9,7 @@ using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.MonthlyQualityReport;
 using Poxiao.Lab.Entity.Dto.ReportConfig;
 using Poxiao.Lab.Entity.Enum;
+using Poxiao.Lab.Helpers;
 using SqlSugar;
 using System.Reflection;
 using System.Text.Json;
@@ -23,7 +24,6 @@ namespace Poxiao.Lab.Service;
 public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynamicApiController, ITransient
 {
     private readonly ISqlSugarRepository<IntermediateDataEntity> _intermediateDataRepository;
-    private readonly ISqlSugarRepository<RawDataEntity> _rawDataRepository;
     private readonly ISqlSugarRepository<IntermediateDataFormulaEntity> _formulaRepository;
     private readonly ISqlSugarRepository<IntermediateDataJudgmentLevelEntity> _judgmentLevelRepository;
     private readonly ISqlSugarRepository<ReportConfigEntity> _reportConfigRepository;
@@ -34,16 +34,15 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
 
     public MonthlyQualityReportService(
         ISqlSugarRepository<IntermediateDataEntity> intermediateDataRepository,
-        ISqlSugarRepository<RawDataEntity> rawDataRepository,
         ISqlSugarRepository<IntermediateDataFormulaEntity> formulaRepository,
         ISqlSugarRepository<IntermediateDataJudgmentLevelEntity> judgmentLevelRepository,
         ISqlSugarRepository<ReportConfigEntity> reportConfigRepository)
     {
         _intermediateDataRepository = intermediateDataRepository;
-        _rawDataRepository = rawDataRepository;
         _formulaRepository = formulaRepository;
         _judgmentLevelRepository = judgmentLevelRepository;
         _reportConfigRepository = reportConfigRepository;
+        IntermediateDataFormulaSchemaHelper.EnsureEditorModeColumn(_formulaRepository.AsSugarClient());
     }
 
     /// <inheritdoc/>
@@ -98,8 +97,7 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         var unqualifiedLevels = statisticLevels.Where(l => l.QualityStatus == QualityStatusEnum.Unqualified).ToList();
 
         var data = await baseQuery.ToListAsync();
-        var rawWeightLookup = await GetRawWeightLookupAsync(data);
-        var totalWeight = GetTotalWeight(data, rawWeightLookup);
+        var totalWeight = GetTotalWeight(data);
 
         // 合格分类统计
         var qualifiedCategories = new Dictionary<string, LevelStatDto>();
@@ -107,7 +105,7 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
 
         foreach (var level in qualifiedLevels)
         {
-            var weight = GetMatchedWeight(data, d => IsFirstInspectionMatch(d, level.Name), rawWeightLookup);
+            var weight = GetMatchedWeight(data, d => IsFirstInspectionMatch(d, level.Name));
             qualifiedWeight += weight;
             qualifiedCategories[level.Name] = new LevelStatDto
             {
@@ -122,13 +120,13 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
 
         foreach (var level in unqualifiedLevels)
         {
-            var weight = GetMatchedWeight(data, d => IsFirstInspectionMatch(d, level.Name), rawWeightLookup);
+            var weight = GetMatchedWeight(data, d => IsFirstInspectionMatch(d, level.Name));
             unqualifiedWeight += weight;
             unqualifiedCategories[level.Name] = weight;
         }
 
         var reportConfigs = await GetReportConfigsAsync();
-        var dynamicStats = CalculateDynamicStats(data, reportConfigs, rawWeightLookup);
+        var dynamicStats = CalculateDynamicStats(data, reportConfigs);
 
         return new MonthlyQualityReportSummaryDto
         {
@@ -154,12 +152,11 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         var unqualifiedLevels = statisticLevels.Where(l => l.QualityStatus == QualityStatusEnum.Unqualified).ToList();
         var reportConfigs = await GetReportConfigsAsync();
 
-        // 查出原始数据
-        var rawData = await baseQuery.ToListAsync();
-        var rawWeightLookup = await GetRawWeightLookupAsync(rawData);
+        // 查出中间数据
+        var data = await baseQuery.ToListAsync();
 
         // 按 生产日期+班次+炉次号+带宽 分组
-        var groupedData = rawData
+        var groupedData = data
             .GroupBy(d => new {
                 ProdDate = d.ProdDate?.Date,
                 d.Shift,
@@ -195,8 +192,7 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
                 group.Items,
                 qualifiedLevels,
                 unqualifiedLevels,
-                reportConfigs,
-                rawWeightLookup);
+                reportConfigs);
             result.Add(dto);
         }
 
@@ -204,11 +200,10 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         var monthlyTotal = CreateSubtotalDto(
             "合计",
             "MonthlyTotal",
-            rawData,
+            data,
             qualifiedLevels,
             unqualifiedLevels,
-            reportConfigs,
-            rawWeightLookup);
+            reportConfigs);
         result.Add(monthlyTotal);
 
         return result;
@@ -224,7 +219,6 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         var reportConfigs = await GetReportConfigsAsync();
 
         var data = await baseQuery.ToListAsync();
-        var rawWeightLookup = await GetRawWeightLookupAsync(data);
         var result = new List<MonthlyQualityReportShiftGroupDto>();
 
         // 按 班次分组
@@ -242,16 +236,16 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
             foreach (var specGroup in specGroups)
             {
                 var items = specGroup.ToList();
-                result.Add(CreateShiftGroupDto(shiftGroup.Key, specGroup.Key, items, qualifiedLevels, false, null, reportConfigs, rawWeightLookup));
+                result.Add(CreateShiftGroupDto(shiftGroup.Key, specGroup.Key, items, qualifiedLevels, false, null, reportConfigs));
             }
 
             // 班次小计
             var shiftItems = shiftGroup.ToList();
-            result.Add(CreateShiftGroupDto(shiftGroup.Key, "小计", shiftItems, qualifiedLevels, true, "ShiftSubtotal", reportConfigs, rawWeightLookup));
+            result.Add(CreateShiftGroupDto(shiftGroup.Key, "小计", shiftItems, qualifiedLevels, true, "ShiftSubtotal", reportConfigs));
         }
 
         // 月度合计
-        result.Add(CreateShiftGroupDto("合计", "", data, qualifiedLevels, true, "MonthlyTotal", reportConfigs, rawWeightLookup));
+        result.Add(CreateShiftGroupDto("合计", "", data, qualifiedLevels, true, "MonthlyTotal", reportConfigs));
 
         return result;
     }
@@ -267,7 +261,6 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         var reportConfigs = await GetReportConfigsAsync();
 
         var data = await baseQuery.ToListAsync();
-        var rawWeightLookup = await GetRawWeightLookupAsync(data);
         var qualifiedLevelNames = qualifiedLevels
             .Select(l => NormalizeLevelName(l.Name))
             .Where(name => !string.IsNullOrWhiteSpace(name))
@@ -283,17 +276,16 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         foreach (var dateGroup in dateGroups)
         {
             var items = dateGroup.ToList();
-            var totalWeight = GetTotalWeight(items, rawWeightLookup);
+            var totalWeight = GetTotalWeight(items);
             var qualifiedWeight = GetMatchedWeight(
                 items,
-                d => qualifiedLevelNames.Contains(NormalizeLevelName(d.FirstInspection)),
-                rawWeightLookup);
+                d => qualifiedLevelNames.Contains(NormalizeLevelName(d.FirstInspection)));
 
             // 动态计算各合格等级的占比
             var qualifiedRates = new Dictionary<string, decimal>();
             foreach (var level in qualifiedLevels)
             {
-                var weight = GetMatchedWeight(items, d => IsFirstInspectionMatch(d, level.Name), rawWeightLookup);
+                var weight = GetMatchedWeight(items, d => IsFirstInspectionMatch(d, level.Name));
                 qualifiedRates[level.Name] = totalWeight > 0 ? Math.Round(weight / totalWeight * 100, 2) : 0;
             }
 
@@ -301,12 +293,12 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
             var unqualifiedRates = new Dictionary<string, decimal>();
             foreach (var level in unqualifiedLevels)
             {
-                var weight = GetMatchedWeight(items, d => IsFirstInspectionMatch(d, level.Name), rawWeightLookup);
+                var weight = GetMatchedWeight(items, d => IsFirstInspectionMatch(d, level.Name));
                 unqualifiedRates[level.Name] = totalWeight > 0 ? Math.Round(weight / totalWeight * 100, 2) : 0;
             }
 
             // 动态统计
-            var dynamicLevelStats = CalculateDynamicStats(items, reportConfigs, rawWeightLookup);
+            var dynamicLevelStats = CalculateDynamicStats(items, reportConfigs);
             var dynamicStats = dynamicLevelStats.ToDictionary(k => k.Key, v => v.Value.Rate);
 
             result.Add(new QualityTrendDto
@@ -334,7 +326,6 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         var unqualifiedLevels = statisticLevels.Where(l => l.QualityStatus == QualityStatusEnum.Unqualified).ToList();
 
         var data = await baseQuery.ToListAsync();
-        var rawWeightLookup = await GetRawWeightLookupAsync(data);
         var unqualifiedLevelNames = unqualifiedLevels
             .Select(l => NormalizeLevelName(l.Name))
             .Where(name => !string.IsNullOrWhiteSpace(name))
@@ -342,14 +333,13 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
 
         var totalUnqualifiedWeight = GetMatchedWeight(
             data,
-            d => unqualifiedLevelNames.Contains(NormalizeLevelName(d.FirstInspection)),
-            rawWeightLookup);
+            d => unqualifiedLevelNames.Contains(NormalizeLevelName(d.FirstInspection)));
 
         var result = new List<UnqualifiedCategoryDto>();
 
         foreach (var level in unqualifiedLevels)
         {
-            var categoryWeight = GetMatchedWeight(data, d => IsFirstInspectionMatch(d, level.Name), rawWeightLookup);
+            var categoryWeight = GetMatchedWeight(data, d => IsFirstInspectionMatch(d, level.Name));
 
             if (categoryWeight > 0)
             {
@@ -377,7 +367,6 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         var reportConfigs = await GetReportConfigsAsync();
 
         var data = await baseQuery.ToListAsync();
-        var rawWeightLookup = await GetRawWeightLookupAsync(data);
         var qualifiedLevelNames = qualifiedLevels
             .Select(l => NormalizeLevelName(l.Name))
             .Where(name => !string.IsNullOrWhiteSpace(name))
@@ -390,20 +379,19 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         foreach (var shiftGroup in shiftGroups)
         {
             var items = shiftGroup.ToList();
-            var totalWeight = GetTotalWeight(items, rawWeightLookup);
+            var totalWeight = GetTotalWeight(items);
             var qualifiedWeight = GetMatchedWeight(
                 items,
-                d => qualifiedLevelNames.Contains(NormalizeLevelName(d.FirstInspection)),
-                rawWeightLookup);
+                d => qualifiedLevelNames.Contains(NormalizeLevelName(d.FirstInspection)));
 
             // 获取A类重量和占比
-            var classAWeight = GetMatchedWeight(items, d => IsFirstInspectionMatch(d, "A"), rawWeightLookup);
+            var classAWeight = GetMatchedWeight(items, d => IsFirstInspectionMatch(d, "A"));
 
             // 获取B类重量和占比
-            var classBWeight = GetMatchedWeight(items, d => IsFirstInspectionMatch(d, "B"), rawWeightLookup);
+            var classBWeight = GetMatchedWeight(items, d => IsFirstInspectionMatch(d, "B"));
 
             // 动态统计
-            var dynamicLevelStats = CalculateDynamicStats(items, reportConfigs, rawWeightLookup);
+            var dynamicLevelStats = CalculateDynamicStats(items, reportConfigs);
             var dynamicStats = dynamicLevelStats.ToDictionary(k => k.Key, v => v.Value.Rate);
 
             result.Add(new ShiftComparisonDto
@@ -540,70 +528,17 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         }
     }
 
-    /// <summary>
-    /// 计算动态统计
-    /// </summary>
-    private async Task<Dictionary<string, decimal>> GetRawWeightLookupAsync(List<IntermediateDataEntity> items)
-    {
-        var lookup = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
-        if (items == null || items.Count == 0)
-        {
-            return lookup;
-        }
-
-        var rawDataIds = items
-            .Select(item => item.RawDataId)
-            .Where(id => !string.IsNullOrWhiteSpace(id))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        if (rawDataIds.Count == 0)
-        {
-            return lookup;
-        }
-
-        var rawWeights = await _rawDataRepository.AsQueryable()
-            .Where(r => r.DeleteMark == null)
-            .Where(r => rawDataIds.Contains(r.Id))
-            .Select(r => new { r.Id, r.SingleCoilWeight })
-            .ToListAsync();
-
-        foreach (var rawWeight in rawWeights)
-        {
-            if (string.IsNullOrWhiteSpace(rawWeight.Id) || !rawWeight.SingleCoilWeight.HasValue)
-            {
-                continue;
-            }
-
-            if (rawWeight.SingleCoilWeight.Value > 0)
-            {
-                lookup[rawWeight.Id] = rawWeight.SingleCoilWeight.Value;
-            }
-        }
-
-        return lookup;
-    }
-
-    private decimal GetStatisticWeight(IntermediateDataEntity item, Dictionary<string, decimal> rawWeightLookup)
+    private decimal GetStatisticWeight(IntermediateDataEntity item)
     {
         if (item?.SingleCoilWeight.HasValue == true && item.SingleCoilWeight.Value > 0)
         {
             return item.SingleCoilWeight.Value;
         }
 
-        if (item != null
-            && !string.IsNullOrWhiteSpace(item.RawDataId)
-            && rawWeightLookup != null
-            && rawWeightLookup.TryGetValue(item.RawDataId, out var rawWeight)
-            && rawWeight > 0)
-        {
-            return rawWeight;
-        }
-
         return 0;
     }
 
-    private decimal GetTotalWeight(IEnumerable<IntermediateDataEntity> items, Dictionary<string, decimal> rawWeightLookup)
+    private decimal GetTotalWeight(IEnumerable<IntermediateDataEntity> items)
     {
         if (items == null)
         {
@@ -613,7 +548,7 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         decimal totalWeight = 0;
         foreach (var item in items)
         {
-            totalWeight += GetStatisticWeight(item, rawWeightLookup);
+            totalWeight += GetStatisticWeight(item);
         }
 
         return totalWeight;
@@ -621,8 +556,7 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
 
     private decimal GetMatchedWeight(
         IEnumerable<IntermediateDataEntity> items,
-        Func<IntermediateDataEntity, bool> predicate,
-        Dictionary<string, decimal> rawWeightLookup)
+        Func<IntermediateDataEntity, bool> predicate)
     {
         if (items == null || predicate == null)
         {
@@ -634,7 +568,7 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         {
             if (item != null && predicate(item))
             {
-                totalWeight += GetStatisticWeight(item, rawWeightLookup);
+                totalWeight += GetStatisticWeight(item);
             }
         }
 
@@ -656,11 +590,10 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
 
     private Dictionary<string, LevelStatDto> CalculateDynamicStats(
         List<IntermediateDataEntity> items,
-        List<ReportConfigEntity> configs,
-        Dictionary<string, decimal> rawWeightLookup)
+        List<ReportConfigEntity> configs)
     {
         var result = new Dictionary<string, LevelStatDto>();
-        var totalWeight = GetTotalWeight(items, rawWeightLookup);
+        var totalWeight = GetTotalWeight(items);
 
         foreach (var config in configs)
         {
@@ -670,8 +603,7 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
 
             var weight = GetMatchedWeight(
                 items,
-                d => levelSet.Contains(GetJudgeValue(d, formulaColumnName)),
-                rawWeightLookup);
+                d => levelSet.Contains(GetJudgeValue(d, formulaColumnName)));
 
             result[config.Id] = new LevelStatDto
             {
@@ -742,10 +674,9 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         List<IntermediateDataEntity> items,
         List<IntermediateDataJudgmentLevelEntity> qualifiedLevels,
         List<IntermediateDataJudgmentLevelEntity> unqualifiedLevels,
-        List<ReportConfigEntity> reportConfigs,
-        Dictionary<string, decimal> rawWeightLookup)
+        List<ReportConfigEntity> reportConfigs)
     {
-        var totalWeight = GetTotalWeight(items, rawWeightLookup);
+        var totalWeight = GetTotalWeight(items);
 
         // 合格分类统计
         var qualifiedCategories = new Dictionary<string, LevelStatDto>();
@@ -753,7 +684,7 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
 
         foreach (var level in qualifiedLevels)
         {
-            var weight = GetMatchedWeight(items, d => IsFirstInspectionMatch(d, level.Name), rawWeightLookup);
+            var weight = GetMatchedWeight(items, d => IsFirstInspectionMatch(d, level.Name));
             qualifiedWeight += weight;
             qualifiedCategories[level.Name] = new LevelStatDto
             {
@@ -767,13 +698,13 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         decimal unqualifiedWeight = 0;
         foreach (var level in unqualifiedLevels)
         {
-            var weight = GetMatchedWeight(items, d => IsFirstInspectionMatch(d, level.Name), rawWeightLookup);
+            var weight = GetMatchedWeight(items, d => IsFirstInspectionMatch(d, level.Name));
             unqualifiedWeight += weight;
             unqualifiedCategories[level.Name] = weight;
         }
 
         // 动态统计
-        var dynamicStats = CalculateDynamicStats(items, reportConfigs, rawWeightLookup);
+        var dynamicStats = CalculateDynamicStats(items, reportConfigs);
 
         return new MonthlyQualityReportDetailDto
         {
@@ -800,10 +731,9 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         List<IntermediateDataEntity> items,
         List<IntermediateDataJudgmentLevelEntity> qualifiedLevels,
         List<IntermediateDataJudgmentLevelEntity> unqualifiedLevels,
-        List<ReportConfigEntity> reportConfigs,
-        Dictionary<string, decimal> rawWeightLookup)
+        List<ReportConfigEntity> reportConfigs)
     {
-        var totalWeight = GetTotalWeight(items, rawWeightLookup);
+        var totalWeight = GetTotalWeight(items);
 
         // 合格分类统计
         var qualifiedCategories = new Dictionary<string, LevelStatDto>();
@@ -811,7 +741,7 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
 
         foreach (var level in qualifiedLevels)
         {
-            var weight = GetMatchedWeight(items, d => IsFirstInspectionMatch(d, level.Name), rawWeightLookup);
+            var weight = GetMatchedWeight(items, d => IsFirstInspectionMatch(d, level.Name));
             qualifiedWeight += weight;
             qualifiedCategories[level.Name] = new LevelStatDto
             {
@@ -825,13 +755,13 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         decimal unqualifiedWeight = 0;
         foreach (var level in unqualifiedLevels)
         {
-            var weight = GetMatchedWeight(items, d => IsFirstInspectionMatch(d, level.Name), rawWeightLookup);
+            var weight = GetMatchedWeight(items, d => IsFirstInspectionMatch(d, level.Name));
             unqualifiedWeight += weight;
             unqualifiedCategories[level.Name] = weight;
         }
 
         // 动态统计
-        var dynamicStats = CalculateDynamicStats(items, reportConfigs, rawWeightLookup);
+        var dynamicStats = CalculateDynamicStats(items, reportConfigs);
 
         return new MonthlyQualityReportDetailDto
         {
@@ -859,10 +789,9 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         List<IntermediateDataJudgmentLevelEntity> qualifiedLevels,
         bool isSummaryRow,
         string summaryType,
-        List<ReportConfigEntity> reportConfigs,
-        Dictionary<string, decimal> rawWeightLookup)
+        List<ReportConfigEntity> reportConfigs)
     {
-        var totalWeight = GetTotalWeight(items, rawWeightLookup);
+        var totalWeight = GetTotalWeight(items);
 
         // 合格分类统计
         var qualifiedCategories = new Dictionary<string, LevelStatDto>();
@@ -870,7 +799,7 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
 
         foreach (var level in qualifiedLevels)
         {
-            var weight = GetMatchedWeight(items, d => IsFirstInspectionMatch(d, level.Name), rawWeightLookup);
+            var weight = GetMatchedWeight(items, d => IsFirstInspectionMatch(d, level.Name));
             qualifiedWeight += weight;
             qualifiedCategories[level.Name] = new LevelStatDto
             {
@@ -883,7 +812,7 @@ public class MonthlyQualityReportService : IMonthlyQualityReportService, IDynami
         decimal unqualifiedWeight = totalWeight - qualifiedWeight;
 
         // 动态统计
-        var dynamicStats = CalculateDynamicStats(items, reportConfigs, rawWeightLookup);
+        var dynamicStats = CalculateDynamicStats(items, reportConfigs);
 
         return new MonthlyQualityReportShiftGroupDto
         {

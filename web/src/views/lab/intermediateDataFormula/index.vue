@@ -332,11 +332,17 @@ const handleOpenFormulaBuilder = async (record: IntermediateDataFormula) => {
   }
 };
 
-const handleSaveFormula = async (data: { id: string; formula: string }) => {
+const handleSaveFormula = async (data: { id: string; formula: string; editorMode?: 'advanced' | 'range' }) => {
   try {
-    await updateFormula(data.id, data.formula);
+    const editorMode = data.editorMode || 'advanced';
+    const saved = await updateFormula(data.id, data.formula, editorMode);
     createMessage.success('公式保存成功');
-    loadData();
+    await loadData();
+    const target = dataList.value.find((item) => item.id === data.id);
+    if (target) {
+      target.formula = saved?.formula || data.formula;
+      target.editorMode = (saved?.editorMode as 'advanced' | 'range' | undefined) || editorMode;
+    }
   } catch (error: any) {
     createMessage.error(error.message || '保存失败');
   }

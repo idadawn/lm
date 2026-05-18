@@ -4,10 +4,11 @@
       type="button"
       class="assistant-trigger"
       :aria-expanded="panelVisible"
-      aria-label="打开智能问数"
+      aria-label="打开小美智能助理"
+      title="小美"
       @click="togglePanel"
     >
-      <img src="/img/chat.svg" alt="智能问数" class="assistant-trigger__icon" />
+      <img src="/img/chat.svg" alt="小美" class="assistant-trigger__icon" />
     </button>
 
     <Teleport to="body">
@@ -22,9 +23,18 @@
           <header class="assistant-panel__header" @pointerdown="handleDragStart">
             <div class="assistant-panel__title">
               <img src="/img/chat.svg" alt="" class="assistant-panel__logo" />
-              <span>智能问数</span>
+              <span>小美</span>
+              <small class="assistant-panel__subtitle">智能数据助理</small>
             </div>
             <div class="assistant-panel__actions">
+              <button
+                type="button"
+                class="assistant-panel__action"
+                title="新对话"
+                @click.stop="handleResetConversation"
+              >
+                <Icon icon="ant-design:reload-outlined" :size="16" />
+              </button>
               <button
                 type="button"
                 class="assistant-panel__action"
@@ -48,7 +58,7 @@
           </header>
 
           <div class="assistant-panel__body">
-            <ChatAssistant />
+            <ChatAssistant ref="chatRef" />
           </div>
         </section>
       </div>
@@ -64,7 +74,12 @@
   const panelVisible = ref(false);
   const fullscreenVisible = ref(false);
   const panelRef = ref<HTMLElement | null>(null);
+  const chatRef = ref<any>(null);
   const isDragging = ref(false);
+
+  function handleResetConversation() {
+    chatRef.value?.resetConversation?.();
+  }
   const compactBreakpoint = 960;
   const panelMargin = 12;
   const desktopGap = 24;
@@ -322,6 +337,13 @@
     color: #1f2937;
     font-size: 15px;
     font-weight: 600;
+  }
+
+  .assistant-panel__subtitle {
+    font-size: 12px;
+    font-weight: 400;
+    color: #94a3b8;
+    margin-left: 2px;
   }
 
   .assistant-panel__logo { width: 20px; height: 20px; display: block; }

@@ -887,6 +887,9 @@ const [registerModal, { setModalProps, closeModal, redoModalHeight }] = useModal
   setModalProps({ confirmLoading: false, defaultFullscreen: false });
   formulaId.value = data?.record?.id || '';
   currentRecord.value = data?.record || null;
+  activeRangePreset.value = 'ALL';
+  presetColumnCount.value = '2';
+  customSpecRanges.value = {};
 
   // 检查是否为范围列
   isRangeColumn.value = data?.record?.isRange === true;
@@ -906,7 +909,6 @@ const [registerModal, { setModalProps, closeModal, redoModalHeight }] = useModal
   if (editorMode.value === 'range' && initFormula) {
     // 解析范围公式
     parseRangeFormula(initFormula);
-    applyRecommendedSegments();
   } else if (initFormula) {
     // 解析普通公式
     parseFormulaToTokens(initFormula);
@@ -1024,17 +1026,7 @@ function buildFallbackSpecs(): MockProductSpec[] {
 
 function resolveInitialEditorMode(record: any): 'range' | 'advanced' {
   if (!record) return 'advanced';
-  if (record.isRange === true) return 'range';
-
-  const formula = String(record.formula || '').toUpperCase();
-  const columnName = String(record.columnName || '').toUpperCase();
-  const formulaName = String(record.formulaName || '').toUpperCase();
-  const rangeHints = ['RANGE(', 'DIFF_FIRST(', 'DIFF_LAST(', 'CONDITIONAL_DIFF', 'DETECTION', 'THICKNESS'];
-  const columnHints = ['THICK', 'DETECTION', '带厚', '检测'];
-
-  if (rangeHints.some(hint => formula.includes(hint))) return 'range';
-  if (columnHints.some(hint => columnName.includes(hint) || formulaName.includes(hint))) return 'range';
-  return 'advanced';
+  return record.editorMode === 'range' ? 'range' : 'advanced';
 }
 
 const loadAvailableFields = async () => {
@@ -1045,6 +1037,52 @@ const loadAvailableFields = async () => {
 };
 
 // --- 解析范围公式 ---
+function syncRangePresetFromParsedRange(prefix: RangeConfig['prefix'], start: number, rawEnd: string) {
+  const max = currentColumnCount.value;
+  const end = rawEnd === '$DetectionColumns'
+    ? max
+    : Number.parseInt(String(rawEnd).replace(/[^\d]/g, ''), 10);
+
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end < start) {
+    activeRangePreset.value = 'CUSTOM';
+    return;
+  }
+
+  const rangeSize = Math.max(1, end - start + 1);
+  presetColumnCount.value = String(rangeSize);
+
+  if (start === 1 && (rawEnd === '$DetectionColumns' || (end >= max && rangeSize > 4))) {
+    activeRangePreset.value = 'ALL';
+    return;
+  }
+
+  if (start === 1) {
+    activeRangePreset.value = 'LEFT';
+    return;
+  }
+
+  if (end >= max) {
+    activeRangePreset.value = 'RIGHT';
+    return;
+  }
+
+  const previousPreset = activeRangePreset.value;
+  activeRangePreset.value = 'MIDDLE';
+  const specForPreset = currentSpec.value || mockSpecs.value[0];
+  if (specForPreset) {
+    const middleRange = getSpecPresetRange(specForPreset);
+    if (middleRange.start === start && middleRange.end === end) {
+      return;
+    }
+  }
+
+  activeRangePreset.value = previousPreset;
+  if (specForPreset) {
+    customSpecRanges.value[`${prefix}-${specForPreset.productSpecId}`] = { start, end };
+  }
+  activeRangePreset.value = 'CUSTOM';
+}
+
 function parseRangeFormula(formula: string) {
   const defaultConfig = {
     middleStart: 9,
@@ -1059,15 +1097,19 @@ function parseRangeFormula(formula: string) {
   const match = formula.match(/^(\w+)\(RANGE\((\w+),\s*(\d+),\s*([\w$]+)\)\)$/);
 
   if (match) {
+    const parsedPrefix = match[2] as RangeConfig['prefix'];
+    const parsedStart = parseInt(match[3]);
+    const parsedEnd = match[4];
     rangeConfig.value = {
       operation: match[1] as any,
-      prefix: match[2] as any,
-      start: parseInt(match[3]),
-      end: match[4],
+      prefix: parsedPrefix,
+      start: parsedStart,
+      end: parsedEnd,
       firstN: 2,
       lastN: 2,
       ...defaultConfig,
     };
+    syncRangePresetFromParsedRange(parsedPrefix, parsedStart, parsedEnd);
     return;
   }
 
@@ -1130,6 +1172,9 @@ function parseRangeFormula(formula: string) {
 
 watch([selectedMockSpecId, () => rangeConfig.value.prefix], () => {
   clampRangeConfigToCurrentSpec();
+  if (rangeConfig.value.operation === 'CONDITIONAL_DIFF') {
+    return;
+  }
   applyRecommendedSegments();
   syncCurrentSpecRange();
 });
@@ -1427,7 +1472,8 @@ function handleSubmit() {
 
   emit('save', {
     id: formulaId.value,
-    formula: formula
+    formula: formula,
+    editorMode: editorMode.value,
   });
   closeModal();
 }

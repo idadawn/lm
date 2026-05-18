@@ -65,15 +65,15 @@ export function getNodeColorByType(type: OntologyNodeType, status?: NodeStatus) 
   switch (type) {
     case 'ProductSpec':
       return COLORS.spec;
-    case 'Metric':
+    case 'Formula':
       return COLORS.metric;
     case 'JudgmentRule':
       return status === 'ok' || status === 'unknown'
         ? COLORS.rule.qualified
         : COLORS.rule.unqualified;
-    case 'RuleCondition':
+    case 'SpecAttribute':
       return COLORS.condition;
-    case 'InspectionRecord':
+    case 'Ribbon':
       return COLORS.record;
     default:
       return COLORS.spec;

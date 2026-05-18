@@ -14,7 +14,7 @@ LangGraph `@tool` 函数集合。三类：
 | File | Description |
 |------|-------------|
 | `sql_tools.py` | `validate_sql(sql)` 白名单（必须 SELECT 开头）+ 黑名单关键字（INSERT/UPDATE/DELETE/DROP/CREATE/ALTER/TRUNCATE/EXEC/UNION）+ 危险序列（`--` `/* */` `;\w+`）+ 表白名单（11 张 `lab_*` 表）；`execute_safe_sql(sql, params)` 通过 `AsyncSessionLocal` 跑参数化 SELECT；`build_safe_where_clause` / `validate_column_name` / `validate_time_range_sql` 工具函数 |
-| `query_tools.py` | `@tool` 函数：`get_formula_definition_tool`（公式 + 单位 + 列名）、`query_metric_tool`（聚合 / 分组 by date / shift filter）、`get_grade_rules_tool`（按 formula_id 取等级规则 + 在 Python 端比较 condition_json）、`get_product_specs_tool`、`get_grade_rules_by_spec_tool`、`get_judgment_types_tool`、`get_first_inspection_config_tool`（读 `lab_report_config.F_LEVEL_NAMES` JSON）、`query_first_inspection_rate_tool`（按重量加权，回落 lab_raw_data） |
+| `query_tools.py` | `@tool` 函数：`get_formula_definition_tool`（公式 + 单位 + 列名）、`query_metric_tool`（聚合 / 分组 by date / shift filter）、`get_grade_rules_tool`（按 formula_id 取等级规则 + 在 Python 端比较 condition_json）、`get_product_specs_tool`、`get_grade_rules_by_spec_tool`、`get_judgment_types_tool`、`get_first_inspection_config_tool`（读 `lab_report_config.F_LEVEL_NAMES` JSON）、`query_first_inspection_rate_tool`（按中间表重量加权） |
 | `graph_tools.py` | `traverse_judgment_path(furnace_no, batch_no, target_grade) @tool` —— 走"炉号→规格→规则→条件×N→等级"序列；`_build_judgment_path_steps` 是无副作用核心；`_evaluate_rule_conditions` 把 `conditionJson`（LIST of dict）逐条 vs record 字段比较 → satisfied/failed/unstructured；中文化字段标签 `_FIELD_LABELS`；任何错误返回带 `kind="fallback"` step 的非空列表 |
 | `__init__.py` | 包标记 |
 

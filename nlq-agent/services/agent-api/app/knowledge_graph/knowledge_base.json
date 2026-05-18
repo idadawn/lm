@@ -1,0 +1,140 @@
+{
+  "_comment": "业务知识库 — 单一信源，集中存放业务术语、字段含义、数据格式、指标口径的权威定义。NLQ Agent 在路由用户问题时，第一步必须先在这里查找命中条目，命中后直接以 entries[].answer 字段为权威答案返回，**禁止 LLM 自由发挥**。维护流程：业务专家可直接修改本文件，FastAPI dev 模式热加载（无需重启）。新增条目请保留 id 唯一、aliases 至少 2 个常见说法、answer 走班组长能听懂的人话。",
+
+  "version": "1.0.0",
+  "updated": "2026-05-17",
+
+  "entries": [
+    {
+      "id": "furnace_no_format",
+      "topic": "炉号",
+      "category": "data_format",
+      "title": "炉号是怎么组成的",
+      "aliases": [
+        "炉号是怎么组成的", "炉号组成", "炉号格式", "炉号怎么解析",
+        "炉号是什么样的", "炉号代表什么", "炉号含义", "炉号结构",
+        "炉号怎么看", "标准炉号格式", "格式化炉号", "炉号字段说明"
+      ],
+      "keywords": ["炉号", "格式", "组成", "结构", "解析"],
+      "answer": "**炉号格式**：`[产线数字][班次汉字][8 位日期]-[炉号]-[卷号]-[分卷号][可选 W/G 字母][可选汉字描述]`\n\n**示例**：`1甲20260426-4-25-1W塌卷`\n\n| 位置 | 含义 | 示例 | 说明 |\n|------|------|------|------|\n| 第 1 位 | 产线号 | `1` | 1～4 号生产线 |\n| 第 2 位 | 班次 | `甲` | 甲 / 乙 / 丙 |\n| 第 3-10 位 | 生产日期 | `20260426` | YYYYMMDD 8 位 |\n| `-4` | 炉号 | 第 4 炉 | 当班当日第几炉 |\n| `-25` | 卷号 | 第 25 卷 | 该炉第几卷 |\n| `-1` | 分卷号 | 第 1 段 | 该卷拆分后的第几段 |\n| `W` / `G` / `w` / `g` | 工艺标识 | `W` | 可选；标识刻痕(W) / 退火(G) 等工艺 |\n| 末尾汉字 | 外观特性 | `塌卷` | 可选；如「塌卷」「毛边」「脆」「划」「麻点」等业务描述 |\n\n**数据库两个字段**：\n\n| 字段 | 含义 | 业务用途 |\n|------|------|--------|\n| `F_FURNACE_NO` | **业务炉号**：含末尾业务标签（如 `1甲20260426-4-25-1W塌卷`） | **业务展示字段** —— 前端 / 报表 / 对话回答都显示这一列，让业务看到完整工艺标签 |\n| `F_FURNACE_NO_FORMATTED` | **物料唯一编码**：剥离末尾 W/G/K 单字母和汉字描述后的炉号（如 `1甲20260426-4-25-1`） | **唯一性判定 + 匹配/JOIN/去重** —— SQL WHERE 条件按它匹配；前端 UI 不直接展示 |\n\n**关键规则**：\n- 用户问"查 1甲...1W 这卷"，按 `F_FURNACE_NO_FORMATTED` 做精确/模糊匹配\n- 返回给用户的"炉号"列展示 `F_FURNACE_NO`（完整业务标签）\n- 前端编辑炉号时，前缀（= F_FURNACE_NO_FORMATTED 物料唯一码）只读保护，只能改末尾后缀"
+    },
+
+    {
+      "id": "first_inspection_rate",
+      "topic": "一次交检合格率",
+      "category": "metric_definition",
+      "title": "一次交检合格率是怎么算的",
+      "aliases": [
+        "一次交检合格率是什么", "一次交检合格率怎么算", "一次交检合格率定义",
+        "一次交检合格率口径", "一次交检合格率公式", "一交合格率",
+        "首检合格率", "一交率", "一次合格率"
+      ],
+      "keywords": ["一次交检合格率", "一次交检", "一交", "首检"],
+      "answer": "**一次交检合格率** = 一次检验为合格等级的卷重合计 ÷ 总卷重 × 100%\n\n**口径要点**：\n1. **判定列**：`F_FIRST_INSPECTION`（一次检验列），**不是** `F_LABELING`（贴标 / 最终等级）。\n2. **合格等级**：由 `lab_report_config` 中「一次交检合格率」一行的 `F_LEVEL_NAMES` 字段配置（通常只算 `A`，业务方可调整）。\n3. **重量字段**：只取 `F_SINGLE_COIL_WEIGHT`（单卷重），不含其他重量列。\n4. **过滤**：`F_DeleteMark IS NULL OR F_DeleteMark = 0`（排除软删除）。\n\n**SQL 骨架**：\n```sql\nSELECT \n  SUM(CASE WHEN F_FIRST_INSPECTION IN ('A') THEN F_SINGLE_COIL_WEIGHT ELSE 0 END) AS pass_weight,\n  SUM(F_SINGLE_COIL_WEIGHT) AS total_weight,\n  ROUND(pass_weight / NULLIF(total_weight, 0) * 100, 2) AS pass_rate\nFROM lab_intermediate_data\nWHERE F_PROD_DATE BETWEEN <start> AND <end>\n```\n\n**⚠️ 常见误区**：「A 类卷重 ÷ 总卷重」**不等于**一次交检合格率，前者按 `F_LABELING` 算的是**质量等级分布**（最终贴标占比），两个列完全不同。"
+    },
+
+    {
+      "id": "labeling_vs_first_inspection",
+      "topic": "字段区别",
+      "category": "field_distinction",
+      "title": "F_LABELING 和 F_FIRST_INSPECTION 有什么区别",
+      "aliases": [
+        "labeling 和 first_inspection 区别",
+        "F_LABELING 和 F_FIRST_INSPECTION 区别",
+        "F_LABELING 和 F_FIRST_INSPECTION 的区别",
+        "labeling 和 first inspection 的区别",
+        "贴标和一次交检的区别", "贴标和一次交检有什么区别",
+        "最终等级和一次检验的区别", "最终等级和一次交检的区别",
+        "labeling 是什么", "F_LABELING 是什么",
+        "F_FIRST_INSPECTION 是什么", "first_inspection 是什么",
+        "一次检验和最终等级区别"
+      ],
+      "keywords": ["labeling", "first_inspection", "贴标", "一次交检", "最终等级"],
+      "answer": "这两列**业务含义完全不同，不能互换使用**：\n\n| 列名 | 中文 | 含义 | 用途 |\n|------|------|------|------|\n| `F_FIRST_INSPECTION` | 一次检验 | 首次检验时的判定结果（A/性能不合/极差不合 等） | 计算**一次交检合格率**、不合格原因分析 |\n| `F_LABELING` | 贴标 / 最终等级 | 经过返修/复检后的最终贴标等级（A/B/未标注 等） | 计算**质量等级分布**、对外发货等级统计 |\n\n**关键差异**：\n- 一次检验是「**生产过程**」的成绩（不可改）\n- 贴标是「**最终出厂**」的等级（可能因返修升级）\n\n所以「上月各班组质量分布」用 `F_LABELING`；「上月一次交检合格率」用 `F_FIRST_INSPECTION`。"
+    },
+
+    {
+      "id": "shift_dimension",
+      "topic": "班次",
+      "category": "dimension",
+      "title": "班次都有哪些",
+      "aliases": [
+        "班次是什么", "有哪些班次", "班次有哪些", "都有什么班次",
+        "甲乙丙是什么班次",
+        "班次代号", "班次定义", "工作班次",
+        "甲班是什么", "乙班是什么", "丙班是什么",
+        "甲班代表什么", "什么叫甲班", "什么叫乙班", "什么叫丙班",
+        "班组是什么", "有哪些班组", "班组有哪些"
+      ],
+      "keywords": ["班次", "班组", "甲班", "乙班", "丙班"],
+      "answer": "检测中心生产排班分为 3 个班次：\n\n| 班次 | 别名 | 数字代号 | 说明 |\n|------|------|---------|------|\n| 甲 | 甲班 / 1班 / 一班 / 早班 | 1 | 通常 8:00 ~ 16:00 |\n| 乙 | 乙班 / 2班 / 二班 / 中班 | 2 | 通常 16:00 ~ 24:00 |\n| 丙 | 丙班 / 3班 / 三班 / 夜班 / 晚班 | 3 | 通常 0:00 ~ 8:00 |\n\n**数据库字段**：\n- `F_SHIFT`：汉字（`甲` / `乙` / `丙`）\n- `F_SHIFT_NUMERIC`：数字（1 / 2 / 3）"
+    },
+
+    {
+      "id": "line_dimension",
+      "topic": "产线",
+      "category": "dimension",
+      "title": "有几条生产线",
+      "aliases": [
+        "产线是什么", "有几条产线", "生产线编号", "有几条生产线", "有多少条产线", "几条产线",
+        "产线号代表什么", "1线 2线 3线 4线", "几号线", "产线有几条", "生产线有几条"
+      ],
+      "keywords": ["产线", "生产线", "线号"],
+      "answer": "检测中心共 4 条生产线，**字段 `F_LINE_NO` 取值 1~4**。\n\n炉号的第 1 位就是产线号，例如 `1甲20251101-1-4-1` 表示**第 1 条产线**、甲班、2025-11-01 生产的炉。\n\n各产线产品规格、产能配置可能不同，质量对比应当**先按产线再按班组**拆分，避免跨产线混合统计造成偏差。"
+    },
+
+    {
+      "id": "quality_level_distribution",
+      "topic": "质量等级分布",
+      "category": "metric_definition",
+      "title": "质量等级分布是怎么算的",
+      "aliases": [
+        "质量等级分布", "等级分布", "质量分布",
+        "labeling 分布", "标签分布", "贴标分布",
+        "A 类占比", "B 类占比", "各等级占比"
+      ],
+      "keywords": ["质量分布", "等级分布", "labeling", "贴标分布"],
+      "answer": "**质量等级分布** = 按贴标列 `F_LABELING` 分组，统计每个等级的卷重和占比。\n\n**口径**：\n- **分组列**：`F_LABELING`（**不是** `F_FIRST_INSPECTION`）\n- **重量字段**：`F_SINGLE_COIL_WEIGHT`\n- **过滤**：`F_DeleteMark IS NULL OR F_DeleteMark = 0`\n- **空值处理**：`F_LABELING` 为空显示为「未标注」\n- **排序**：按重量倒序\n\n**SQL 骨架**：\n```sql\nSELECT\n  COALESCE(NULLIF(TRIM(F_LABELING), ''), '未标注') AS level,\n  SUM(F_SINGLE_COIL_WEIGHT) AS weight,\n  ROUND(SUM(F_SINGLE_COIL_WEIGHT) / SUM(SUM(F_SINGLE_COIL_WEIGHT)) OVER () * 100, 2) AS rate\nFROM lab_intermediate_data\nWHERE F_PROD_DATE BETWEEN <start> AND <end>\nGROUP BY F_LABELING\n```\n\n**⚠️ 不是合格率**：本指标只描述**贴标后**的等级构成（A 类卷重多少、B 类多少、不合多少），不要叫它「合格率」——后者口径不同（见「一次交检合格率」条目）。"
+    },
+
+    {
+      "id": "single_coil_weight",
+      "topic": "卷重",
+      "category": "term",
+      "title": "卷重是什么",
+      "aliases": [
+        "卷重是什么", "单卷重", "重量字段",
+        "F_SINGLE_COIL_WEIGHT", "单卷重量"
+      ],
+      "keywords": ["卷重", "单卷重", "重量"],
+      "answer": "**卷重** = 单条带材卷起来的重量（kg），数据库字段 `F_SINGLE_COIL_WEIGHT`，存在 `lab_intermediate_data` 表里。\n\n所有重量类统计（产量、合格重量、不合格重量、各等级重量）**都只用这一个字段**，不要用 `F_COIL_WEIGHT` 等历史字段。"
+    },
+
+    {
+      "id": "furnace_batch_no",
+      "topic": "批次号",
+      "category": "term",
+      "title": "批次号是什么",
+      "aliases": [
+        "批次号是什么", "炉次号", "F_FURNACE_BATCH_NO",
+        "什么是批次", "批次和炉号区别"
+      ],
+      "keywords": ["批次号", "炉次号", "批次"],
+      "answer": "**批次号** = 同一炉次内多个卷的统一标识，存在 `F_FURNACE_BATCH_NO` 字段。\n\n**炉号 vs 批次号**：\n- **炉号**（`F_FURNACE_NO_FORMATTED`）：一卷一个，全局唯一，包含产线/班次/日期/分卷信息\n- **批次号**（`F_FURNACE_BATCH_NO`）：一炉一个，同一炉里几个卷共用同一批次号，用于关联同炉数据"
+    },
+
+    {
+      "id": "appearance_features",
+      "topic": "外观特性",
+      "category": "term",
+      "title": "外观特性有哪些",
+      "aliases": [
+        "外观特性是什么", "外观缺陷", "外观分类",
+        "外观特性有哪些", "外观特性都有什么", "外观特性都有哪些", "有哪些外观特性",
+        "脆 划 麻点 是什么", "炉号后面的汉字"
+      ],
+      "keywords": ["外观", "外观特性", "缺陷", "脆", "划", "麻点"],
+      "answer": "**外观特性**指带材在生产中被肉眼或仪器识别出的表面特征/缺陷，通常以汉字写在炉号末尾，例如 `1甲20251101-1-4-1脆` 末尾的「脆」。\n\n**常见外观特性**（数据库表 `lab_appearance_feature_*`）：\n\n| 特性 | 同义词 | 含义 |\n|------|--------|------|\n| 脆 | 易脆、发脆 | 易折易裂 |\n| 划 | 划伤、划痕、刮痕 | 表面有划伤 |\n| 麻点 | 麻面、麻坑、斑点 | 点状缺陷 |\n| 凹 | 凹陷、凹坑 | 表面下陷 |\n| 棱 | 起棱、棱角 | 不平直 |\n| 白边 | 边白 | 边缘发白 |\n| 脆边 | 边脆、边缘脆 | 边缘易脆 |\n| 亮线 | 光亮线、亮纹 | 表面亮条 |\n\n外观特性会影响最终贴标等级，但不直接进入「一次交检合格率」的合格判定。"
+    }
+  ]
+}

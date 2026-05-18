@@ -11,6 +11,8 @@ import type {
   OntologyData,
   OntologyRule,
   OntologyFormula,
+  OntologyNodeType,
+  OntologyRelationType,
 } from '../types/ontology';
 
 export interface GraphIndexes {
@@ -117,10 +119,10 @@ function addEdge(edges: any[], source: string, target: string, label: string, re
 
 function addBusinessObjectNodes(nodes: any[], edges: any[], rootId: string) {
   const objects = [
-    { id: 'domain:lamination', type: 'LaminationData', label: '叠片数据', subtitle: '导入后计算检测明细', x: 100, y: 80 },
-    { id: 'domain:single-sheet', type: 'SingleSheetPerformance', label: '单片性能', subtitle: 'Ps / Ss / Hc', x: 100, y: 150 },
-    { id: 'domain:appearance', type: 'AppearanceFeature', label: '外观特性', subtitle: '缺陷、等级、分类', x: 100, y: 220 },
-    { id: 'domain:metric-judge', type: 'MetricJudgement', label: '指标判定', subtitle: '统计计算与等级结果', x: 520, y: 200 },
+    { id: 'domain:lamination', type: 'LaminationData' as OntologyNodeType, label: '叠片数据', subtitle: '导入后计算检测明细', x: 100, y: 80 },
+    { id: 'domain:single-sheet', type: 'SingleSheetPerf' as OntologyNodeType, label: '单片性能', subtitle: 'Ps / Ss / Hc', x: 100, y: 150 },
+    { id: 'domain:appearance', type: 'AppearanceFeature' as OntologyNodeType, label: '外观特性', subtitle: '缺陷、等级、分类', x: 100, y: 220 },
+    { id: 'domain:metric-judge', type: 'MetricJudge' as OntologyNodeType, label: '指标判定', subtitle: '统计计算与等级结果', x: 520, y: 200 },
   ];
   for (const obj of objects) {
     nodes.push({
@@ -142,8 +144,8 @@ function buildSpecNode(spec: any, x: number, y: number, ruleCount: number, formu
     id: `spec:${spec.id}`,
     label: spec.name || spec.code || '产品规格',
     subtitle: spec.code,
-    type: 'ProductSpec',
-    dataType: 'spec',
+    type: 'ProductSpec' as OntologyNodeType,
+    dataType: 'ProductSpec',
     x,
     y,
     rawData: spec,
@@ -157,8 +159,8 @@ function buildRuleNode(rule: OntologyRule, x: number, y: number) {
     id: `rule:${rule.id}`,
     label: rule.name || rule.quality_status || '判定规则',
     subtitle: rule.quality_status || '规则',
-    type: 'JudgementRule',
-    dataType: 'rule',
+    type: 'JudgmentRule' as OntologyNodeType,
+    dataType: 'JudgmentRule',
     x,
     y,
     rawData: rule,
@@ -171,8 +173,8 @@ function buildFormulaNode(formula: OntologyFormula, x: number, y: number, linked
     id: `formula:${formula.id}`,
     label: formula.formula_name || formula.column_name || '公式',
     subtitle: formulaTypeLabel(formula),
-    type: 'Formula',
-    dataType: 'formula',
+    type: 'Formula' as OntologyNodeType,
+    dataType: 'Formula',
     x,
     y,
     rawData: formula,
@@ -260,7 +262,7 @@ function _buildFullGraph(
     id: rootId,
     label: '带材',
     subtitle: '检测中心业务根节点',
-    type: 'Ribbon',
+    type: 'Ribbon' as OntologyNodeType,
     dataType: 'Ribbon',
     x: 60,
     y: 260,
@@ -288,9 +290,9 @@ function _buildFullGraph(
   ruleList.forEach((rule, i) => {
     nodes.push(buildRuleNode(rule, 340, distributeY(i, ruleList.length, 180, 34)));
     if (rule.product_spec_id && focus.specIds.has(rule.product_spec_id)) {
-      addEdge(edges, `spec:${rule.product_spec_id}`, `rule:${rule.id}`, '判定规则', 'USES_RULE');
+      addEdge(edges, `spec:${rule.product_spec_id}`, `rule:${rule.id}`, '判定规则', 'HAS_RULE');
     } else {
-      addEdge(edges, rootId, `rule:${rule.id}`, '判定规则', 'USES_RULE');
+      addEdge(edges, rootId, `rule:${rule.id}`, '判定规则', 'HAS_RULE');
     }
   });
 
@@ -350,7 +352,7 @@ function _buildSpecCentricGraph(
     id: rootId,
     label: '带材',
     subtitle: '业务根节点',
-    type: 'Ribbon',
+    type: 'Ribbon' as OntologyNodeType,
     dataType: 'Ribbon',
     x: 60,
     y: 260,
@@ -362,7 +364,7 @@ function _buildSpecCentricGraph(
 
   specRules.forEach((rule, i) => {
     nodes.push(buildRuleNode(rule, 340, distributeY(i, specRules.length, 180, 34)));
-    addEdge(edges, `spec:${spec.id}`, `rule:${rule.id}`, '判定规则', 'USES_RULE');
+    addEdge(edges, `spec:${spec.id}`, `rule:${rule.id}`, '判定规则', 'HAS_RULE');
   });
 
   const formulas = Array.from(formulaIds).map((fid) => formulaMap[fid]).filter(Boolean);

@@ -159,17 +159,22 @@ async def query_metric_tool(
     where_clause = " AND ".join(where_clauses)
 
     try:
+        # 与业务系统（lm/api MonthlyQualityReport + Dashboard）对齐：
+        #   1. 时间维度用【生产日期 F_PROD_DATE】，不用 F_DETECTION_DATE
+        #   2. 排除软删除：F_DeleteMark = 0 / IS NULL
+        delete_filter = "(F_DeleteMark IS NULL OR F_DeleteMark = 0)"
         if group_by_date:
             # Group by date query (for trend charts)
             sql = f"""
                 SELECT
-                    DATE(F_DETECTION_DATE) as date,
+                    DATE(F_PROD_DATE) as date,
                     {aggregation.upper()}({column_name}) as value,
                     COUNT(*) as count
                 FROM lab_intermediate_data
                 WHERE {where_clause}
                     AND {column_name} IS NOT NULL
-                GROUP BY DATE(F_DETECTION_DATE)
+                    AND {delete_filter}
+                GROUP BY DATE(F_PROD_DATE)
                 ORDER BY date
             """  # noqa: S608
         else:
@@ -181,6 +186,7 @@ async def query_metric_tool(
                 FROM lab_intermediate_data
                 WHERE {where_clause}
                     AND {column_name} IS NOT NULL
+                    AND {delete_filter}
             """  # noqa: S608
 
         results = await execute_safe_sql(sql, params)
@@ -365,36 +371,70 @@ SPEC_WIDTH_RANGES = {
 
 @tool
 async def get_product_specs_tool() -> dict[str, Any]:
-    """Get all available product specifications.
+    """Get all available product specifications with attributes.
 
-    Returns list of product specs with code, name, and width range.
+    Returns list of product specs with code, name, width range, detection columns
+    and current-version extension attributes (e.g. length, layers, density).
 
     Returns:
-        Dict containing list of specs with code, name, width_min, width_max
+        Dict containing list of specs with code, name, width_min, width_max,
+        detection_columns and attributes list.
     """
+    # 注意：lab_product_spec.F_Id / lab_product_spec_version.F_PRODUCT_SPEC_ID 等字段
+    # 在不同迁移产物里有可能落到 utf8mb4_unicode_ci 与 utf8mb4_0900_ai_ci 两套排序规则，
+    # MySQL 在 JOIN/= 时会抛 "Illegal mix of collations"。这里显式 COLLATE 一边到中性
+    # 排序规则即可——utf8mb4_unicode_ci 兼容性最好。
     sql = """
-        SELECT F_Id as id, F_CODE as code, F_NAME as name, F_DETECTION_COLUMNS as detection_columns
-        FROM lab_product_spec
-        WHERE (F_DeleteMark IS NULL OR F_DeleteMark = 0) AND F_ENABLEDMARK = 1
-        ORDER BY F_CODE
+        SELECT
+            p.F_Id as id,
+            p.F_CODE as code,
+            p.F_NAME as name,
+            p.F_DETECTION_COLUMNS as detection_columns,
+            a.F_ATTRIBUTE_NAME as attr_name,
+            a.F_ATTRIBUTE_KEY as attr_key,
+            a.F_ATTRIBUTE_VALUE as attr_value,
+            a.F_UNIT as attr_unit
+        FROM lab_product_spec p
+        LEFT JOIN lab_product_spec_version v
+            ON p.F_Id COLLATE utf8mb4_unicode_ci = v.F_PRODUCT_SPEC_ID COLLATE utf8mb4_unicode_ci
+            AND v.F_IS_CURRENT = 1
+        LEFT JOIN lab_product_spec_attribute a
+            ON p.F_Id COLLATE utf8mb4_unicode_ci = a.F_PRODUCT_SPEC_ID COLLATE utf8mb4_unicode_ci
+            AND a.F_VERSION COLLATE utf8mb4_unicode_ci = v.F_VERSION COLLATE utf8mb4_unicode_ci
+            AND (a.F_DeleteMark IS NULL OR a.F_DeleteMark = 0)
+        WHERE (p.F_DeleteMark IS NULL OR p.F_DeleteMark = 0)
+          AND p.F_ENABLEDMARK = 1
+        ORDER BY p.F_CODE, a.F_SORTCODE
     """
 
     results = await execute_safe_sql(sql, {})
 
-    specs = []
+    specs_map: dict[str, dict[str, Any]] = {}
     for r in results:
-        code = str(r["code"])
-        width_range = SPEC_WIDTH_RANGES.get(code, {})
-        specs.append(
-            {
-                "id": str(r["id"]),
+        sid = str(r["id"])
+        if sid not in specs_map:
+            code = str(r["code"])
+            width_range = SPEC_WIDTH_RANGES.get(code, {})
+            specs_map[sid] = {
+                "id": sid,
                 "code": code,
                 "name": r["name"],
                 "detection_columns": r["detection_columns"],
                 "width_min": width_range.get("min"),
                 "width_max": width_range.get("max"),
+                "attributes": [],
             }
-        )
+        if r["attr_name"]:
+            specs_map[sid]["attributes"].append(
+                {
+                    "name": r["attr_name"],
+                    "key": r["attr_key"],
+                    "value": r["attr_value"],
+                    "unit": r["attr_unit"],
+                }
+            )
+
+    specs = list(specs_map.values())
 
     return {
         "found": len(specs) > 0,
@@ -422,6 +462,8 @@ async def get_grade_rules_by_spec_tool(
         Dict containing rules grouped by spec
     """
     # 查询判定规则，关联产品规格表获取规格代码
+    # lab_intermediate_data_judgment_level.F_PRODUCT_SPEC_ID 与 lab_product_spec.F_Id
+    # 用了不同 collation（utf8mb4_0900_ai_ci vs utf8mb4_unicode_ci），需显式归一。
     sql = """
         SELECT
             j.F_Id as id,
@@ -434,7 +476,8 @@ async def get_grade_rules_by_spec_tool(
             j.F_CONDITION as condition_json,
             p.F_CODE as spec_code
         FROM lab_intermediate_data_judgment_level j
-        LEFT JOIN lab_product_spec p ON j.F_PRODUCT_SPEC_ID = p.F_Id
+        LEFT JOIN lab_product_spec p
+            ON j.F_PRODUCT_SPEC_ID COLLATE utf8mb4_unicode_ci = p.F_Id COLLATE utf8mb4_unicode_ci
         WHERE j.F_FORMULA_ID = :formula_id
         ORDER BY j.F_PRIORITY DESC, j.F_NAME
     """
@@ -544,6 +587,89 @@ async def get_judgment_types_tool() -> dict[str, Any]:
 
 
 @tool
+async def get_indicator_definition_tool(indicator_name: str) -> dict[str, Any]:
+    """Get the definition / formula / pass-grades for a statistical indicator.
+
+    用于回答"X 的判断依据/计算口径/怎么算/包含哪些等级"类元问题。
+    从 lab_report_config 取指标元数据，并 JOIN lab_intermediate_data_formula 取实际计算公式。
+
+    Args:
+        indicator_name: 指标名（如 "一次交检合格率"、"A"、"合格率"、"不合格"）。
+                        模糊匹配 lab_report_config.F_NAME。
+
+    Returns:
+        Dict containing:
+        - found: 是否匹配到
+        - name: 指标完整名
+        - description: 描述
+        - level_names: 合格等级列表（如 ["A"]）
+        - is_percentage: 是否是占比指标
+        - formula_id: 关联的公式 ID
+        - formula_name: 公式名（例如 "F_LABELING"）
+        - column_name: 数据库列名（即"判定列"）
+        - formula: 公式表达式
+        - source_table: 公式所在表
+    """
+    # 字符串字段 collation 跨表 JOIN，必须显式 COLLATE。
+    sql = """
+        SELECT
+            r.F_NAME as name,
+            r.F_DESCRIPTION as description,
+            r.F_LEVEL_NAMES as level_names,
+            r.F_IS_PERCENTAGE as is_percentage,
+            r.F_FORMULA_ID as formula_id,
+            f.F_FORMULA_NAME as formula_name,
+            f.F_COLUMN_NAME as column_name,
+            f.F_FORMULA as formula,
+            f.F_TABLE_NAME as source_table,
+            f.F_UNIT_NAME as unit_name
+        FROM lab_report_config r
+        LEFT JOIN lab_intermediate_data_formula f
+            ON r.F_FORMULA_ID COLLATE utf8mb4_unicode_ci = f.F_Id COLLATE utf8mb4_unicode_ci
+        WHERE (r.F_DeleteMark IS NULL OR r.F_DeleteMark = 0)
+          AND r.F_ENABLEDMARK = 1
+          AND (r.F_NAME = :name OR r.F_NAME LIKE :fuzzy)
+        ORDER BY CASE WHEN r.F_NAME = :name THEN 0 ELSE 1 END, r.F_SORT_ORDER ASC
+        LIMIT 1
+    """
+
+    results = await execute_safe_sql(
+        sql, {"name": indicator_name, "fuzzy": f"%{indicator_name}%"}
+    )
+    if not results:
+        return {"found": False, "error": f"未在 lab_report_config 找到指标 '{indicator_name}'"}
+
+    row = results[0]
+    level_names_raw = row.get("level_names") or ""
+    level_names: list[str] = []
+    if level_names_raw:
+        try:
+            parsed = json.loads(level_names_raw)
+            if isinstance(parsed, list):
+                level_names = [str(g) for g in parsed]
+            elif isinstance(parsed, str):
+                level_names = [g.strip() for g in parsed.split(",") if g.strip()]
+        except json.JSONDecodeError:
+            level_names = [
+                g.strip() for g in str(level_names_raw).split(",") if g.strip()
+            ]
+
+    return {
+        "found": True,
+        "name": row.get("name") or indicator_name,
+        "description": row.get("description") or "",
+        "level_names": level_names,
+        "is_percentage": bool(row.get("is_percentage")),
+        "formula_id": str(row.get("formula_id") or ""),
+        "formula_name": row.get("formula_name") or "",
+        "column_name": row.get("column_name") or "",
+        "formula": row.get("formula") or "",
+        "source_table": row.get("source_table") or "",
+        "unit_name": row.get("unit_name") or "",
+    }
+
+
+@tool
 async def get_first_inspection_config_tool() -> dict[str, Any]:
     """Get first inspection pass rate configuration.
 
@@ -632,8 +758,8 @@ async def query_first_inspection_rate_tool(
     config = await get_first_inspection_config_tool.ainvoke({})
     pass_grades = config.get("grades", ["A"])
 
-    # 与 lm/api MonthlyQualityReportService 对齐：按重量加权计算，重量优先取
-    # lab_intermediate_data.F_SINGLE_COIL_WEIGHT，缺失时回落 lab_raw_data。
+    # 与 lm/api MonthlyQualityReportService 对齐：按重量加权计算，重量只取
+    # lab_intermediate_data.F_SINGLE_COIL_WEIGHT。
     # 不过滤 F_FIRST_INSPECTION IS NOT NULL（lm/api 把 NULL 视为未判定，仍计入总量）。
     conditions: list[str] = []
     params: dict[str, Any] = {}
@@ -641,7 +767,8 @@ async def query_first_inspection_rate_tool(
     if time_range_sql:
         if not validate_time_range_sql(time_range_sql):
             return {"error": "Invalid time range SQL"}
-        conditions.append(time_range_sql.replace("F_DETECTION_DATE", "d.F_DETECTION_DATE"))
+        # _build_time_range_sql 现在返回 F_PROD_DATE，这里加表别名前缀
+        conditions.append(time_range_sql.replace("F_PROD_DATE", "d.F_PROD_DATE"))
 
     if shift:
         conditions.append("d.F_SHIFT = :shift")
@@ -651,6 +778,9 @@ async def query_first_inspection_rate_tool(
         conditions.append("p.F_CODE = :spec_code")
         params["spec_code"] = spec_code
 
+    # 与业务系统对齐：排除软删除记录
+    conditions.append("(d.F_DeleteMark IS NULL OR d.F_DeleteMark = 0)")
+
     where_clause = (" AND ".join(conditions)) if conditions else "1=1"
     params["pass_grades"] = tuple(pass_grades)
 
@@ -658,13 +788,12 @@ async def query_first_inspection_rate_tool(
         SELECT
             COUNT(*) AS total_count,
             SUM(CASE WHEN d.F_FIRST_INSPECTION IN :pass_grades THEN 1 ELSE 0 END) AS pass_count,
-            COALESCE(SUM(COALESCE(d.F_SINGLE_COIL_WEIGHT, r.F_SINGLE_COIL_WEIGHT, 0)), 0) AS total_weight,
+            COALESCE(SUM(COALESCE(d.F_SINGLE_COIL_WEIGHT, 0)), 0) AS total_weight,
             COALESCE(SUM(CASE WHEN d.F_FIRST_INSPECTION IN :pass_grades
-                              THEN COALESCE(d.F_SINGLE_COIL_WEIGHT, r.F_SINGLE_COIL_WEIGHT, 0)
+                              THEN COALESCE(d.F_SINGLE_COIL_WEIGHT, 0)
                               ELSE 0 END), 0) AS pass_weight
         FROM lab_intermediate_data d
         LEFT JOIN lab_product_spec p ON d.F_PRODUCT_SPEC_ID = p.F_Id
-        LEFT JOIN lab_raw_data r ON d.F_RAW_DATA_ID = r.F_Id
         WHERE {where_clause}
     """
 

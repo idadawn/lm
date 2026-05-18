@@ -22,10 +22,20 @@ export type ReasoningStepKindPresentation = {
 };
 
 export const REASONING_STEP_PRESENTATION: Record<string, ReasoningStepKindPresentation> = {
-  record:    { label: '命中记录', color: '#475569', icon: 'file-text' },
-  spec:      { label: '产品规格', color: '#1e40af', icon: 'safety-certificate' },
-  rule:      { label: '判定规则', color: '#6d28d9', icon: 'check-circle' },
-  condition: { label: '条件评估', color: '#155e75', icon: 'filter' },
-  grade:     { label: '最终结论', color: '#92400e', icon: 'star' },
-  fallback:  { label: '降级',     color: '#b91c1c', icon: 'question-circle' },
+  record:        { label: '命中记录', color: '#475569', icon: 'file-text' },
+  spec:          { label: '产品规格', color: '#1e40af', icon: 'safety-certificate' },
+  rule:          { label: '判定规则', color: '#6d28d9', icon: 'check-circle' },
+  condition:     { label: '条件评估', color: '#155e75', icon: 'filter' },
+  grade:         { label: '最终结论', color: '#92400e', icon: 'star' },
+  fallback:      { label: '降级处理', color: '#b91c1c', icon: 'question-circle' },
+  // NLQ Agent reasoning kinds (Chinese — backend already sends Chinese title/summary)
+  intent:        { label: '意图识别', color: '#0891b2', icon: 'bulb' },
+  sql:           { label: '数据查询', color: '#0e7490', icon: 'database' },
+  answer:        { label: '整理回答', color: '#0d9488', icon: 'edit' },
+  schema_pick:   { label: '选表',     color: '#1e40af', icon: 'database' },
+  column_pick:   { label: '选列',     color: '#1d4ed8', icon: 'table' },
+  sql_draft:     { label: 'SQL 草稿', color: '#7c3aed', icon: 'code' },
+  sql_validate:  { label: 'SQL 校验', color: '#6d28d9', icon: 'safety' },
+  execute_sql:   { label: '执行 SQL', color: '#059669', icon: 'play-circle' },
+  result_summary:{ label: '结果总结', color: '#0d9488', icon: 'file-done' },
 };

@@ -14,60 +14,82 @@
       </view>
     </view>
 
-    <!-- 日期选择与刷新 -->
-    <view class="header-bar">
-      <view class="date-picker-group">
-        <picker mode="date" :value="startDate" @change="onStartDateChange">
-          <view class="date-picker">{{ startDate }}</view>
-        </picker>
-        <text class="date-sep">~</text>
-        <picker mode="date" :value="endDate" @change="onEndDateChange">
-          <view class="date-picker">{{ endDate }}</view>
-        </picker>
+    <!-- 快速日期选择 chip 行 -->
+    <scroll-view class="quick-range-bar" scroll-x :show-scrollbar="false">
+      <view class="quick-range-chips">
+        <view
+          v-for="opt in quickRangeOptions"
+          :key="opt.key"
+          class="quick-chip"
+          :class="{ active: activeRangeKey === opt.key }"
+          @click="applyQuickRange(opt.key)"
+        >
+          <text class="quick-chip-text">{{ opt.label }}</text>
+        </view>
+        <view
+          class="quick-chip quick-chip--custom"
+          :class="{ active: !activeRangeKey && !showCustomPicker, ring: showCustomPicker }"
+          @click="showCustomPicker = !showCustomPicker"
+        >
+          <text class="quick-chip-text">{{ showCustomPicker ? '收起' : '自定义' }}</text>
+        </view>
+        <view class="quick-chip quick-chip--refresh" @click="fetchData(true)">
+          <text class="quick-chip-text">🔄 刷新</text>
+        </view>
       </view>
-      <text class="refresh-btn" @click="fetchData(true)">刷新</text>
+    </scroll-view>
+
+    <!-- 当前选中区间显示 -->
+    <view class="range-summary">
+      <text class="range-text">{{ startDate }} ～ {{ endDate }}</text>
     </view>
 
-    <!-- 空数据提示 -->
-    <view class="empty-tip" v-if="!loading && totalWeight === 0">
-      <text>当前日期范围内暂无数据</text>
+    <!-- 自定义日期（折叠） -->
+    <view v-if="showCustomPicker" class="custom-date-row">
+      <picker mode="date" :value="startDate" @change="onStartDateChange">
+        <view class="date-picker">起：{{ startDate }}</view>
+      </picker>
+      <text class="date-sep">~</text>
+      <picker mode="date" :value="endDate" @change="onEndDateChange">
+        <view class="date-picker">止：{{ endDate }}</view>
+      </picker>
     </view>
 
-    <!-- KPI 卡片 -->
-    <view class="kpi-section" v-if="totalWeight > 0 || loading" :class="{ 'kpi-loaded': !loading }">
+    <!-- KPI 卡片：始终显示，无数据时显示占位 — — -->
+    <view class="kpi-section" :class="{ 'kpi-loaded': !loading, 'kpi-empty': !loading && totalWeight === 0 }">
       <view class="kpi-card kpi-card--weight" @click="onKpiClick('weight')">
         <view class="kpi-top-icon kpi-top-icon--weight"></view>
-        <text class="kpi-value">{{ formatNumber(totalWeight) }}</text>
+        <text class="kpi-value">{{ totalWeight > 0 ? formatNumber(totalWeight) : '—' }}</text>
         <text class="kpi-label">检测总重量(kg)</text>
       </view>
       <view class="kpi-card kpi-card--check" @click="onKpiClick('check')">
         <view class="kpi-top-icon kpi-top-icon--check"></view>
-        <text class="kpi-value" :style="{ color: getRateColor(qualifiedRate) }">
-          {{ qualifiedRate.toFixed(2) }}%
+        <text class="kpi-value" :style="{ color: totalWeight > 0 ? getRateColor(qualifiedRate) : '#cbd5e1' }">
+          {{ totalWeight > 0 ? qualifiedRate.toFixed(2) + '%' : '—' }}
         </text>
         <text class="kpi-label">合格率</text>
       </view>
       <view class="kpi-card kpi-card--chart" @click="onKpiClick('chart')">
         <view class="kpi-top-icon kpi-top-icon--chart"></view>
-        <text class="kpi-value">{{ laminationAvg.toFixed(4) }}</text>
+        <text class="kpi-value">{{ laminationAvg > 0 ? laminationAvg.toFixed(4) : '—' }}</text>
         <text class="kpi-label">叠片系数均值</text>
       </view>
       <view class="kpi-card kpi-card--trend" @click="onKpiClick('trend')">
         <view class="kpi-top-icon kpi-top-icon--trend"></view>
-        <text class="kpi-value">{{ formatNumber(todayWeight) }}</text>
+        <text class="kpi-value">{{ todayWeight > 0 ? formatNumber(todayWeight) : '—' }}</text>
         <text class="kpi-label">今日产量(kg)</text>
-        <text class="kpi-change" :class="changeRate >= 0 ? 'up' : 'down'">
+        <text v-if="todayWeight > 0" class="kpi-change" :class="changeRate >= 0 ? 'up' : 'down'">
           {{ changeRate >= 0 ? '↑' : '↓' }}{{ Math.abs(changeRate).toFixed(1) }}%
         </text>
       </view>
     </view>
 
     <!-- 质量分布 -->
-    <view class="section-card section-card--distribution" v-if="distributionList.length > 0" :style="cardStyle(0)">
+    <view class="section-card section-card--distribution" :style="cardStyle(0)">
       <view class="section-header">
         <text class="section-title">质量分布</text>
       </view>
-      <view class="distribution-list">
+      <view v-if="distributionList.length > 0" class="distribution-list">
         <view class="distribution-item" v-for="(item, index) in distributionList" :key="index">
           <view class="dist-color" :style="{ backgroundColor: item.color }"></view>
           <text class="dist-name">{{ item.name }}</text>
@@ -78,28 +100,39 @@
           </view>
         </view>
       </view>
+      <view v-else class="section-empty">
+        <text class="section-empty-icon">📊</text>
+        <text class="section-empty-text">本期暂无质量分布数据</text>
+      </view>
     </view>
 
     <!-- 叠片系数趋势 -->
-    <view class="section-card section-card--trend" v-if="laminationTrendData.length > 0" :style="cardStyle(1)">
+    <view class="section-card section-card--trend" :style="cardStyle(1)">
       <view class="section-header">
         <text class="section-title">叠片系数趋势</text>
       </view>
-      <view class="trend-legend" v-if="trendSpecs.length > 0">
-        <view class="legend-item" v-for="(spec, idx) in trendSpecs" :key="idx">
-          <view class="legend-dot" :style="{ backgroundColor: trendColors[idx % trendColors.length] }"></view>
-          <text class="legend-text">{{ spec }}</text>
-        </view>
+      <UChart
+        v-if="laminationTrendData.length > 0"
+        type="area"
+        :categories="trendCategories"
+        :series="trendSeriesForChart"
+        :width="canvasWidth"
+        :height="220"
+        :colors="trendColors"
+        :y-axis-decimal="3"
+      />
+      <view v-else class="section-empty">
+        <text class="section-empty-icon">📈</text>
+        <text class="section-empty-text">本期暂无叠片系数趋势</text>
       </view>
-      <canvas canvas-id="trendCanvas" class="trend-canvas" :style="{ width: canvasWidth + 'px', height: '200px' }"></canvas>
     </view>
 
     <!-- 不合格 Top5 -->
-    <view class="section-card section-card--top5" v-if="unqualifiedTop5.length > 0" :style="cardStyle(2)">
+    <view class="section-card section-card--top5" :style="cardStyle(2)">
       <view class="section-header">
         <text class="section-title">不合格原因 Top5</text>
       </view>
-      <view class="top5-list">
+      <view v-if="unqualifiedTop5.length > 0" class="top5-list">
         <view class="top5-item" v-for="(item, index) in unqualifiedTop5" :key="index">
           <text class="top5-rank">{{ index + 1 }}</text>
           <text class="top5-name">{{ item.categoryName }}</text>
@@ -109,30 +142,52 @@
           </view>
         </view>
       </view>
-    </view>
-
-    <!-- 班次对比 -->
-    <view class="section-card section-card--shift" v-if="shiftComparisonData.length > 0" :style="cardStyle(3)">
-      <view class="section-header">
-        <text class="section-title">班次对比</text>
-      </view>
-      <view class="shift-list">
-        <view class="shift-item" v-for="(item, index) in shiftComparisonData" :key="index">
-          <text class="shift-name">{{ item.shift }}</text>
-          <text class="shift-weight">{{ formatNumber(item.totalWeight) }}kg</text>
-          <text class="shift-rate" :style="{ color: getRateColor(item.qualifiedRate) }">
-            {{ item.qualifiedRate.toFixed(2) }}%
-          </text>
-        </view>
+      <view v-else class="section-empty">
+        <text class="section-empty-icon">✅</text>
+        <text class="section-empty-text">本期没有不合格记录</text>
       </view>
     </view>
 
-    <!-- 厚度-叠片系数关联 -->
-    <view class="section-card section-card--correlation" v-if="thicknessCorrelationData.length > 0" :style="cardStyle(4)">
+    <!-- 班次产量对比（柱+线混合） -->
+    <view class="section-card section-card--shift" :style="cardStyle(3)">
       <view class="section-header">
-        <text class="section-title">厚度-叠片系数关联</text>
+        <text class="section-title">班次产量对比</text>
       </view>
-      <canvas canvas-id="scatterCanvas" class="scatter-canvas" :style="{ width: canvasWidth + 'px', height: '200px' }"></canvas>
+      <UChart
+        v-if="shiftComparisonData.length > 0"
+        type="mix"
+        :categories="shiftChartCategories"
+        :series="shiftMixSeries"
+        :width="canvasWidth"
+        :height="240"
+        :colors="['#1890ff', '#722ed1']"
+        :y-axis-decimal="0"
+      />
+      <view v-else class="section-empty">
+        <text class="section-empty-icon">👥</text>
+        <text class="section-empty-text">本期暂无班次对比数据</text>
+      </view>
+    </view>
+
+    <!-- 质量趋势分析（按日聚合的不合格率，平滑曲线） -->
+    <view class="section-card section-card--correlation" :style="cardStyle(4)">
+      <view class="section-header">
+        <text class="section-title">质量趋势分析</text>
+      </view>
+      <UChart
+        v-if="qualityTrendData.length > 0"
+        type="line"
+        :categories="qualityTrendCategories"
+        :series="qualityTrendSeries"
+        :width="canvasWidth"
+        :height="220"
+        :colors="['#722ed1', '#52c41a']"
+        :y-axis-decimal="2"
+      />
+      <view v-else class="section-empty">
+        <text class="section-empty-icon">📈</text>
+        <text class="section-empty-text">本期暂无质量趋势数据</text>
+      </view>
     </view>
   </view>
 </template>
@@ -141,12 +196,34 @@
 import { ref, computed, nextTick } from 'vue'
 import { onShow, onReady, onPullDownRefresh } from '@dcloudio/uni-app'
 import { getMonthlyReport, getLaminationTrend, getThicknessCorrelation, getDailyProduction } from '@/api/dashboard.js'
-import { formatDate, getStartOfMonth, getToday } from '@/utils/date.js'
+import { formatDate, getStartOfMonth, getToday, getQuickRange, detectQuickRangeKey } from '@/utils/date.js'
+import UChart from '@/components/u-chart/u-chart.vue'
 
 const loading = ref(false)
 const canvasWidth = ref(350)
 const startDate = ref(formatDate(getStartOfMonth()))
 const endDate = ref(formatDate(getToday()))
+
+// ── 快速日期选择 ──
+const quickRangeOptions = [
+  { key: 'today',          label: '今日' },
+  { key: 'this_week',      label: '本周' },
+  { key: 'last_week',      label: '上周' },
+  { key: 'current_month',  label: '本月' },
+  { key: 'last_month',     label: '上月' },
+]
+const showCustomPicker = ref(false)
+// computed：当前 startDate/endDate 对应哪个快速 key（自定义时为空串）
+const activeRangeKey = computed(() => detectQuickRangeKey(startDate.value, endDate.value))
+
+function applyQuickRange(key) {
+  const [s, e] = getQuickRange(key)
+  if (s === startDate.value && e === endDate.value) return  // 已选中，不重复请求
+  startDate.value = s
+  endDate.value = e
+  showCustomPicker.value = false
+  fetchData(true)
+}
 
 const totalWeight = ref(0)
 const qualifiedRate = ref(0)
@@ -262,6 +339,141 @@ const trendSpecs = computed(() => {
   return Array.from(set)
 })
 
+// ── uCharts 数据结构改造 ──
+// 1. 收集所有日期作为 categories（按时间排序去重）
+// 2. 按 spec 分组成 series，每条曲线对齐到 categories 上（没有的位置填 null）
+const trendCategories = computed(() => {
+  const set = new Set()
+  laminationTrendData.value.forEach((item) => { if (item.date) set.add(item.date) })
+  return Array.from(set).sort().map((d) => d.slice(5))  // MM-DD 显示
+})
+
+const trendSeriesForChart = computed(() => {
+  const allDates = Array.from(new Set(laminationTrendData.value.map((i) => i.date))).sort()
+  const bySpec = new Map()
+  laminationTrendData.value.forEach((item) => {
+    const spec = item.productSpecCode || '全部'
+    if (!bySpec.has(spec)) bySpec.set(spec, new Map())
+    bySpec.get(spec).set(item.date, item.value)
+  })
+  const result = []
+  bySpec.forEach((dateMap, spec) => {
+    result.push({
+      name: String(spec),
+      data: allDates.map((d) => {
+        const v = dateMap.get(d)
+        return v == null ? null : Number(v)
+      })
+    })
+  })
+  return result
+})
+
+// 班次对比 柱+线混合图：
+// - categories：班次名（甲/乙/丙/丁）
+// - series[0]：柱状，产量(kg)，挂在左 Y 轴（index=0）
+// - series[1]：折线，合格率(%)，挂在右 Y 轴（index=1）
+const SHIFT_ORDER = ['甲班', '乙班', '丙班', '丁班', '甲', '乙', '丙', '丁']
+const sortedShiftData = computed(() => {
+  const arr = [...shiftComparisonData.value]
+  arr.sort((a, b) => {
+    const ia = SHIFT_ORDER.indexOf(a.shift)
+    const ib = SHIFT_ORDER.indexOf(b.shift)
+    if (ia !== -1 && ib !== -1) return ia - ib
+    if (ia !== -1) return -1
+    if (ib !== -1) return 1
+    return String(a.shift).localeCompare(String(b.shift))
+  })
+  return arr
+})
+
+const shiftChartCategories = computed(() => sortedShiftData.value.map((s) => s.shift))
+
+const shiftMixSeries = computed(() => [
+  {
+    name: '产量(kg)',
+    index: 0,
+    type: 'column',
+    data: sortedShiftData.value.map((s) => Math.round(Number(s.totalWeight || 0)))
+  },
+  {
+    name: '合格率(%)',
+    index: 1,
+    type: 'line',
+    color: '#722ed1',
+    data: sortedShiftData.value.map((s) => Number(Number(s.qualifiedRate || 0).toFixed(2)))
+  }
+])
+
+// 日期解析：兼容三种后端返回格式：
+// - ISO 字符串 "2026-04-15T16:00:00Z" 或 "2026-04-15"
+// - Date 对象
+// - Unix 时间戳数字（ms 或 s），如 1745609123456
+// 全部归一化成 "YYYY-MM-DD"。
+function toIsoDate(raw) {
+  if (!raw) return ''
+  if (raw instanceof Date) return isNaN(raw.getTime()) ? '' : formatDate(raw)
+  const s = String(raw)
+  // 已经是 YYYY-MM-DD 开头：直接取前 10
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10)
+  // 纯数字 → 时间戳。13 位是 ms，10 位是 s（×1000）
+  if (/^\d+$/.test(s)) {
+    const n = Number(s)
+    const ms = s.length === 10 ? n * 1000 : n
+    const d = new Date(ms)
+    return isNaN(d.getTime()) ? '' : formatDate(d)
+  }
+  // 其他字符串交给 Date 兜底（".NET" 风格 / RFC2822 等）
+  const d = new Date(s)
+  return isNaN(d.getTime()) ? '' : formatDate(d)
+}
+
+// 质量趋势分析：从 details 按日聚合 不合格率/合格率
+// - 后端的 isSummaryRow 合计行必须跳过，否则会把"合计"也当成一天
+// - 日期格式不固定，统一走 toIsoDate 归一化成 "YYYY-MM-DD"
+const qualityTrendData = computed(() => {
+  const byDate = new Map()
+  details.value.forEach((row) => {
+    if (row.isSummaryRow) return
+    const date = toIsoDate(row.prodDate)
+    if (!date) return
+    if (!byDate.has(date)) byDate.set(date, { det: 0, qual: 0, unq: 0 })
+    const e = byDate.get(date)
+    e.det += Number(row.detectionWeight || 0)
+    e.qual += Number(row.qualifiedWeight || 0)
+    e.unq += Number(row.unqualifiedWeight || 0)
+  })
+  return Array.from(byDate.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, v]) => ({
+      date,
+      unqualifiedRate: v.det > 0 ? (v.unq / v.det * 100) : 0,
+      qualifiedRate:   v.det > 0 ? (v.qual / v.det * 100) : 0
+    }))
+})
+
+const qualityTrendCategories = computed(() =>
+  qualityTrendData.value.map((d) => d.date.slice(5))   // MM-DD
+)
+
+const qualityTrendSeries = computed(() => [
+  {
+    name: '不合格率(%)',
+    data: qualityTrendData.value.map((d) => Number(d.unqualifiedRate.toFixed(2)))
+  }
+])
+
+// 厚度-叠片系数散点图：uCharts scatter 系列要求每个点是 [x, y] 二元数组
+const scatterSeriesForChart = computed(() => {
+  const pts = thicknessCorrelationData.value
+    .map((item) => [Number(item.thickness || 0), Number(item.laminationFactor || 0)])
+    .filter(([x, y]) => x > 0 && y > 0)
+  return [{
+    name: '厚度-叠片系数',
+    data: pts,
+  }]
+})
+
 function formatNumber(n) {
   if (isNaN(n)) return '0'
   if (n >= 10000) return (n / 10000).toFixed(2) + 'w'
@@ -316,8 +528,7 @@ async function fetchData(force = false) {
     console.log('[Dashboard] 命中缓存，跳过请求:', rangeKey)
     // 确保 Canvas 图表已绘制（页面返回时可能需要重绘）
     nextTick(() => {
-      drawTrendChart()
-      drawScatterChart()
+      // UChart 组件自动响应数据变化，无需手动重绘
     })
     return
   }
@@ -376,12 +587,26 @@ async function fetchData(force = false) {
           productSpecName: item.productSpecName || null,
           value: item.value || 0
         }))
+        const dateSet = new Set(laminationTrendData.value.map((i) => i.date).filter(Boolean))
+        const specSet = new Set(laminationTrendData.value.map((i) => i.productSpecCode || '全部'))
+        console.log('[Dashboard] 叠片趋势 原始行数=', data.length,
+          '不重复日期数=', dateSet.size,
+          '不重复规格数=', specSet.size,
+          '前3行=', JSON.stringify(data.slice(0, 3)))
       }
     }
 
     if (thicknessRes) {
       const data = thicknessRes.data
-      if (Array.isArray(data)) thicknessCorrelationData.value = data
+      if (Array.isArray(data)) {
+        thicknessCorrelationData.value = data
+        const xs = data.map((d) => Number(d.thickness || 0)).filter((v) => v > 0)
+        const ys = data.map((d) => Number(d.laminationFactor || 0)).filter((v) => v > 0)
+        console.log('[Dashboard] 厚度散点 原始行数=', data.length,
+          'x范围=', xs.length ? (Math.min(...xs) + '~' + Math.max(...xs)) : '空',
+          'y范围=', ys.length ? (Math.min(...ys) + '~' + Math.max(...ys)) : '空',
+          '前3行=', JSON.stringify(data.slice(0, 3)))
+      }
     }
 
     getDailyProduction().then((res) => {
@@ -398,8 +623,7 @@ async function fetchData(force = false) {
     animTick.value++
 
     nextTick(() => {
-      drawTrendChart()
-      drawScatterChart()
+      // UChart 组件自动响应数据变化，无需手动重绘
     })
   } catch (e) {
     console.error('[Dashboard] 获取数据失败:', e)
@@ -566,8 +790,7 @@ onShow(() => {
 onReady(() => {
   const sysInfo = uni.getSystemInfoSync()
   canvasWidth.value = sysInfo.windowWidth - 32
-  if (laminationTrendData.value.length > 0) drawTrendChart()
-  if (thicknessCorrelationData.value.length > 0) drawScatterChart()
+  // UChart 组件根据 props 自动渲染，不需要手动触发
 })
 
 onPullDownRefresh(() => {
@@ -585,21 +808,84 @@ onPullDownRefresh(() => {
   box-sizing: border-box;
 }
 
-.header-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #ffffff;
-  border-radius: 12px;
-  padding: 12px 16px;
-  margin-bottom: 16px;
-  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.08);
+/* ── 快速日期选择 chip 行 ── */
+.quick-range-bar {
+  white-space: nowrap;
+  margin-bottom: 8px;
 }
 
-.date-picker-group {
+.quick-range-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 4px 4px 0;
+}
+
+.quick-chip {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  background: #ffffff;
+  border-radius: 18px;
+  border: 1px solid #e2e8f0;
+  font-size: 13px;
+  color: #475569;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+.quick-chip-text {
+  font-size: 13px;
+  color: inherit;
+}
+
+.quick-chip:active,
+.quick-chip.ring {
+  transform: scale(0.96);
+}
+
+.quick-chip.active {
+  background: linear-gradient(135deg, #1890ff, #40a9ff);
+  border-color: transparent;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.28);
+}
+
+.quick-chip.active .quick-chip-text {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.quick-chip--custom {
+  background: #f8fafc;
+}
+
+.quick-chip--refresh {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #15803d;
+}
+
+/* ── 当前选中区间显示 + 自定义日期 ── */
+.range-summary {
+  text-align: right;
+  padding: 0 4px;
+  margin-bottom: 12px;
+}
+
+.range-text {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.custom-date-row {
   display: flex;
   align-items: center;
   gap: 8px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(24, 144, 255, 0.08);
 }
 
 .date-picker {
@@ -615,17 +901,37 @@ onPullDownRefresh(() => {
   color: #8c8c8c;
 }
 
-.refresh-btn {
-  font-size: 14px;
-  color: #1890ff;
-  font-weight: 600;
-}
-
 .empty-tip {
   text-align: center;
   padding: 40px 0;
   color: #8c8c8c;
   font-size: 14px;
+}
+
+/* 单个 section 卡片内的空状态占位 */
+.section-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 12px;
+  gap: 8px;
+  color: #94a3b8;
+}
+
+.section-empty-icon {
+  font-size: 36px;
+  line-height: 1;
+}
+
+.section-empty-text {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+/* KPI 空态：值变浅灰但保持位置 */
+.kpi-section.kpi-empty .kpi-value {
+  color: #cbd5e1;
 }
 
 .kpi-section {
@@ -926,6 +1232,44 @@ onPullDownRefresh(() => {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+/* 紧凑版：跟在混合图下方，三列网格，去掉 border */
+.shift-list--compact {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #e2e8f0;
+}
+
+.shift-list--compact .shift-item {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 6px;
+  border-bottom: none;
+  background: #f8fafc;
+  border-radius: 8px;
+  gap: 4px;
+}
+
+.shift-list--compact .shift-name {
+  width: auto;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.shift-list--compact .shift-weight {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.shift-list--compact .shift-rate {
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .shift-item {

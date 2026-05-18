@@ -6,6 +6,7 @@ using Poxiao.DynamicApiController;
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.ReportConfig;
 using Poxiao.Lab.Entity.Enum;
+using Poxiao.Lab.Helpers;
 using SqlSugar;
 using System.Text.Json;
 
@@ -30,6 +31,7 @@ public class ReportConfigService : IDynamicApiController, ITransient
         _reportConfigRepository = reportConfigRepository;
         _formulaRepository = formulaRepository;
         _judgmentLevelRepository = judgmentLevelRepository;
+        IntermediateDataFormulaSchemaHelper.EnsureEditorModeColumn(_formulaRepository.AsSugarClient());
     }
 
     /// <summary>

@@ -195,7 +195,7 @@ async def get_ribbon_subgraph(furnace_no: str, depth: int = 2) -> dict | None:
         if mag:
             mid = f"single_sheet:{mag['F_Id']}"
             nodes.append(OntologyNode(
-                id=mid, type="SingleSheetPerformance", label="单片性能",
+                id=mid, type="SingleSheetPerf", label="单片性能",
                 subtitle=str(mag["F_DETECTION_TIME"]) if mag["F_DETECTION_TIME"] else None,
                 status="ok", raw={"ps_loss": float(mag["F_PS_LOSS"]) if mag["F_PS_LOSS"] else None,
                 "ss_power": float(mag["F_SS_POWER"]) if mag["F_SS_POWER"] else None,
@@ -242,7 +242,8 @@ async def get_ribbon_subgraph(furnace_no: str, depth: int = 2) -> dict | None:
                        j.F_COLOR, j.F_CONDITION, j.F_FORMULA_ID,
                        f.F_FORMULA_NAME, f.F_COLUMN_NAME, f.F_FORMULA_TYPE, f.F_FORMULA
                 FROM lab_intermediate_data_judgment_level j
-                LEFT JOIN lab_intermediate_data_formula f ON j.F_FORMULA_ID = f.F_Id
+                LEFT JOIN lab_intermediate_data_formula f
+                    ON j.F_FORMULA_ID COLLATE utf8mb4_unicode_ci = f.F_Id COLLATE utf8mb4_unicode_ci
                 WHERE j.F_PRODUCT_SPEC_ID COLLATE utf8mb4_unicode_ci = :sid COLLATE utf8mb4_unicode_ci
                   AND (j.F_DeleteMark = 0 OR j.F_DeleteMark IS NULL)
                 ORDER BY j.F_PRIORITY
@@ -250,7 +251,7 @@ async def get_ribbon_subgraph(furnace_no: str, depth: int = 2) -> dict | None:
             for rr in (await session.execute(rsql, {"sid": spec_id})).mappings().all():
                 rid2 = f"rule:{rr['F_Id']}"
                 nodes.append(OntologyNode(
-                    id=rid2, type="JudgementRule", label=rr["F_NAME"],
+                    id=rid2, type="JudgmentRule", label=rr["F_NAME"],
                     subtitle=rr["F_QUALITY_STATUS"],
                     status="ok" if rr["F_QUALITY_STATUS"] == "合格" else "warning",
                     raw={"name": rr["F_NAME"], "priority": rr["F_PRIORITY"],
@@ -259,9 +260,9 @@ async def get_ribbon_subgraph(furnace_no: str, depth: int = 2) -> dict | None:
                          "formula_name": rr["F_FORMULA_NAME"], "column_name": rr["F_COLUMN_NAME"]},
                 ))
                 edges.append(OntologyEdge(
-                    id=f"{spec_node_id}-USES_RULE-{rid2}",
+                    id=f"{spec_node_id}-HAS_RULE-{rid2}",
                     source=spec_node_id, target=rid2,
-                    relation="USES_RULE", label="使用规则",
+                    relation="HAS_RULE", label="使用规则",
                 ))
                 if rr.get("F_FORMULA_ID"):
                     fid2 = f"formula:{rr['F_FORMULA_ID']}"
@@ -530,8 +531,8 @@ async def _build_judgment_path_steps(
             "status": "success",
             "ontology_refs": [
                 {
-                    "type": "InspectionRecord",
-                    "id": f"record:{furnace_no or batch_no}",
+                    "type": "Ribbon",
+                    "id": f"ribbon:{furnace_no or batch_no}",
                     "label": f"炉号 {furnace_no or batch_no}",
                 }
             ],
@@ -573,9 +574,9 @@ async def _build_judgment_path_steps(
             ],
             "edge_refs": [
                 {
-                    "source": f"record:{furnace_no or batch_no}",
+                    "source": f"ribbon:{furnace_no or batch_no}",
                     "target": f"spec:{spec_code}",
-                    "relation": "USES_SPEC",
+                    "relation": "BELONGS_TO_SPEC",
                 }
             ],
             "meta": {"spec_code": spec_code},
@@ -697,16 +698,9 @@ async def _build_judgment_path_steps(
                 "status": "success",
                 "ontology_refs": [
                     {
-                        "type": "RuleCondition",
-                        "id": f"cond:{rule_id}:{detail['field']}",
-                        "label": detail["label"] or detail["field"],
-                    }
-                ],
-                "edge_refs": [
-                    {
-                        "source": f"rule:{rule_id}",
-                        "target": f"cond:{rule_id}:{detail['field']}",
-                        "relation": "HAS_CONDITION",
+                        "type": "JudgmentRule",
+                        "id": f"rule:{rule_id}",
+                        "label": rule_name,
                     }
                 ],
                 "evidence": [
@@ -733,16 +727,9 @@ async def _build_judgment_path_steps(
                 "status": "warning",
                 "ontology_refs": [
                     {
-                        "type": "RuleCondition",
-                        "id": f"cond:{rule_id}:{detail['field']}",
-                        "label": detail["label"] or detail["field"],
-                    }
-                ],
-                "edge_refs": [
-                    {
-                        "source": f"rule:{rule_id}",
-                        "target": f"cond:{rule_id}:{detail['field']}",
-                        "relation": "HAS_CONDITION",
+                        "type": "JudgmentRule",
+                        "id": f"rule:{rule_id}",
+                        "label": rule_name,
                     }
                 ],
                 "evidence": [

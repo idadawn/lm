@@ -75,6 +75,20 @@ class Settings(BaseSettings):
     NEO4J_DATABASE: str = "neo4j"
     NEO4J_ENABLED: bool = False  # 默认关闭，需要手动启用
 
+    # LightRAG 检索增强层
+    # ------------------------------------------------------------
+    # 设计：嵌入式（同进程），向量库走本地 NanoVectorDB（文件），
+    # embedding 走本地 BGE-small-zh-v1.5；只用 LightRAG 的检索能力，
+    # 不启用自动实体抽取（自己 insert 序列化好的图谱片段）。
+    LIGHTRAG_ENABLED: bool = False  # 默认关闭，通过 PoC 验证后再启用
+    LIGHTRAG_WORKING_DIR: str = os.path.join(BASE_DIR, "data", "lightrag")
+    LIGHTRAG_EMBEDDING_MODEL: str = "BAAI/bge-small-zh-v1.5"
+    LIGHTRAG_EMBEDDING_DIM: int = 512
+    LIGHTRAG_EMBEDDING_DEVICE: str = "cpu"  # 没 GPU 也跑得动；有 GPU 可改 "cuda"
+    LIGHTRAG_LLM_FUNC_MODE: str = "litellm"  # 复用 LITELLM 网关，不重复配 OpenAI key
+    LIGHTRAG_CONFIDENCE_THRESHOLD: float = 0.85  # 高于此值直接答；低于走原路由
+    LIGHTRAG_CONTEXT_TOP_K: int = 5  # 中等置信度时注入下游 prompt 的片段数
+
     # Sentry 错误追踪
     SENTRY_DSN: str = ""
 

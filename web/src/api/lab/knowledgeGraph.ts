@@ -66,36 +66,212 @@ export interface OntologySpec {
   id: string;
   code: string;
   name: string;
-  description: string;
+  description: string;                // 兼容旧字段（值 = detection_columns）
+  detection_columns?: string;         // F_DETECTION_COLUMNS 叠片检测数据列
+  version?: string;                   // 当前版本号 F_VERSION（来自 lab_product_spec_version）
   attributes: Array<{ key: string; name: string; value: string; unit: string }>;
 }
 
 export interface OntologyRule {
   id: string;
-  name: string;
-  code: string;
-  quality_status: string;
-  priority: number;
-  description: string;
-  product_spec_id: string;
-  product_spec_name: string;
-  formula_name: string;
-  formula_id: string;
+  code: string;                    // F_CODE 等级代码
+  name: string;                    // F_NAME 等级名称
+  formula_id: string;              // F_FORMULA_ID 关联的判定公式
+  formula_name: string;            // F_FORMULA_NAME 冗余公式名
+  product_spec_id: string;         // F_PRODUCT_SPEC_ID 产品规格 ID
+  product_spec_name: string;       // 规格名（来自 JOIN）
+  product_spec_code?: string;      // 规格代码
+  quality_status: string;          // F_QUALITY_STATUS 合格/不合格/其他
+  priority: number;                // F_PRIORITY 优先级
+  color?: string;                  // F_COLOR 展示颜色
+  is_statistic?: boolean;          // F_IS_STATISTIC 是否参与统计
+  is_default?: boolean;            // F_IS_DEFAULT 是否兜底
+  description?: string;            // F_DESCRIPTION 业务说明
+  conditionJson?: string;          // F_CONDITION 判定条件 JSON
 }
 
 export interface OntologyFormula {
   id: string;
   formula_name: string;
+  column_name: string;            // F_COLUMN_NAME
+  formula: string;                // F_FORMULA
+  formula_type: string;           // F_FORMULA_TYPE 归一化为 'CALC'|'JUDGE'|'NO'
+  unit_name: string;              // F_UNIT_NAME
+  formula_language?: string;      // F_FORMULA_LANGUAGE 'EXCEL'|'MATH'
+  table_name?: string;            // F_TABLE_NAME
+  source_type?: string;           // F_SOURCE_TYPE 'SYSTEM'|'CUSTOM'
+  precision_val?: number | null;  // F_PRECISION
+  sort_order?: number;            // F_SORT_ORDER
+  is_enabled?: boolean;           // F_IS_ENABLED
+  default_value?: string;         // F_DEFAULT_VALUE
+  remark?: string;                // F_REMARK
+  aliases?: string[];             // NLQ 同义词
+}
+
+export interface OntologySpecAttribute {
+  id: string;
+  spec_id: string;
+  name: string;
+  attr_key?: string;
+  value?: string;
+  value_type?: string;
+  unit?: string;
+  precision_val?: number | string;
+  version?: string;
+}
+
+export interface OntologyTemplateField {
+  field: string;
+  label?: string;
+  data_type?: string;
+  required?: boolean;
+}
+
+export interface OntologyExcelTemplate {
+  id: string;
+  template_name: string;
+  template_code: string;
+  field_mappings: OntologyTemplateField[];
+}
+
+export interface OntologyTableField {
   column_name: string;
-  formula: string;
-  formula_type: string;
-  unit_name: string;
+  column_comment: string;
+  aliases?: string[];            // NLQ 同义词
+}
+
+// ------ 外观特性相关类型 ------
+
+export interface OntologyAppearanceCategory {
+  id: string;
+  name: string;
+  description?: string;
+  parent_id?: string;          // F_PARENTID
+  root_id?: string;            // F_ROOTID
+  path?: string;               // F_PATH "rootId,parentId,currentId"
+  sort_code?: number;
+}
+
+export interface OntologyAppearanceFeature {
+  id: string;
+  name: string;                // F_NAME 特性名（如"脆"）
+  category_id: string;         // F_CATEGORY_ID
+  severity_level_id?: string;  // F_SEVERITY_LEVEL_ID
+  level_name?: string;         // JOIN 出来：等级名称（如"中等"）
+  level_is_default?: boolean;
+  keywords: string[];          // 已解析的 JSON 数组
+  description?: string;
+  sort_code?: number;
+  aliases?: string[];          // NLQ 同义词
+}
+
+export interface OntologyAppearanceLevel {
+  id: string;
+  name: string;                // 等级名（微/轻微/中等/严重/超级）
+  description?: string;
+  sort_code?: number;
+  enabled?: boolean;
+  is_default?: boolean;
+}
+
+export interface OntologyReportConfig {
+  id: string;
+  name: string;                  // F_NAME 统计名称
+  formula_id: string;            // F_FORMULA_ID 关联 JUDGE 公式
+  level_names: string[];         // F_LEVEL_NAMES 已解析的 JSON 数组
+  description?: string;
+  sort_order?: number;
+  is_system?: boolean;
+  is_header?: boolean;           // 头部展示
+  is_percentage?: boolean;       // 仅占比
+  is_show_in_report?: boolean;
+  is_show_ratio?: boolean;
+  aliases?: string[];            // NLQ 同义词
+}
+
+export interface OntologySqlTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  applicable_metric_id?: string;    // '*' = 通用模板
+  parameters?: Array<{
+    name: string;
+    type: string;
+    required?: boolean;
+    desc?: string;
+  }>;
+  sql_template: string;
+  output_columns?: Array<{ name: string; desc?: string }>;
+  sample_questions?: string[];
+}
+
+// 维度元数据（NLQ 用：自然语言→SQL 条件的解析依据）
+export interface OntologyTimeRange {
+  expr: string;
+  aliases: string[];
+  start: string;
+  end: string;
+}
+
+export interface OntologyShiftValue {
+  code: string;
+  numeric?: number;
+  aliases: string[];
+}
+
+export interface OntologyDimensions {
+  time?: {
+    field: string;
+    aliases?: string[];
+    format?: string;
+    min_date?: string;
+    max_date?: string;
+    row_count?: number;
+    common_ranges?: OntologyTimeRange[];
+    sql_helpers?: Record<string, string>;
+  };
+  shift?: {
+    field: string;
+    secondary_field?: string;
+    aliases?: string[];
+    values?: OntologyShiftValue[];
+    values_from_data?: string[];
+  };
+  line?: {
+    field: string;
+    aliases?: string[];
+    value_aliases?: Record<string, string[]>;
+    values_from_data?: string[];
+  };
+  product_spec?: {
+    field: string;
+    aliases?: string[];
+    kg_ref?: string;
+    values_from_data?: string[];
+  };
+  furnace_no?: {
+    field: string;
+    aliases?: string[];
+    raw_field?: string;
+    raw_aliases?: string[];
+  };
 }
 
 export interface OntologyData {
   specs: OntologySpec[];
   rules: OntologyRule[];
   formulas: OntologyFormula[];
+  spec_attributes?: OntologySpecAttribute[];
+  excel_templates?: OntologyExcelTemplate[];
+  table_fields?: Record<string, OntologyTableField[]>;
+  appearance_categories?: OntologyAppearanceCategory[];
+  appearance_features?: OntologyAppearanceFeature[];
+  appearance_levels?: OntologyAppearanceLevel[];
+  report_configs?: OntologyReportConfig[];
+  sql_templates?: OntologySqlTemplate[];
+  sql_placeholder_format?: Record<string, string>;
+  sql_table_context?: Record<string, Record<string, unknown>>;
+  dimensions?: OntologyDimensions;
 }
 
 export async function getOntology(): Promise<OntologyData> {

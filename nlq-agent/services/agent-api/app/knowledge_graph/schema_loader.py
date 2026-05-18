@@ -99,7 +99,9 @@ class SchemaCache:
                 ):
                     matched.append(col)
         # 也总是把常用业务列加进来（如果存在）
+        # 生产日期 F_PROD_DATE 在前 — 这是业务系统月度报表的时间口径
         common_priority = [
+            "F_PROD_DATE",
             "F_DETECTION_DATE",
             "F_FURNACE_NO",
             "F_FURNACE_BATCH_NO",
@@ -109,6 +111,7 @@ class SchemaCache:
             "F_PRODUCT_SPEC_ID",
             "F_RAW_DATA_ID",
             "F_SINGLE_COIL_WEIGHT",
+            "F_DeleteMark",
         ]
         col_index = tbl.column_map()
         priority_existing = [col_index[n] for n in common_priority if n in col_index and col_index[n] not in always and col_index[n] not in matched]

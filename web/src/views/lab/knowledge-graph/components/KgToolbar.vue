@@ -17,15 +17,7 @@
         allow-clear
         @change="onSearchChange"
       />
-      <a-radio-group
-        v-model:value="localViewMode"
-        option-type="button"
-        :options="[
-          { label: '网格', value: 'grid' },
-          { label: '图谱', value: 'graph' },
-        ]"
-        @change="$emit('update:viewMode', localViewMode)"
-      />
+      <!-- 网格/图谱切换已移除，默认只显示图谱 -->
     </a-space>
   </div>
 </template>
@@ -33,27 +25,24 @@
 <script lang="ts" setup>
 import { ref, watch, h } from 'vue';
 import { ReloadOutlined, SyncOutlined, SearchOutlined } from '@ant-design/icons-vue';
-import type { ViewMode } from '../types/ontology';
+
 
 const props = defineProps<{
   loading: boolean;
   resyncing: boolean;
   searchText: string;
-  viewMode: ViewMode;
+
 }>();
 
 const emit = defineEmits<{
   (e: 'resync'): void;
   (e: 'refresh'): void;
   (e: 'search', value: string): void;
-  (e: 'update:viewMode', value: ViewMode): void;
+
 }>();
 
 const localSearch = ref(props.searchText);
-const localViewMode = ref<ViewMode>(props.viewMode);
-
 watch(() => props.searchText, (v) => { localSearch.value = v; });
-watch(() => props.viewMode, (v) => { localViewMode.value = v; });
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 

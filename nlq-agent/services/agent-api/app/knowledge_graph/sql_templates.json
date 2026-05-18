@@ -1,0 +1,170 @@
+{
+  "_comment": "智能问数 SQL 模板库 — 由 /kg/ontology 加载并按 applicable_metric_id / applicable_formula_id 关联到指标/公式节点。LLM 生成 SQL 时优先复用这些骨架。占位符约定：{startDate} {endDate} {shift} {productSpecCode} {lineNo} {levelList:csv} {levelList:in}",
+
+  "templates": [
+    {
+      "id": "metric_aggregate",
+      "name": "单指标重量聚合",
+      "description": "按时间窗 + 等级筛选，统计满足条件的检测重量合计。适用于任意 ReportConfig 指标。",
+      "applicable_metric_id": "*",
+      "parameters": [
+        { "name": "startDate", "type": "date", "required": true, "desc": "开始日期 yyyy-MM-dd" },
+        { "name": "endDate", "type": "date", "required": true, "desc": "结束日期（含当天）" },
+        { "name": "levelList", "type": "string[]", "required": true, "desc": "指标 level_names" },
+        { "name": "judgeColumn", "type": "column", "required": true, "desc": "判定列名（来自指标 formula.column_name），如 F_FIRST_INSPECTION" }
+      ],
+      "sql_template": "SELECT SUM(F_SINGLE_COIL_WEIGHT) AS matched_weight\nFROM lab_intermediate_data\nWHERE F_DeleteMark IS NULL\n  AND F_PROD_DATE >= '{startDate}'\n  AND F_PROD_DATE < DATE_ADD('{endDate}', INTERVAL 1 DAY)\n  AND {judgeColumn} IN ({levelList:in})",
+      "output_columns": [
+        { "name": "matched_weight", "desc": "命中等级的重量合计(kg)" }
+      ],
+      "sample_questions": [
+        "本月一次交检 A 类的重量是多少？",
+        "上周甲班 B 级总产量？"
+      ]
+    },
+
+    {
+      "id": "metric_rate",
+      "name": "单指标占比",
+      "description": "命中等级重量 / 总重量 = 占比。一次交检合格率、A 类占比等都走这个模板。",
+      "applicable_metric_id": "*",
+      "parameters": [
+        { "name": "startDate", "type": "date", "required": true },
+        { "name": "endDate", "type": "date", "required": true },
+        { "name": "levelList", "type": "string[]", "required": true },
+        { "name": "judgeColumn", "type": "column", "required": true, "desc": "如 F_FIRST_INSPECTION" }
+      ],
+      "sql_template": "SELECT \n  SUM(CASE WHEN {judgeColumn} IN ({levelList:in}) THEN F_SINGLE_COIL_WEIGHT ELSE 0 END) AS matched_weight,\n  SUM(F_SINGLE_COIL_WEIGHT) AS total_weight,\n  ROUND(SUM(CASE WHEN {judgeColumn} IN ({levelList:in}) THEN F_SINGLE_COIL_WEIGHT ELSE 0 END)\n        / NULLIF(SUM(F_SINGLE_COIL_WEIGHT), 0) * 100, 2) AS matched_rate\nFROM lab_intermediate_data\nWHERE F_DeleteMark IS NULL\n  AND F_PROD_DATE >= '{startDate}'\n  AND F_PROD_DATE < DATE_ADD('{endDate}', INTERVAL 1 DAY)",
+      "output_columns": [
+        { "name": "matched_weight", "desc": "命中重量(kg)" },
+        { "name": "total_weight", "desc": "总重量(kg)" },
+        { "name": "matched_rate", "desc": "占比 %" }
+      ],
+      "sample_questions": [
+        "本月一次交检合格率？",
+        "上月 A 类占比多少？",
+        "本月不合格率？"
+      ]
+    },
+
+    {
+      "id": "shift_comparison",
+      "name": "班次对比",
+      "description": "按 F_SHIFT 分组，对比甲/乙/丙三班的总产量和指标占比。",
+      "applicable_metric_id": "*",
+      "parameters": [
+        { "name": "startDate", "type": "date", "required": true },
+        { "name": "endDate", "type": "date", "required": true },
+        { "name": "levelList", "type": "string[]", "required": true },
+        { "name": "judgeColumn", "type": "column", "required": true }
+      ],
+      "sql_template": "SELECT F_SHIFT AS shift,\n  SUM(F_SINGLE_COIL_WEIGHT) AS total_weight,\n  SUM(CASE WHEN {judgeColumn} IN ({levelList:in}) THEN F_SINGLE_COIL_WEIGHT ELSE 0 END) AS matched_weight,\n  ROUND(SUM(CASE WHEN {judgeColumn} IN ({levelList:in}) THEN F_SINGLE_COIL_WEIGHT ELSE 0 END)\n        / NULLIF(SUM(F_SINGLE_COIL_WEIGHT), 0) * 100, 2) AS matched_rate\nFROM lab_intermediate_data\nWHERE F_DeleteMark IS NULL\n  AND F_PROD_DATE >= '{startDate}'\n  AND F_PROD_DATE < DATE_ADD('{endDate}', INTERVAL 1 DAY)\nGROUP BY F_SHIFT\nORDER BY F_SHIFT",
+      "output_columns": [
+        { "name": "shift", "desc": "班次 甲/乙/丙" },
+        { "name": "total_weight", "desc": "总重量" },
+        { "name": "matched_weight", "desc": "命中重量" },
+        { "name": "matched_rate", "desc": "占比 %" }
+      ],
+      "sample_questions": [
+        "本月三班合格率对比",
+        "上周哪个班次合格率最高？"
+      ]
+    },
+
+    {
+      "id": "daily_trend",
+      "name": "日趋势",
+      "description": "按 DATE(F_PROD_DATE) 分组的日度指标占比，用于绘制趋势线。",
+      "applicable_metric_id": "*",
+      "parameters": [
+        { "name": "startDate", "type": "date", "required": true },
+        { "name": "endDate", "type": "date", "required": true },
+        { "name": "levelList", "type": "string[]", "required": true },
+        { "name": "judgeColumn", "type": "column", "required": true }
+      ],
+      "sql_template": "SELECT DATE(F_PROD_DATE) AS prod_date,\n  SUM(F_SINGLE_COIL_WEIGHT) AS total_weight,\n  ROUND(SUM(CASE WHEN {judgeColumn} IN ({levelList:in}) THEN F_SINGLE_COIL_WEIGHT ELSE 0 END)\n        / NULLIF(SUM(F_SINGLE_COIL_WEIGHT), 0) * 100, 2) AS matched_rate\nFROM lab_intermediate_data\nWHERE F_DeleteMark IS NULL\n  AND F_PROD_DATE >= '{startDate}'\n  AND F_PROD_DATE < DATE_ADD('{endDate}', INTERVAL 1 DAY)\nGROUP BY DATE(F_PROD_DATE)\nORDER BY prod_date",
+      "output_columns": [
+        { "name": "prod_date", "desc": "生产日期" },
+        { "name": "total_weight", "desc": "当日重量" },
+        { "name": "matched_rate", "desc": "当日占比 %" }
+      ],
+      "sample_questions": [
+        "近 7 天合格率走势",
+        "本月每天的一次交检合格率"
+      ]
+    },
+
+    {
+      "id": "unqualified_breakdown",
+      "name": "不合格分类统计",
+      "description": "按 F_FIRST_INSPECTION 分组统计每种不合格类型的重量与占比（Top N）。",
+      "applicable_metric_id": "*",
+      "parameters": [
+        { "name": "startDate", "type": "date", "required": true },
+        { "name": "endDate", "type": "date", "required": true },
+        { "name": "qualifiedLevels", "type": "string[]", "required": false, "desc": "合格等级列表（用于排除），默认 ['A','B']" },
+        { "name": "limit", "type": "int", "required": false, "desc": "返回条数，默认 10" }
+      ],
+      "sql_template": "SELECT F_FIRST_INSPECTION AS category,\n  SUM(F_SINGLE_COIL_WEIGHT) AS weight,\n  ROUND(SUM(F_SINGLE_COIL_WEIGHT) / NULLIF((\n    SELECT SUM(F_SINGLE_COIL_WEIGHT) FROM lab_intermediate_data\n    WHERE F_DeleteMark IS NULL\n      AND F_PROD_DATE >= '{startDate}'\n      AND F_PROD_DATE < DATE_ADD('{endDate}', INTERVAL 1 DAY)\n  ), 0) * 100, 2) AS rate\nFROM lab_intermediate_data\nWHERE F_DeleteMark IS NULL\n  AND F_PROD_DATE >= '{startDate}'\n  AND F_PROD_DATE < DATE_ADD('{endDate}', INTERVAL 1 DAY)\n  AND F_FIRST_INSPECTION NOT IN ({qualifiedLevels:in})\nGROUP BY F_FIRST_INSPECTION\nORDER BY weight DESC\nLIMIT {limit}",
+      "output_columns": [
+        { "name": "category", "desc": "不合格类型" },
+        { "name": "weight", "desc": "重量" },
+        { "name": "rate", "desc": "占总重量百分比 %" }
+      ],
+      "sample_questions": [
+        "本月不合格类型 Top 5",
+        "上月哪种缺陷重量最多？"
+      ]
+    },
+
+    {
+      "id": "detail_list",
+      "name": "明细查询",
+      "description": "按指定条件返回原始明细，常用于「找出所有 X 级炉号」这类问题。",
+      "applicable_metric_id": "*",
+      "parameters": [
+        { "name": "startDate", "type": "date", "required": true },
+        { "name": "endDate", "type": "date", "required": true },
+        { "name": "levelList", "type": "string[]", "required": false, "desc": "筛选的等级；不传则返回全部" },
+        { "name": "judgeColumn", "type": "column", "required": false, "desc": "默认 F_FIRST_INSPECTION" },
+        { "name": "limit", "type": "int", "required": false, "desc": "默认 500" }
+      ],
+      "sql_template": "SELECT F_FURNACE_NO_FORMATTED AS furnace_no,\n  F_PROD_DATE AS prod_date,\n  F_SHIFT AS shift,\n  F_FURNACE_BATCH_NO AS furnace_batch_no,\n  F_PRODUCT_SPEC_CODE AS product_spec_code,\n  F_SINGLE_COIL_WEIGHT AS single_coil_weight,\n  F_FIRST_INSPECTION AS first_inspection,\n  F_LABELING AS labeling\nFROM lab_intermediate_data\nWHERE F_DeleteMark IS NULL\n  AND F_PROD_DATE >= '{startDate}'\n  AND F_PROD_DATE < DATE_ADD('{endDate}', INTERVAL 1 DAY)\n  AND ('{levelList:csv}' = '' OR {judgeColumn} IN ({levelList:in}))\nORDER BY F_PROD_DATE DESC, F_SHIFT, F_FURNACE_BATCH_NO\nLIMIT {limit}",
+      "output_columns": [
+        { "name": "furnace_no", "desc": "炉号" },
+        { "name": "prod_date", "desc": "生产日期" },
+        { "name": "shift", "desc": "班次" },
+        { "name": "furnace_batch_no", "desc": "炉次号" },
+        { "name": "product_spec_code", "desc": "产品规格" },
+        { "name": "single_coil_weight", "desc": "单卷重量(kg)" },
+        { "name": "first_inspection", "desc": "一次交检结果" },
+        { "name": "labeling", "desc": "最终等级" }
+      ],
+      "sample_questions": [
+        "本月所有 C 级炉号",
+        "上周甲班的不合格明细"
+      ]
+    }
+  ],
+
+  "placeholder_format": {
+    "_comment": "占位符填充规则说明（供 NLQ Agent 实现参数替换）",
+    "{name}": "标量替换",
+    "{name:csv}": "数组用逗号拼接，如 ['A','B'] -> A,B",
+    "{name:in}": "数组转 SQL IN 子句，如 ['A','B'] -> 'A','B'"
+  },
+
+  "table_context": {
+    "_comment": "主表元数据，供 NLQ Agent 校验/补充字段",
+    "lab_intermediate_data": {
+      "primary_key": "F_Id",
+      "delete_mark": "F_DeleteMark",
+      "time_field": "F_PROD_DATE",
+      "weight_field": "F_SINGLE_COIL_WEIGHT",
+      "shift_field": "F_SHIFT",
+      "product_spec_field": "F_PRODUCT_SPEC_CODE",
+      "furnace_no_field": "F_FURNACE_NO_FORMATTED",
+      "judge_columns": ["F_FIRST_INSPECTION", "F_LABELING", "F_MAGNETIC_RES", "F_THICK_RES", "F_LAM_FACTOR_RES"]
+    }
+  }
+}

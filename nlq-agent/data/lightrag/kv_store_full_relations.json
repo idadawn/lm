@@ -1,0 +1,3709 @@
+{
+  "kb:furnace_no_format": {
+    "relation_pairs": [
+      [
+        "Coil Number",
+        "Furnace Number Format"
+      ],
+      [
+        "Example Furnace Number",
+        "F_FURNACE_NO"
+      ],
+      [
+        "Furnace Number",
+        "Furnace Number Format"
+      ],
+      [
+        "Appearance Characteristic",
+        "Example Furnace Number"
+      ],
+      [
+        "Furnace Number Component",
+        "Furnace Number Format"
+      ],
+      [
+        "Furnace Number Format",
+        "Sub-Coil Number"
+      ],
+      [
+        "Appearance Characteristic",
+        "F_FURNACE_NO"
+      ],
+      [
+        "F_FURNACE_NO_FORMATTED",
+        "Furnace Number Format"
+      ],
+      [
+        "Example Furnace Number",
+        "Sub-Coil Number"
+      ],
+      [
+        "Furnace Number Format",
+        "Production Date"
+      ],
+      [
+        "Furnace Number Format",
+        "Shift"
+      ],
+      [
+        "Example Furnace Number",
+        "Production Date"
+      ],
+      [
+        "Example Furnace Number",
+        "Shift"
+      ],
+      [
+        "Example Furnace Number",
+        "Furnace Number Format"
+      ],
+      [
+        "Coil Number",
+        "Example Furnace Number"
+      ],
+      [
+        "Appearance Characteristic",
+        "Furnace Number Format"
+      ],
+      [
+        "F_FURNACE_NO",
+        "Furnace Number Format"
+      ],
+      [
+        "F_FURNACE_NO",
+        "F_FURNACE_NO_FORMATTED"
+      ],
+      [
+        "Furnace Number Format",
+        "Production Line Number"
+      ],
+      [
+        "Example Furnace Number",
+        "Furnace Number Component"
+      ],
+      [
+        "Example Furnace Number",
+        "Production Line Number"
+      ]
+    ],
+    "count": 21,
+    "create_time": 1778985114,
+    "update_time": 1778985114,
+    "_id": "kb:furnace_no_format"
+  },
+  "kb:first_inspection_rate": {
+    "relation_pairs": [
+      [
+        "Lab Report Configuration",
+        "Level Names Field"
+      ],
+      [
+        "Delete Mark",
+        "First Inspection Pass Rate"
+      ],
+      [
+        "A Grade Coil Weight",
+        "Labeling Column"
+      ],
+      [
+        "First Inspection Column",
+        "Labeling Column"
+      ],
+      [
+        "First Inspection Column",
+        "First Inspection Pass Rate"
+      ],
+      [
+        "First Inspection Pass Rate",
+        "SQL Query"
+      ],
+      [
+        "First Inspection Pass Rate",
+        "Single Coil Weight"
+      ],
+      [
+        "F_PROD_DATE",
+        "Lab Intermediate Data"
+      ],
+      [
+        "First Inspection Pass Rate",
+        "Lab Intermediate Data"
+      ],
+      [
+        "A Grade Coil Weight",
+        "First Inspection Pass Rate"
+      ]
+    ],
+    "count": 10,
+    "create_time": 1778985158,
+    "update_time": 1778985158,
+    "_id": "kb:first_inspection_rate"
+  },
+  "kb:labeling_vs_first_inspection": {
+    "relation_pairs": [
+      [
+        "F_LABELING",
+        "Reinspection"
+      ],
+      [
+        "F_FIRST_INSPECTION",
+        "Production Process"
+      ],
+      [
+        "F_LABELING",
+        "Quality Grade Distribution"
+      ],
+      [
+        "F_FIRST_INSPECTION",
+        "First Inspection Pass Rate"
+      ],
+      [
+        "F_LABELING",
+        "Final Shipment Grade"
+      ],
+      [
+        "F_LABELING",
+        "贴标"
+      ],
+      [
+        "F_LABELING",
+        "Rework"
+      ],
+      [
+        "F_FIRST_INSPECTION",
+        "F_LABELING"
+      ],
+      [
+        "Reinspection",
+        "Rework"
+      ],
+      [
+        "F_FIRST_INSPECTION",
+        "一次交检"
+      ],
+      [
+        "F_FIRST_INSPECTION",
+        "Nonconformity Reason Analysis"
+      ]
+    ],
+    "count": 11,
+    "create_time": 1778985218,
+    "update_time": 1778985218,
+    "_id": "kb:labeling_vs_first_inspection"
+  },
+  "kb:shift_dimension": {
+    "relation_pairs": [
+      [
+        "乙",
+        "生产排班"
+      ],
+      [
+        "F_SHIFT",
+        "甲"
+      ],
+      [
+        "丙",
+        "生产排班"
+      ],
+      [
+        "F_SHIFT_NUMERIC",
+        "甲"
+      ],
+      [
+        "F_SHIFT",
+        "丙"
+      ],
+      [
+        "F_SHIFT_NUMERIC",
+        "丙"
+      ],
+      [
+        "生产排班",
+        "甲"
+      ],
+      [
+        "F_SHIFT_NUMERIC",
+        "乙"
+      ],
+      [
+        "F_SHIFT",
+        "乙"
+      ],
+      [
+        "检测中心",
+        "生产排班"
+      ]
+    ],
+    "count": 10,
+    "create_time": 1778985251,
+    "update_time": 1778985251,
+    "_id": "kb:shift_dimension"
+  },
+  "kb:line_dimension": {
+    "relation_pairs": [
+      [
+        "Production Line",
+        "Shift/Team"
+      ],
+      [
+        "Furnace",
+        "Furnace Number"
+      ],
+      [
+        "F_LINE_NO",
+        "Production Line"
+      ],
+      [
+        "Furnace",
+        "Production Line"
+      ],
+      [
+        "Furnace",
+        "Shift A"
+      ],
+      [
+        "Furnace Number",
+        "Production Line"
+      ],
+      [
+        "Detection Center",
+        "Production Line"
+      ],
+      [
+        "Furnace Number",
+        "Shift A"
+      ]
+    ],
+    "count": 8,
+    "create_time": 1778985297,
+    "update_time": 1778985297,
+    "_id": "kb:line_dimension"
+  },
+  "kb:quality_level_distribution": {
+    "relation_pairs": [
+      [
+        "Quality Grade Distribution",
+        "lab_intermediate_data"
+      ],
+      [
+        "F_LABELING",
+        "Quality Grade Distribution"
+      ],
+      [
+        "F_SINGLE_COIL_WEIGHT",
+        "Quality Grade Distribution"
+      ],
+      [
+        "First Inspection Pass Rate",
+        "Quality Grade Distribution"
+      ],
+      [
+        "F_PROD_DATE",
+        "Quality Grade Distribution"
+      ],
+      [
+        "F_DeleteMark",
+        "Quality Grade Distribution"
+      ],
+      [
+        "F_LABELING",
+        "Unlabeled"
+      ]
+    ],
+    "count": 7,
+    "create_time": 1778985337,
+    "update_time": 1778985337,
+    "_id": "kb:quality_level_distribution"
+  },
+  "kb:single_coil_weight": {
+    "relation_pairs": [
+      [
+        "卷重",
+        "各等级重量"
+      ],
+      [
+        "卷重",
+        "合格重量"
+      ],
+      [
+        "单条带材",
+        "卷重"
+      ],
+      [
+        "产量",
+        "卷重"
+      ],
+      [
+        "F_COIL_WEIGHT",
+        "卷重"
+      ],
+      [
+        "不合格重量",
+        "卷重"
+      ],
+      [
+        "F_SINGLE_COIL_WEIGHT",
+        "lab_intermediate_data"
+      ],
+      [
+        "单卷重量",
+        "卷重"
+      ],
+      [
+        "卷重",
+        "重量字段"
+      ],
+      [
+        "F_SINGLE_COIL_WEIGHT",
+        "卷重"
+      ],
+      [
+        "单卷重",
+        "卷重"
+      ]
+    ],
+    "count": 11,
+    "create_time": 1778985373,
+    "update_time": 1778985373,
+    "_id": "kb:single_coil_weight"
+  },
+  "kb:furnace_batch_no": {
+    "relation_pairs": [
+      [
+        "Coil",
+        "Furnace Number"
+      ],
+      [
+        "Batch Number",
+        "F_FURNACE_BATCH_NO"
+      ],
+      [
+        "F_FURNACE_NO_FORMATTED",
+        "Furnace Number"
+      ],
+      [
+        "Batch Number",
+        "Furnace Run"
+      ],
+      [
+        "Batch Number",
+        "Coil"
+      ],
+      [
+        "Batch Number",
+        "Furnace Number"
+      ],
+      [
+        "Coil",
+        "Furnace Run"
+      ]
+    ],
+    "count": 7,
+    "create_time": 1778985408,
+    "update_time": 1778985408,
+    "_id": "kb:furnace_batch_no"
+  },
+  "kb:appearance_features": {
+    "relation_pairs": [
+      [
+        "Appearance Feature",
+        "Furnace Number"
+      ],
+      [
+        "Appearance Feature",
+        "Pitting"
+      ],
+      [
+        "Appearance Feature",
+        "Labeling Grade"
+      ],
+      [
+        "Appearance Feature",
+        "Dent"
+      ],
+      [
+        "Appearance Feature",
+        "Database Table Lab Appearance Feature"
+      ],
+      [
+        "Appearance Feature",
+        "Brittle Edge"
+      ],
+      [
+        "Appearance Feature",
+        "First Inspection Pass Rate"
+      ],
+      [
+        "Appearance Feature",
+        "White Edge"
+      ],
+      [
+        "Appearance Feature",
+        "Scratch"
+      ],
+      [
+        "Appearance Feature",
+        "Brittle"
+      ],
+      [
+        "Appearance Feature",
+        "Ridge"
+      ],
+      [
+        "Appearance Feature",
+        "Bright Line"
+      ]
+    ],
+    "count": 12,
+    "create_time": 1778985452,
+    "update_time": 1778985452,
+    "_id": "kb:appearance_features"
+  },
+  "aliases:formula": {
+    "relation_pairs": [
+      [
+        "SsPower",
+        "视在功率"
+      ],
+      [
+        "MagneticRes",
+        "磁性能判定"
+      ],
+      [
+        "MagneticRes",
+        "磁性能结果"
+      ],
+      [
+        "P",
+        "PsLoss"
+      ],
+      [
+        "Formulas and Indicators Synonym Dictionary",
+        "Hc"
+      ],
+      [
+        "Formulas and Indicators Synonym Dictionary",
+        "MagneticRes"
+      ],
+      [
+        "Labeling",
+        "总判定"
+      ],
+      [
+        "Thickness",
+        "平均厚度"
+      ],
+      [
+        "LamFactor",
+        "叠片系数"
+      ],
+      [
+        "Formulas and Indicators Synonym Dictionary",
+        "LamFactor"
+      ],
+      [
+        "PsLoss",
+        "比损"
+      ],
+      [
+        "Thickness",
+        "厚度"
+      ],
+      [
+        "CoilWeight",
+        "单卷重量"
+      ],
+      [
+        "Ps",
+        "PsLoss"
+      ],
+      [
+        "Density",
+        "密度"
+      ],
+      [
+        "Formulas and Indicators Synonym Dictionary",
+        "LamFactorRes"
+      ],
+      [
+        "FirstInspection",
+        "一交"
+      ],
+      [
+        "Labeling",
+        "标签"
+      ],
+      [
+        "SsPower",
+        "激磁功率"
+      ],
+      [
+        "Labeling",
+        "等级标签"
+      ],
+      [
+        "PsLoss",
+        "比铁损"
+      ],
+      [
+        "CoilWeight",
+        "重量"
+      ],
+      [
+        "Thickness",
+        "带材厚度"
+      ],
+      [
+        "S",
+        "SsPower"
+      ],
+      [
+        "Formulas and Indicators Synonym Dictionary",
+        "Labeling"
+      ],
+      [
+        "MagneticRes",
+        "磁性判级"
+      ],
+      [
+        "Ss",
+        "SsPower"
+      ],
+      [
+        "Formulas and Indicators Synonym Dictionary",
+        "Thickness"
+      ],
+      [
+        "Formulas and Indicators Synonym Dictionary",
+        "Width"
+      ],
+      [
+        "ThickRes",
+        "厚度判定"
+      ],
+      [
+        "LamFactorRes",
+        "叠片系数判定"
+      ],
+      [
+        "LamFactorRes",
+        "叠片系数结果"
+      ],
+      [
+        "PsLoss",
+        "磁损"
+      ],
+      [
+        "CoilWeight",
+        "Formulas and Indicators Synonym Dictionary"
+      ],
+      [
+        "Width",
+        "带宽"
+      ],
+      [
+        "FirstInspection",
+        "Formulas and Indicators Synonym Dictionary"
+      ],
+      [
+        "ThickRes",
+        "厚度结果"
+      ],
+      [
+        "FirstInspection",
+        "一次检验"
+      ],
+      [
+        "FirstInspection",
+        "一次交检"
+      ],
+      [
+        "ThickRes",
+        "厚度判级"
+      ],
+      [
+        "LamFactor",
+        "叠片率"
+      ],
+      [
+        "Thickness",
+        "带厚"
+      ],
+      [
+        "Formulas and Indicators Synonym Dictionary",
+        "ThickRes"
+      ],
+      [
+        "Labeling",
+        "贴标"
+      ],
+      [
+        "Density",
+        "Formulas and Indicators Synonym Dictionary"
+      ],
+      [
+        "CoilWeight",
+        "卷重"
+      ],
+      [
+        "Width",
+        "宽度"
+      ],
+      [
+        "Labeling",
+        "最终等级"
+      ],
+      [
+        "Hc",
+        "磁矫顽"
+      ],
+      [
+        "Width",
+        "带材宽度"
+      ],
+      [
+        "FirstInspection",
+        "首次交检"
+      ],
+      [
+        "Formulas and Indicators Synonym Dictionary",
+        "SsPower"
+      ],
+      [
+        "Hc",
+        "矫顽力"
+      ],
+      [
+        "FirstInspection",
+        "首检"
+      ],
+      [
+        "Formulas and Indicators Synonym Dictionary",
+        "PsLoss"
+      ],
+      [
+        "LamFactor",
+        "Lamination Factor"
+      ],
+      [
+        "SsPower",
+        "磁化功率"
+      ],
+      [
+        "PsLoss",
+        "铁损"
+      ],
+      [
+        "LamFactor",
+        "叠系数"
+      ]
+    ],
+    "count": 59,
+    "create_time": 1778985550,
+    "update_time": 1778985550,
+    "_id": "aliases:formula"
+  },
+  "aliases:metric": {
+    "relation_pairs": [
+      [
+        "B",
+        "二级"
+      ],
+      [
+        "一交合格率",
+        "一次交检合格率"
+      ],
+      [
+        "B",
+        "良等品"
+      ],
+      [
+        "一次交检合格率",
+        "一次合格率"
+      ],
+      [
+        "B",
+        "B类"
+      ],
+      [
+        "一交率",
+        "一次交检合格率"
+      ],
+      [
+        "A",
+        "A类"
+      ],
+      [
+        "不合格",
+        "次品"
+      ],
+      [
+        "合格率",
+        "达标率"
+      ],
+      [
+        "一次交检合格率",
+        "首检合格率"
+      ],
+      [
+        "不合格",
+        "废品"
+      ],
+      [
+        "A",
+        "一级"
+      ],
+      [
+        "aliases.json",
+        "业务术语同义词词典"
+      ],
+      [
+        "不合格",
+        "不达标"
+      ],
+      [
+        "A",
+        "业务术语同义词词典"
+      ],
+      [
+        "qualified rate",
+        "合格率"
+      ],
+      [
+        "B",
+        "B级"
+      ],
+      [
+        "不合格",
+        "业务术语同义词词典"
+      ],
+      [
+        "合格比例",
+        "合格率"
+      ],
+      [
+        "不合格",
+        "不合格率"
+      ],
+      [
+        "A",
+        "优等品"
+      ],
+      [
+        "B",
+        "业务术语同义词词典"
+      ],
+      [
+        "合格率",
+        "通过率"
+      ],
+      [
+        "一次交检合格率",
+        "业务术语同义词词典"
+      ],
+      [
+        "A",
+        "A级"
+      ],
+      [
+        "业务术语同义词词典",
+        "合格率"
+      ]
+    ],
+    "count": 26,
+    "create_time": 1778985605,
+    "update_time": 1778985605,
+    "_id": "aliases:metric"
+  },
+  "aliases:appearance": {
+    "relation_pairs": [
+      [
+        "韧性",
+        "韧性差"
+      ],
+      [
+        "脆边",
+        "边脆"
+      ],
+      [
+        "白边",
+        "边白"
+      ],
+      [
+        "凹",
+        "凹陷"
+      ],
+      [
+        "麻点",
+        "麻面"
+      ],
+      [
+        "斑点",
+        "麻点"
+      ],
+      [
+        "脆",
+        "脆性"
+      ],
+      [
+        "发脆",
+        "脆"
+      ],
+      [
+        "凹",
+        "凹坑"
+      ],
+      [
+        "凹",
+        "凹缺"
+      ],
+      [
+        "韧度",
+        "韧性"
+      ],
+      [
+        "划",
+        "划痕"
+      ],
+      [
+        "亮线",
+        "光亮线"
+      ],
+      [
+        "划",
+        "划伤"
+      ],
+      [
+        "棱",
+        "棱边"
+      ],
+      [
+        "棱",
+        "起棱"
+      ],
+      [
+        "麻坑",
+        "麻点"
+      ],
+      [
+        "白边",
+        "白边缘"
+      ],
+      [
+        "棱",
+        "棱角"
+      ],
+      [
+        "亮纹",
+        "亮线"
+      ],
+      [
+        "脆边",
+        "边缘脆"
+      ],
+      [
+        "划",
+        "刮痕"
+      ],
+      [
+        "脆韧性",
+        "韧性"
+      ],
+      [
+        "易脆",
+        "脆"
+      ]
+    ],
+    "count": 24,
+    "create_time": 1778985650,
+    "update_time": 1778985650,
+    "_id": "aliases:appearance"
+  },
+  "aliases:field": {
+    "relation_pairs": [
+      [
+        "F_LINE_NO",
+        "产线号"
+      ],
+      [
+        "F_SS_POWER",
+        "Ss"
+      ],
+      [
+        "F_FURNACE_NO_FORMATTED",
+        "格式化炉号"
+      ],
+      [
+        "F_PS_LOSS",
+        "铁损"
+      ],
+      [
+        "F_LINE_NO",
+        "产线"
+      ],
+      [
+        "F_LINE_NO",
+        "生产线"
+      ],
+      [
+        "F_LABELING",
+        "总判定"
+      ],
+      [
+        "F_PS_LOSS",
+        "Ps"
+      ],
+      [
+        "F_SS_POWER",
+        "激磁功率"
+      ],
+      [
+        "F_FURNACE_NO",
+        "炉号"
+      ],
+      [
+        "F_FURNACE_NO",
+        "原始炉号"
+      ],
+      [
+        "F_SHIFT",
+        "班次"
+      ],
+      [
+        "F_COIL_NO",
+        "卷号"
+      ],
+      [
+        "F_FURNACE_NO_FORMATTED",
+        "标准炉号"
+      ],
+      [
+        "F_PROD_DATE",
+        "生产日"
+      ],
+      [
+        "F_HC",
+        "矫顽力"
+      ],
+      [
+        "F_SHIFT",
+        "班次汉字"
+      ],
+      [
+        "F_PS_LOSS",
+        "磁损"
+      ],
+      [
+        "F_FURNACE_NO",
+        "炉号字符串"
+      ],
+      [
+        "F_HC",
+        "Hc"
+      ],
+      [
+        "F_LABELING",
+        "最终等级"
+      ],
+      [
+        "F_LABELING",
+        "贴标"
+      ],
+      [
+        "F_PROD_DATE",
+        "生产日期"
+      ]
+    ],
+    "count": 23,
+    "create_time": 1778985698,
+    "update_time": 1778985698,
+    "_id": "aliases:field"
+  },
+  "dim:time": {
+    "relation_pairs": [
+      [
+        "Time",
+        "近7天"
+      ],
+      [
+        "上一周",
+        "上周"
+      ],
+      [
+        "今天",
+        "今日"
+      ],
+      [
+        "今",
+        "今日"
+      ],
+      [
+        "F_PROD_DATE",
+        "Time"
+      ],
+      [
+        "Time",
+        "近30天"
+      ],
+      [
+        "上年",
+        "去年"
+      ],
+      [
+        "Time",
+        "今日"
+      ],
+      [
+        "过去7天",
+        "近7天"
+      ],
+      [
+        "上一个月",
+        "上月"
+      ],
+      [
+        "本周",
+        "本周内"
+      ],
+      [
+        "昨",
+        "昨日"
+      ],
+      [
+        "最近一个月",
+        "近30天"
+      ],
+      [
+        "Time",
+        "上周"
+      ],
+      [
+        "Time",
+        "本月"
+      ],
+      [
+        "最近一周",
+        "近7天"
+      ],
+      [
+        "F_PROD_DATE",
+        "prod_date"
+      ],
+      [
+        "近7天",
+        "近一周"
+      ],
+      [
+        "Time",
+        "上月"
+      ],
+      [
+        "本周",
+        "这周"
+      ],
+      [
+        "Time",
+        "去年"
+      ],
+      [
+        "本月",
+        "本月内"
+      ],
+      [
+        "当月",
+        "本月"
+      ],
+      [
+        "本月",
+        "这个月"
+      ],
+      [
+        "Time",
+        "本周"
+      ],
+      [
+        "今日",
+        "当天"
+      ],
+      [
+        "昨天",
+        "昨日"
+      ],
+      [
+        "Time",
+        "昨日"
+      ],
+      [
+        "上个月",
+        "上月"
+      ],
+      [
+        "Time",
+        "本年"
+      ],
+      [
+        "近30天",
+        "近一个月"
+      ],
+      [
+        "当年",
+        "本年"
+      ],
+      [
+        "今年",
+        "本年"
+      ],
+      [
+        "F_PROD_DATE",
+        "日期"
+      ],
+      [
+        "F_PROD_DATE",
+        "生产日期"
+      ],
+      [
+        "上一年",
+        "去年"
+      ],
+      [
+        "过去30天",
+        "近30天"
+      ]
+    ],
+    "count": 37,
+    "create_time": 1778985760,
+    "update_time": 1778985760,
+    "_id": "dim:time"
+  },
+  "dim:shift": {
+    "relation_pairs": [
+      [
+        "Shift",
+        "丙"
+      ],
+      [
+        "F_SHIFT",
+        "Shift"
+      ],
+      [
+        "Shift",
+        "乙"
+      ],
+      [
+        "Shift",
+        "甲"
+      ]
+    ],
+    "count": 4,
+    "create_time": 1778985796,
+    "update_time": 1778985796,
+    "_id": "dim:shift"
+  },
+  "dim:line": {
+    "relation_pairs": [
+      [
+        "F_LINE_NO",
+        "Line"
+      ]
+    ],
+    "count": 1,
+    "create_time": 1778985827,
+    "update_time": 1778985827,
+    "_id": "dim:line"
+  },
+  "dim:product_spec": {
+    "relation_pairs": [
+      [
+        "product_spec",
+        "牌号"
+      ],
+      [
+        "F_PRODUCT_SPEC_CODE",
+        "product_spec"
+      ],
+      [
+        "product_spec",
+        "产品规格"
+      ],
+      [
+        "product_spec",
+        "规格"
+      ]
+    ],
+    "count": 4,
+    "create_time": 1778985848,
+    "update_time": 1778985848,
+    "_id": "dim:product_spec"
+  },
+  "dim:furnace_no": {
+    "relation_pairs": [
+      [
+        "F_FURNACE_NO",
+        "Furnace_No"
+      ],
+      [
+        "F_FURNACE_NO_FORMATTED",
+        "Furnace_No"
+      ],
+      [
+        "F_FURNACE_NO",
+        "F_FURNACE_NO_FORMATTED"
+      ]
+    ],
+    "count": 3,
+    "create_time": 1778985879,
+    "update_time": 1778985879,
+    "_id": "dim:furnace_no"
+  },
+  "sql_tpl:metric_aggregate": {
+    "relation_pairs": [
+      [
+        "SQL Template",
+        "startDate"
+      ],
+      [
+        "F_SINGLE_COIL_WEIGHT",
+        "SQL Template"
+      ],
+      [
+        "F_DeleteMark",
+        "lab_intermediate_data"
+      ],
+      [
+        "ReportConfig",
+        "SQL Template"
+      ],
+      [
+        "SQL Template",
+        "endDate"
+      ],
+      [
+        "SQL Template",
+        "levelList"
+      ],
+      [
+        "SQL Template",
+        "judgeColumn"
+      ],
+      [
+        "F_SINGLE_COIL_WEIGHT",
+        "lab_intermediate_data"
+      ],
+      [
+        "F_PROD_DATE",
+        "lab_intermediate_data"
+      ],
+      [
+        "SQL Template",
+        "lab_intermediate_data"
+      ],
+      [
+        "LLM",
+        "SQL Template"
+      ]
+    ],
+    "count": 11,
+    "create_time": 1778985917,
+    "update_time": 1778985917,
+    "_id": "sql_tpl:metric_aggregate"
+  },
+  "sql_tpl:metric_rate": {
+    "relation_pairs": [
+      [
+        "Class A Proportion",
+        "Single Metric Proportion"
+      ],
+      [
+        "Nonconformity Rate",
+        "Single Metric Proportion"
+      ],
+      [
+        "SQL Skeleton",
+        "total_weight"
+      ],
+      [
+        "SQL Template",
+        "startDate"
+      ],
+      [
+        "SQL Skeleton",
+        "SQL Template"
+      ],
+      [
+        "One-Time Inspection Pass Rate",
+        "Single Metric Proportion"
+      ],
+      [
+        "SQL Template",
+        "endDate"
+      ],
+      [
+        "SQL Skeleton",
+        "matched_rate"
+      ],
+      [
+        "Class A Proportion",
+        "Typical User Queries"
+      ],
+      [
+        "LLM",
+        "SQL Skeleton"
+      ],
+      [
+        "Nonconformity Rate",
+        "Typical User Queries"
+      ],
+      [
+        "F_DeleteMark",
+        "SQL Template"
+      ],
+      [
+        "One-Time Inspection Pass Rate",
+        "Typical User Queries"
+      ],
+      [
+        "SQL Template",
+        "lab_intermediate_data"
+      ],
+      [
+        "SQL Skeleton",
+        "matched_weight"
+      ],
+      [
+        "F_SINGLE_COIL_WEIGHT",
+        "SQL Template"
+      ],
+      [
+        "F_PROD_DATE",
+        "SQL Template"
+      ],
+      [
+        "SQL Template",
+        "Single Metric Proportion"
+      ],
+      [
+        "SQL Template",
+        "levelList"
+      ],
+      [
+        "SQL Template",
+        "judgeColumn"
+      ]
+    ],
+    "count": 20,
+    "create_time": 1778985968,
+    "update_time": 1778985968,
+    "_id": "sql_tpl:metric_rate"
+  },
+  "sql_tpl:shift_comparison": {
+    "relation_pairs": [
+      [
+        "F_SHIFT",
+        "SQL Template (Shift Comparison)"
+      ],
+      [
+        "SQL Template (Shift Comparison)",
+        "startDate"
+      ],
+      [
+        "三班(Three Shifts)",
+        "乙班(Shift B)"
+      ],
+      [
+        "SQL Template (Shift Comparison)",
+        "总产量(Total Production)"
+      ],
+      [
+        "SQL Template (Shift Comparison)",
+        "endDate"
+      ],
+      [
+        "F_SINGLE_COIL_WEIGHT",
+        "matched_weight"
+      ],
+      [
+        "SQL Template (Shift Comparison)",
+        "matched_rate"
+      ],
+      [
+        "三班(Three Shifts)",
+        "丙班(Shift C)"
+      ],
+      [
+        "matched_rate",
+        "指标占比(Indicator Ratio)"
+      ],
+      [
+        "matched_rate",
+        "matched_weight"
+      ],
+      [
+        "F_DeleteMark",
+        "SQL Template (Shift Comparison)"
+      ],
+      [
+        "SQL Template (Shift Comparison)",
+        "lab_intermediate_data"
+      ],
+      [
+        "SQL Template (Shift Comparison)",
+        "指标占比(Indicator Ratio)"
+      ],
+      [
+        "total_weight",
+        "总产量(Total Production)"
+      ],
+      [
+        "SQL Template (Shift Comparison)",
+        "matched_weight"
+      ],
+      [
+        "F_PROD_DATE",
+        "SQL Template (Shift Comparison)"
+      ],
+      [
+        "SQL Template (Shift Comparison)",
+        "judgeColumn"
+      ],
+      [
+        "F_SINGLE_COIL_WEIGHT",
+        "total_weight"
+      ],
+      [
+        "SQL Template (Shift Comparison)",
+        "levelList"
+      ],
+      [
+        "F_PROD_DATE",
+        "startDate"
+      ],
+      [
+        "judgeColumn",
+        "levelList"
+      ],
+      [
+        "matched_rate",
+        "total_weight"
+      ],
+      [
+        "SQL Template (Shift Comparison)",
+        "三班(Three Shifts)"
+      ],
+      [
+        "F_PROD_DATE",
+        "endDate"
+      ],
+      [
+        "SQL Template (Shift Comparison)",
+        "total_weight"
+      ],
+      [
+        "三班(Three Shifts)",
+        "甲班(Shift A)"
+      ]
+    ],
+    "count": 26,
+    "create_time": 1778986047,
+    "update_time": 1778986047,
+    "_id": "sql_tpl:shift_comparison"
+  },
+  "sql_tpl:daily_trend": {
+    "relation_pairs": [
+      [
+        "F_DeleteMark",
+        "lab_intermediate_data"
+      ],
+      [
+        "Daily Trend SQL Template",
+        "endDate"
+      ],
+      [
+        "Daily Trend SQL Template",
+        "levelList"
+      ],
+      [
+        "Daily Trend SQL Template",
+        "judgeColumn"
+      ],
+      [
+        "Daily Trend SQL Template",
+        "First-Time Pass Rate"
+      ],
+      [
+        "Daily Trend SQL Template",
+        "Pass Rate"
+      ],
+      [
+        "Daily Trend SQL Template",
+        "lab_intermediate_data"
+      ],
+      [
+        "Daily Trend SQL Template",
+        "startDate"
+      ],
+      [
+        "F_SINGLE_COIL_WEIGHT",
+        "lab_intermediate_data"
+      ],
+      [
+        "F_PROD_DATE",
+        "lab_intermediate_data"
+      ]
+    ],
+    "count": 10,
+    "create_time": 1778986087,
+    "update_time": 1778986087,
+    "_id": "sql_tpl:daily_trend"
+  },
+  "sql_tpl:unqualified_breakdown": {
+    "relation_pairs": [
+      [
+        "lab_intermediate_data",
+        "不合格分类统计"
+      ],
+      [
+        "limit",
+        "不合格分类统计"
+      ],
+      [
+        "F_SINGLE_COIL_WEIGHT",
+        "不合格分类统计"
+      ],
+      [
+        "qualifiedLevels",
+        "不合格分类统计"
+      ],
+      [
+        "F_PROD_DATE",
+        "不合格分类统计"
+      ],
+      [
+        "F_FIRST_INSPECTION",
+        "不合格分类统计"
+      ],
+      [
+        "F_DeleteMark",
+        "不合格分类统计"
+      ],
+      [
+        "endDate",
+        "不合格分类统计"
+      ],
+      [
+        "startDate",
+        "不合格分类统计"
+      ]
+    ],
+    "count": 9,
+    "create_time": 1778986125,
+    "update_time": 1778986125,
+    "_id": "sql_tpl:unqualified_breakdown"
+  },
+  "sql_tpl:detail_list": {
+    "relation_pairs": [
+      [
+        "SQL Template: 明细查询",
+        "lab_intermediate_data"
+      ],
+      [
+        "SQL Template: 明细查询",
+        "limit"
+      ],
+      [
+        "SQL Template: 明细查询",
+        "startDate"
+      ],
+      [
+        "SQL Template: 明细查询",
+        "judgeColumn"
+      ],
+      [
+        "SQL Template: 明细查询",
+        "endDate"
+      ],
+      [
+        "SQL Template: 明细查询",
+        "levelList"
+      ]
+    ],
+    "count": 6,
+    "create_time": 1778986177,
+    "update_time": 1778986177,
+    "_id": "sql_tpl:detail_list"
+  },
+  "docs:development-guide:0": {
+    "relation_pairs": [
+      [
+        "Neo4j Knowledge Graph",
+        "nlq-agent Development Guide"
+      ],
+      [
+        "nlq-agent",
+        "路美实验室"
+      ],
+      [
+        "Frontend Ontology Visualization",
+        "nlq-agent Development Guide"
+      ],
+      [
+        "Backend Agent Architecture",
+        "nlq-agent"
+      ],
+      [
+        "Neo4j Knowledge Graph",
+        "nlq-agent"
+      ],
+      [
+        "nlq-agent",
+        "nlq-agent Development Guide"
+      ],
+      [
+        "Frontend Ontology Visualization",
+        "nlq-agent"
+      ],
+      [
+        "Backend Agent Architecture",
+        "nlq-agent Development Guide"
+      ]
+    ],
+    "count": 8,
+    "create_time": 1778986211,
+    "update_time": 1778986211,
+    "_id": "docs:development-guide:0"
+  },
+  "docs:development-guide:1": {
+    "relation_pairs": [
+      [
+        "Development Guide",
+        "Frontend Ontology Visualization"
+      ],
+      [
+        "Development Guide",
+        "Intelligent Routing for Statistical Questions"
+      ],
+      [
+        "Development Guide",
+        "Two-Stage Q&A Architecture"
+      ],
+      [
+        "Development Guide",
+        "Neo4j Knowledge Graph"
+      ],
+      [
+        "Development Guide",
+        "Integration Points with Existing Codebase"
+      ],
+      [
+        "Deployment and Operations",
+        "Development Guide"
+      ],
+      [
+        "Development Guide",
+        "Implementation Roadmap"
+      ],
+      [
+        "Core Architecture Concepts",
+        "Development Guide"
+      ],
+      [
+        "Development Guide",
+        "Project Directory Structure"
+      ],
+      [
+        "Detailed Key Code Design",
+        "Development Guide"
+      ],
+      [
+        "Development Guide",
+        "Semantic Layer Data Model"
+      ]
+    ],
+    "count": 11,
+    "create_time": 1778986235,
+    "update_time": 1778986235,
+    "_id": "docs:development-guide:1"
+  },
+  "docs:development-guide:2": {
+    "relation_pairs": [
+      [
+        "luma_metrics",
+        "指标定义"
+      ],
+      [
+        "知识图谱",
+        "路美项目"
+      ],
+      [
+        "LLM",
+        "语义层"
+      ],
+      [
+        "产品规格",
+        "知识图谱"
+      ],
+      [
+        "Indexing",
+        "WrenAI三层Pipeline"
+      ],
+      [
+        "WrenAI三层Pipeline",
+        "路美两阶段架构"
+      ],
+      [
+        "LLM",
+        "SQL"
+      ],
+      [
+        "Generation",
+        "WrenAI三层Pipeline"
+      ],
+      [
+        "WrenAI",
+        "语义层"
+      ],
+      [
+        "指标定义",
+        "知识图谱"
+      ],
+      [
+        "DDL",
+        "LLM"
+      ],
+      [
+        "合格率",
+        "指标定义"
+      ],
+      [
+        "luma_rules",
+        "判定规则"
+      ],
+      [
+        "WrenAI",
+        "WrenAI三层Pipeline"
+      ],
+      [
+        "判定规则",
+        "知识图谱"
+      ],
+      [
+        "Retrieval",
+        "WrenAI三层Pipeline"
+      ],
+      [
+        "路美两阶段架构",
+        "路美项目"
+      ],
+      [
+        "luma_specs",
+        "产品规格"
+      ]
+    ],
+    "count": 18,
+    "create_time": 1778986327,
+    "update_time": 1778986327,
+    "_id": "docs:development-guide:2"
+  },
+  "docs:development-guide:3": {
+    "relation_pairs": [
+      [
+        "Overall Architecture Diagram",
+        "Two-Stage QA Architecture"
+      ],
+      [
+        "Chat2SQL Agent",
+        "FastAPI Microservice"
+      ],
+      [
+        "KgReasoningPanel",
+        "SSE Event Stream"
+      ],
+      [
+        "Chat2SQL Agent",
+        "QueryAgent"
+      ],
+      [
+        "FastAPI Microservice",
+        "RootCause Agent"
+      ],
+      [
+        "FastAPI Microservice",
+        "QueryAgent"
+      ],
+      [
+        "FastAPI Microservice",
+        "SSE Event Stream"
+      ],
+      [
+        "RootCause Agent",
+        "RootCause Agent File"
+      ],
+      [
+        "QueryAgent",
+        "RootCause Agent"
+      ],
+      [
+        "Chat2SQL Agent",
+        "Chat2SQL Agent File"
+      ],
+      [
+        "FastAPI Microservice",
+        "Two-Stage QA Architecture"
+      ],
+      [
+        "QueryAgent",
+        "QueryAgent File"
+      ]
+    ],
+    "count": 12,
+    "create_time": 1778986371,
+    "update_time": 1778986371,
+    "_id": "docs:development-guide:3"
+  },
+  "docs:development-guide:4": {
+    "relation_pairs": [
+      [
+        "Chat2SQL",
+        "QueryAgent"
+      ],
+      [
+        "QueryAgent",
+        "Root Cause Intent"
+      ],
+      [
+        "app/agents/query_agent.py",
+        "query_agent_node"
+      ],
+      [
+        "QueryAgent",
+        "query_agent_node"
+      ],
+      [
+        "Out of Scope Intent",
+        "QueryAgent"
+      ],
+      [
+        "QueryAgent",
+        "Statistical Intent"
+      ],
+      [
+        "Conceptual Intent",
+        "QueryAgent"
+      ],
+      [
+        "Knowledge Graph",
+        "RootCauseAgent"
+      ],
+      [
+        "QueryAgent",
+        "RootCauseAgent"
+      ]
+    ],
+    "count": 9,
+    "create_time": 1778986406,
+    "update_time": 1778986406,
+    "_id": "docs:development-guide:4"
+  },
+  "docs:development-guide:5": {
+    "relation_pairs": [
+      [
+        "MySQL",
+        "Schema Loader Python Script"
+      ],
+      [
+        "Semantic Layer Data Model",
+        "Yield Rate"
+      ],
+      [
+        "Average Thickness",
+        "Semantic Layer Data Model"
+      ],
+      [
+        "Product Specifications",
+        "Schema Loader Python Script"
+      ],
+      [
+        "Qdrant",
+        "Schema Loader Python Script"
+      ],
+      [
+        "Output",
+        "Semantic Layer Data Model"
+      ],
+      [
+        "Iron Loss",
+        "Semantic Layer Data Model"
+      ],
+      [
+        "Formula Definitions",
+        "Schema Loader Python Script"
+      ],
+      [
+        "Decision Rules",
+        "Schema Loader Python Script"
+      ],
+      [
+        "Lamination Factor",
+        "Semantic Layer Data Model"
+      ],
+      [
+        "Schema Loader Python Script",
+        "Semantic Layer Data Model"
+      ]
+    ],
+    "count": 11,
+    "create_time": 1778986447,
+    "update_time": 1778986447,
+    "_id": "docs:development-guide:5"
+  },
+  "docs:development-guide:6": {
+    "relation_pairs": [
+      [
+        "FurnaceNoParsed",
+        "Ribbon"
+      ],
+      [
+        "MagneticDataImport",
+        "lab_magnetic_raw_data"
+      ],
+      [
+        "Ribbon",
+        "VirtualNode"
+      ],
+      [
+        "INFORMATION_SCHEMA.COLUMNS",
+        "TemplateField"
+      ],
+      [
+        "FurnaceNoInput",
+        "FurnaceNumberParsingRules"
+      ],
+      [
+        "FurnaceNoField",
+        "FurnaceNumberRegexGroup"
+      ],
+      [
+        "Front-End Knowledge Graph",
+        "nlq-agent/docs/kg-frontend-ontology.md"
+      ],
+      [
+        "Front-End Knowledge Graph",
+        "relation-graph-vue3"
+      ],
+      [
+        "FurnaceNoParsed",
+        "FurnaceNumberParsingRules"
+      ],
+      [
+        "RawDataImport",
+        "Ribbon"
+      ],
+      [
+        "SpecAttribute",
+        "lab_product_spec_attribute"
+      ],
+      [
+        "IntermediateData",
+        "lab_intermediate_data"
+      ],
+      [
+        "FurnaceNoInput",
+        "Ribbon"
+      ],
+      [
+        "Force-Directed Layout",
+        "Front-End Knowledge Graph"
+      ],
+      [
+        "MagneticDataImport",
+        "Ribbon"
+      ],
+      [
+        "RawDataImport",
+        "lab_raw_data"
+      ],
+      [
+        "ProductSpec",
+        "Ribbon"
+      ],
+      [
+        "ProductSpec",
+        "lab_product_spec"
+      ]
+    ],
+    "count": 18,
+    "create_time": 1778986508,
+    "update_time": 1778986508,
+    "_id": "docs:development-guide:6"
+  },
+  "docs:development-guide:7": {
+    "relation_pairs": [
+      [
+        "Agent-API",
+        "chat.py"
+      ],
+      [
+        "NLQ-Agent",
+        "Qdrant"
+      ],
+      [
+        "NLQ-Agent",
+        "Shared Types Package"
+      ],
+      [
+        "TEI",
+        "docker-compose.yml"
+      ],
+      [
+        "NLQ-Agent",
+        "Neo4j"
+      ],
+      [
+        "Agent-API",
+        "graph.py"
+      ],
+      [
+        "Agent-API",
+        "llm_factory.py"
+      ],
+      [
+        "Agent-API",
+        "LangGraph"
+      ],
+      [
+        "Agent-API",
+        "logger.py"
+      ],
+      [
+        "Agent-API",
+        "Dockerfile"
+      ],
+      [
+        "Agent-API",
+        "QueryAgent"
+      ],
+      [
+        "Knowledge Graph Module",
+        "Neo4j"
+      ],
+      [
+        "Agent-API",
+        "manager.py"
+      ],
+      [
+        "Agent-API",
+        "main.py"
+      ],
+      [
+        "Agent-API",
+        "sentry_integration.py"
+      ],
+      [
+        "Agent-API",
+        "Chat2SQL Agent"
+      ],
+      [
+        "Agent-API",
+        "database.py"
+      ],
+      [
+        "Graph Tools",
+        "RootCauseAgent"
+      ],
+      [
+        "Qdrant",
+        "docker-compose.yml"
+      ],
+      [
+        "Agent-API",
+        "RootCauseAgent"
+      ],
+      [
+        "Agent-API",
+        "kg.py"
+      ],
+      [
+        "Agent-API",
+        "config.py"
+      ],
+      [
+        "Agent-API",
+        "health.py"
+      ],
+      [
+        "Agent-API",
+        "Knowledge Graph Module"
+      ],
+      [
+        "Agent-API",
+        "auth.py"
+      ],
+      [
+        "Agent-API",
+        "schemas.py"
+      ],
+      [
+        "Chat2SQL Agent",
+        "SQL Tools"
+      ],
+      [
+        "Query Tools",
+        "QueryAgent"
+      ],
+      [
+        "LangGraph",
+        "graph.py"
+      ],
+      [
+        "Neo4j",
+        "docker-compose.yml"
+      ],
+      [
+        "Frontend",
+        "reasoning-protocol.ts"
+      ],
+      [
+        "NLQ-Agent",
+        "TEI"
+      ],
+      [
+        "Agent-API",
+        "NLQ-Agent"
+      ],
+      [
+        "Agent-API",
+        "sync.py"
+      ]
+    ],
+    "count": 34,
+    "create_time": 1778986596,
+    "update_time": 1778986596,
+    "_id": "docs:development-guide:7"
+  },
+  "docs:development-guide:8": {
+    "relation_pairs": [
+      [
+        "LangGraph State Machine",
+        "app/agents/graph.py"
+      ],
+      [
+        "SSE Event Stream",
+        "reasoning_step"
+      ],
+      [
+        "SSE Event Stream",
+        "text"
+      ],
+      [
+        "SSE Event Stream",
+        "response_metadata"
+      ],
+      [
+        "QueryAgent",
+        "RootCause Agent"
+      ],
+      [
+        "AST Validation",
+        "SQL Security Mechanism"
+      ],
+      [
+        "Iron Loss Threshold",
+        "Two-Stage Filling"
+      ],
+      [
+        "OutOfScope Response",
+        "QueryAgent"
+      ],
+      [
+        "OnResponseMetadata",
+        "response_metadata"
+      ],
+      [
+        "OnDone",
+        "done"
+      ],
+      [
+        "Regular Expression Whitelist",
+        "SQL Security Mechanism"
+      ],
+      [
+        "SSE Event Stream",
+        "error"
+      ],
+      [
+        "QueryAgent",
+        "User Question"
+      ],
+      [
+        "Chat2SQL Agent",
+        "QueryAgent"
+      ],
+      [
+        "Fallback",
+        "SQL Correction Loop"
+      ],
+      [
+        "Direct Answer",
+        "QueryAgent"
+      ],
+      [
+        "OnError",
+        "error"
+      ],
+      [
+        "Error Message",
+        "SQL Correction Loop"
+      ],
+      [
+        "OnText",
+        "text"
+      ],
+      [
+        "F_PERF_PS_LOSS",
+        "Iron Loss Threshold"
+      ],
+      [
+        "LLM",
+        "SQL Correction Loop"
+      ],
+      [
+        "SSE Event Stream",
+        "done"
+      ],
+      [
+        "Chat2SQL Agent",
+        "SQL Correction Loop"
+      ],
+      [
+        "SSE Event Stream",
+        "app/api/chat.py"
+      ],
+      [
+        "OnReasoningStep",
+        "reasoning_step"
+      ],
+      [
+        "DDL",
+        "SQL Correction Loop"
+      ],
+      [
+        "SQL Security Mechanism",
+        "app/tools/sql_tools.py"
+      ],
+      [
+        "Automatic LIMIT",
+        "SQL Security Mechanism"
+      ]
+    ],
+    "count": 28,
+    "create_time": 1778986666,
+    "update_time": 1778986666,
+    "_id": "docs:development-guide:8"
+  },
+  "docs:development-guide:9": {
+    "relation_pairs": [
+      [
+        "Daily Refresh",
+        "Knowledge Graph API"
+      ],
+      [
+        "ProductSpec",
+        "SpecAttribute"
+      ],
+      [
+        "Knowledge Graph API",
+        "Neo4j"
+      ],
+      [
+        "Docker",
+        "Neo4j"
+      ],
+      [
+        "MySQL",
+        "Neo4j"
+      ],
+      [
+        "Knowledge Graph",
+        "Neo4j"
+      ],
+      [
+        "Neo4j",
+        "Neo4j 5.15-community"
+      ],
+      [
+        ".env File",
+        "Neo4j"
+      ],
+      [
+        "Knowledge Graph API",
+        "MySQL"
+      ],
+      [
+        "JudgmentRule",
+        "ProductSpec"
+      ],
+      [
+        "Knowledge Graph",
+        "Knowledge Graph API"
+      ],
+      [
+        "Formula",
+        "JudgmentRule"
+      ],
+      [
+        "Knowledge Graph",
+        "MySQL"
+      ]
+    ],
+    "count": 13,
+    "update_time": 1778986709,
+    "_id": "docs:development-guide:9"
+  },
+  "docs:development-guide:10": {
+    "relation_pairs": [
+      [
+        "Qdrant",
+        "Qdrant gRPC"
+      ],
+      [
+        "Neo4j",
+        "Neo4j HTTP"
+      ],
+      [
+        "Schema Loader",
+        "Semantic Layer Initialization"
+      ],
+      [
+        ".NET Backend",
+        "Knowledge Graph Synchronization"
+      ],
+      [
+        "Agent API",
+        "Schema Loader"
+      ],
+      [
+        "Docker Compose",
+        "TEI"
+      ],
+      [
+        "HTTP Callback",
+        "nlq-agent"
+      ],
+      [
+        "Qdrant",
+        "Qdrant REST"
+      ],
+      [
+        "Docker Compose",
+        "Neo4j"
+      ],
+      [
+        "Schema Loader",
+        "Semantic Layer"
+      ],
+      [
+        "Neo4j",
+        "Neo4j Bolt"
+      ],
+      [
+        "NEO4J_ENABLED",
+        "nlq-agent"
+      ],
+      [
+        ".NET Backend",
+        "Rule Synchronization"
+      ],
+      [
+        "Docker Compose",
+        "Qdrant"
+      ],
+      [
+        "FastAPI",
+        "nlq-agent"
+      ]
+    ],
+    "count": 15,
+    "create_time": 1778986774,
+    "update_time": 1778986774,
+    "_id": "docs:development-guide:10"
+  },
+  "docs:development-guide:11": {
+    "relation_pairs": [
+      [
+        "Phase 5",
+        "SSE Protocol"
+      ],
+      [
+        "Frontend Knowledge Graph Visualization",
+        "relation-graph-vue3"
+      ],
+      [
+        "Frontend",
+        "Frontend Knowledge Graph Visualization"
+      ],
+      [
+        "Frontend Knowledge Graph Visualization",
+        "Phase 6"
+      ],
+      [
+        "Phase 7",
+        "Predefined Template Expansion"
+      ],
+      [
+        "Phase 1",
+        "Qdrant"
+      ],
+      [
+        "Phase 2",
+        "QueryAgent"
+      ],
+      [
+        "Phase 7",
+        "Prompt Tuning"
+      ],
+      [
+        "Frontend Knowledge Graph Visualization",
+        "Phase 5"
+      ],
+      [
+        "Neo4j",
+        "Phase 1"
+      ],
+      [
+        "Development Guide",
+        "Implementation Roadmap"
+      ],
+      [
+        "Phase 4",
+        "RootCause Agent"
+      ],
+      [
+        "Phase 1",
+        "TEI"
+      ],
+      [
+        "Frontend",
+        "Phase 5"
+      ],
+      [
+        "Chat2SQL Agent",
+        "Phase 3"
+      ],
+      [
+        "Performance Optimization",
+        "Phase 7"
+      ],
+      [
+        "Phase 1",
+        "Semantic Layer Initialization"
+      ]
+    ],
+    "count": 17,
+    "create_time": 1778986838,
+    "update_time": 1778986838,
+    "_id": "docs:development-guide:11"
+  },
+  "docs:development-guide:12": {
+    "relation_pairs": [
+      [
+        "Mobile SSE Client",
+        "No Modification Required"
+      ],
+      [
+        "Frontend Reasoning Chain Component",
+        "No Modification Required"
+      ],
+      [
+        "Add Neo4j Service Definition",
+        "Docker Compose Configuration"
+      ],
+      [
+        "Environment Variables Configuration",
+        "NLQ_AGENT_URL"
+      ],
+      [
+        ".env.example",
+        "Environment Variables Configuration"
+      ],
+      [
+        ".NET AI Controller",
+        "nlq-agent"
+      ],
+      [
+        "Frontend Reasoning Chain Component",
+        "web/src/components/KgReasoningChain/"
+      ],
+      [
+        "Docker Compose Configuration",
+        "docker-compose.yml"
+      ],
+      [
+        ".NET AI Controller",
+        "api/src/modularity/ai/"
+      ],
+      [
+        "Docker Compose Configuration",
+        "nlq-agent"
+      ],
+      [
+        "Frontend SSE Client",
+        "No Modification Required"
+      ],
+      [
+        "Frontend Knowledge Graph",
+        "Ongoing Iteration"
+      ],
+      [
+        ".NET Rule Service",
+        "api/src/modularity/lab/"
+      ],
+      [
+        "Type Definitions",
+        "web/src/types/reasoning-protocol.d.ts"
+      ],
+      [
+        "No Modification Required",
+        "Type Definitions"
+      ],
+      [
+        "Docker Compose Configuration",
+        "Neo4j"
+      ],
+      [
+        "Development Guide Chapter 11: Integration Points with Existing Codebase",
+        "Frontend SSE Client"
+      ],
+      [
+        ".NET AI Controller",
+        "Add Nlq-Agent Proxy Route"
+      ],
+      [
+        "Add Nlq-Agent Service Definition",
+        "Docker Compose Configuration"
+      ],
+      [
+        ".NET Rule Service",
+        "Add Changed HTTP Callback"
+      ],
+      [
+        "Add NLQ_AGENT_URL Configuration",
+        "Environment Variables Configuration"
+      ],
+      [
+        "Frontend Knowledge Graph",
+        "web/src/views/lab/knowledge-graph/"
+      ],
+      [
+        "Mobile SSE Client",
+        "mobile/utils/sse-client.js"
+      ],
+      [
+        ".NET AI Controller",
+        "Development Guide Chapter 11: Integration Points with Existing Codebase"
+      ],
+      [
+        "Frontend SSE Client",
+        "web/src/api/nlqAgent.ts"
+      ]
+    ],
+    "count": 25,
+    "create_time": 1778986913,
+    "update_time": 1778986913,
+    "_id": "docs:development-guide:12"
+  },
+  "docs:kg-frontend-ontology:0": {
+    "relation_pairs": [
+      [
+        "GET /api/v1/kg/ontology",
+        "kg-frontend-ontology"
+      ],
+      [
+        "Panel Display Rules",
+        "kg-frontend-ontology"
+      ],
+      [
+        "Node Types",
+        "kg-frontend-ontology"
+      ],
+      [
+        "Data Sources",
+        "kg-frontend-ontology"
+      ],
+      [
+        "Connection Relationships",
+        "kg-frontend-ontology"
+      ],
+      [
+        "kg-frontend-ontology",
+        "relation-graph-vue3"
+      ]
+    ],
+    "count": 6,
+    "create_time": 1778986951,
+    "update_time": 1778986951,
+    "_id": "docs:kg-frontend-ontology:0"
+  },
+  "docs:kg-frontend-ontology:1": {
+    "relation_pairs": [
+      [
+        "SpecAttribute",
+        "lab_product_spec_attribute"
+      ],
+      [
+        "IntermediateData",
+        "lab_intermediate_data"
+      ],
+      [
+        "Furnace Number Parsing Rules",
+        "FurnaceNoInput"
+      ],
+      [
+        "IntermediateData",
+        "kg-frontend-ontology"
+      ],
+      [
+        "FurnaceNoInput",
+        "kg-frontend-ontology"
+      ],
+      [
+        "MagneticDataImport",
+        "lab_magnetic_raw_data"
+      ],
+      [
+        "INFORMATION_SCHEMA.COLUMNS",
+        "TemplateField"
+      ],
+      [
+        "FurnaceNoField",
+        "kg-frontend-ontology"
+      ],
+      [
+        "TemplateField",
+        "kg-frontend-ontology"
+      ],
+      [
+        "ProductSpec",
+        "lab_product_spec"
+      ],
+      [
+        "Furnace Number Parsing Rules",
+        "FurnaceNoField"
+      ],
+      [
+        "SpecAttribute",
+        "kg-frontend-ontology"
+      ],
+      [
+        "FurnaceNoParsed",
+        "kg-frontend-ontology"
+      ],
+      [
+        "RawDataImport",
+        "kg-frontend-ontology"
+      ],
+      [
+        "Ribbon",
+        "kg-frontend-ontology"
+      ],
+      [
+        "RawDataImport",
+        "lab_raw_data"
+      ],
+      [
+        "ProductSpec",
+        "kg-frontend-ontology"
+      ],
+      [
+        "Force-Directed Layout",
+        "kg-frontend-ontology"
+      ],
+      [
+        "Furnace Number Parsing Rules",
+        "FurnaceNoParsed"
+      ],
+      [
+        "MagneticDataImport",
+        "kg-frontend-ontology"
+      ],
+      [
+        "Ribbon",
+        "Virtual Root Node"
+      ]
+    ],
+    "count": 21,
+    "create_time": 1778987010,
+    "update_time": 1778987010,
+    "_id": "docs:kg-frontend-ontology:1"
+  },
+  "docs:kg-frontend-ontology:2": {
+    "relation_pairs": [
+      [
+        "LabProductSpecAttribute",
+        "SpecAttribute"
+      ],
+      [
+        "ProductSpec",
+        "SpecAttribute"
+      ],
+      [
+        "RawDataImport",
+        "Ribbon"
+      ],
+      [
+        "LabProductSpec",
+        "ProductSpec"
+      ],
+      [
+        "LAB_EXCEL_IMPORT_TEMP",
+        "RawDataImport"
+      ],
+      [
+        "LabProductSpecVersion",
+        "SpecAttribute"
+      ],
+      [
+        "FurnaceNoInput",
+        "Ribbon"
+      ],
+      [
+        "MagneticDataImport",
+        "Ribbon"
+      ],
+      [
+        "LabRawData",
+        "RawDataImport"
+      ],
+      [
+        "ProductSpec",
+        "Ribbon"
+      ]
+    ],
+    "count": 10,
+    "create_time": 1778987080,
+    "update_time": 1778987080,
+    "_id": "docs:kg-frontend-ontology:2"
+  },
+  "docs:kg-frontend-ontology:3": {
+    "relation_pairs": [
+      [
+        "ProductSpec",
+        "SpecAttribute"
+      ],
+      [
+        "MagneticDataImport",
+        "炉号节点"
+      ],
+      [
+        "RawDataImport",
+        "Ribbon"
+      ],
+      [
+        "FurnaceNoField",
+        "FurnaceNoParsed"
+      ],
+      [
+        "IntermediateData",
+        "RawDataImport"
+      ],
+      [
+        "字段",
+        "炉号节点"
+      ],
+      [
+        "FurnaceNoInput",
+        "Ribbon"
+      ],
+      [
+        "MagneticDataImport",
+        "Ribbon"
+      ],
+      [
+        "FurnaceNoInput",
+        "FurnaceNoParsed"
+      ],
+      [
+        "ProductSpec",
+        "Ribbon"
+      ],
+      [
+        "TemplateField",
+        "导入模板/中间数据"
+      ]
+    ],
+    "count": 11,
+    "create_time": 1778987121,
+    "update_time": 1778987121,
+    "_id": "docs:kg-frontend-ontology:3"
+  },
+  "docs:kg-frontend-ontology:4": {
+    "relation_pairs": [
+      [
+        "CodeNameTargetTable",
+        "Spec"
+      ],
+      [
+        "RuleCombo",
+        "RuleGroup"
+      ],
+      [
+        "IntermediateData",
+        "Spec"
+      ],
+      [
+        "FurnaceNo",
+        "FurnaceNoField"
+      ],
+      [
+        "ImportTemplateFieldMapping",
+        "Spec"
+      ],
+      [
+        "Formula",
+        "NameTypeColumnNameUnitFormulaRelatedRules"
+      ],
+      [
+        "RibbonRoot",
+        "SingleSheetPerformanceFields"
+      ],
+      [
+        "Spec",
+        "TableFieldList"
+      ],
+      [
+        "RawDataImport",
+        "Spec"
+      ],
+      [
+        "FurnaceNo",
+        "FurnaceNoParsed"
+      ],
+      [
+        "FurnaceNo",
+        "RawFurnaceNumber"
+      ],
+      [
+        "GradeCodeQualityStatusPriorityConditionTable",
+        "Rule"
+      ],
+      [
+        "Spec",
+        "TemplateField"
+      ],
+      [
+        "LaminationDataFields",
+        "RibbonRoot"
+      ],
+      [
+        "ProductSpecList",
+        "RibbonRoot"
+      ],
+      [
+        "FurnaceNo",
+        "FurnaceNumber"
+      ],
+      [
+        "FieldDisplay",
+        "FurnaceNo"
+      ],
+      [
+        "ProductSpec",
+        "Spec"
+      ],
+      [
+        "JudgmentRule",
+        "Rule"
+      ],
+      [
+        "RuleCombo",
+        "SpecStatusRuleList"
+      ],
+      [
+        "Ribbon",
+        "RibbonRoot"
+      ],
+      [
+        "FurnaceNo",
+        "FurnaceNoInput"
+      ],
+      [
+        "ExtendedAttributes",
+        "RibbonRoot"
+      ],
+      [
+        "MagneticDataImport",
+        "Spec"
+      ]
+    ],
+    "count": 24,
+    "create_time": 1778987204,
+    "update_time": 1778987204,
+    "_id": "docs:kg-frontend-ontology:4"
+  },
+  "docs:kg-frontend-ontology:5": {
+    "relation_pairs": [
+      [
+        "Lab_Magnetic_Raw_Data",
+        "Table_fields"
+      ],
+      [
+        "Lab_Product_Spec",
+        "Specs"
+      ],
+      [
+        "Lab_Intermediate_Data_Judgment_Level",
+        "Rules"
+      ],
+      [
+        "F_CONFIG_JSON",
+        "LAB_EXCEL_IMPORT_TEMPLATE"
+      ],
+      [
+        "/api/v1/kg/ontology",
+        "Excel_templates"
+      ],
+      [
+        "Lab_Product_Spec_Version",
+        "Spec_attributes"
+      ],
+      [
+        "Lab_Raw_Data",
+        "Table_fields"
+      ],
+      [
+        "Lab_Product_Spec",
+        "Rules"
+      ],
+      [
+        "Formulas",
+        "Lab_Intermediate_Data_Formula"
+      ],
+      [
+        "Excel_templates",
+        "F_CONFIG_JSON"
+      ],
+      [
+        "/api/v1/kg/ontology",
+        "Specs"
+      ],
+      [
+        "/api/v1/kg/ontology",
+        "Formulas"
+      ],
+      [
+        "Excel_templates",
+        "LAB_EXCEL_IMPORT_TEMPLATE"
+      ],
+      [
+        "Lab_Product_Spec_Attribute",
+        "Spec_attributes"
+      ],
+      [
+        "Lab_Intermediate_Data",
+        "Table_fields"
+      ],
+      [
+        "/api/v1/kg/ontology",
+        "Table_fields"
+      ],
+      [
+        "INFORMATION_SCHEMA.COLUMNS",
+        "Table_fields"
+      ],
+      [
+        "/api/v1/kg/ontology",
+        "Spec_attributes"
+      ],
+      [
+        "/api/v1/kg/ontology",
+        "Rules"
+      ],
+      [
+        "/api/v1/kg/ontology",
+        "kg-frontend-ontology"
+      ]
+    ],
+    "count": 20,
+    "create_time": 1778987285,
+    "update_time": 1778987285,
+    "_id": "docs:kg-frontend-ontology:5"
+  },
+  "docs:kg-frontend-ontology:6": {
+    "relation_pairs": [
+      [
+        "ACTIVE_NODE_TYPES",
+        "RawDataImport"
+      ],
+      [
+        "ACTIVE_NODE_TYPES",
+        "IntermediateData"
+      ],
+      [
+        "ACTIVE_NODE_TYPES",
+        "SpecAttribute"
+      ],
+      [
+        "ACTIVE_NODE_TYPES",
+        "FurnaceNoParsed"
+      ],
+      [
+        "ACTIVE_NODE_TYPES",
+        "Formula"
+      ],
+      [
+        "ACTIVE_NODE_TYPES",
+        "Ribbon"
+      ],
+      [
+        "ACTIVE_NODE_TYPES",
+        "FurnaceNoInput"
+      ],
+      [
+        "ACTIVE_NODE_TYPES",
+        "get_ontology()"
+      ],
+      [
+        "ACTIVE_NODE_TYPES",
+        "ProductSpec"
+      ],
+      [
+        "ACTIVE_NODE_TYPES",
+        "JudgmentRule"
+      ],
+      [
+        "ACTIVE_NODE_TYPES",
+        "TemplateField"
+      ],
+      [
+        "ACTIVE_NODE_TYPES",
+        "MagneticDataImport"
+      ],
+      [
+        "ACTIVE_NODE_TYPES",
+        "FurnaceNoField"
+      ]
+    ],
+    "count": 13,
+    "create_time": 1778987333,
+    "update_time": 1778987333,
+    "_id": "docs:kg-frontend-ontology:6"
+  },
+  "docs:kg-frontend-ontology:7": {
+    "relation_pairs": [
+      [
+        "GraphOptions",
+        "Move To Center When Refresh"
+      ],
+      [
+        "GraphOptions",
+        "RGOptions"
+      ],
+      [
+        "GraphOptions",
+        "Layout Configuration"
+      ],
+      [
+        "Default Junction Point",
+        "GraphOptions"
+      ],
+      [
+        "Default Node Shape",
+        "GraphOptions"
+      ],
+      [
+        "GraphOptions",
+        "Zoom To Fit When Refresh"
+      ],
+      [
+        "GraphOptions",
+        "Layout"
+      ],
+      [
+        "Force",
+        "Layout Name"
+      ],
+      [
+        "Layout",
+        "Layout Name"
+      ],
+      [
+        "Kg Frontend Ontology",
+        "Layout Configuration"
+      ],
+      [
+        "GraphOptions",
+        "Use Animation When Refresh"
+      ],
+      [
+        "Default Line Shape",
+        "GraphOptions"
+      ]
+    ],
+    "count": 12,
+    "create_time": 1778987390,
+    "update_time": 1778987390,
+    "_id": "docs:kg-frontend-ontology:7"
+  },
+  "docs:kg-frontend-ontology:8": {
+    "relation_pairs": [
+      [
+        "AppearanceFeature",
+        "Ribbon"
+      ],
+      [
+        "MetricJudge",
+        "get_ontology()"
+      ],
+      [
+        "MetricJudge",
+        "SingleSheetPerf"
+      ],
+      [
+        "AppearanceFeature",
+        "get_ontology()"
+      ],
+      [
+        "JudgmentRule",
+        "get_ontology()"
+      ],
+      [
+        "ACTIVE_NODE_TYPES",
+        "MetricJudge"
+      ],
+      [
+        "ACTIVE_NODE_TYPES",
+        "Formula"
+      ],
+      [
+        "Formula",
+        "get_ontology()"
+      ],
+      [
+        "JudgmentRule",
+        "ProductSpec"
+      ],
+      [
+        "ACTIVE_NODE_TYPES",
+        "JudgmentRule"
+      ],
+      [
+        "LaminationData",
+        "MetricJudge"
+      ],
+      [
+        "Formula",
+        "JudgmentRule"
+      ],
+      [
+        "ACTIVE_NODE_TYPES",
+        "AppearanceFeature"
+      ]
+    ],
+    "count": 13,
+    "create_time": 1778987430,
+    "update_time": 1778987430,
+    "_id": "docs:kg-frontend-ontology:8"
+  },
+  "neo4j:ProductSpec:780818476708134853": {
+    "relation_pairs": [
+      [
+        "Code 120",
+        "detectionColumns"
+      ]
+    ],
+    "count": 1,
+    "create_time": 1779045152,
+    "update_time": 1779045152,
+    "_id": "neo4j:ProductSpec:780818476708134853"
+  },
+  "neo4j:ProductSpec:780818754094235589": {
+    "relation_pairs": [
+      [
+        "Code",
+        "Record 170"
+      ],
+      [
+        "Code",
+        "Detection Columns"
+      ],
+      [
+        "Detection Columns",
+        "Record 170"
+      ]
+    ],
+    "count": 3,
+    "create_time": 1779045197,
+    "update_time": 1779045197,
+    "_id": "neo4j:ProductSpec:780818754094235589"
+  },
+  "neo4j:ProductSpec:780818794812538821": {
+    "relation_pairs": [
+      [
+        "Code 213",
+        "DetectionColumns 22"
+      ]
+    ],
+    "count": 1,
+    "create_time": 1779045218,
+    "update_time": 1779045218,
+    "_id": "neo4j:ProductSpec:780818794812538821"
+  },
+  "neo4j:SpecAttribute:784012917199601607": {
+    "relation_pairs": [
+      [
+        "g/cm³",
+        "密度"
+      ],
+      [
+        "Decimal",
+        "密度"
+      ]
+    ],
+    "count": 2,
+    "create_time": 1779045255,
+    "update_time": 1779045255,
+    "_id": "neo4j:SpecAttribute:784012917199601607"
+  },
+  "neo4j:SpecAttribute:784012917199601606": {
+    "relation_pairs": [
+      [
+        "Layers",
+        "Version"
+      ],
+      [
+        "Layers",
+        "ValueType"
+      ],
+      [
+        "Layers",
+        "Precision"
+      ]
+    ],
+    "count": 3,
+    "create_time": 1779045258,
+    "update_time": 1779045258,
+    "_id": "neo4j:SpecAttribute:784012917199601606"
+  },
+  "neo4j:SpecAttribute:784012984719507398": {
+    "relation_pairs": [
+      [
+        "Layers",
+        "Version"
+      ],
+      [
+        "Layers",
+        "ValueType"
+      ],
+      [
+        "Layers",
+        "Precision"
+      ]
+    ],
+    "count": 3,
+    "create_time": 1779045259,
+    "update_time": 1779045259,
+    "_id": "neo4j:SpecAttribute:784012984719507398"
+  },
+  "neo4j:SpecAttribute:784012984719507399": {
+    "relation_pairs": [
+      [
+        "g/cm³",
+        "密度"
+      ],
+      [
+        "Decimal",
+        "密度"
+      ]
+    ],
+    "count": 2,
+    "create_time": 1779045259,
+    "update_time": 1779045259,
+    "_id": "neo4j:SpecAttribute:784012984719507399"
+  },
+  "neo4j:SpecAttribute:784013041652989894": {
+    "relation_pairs": [
+      [
+        "Layers",
+        "Version"
+      ],
+      [
+        "Layers",
+        "ValueType"
+      ],
+      [
+        "Layers",
+        "Precision"
+      ]
+    ],
+    "count": 3,
+    "create_time": 1779045260,
+    "update_time": 1779045260,
+    "_id": "neo4j:SpecAttribute:784013041652989894"
+  },
+  "neo4j:SpecAttribute:784013041652989895": {
+    "relation_pairs": [
+      [
+        "g/cm³",
+        "密度"
+      ],
+      [
+        "Decimal",
+        "密度"
+      ]
+    ],
+    "count": 2,
+    "create_time": 1779045260,
+    "update_time": 1779045260,
+    "_id": "neo4j:SpecAttribute:784013041652989895"
+  },
+  "neo4j:SpecAttribute:784013106480152517": {
+    "relation_pairs": [
+      [
+        "Length",
+        "Meter Unit"
+      ],
+      [
+        "Decimal Value Type",
+        "Length"
+      ],
+      [
+        "Length",
+        "Length Precision"
+      ],
+      [
+        "Length",
+        "Length Version"
+      ]
+    ],
+    "count": 4,
+    "create_time": 1779045287,
+    "update_time": 1779045287,
+    "_id": "neo4j:SpecAttribute:784013106480152517"
+  },
+  "neo4j:SpecAttribute:784013106480152518": {
+    "relation_pairs": [
+      [
+        "2 (version)",
+        "层数"
+      ],
+      [
+        "int",
+        "层数"
+      ],
+      [
+        "2 (precision)",
+        "层数"
+      ],
+      [
+        "layers",
+        "层数"
+      ]
+    ],
+    "count": 4,
+    "create_time": 1779045344,
+    "update_time": 1779045344,
+    "_id": "neo4j:SpecAttribute:784013106480152518"
+  },
+  "neo4j:SpecAttribute:784013106480152519": {
+    "relation_pairs": [
+      [
+        "Density",
+        "Version 2"
+      ],
+      [
+        "Density",
+        "Gram Per Cubic Centimeter"
+      ],
+      [
+        "Decimal",
+        "Density"
+      ]
+    ],
+    "count": 3,
+    "create_time": 1779045374,
+    "update_time": 1779045374,
+    "_id": "neo4j:SpecAttribute:784013106480152519"
+  },
+  "neo4j:Formula:787025213026992069": {
+    "relation_pairs": [
+      [
+        "DIFF_FIRST ( Thickness , 2 )",
+        "最左侧差值"
+      ],
+      [
+        "μm",
+        "最左侧差值"
+      ],
+      [
+        "$VAR_1769806633591",
+        "最左侧差值"
+      ],
+      [
+        "Thickness",
+        "最左侧差值"
+      ],
+      [
+        "CUSTOM",
+        "最左侧差值"
+      ]
+    ],
+    "count": 5,
+    "create_time": 1779045404,
+    "update_time": 1779045404,
+    "_id": "neo4j:Formula:787025213026992069"
+  },
+  "neo4j:Formula:787025434377191365": {
+    "relation_pairs": [
+      [
+        "DIFF_LAST",
+        "Rightmost Difference"
+      ],
+      [
+        "$VAR_1769806687604",
+        "Rightmost Difference"
+      ],
+      [
+        "DIFF_LAST",
+        "Offset 2"
+      ],
+      [
+        "DIFF_LAST",
+        "Thickness"
+      ],
+      [
+        "Formula Type 1",
+        "Rightmost Difference"
+      ],
+      [
+        "Rightmost Difference",
+        "μm"
+      ],
+      [
+        "CUSTOM",
+        "Rightmost Difference"
+      ]
+    ],
+    "count": 7,
+    "create_time": 1779045437,
+    "update_time": 1779045437,
+    "_id": "neo4j:Formula:787025434377191365"
+  },
+  "neo4j:Formula:787030712749391813": {
+    "relation_pairs": [
+      [
+        "Detection",
+        "MIN(RANGE(Detection, 1, 5))"
+      ],
+      [
+        "$VAR_1769807946074",
+        "前部最小值"
+      ],
+      [
+        "$VAR_1769807946074",
+        "CUSTOM"
+      ],
+      [
+        "$VAR_1769807946074",
+        "μm"
+      ],
+      [
+        "$VAR_1769807946074",
+        "MIN(RANGE(Detection, 1, 5))"
+      ]
+    ],
+    "count": 5,
+    "create_time": 1779045465,
+    "update_time": 1779045465,
+    "_id": "neo4j:Formula:787030712749391813"
+  },
+  "neo4j:Formula:787030797155565509": {
+    "relation_pairs": [
+      [
+        "Front Maximum",
+        "Micrometer"
+      ],
+      [
+        "Detection",
+        "RANGE Function"
+      ],
+      [
+        "Front Maximum",
+        "MAX Function"
+      ],
+      [
+        "Front Maximum",
+        "RANGE Function"
+      ],
+      [
+        "$VAR_1769807966188",
+        "Front Maximum"
+      ],
+      [
+        "MAX Function",
+        "RANGE Function"
+      ]
+    ],
+    "count": 6,
+    "create_time": 1779045490,
+    "update_time": 1779045490,
+    "_id": "neo4j:Formula:787030797155565509"
+  },
+  "neo4j:Formula:787031085417496517": {
+    "relation_pairs": [
+      [
+        "μm",
+        "前部平均值"
+      ],
+      [
+        "Average Formula",
+        "前部平均值"
+      ],
+      [
+        "Average Formula",
+        "RANGE"
+      ],
+      [
+        "$VAR_1769808034938",
+        "前部平均值"
+      ],
+      [
+        "Detection",
+        "RANGE"
+      ],
+      [
+        "CUSTOM",
+        "前部平均值"
+      ],
+      [
+        "Average Formula",
+        "Detection"
+      ]
+    ],
+    "count": 7,
+    "create_time": 1779045531,
+    "update_time": 1779045531,
+    "_id": "neo4j:Formula:787031085417496517"
+  },
+  "neo4j:Formula:787031280893034437": {
+    "relation_pairs": [
+      [
+        "Min Of Range Formula",
+        "Minimum Of Middle 4 Positions"
+      ],
+      [
+        "Min Of Range Formula",
+        "Thickness"
+      ],
+      [
+        "$VAR_1769808081515",
+        "Minimum Of Middle 4 Positions"
+      ],
+      [
+        "Minimum Of Middle 4 Positions",
+        "μm"
+      ],
+      [
+        "CUSTOM",
+        "Minimum Of Middle 4 Positions"
+      ]
+    ],
+    "count": 5,
+    "create_time": 1779045572,
+    "update_time": 1779045572,
+    "_id": "neo4j:Formula:787031280893034437"
+  },
+  "neo4j:Formula:787031424921239493": {
+    "relation_pairs": [
+      [
+        "$VAR_1769808115859",
+        "MAX(RANGE(Thickness, 5, 8))"
+      ],
+      [
+        "$VAR_1769808115859",
+        "Middle 4 Digits Maximum"
+      ],
+      [
+        "$VAR_1769808115859",
+        "μm"
+      ],
+      [
+        "$VAR_1769808115859",
+        "CUSTOM"
+      ],
+      [
+        "$VAR_1769808115859",
+        "Formula Type 1"
+      ],
+      [
+        "MAX(RANGE(Thickness, 5, 8))",
+        "Thickness"
+      ]
+    ],
+    "count": 6,
+    "create_time": 1779045609,
+    "update_time": 1779045609,
+    "_id": "neo4j:Formula:787031424921239493"
+  },
+  "neo4j:Formula:787031496698363845": {
+    "relation_pairs": [
+      [
+        "$VAR_1769808132998",
+        "AVG(RANGE(Thickness, 5, 8))"
+      ],
+      [
+        "$VAR_1769808132998",
+        "中间4位平均值"
+      ],
+      [
+        "AVG(RANGE(Thickness, 5, 8))",
+        "μm"
+      ],
+      [
+        "AVG(RANGE(Thickness, 5, 8))",
+        "Thickness"
+      ],
+      [
+        "CUSTOM",
+        "sourceType"
+      ],
+      [
+        "$VAR_1769808132998",
+        "formulaType"
+      ],
+      [
+        "$VAR_1769808132998",
+        "sourceType"
+      ]
+    ],
+    "count": 7,
+    "create_time": 1779045650,
+    "update_time": 1779045650,
+    "_id": "neo4j:Formula:787031496698363845"
+  },
+  "neo4j:Formula:787031710205214661": {
+    "relation_pairs": [
+      [
+        "MIN(RANGE(Thickness, 10, 13))",
+        "Thickness"
+      ],
+      [
+        "$VAR_1769808183872",
+        "CUSTOM"
+      ],
+      [
+        "$VAR_1769808183872",
+        "MIN(RANGE(Thickness, 10, 13))"
+      ],
+      [
+        "$VAR_1769808183872",
+        "右侧4位最小值"
+      ],
+      [
+        "$VAR_1769808183872",
+        "μm"
+      ]
+    ],
+    "count": 5,
+    "create_time": 1779045694,
+    "update_time": 1779045694,
+    "_id": "neo4j:Formula:787031710205214661"
+  }
+}

@@ -21,15 +21,20 @@
  *   task.abort && task.abort()
  */
 
+// 优先读独立的 NLQ_AGENT_API_BASE；没设就基于主 API base 派生（追加 /nlq-agent）。
+// 主 API base 来自 APP 的"服务器设置"页面（lm_api_base_url），这里只负责拼路径后缀。
 function getBaseUrl() {
-  // uni.getStorageSync 在主入口存储 NLQ_AGENT_API_BASE，未设置时抛出错误。
   try {
-    const stored = uni.getStorageSync('NLQ_AGENT_API_BASE');
-    if (stored) return stored;
+    // 显式覆盖
+    const explicit = uni.getStorageSync('NLQ_AGENT_API_BASE');
+    if (explicit) return explicit;
+    // 派生：主 API base + /nlq-agent（反代路径，跟 nginx 配置对齐）
+    const apiBase = uni.getStorageSync('lm_api_base_url');
+    if (apiBase) return apiBase.replace(/\/$/, '') + '/nlq-agent';
   } catch (e) {
     // ignore
   }
-  throw new Error('NLQ_AGENT_API_BASE 未配置 — 请在 app 启动配置中设置');
+  throw new Error('NLQ Agent 地址未配置 — 请先在「我的 → 服务器设置」里设置主服务器地址');
 }
 
 function parseSseLine(line) {
@@ -94,9 +99,20 @@ export function streamNlqChat(request, handlers) {
   const handlersSafe = handlers || {};
   let buffer = '';
   let aborted = false;
+  let chunkCount = 0;
+
+  const url = `${getBaseUrl()}/api/v1/chat/stream`;
+  console.log('[sse] POST', url, '| messages:', (request.messages || []).length);
+
+  // #ifdef H5
+  // H5 上 uni.request 的 enableChunked 不工作 → 用原生 fetch + ReadableStream 真流式
+  return _streamViaFetch(url, request, handlersSafe);
+  // #endif
+
+  // #ifndef H5
 
   const requestTask = uni.request({
-    url: `${getBaseUrl()}/api/v1/chat/stream`,
+    url,
     method: 'POST',
     enableChunked: true,
     timeout: 120000,
@@ -105,10 +121,30 @@ export function streamNlqChat(request, handlers) {
       'X-Request-Origin': 'embedded'
     },
     data: request,
-    success: () => {
+    success: (res) => {
+      console.log('[sse] success | statusCode:', res && res.statusCode, '| chunks received:', chunkCount, '| body:', res && res.data && typeof res.data === 'string' ? res.data.slice(0, 200) : '(non-string)');
+      // 如果服务端把全部 SSE 数据一次性放到 data 里（enableChunked 在某些平台不生效时），
+      // 这里兜底解析一遍——保证非流式回落也能跑通。
+      if (chunkCount === 0 && res && res.data) {
+        let bodyText = '';
+        if (typeof res.data === 'string') bodyText = res.data;
+        else if (res.data instanceof ArrayBuffer) {
+          try { bodyText = new TextDecoder('utf-8').decode(res.data); } catch (_) {}
+        } else {
+          try { bodyText = JSON.stringify(res.data); } catch (_) {}
+        }
+        if (bodyText) {
+          console.log('[sse] fallback: parsing full body as one batch (chunked disabled on this platform?)');
+          bodyText.split('\n\n').forEach((chunk) => {
+            const line = chunk.split('\n').find((l) => l.indexOf('data:') === 0);
+            if (line) dispatchEvent(parseSseLine(line), handlersSafe);
+          });
+        }
+      }
       if (!aborted && handlersSafe.onDone) handlersSafe.onDone();
     },
     fail: (err) => {
+      console.warn('[sse] fail:', err && err.errMsg, err);
       if (aborted) return;
       if (handlersSafe.onError) {
         handlersSafe.onError(new Error(err && err.errMsg ? err.errMsg : 'request failed'));
@@ -117,10 +153,15 @@ export function streamNlqChat(request, handlers) {
   });
 
   if (requestTask && requestTask.onChunkReceived) {
+    console.log('[sse] onChunkReceived hooked (enableChunked supported)');
     requestTask.onChunkReceived((res) => {
       if (aborted) return;
+      chunkCount++;
       const data = res && res.data ? res.data : null;
-      if (!data) return;
+      if (!data) {
+        console.warn('[sse] empty chunk #' + chunkCount);
+        return;
+      }
       let text;
       try {
         // #ifdef MP-WEIXIN
@@ -174,6 +215,10 @@ export function streamNlqChat(request, handlers) {
     });
   }
 
+  if (!(requestTask && requestTask.onChunkReceived)) {
+    console.warn('[sse] onChunkReceived NOT supported on this platform — will rely on success() fallback parsing the full body');
+  }
+
   // 包装 abort 方法，标记 aborted 状态避免回调泄漏
   const originalAbort = requestTask && requestTask.abort;
   const wrappedTask = {
@@ -185,4 +230,77 @@ export function streamNlqChat(request, handlers) {
   };
 
   return wrappedTask;
+  // #endif
 }
+
+// #ifdef H5
+// H5 上用原生 fetch + ReadableStream 真流式（uni.request 的 enableChunked 在 H5 不工作）
+function _streamViaFetch(url, request, handlers) {
+  console.log('[sse] H5 fetch streaming (ReadableStream)');
+  const controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  let aborted = false;
+  let buffer = '';
+
+  (async () => {
+    try {
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-Origin': 'embedded'
+        },
+        body: JSON.stringify(request),
+        signal: controller ? controller.signal : undefined
+      });
+      if (!resp.ok) {
+        if (!aborted && handlers.onError) {
+          handlers.onError(new Error('upstream ' + resp.status));
+        }
+        return;
+      }
+      if (!resp.body || !resp.body.getReader) {
+        // 极老浏览器不支持 ReadableStream → 整段读一次
+        const text = await resp.text();
+        text.split('\n\n').forEach((chunk) => {
+          const line = chunk.split('\n').find((l) => l.indexOf('data:') === 0);
+          if (line) dispatchEvent(parseSseLine(line), handlers);
+        });
+        if (!aborted && handlers.onDone) handlers.onDone();
+        return;
+      }
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      while (true) {
+        if (aborted) {
+          try { reader.cancel(); } catch (_) {}
+          return;
+        }
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const chunks = buffer.split('\n\n');
+        buffer = chunks.pop() || '';
+        chunks.forEach((chunk) => {
+          const line = chunk.split('\n').find((l) => l.indexOf('data:') === 0);
+          if (line) dispatchEvent(parseSseLine(line), handlers);
+        });
+      }
+      if (!aborted && handlers.onDone) handlers.onDone();
+    } catch (err) {
+      if (aborted) return;
+      if (handlers.onError) {
+        handlers.onError(err instanceof Error ? err : new Error(String(err)));
+      }
+    }
+  })();
+
+  return {
+    abort: () => {
+      aborted = true;
+      if (controller) {
+        try { controller.abort(); } catch (_) {}
+      }
+    }
+  };
+}
+// #endif

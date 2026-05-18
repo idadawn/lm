@@ -309,8 +309,9 @@ const rawDataBaseColumns: BasicColumn[] = [
   { title: '行号', dataIndex: 'sortCode', width: 80, fixed: 'left' },
   { title: '生产日期', dataIndex: 'prodDateStr', width: 120, defaultHidden: true },
   { title: '检测日期', dataIndex: 'detectionDateStr', width: 120, fixed: 'left' },
-  { title: '原始炉号', dataIndex: 'furnaceNo', width: 200, fixed: 'left' },
-  { title: '炉号', dataIndex: 'furnaceNoFormatted', width: 200, fixed: 'left' },
+  // 炉号：业务展示用原始炉号 furnaceNo（含 W/G/汉字业务标签）
+  // 唯一性判定走 furnaceNoFormatted（物料唯一编码），后端 dedup
+  { title: '炉号', dataIndex: 'furnaceNo', width: 200, fixed: 'left' },
   { title: '产线', dataIndex: 'lineNo', width: 80, align: 'center', defaultHidden: true },
   { title: '班次', dataIndex: 'shift', width: 80, align: 'center', defaultHidden: true },
   { title: '卷号', dataIndex: 'coilNo', width: 80, align: 'center', defaultHidden: true },

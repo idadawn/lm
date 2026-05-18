@@ -123,7 +123,7 @@ public class FurnaceNo
         // 特性描述限制为中文汉字、括号或空格：[\u4e00-\u9fa5\(\)\uff08\uff09\s]*
         var normalizedInput = NormalizeInput(furnaceNo);
         var pattern =
-            @"^\s*(\d+)(.*?)(\d{8})\s*-\s*(\d+)\s*-\s*(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*([Ww]?)\s*([a-zA-Z\u4e00-\u9fa5\(\)\uff08\uff09\s，,。；;：:、·!！?？~～]*)\s*$";
+            @"^\s*(\d+)(.*?)(\d{8})\s*-\s*(\d+)\s*-\s*(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*([WwGgKk]?)\s*([a-zA-Z\u4e00-\u9fa5\(\)\uff08\uff09\s，,。；;：:、·!！?？~～]*)\s*$";
         var match = Regex.Match(normalizedInput, pattern);
 
         if (!match.Success)
@@ -140,7 +140,8 @@ public class FurnaceNo
             result.FurnaceBatchNo = match.Groups[4].Value; // 炉次号
             result.CoilNo = match.Groups[5].Value; // 卷号
             result.SubcoilNo = match.Groups[6].Value; // 分卷号（必填）
-            result.SpecialMarker = match.Groups[7].Value; // 特殊标记（W/w）
+            // 特殊标记统一大写（W/G/K），让下游 dedup / 展示 / 单片性能匹配只面对一种形态
+            result.SpecialMarker = (match.Groups[7].Value ?? string.Empty).ToUpperInvariant();
             result.FeatureSuffix = NormalizeFeatureSuffix(match.Groups[8].Value); // 特性描述（可选）
 
             // 忽略特定的非特性后缀（如复测）
@@ -341,8 +342,10 @@ public class FurnaceNo
     }
 
     /// <summary>
-    /// 获取基础炉号（不包含特性描述，但包含特殊标记W）
-    /// 格式：[产线数字][班次汉字][8位日期]-[炉次号]-[卷号]-[分卷号][W/w]
+    /// 获取基础炉号（物料唯一编码）—— 仅保留 [产线][班次][日期]-[炉次]-[卷号]-[分卷号]
+    /// ★ 历史版本曾把 W 标记拼在这里，导致同一物料在「未刻痕 → 已刻痕」两阶段被当成两条数据。
+    /// 现在统一不带 W/G/K 等工艺标记和汉字描述，保证同物料只有一条记录。
+    /// 工艺阶段（W/G/K）请单独读 SpecialMarker 属性。
     /// </summary>
     /// <returns>基础炉号字符串</returns>
     public string GetFurnaceNo()
@@ -351,12 +354,7 @@ public class FurnaceNo
             return null;
 
         var dateStr = ProdDate.Value.ToString("yyyyMMdd");
-        var baseNo = $"{LineNo}{Shift}{dateStr}-{FurnaceBatchNo}-{CoilNo}-{SubcoilNo}";
-        if (!string.IsNullOrWhiteSpace(SpecialMarker))
-        {
-            baseNo += SpecialMarker;
-        }
-        return baseNo;
+        return $"{LineNo}{Shift}{dateStr}-{FurnaceBatchNo}-{CoilNo}-{SubcoilNo}";
     }
 
     /// <summary>

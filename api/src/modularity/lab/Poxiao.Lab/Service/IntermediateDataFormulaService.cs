@@ -72,6 +72,7 @@ public class IntermediateDataFormulaService
         _cacheManager = cacheManager;
         _userManager = userManager;
         _eventPublisher = eventPublisher;
+        IntermediateDataFormulaSchemaHelper.EnsureEditorModeColumn(_repository.AsSugarClient());
     }
 
     /// <summary>
@@ -82,6 +83,7 @@ public class IntermediateDataFormulaService
         var dto = entity.Adapt<IntermediateDataFormulaDto>();
         dto.FormulaType = entity.FormulaType.ToString();
         dto.SourceType = entity.SourceType;
+        dto.EditorMode = IntermediateDataFormulaSchemaHelper.NormalizeEditorMode(entity.EditorMode);
 
         // 根据 columnName 查找对应的 displayName
         dto.DisplayName = GetColumnDisplayName(entity.ColumnName);
@@ -245,6 +247,7 @@ public class IntermediateDataFormulaService
         }
 
         var entity = dto.Adapt<IntermediateDataFormulaEntity>();
+        entity.EditorMode = IntermediateDataFormulaSchemaHelper.NormalizeEditorMode(dto.EditorMode);
         entity.SourceType = "CUSTOM"; // 手动创建的默认为自定义
         // 处理 FormulaType 字符串到枚举的转换
         if (!string.IsNullOrEmpty(dto.FormulaType))
@@ -348,6 +351,9 @@ public class IntermediateDataFormulaService
         entity.FormulaName = dto.FormulaName ?? entity.ColumnName;
         entity.Formula = dto.Formula ?? entity.Formula;
         entity.FormulaLanguage = dto.FormulaLanguage ?? entity.FormulaLanguage;
+        entity.EditorMode = string.IsNullOrWhiteSpace(dto.EditorMode)
+            ? IntermediateDataFormulaSchemaHelper.NormalizeEditorMode(entity.EditorMode)
+            : IntermediateDataFormulaSchemaHelper.NormalizeEditorMode(dto.EditorMode);
         // 将字符串转换为枚举
         if (!string.IsNullOrEmpty(dto.FormulaType))
         {
@@ -391,6 +397,10 @@ public class IntermediateDataFormulaService
             throw Oops.Oh(ErrorCode.COM1005);
 
         entity.Formula = input.Formula;
+        if (!string.IsNullOrWhiteSpace(input.EditorMode))
+        {
+            entity.EditorMode = IntermediateDataFormulaSchemaHelper.NormalizeEditorMode(input.EditorMode);
+        }
         entity.LastModify();
 
         var isOk = await _repository.UpdateAsync(entity);

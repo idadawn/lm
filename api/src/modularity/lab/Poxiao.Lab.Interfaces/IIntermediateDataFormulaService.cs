@@ -1,5 +1,6 @@
 using Poxiao.Lab.Entity;
 using Poxiao.Lab.Entity.Dto.IntermediateDataFormula;
+using System.Text.Json.Serialization;
 
 namespace Poxiao.Lab.Interfaces;
 
@@ -110,5 +111,9 @@ public class FormulaUpdateInput
     /// <summary>
     /// 公式内容.
     /// </summary>
+    [JsonPropertyName("formula")]
     public string Formula { get; set; }
+
+    [JsonPropertyName("editorMode")]
+    public string EditorMode { get; set; }
 }

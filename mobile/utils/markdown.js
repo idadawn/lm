@@ -21,13 +21,28 @@ marked.setOptions({
 })
 
 /**
+ * 把 marked 输出的 ```sql 代码块（<pre><code class="language-sql">…）包进 <details>，
+ * 默认折叠，用户点 summary 才展开。
+ * 不只针对 "sql"：把所有 language-sql/language-mysql/language-postgres 的都折叠。
+ */
+function collapseSqlBlocks(html) {
+  if (!html) return html
+  return html.replace(
+    /<pre><code class="language-(sql|mysql|postgres|postgresql|tsql|plsql)">([\s\S]*?)<\/code><\/pre>/gi,
+    (_m, _lang, body) =>
+      '<details class="sql-fold"><summary>📋 SQL 查询语句（点击展开）</summary>' +
+      '<pre><code class="language-sql">' + body + '</code></pre></details>'
+  )
+}
+
+/**
  * Convert markdown text to HTML.
  * Returns '' for empty/null input so consumers can bind directly.
  */
 export function renderMarkdown(content) {
   if (!content) return ''
   try {
-    return marked.parse(content)
+    return collapseSqlBlocks(marked.parse(content))
   } catch (_) {
     // marked throws on malformed input; surface raw text rather than crash UI
     return String(content)
@@ -44,6 +59,7 @@ const ALLOWED_TAGS = [
   'a',
   'table', 'thead', 'tbody', 'tr', 'td', 'th',
   'span', 'div',
+  'details', 'summary',   // SQL 折叠块用
 ]
 
 const ALLOWED_ATTR = ['href', 'title', 'class', 'src', 'alt', 'colspan', 'rowspan', 'align']

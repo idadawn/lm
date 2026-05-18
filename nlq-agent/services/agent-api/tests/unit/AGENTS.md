@@ -11,7 +11,7 @@
 | File | Description |
 |------|-------------|
 | `test_sql_tools.py` | SQL 白名单 / 黑名单 / 危险序列 / 表白名单 / `validate_column_name` / `validate_time_range_sql` |
-| `test_query_tools.py` | `get_formula_definition_tool` / `query_metric_tool` / `get_grade_rules_tool` / 一次交检合格率（含按重量加权回落 lab_raw_data） |
+| `test_query_tools.py` | `get_formula_definition_tool` / `query_metric_tool` / `get_grade_rules_tool` / 一次交检合格率（按中间表重量加权） |
 | `test_graph_tools.py` | `traverse_judgment_path` 多跳：record/spec/rule/condition/grade 全路径 + fallback（无炉号 / 记录不存在 / KG 不可用 / Cypher 异常 / 规则缺失 / 未结构化条件） |
 | `test_knowledge_graph.py` | `queries.py` 高层 Cypher 函数（mock `graph.query_async`） |
 | `test_graph.py` | `intent_classifier_node` / `route_by_intent` / `response_formatter_node` 的字段拼接与 fallback |

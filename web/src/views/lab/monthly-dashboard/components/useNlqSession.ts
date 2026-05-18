@@ -41,6 +41,13 @@ export interface NlqSessionMessage {
   role: 'user' | 'assistant';
   content: string;
   reasoningSteps?: ReasoningStep[];
+  // 后端通过 chart 事件下发的可视化配置（donut / bar / line 等）。
+  // 每个 assistant 消息独立存储自己那一轮的图表，不持久化（仅会话内存）。
+  chartConfig?: Record<string, any>;
+  // LightRAG / KB 命中时附带的引用来源（如 "knowledge_base.json#furnace_no_format"）
+  citations?: string[];
+  // KB 命中时的置信度（0~1）。前端用来在 citations 旁边展示百分比。
+  kbConfidence?: number;
 }
 
 export interface NlqSessionEntry {

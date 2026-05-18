@@ -83,6 +83,19 @@ html[data-theme='dark'] {
       -webkit-text-fill-color: #232a3b;
       transition: background-color 5000s ease-out 0.2s;
     }
+
+    .mobile-download {
+      background: rgba(35, 42, 59, 0.5);
+      border-color: rgba(255, 255, 255, 0.06);
+
+      .mobile-download-title {
+        color: #d1d5db;
+      }
+
+      .mobile-download-tip {
+        color: #9ca3af;
+      }
+    }
   }
 }
 
@@ -212,11 +225,57 @@ html[data-theme='dark'] {
       pointer-events: none;
     }
 
+    .mobile-download {
+      position: absolute;
+      bottom: 52px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 12px;
+      border: 1px solid rgba(0, 0, 0, 0.04);
+      backdrop-filter: blur(4px);
+
+      .mobile-download-qrcode {
+        width: 72px;
+        height: 72px;
+        border-radius: 6px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+        border: 1px solid rgba(0, 0, 0, 0.04);
+        flex-shrink: 0;
+      }
+
+      .mobile-download-info {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left;
+
+        .mobile-download-title {
+          font-size: 14px;
+          color: #333;
+          font-weight: 600;
+          line-height: 1.4;
+        }
+
+        .mobile-download-tip {
+          font-size: 12px;
+          color: #888;
+          margin-top: 4px;
+          line-height: 1.4;
+        }
+      }
+    }
+
     .copyright {
       color: #8c8c8c;
       font-size: 12px;
       position: absolute;
-      bottom: 30px;
+      bottom: 24px;
       text-align: center;
       width: 100%;
       z-index: 1;

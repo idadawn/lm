@@ -19,6 +19,13 @@
         <div class="login-title">{{ title }}</div>
         <LoginForm />
       </div>
+      <div class="mobile-download">
+        <img src="/resource/img/lmapp.png" alt="移动端下载二维码" class="mobile-download-qrcode" />
+        <div class="mobile-download-info">
+          <div class="mobile-download-title">移动端下载</div>
+          <div class="mobile-download-tip">扫码下载 APP</div>
+        </div>
+      </div>
       <div class="copyright">{{ getSysConfig.copyright }}</div>
     </div>
   </div>

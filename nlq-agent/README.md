@@ -7,7 +7,6 @@
 | 路径 | 定位 | 当前状态 |
 |---|---|---|
 | `services/agent-api/` | 主后端服务，包含 FastAPI 应用、LangGraph 工作流、工具函数、模型和测试。 | **主线维护** |
-| `apps/web/` | nlq-agent 独立前端实验工作区。 | 保留 |
 | `packages/shared-types/` | 前后端共享 TypeScript 类型定义。 | 保留 |
 | `docs/` | 产品、技术设计、知识图谱、变更记录、审查报告和路线图文档。 | **统一文档入口** |
 | `package.json`、`pnpm-workspace.yaml`、`turbo.json` | 前端与共享包工作区配置。 | 保留 |

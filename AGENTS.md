@@ -4,7 +4,7 @@
 > 
 > **Project Name:** 检测室数据分析系统 (Laboratory Data Analysis System)
 > **Primary Language:** Chinese (UI, comments, documentation)
-> **Last Updated:** 2026-01-29
+> **Last Updated:** 2026-05-20
 
 ---
 
@@ -156,9 +156,7 @@ lm/
 │   ├── build/                    # Build configuration
 │   ├── mock/                     # Mock server for development
 │   └── deploy/                   # Deployment configuration
-├── sql/                          # Database migration scripts
-├── scripts/                      # Utility scripts
-├── docker-compose.yml            # Docker compose for production
+├── docker-compose.yml            # Docker compose for infrastructure services
 └── .env.example                  # Environment variables template
 ```
 
@@ -249,19 +247,18 @@ pnpm clean:cache
 
 Default frontend URL: `http://localhost:3000`
 
-### Deployment build（生成 `apps/api` 与 `apps/dist`）
-
-用于 [`apps/docker-compose.yml`](apps/docker-compose.yml) 构建镜像前，在仓库根目录执行：
+### Deployment Build
 
 ```bash
-bash scripts/rebuild.sh              # API + Web（Turbo）
-bash scripts/rebuild.sh api          # 仅 API
-bash scripts/rebuild.sh web          # 仅 Web
-bash scripts/build-api.sh            # 仅 API（单脚本）
-bash scripts/build-web-turbo.sh      # 仅 Web（单脚本）
-```
+# Backend
+cd api/src/application/Poxiao.API.Entry
+dotnet publish -c Release -o ./publish
 
-Windows（PowerShell，在仓库根目录）：`.\scripts\build-api.ps1`、`.\scripts\build-web.ps1`。
+# Frontend
+cd web
+pnpm build
+# Output in web/dist/
+```
 
 ### Mock Server (for frontend-only development)
 
@@ -553,8 +550,8 @@ AI settings are in `api/src/application/Poxiao.API.Entry/Configurations/AI.json`
 
 1. Create entity class in `Poxiao.ModuleName.Entity/Entity/`
 2. Inherit from `CLDEntityBase`
-3. Add SQL migration script in `sql/`
-4. Run migration against database
+3. Apply database migration (use SqlSugar CodeFirst or manual SQL scripts)
+4. Verify table structure in database
 5. Use code generator or manually create DTOs, Service, Controller
 
 ### Adding a New API Endpoint
@@ -636,9 +633,7 @@ When writing SQL or using SqlSugar:
 
 ## Resources
 
-- **Documentation:** `doc/` directory
-- **SQL Migrations:** `sql/` directory
-- **Scripts:** `scripts/` directory
+- **Documentation:** Refer to module-specific `README.md` files
 - **API Testing:** `api/test-color-api.http` (REST Client format)
 
 ---

@@ -1,0 +1,177 @@
+# ============================================
+# 基础设施服务 - Docker Compose 配置
+# 启动实验室数据分析系统所需的基础中间件（除 MySQL 外）
+# 
+# 使用方式：
+#   docker compose up -d                  # 启动基础服务（Redis + RabbitMQ + Qdrant）
+#   docker compose --profile ai up -d     # 额外启动 AI 服务（TEI + vLLM）
+#   docker compose down                   # 停止所有服务
+# ============================================
+
+services:
+  # ------------------------------------------
+  # Redis - 缓存与会话存储
+  # ------------------------------------------
+  redis:
+    image: redis:${REDIS_VERSION:-8.0-alpine}
+    container_name: ${CONTAINER_PREFIX:-lm}-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6380}:6379"
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:-Lm@Redis#2025Secure!}
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    networks:
+      - lm-infra-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ------------------------------------------
+  # RabbitMQ - 消息队列与事件总线
+  # ------------------------------------------
+  rabbitmq:
+    image: rabbitmq:${RABBITMQ_VERSION:-3.13-management-alpine}
+    container_name: ${CONTAINER_PREFIX:-lm}-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "${RABBITMQ_AMQP_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+      # 兼容原有配置中使用的 8005 端口映射到 AMQP
+      - "8005:5672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-admin}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-admin123}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - lm-infra-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ------------------------------------------
+  # TEI - Text Embeddings Inference
+  # 用途：文本向量化（bge-m3 模型）
+  # 注意：需要预先下载模型文件到 MODELS_HOST_PATH 目录
+  # ------------------------------------------
+  tei:
+    image: ghcr.io/huggingface/text-embeddings-inference:${TEI_VERSION:-1.6}
+    container_name: ${CONTAINER_PREFIX:-lm}-tei
+    restart: unless-stopped
+    profiles:
+      - ai
+    ports:
+      - "${TEI_PORT:-8081}:80"
+    # 如需 GPU 加速，取消下方注释（需 NVIDIA Docker Runtime）
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    volumes:
+      - ${MODELS_HOST_PATH:-/opt/models}:/models:ro
+    # 模型路径需根据实际挂载位置调整；如未准备模型，容器会启动失败
+    command: >
+      --model-id /models/${TEI_MODEL_NAME:-bge-m3}
+      --port 80
+      --max-client-batch-size ${TEI_MAX_BATCH_SIZE:-32}
+    networks:
+      - lm-infra-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ------------------------------------------
+  # vLLM - 大模型推理引擎
+  # 用途：LLM 推理（Qwen2.5-7B-Instruct 等）
+  # 注意：需要 GPU 与模型文件，Windows Docker Desktop 可能无法直接运行
+  # ------------------------------------------
+  vllm:
+    image: vllm/vllm-openai:${VLLM_VERSION:-latest}
+    container_name: ${CONTAINER_PREFIX:-lm}-vllm
+    restart: unless-stopped
+    profiles:
+      - ai
+    ports:
+      - "${VLLM_PORT:-8082}:8000"
+    # 如需 GPU 加速，取消下方注释（需 NVIDIA Docker Runtime）
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    volumes:
+      - ${MODELS_HOST_PATH:-/opt/models}:/models:ro
+    environment:
+      - PYTHONUNBUFFERED=1
+    # 模型路径需根据实际挂载位置调整；如未准备模型，容器会启动失败
+    command: >
+      --model /models/${VLLM_MODEL_NAME:-Qwen2.5-7B-Instruct}
+      --served-model-name ${VLLM_MODEL_NAME:-Qwen2.5-7B-Instruct}
+      --gpu-memory-utilization ${VLLM_GPU_MEMORY_UTILIZATION:-0.7}
+      --max-model-len ${VLLM_MAX_MODEL_LEN:-4096}
+      --port 8000
+    networks:
+      - lm-infra-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ------------------------------------------
+# 持久化数据卷
+# ------------------------------------------
+volumes:
+  redis_data:
+    name: lm-redis-data
+  rabbitmq_data:
+    name: lm-rabbitmq-data
+
+# ------------------------------------------
+# 网络
+# ------------------------------------------
+networks:
+  lm-infra-network:
+    name: ${NETWORK_NAME:-lm-network}
+    driver: bridge

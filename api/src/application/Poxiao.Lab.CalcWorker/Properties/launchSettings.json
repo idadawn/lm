@@ -1,0 +1,17 @@
+{
+  "profiles": {
+    "Poxiao.Lab.CalcWorker": {
+      "commandName": "Project"
+    },
+    "YY": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "YY"
+      }
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    }
+  }
+}

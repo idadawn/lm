@@ -22,7 +22,7 @@ jobs:
       run:
         working-directory: web
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0  # full history for freeze gate diff
 
@@ -58,7 +58,7 @@ jobs:
   reasoning-protocol-sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -94,7 +94,7 @@ jobs:
     # Wave 0 only validates Playwright config syntax; real E2E lands in Wave 4
     if: github.event_name == 'workflow_dispatch'  # manual-only until Wave 4
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v3
         with:

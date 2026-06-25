@@ -453,7 +453,8 @@ async def chat2sql_agent_node(state: dict[str, Any]) -> dict[str, Any]:
             }
 
     messages = state.get("messages", [])
-    user_question = _last_human_text(messages)
+    # 优先用意图分类阶段改写出的"自包含问题"（多轮追问承接上文）；缺失时回退到最新一条消息
+    user_question = str(state.get("resolved_question") or "").strip() or _last_human_text(messages)
     model_name = state.get("model_name") or None
     today = _today_iso()
 

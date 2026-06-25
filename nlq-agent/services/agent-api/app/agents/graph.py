@@ -430,6 +430,39 @@ async def intent_classifier_node(state: dict[str, Any]) -> dict[str, Any]:
                 history_lines.append(f"Assistant: {str(hist_msg.get('content', ''))[:280]}")
     conv_history = "\n".join(history_lines) if history_lines else "(no prior turns)"
 
+    # 多轮承接：先用一次专注的"问题改写"调用，把追问补全成自包含的完整问题，
+    # 之后的意图分类 / 实体抽取 / chat2sql 生成 SQL 都基于它。
+    # 例：上一轮"本月不合格原因 Top 5" + 本轮"4月份的数据" → "4月份的不合格原因 Top 5"。
+    effective_question = user_content
+    if history_lines:
+        try:
+            rewrite_prompt = (
+                "你是问题改写器。根据对话历史，把用户最新一句话改写成一个【自包含的完整中文问题】。\n"
+                "规则：\n"
+                "1) 若最新一句只是在上一轮问题基础上切换或补充某个维度（时间/班次/规格等），"
+                "就继承上一轮的主题与指标，只替换被改动的维度。"
+                "例：上一轮“本月不合格原因 Top 5” + 最新“4月份的数据” → “4月份的不合格原因 Top 5”。\n"
+                "2) 若最新一句本身已是与上一轮无关的完整新问题，原样返回，不要并入上文。\n"
+                "3) 只输出改写后的问题本身，不要任何解释、前后缀或引号。\n\n"
+                f"对话历史：\n{conv_history}\n\n"
+                f"用户最新一句：{user_content}\n\n"
+                "改写后的完整问题："
+            )
+            rewrite_resp = await get_llm(model_name).ainvoke(
+                [{"role": "user", "content": rewrite_prompt}]
+            )
+            rewritten = (
+                str(getattr(rewrite_resp, "content", "") or "")
+                .strip()
+                .strip('"')
+                .strip("“”")
+                .strip()
+            )
+            if rewritten:
+                effective_question = rewritten
+        except Exception as _rw_err:  # noqa: BLE001
+            print(f"[WARN] follow-up rewrite failed: {_rw_err}")
+
     full_prompt = f"""{INTENT_CLASSIFICATION_PROMPT}
 
 ---
@@ -437,13 +470,12 @@ async def intent_classifier_node(state: dict[str, Any]) -> dict[str, Any]:
 Conversation history:
 {conv_history}
 
-Current user question: {user_content}
+Current user question（已补全为自包含问题，请据此分类与抽取实体）: {effective_question}
 
 Previous extracted context: {json.dumps(context, ensure_ascii=False)}
 
-注意：当 current question 是承接性表达（如"上个月呢"、"那今年呢"、"再算一下"），必须从对话历史中推断出上一轮的 metric / query_type / shift / spec_code 等实体，沿用过来。只有 time_range 之类被新问题明确替换的字段才更新。
-
-Respond with JSON only:"""
+Respond with JSON only:
+{{"intent": "...", "entities": {{...}}, "context": {{...}}}}"""
 
     # Use LLM to classify intent and extract entities
     llm = get_llm(model_name)
@@ -470,6 +502,7 @@ Respond with JSON only:"""
                 "entities": {},
                 "context": context,
                 "messages": messages,
+                "resolved_question": user_content,
             }
 
         result = json.loads(result_text)
@@ -477,6 +510,8 @@ Respond with JSON only:"""
         intent = result.get("intent", "unknown")
         entities = result.get("entities", {})
         new_context = result.get("context", {})
+        # 多轮承接：用改写后的自包含问题，供下游 chat2sql 生成 SQL 时使用
+        resolved_question = effective_question
 
         # Merge with historical context for multi-turn support
         merged_context = {**context, **new_context}
@@ -515,6 +550,7 @@ Respond with JSON only:"""
             "entities": entities,
             "context": merged_context,
             "messages": messages,
+            "resolved_question": resolved_question,
         }
 
     except Exception as e:

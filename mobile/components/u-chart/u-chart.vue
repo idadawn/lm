@@ -98,7 +98,10 @@ export default {
         extra: {
           tooltip: {
             showBox: true,
-            bgColor: 'rgba(15,23,42,0.92)',
+            // bgColor 必须是 hex —— uCharts 画 tooltip 时会把它喂给内部 hexToRgb()，
+            // 传 rgba() 会让其正则匹配返回 null 进而 `[1] of null` 崩溃（drawToolTip）。
+            // 透明度走 bgOpacity，#0f172a == rgb(15,23,42)，最终等价于 rgba(15,23,42,0.92)。
+            bgColor: '#0f172a',
             bgOpacity: 0.92,
             fontColor: '#f1f5f9'
           }

@@ -243,8 +243,18 @@ function Invoke-HBuilderXCLI {
 Write-Host "【步骤 4/6】生成最新 App 资源" -ForegroundColor Yellow
 Write-Host "（如提示未登录，请先在 HBuilderX 登录 DCloud 账号）" -ForegroundColor DarkYellow
 
-# open 命令无需捕获输出
-& $HBuilderXPath open --project "$ProjectRoot" 2>&1 | Out-Null
+# 关键：cli publish/pack 只识别"已导入 HBuilderX 工作区"的项目。
+# 必须用 `project open --path` 真正导入；旧写法 `open --project` 不会导入，
+# 全新检出 / git worktree 会在 publish 阶段报"项目 ... 不存在，请先导入"。
+& $HBuilderXPath project open --path "$ProjectRoot" 2>&1 | Out-Null
+
+# manifest 引用的应用图标位于 unpackage/res/icons/*，这些资源通常不纳入 git，
+# 全新检出 / worktree 可能缺失，会让云打包阶段报"文件不存在"。提前明确告警。
+$iconProbe = Join-Path $ProjectRoot "unpackage\res\icons\72x72.png"
+if (-not (Test-Path $iconProbe)) {
+    Write-Host "⚠️ 未找到应用图标 $iconProbe —— 云打包会报「文件不存在」。" -ForegroundColor Yellow
+    Write-Host "   请从已有检出复制 unpackage\res\icons\ 或在 HBuilderX 中重新生成图标后再打包。" -ForegroundColor Yellow
+}
 
 $publishResult = Invoke-HBuilderXCLI -Arguments "publish --platform APP --project `"$ProjectRoot`" --type appResource"
 

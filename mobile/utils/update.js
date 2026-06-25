@@ -2,14 +2,17 @@ import { get } from './http.js'
 import { checkPgyerUpdate } from './update-pgyer.js'
 
 // ==================== 更新源配置 ====================
-// 支持 'backend'（自建后端）或 'pgyer'（蒲公英）
-export const UPDATE_SOURCE = 'pgyer'
+// 支持 'backend'（自建后端，推荐）或 'pgyer'（蒲公英）
+// ⚠️ 安全：切勿在客户端内置蒲公英账号级 _api_key —— 它会随 APK 分发、可被反编译提取，
+//    进而以该账号身份调用蒲公英 OpenAPI（上传/列举/删除应用）。更新检测统一改走
+//    自建后端 /api/app/version，由后端持有蒲公英 Key 代理 app/check。
+export const UPDATE_SOURCE = 'backend'
 
-// 蒲公英配置（仅在 UPDATE_SOURCE = 'pgyer' 时生效）
-// 请前往 https://www.pgyer.com 注册并获取以下 Key
+// 已弃用：仅保留结构以兼容旧代码路径。禁止在此填入任何真实 Key（留空即可）。
+// 后端代理已接管更新检测，客户端不再需要、也不应携带蒲公英 Key。
 export const PGYER_CONFIG = {
-  _api_key: '883505be5ccf18ad1b06a732beab5620',   // 蒲公英 API Key
-  appKey: 'b11d87be80e350458bd4734d65bcc462'      // 应用 Key
+  _api_key: '',
+  appKey: ''
 }
 
 // ==================== 自建后端更新 ====================

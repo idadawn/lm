@@ -225,12 +225,42 @@ html[data-theme='dark'] {
       pointer-events: none;
     }
 
-    .mobile-download {
-      position: absolute;
-      bottom: 52px;
-      left: 50%;
-      transform: translateX(-50%);
+    // 内层容器：纵向排列，高度不足时整体滚动，避免底部内容遮挡表单
+    .login-right-panel-inner {
+      position: relative;
       z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      height: 100%;
+      overflow-x: hidden;
+      overflow-y: auto;
+      padding: 24px 16px;
+    }
+
+    // 表单区域：有空间时居中表单；空间不足时不压缩，交由外层滚动
+    .login-right-panel-content {
+      flex: 1 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 16px 0;
+    }
+
+    // 底部区域：APP 下载二维码 + 版权，始终在下部且处于正常文档流，不再绝对定位遮挡表单
+    .login-right-panel-footer {
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      width: 100%;
+      padding-top: 8px;
+    }
+
+    .mobile-download {
       display: flex;
       align-items: center;
       gap: 12px;
@@ -274,11 +304,7 @@ html[data-theme='dark'] {
     .copyright {
       color: #8c8c8c;
       font-size: 12px;
-      position: absolute;
-      bottom: 24px;
       text-align: center;
-      width: 100%;
-      z-index: 1;
       opacity: 0.8;
       letter-spacing: 0.5px;
     }

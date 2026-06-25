@@ -14,19 +14,25 @@
       <div class="flex items-center absolute right-4 top-4">
         <AppDarkModeToggle class="enter-x mr-2" v-if="!sessionTimeout" />
       </div>
-      <div :class="`${prefixCls}-form`" class="enter-x">
-        <!-- <LoginFormTitle class="-enter-x xl:hidden" /> -->
-        <div class="login-title">{{ title }}</div>
-        <LoginForm />
-      </div>
-      <div class="mobile-download">
-        <img src="/resource/img/lmapp.png" alt="移动端下载二维码" class="mobile-download-qrcode" />
-        <div class="mobile-download-info">
-          <div class="mobile-download-title">移动端下载</div>
-          <div class="mobile-download-tip">扫码下载 APP</div>
+      <div class="login-right-panel-inner">
+        <div class="login-right-panel-content">
+          <div :class="`${prefixCls}-form`" class="enter-x">
+            <!-- <LoginFormTitle class="-enter-x xl:hidden" /> -->
+            <div class="login-title">{{ title }}</div>
+            <LoginForm />
+          </div>
+        </div>
+        <div class="login-right-panel-footer">
+          <div class="mobile-download">
+            <img src="/resource/img/lmapp.png" alt="移动端下载二维码" class="mobile-download-qrcode" />
+            <div class="mobile-download-info">
+              <div class="mobile-download-title">移动端下载</div>
+              <div class="mobile-download-tip">扫码下载 APP</div>
+            </div>
+          </div>
+          <div class="copyright">{{ getSysConfig.copyright }}</div>
         </div>
       </div>
-      <div class="copyright">{{ getSysConfig.copyright }}</div>
     </div>
   </div>
 </template>

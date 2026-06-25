@@ -151,5 +151,9 @@
     "DoMainPc": "http://localhost:3000",
     "DoMainApp": "http://localhost:8081",
     "AppPushUrl": ""
+  },
+  "Pgyer": {
+    "ApiKey": "",
+    "AppKey": ""
   }
 }

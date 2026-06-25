@@ -176,6 +176,7 @@ function updateChart() {
         yAxis: [
             {
                 type: 'value',
+                alignTicks: false,
                 name: 'kg',
                 nameTextStyle: { fontSize: 10, color: '#8c8c8c', padding: [0, 24, 0, 0] },
                 axisLine: { show: false },
@@ -188,6 +189,7 @@ function updateChart() {
             },
             {
                 type: 'value',
+                alignTicks: false,
                 name: '%',
                 min: 0,
                 max: 100,

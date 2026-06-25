@@ -86,13 +86,13 @@ function updateChart() {
 
   // 动态构建指标：总产量占比（归一化）、合格率，以及所有合格等级
   const indicators = [
-    { name: '产量占比', max: 100 },
-    { name: '合格率', max: 100 },
+    { name: '产量占比', min: 0, max: 100 },
+    { name: '合格率', min: 0, max: 100 },
   ];
 
   // 根据合格等级列动态添加指标
   for (const cfg of indicatorConfigs) {
-    indicators.push({ name: `${cfg.name}占比`, max: 100 });
+    indicators.push({ name: `${cfg.name}占比`, min: 0, max: 100 });
   }
 
   // 计算总产量的最大值用于归一化
@@ -167,7 +167,7 @@ function updateChart() {
       indicator: indicators,
       radius: '65%',
       center: ['50%', '50%'],
-      splitNumber: 4,
+      splitNumber: 5,
       scale: false,
       axisName: {
         color: '#666',

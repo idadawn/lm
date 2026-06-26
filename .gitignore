@@ -19,6 +19,9 @@ wwwroot/
 *.dev.bat
 appsettings.Development.json
 
+# 环境专属 DB 连接串覆盖保持本地（基础 ConnectionStrings.json 仍跟踪）
+ConnectionStrings.*.json
+
 # Local configuration files (sensitive)
 SERVICES-CONFIG.local.md
 *.local.md

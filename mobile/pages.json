@@ -17,7 +17,19 @@
     {
       "path": "pages/chat/chat",
       "style": {
-        "navigationBarTitleText": "对话"
+        "navigationBarTitleText": "对话",
+        "app-plus": {
+          "titleNView": {
+            "buttons": [
+              {
+                "text": "新对话",
+                "fontSize": "15px",
+                "color": "#1890ff",
+                "float": "right"
+              }
+            ]
+          }
+        }
       }
     },
     {

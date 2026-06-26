@@ -394,10 +394,22 @@
               <span class="header-tip">使用逗号 (,) 分隔参数</span>
             </div>
             <div class="functions-list-detailed">
-              <div v-for="func in functions" :key="func.name" class="func-item" @click="insertFunction(func)">
-                <div class="func-name">{{ func.name }}</div>
-                <div class="func-desc">{{ func.description }}</div>
-              </div>
+              <a-tooltip v-for="func in functions" :key="func.name" placement="left">
+                <template #title>
+                  <div style="line-height: 1.7">
+                    <div style="font-weight: 600; margin-bottom: 2px">{{ func.label }}（{{ func.name }}）</div>
+                    <div>语法：{{ func.syntax }}</div>
+                    <div>示例：{{ func.example }}</div>
+                  </div>
+                </template>
+                <div class="func-item" @click="insertFunction(func)">
+                  <div class="func-main">
+                    <span class="func-label">{{ func.label }}</span>
+                    <code class="func-code">{{ func.name }}</code>
+                  </div>
+                  <span class="func-tag">{{ func.description }}</span>
+                </div>
+              </a-tooltip>
             </div>
           </div>
 
@@ -809,15 +821,16 @@ const syntaxOperators = ['(', ')', ','];
 const comparisonOperators = ['=', '<>', '>', '<'];
 const allOperators = [...basicOperators, ...syntaxOperators, ...comparisonOperators];
 
+// name 为公式实际写入的英文函数名（insertFunction 用它构建公式，请勿改动）；label 为中文显示名
 const functions = [
-  { name: 'SUM', value: 'SUM(', type: 'function', description: '统计' },
-  { name: 'AVG', value: 'AVG(', type: 'function', description: '统计' },
-  { name: 'MAX', value: 'MAX(', type: 'function', description: '统计' },
-  { name: 'MIN', value: 'MIN(', type: 'function', description: '统计' },
-  { name: 'IF', value: 'IF(', type: 'function', description: '逻辑' },
-  { name: 'RANGE', value: 'RANGE(', type: 'function', description: '范围' },
-  { name: 'DIFF_FIRST', value: 'DIFF_FIRST(', type: 'function', description: '前N列差' },
-  { name: 'DIFF_LAST', value: 'DIFF_LAST(', type: 'function', description: '后N列差' },
+  { name: 'SUM', label: '求和', value: 'SUM(', type: 'function', description: '统计', syntax: 'SUM(参数1, 参数2, …)', example: 'SUM(检测1, 检测2)' },
+  { name: 'AVG', label: '平均值', value: 'AVG(', type: 'function', description: '统计', syntax: 'AVG(参数1, 参数2, …)', example: 'AVG(RANGE(Detection, 1, 5))' },
+  { name: 'MAX', label: '最大值', value: 'MAX(', type: 'function', description: '统计', syntax: 'MAX(参数1, 参数2, …)', example: 'MAX(检测1, 检测2)' },
+  { name: 'MIN', label: '最小值', value: 'MIN(', type: 'function', description: '统计', syntax: 'MIN(参数1, 参数2, …)', example: 'MIN(检测1, 检测2)' },
+  { name: 'IF', label: '条件判断', value: 'IF(', type: 'function', description: '逻辑', syntax: 'IF(条件, 真值, 假值)', example: 'IF(检测1 > 100, 1, 0)' },
+  { name: 'RANGE', label: '区间', value: 'RANGE(', type: 'function', description: '范围', syntax: 'RANGE(前缀, 起始列, 结束列)', example: 'RANGE(Detection, 1, 5)' },
+  { name: 'DIFF_FIRST', label: '前N列差值', value: 'DIFF_FIRST(', type: 'function', description: '差值', syntax: 'DIFF_FIRST(前缀, N, 总列数)', example: 'DIFF_FIRST(Detection, 2)' },
+  { name: 'DIFF_LAST', label: '后N列差值', value: 'DIFF_LAST(', type: 'function', description: '差值', syntax: 'DIFF_LAST(前缀, N, 总列数)', example: 'DIFF_LAST(Detection, 2)' },
 ];
 
 const templates: any[] = [];
@@ -1615,7 +1628,7 @@ function handleCancel() { closeModal(); }
 // ========== 普通公式编辑器 (保持原样式) ==========
 .formula-builder {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   max-height: ~'calc(100vh - 120px)';
   min-height: 520px;
   background: white;
@@ -1628,24 +1641,43 @@ function handleCancel() { closeModal(); }
   height: 100%;
 }
 
-.left-panel {
-  width: 200px;
+// 两侧改为柔和卡片，弱化生硬的分隔线，三个区域层次更清晰
+.left-panel,
+.right-panel {
   flex-shrink: 0;
-  border-right: 1px solid @color-border;
-  padding-right: 10px;
+  background: #fafbfd;
+  border: 1px solid #eef0f4;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.left-panel {
+  width: 212px;
 }
 
 .right-panel {
-  width: 220px;
-  flex-shrink: 0;
-  border-left: 1px solid @color-border;
-  padding-left: 10px;
+  width: 230px;
 }
 
 .center-panel {
   flex: 1;
   min-width: 0;
   padding: 0 4px;
+}
+
+// 窄屏自适应：收窄两侧面板，保证中间编辑区可用
+@media (max-width: 1180px) {
+  .formula-builder {
+    gap: 10px;
+  }
+
+  .left-panel {
+    width: 188px;
+  }
+
+  .right-panel {
+    width: 200px;
+  }
 }
 
 .panel-header {
@@ -1858,7 +1890,7 @@ function handleCancel() { closeModal(); }
 .block-editor {
   flex: 1;
   border: 1px solid #d9d9d9;
-  border-radius: 8px;
+  border-radius: 10px;
   background: #fafafa;
   padding: 16px;
   margin-bottom: 16px;
@@ -2080,7 +2112,8 @@ function handleCancel() { closeModal(); }
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 6px 12px;
+    gap: 8px;
+    padding: 7px 12px;
     background: #f9f0ff;
     border: 1px solid #d3adf7;
     border-radius: 4px;
@@ -2092,15 +2125,36 @@ function handleCancel() { closeModal(); }
       background: #f0e6fa;
     }
 
-    .func-name {
-      font-weight: bold;
+    .func-main {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .func-label {
+      font-weight: 600;
       color: #722ed1;
       font-size: 13px;
     }
 
-    .func-desc {
+    .func-code {
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
       font-size: 11px;
-      color: #b37feb;
+      color: #9254de;
+      background: rgba(114, 46, 209, 0.08);
+      padding: 0 5px;
+      border-radius: 3px;
+      line-height: 1.6;
+    }
+
+    .func-tag {
+      flex-shrink: 0;
+      font-size: 11px;
+      color: #722ed1;
+      background: #efdbff;
+      padding: 1px 8px;
+      border-radius: 10px;
     }
   }
 }

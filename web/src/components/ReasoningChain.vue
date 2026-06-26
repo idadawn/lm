@@ -34,15 +34,15 @@
           <span class="reasoning-chain__index">{{ index + 1 }}</span>
           <div class="reasoning-chain__body">
             <div class="reasoning-chain__tags">
-              <a-tag
-                :color="getPresentation(step.kind).color"
+              <span
                 class="reasoning-chain__kind-tag"
-              >{{ getPresentation(step.kind).label }}</a-tag>
-              <a-tag
+                :style="{ color: getPresentation(step.kind).color }"
+              >{{ getPresentation(step.kind).label }}</span>
+              <span
                 v-if="step.kind === 'condition' && step.satisfied !== undefined"
-                :color="step.satisfied ? '#15803d' : '#b91c1c'"
                 class="reasoning-chain__kind-tag"
-              >{{ step.satisfied ? '满足' : '不满足' }}</a-tag>
+                :style="{ color: step.satisfied ? '#15803d' : '#b91c1c' }"
+              >{{ step.satisfied ? '满足' : '不满足' }}</span>
             </div>
             <div class="reasoning-chain__label">{{ stepLabel(step) }}</div>
             <div v-if="step.kind === 'condition'" class="reasoning-chain__meta">
@@ -111,10 +111,10 @@ function stepDetail(step: any): string {
 
 <style lang="less" scoped>
 .reasoning-chain {
-  margin-bottom: 10px;
-  background: #fafbfc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  margin-bottom: 12px;
+  background: #fbfcfe;
+  border: 1px solid #eef1f6;
+  border-radius: 12px;
   overflow: hidden;
 
   &__header {
@@ -179,8 +179,8 @@ function stepDetail(step: any): string {
   &__row {
     display: flex;
     gap: 10px;
-    padding: 8px 14px 8px 18px;
-    border-left: 3px solid #e2e8f0;
+    padding: 9px 14px 9px 16px;
+    border-left: 2px solid #eef2f7;
     margin: 0 0 0 0;
     transition: border-color 0.15s;
     /* 新增：每条新步骤入场时的轻量滑入动画，配合前端节流队列形成"一条条往上冒"的效果 */
@@ -226,7 +226,13 @@ function stepDetail(step: any): string {
     font-size: 11px;
     border-radius: 50%;
     font-weight: 600;
-    margin-top: 2px;
+    margin-top: 1px;
+  }
+
+  /* 进行中的步骤：编号换成主题色实心，作为唯一的“强调点” */
+  &__row--running &__index {
+    background: #eef2ff;
+    color: #4f46e5;
   }
 
   &__body {
@@ -244,12 +250,15 @@ function stepDetail(step: any): string {
   }
 
   &__kind-tag {
-    font-size: 11px !important;
-    line-height: 18px !important;
-    padding: 0 7px !important;
-    margin-right: 0 !important;
-    border-radius: 10px !important;
-    border: none !important;
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    line-height: 18px;
+    padding: 0 7px;
+    border-radius: 6px;
+    font-weight: 500;
+    background: #f1f5f9;
+    /* 语义色只保留为低饱和文字色，背景统一，去掉彩色实心块 */
   }
 
   &__label {

@@ -94,5 +94,21 @@
     },
     "vueVersion": "3",
     "fallbackLocale": "zh-Hans",
-    "locale": "zh-Hans"
+    "locale": "zh-Hans",
+    "app-harmony": {
+        "distribute": {
+            "bundleName": "com.emergen.lm",
+            "signingConfigs": {
+                "default": {
+                    "certpath": "c:\\Users\\dawn\\AppData\\Roaming\\HBuilder X\\extensions\\launcher\\agc-certs\\1782451477521.cer",
+                    "keyAlias": "debugKey",
+                    "keyPassword": "0000001B66935AE470E27C90C620C3570DB727E19E66AFD1C4E878A9CCB15D82ABF055755350858B552A0F",
+                    "profile": "c:\\Users\\dawn\\AppData\\Roaming\\HBuilder X\\extensions\\launcher\\agc-certs\\1782451477521.p7b",
+                    "signAlg": "SHA256withECDSA",
+                    "storeFile": "c:\\Users\\dawn\\AppData\\Roaming\\HBuilder X\\extensions\\launcher\\agc-certs\\1782451477521.p12",
+                    "storePassword": "0000001B66935AE470E27C90C620C3570DB727E19E66AFD1C4E878A9CCB15D82ABF055755350858B552A0F"
+                }
+            }
+        }
+    }
 }

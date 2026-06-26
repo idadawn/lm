@@ -49,6 +49,56 @@ function parseSseLine(line) {
   }
 }
 
+// 平台无关的 chunk 解码。
+// ★ 鸿蒙(APP-HARMONY) 踩坑：旧实现用 `#ifdef APP-PLUS || H5` 网住 TextDecoder，
+//   但 APP-PLUS 在鸿蒙不编译（官方：安卓/苹果编译，鸿蒙不编译），导致解码分支被整段剔除、
+//   text 变 undefined、`buffer += undefined` 把字面量 "undefined" 灌进缓冲区，
+//   SSE 永远解析不出 data: 行 → 回答空白。改为运行时特性检测，新增端无需再维护 #ifdef。
+// onChunkReceived 各端返回 ArrayBuffer；个别运行时可能直接给 string，先判类型，
+// 避免对 string 调 TextDecoder 抛错。任何异常都退化为 ''（不再污染缓冲区）。
+function decodeChunk(data) {
+  if (data == null) return '';
+  if (typeof data === 'string') return data;
+  try {
+    if (typeof TextDecoder !== 'undefined') {
+      return new TextDecoder('utf-8').decode(data);
+    }
+  } catch (e) {
+    // 落到手动解码兜底
+  }
+  // 手动 UTF-8 解码：无 TextDecoder 的旧运行时（老版微信小程序 / HBuilderX < 4.75 的鸿蒙）
+  try {
+    const bytes = new Uint8Array(data);
+    let result = '';
+    let i = 0;
+    while (i < bytes.length) {
+      const b1 = bytes[i++];
+      if (b1 < 0x80) {
+        result += String.fromCharCode(b1);
+        continue;
+      }
+      let codepoint = 0;
+      let extraBytes = 0;
+      if ((b1 & 0xe0) === 0xc0) { codepoint = b1 & 0x1f; extraBytes = 1; }
+      else if ((b1 & 0xf0) === 0xe0) { codepoint = b1 & 0x0f; extraBytes = 2; }
+      else if ((b1 & 0xf8) === 0xf0) { codepoint = b1 & 0x07; extraBytes = 3; }
+      else { result += '�'; continue; }
+      while (extraBytes-- && i < bytes.length) {
+        codepoint = (codepoint << 6) | (bytes[i++] & 0x3f);
+      }
+      if (codepoint > 0xffff) {
+        const c = codepoint - 0x10000;
+        result += String.fromCharCode(0xd800 + (c >> 10), 0xdc00 + (c & 0x3ff));
+      } else {
+        result += String.fromCharCode(codepoint);
+      }
+    }
+    return result;
+  } catch (e) {
+    return '';
+  }
+}
+
 function dispatchEvent(event, handlers) {
   if (!event) return;
   switch (event.type) {
@@ -162,47 +212,8 @@ export function streamNlqChat(request, handlers) {
         console.warn('[sse] empty chunk #' + chunkCount);
         return;
       }
-      let text;
-      try {
-        // #ifdef MP-WEIXIN
-        if (typeof TextDecoder !== 'undefined') {
-          text = new TextDecoder('utf-8').decode(data);
-        } else {
-          const bytes = new Uint8Array(data);
-          let result = '';
-          let i = 0;
-          while (i < bytes.length) {
-            const b1 = bytes[i++];
-            if (b1 < 0x80) {
-              result += String.fromCharCode(b1);
-              continue;
-            }
-            let codepoint = 0;
-            let extraBytes = 0;
-            if ((b1 & 0xe0) === 0xc0) { codepoint = b1 & 0x1f; extraBytes = 1; }
-            else if ((b1 & 0xf0) === 0xe0) { codepoint = b1 & 0x0f; extraBytes = 2; }
-            else if ((b1 & 0xf8) === 0xf0) { codepoint = b1 & 0x07; extraBytes = 3; }
-            else { result += '�'; continue; }
-            while (extraBytes-- && i < bytes.length) {
-              codepoint = (codepoint << 6) | (bytes[i++] & 0x3f);
-            }
-            if (codepoint > 0xffff) {
-              const c = codepoint - 0x10000;
-              result += String.fromCharCode(0xd800 + (c >> 10), 0xdc00 + (c & 0x3ff));
-            } else {
-              result += String.fromCharCode(codepoint);
-            }
-          }
-          text = result;
-        }
-        // #endif
-        // #ifdef APP-PLUS || H5
-        text = new TextDecoder('utf-8').decode(data);
-        // #endif
-      } catch (e) {
-        text = '';
-      }
-      buffer += text;
+      // 平台无关解码（含鸿蒙 APP-HARMONY）：见上方 decodeChunk 注释。
+      buffer += decodeChunk(data);
       const chunks = buffer.split('\n\n');
       buffer = chunks.pop() || '';
       chunks.forEach((chunk) => {

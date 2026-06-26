@@ -312,6 +312,13 @@ if (-not $isApp) {
     Write-Host "⚠️ 当前产物是 .hap 而非 .app。AGC 正式发布渠道只接收 .app（多 HAP 聚合包）。" -ForegroundColor Yellow
     Write-Host "   如需上架请用 hvigorw assembleApp 或 HBuilderX 出 .app。" -ForegroundColor Yellow
 }
+# 未签名检测：HBuilderX 在 manifest 未配 release 签名证书时会出 *-unsigned.app
+if ($artifact.Name -match 'unsigned') {
+    Write-Host "⚠️ 产物未签名（文件名含 unsigned）—— manifest 未配置 release 签名证书。" -ForegroundColor Yellow
+    Write-Host "   未签名包【无法安装到设备、也无法上传 AGC 发布】。" -ForegroundColor Yellow
+    Write-Host "   请在 AGC 申请发布证书(.p12/.cer/.p7b)，配到 manifest.json 的" -ForegroundColor Yellow
+    Write-Host "   app-harmony.distribute.signingConfigs.release 后重新打包。详见 PUBLISH-HARMONY.md。" -ForegroundColor Yellow
+}
 Write-Host ""
 Write-Host "下一步上传到 AppGallery Connect：" -ForegroundColor Cyan
 Write-Host "  .\upload-to-agc.ps1 -HapPath `"$($artifact.FullName)`"" -ForegroundColor Cyan

@@ -193,7 +193,7 @@
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, onMounted } from 'vue'
 import { onShow, onReady, onPullDownRefresh } from '@dcloudio/uni-app'
 import { getMonthlyReport, getLaminationTrend, getThicknessCorrelation, getDailyProduction } from '@/api/dashboard.js'
 import { formatDate, getStartOfMonth, getToday, getQuickRange, detectQuickRangeKey } from '@/utils/date.js'
@@ -211,6 +211,7 @@ const quickRangeOptions = [
   { key: 'last_week',      label: '上周' },
   { key: 'current_month',  label: '本月' },
   { key: 'last_month',     label: '上月' },
+  { key: 'this_year',      label: '今年' },
 ]
 const showCustomPicker = ref(false)
 // computed：当前 startDate/endDate 对应哪个快速 key（自定义时为空串）
@@ -787,9 +788,23 @@ onShow(() => {
   fetchData(false)
 })
 
+// 测量画布宽度：优先 getWindowInfo（鸿蒙 4.23+ 专用、更可靠），回退 getSystemInfoSync。
+// 不用 createSelectorQuery().boundingClientRect()——鸿蒙兼容表标注其不支持。
+function measureCanvasWidth() {
+  try {
+    const info = uni.getWindowInfo ? uni.getWindowInfo() : uni.getSystemInfoSync()
+    if (info && info.windowWidth) canvasWidth.value = info.windowWidth - 32
+  } catch (_) {}
+}
+
+// onReady 在鸿蒙「持续渲染」场景下有不触发的已知回归，单靠它会让 canvasWidth 停在 350 默认值、
+// 图表渲染不满宽。补一个 onMounted（Vue 钩子，鸿蒙可靠触发）兜底；两处都调，幂等。
+onMounted(() => {
+  nextTick(() => measureCanvasWidth())
+})
+
 onReady(() => {
-  const sysInfo = uni.getSystemInfoSync()
-  canvasWidth.value = sysInfo.windowWidth - 32
+  measureCanvasWidth()
   // UChart 组件根据 props 自动渲染，不需要手动触发
 })
 

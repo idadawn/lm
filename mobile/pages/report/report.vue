@@ -13,6 +13,13 @@
           >
             <text class="quick-chip-text">{{ opt.label }}</text>
           </view>
+          <view
+            class="quick-chip quick-chip--custom"
+            :class="{ active: !activeRangeKey && !showCustomPicker, ring: showCustomPicker }"
+            @click="showCustomPicker = !showCustomPicker"
+          >
+            <text class="quick-chip-text">{{ showCustomPicker ? '收起' : '自定义' }}</text>
+          </view>
           <view class="quick-chip quick-chip--rotate" @click="toggleLandscape">
             <text class="quick-chip-text">{{ isLandscape ? '↩️ 竖屏' : '🔄 横屏' }}</text>
           </view>
@@ -20,6 +27,16 @@
       </scroll-view>
       <view class="range-summary">
         <text class="range-text">{{ startDate }} ～ {{ endDate }}</text>
+      </view>
+      <!-- 自定义日期（折叠）：点「自定义」展开，选起/止日期 -->
+      <view v-if="showCustomPicker" class="custom-date-row">
+        <picker mode="date" :value="startDate" @change="onStartDateChange">
+          <view class="date-picker">起：{{ startDate }}</view>
+        </picker>
+        <text class="date-sep">~</text>
+        <picker mode="date" :value="endDate" @change="onEndDateChange">
+          <view class="date-picker">止：{{ endDate }}</view>
+        </picker>
       </view>
     </view>
 
@@ -175,15 +192,34 @@ const quickRangeOptions = [
   { key: 'last_week',      label: '上周' },
   { key: 'current_month',  label: '本月' },
   { key: 'last_month',     label: '上月' },
+  { key: 'this_year',      label: '今年' },
 ]
 const activeRangeKey = computed(() => detectQuickRangeKey(startDate.value, endDate.value))
+const showCustomPicker = ref(false)
 
 function applyQuickRange(key) {
   const [s, e] = getQuickRange(key)
+  showCustomPicker.value = false
   if (s === startDate.value && e === endDate.value) return
   startDate.value = s
   endDate.value = e
   fetchData()
+}
+
+// 自定义日期：起/止任一变化就重新拉数（与首页交互一致）
+function onStartDateChange(e) {
+  const val = e.detail.value
+  if (val && val !== startDate.value) {
+    startDate.value = val
+    fetchData()
+  }
+}
+function onEndDateChange(e) {
+  const val = e.detail.value
+  if (val && val !== endDate.value) {
+    endDate.value = val
+    fetchData()
+  }
 }
 
 // ── 数据 ──
@@ -466,6 +502,40 @@ function toggleLandscape() {
   border-color: #fde68a;
 }
 .quick-chip--rotate .quick-chip-text { color: #92400e; }
+
+.quick-chip--custom {
+  background: #f8fafc;
+}
+.quick-chip.ring {
+  transform: scale(0.96);
+}
+
+/* 自定义日期（折叠）：点「自定义」展开，与首页交互/样式一致 */
+.custom-date-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 12rpx;
+  background: #ffffff;
+  border-radius: 24rpx;
+  padding: 16rpx 24rpx;
+  box-shadow: 0 4rpx 12rpx rgba(24, 144, 255, 0.08);
+}
+.date-picker {
+  font-size: 26rpx;
+  color: #262626;
+  background: #f5f7fa;
+  padding: 12rpx 24rpx;
+  border-radius: 12rpx;
+  transition: background 0.2s;
+}
+.date-picker:active {
+  background: #e4e7ed;
+}
+.date-sep {
+  font-size: 26rpx;
+  color: #8c8c8c;
+}
 
 .range-summary {
   margin-top: 12rpx;

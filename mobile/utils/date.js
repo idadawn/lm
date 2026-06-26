@@ -46,7 +46,7 @@ function endOfWeekDate(d) {
 
 /**
  * 给定一个"快速选择" key，返回 [startDate, endDate]（已格式化为 yyyy-MM-dd）。
- * 支持：today / this_week / last_week / current_month / last_month
+ * 支持：today / this_week / last_week / current_month / last_month / this_year
  */
 export function getQuickRange(key) {
   const now = new Date()
@@ -74,6 +74,9 @@ export function getQuickRange(key) {
       const firstOfLast = startOfMonthDate(lastOfLast)
       return [formatDate(firstOfLast), formatDate(lastOfLast)]
     }
+    case 'this_year':
+      // 今年：1 月 1 日 → 今天
+      return [formatDate(new Date(now.getFullYear(), 0, 1)), formatDate(now)]
     default:
       return [formatDate(now), formatDate(now)]
   }
@@ -84,7 +87,7 @@ export function getQuickRange(key) {
  * 用于打开页面时回显当前选中的 chip。返回 '' 表示自定义。
  */
 export function detectQuickRangeKey(start, end) {
-  const candidates = ['today', 'this_week', 'last_week', 'current_month', 'last_month']
+  const candidates = ['today', 'this_week', 'last_week', 'current_month', 'last_month', 'this_year']
   for (const k of candidates) {
     const [s, e] = getQuickRange(k)
     if (s === start && e === end) return k

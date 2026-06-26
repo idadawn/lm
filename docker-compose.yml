@@ -72,11 +72,13 @@ services:
         max-file: "3"
 
   # ------------------------------------------
-  # Nginx - 移动端内网调试网关
+  # Nginx - 移动端内网调试网关【仅 Linux 宿主】
   # 把后端 API(:10089) 与 NLQ 智能体(:8000) 聚合到单一来源，App 只配一个主服务器地址。
-  # 仅在内网真机调试 App 时启动（profile=mobile，默认不随基础设施启动）：
   #   docker compose --profile mobile up -d nginx-mobile
-  # 或直接运行 ./start-mobile-proxy.ps1（会顺带打印本机内网地址）。
+  # ⚠ Windows + Docker Desktop(WSL2)：发布端口只转发到宿主机 127.0.0.1，内网网卡不可达，
+  #   手机连不上。Windows 请改用原生 nginx：运行 ./start-mobile-proxy.ps1
+  #   （它用 web/conf/nginx.mobile.win.conf，直接 listen 0.0.0.0:8928，真机可达）。
+  # Linux 宿主可加 network_mode: host 或确保发布端口绑定到内网网卡后正常使用本服务。
   # ------------------------------------------
   nginx-mobile:
     image: nginx:${NGINX_VERSION:-1.27-alpine}

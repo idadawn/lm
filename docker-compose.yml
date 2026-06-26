@@ -72,6 +72,40 @@ services:
         max-file: "3"
 
   # ------------------------------------------
+  # Nginx - 移动端内网调试网关
+  # 把后端 API(:10089) 与 NLQ 智能体(:8000) 聚合到单一来源，App 只配一个主服务器地址。
+  # 仅在内网真机调试 App 时启动（profile=mobile，默认不随基础设施启动）：
+  #   docker compose --profile mobile up -d nginx-mobile
+  # 或直接运行 ./start-mobile-proxy.ps1（会顺带打印本机内网地址）。
+  # ------------------------------------------
+  nginx-mobile:
+    image: nginx:${NGINX_VERSION:-1.27-alpine}
+    container_name: ${CONTAINER_PREFIX:-lm}-nginx-mobile
+    restart: unless-stopped
+    profiles:
+      - mobile
+    ports:
+      - "${MOBILE_PROXY_PORT:-8928}:80"
+    volumes:
+      - ./web/conf/nginx.mobile.conf:/etc/nginx/conf.d/default.conf:ro
+    # 让容器内 host.docker.internal 指向宿主机（Docker Desktop 自带，Linux 需此项）
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - lm-infra-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/__gw_health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ------------------------------------------
   # TEI - Text Embeddings Inference
   # 用途：文本向量化（bge-m3 模型）
   # 注意：需要预先下载模型文件到 MODELS_HOST_PATH 目录

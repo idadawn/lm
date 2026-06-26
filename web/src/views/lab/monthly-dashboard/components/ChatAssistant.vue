@@ -635,8 +635,8 @@ onMounted(() => {
     .message-content {
       background: linear-gradient(135deg, #4096FF 0%, #1677FF 100%);
       color: #fff;
-      border-radius: 14px 4px 14px 14px;
-      box-shadow: 0 2px 8px rgba(22, 119, 255, 0.18);
+      border-radius: 16px 4px 16px 16px;
+      box-shadow: 0 4px 14px rgba(22, 119, 255, 0.22);
 
       .markdown-content {
         color: #fff;
@@ -658,9 +658,9 @@ onMounted(() => {
     .message-content {
       background: #FFFFFF;
       color: #1E293B;
-      border-radius: 4px 14px 14px 14px;
-      box-shadow: 0 1px 4px rgba(15, 23, 42, 0.05);
-      border: 1px solid #E2E8F0;
+      border-radius: 4px 16px 16px 16px;
+      box-shadow: 0 2px 14px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+      border: 1px solid #EDF1F6;
     }
 
     .message-avatar {
@@ -683,8 +683,8 @@ onMounted(() => {
 }
 
 .chat-assistant-panel .message-content {
-  max-width: 78%;
-  padding: 10px 14px;
+  max-width: 80%;
+  padding: 12px 16px;
   line-height: 1.65;
   position: relative;
   font-size: 14px;
@@ -869,13 +869,20 @@ onMounted(() => {
       color: #f1f5f9;
       border-radius: 4px;
       font-size: 11.5px;
+      line-height: 1.55;
       max-height: 280px;
-      overflow: auto;
+      overflow-y: auto;
+      overflow-x: hidden;
+      /* SQL 自动换行：长语句不再横向滚动，整段在框内折行 */
+      white-space: pre-wrap;
+      word-break: break-word;
+      overflow-wrap: anywhere;
 
       code {
         background: none;
         color: inherit;
         padding: 0;
+        white-space: inherit;
       }
     }
   }

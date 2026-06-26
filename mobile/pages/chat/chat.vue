@@ -71,7 +71,8 @@
           </view>
 
           <!-- Markdown 正文（已抽出 SQL，避免被一长段 SQL 占满屏幕） -->
-          <!-- #ifdef MP-WEIXIN || APP-PLUS -->
+          <!-- APP-HARMONY 必须显式列出：APP-PLUS 在鸿蒙不编译，漏了它正文就整段不渲染（空白气泡） -->
+          <!-- #ifdef MP-WEIXIN || APP-PLUS || APP-HARMONY -->
           <mp-html
             :content="renderBody(msg.content)"
             :tag-style="mdTagStyle"
@@ -194,7 +195,7 @@ import { streamNlqChat } from '@/utils/sse-client.js'
 import KgReasoningChain from '@/components/kg-reasoning-chain/kg-reasoning-chain.vue'
 import ChatChartBubble from '@/components/chat-chart-bubble/chat-chart-bubble.vue'
 import { renderMarkdown, sanitizeHtml } from '@/utils/markdown.js'
-// #ifdef MP-WEIXIN || APP-PLUS
+// #ifdef MP-WEIXIN || APP-PLUS || APP-HARMONY
 import MpHtml from 'mp-html/dist/uni-app/components/mp-html/mp-html.vue'
 // #endif
 

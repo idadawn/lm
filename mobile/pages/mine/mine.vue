@@ -105,19 +105,31 @@ function loadUserInfo() {
   if (info) {
     userInfo.value = info
   }
-  // 获取版本号：APP-PLUS 优先用 plus.runtime.getProperty（支持 wgt 热更新后版本）
+  // 获取版本号
+  // APP-PLUS（Android/iOS）：plus.runtime.getProperty 返回含 wgt 热更新后的版本
+  // APP-HARMONY：plus.* 不存在，用 uni.getAppBaseInfo()（HBuilderX 4.23+ 支持）
   // #ifdef APP-PLUS
   plus.runtime.getProperty(plus.runtime.appid, (wgtinfo) => {
     appVersion.value = wgtinfo?.version || '1.0.0'
   })
   // #endif
+  // #ifdef APP-HARMONY
+  try {
+    const baseInfo = uni.getAppBaseInfo()
+    appVersion.value = baseInfo?.appVersion || '1.0.0'
+  } catch (e) {
+    appVersion.value = '1.0.0'
+  }
+  // #endif
   // #ifndef APP-PLUS
+  // #ifndef APP-HARMONY
   try {
     const baseInfo = uni.getAppBaseInfo ? uni.getAppBaseInfo() : {}
     appVersion.value = baseInfo?.appVersion || '1.0.0'
   } catch (e) {
     appVersion.value = '1.0.0'
   }
+  // #endif
   // #endif
 }
 
@@ -150,11 +162,19 @@ function clearCache() {
 }
 
 function checkVersion() {
+  // APP-PLUS（Android/iOS）和 APP-HARMONY 均走 checkUpdate() 检查后端版本
+  // checkUpdate() 内部按平台分支：Android/iOS 下载安装，鸿蒙跳转应用市场
   // #ifdef APP-PLUS
   checkUpdate()
   // #endif
+  // #ifdef APP-HARMONY
+  checkUpdate()
+  // #endif
   // #ifndef APP-PLUS
+  // #ifndef APP-HARMONY
+  // H5 / 小程序：不支持自动更新，仅展示当前版本号
   uni.showToast({ title: '当前版本 v' + appVersion.value, icon: 'none' })
+  // #endif
   // #endif
 }
 

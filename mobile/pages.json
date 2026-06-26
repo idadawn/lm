@@ -18,12 +18,16 @@
       "path": "pages/chat/chat",
       "style": {
         "navigationBarTitleText": "对话",
+        // #ifdef APP-HARMONY
+        // 鸿蒙不支持 titleNView 原生按钮，改自绘顶栏：隐藏系统导航栏，由 chat.vue 渲染含「+」的自定义头部
+        "navigationStyle": "custom",
+        // #endif
         "app-plus": {
           "titleNView": {
             "buttons": [
               {
-                "text": "新对话",
-                "fontSize": "15px",
+                "text": "+",
+                "fontSize": "26px",
                 "color": "#1890ff",
                 "float": "right"
               }

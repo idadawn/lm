@@ -39,7 +39,13 @@
         <view class="msg-avatar" v-if="msg.role === 'assistant'">
           <text class="msg-avatar-text">AI</text>
         </view>
-        <view class="msg-bubble assistant-card" v-if="msg.role === 'assistant'" @longpress="copyMessage(msg)">
+        <view
+          class="msg-bubble assistant-card"
+          v-if="msg.role === 'assistant'"
+          @longpress="copyMessage(msg)"
+          @touchstart="onBubbleTouchStart"
+          @touchmove="onBubbleTouchMove"
+        >
           <!-- 长按 0.5s 复制：手机原生交互习惯，统一应用于 user / assistant 两侧 -->
           <!-- 推理过程：流式期间默认展开，流式结束自动收起 -->
           <KgReasoningChain
@@ -64,17 +70,31 @@
             </view>
           </view>
 
-          <!-- Markdown 正文 -->
-          <!-- #ifdef MP-WEIXIN || APP-PLUS -->
+          <!-- Markdown 正文（已抽出 SQL，避免被一长段 SQL 占满屏幕） -->
+          <!-- APP-HARMONY 必须显式列出：APP-PLUS 在鸿蒙不编译，漏了它正文就整段不渲染（空白气泡） -->
+          <!-- #ifdef MP-WEIXIN || APP-PLUS || APP-HARMONY -->
           <mp-html
-            :content="renderMarkdown(msg.content)"
+            :content="renderBody(msg.content)"
             :tag-style="mdTagStyle"
             class="msg-md"
           />
           <!-- #endif -->
           <!-- #ifdef H5 -->
-          <view class="msg-md" v-html="sanitizeHtml(renderMarkdown(msg.content))"></view>
+          <view class="msg-md" v-html="sanitizeHtml(renderBody(msg.content))"></view>
           <!-- #endif -->
+
+          <!-- SQL 折叠：后端把 SQL 包进 <details>，但 mp-html 不支持 <details> 折叠交互，
+               会把 SQL 一直摊开。改为抽出 SQL 由 Vue 原生折叠按钮控制，默认收起。 -->
+          <view v-if="getSql(msg.content)" class="sql-fold-bar">
+            <view class="sql-fold-toggle" @click="toggleSql(index)">
+              <text class="sql-fold-icon">📄</text>
+              <text class="sql-fold-label">SQL 查询语句</text>
+              <text class="sql-fold-arrow">{{ msg.sqlOpen ? '收起 ▾' : '展开 ▸' }}</text>
+            </view>
+            <scroll-view v-if="msg.sqlOpen" class="sql-fold-body" scroll-y :show-scrollbar="false">
+              <text class="sql-fold-code" :selectable="true" :user-select="true">{{ getSql(msg.content) }}</text>
+            </scroll-view>
+          </view>
 
           <!-- 图表（donut/bar/line）— 移动端简化为横向 bar 列表，最易读 -->
           <ChatChartBubble
@@ -105,7 +125,13 @@
           </view>
         </view>
 
-        <view class="msg-bubble" v-else @longpress="copyMessage(msg)">
+        <view
+          class="msg-bubble"
+          v-else
+          @longpress="copyMessage(msg)"
+          @touchstart="onBubbleTouchStart"
+          @touchmove="onBubbleTouchMove"
+        >
           <text class="msg-text" :selectable="true" :user-select="true">{{ msg.content }}</text>
         </view>
 
@@ -148,6 +174,7 @@
         placeholder="输入问题..."
         :disabled="loading"
         confirm-type="send"
+        :adjust-position="false"
         @confirm="sendMessage"
       />
       <view
@@ -163,11 +190,12 @@
 
 <script setup>
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
+import { onNavigationBarButtonTap } from '@dcloudio/uni-app'
 import { streamNlqChat } from '@/utils/sse-client.js'
 import KgReasoningChain from '@/components/kg-reasoning-chain/kg-reasoning-chain.vue'
 import ChatChartBubble from '@/components/chat-chart-bubble/chat-chart-bubble.vue'
 import { renderMarkdown, sanitizeHtml } from '@/utils/markdown.js'
-// #ifdef MP-WEIXIN || APP-PLUS
+// #ifdef MP-WEIXIN || APP-PLUS || APP-HARMONY
 import MpHtml from 'mp-html/dist/uni-app/components/mp-html/mp-html.vue'
 // #endif
 
@@ -244,6 +272,13 @@ const unreadCount = ref(0)
 const atBottom = ref(true)        // 当前是否在底部（容差 100px）
 const scrollBtnBottom = computed(() => 64 + (keyboardHeight.value || 0))
 
+// ── 误触保护 ──
+// longpress 在部分机型滑动列表时也会触发，导致一滑屏就反复弹"已复制"。
+// 记录最近一次滚动时间 + 本次触摸的纵向位移，copyMessage 前判定为滑动手势就跳过。
+let lastScrollAt = 0
+let touchStartY = 0
+let touchMoved = false
+
 onMounted(() => {
   uni.onKeyboardHeightChange((res) => {
     keyboardHeight.value = res.height || 0
@@ -284,6 +319,7 @@ function scrollToBottom() {
 
 // 滚动事件：判断当前是否在底部（scrollHeight - scrollTop - clientHeight < 100 算在底部）
 function onChatScroll(e) {
+  lastScrollAt = Date.now()
   const d = e.detail || {}
   const scrollTop = d.scrollTop || 0
   const scrollHeight = d.scrollHeight || 0
@@ -318,6 +354,40 @@ function sendQuick(text) {
   inputText.value = text
   sendMessage()
 }
+
+// ── 新对话 ──────────────────────────────────────────────
+// 由导航栏右上角「新对话」按钮触发（pages.json titleNView.buttons）。
+// 当前会话只保留一条（storage 单 session），开新对话会清空当前记录，
+// 有内容时先二次确认，避免误触丢失。
+function newConversation() {
+  const reset = () => {
+    if (loading.value) stopGeneration()
+    messages.value = []
+    currentSessionId.value = makeId()
+    inputText.value = ''
+    showScrollToBottomBtn.value = false
+    unreadCount.value = 0
+    atBottom.value = true
+    saveSessions()
+  }
+  if (!messages.value.length) {
+    reset()
+    return
+  }
+  uni.showModal({
+    title: '新对话',
+    content: '将清空当前对话并开始新的对话，确定吗？',
+    confirmText: '开始',
+    cancelText: '取消',
+    success: (res) => {
+      if (res.confirm) reset()
+    },
+  })
+}
+
+onNavigationBarButtonTap(() => {
+  newConversation()
+})
 
 // ── 来源 citations 折叠/复制 ─────────────────────────
 function toggleCitations(index) {
@@ -365,6 +435,54 @@ function friendlyCitations(raw) {
   return result
 }
 
+// ── SQL 折叠 ────────────────────────────────────────────
+// 后端把 SQL 包进 <details class="sql-block">…<pre><code class="language-sql">…</code></pre></details>，
+// 但 mp-html（App 端）不支持 <details> 折叠交互，会把 SQL 一直摊开占满屏幕。
+// 这里渲染前把 SQL 摘出来：正文不再含 SQL，由模板里 Vue 原生折叠按钮控制（默认收起）。
+const SQL_BLOCK_RE = /\n*(?:-{3,}\s*\n)?\s*<details class="sql-block">[\s\S]*?<\/details>\s*/i
+const SQL_CODE_RE = /<pre><code class="language-sql">([\s\S]*?)<\/code><\/pre>/i
+
+function decodeEntities(s) {
+  return String(s || '')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#x27;/g, "'")
+    .replace(/&#0?39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&') // 放最后，避免把已解码内容二次解码
+}
+
+function extractSql(content) {
+  const raw = typeof content === 'string' ? content : ''
+  // 快路径：绝大多数消息（用户消息、流式中的正文）不含 SQL，直接原样返回
+  if (!raw || raw.indexOf('language-sql') === -1) return { sql: '', body: raw }
+  const codeMatch = raw.match(SQL_CODE_RE)
+  if (!codeMatch) return { sql: '', body: raw }
+  const sql = decodeEntities(codeMatch[1]).trim()
+  // 优先整块移除后端的 <details class="sql-block">（连同其上方的 --- 分隔线），
+  // 兜底再移除裸 <pre><code>。
+  let body = SQL_BLOCK_RE.test(raw)
+    ? raw.replace(SQL_BLOCK_RE, '\n\n')
+    : raw.replace(SQL_CODE_RE, '')
+  body = body.replace(/\n{3,}/g, '\n\n').trim()
+  return { sql, body }
+}
+
+function renderBody(content) {
+  return renderMarkdown(extractSql(content).body)
+}
+
+function getSql(content) {
+  return extractSql(content).sql
+}
+
+function toggleSql(index) {
+  const msg = messages.value[index]
+  if (!msg) return
+  msg.sqlOpen = !msg.sqlOpen
+}
+
 function copyText(text) {
   if (!text) return
   uni.setClipboardData({
@@ -378,7 +496,23 @@ function copyText(text) {
 // ── 长按复制消息 ────────────────────────────────────────
 // 用户消息和助手消息都支持。复制助手消息时，把 markdown 原文复制（含表格 / SQL），
 // 不复制 HTML，便于粘贴到其他地方查看。
+// 记录触摸起点 / 位移，配合 lastScrollAt 过滤滑动中的 longpress 误触
+function onBubbleTouchStart(e) {
+  touchMoved = false
+  const t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0])
+  touchStartY = t ? (t.pageY || t.clientY || 0) : 0
+}
+
+function onBubbleTouchMove(e) {
+  const t = (e.touches && e.touches[0]) || (e.changedTouches && e.changedTouches[0])
+  if (!t) return
+  const y = t.pageY || t.clientY || 0
+  if (Math.abs(y - touchStartY) > 8) touchMoved = true
+}
+
 function copyMessage(msg) {
+  // 滑动 / 滚动中触发的 longpress 视为误触：手指有位移、或刚滚动过就不复制
+  if (touchMoved || Date.now() - lastScrollAt < 400) return
   if (!msg || !msg.content) return
   const text = typeof msg.content === 'string' ? msg.content : String(msg.content)
   uni.setClipboardData({
@@ -1167,5 +1301,54 @@ function sendMessage() {
 .msg-md details.sql-fold > pre {
   margin: 0;
   border-radius: 0;
+}
+
+/* SQL 折叠条：Vue 原生折叠（不依赖 mp-html 的 <details>），默认收起 */
+.sql-fold-bar {
+  margin-top: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.sql-fold-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #f1f5f9;
+  user-select: none;
+}
+
+.sql-fold-icon {
+  font-size: 14px;
+}
+
+.sql-fold-label {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.sql-fold-arrow {
+  font-size: 11px;
+  color: #1890ff;
+}
+
+.sql-fold-body {
+  max-height: 320px;
+  background: #1e293b;
+  padding: 12px 14px;
+  box-sizing: border-box;
+}
+
+.sql-fold-code {
+  font-family: 'FiraCode', 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #f1f5f9;
+  white-space: pre-wrap;
+  word-break: break-all;
 }
 </style>

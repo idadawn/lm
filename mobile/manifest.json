@@ -1,29 +1,26 @@
-﻿{
-    "name": "检测室数据分析",
-    "appid": "__UNI__446F191",
-    "description": "检测室数据分析系统移动端",
-    "versionName": "1.3.2",
-    "versionCode": 132,
-    "transformPx": false,
-    "app-plus": {
-        "usingComponents": true,
-        "nvueStyleCompiler": "uni-app",
-        "compilerVersion": 3,
-        "splashscreen": {
-            "alwaysShowBeforeRender": true,
-            "waiting": true,
-            "autoclose": true,
-            "delay": 0
+{
+    "name" : "检测室数据分析",
+    "appid" : "__UNI__446F191",
+    "description" : "检测室数据分析系统移动端",
+    "versionName" : "1.3.3",
+    "versionCode" : 133,
+    "transformPx" : false,
+    "app-plus" : {
+        "usingComponents" : true,
+        "nvueStyleCompiler" : "uni-app",
+        "compilerVersion" : 3,
+        "splashscreen" : {
+            "alwaysShowBeforeRender" : true,
+            "waiting" : true,
+            "autoclose" : true,
+            "delay" : 0
         },
-        "modules": {},
-        "distribute": {
-            "android": {
-                "packagename": "cn.emergen.lm",
-                "abiFilters": [
-                    "armeabi-v7a",
-                    "arm64-v8a"
-                ],
-                "permissions": [
+        "modules" : {},
+        "distribute" : {
+            "android" : {
+                "packagename" : "cn.emergen.lm",
+                "abiFilters" : [ "armeabi-v7a", "arm64-v8a" ],
+                "permissions" : [
                     "<uses-permission android:name=\"android.permission.INTERNET\" />",
                     "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\" />",
                     "<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" />",
@@ -32,67 +29,83 @@
                     "<uses-permission android:name=\"android.permission.MODIFY_AUDIO_SETTINGS\" />"
                 ]
             },
-            "ios": {
-                "dSYMs": false
+            "ios" : {
+                "dSYMs" : false
             },
-            "sdkConfigs": {
-                "speech": {}
+            "sdkConfigs" : {
+                "speech" : {}
             },
-            "icons": {
-                "android": {
-                    "hdpi": "unpackage/res/icons/72x72.png",
-                    "xhdpi": "unpackage/res/icons/96x96.png",
-                    "xxhdpi": "unpackage/res/icons/144x144.png",
-                    "xxxhdpi": "unpackage/res/icons/192x192.png"
+            "icons" : {
+                "android" : {
+                    "hdpi" : "unpackage/res/icons/72x72.png",
+                    "xhdpi" : "unpackage/res/icons/96x96.png",
+                    "xxhdpi" : "unpackage/res/icons/144x144.png",
+                    "xxxhdpi" : "unpackage/res/icons/192x192.png"
                 },
-                "ios": {
-                    "appstore": "unpackage/res/icons/1024x1024.png",
-                    "ipad": {
-                        "app": "unpackage/res/icons/76x76.png",
-                        "app@2x": "unpackage/res/icons/152x152.png",
-                        "notification": "unpackage/res/icons/20x20.png",
-                        "notification@2x": "unpackage/res/icons/40x40.png",
-                        "proapp@2x": "unpackage/res/icons/167x167.png",
-                        "settings": "unpackage/res/icons/29x29.png",
-                        "settings@2x": "unpackage/res/icons/58x58.png",
-                        "spotlight": "unpackage/res/icons/40x40.png",
-                        "spotlight@2x": "unpackage/res/icons/80x80.png"
+                "ios" : {
+                    "appstore" : "unpackage/res/icons/1024x1024.png",
+                    "ipad" : {
+                        "app" : "unpackage/res/icons/76x76.png",
+                        "app@2x" : "unpackage/res/icons/152x152.png",
+                        "notification" : "unpackage/res/icons/20x20.png",
+                        "notification@2x" : "unpackage/res/icons/40x40.png",
+                        "proapp@2x" : "unpackage/res/icons/167x167.png",
+                        "settings" : "unpackage/res/icons/29x29.png",
+                        "settings@2x" : "unpackage/res/icons/58x58.png",
+                        "spotlight" : "unpackage/res/icons/40x40.png",
+                        "spotlight@2x" : "unpackage/res/icons/80x80.png"
                     },
-                    "iphone": {
-                        "app@2x": "unpackage/res/icons/120x120.png",
-                        "app@3x": "unpackage/res/icons/180x180.png",
-                        "notification@2x": "unpackage/res/icons/40x40.png",
-                        "notification@3x": "unpackage/res/icons/60x60.png",
-                        "settings@2x": "unpackage/res/icons/58x58.png",
-                        "settings@3x": "unpackage/res/icons/87x87.png",
-                        "spotlight@2x": "unpackage/res/icons/80x80.png",
-                        "spotlight@3x": "unpackage/res/icons/120x120.png"
+                    "iphone" : {
+                        "app@2x" : "unpackage/res/icons/120x120.png",
+                        "app@3x" : "unpackage/res/icons/180x180.png",
+                        "notification@2x" : "unpackage/res/icons/40x40.png",
+                        "notification@3x" : "unpackage/res/icons/60x60.png",
+                        "settings@2x" : "unpackage/res/icons/58x58.png",
+                        "settings@3x" : "unpackage/res/icons/87x87.png",
+                        "spotlight@2x" : "unpackage/res/icons/80x80.png",
+                        "spotlight@3x" : "unpackage/res/icons/120x120.png"
                     }
                 }
             }
         }
     },
-    "quickapp": {},
-    "mp-weixin": {
-        "appid": "",
-        "setting": {
-            "urlCheck": false
+    "quickapp" : {},
+    "mp-weixin" : {
+        "appid" : "",
+        "setting" : {
+            "urlCheck" : false
         },
-        "usingComponents": true
+        "usingComponents" : true
     },
-    "mp-alipay": {
-        "usingComponents": true
+    "mp-alipay" : {
+        "usingComponents" : true
     },
-    "mp-baidu": {
-        "usingComponents": true
+    "mp-baidu" : {
+        "usingComponents" : true
     },
-    "mp-toutiao": {
-        "usingComponents": true
+    "mp-toutiao" : {
+        "usingComponents" : true
     },
-    "uniStatistics": {
-        "enable": false
+    "uniStatistics" : {
+        "enable" : false
     },
-    "vueVersion": "3",
-    "fallbackLocale": "zh-Hans",
-    "locale": "zh-Hans"
+    "vueVersion" : "3",
+    "fallbackLocale" : "zh-Hans",
+    "locale" : "zh-Hans",
+    "app-harmony" : {
+        "distribute" : {
+            "bundleName" : "com.emergen.lm",
+            "signingConfigs" : {
+                "default" : {
+                    "certpath" : "c:\\Users\\dawn\\AppData\\Roaming\\HBuilder X\\extensions\\launcher\\agc-certs\\1782451477521.cer",
+                    "keyAlias" : "debugKey",
+                    "keyPassword" : "0000001B66935AE470E27C90C620C3570DB727E19E66AFD1C4E878A9CCB15D82ABF055755350858B552A0F",
+                    "profile" : "c:\\Users\\dawn\\AppData\\Roaming\\HBuilder X\\extensions\\launcher\\agc-certs\\1782451477521.p7b",
+                    "signAlg" : "SHA256withECDSA",
+                    "storeFile" : "c:\\Users\\dawn\\AppData\\Roaming\\HBuilder X\\extensions\\launcher\\agc-certs\\1782451477521.p12",
+                    "storePassword" : "0000001B66935AE470E27C90C620C3570DB727E19E66AFD1C4E878A9CCB15D82ABF055755350858B552A0F"
+                }
+            }
+        }
+    }
 }

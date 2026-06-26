@@ -1,5 +1,17 @@
 <template>
   <view class="chat-page">
+    <!-- 鸿蒙自绘顶栏：原生标题栏不支持 titleNView 按钮，且 onNavigationBarButtonTap 在鸿蒙不触发。
+         配合 pages.json 的 navigationStyle:custom（隐藏系统栏），这里放标题 + 右上角「+」新对话。 -->
+    <!-- #ifdef APP-HARMONY -->
+    <view class="hm-navbar" :style="{ paddingTop: statusBarHeight + 'px' }">
+      <view class="hm-navbar-bar">
+        <text class="hm-navbar-title">对话</text>
+        <view class="hm-navbar-add" hover-class="hm-navbar-add-hover" @click="newConversation">
+          <text class="hm-navbar-add-icon">+</text>
+        </view>
+      </view>
+    </view>
+    <!-- #endif -->
     <!-- 消息列表 -->
     <scroll-view
       class="chat-list"
@@ -264,6 +276,9 @@ const scrollToView = ref('')
 // 键盘高度
 const keyboardHeight = ref(0)
 
+// 鸿蒙自定义导航栏（navigationStyle:custom）需让出状态栏高度，避免「+」与时间/电量重叠
+const statusBarHeight = ref(0)
+
 // ── 滚动状态 ──
 // 当用户向上滚动离开底部时，showScrollToBottomBtn 变 true，显示「一键到底」浮动按钮。
 // 流式更新时若用户在底部，自动跟随；用户离开底部后，新消息累计到 unreadCount。
@@ -280,6 +295,9 @@ let touchStartY = 0
 let touchMoved = false
 
 onMounted(() => {
+  // #ifdef APP-HARMONY
+  try { statusBarHeight.value = uni.getSystemInfoSync().statusBarHeight || 0 } catch (_) {}
+  // #endif
   uni.onKeyboardHeightChange((res) => {
     keyboardHeight.value = res.height || 0
   })
@@ -777,6 +795,50 @@ function sendMessage() {
   flex-direction: column;
   box-sizing: border-box;
   overflow: hidden;
+}
+
+/* 鸿蒙自绘顶栏（仅 APP-HARMONY 渲染）：替代不支持的原生 titleNView 按钮。
+   paddingTop 由内联 style 让出状态栏高度；.hm-navbar-bar 固定 44px 内容高度。 */
+.hm-navbar {
+  flex-shrink: 0;
+  background: #ffffff;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.hm-navbar-bar {
+  position: relative;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hm-navbar-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.hm-navbar-add {
+  position: absolute;
+  right: 4px;
+  top: 0;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hm-navbar-add-hover {
+  opacity: 0.5;
+}
+
+.hm-navbar-add-icon {
+  font-size: 30px;
+  font-weight: 300;
+  color: #1890ff;
+  line-height: 1;
 }
 
 .chat-list {

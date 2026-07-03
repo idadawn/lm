@@ -48,8 +48,10 @@ function Test-ReleaseExclude {
     param([string]$RelativePath)
     $p = ($RelativePath -replace "\\", "/").TrimStart("/")
     if ($p -eq "ops/.env") { return $true }
+    if ($p -in @("ops/push-to-oss.ps1", "ops/pull-from-oss.ps1")) { return $true }
+    if ($p -in @("nssm.exe", "otp_win64.exe", "rabbitmq.zip")) { return $true }
+    if ($p -like "nginx/*" -or $p -like "redis/*" -or $p -like "erlang/*" -or $p -like "rabbitmq/*" -or $p -like "mysql/*") { return $true }
     if ($p -like "logs/*" -or $p -like "*/logs/*") { return $true }
-    if ($p -like "redis/data/*" -or $p -like "rabbitmq/data/*") { return $true }
     if ($p -like "ops/tools/*" -or $p -like "_downloads/*" -or $p -like "_upgrade/*" -or $p -like "_release/*" -or $p -like "backups/*") { return $true }
     if ($p -match "(^|/)__pycache__/") { return $true }
     if ($p -match "(^|/)\.venv/") { return $true }
@@ -83,12 +85,7 @@ function New-ReleaseZip {
             if ($Mode -eq "ToolPatch" -and -not (
                 $relForMatch -like "ops/*.ps1" -or
                 $relForMatch -like "ops/*.cmd" -or
-                $relForMatch -in @(
-                    "ops/LmDeployConsole/LmDeployConsole.exe",
-                    "ops/LmDeployConsole/LmDeployConsole.dll",
-                    "ops/LmDeployConsole/LmDeployConsole.deps.json",
-                    "ops/LmDeployConsole/LmDeployConsole.runtimeconfig.json"
-                )
+                $relForMatch -like "ops/LmDeployConsole/*"
             )) { continue }
             if (Test-ReleaseExclude $rel) { continue }
             $entry = ($rel -replace "\\", "/")
@@ -106,7 +103,9 @@ if (-not $SkipStage) {
     Write-Host "==> Stage ops scripts into $DeployRoot\ops" -ForegroundColor Cyan
     $opsOut = Join-Path $DeployRoot "ops"
     New-Item -ItemType Directory -Force -Path $opsOut | Out-Null
-    Copy-Item -Path (Join-Path $ScriptDir "*.ps1") -Destination $opsOut -Force
+    Get-ChildItem -Path $ScriptDir -Filter "*.ps1" -File |
+        Where-Object { $_.Name -notin @("push-to-oss.ps1", "pull-from-oss.ps1") } |
+        Copy-Item -Destination $opsOut -Force
     Copy-Item -Path (Join-Path $ScriptDir "*.cmd") -Destination $opsOut -Force -ErrorAction SilentlyContinue
     Copy-Item -Path (Join-Path $ScriptDir ".env.example") -Destination $opsOut -Force
     $tpl = Join-Path (Split-Path (Split-Path $ScriptDir -Parent) -Parent) "web\conf\nginx.windows.conf.template"

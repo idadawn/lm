@@ -5,7 +5,8 @@
 .DESCRIPTION
     Downloads and places the software expected by install-infra.ps1 and
     install-services.ps1: NSSM, nginx, Redis, Erlang installer, RabbitMQ zip.
-    URLs can be overridden from ops\.env.
+    By default this pulls from the configured private OSS prereq folder. Public
+    URLs can still be used by setting PREREQ_SOURCE=Public in ops\.env.
 #>
 param(
     [ValidateSet("all", "nssm", "nginx", "redis", "erlang", "rabbitmq")]
@@ -16,6 +17,9 @@ param(
 $ErrorActionPreference = "Stop"
 $ScriptDir = $PSScriptRoot
 . (Join-Path $ScriptDir "_dotenv.ps1")
+if (Test-Path (Join-Path $ScriptDir "_ossrest.ps1")) {
+    . (Join-Path $ScriptDir "_ossrest.ps1")
+}
 
 $envMap = Get-DotEnv -Path (Join-Path $ScriptDir ".env")
 function Val($k, $d = "") { Coalesce-EnvValue -ParamValue "" -EnvMap $envMap -Key $k -Default $d }
@@ -33,6 +37,21 @@ $RedisZipUrl = Val "REDIS_ZIP_URL" "https://github.com/tporadowski/redis/release
 $ErlangOtpUrl = Val "ERLANG_OTP_URL" "https://github.com/erlang/otp/releases/download/OTP-26.2.5/otp_win64_26.2.5.exe"
 $RabbitMqZipUrl = Val "RABBITMQ_ZIP_URL" "https://github.com/rabbitmq/rabbitmq-server/releases/download/v3.13.7/rabbitmq-server-windows-3.13.7.zip"
 
+$PrereqSource = Val "PREREQ_SOURCE" "OSS"
+$OssEndpoint = Val "OSS_ENDPOINT" "oss-cn-hangzhou.aliyuncs.com"
+$OssBucket = Val "OSS_BUCKET" ""
+$OssAccessKeyId = Val "OSS_ACCESS_KEY_ID" ""
+$OssAccessKeySecret = Val "OSS_ACCESS_KEY_SECRET" ""
+$OssPrefix = (Val "OSS_PREFIX" "lab-deploy").Trim("/")
+$PrereqPrefix = (Val "PREREQ_PREFIX" "prereqs").Trim("/")
+$EnableHttps = ((Val "OSS_ENABLE_HTTPS" "true") -ne "false")
+$UseOssPrereqs = ($PrereqSource -ieq "OSS" -and $OssBucket -and $OssAccessKeyId -and $OssAccessKeySecret -and (Get-Command Get-OssObject -ErrorAction SilentlyContinue))
+
+function Join-OssKey {
+    param([string[]]$Parts)
+    return (($Parts | Where-Object { $_ } | ForEach-Object { $_.Trim("/") }) -join "/")
+}
+
 function Download-File {
     param(
         [Parameter(Mandatory = $true)][string]$Url,
@@ -44,6 +63,28 @@ function Download-File {
     }
     Write-Host "  download: $Url" -ForegroundColor DarkGray
     Invoke-WebRequest -Uri $Url -OutFile $OutFile -UseBasicParsing -TimeoutSec 900
+}
+
+function Get-PrereqFile {
+    param(
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][string]$Url,
+        [Parameter(Mandatory = $true)][string]$FileName,
+        [Parameter(Mandatory = $true)][string]$OutFile
+    )
+    if ((Test-Path $OutFile) -and -not $Force) {
+        Write-Host "  skip: $OutFile" -ForegroundColor DarkGray
+        return
+    }
+
+    if ($UseOssPrereqs) {
+        $key = Join-OssKey @($OssPrefix, $PrereqPrefix, $FileName)
+        Write-Host "  download: oss://$OssBucket/$key" -ForegroundColor DarkGray
+        Get-OssObject -Endpoint $OssEndpoint -Bucket $OssBucket -Key $key -AccessKeyId $OssAccessKeyId -AccessKeySecret $OssAccessKeySecret -OutFile $OutFile -EnableHttps $EnableHttps | Out-Null
+        return
+    }
+
+    Download-File -Url $Url -OutFile $OutFile
 }
 
 function Expand-ZipContent {
@@ -66,6 +107,7 @@ function Expand-ZipContent {
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "  LM Windows prerequisites downloader" -ForegroundColor Cyan
 Write-Host "  DEPLOY_ROOT: $DeployRoot" -ForegroundColor Cyan
+Write-Host "  source: $(if ($UseOssPrereqs) { 'OSS' } else { 'Public URL' })" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 
 if (Wants "nssm") {
@@ -75,13 +117,16 @@ if (Wants "nssm") {
         Write-Host "  exists: $target" -ForegroundColor DarkGray
     } else {
         $zip = Join-Path $DownloadDir "nssm.zip"
-        Download-File -Url $NssmZipUrl -OutFile $zip
+        Get-PrereqFile -Name "nssm" -Url $NssmZipUrl -FileName "nssm.zip" -OutFile $zip
         $tmp = Join-Path $DownloadDir "nssm-extract"
         if (Test-Path $tmp) { Remove-Item -LiteralPath $tmp -Recurse -Force }
         Expand-Archive -Path $zip -DestinationPath $tmp -Force
         $exe = Get-ChildItem -Path $tmp -Recurse -Filter "nssm.exe" |
             Where-Object { $_.FullName -match "win64" } |
             Select-Object -First 1
+        if (-not $exe) {
+            $exe = Get-ChildItem -Path $tmp -Recurse -Filter "nssm.exe" | Select-Object -First 1
+        }
         if (-not $exe) { throw "nssm.exe not found in $zip" }
         Copy-Item -Path $exe.FullName -Destination $target -Force
         Write-Host "  ready: $target" -ForegroundColor Green
@@ -96,7 +141,7 @@ if (Wants "nginx") {
         Write-Host "  exists: $target" -ForegroundColor DarkGray
     } else {
         $zip = Join-Path $DownloadDir "nginx.zip"
-        Download-File -Url $NginxZipUrl -OutFile $zip
+        Get-PrereqFile -Name "nginx" -Url $NginxZipUrl -FileName "nginx.zip" -OutFile $zip
         Expand-ZipContent -ZipPath $zip -Destination $targetDir
         if (-not (Test-Path $target)) { throw "nginx.exe not found after extracting $zip" }
         Write-Host "  ready: $target" -ForegroundColor Green
@@ -111,7 +156,7 @@ if (Wants "redis") {
         Write-Host "  exists: $target" -ForegroundColor DarkGray
     } else {
         $zip = Join-Path $DownloadDir "redis.zip"
-        Download-File -Url $RedisZipUrl -OutFile $zip
+        Get-PrereqFile -Name "redis" -Url $RedisZipUrl -FileName "redis.zip" -OutFile $zip
         Expand-ZipContent -ZipPath $zip -Destination $targetDir
         if (-not (Test-Path $target)) { throw "redis-server.exe not found after extracting $zip" }
         Write-Host "  ready: $target" -ForegroundColor Green
@@ -124,7 +169,7 @@ if (Wants "erlang") {
     if ((Test-Path $target) -and -not $Force) {
         Write-Host "  exists: $target" -ForegroundColor DarkGray
     } else {
-        Download-File -Url $ErlangOtpUrl -OutFile $target
+        Get-PrereqFile -Name "erlang" -Url $ErlangOtpUrl -FileName "otp_win64.exe" -OutFile $target
         Write-Host "  ready: $target" -ForegroundColor Green
     }
 }
@@ -135,7 +180,7 @@ if (Wants "rabbitmq") {
     if ((Test-Path $target) -and -not $Force) {
         Write-Host "  exists: $target" -ForegroundColor DarkGray
     } else {
-        Download-File -Url $RabbitMqZipUrl -OutFile $target
+        Get-PrereqFile -Name "rabbitmq" -Url $RabbitMqZipUrl -FileName "rabbitmq.zip" -OutFile $target
         Write-Host "  ready: $target" -ForegroundColor Green
     }
 }

@@ -30,6 +30,7 @@ $AccessKeyId = Val "OSS_ACCESS_KEY_ID" ""
 $AccessKeySecret = Val "OSS_ACCESS_KEY_SECRET" ""
 $Prefix = (Val "OSS_PREFIX" "lab-deploy").Trim("/")
 $EnableHttps = ((Val "OSS_ENABLE_HTTPS" "true") -ne "false")
+$ReleaseBackupKeep = [int](Val "RELEASE_BACKUP_KEEP" "5")
 if (-not $ManifestName) { $ManifestName = Val "UPGRADE_MANIFEST" "release.json" }
 
 if (-not $Bucket -or -not $AccessKeyId -or -not $AccessKeySecret) {
@@ -59,6 +60,93 @@ function Restore-EnvFile {
         New-Item -ItemType Directory -Force -Path (Join-Path $DeployRoot "ops") | Out-Null
         Copy-Item -Path $BackupPath -Destination (Join-Path $DeployRoot "ops\.env") -Force
     }
+}
+
+function Test-BackupExclude {
+    param([string]$RelativePath)
+    $p = ($RelativePath -replace "\\", "/").TrimStart("/")
+    if ($p -like "logs/*" -or $p -like "*/logs/*") { return $true }
+    if ($p -like "redis/data/*" -or $p -like "rabbitmq/data/*") { return $true }
+    if ($p -like "_downloads/*" -or $p -like "_upgrade/*" -or $p -like "backups/*") { return $true }
+    if ($p -match "(^|/)__pycache__/") { return $true }
+    if ($p -match "(^|/)\.venv/") { return $true }
+    if ($p -match "(^|/)node_modules/") { return $true }
+    if ($p -match "(^|/)\.pytest_cache/") { return $true }
+    if ($p -match "(^|/)\.turbo/") { return $true }
+    return $false
+}
+
+function Add-FileToZip {
+    param(
+        [Parameter(Mandatory = $true)]$Zip,
+        [Parameter(Mandatory = $true)][string]$FilePath,
+        [Parameter(Mandatory = $true)][string]$EntryName
+    )
+    [IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+        $Zip,
+        $FilePath,
+        ($EntryName -replace "\\", "/"),
+        [IO.Compression.CompressionLevel]::Optimal
+    ) | Out-Null
+}
+
+function Backup-CurrentDeployment {
+    param(
+        [string]$CurrentVersion,
+        [string]$NextVersion
+    )
+
+    Add-Type -AssemblyName System.IO.Compression
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+    $backupRoot = Join-Path $DeployRoot "backups\releases"
+    New-Item -ItemType Directory -Force -Path $backupRoot | Out-Null
+    $fromVersion = if ($CurrentVersion) { $CurrentVersion } else { "unknown" }
+    $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $backupPath = Join-Path $backupRoot "lm-before-$NextVersion-from-$fromVersion-$stamp.zip"
+    if (Test-Path $backupPath) { Remove-Item -LiteralPath $backupPath -Force }
+
+    $serviceInfoPath = Join-Path $upgradeDir "service-info-before-upgrade.json"
+    Get-CimInstance Win32_Service -Filter "Name='lm-web' OR Name='lm-api' OR Name='lm-nlq-agent' OR Name='lm-redis' OR Name='lm-rabbitmq'" |
+        Select-Object Name,DisplayName,State,StartMode,PathName,StartName,ProcessId |
+        ConvertTo-Json -Depth 4 |
+        Set-Content -Path $serviceInfoPath -Encoding UTF8
+
+    $zip = [IO.Compression.ZipFile]::Open($backupPath, [IO.Compression.ZipArchiveMode]::Create)
+    try {
+        foreach ($relativeRoot in @("api", "web", "nlq-agent", "ops")) {
+            $sourceRoot = Join-Path $DeployRoot $relativeRoot
+            if (-not (Test-Path $sourceRoot)) { continue }
+            $rootFull = (Resolve-Path $sourceRoot).Path.TrimEnd("\", "/")
+            foreach ($file in Get-ChildItem -Path $rootFull -Recurse -File -Force) {
+                $rel = Join-Path $relativeRoot ($file.FullName.Substring($rootFull.Length).TrimStart("\", "/"))
+                if (Test-BackupExclude $rel) { continue }
+                Add-FileToZip -Zip $zip -FilePath $file.FullName -EntryName $rel
+            }
+        }
+
+        foreach ($fileName in @(".release-version", ".release-manifest.json")) {
+            $path = Join-Path $DeployRoot $fileName
+            if (Test-Path $path) {
+                Add-FileToZip -Zip $zip -FilePath $path -EntryName $fileName
+            }
+        }
+
+        Add-FileToZip -Zip $zip -FilePath $serviceInfoPath -EntryName "service-info-before-upgrade.json"
+    }
+    finally {
+        $zip.Dispose()
+    }
+
+    if ($ReleaseBackupKeep -gt 0) {
+        Get-ChildItem -Path $backupRoot -Filter "lm-before-*.zip" -File -ErrorAction SilentlyContinue |
+            Sort-Object LastWriteTime -Descending |
+            Select-Object -Skip $ReleaseBackupKeep |
+            Remove-Item -Force
+    }
+
+    Write-Host "==> Previous deployment backup: $backupPath" -ForegroundColor Green
+    return $backupPath
 }
 
 $manifestKey = Join-OssKey @($Prefix, $ManifestName)
@@ -109,6 +197,8 @@ try {
 
     $envBackup = Join-Path $upgradeDir "server.env.bak"
     if (Test-Path $envFile) { Copy-Item -Path $envFile -Destination $envBackup -Force }
+
+    Backup-CurrentDeployment -CurrentVersion $currentVersion -NextVersion $manifest.version | Out-Null
 
     if ($runDeployAll) {
         Write-Host "==> Stop services before extracting" -ForegroundColor Cyan

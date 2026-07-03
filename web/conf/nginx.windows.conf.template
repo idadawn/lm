@@ -1,0 +1,120 @@
+# ====================================================================
+# 原生 Windows Nginx —— 单机部署网关模板（静态资源 + /api + /nlq-agent 反代）
+# --------------------------------------------------------------------
+# 由 ops/windows/install-services.ps1 在安装 lm-web 服务时读取本模板，
+# 替换 __XXX__ 占位符后写出到 <DeployRoot>/web/nginx.conf，再交给 NSSM
+# 以 `nginx.exe -p <nginx目录> -c <生成的conf>` 常驻运行。
+# daemon off 写在本配置里而非 -g 参数：PS 5.1 -> nssm 传参会吞内嵌引号，
+# `-g "daemon off;"` 到注册表里会变成裸的 -g daemon off; 导致 nginx 拒启。
+#
+# 占位符：
+#   __WEB_ROOT__     前端 dist 绝对路径（正斜杠）
+#   __API_PORT__     后端 Kestrel 监听端口
+#   __NLQ_PORT__     nlq-agent (uvicorn) 监听端口
+#   __WEB_PORT__     本网关对外监听端口
+#   __LOG_DIR__      nginx 自身日志目录（绝对路径，正斜杠）
+#   __MIME_TYPES__   nginx 安装目录下 conf/mime.types 的绝对路径
+#
+# 不要直接拿这个模板给 nginx -c 用——占位符未替换会导致 nginx -t 报错。
+# ====================================================================
+
+daemon off;
+worker_processes  1;
+error_log  __LOG_DIR__/nginx-error.log  warn;
+pid        __LOG_DIR__/nginx.pid;
+
+events { worker_connections 1024; }
+
+http {
+    include       __MIME_TYPES__;
+    default_type  application/octet-stream;
+    access_log    __LOG_DIR__/nginx-access.log;
+    sendfile      on;
+    charset       utf-8;
+    client_max_body_size 100m;
+
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_comp_level 6;
+    gzip_types text/plain text/css text/xml text/javascript
+               application/json application/javascript application/xml+rss
+               application/rss+xml font/truetype font/opentype
+               application/vnd.ms-fontobject image/svg+xml;
+
+    # WebSocket 升级：依据 Upgrade 头决定 Connection 头
+    map $http_upgrade $connection_upgrade {
+        default upgrade;
+        ''      close;
+    }
+
+    upstream lm_backend { server 127.0.0.1:__API_PORT__; }
+    upstream lm_nlq     { server 127.0.0.1:__NLQ_PORT__; }
+
+    server {
+        listen      __WEB_PORT__;
+        server_name _;
+
+        root  __WEB_ROOT__;
+        index index.html;
+
+        # ---- NLQ 智能体（SSE 流式，剥掉 /nlq-agent 前缀）----
+        location /nlq-agent/ {
+            proxy_pass http://lm_nlq/;
+            proxy_http_version 1.1;
+            proxy_set_header Host              $host;
+            proxy_set_header X-Real-IP         $remote_addr;
+            proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Connection        "";
+            proxy_buffering           off;
+            proxy_cache               off;
+            proxy_read_timeout        3600s;
+            proxy_send_timeout        3600s;
+            chunked_transfer_encoding on;
+        }
+
+        # ---- 后端 API（含 WebSocket /api/message/websocket）----
+        location /api/ {
+            proxy_pass http://lm_backend/api/;
+            proxy_http_version 1.1;
+            proxy_set_header Host              $host;
+            proxy_set_header X-Real-IP         $remote_addr;
+            proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header Upgrade           $http_upgrade;
+            proxy_set_header Connection        $connection_upgrade;
+            proxy_read_timeout 3600s;
+            proxy_send_timeout 3600s;
+        }
+
+        # HTML 不缓存
+        location ~* \.html$ {
+            expires -1;
+            add_header Cache-Control "no-cache, no-store, must-revalidate";
+        }
+
+        # 静态资源长缓存
+        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+            expires 30d;
+            add_header Cache-Control "public, immutable";
+            access_log off;
+        }
+
+        # 前端路由 fallback
+        location / {
+            try_files $uri $uri/ /index.html;
+        }
+
+        # 网关自身健康检查
+        location = /health {
+            access_log off;
+            default_type text/plain;
+            return 200 "healthy\n";
+        }
+
+        add_header X-Frame-Options "SAMEORIGIN" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-XSS-Protection "1; mode=block" always;
+    }
+}

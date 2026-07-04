@@ -30,10 +30,19 @@
             <Setter Property="Margin" Value="0,0,0,10" />
         </Style>
         <Style x:Key="PortBox" TargetType="TextBox">
-            <Setter Property="Width" Value="82" />
             <Setter Property="Height" Value="28" />
             <Setter Property="HorizontalContentAlignment" Value="Right" />
-            <Setter Property="Margin" Value="8,0,0,6" />
+            <Setter Property="Margin" Value="0" />
+            <Setter Property="MinWidth" Value="92" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+        </Style>
+        <Style x:Key="PortLabel" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,0,0,4" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="PortField" TargetType="StackPanel">
+            <Setter Property="Margin" Value="0,0,16,8" />
         </Style>
     </Window.Resources>
 
@@ -101,36 +110,37 @@
                         </Grid.RowDefinitions>
                         <GroupBox Header="推荐端口" Margin="0,0,0,10">
                             <StackPanel Margin="8">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="110" />
-                                    <ColumnDefinition Width="82" />
-                                    <ColumnDefinition Width="110" />
-                                    <ColumnDefinition Width="82" />
-                                    <ColumnDefinition Width="150" />
-                                    <ColumnDefinition Width="82" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Web 入口（80）" VerticalAlignment="Center" />
-                                <TextBox x:Name="WebPortBox" Grid.Row="0" Grid.Column="1" Style="{StaticResource PortBox}" />
-                                <TextBlock Grid.Row="0" Grid.Column="2" Text="API（10089）" VerticalAlignment="Center" />
-                                <TextBox x:Name="ApiPortBox" Grid.Row="0" Grid.Column="3" Style="{StaticResource PortBox}" />
-                                <TextBlock Grid.Row="0" Grid.Column="4" Text="智能体（8000）" VerticalAlignment="Center" />
-                                <TextBox x:Name="NlqPortBox" Grid.Row="0" Grid.Column="5" Style="{StaticResource PortBox}" />
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Redis（6380）" VerticalAlignment="Center" />
-                                <TextBox x:Name="RedisPortBox" Grid.Row="1" Grid.Column="1" Style="{StaticResource PortBox}" />
-                                <TextBlock Grid.Row="1" Grid.Column="2" Text="RabbitMQ（8005）" VerticalAlignment="Center" />
-                                <TextBox x:Name="RabbitPortBox" Grid.Row="1" Grid.Column="3" Style="{StaticResource PortBox}" />
-                                <TextBlock Grid.Row="1" Grid.Column="4" Text="RabbitMQ 管理台（15672）" VerticalAlignment="Center" />
-                                <TextBox x:Name="RabbitMgmtPortBox" Grid.Row="1" Grid.Column="5" Style="{StaticResource PortBox}" />
-                                <TextBlock Grid.Row="0" Grid.Column="6" Text="MySQL（3306）" VerticalAlignment="Center" />
-                                <TextBox x:Name="DbPortBox" Grid.Row="1" Grid.Column="6" Style="{StaticResource PortBox}" HorizontalAlignment="Left" />
-                            </Grid>
-                            <DockPanel Margin="0,6,0,0">
+                            <UniformGrid Columns="4" Margin="0,0,0,4">
+                                <StackPanel Style="{StaticResource PortField}">
+                                    <TextBlock Text="Web 入口（80）" Style="{StaticResource PortLabel}" />
+                                    <TextBox x:Name="WebPortBox" Style="{StaticResource PortBox}" />
+                                </StackPanel>
+                                <StackPanel Style="{StaticResource PortField}">
+                                    <TextBlock Text="API（10089）" Style="{StaticResource PortLabel}" />
+                                    <TextBox x:Name="ApiPortBox" Style="{StaticResource PortBox}" />
+                                </StackPanel>
+                                <StackPanel Style="{StaticResource PortField}">
+                                    <TextBlock Text="智能体（8000）" Style="{StaticResource PortLabel}" />
+                                    <TextBox x:Name="NlqPortBox" Style="{StaticResource PortBox}" />
+                                </StackPanel>
+                                <StackPanel Style="{StaticResource PortField}">
+                                    <TextBlock Text="MySQL（3306）" Style="{StaticResource PortLabel}" />
+                                    <TextBox x:Name="DbPortBox" Style="{StaticResource PortBox}" />
+                                </StackPanel>
+                                <StackPanel Style="{StaticResource PortField}">
+                                    <TextBlock Text="Redis（6380）" Style="{StaticResource PortLabel}" />
+                                    <TextBox x:Name="RedisPortBox" Style="{StaticResource PortBox}" />
+                                </StackPanel>
+                                <StackPanel Style="{StaticResource PortField}">
+                                    <TextBlock Text="RabbitMQ（8005）" Style="{StaticResource PortLabel}" />
+                                    <TextBox x:Name="RabbitPortBox" Style="{StaticResource PortBox}" />
+                                </StackPanel>
+                                <StackPanel Style="{StaticResource PortField}">
+                                    <TextBlock Text="RabbitMQ 管理台（15672）" Style="{StaticResource PortLabel}" />
+                                    <TextBox x:Name="RabbitMgmtPortBox" Style="{StaticResource PortBox}" />
+                                </StackPanel>
+                            </UniformGrid>
+                            <DockPanel>
                                 <CheckBox x:Name="FirewallBox" Content="保存后放行 Web 端口到防火墙" IsChecked="True" DockPanel.Dock="Left" />
                                 <Button Content="保存部署设置" Width="128" Height="28" HorizontalAlignment="Right" Click="SaveSettings_Click" />
                             </DockPanel>

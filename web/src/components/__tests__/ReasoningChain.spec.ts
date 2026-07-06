@@ -22,26 +22,23 @@ import { REASONING_STEP_PRESENTATION } from '/@/types/reasoning-step-presentatio
 import type { ReasoningStep } from '/@/types/reasoning-protocol';
 
 // ---------------------------------------------------------------------------
-// Global stubs for Ant Design / icon components
+// Global stubs for icon components
 // We stub at the component level so happy-dom doesn't have to handle them.
+// (kind tags are plain spans with inline color style — no a-tag involved)
 // ---------------------------------------------------------------------------
 
 const globalStubs = {
   BulbOutlined: defineComponent({ name: 'BulbOutlined', render: () => h('span', { class: 'stub-bulb' }) }),
   DownOutlined: defineComponent({ name: 'DownOutlined', render: () => h('span', { class: 'stub-down' }) }),
-  // a-tag renders its default slot text; color is passed as a prop
-  'a-tag': defineComponent({
-    name: 'ATag',
-    props: ['color'],
-    render() {
-      return h(
-        'span',
-        { class: 'stub-tag', 'data-color': (this as { color: string }).color },
-        (this as { $slots: { default?: () => unknown[] } }).$slots.default?.(),
-      );
-    },
-  }),
 };
+
+// Collect the inline style strings of all kind tags, lower-cased for hex comparison
+function kindTagStyles(wrapper: ReturnType<typeof mount>): string {
+  return wrapper
+    .findAll('.reasoning-chain__kind-tag')
+    .map((t) => (t.attributes('style') || '').toLowerCase())
+    .join(' ');
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -114,9 +111,7 @@ describe('ReasoningChain — single step', () => {
   it('renders spec kind tag with color from REASONING_STEP_PRESENTATION', () => {
     const wrapper = mountChain([SPEC_STEP], true);
     const expectedColor = REASONING_STEP_PRESENTATION['spec'].color;
-    const tags = wrapper.findAll('.stub-tag');
-    const colorValues = tags.map((t) => t.attributes('data-color'));
-    expect(colorValues).toContain(expectedColor);
+    expect(kindTagStyles(wrapper)).toContain(expectedColor.toLowerCase());
   });
 
   it('renders the step label text', () => {
@@ -236,9 +231,7 @@ describe('ReasoningChain — all 6 step kinds', () => {
     it(`renders correct color for kind="${kind}"`, () => {
       const wrapper = mountChain([step], true);
       const expectedColor = REASONING_STEP_PRESENTATION[kind].color;
-      const tags = wrapper.findAll('.stub-tag');
-      const colorValues = tags.map((t) => t.attributes('data-color'));
-      expect(colorValues).toContain(expectedColor);
+      expect(kindTagStyles(wrapper)).toContain(expectedColor.toLowerCase());
     });
   }
 });

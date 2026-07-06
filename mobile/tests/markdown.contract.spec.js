@@ -2,17 +2,19 @@
  * Unit tests for mobile/utils/markdown.js (W1.4).
  *
  * sanitizeHtml needs a DOM, mirroring the H5 production environment. We use
- * happy-dom (already a web devDep, accessible from this test via the workspace's
- * node_modules resolution) to provide window/document.
+ * jsdom (mobile devDep) — DOMPurify's officially supported Node DOM. happy-dom
+ * is NOT usable here: DOMPurify under happy-dom silently mis-sanitizes
+ * (keeps <script>, drops surrounding text). Reaching into ../../web/node_modules
+ * also broke CI, where web deps aren't installed.
  */
 
 const path = require('node:path')
 const assert = require('node:assert')
 const { pathToFileURL } = require('node:url')
 
-const { Window } = require(path.resolve(__dirname, '../../web/node_modules/happy-dom'))
+const { JSDOM } = require('jsdom')
 
-const win = new Window()
+const win = new JSDOM('').window
 globalThis.window = win
 globalThis.document = win.document
 

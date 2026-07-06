@@ -1,7 +1,10 @@
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
@@ -21,16 +24,57 @@ public sealed record ServiceItem(
     string LogName,
     bool IsPortOnly = false);
 
-public sealed class ServiceStatusRow
+public sealed class ServiceStatusRow : INotifyPropertyChanged
 {
-    public string Name { get; set; } = "";
-    public string Title { get; set; } = "";
-    public string State { get; set; } = "";
-    public string StartMode { get; set; } = "";
-    public string ProcessId { get; set; } = "";
-    public int Port { get; set; }
-    public bool PortOpen { get; set; }
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public string Name { get; init; } = "";
+    public string Title { get; init; } = "";
+    public bool CanSelect { get; init; }
+
+    private bool selected;
+    public bool Selected { get => selected; set => Set(ref selected, value); }
+
+    private string state = "";
+    public string State { get => state; set => Set(ref state, value); }
+
+    private string startMode = "";
+    public string StartMode { get => startMode; set => Set(ref startMode, value); }
+
+    private string processId = "";
+    public string ProcessId { get => processId; set => Set(ref processId, value); }
+
+    private int port;
+    public int Port { get => port; set => Set(ref port, value); }
+
+    private bool portOpen;
+    public bool PortOpen
+    {
+        get => portOpen;
+        set
+        {
+            if (Set(ref portOpen, value))
+            {
+                OnPropertyChanged(nameof(PortOpenText));
+            }
+        }
+    }
+
     public string PortOpenText => PortOpen ? "是" : "否";
+
+    private bool Set<T>(ref T field, T value, [CallerMemberName] string? name = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value))
+        {
+            return false;
+        }
+
+        field = value;
+        OnPropertyChanged(name);
+        return true;
+    }
+
+    private void OnPropertyChanged(string? name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
 public sealed record ScriptResult(int ExitCode, string Output);
@@ -48,6 +92,9 @@ public partial class MainWindow : Window
         new("rabbitmq-mgmt", "RabbitMQ UI", "RABBITMQ_MANAGEMENT_PORT", 15672, "rabbitmq-mgmt", "lm-rabbitmq", true)
     ];
 
+    private readonly ObservableCollection<ServiceStatusRow> statusRows = [];
+    private readonly Dictionary<string, ServiceStatusRow> rowsByName = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, TextBox> logBoxes = new(StringComparer.OrdinalIgnoreCase);
     private readonly DispatcherTimer refreshTimer = new() { Interval = TimeSpan.FromSeconds(5) };
     private readonly HttpClient httpClient = new() { Timeout = TimeSpan.FromSeconds(5) };
     private readonly string scriptsDir;
@@ -68,23 +115,34 @@ public partial class MainWindow : Window
             ? System.Windows.Media.Brushes.DarkGreen
             : System.Windows.Media.Brushes.DarkRed;
 
-        foreach (var item in services.Where(x => !x.IsPortOnly))
+        foreach (var item in services)
         {
-            ServiceChecks.Children.Add(new CheckBox
+            var row = new ServiceStatusRow
             {
-                Content = $"{item.Name}  {item.Title}",
-                IsChecked = true,
-                Margin = new Thickness(0, 0, 0, 5),
-                Tag = item.Name
-            });
+                Name = item.Name,
+                Title = item.Title,
+                CanSelect = !item.IsPortOnly,
+                Selected = !item.IsPortOnly,
+                State = item.IsPortOnly ? "PortOnly" : "Loading",
+                Port = item.DefaultPort
+            };
+            statusRows.Add(row);
+            rowsByName[item.Name] = row;
         }
+        ServiceGrid.ItemsSource = statusRows;
 
+        BuildLogTabs();
         ReloadEnv();
-        SetInitialStatusRows();
+        UpdateAuthStatus();
 
         Loaded += async (_, _) =>
         {
-            Log("WPF 部署控制台已启动。");
+            LogDeploy("WPF 部署控制台已启动。");
+            if (!IsAuthorized())
+            {
+                LogDeploy("未检测到升级授权码，如需在线升级请输入授权码。");
+                ShowAuthDialog();
+            }
             await RefreshStatusAsync();
         };
 
@@ -108,21 +166,71 @@ public partial class MainWindow : Window
     private void DownloadPrereqs_Click(object sender, RoutedEventArgs e) => RunScript("下载基础软件", "download-prereqs.ps1");
     private void RenderConfig_Click(object sender, RoutedEventArgs e) => RunScript("渲染配置", "render-config.ps1");
     private void DeployAll_Click(object sender, RoutedEventArgs e) => RunScript("一键部署/更新", "deploy-all.ps1");
-    private void PublishToolPatch_Click(object sender, RoutedEventArgs e) => RunScript("发布工具补丁到 OSS", "publish-release.ps1", "-PackageMode ToolPatch");
-    private void PublishFullRelease_Click(object sender, RoutedEventArgs e) => RunScript("发布完整版本到 OSS", "publish-release.ps1", "-PackageMode Full");
-    private void CheckUpgrade_Click(object sender, RoutedEventArgs e) => RunScript("检查更新", "upgrade.ps1", "-CheckOnly");
-    private void RunUpgrade_Click(object sender, RoutedEventArgs e) => RunScript("立即在线升级", "upgrade.ps1");
-    private void InstallAutoUpgrade_Click(object sender, RoutedEventArgs e) => RunScript("安装自动升级", "install-auto-upgrade.ps1");
     private void RestartAsAdmin_Click(object sender, RoutedEventArgs e) => RestartAsAdministrator();
     private void StartSelected_Click(object sender, RoutedEventArgs e) => RunServiceCommand("start");
     private void StopSelected_Click(object sender, RoutedEventArgs e) => RunServiceCommand("stop");
     private void RestartSelected_Click(object sender, RoutedEventArgs e) => RunServiceCommand("restart");
     private async void Refresh_Click(object sender, RoutedEventArgs e) => await RefreshStatusAsync();
     private async void HealthCheck_Click(object sender, RoutedEventArgs e) => await HealthCheck();
-    private void TailLogs_Click(object sender, RoutedEventArgs e) => TailLogs();
     private void OpenSite_Click(object sender, RoutedEventArgs e) => OpenSite();
     private void OpenLogs_Click(object sender, RoutedEventArgs e) => OpenLogsDir();
     private void ClearOutput_Click(object sender, RoutedEventArgs e) => OutputBox.Clear();
+    private void ClearServiceOutput_Click(object sender, RoutedEventArgs e) => ServiceOutputBox.Clear();
+    private void AuthSetup_Click(object sender, RoutedEventArgs e) => ShowAuthDialog();
+    private async void RefreshLog_Click(object sender, RoutedEventArgs e) => await LoadCurrentLogTabAsync();
+    private async void LogTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!ReferenceEquals(e.OriginalSource, LogTabs))
+        {
+            return;
+        }
+        await LoadCurrentLogTabAsync();
+    }
+
+    private void PublishToolPatch_Click(object sender, RoutedEventArgs e)
+    {
+        if (!EnsureAuthorized("发布工具补丁"))
+        {
+            return;
+        }
+        RunScript("发布工具补丁到 OSS", "publish-release.ps1", "-PackageMode ToolPatch");
+    }
+
+    private void PublishFullRelease_Click(object sender, RoutedEventArgs e)
+    {
+        if (!EnsureAuthorized("发布完整版本"))
+        {
+            return;
+        }
+        RunScript("发布完整版本到 OSS", "publish-release.ps1", "-PackageMode Full");
+    }
+
+    private void CheckUpgrade_Click(object sender, RoutedEventArgs e)
+    {
+        if (!EnsureAuthorized("检查更新"))
+        {
+            return;
+        }
+        RunScript("检查更新", "upgrade.ps1", "-CheckOnly");
+    }
+
+    private void RunUpgrade_Click(object sender, RoutedEventArgs e)
+    {
+        if (!EnsureAuthorized("在线升级"))
+        {
+            return;
+        }
+        RunScript("立即在线升级", "upgrade.ps1");
+    }
+
+    private void InstallAutoUpgrade_Click(object sender, RoutedEventArgs e)
+    {
+        if (!EnsureAuthorized("安装自动升级"))
+        {
+            return;
+        }
+        RunScript("安装自动升级", "install-auto-upgrade.ps1");
+    }
 
     private void InstallInfra_Click(object sender, RoutedEventArgs e)
     {
@@ -148,6 +256,144 @@ public partial class MainWindow : Window
         RunScript("安装应用服务", "install-services.ps1", args);
     }
 
+    // ──── 升级授权码 ────
+
+    private bool IsAuthorized()
+    {
+        return EnvValue("OSS_BUCKET", "").Length > 0
+            && EnvValue("OSS_ACCESS_KEY_ID", "").Length > 0
+            && EnvValue("OSS_ACCESS_KEY_SECRET", "").Length > 0;
+    }
+
+    private void UpdateAuthStatus()
+    {
+        if (IsAuthorized())
+        {
+            AuthText.Text = $"升级授权：已配置（{EnvValue("OSS_BUCKET", "")}）";
+            AuthText.Foreground = System.Windows.Media.Brushes.DarkGreen;
+            AuthButton.Content = "修改授权码";
+        }
+        else
+        {
+            AuthText.Text = "升级授权：未配置，在线升级前请输入授权码";
+            AuthText.Foreground = System.Windows.Media.Brushes.DarkRed;
+            AuthButton.Content = "输入授权码";
+        }
+    }
+
+    private bool EnsureAuthorized(string action)
+    {
+        ReloadEnv();
+        if (IsAuthorized())
+        {
+            return true;
+        }
+
+        var choice = MessageBox.Show(
+            $"{action}需要升级授权码（含 OSS 访问凭据），当前尚未配置。现在输入授权码吗？",
+            "需要授权",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+        if (choice == MessageBoxResult.Yes)
+        {
+            ShowAuthDialog();
+        }
+
+        ReloadEnv();
+        return IsAuthorized();
+    }
+
+    private void ShowAuthDialog()
+    {
+        ReloadEnv();
+        var configured = IsAuthorized();
+        var status = configured
+            ? $"当前状态：已配置（Bucket：{EnvValue("OSS_BUCKET", "")}）"
+            : "当前状态：未配置";
+        var currentCode = configured
+            ? UpgradeAuthCode.Encode(new UpgradeAuth(
+                EnvValue("OSS_ENDPOINT", ""),
+                EnvValue("OSS_BUCKET", ""),
+                EnvValue("OSS_ACCESS_KEY_ID", ""),
+                EnvValue("OSS_ACCESS_KEY_SECRET", ""),
+                EnvValue("OSS_PREFIX", "")))
+            : null;
+
+        var dialog = new AuthDialog(status, currentCode);
+        if (IsLoaded)
+        {
+            dialog.Owner = this;
+        }
+        else
+        {
+            dialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        }
+
+        if (dialog.ShowDialog() == true && dialog.Result is { } auth)
+        {
+            try
+            {
+                SaveAuthToEnv(auth);
+                LogDeploy($"授权码已保存（Bucket：{auth.Bucket}）。");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("保存授权码失败：" + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        ReloadEnv();
+        UpdateAuthStatus();
+    }
+
+    private void SaveAuthToEnv(UpgradeAuth auth)
+    {
+        var examplePath = Path.Combine(scriptsDir, ".env.example");
+        List<string> lines;
+        if (File.Exists(envPath))
+        {
+            lines = File.ReadAllLines(envPath, Encoding.UTF8).ToList();
+        }
+        else if (File.Exists(examplePath))
+        {
+            lines = File.ReadAllLines(examplePath, Encoding.UTF8).ToList();
+        }
+        else
+        {
+            lines = [];
+        }
+
+        if (auth.Endpoint.Length > 0)
+        {
+            SetEnvLine(lines, "OSS_ENDPOINT", auth.Endpoint);
+        }
+        SetEnvLine(lines, "OSS_BUCKET", auth.Bucket);
+        SetEnvLine(lines, "OSS_ACCESS_KEY_ID", auth.AccessKeyId);
+        SetEnvLine(lines, "OSS_ACCESS_KEY_SECRET", auth.AccessKeySecret);
+        if (auth.Prefix.Length > 0)
+        {
+            SetEnvLine(lines, "OSS_PREFIX", auth.Prefix);
+        }
+
+        File.WriteAllLines(envPath, lines, new UTF8Encoding(false));
+    }
+
+    private static void SetEnvLine(List<string> lines, string key, string value)
+    {
+        var pattern = new Regex(@"^\s*" + Regex.Escape(key) + @"\s*=", RegexOptions.IgnoreCase);
+        for (var i = 0; i < lines.Count; i++)
+        {
+            if (pattern.IsMatch(lines[i]))
+            {
+                lines[i] = $"{key}={value}";
+                return;
+            }
+        }
+        lines.Add($"{key}={value}");
+    }
+
+    // ──── 脚本与服务命令 ────
+
     private async void RunScript(string title, string scriptName, string extraArgs = "")
     {
         if (!CanRunTask())
@@ -162,7 +408,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        await RunTask(title, $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\" {extraArgs}".Trim());
+        await RunTask(title, $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\" {extraArgs}".Trim(), OutputBox);
     }
 
     private async void RunServiceCommand(string action)
@@ -175,7 +421,7 @@ public partial class MainWindow : Window
         var names = SelectedServices().Where(s => !s.IsPortOnly).Select(s => s.Name).ToArray();
         if (names.Length == 0)
         {
-            MessageBox.Show("请先勾选服务。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("请先在服务列表勾选服务。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -192,7 +438,8 @@ public partial class MainWindow : Window
         });
         command.AppendLine("}");
         var encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes(command.ToString()));
-        await RunTask($"{action} services", $"-NoProfile -ExecutionPolicy Bypass -EncodedCommand {encoded}");
+        LogTabs.SelectedIndex = 0;
+        await RunTask($"{action} services", $"-NoProfile -ExecutionPolicy Bypass -EncodedCommand {encoded}", ServiceOutputBox);
     }
 
     private bool CanRunTask()
@@ -206,23 +453,23 @@ public partial class MainWindow : Window
         return false;
     }
 
-    private async Task RunTask(string title, string powershellArguments)
+    private async Task RunTask(string title, string powershellArguments, TextBox target)
     {
         SetBusy(true);
-        Log("");
-        Log($">>> {title}");
+        Log(target, "");
+        Log(target, $">>> {title}");
         try
         {
             var result = await RunProcess("powershell.exe", powershellArguments, scriptsDir);
             foreach (var line in SplitLines(result.Output))
             {
-                Log(line);
+                Log(target, line);
             }
-            Log($"<<< 任务结束，退出码：{result.ExitCode}");
+            Log(target, $"<<< 任务结束，退出码：{result.ExitCode}");
         }
         catch (Exception ex)
         {
-            Log("ERROR: " + ex.Message);
+            Log(target, "ERROR: " + ex.Message);
         }
         finally
         {
@@ -260,26 +507,12 @@ public partial class MainWindow : Window
         return new ScriptResult(process.ExitCode, output.ToString());
     }
 
+    // ──── 服务状态 ────
+
     private void ReloadEnv()
     {
         env = File.Exists(envPath) ? ReadDotEnv(envPath) : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         DeployRootBox.Text = DeployRoot();
-    }
-
-    private void SetInitialStatusRows()
-    {
-        ReloadEnv();
-        ServiceGrid.ItemsSource = services.Select(item => new ServiceStatusRow
-        {
-            Name = item.Name,
-            Title = item.Title,
-            State = item.IsPortOnly ? "PortOnly" : "Loading",
-            StartMode = "",
-            ProcessId = "",
-            Port = PortFor(item),
-            PortOpen = false
-        }).ToList();
-        LastRefreshText.Text = "等待刷新...";
     }
 
     private async Task RefreshStatusAsync()
@@ -293,35 +526,31 @@ public partial class MainWindow : Window
         try
         {
             ReloadEnv();
+            var ports = services.ToDictionary(x => x.Name, PortFor, StringComparer.OrdinalIgnoreCase);
             var serviceInfo = await QueryServicesAsync(services.Where(x => !x.IsPortOnly).Select(x => x.Name));
-            var rows = await Task.Run(() =>
-            {
-                return services.Select(item =>
-                {
-                    var port = PortFor(item);
-                    var info = item.IsPortOnly || !serviceInfo.TryGetValue(item.Name, out var found)
-                        ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                        : found;
-                    var state = item.IsPortOnly ? "PortOnly" : info.GetValueOrDefault("State", "NotInstalled");
-                    return new ServiceStatusRow
-                    {
-                        Name = item.Name,
-                        Title = item.Title,
-                        State = state,
-                        StartMode = item.IsPortOnly ? "" : info.GetValueOrDefault("StartMode", ""),
-                        ProcessId = item.IsPortOnly ? "" : info.GetValueOrDefault("ProcessId", ""),
-                        Port = port,
-                        PortOpen = port > 0 && IsPortOpen(port)
-                    };
-                }).ToList();
-            });
+            var portOpen = await Task.Run(() => ports.ToDictionary(
+                pair => pair.Key,
+                pair => pair.Value > 0 && IsPortOpen(pair.Value),
+                StringComparer.OrdinalIgnoreCase));
 
-            ServiceGrid.ItemsSource = rows;
+            foreach (var item in services)
+            {
+                var row = rowsByName[item.Name];
+                var info = item.IsPortOnly || !serviceInfo.TryGetValue(item.Name, out var found)
+                    ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    : found;
+                row.State = item.IsPortOnly ? "PortOnly" : info.GetValueOrDefault("State", "NotInstalled");
+                row.StartMode = item.IsPortOnly ? "" : info.GetValueOrDefault("StartMode", "");
+                row.ProcessId = item.IsPortOnly ? "" : info.GetValueOrDefault("ProcessId", "");
+                row.Port = ports[item.Name];
+                row.PortOpen = portOpen.GetValueOrDefault(item.Name);
+            }
+
             LastRefreshText.Text = "最后刷新：" + DateTime.Now.ToString("HH:mm:ss");
         }
         catch (Exception ex)
         {
-            Log("刷新状态失败：" + ex.Message);
+            LogService("刷新状态失败：" + ex.Message);
         }
         finally
         {
@@ -450,7 +679,8 @@ public partial class MainWindow : Window
 
     private async Task HealthCheck()
     {
-        Log(">>> 健康检查");
+        LogTabs.SelectedIndex = 0;
+        LogService(">>> 健康检查");
         var urls = new[]
         {
             $"http://127.0.0.1:{PortFor("WEB_PORT", 80)}/",
@@ -465,40 +695,82 @@ public partial class MainWindow : Window
             try
             {
                 using var response = await httpClient.GetAsync(url);
-                Log($"{url} -> {(int)response.StatusCode}");
+                LogService($"{url} -> {(int)response.StatusCode}");
             }
             catch (Exception ex)
             {
-                Log($"{url} -> FAILED: {ex.Message}");
+                LogService($"{url} -> FAILED: {ex.Message}");
             }
         }
     }
 
-    private void TailLogs()
+    // ──── 服务日志（按服务分类展示）────
+
+    private void BuildLogTabs()
     {
-        foreach (var item in SelectedServices())
+        foreach (var item in services.Where(s => s.LogName.Length > 0).DistinctBy(s => s.LogName))
         {
-            if (string.IsNullOrWhiteSpace(item.LogName))
+            var box = new TextBox
             {
-                continue;
-            }
-
-            var stderr = Path.Combine(DeployRoot(), "logs", item.LogName, "stderr.log");
-            var stdout = Path.Combine(DeployRoot(), "logs", item.LogName, "stdout.log");
-            var file = File.Exists(stderr) ? stderr : File.Exists(stdout) ? stdout : "";
-            if (file.Length == 0)
-            {
-                Log($"未找到日志：{item.Name}");
-                continue;
-            }
-
-            Log($">>> {file}");
-            foreach (var line in Tail(file, 80))
-            {
-                Log(line);
-            }
+                FontFamily = new System.Windows.Media.FontFamily("Consolas"),
+                FontSize = 12,
+                IsReadOnly = true,
+                AcceptsReturn = true,
+                AcceptsTab = true,
+                TextWrapping = TextWrapping.NoWrap,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto
+            };
+            logBoxes[item.LogName] = box;
+            LogTabs.Items.Add(new TabItem { Header = item.LogName, Content = box, Tag = item.LogName });
         }
     }
+
+    private async Task LoadCurrentLogTabAsync()
+    {
+        if (LogTabs.SelectedItem is not TabItem tab || tab.Tag is not string logName)
+        {
+            return;
+        }
+
+        var box = logBoxes[logName];
+        var dir = Path.Combine(DeployRoot(), "logs", logName);
+        box.Text = $"正在读取 {dir} ...";
+        var text = await Task.Run(() => ReadServiceLog(dir));
+        box.Text = text;
+        box.ScrollToEnd();
+    }
+
+    private static string ReadServiceLog(string dir)
+    {
+        if (!Directory.Exists(dir))
+        {
+            return $"日志目录不存在：{dir}";
+        }
+
+        var sb = new StringBuilder();
+        foreach (var fileName in new[] { "stdout.log", "stderr.log" })
+        {
+            var path = Path.Combine(dir, fileName);
+            sb.AppendLine($"===== {fileName} =====");
+            if (File.Exists(path))
+            {
+                foreach (var line in Tail(path, 200))
+                {
+                    sb.AppendLine(line);
+                }
+            }
+            else
+            {
+                sb.AppendLine("（文件不存在）");
+            }
+            sb.AppendLine();
+        }
+
+        return sb.ToString();
+    }
+
+    // ──── 其他操作 ────
 
     private void OpenSite()
     {
@@ -532,10 +804,9 @@ public partial class MainWindow : Window
 
     private IEnumerable<ServiceItem> SelectedServices()
     {
-        var names = ServiceChecks.Children.OfType<CheckBox>()
-            .Where(x => x.IsChecked == true)
-            .Select(x => x.Tag?.ToString() ?? "")
-            .Where(x => x.Length > 0)
+        var names = statusRows
+            .Where(row => row.CanSelect && row.Selected)
+            .Select(row => row.Name)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         return services.Where(s => names.Contains(s.Name));
     }
@@ -661,27 +932,18 @@ public partial class MainWindow : Window
     {
         busy = value;
         BusyText.Text = value ? "正在执行任务..." : "就绪";
-        SetButtonsEnabled(this, !value);
-        AutoRefreshBox.IsEnabled = true;
+        DeployButtonsPanel.IsEnabled = !value;
+        ServiceButtonsPanel.IsEnabled = !value;
+        AuthButton.IsEnabled = !value;
     }
 
-    private static void SetButtonsEnabled(DependencyObject root, bool enabled)
-    {
-        for (var i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(root); i++)
-        {
-            var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
-            if (child is Button button && button.Content?.ToString() != "刷新状态")
-            {
-                button.IsEnabled = enabled;
-            }
+    private void LogDeploy(string message) => Log(OutputBox, message);
 
-            SetButtonsEnabled(child, enabled);
-        }
-    }
+    private void LogService(string message) => Log(ServiceOutputBox, message);
 
-    private void Log(string message)
+    private static void Log(TextBox target, string message)
     {
-        OutputBox.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
-        OutputBox.ScrollToEnd();
+        target.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
+        target.ScrollToEnd();
     }
 }

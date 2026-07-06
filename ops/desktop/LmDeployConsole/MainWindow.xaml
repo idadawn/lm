@@ -10,22 +10,27 @@
         FontFamily="Microsoft YaHei UI"
         FontSize="13">
     <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
         <Style x:Key="PrimaryButton" TargetType="Button">
             <Setter Property="Height" Value="34" />
+            <Setter Property="Width" Value="128" />
             <Setter Property="Margin" Value="0,0,8,8" />
             <Setter Property="Padding" Value="10,0" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
         </Style>
-        <Style x:Key="SectionTitle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="16" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Margin" Value="0,0,0,8" />
+        <Style x:Key="ToolbarButton" TargetType="Button">
+            <Setter Property="Height" Value="30" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="Padding" Value="12,0" />
+        </Style>
+        <Style TargetType="GroupBox">
+            <Setter Property="Padding" Value="8,8,0,0" />
         </Style>
     </Window.Resources>
 
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="330" />
+            <ColumnDefinition Width="270" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
@@ -33,7 +38,15 @@
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="18">
                     <TextBlock Text="部署控制台" FontSize="22" FontWeight="Bold" Margin="0,0,0,12" />
-                    <TextBlock x:Name="AdminText" Text="管理员权限：" Margin="0,0,0,14" />
+                    <TextBlock x:Name="AdminText" Text="管理员权限：" Margin="0,0,0,6" TextWrapping="Wrap" />
+                    <TextBlock x:Name="AuthText" Text="升级授权：检查中..." Margin="0,0,0,6" TextWrapping="Wrap" />
+                    <Button x:Name="AuthButton"
+                            Content="输入授权码"
+                            Height="32"
+                            Margin="0,2,0,18"
+                            HorizontalAlignment="Left"
+                            Padding="14,0"
+                            Click="AuthSetup_Click" />
 
                     <TextBlock Text="脚本目录" FontWeight="SemiBold" Margin="0,0,0,5" />
                     <TextBox x:Name="ScriptsDirBox" IsReadOnly="True" Margin="0,0,0,12" />
@@ -41,92 +54,168 @@
                     <TextBlock Text="部署目录" FontWeight="SemiBold" Margin="0,0,0,5" />
                     <TextBox x:Name="DeployRootBox" IsReadOnly="True" Margin="0,0,0,16" />
 
-                    <TextBlock Text="服务选择" FontWeight="SemiBold" Margin="0,0,0,8" />
-                    <Border BorderBrush="#D9DEE8" BorderThickness="1" Background="White" Padding="8" Margin="0,0,0,18">
-                        <StackPanel x:Name="ServiceChecks" />
-                    </Border>
-
-                    <TextBlock Text="部署与升级" Style="{StaticResource SectionTitle}" />
-                    <UniformGrid Columns="2" Margin="0,0,0,8">
-                        <Button Content="下载基础软件" Style="{StaticResource PrimaryButton}" Click="DownloadPrereqs_Click" />
-                        <Button Content="渲染配置" Style="{StaticResource PrimaryButton}" Click="RenderConfig_Click" />
-                        <Button Content="安装基础服务" Style="{StaticResource PrimaryButton}" Click="InstallInfra_Click" />
-                        <Button Content="安装应用服务" Style="{StaticResource PrimaryButton}" Click="InstallApps_Click" />
-                        <Button Content="一键部署/更新" Style="{StaticResource PrimaryButton}" Click="DeployAll_Click" />
-                        <Button Content="发布工具补丁" Style="{StaticResource PrimaryButton}" Click="PublishToolPatch_Click" />
-                        <Button Content="发布完整版本" Style="{StaticResource PrimaryButton}" Click="PublishFullRelease_Click" />
-                        <Button Content="检查更新" Style="{StaticResource PrimaryButton}" Click="CheckUpgrade_Click" />
-                        <Button Content="立即在线升级" Style="{StaticResource PrimaryButton}" Click="RunUpgrade_Click" />
-                        <Button Content="安装自动升级" Style="{StaticResource PrimaryButton}" Click="InstallAutoUpgrade_Click" />
-                        <Button Content="管理员重启" Style="{StaticResource PrimaryButton}" Click="RestartAsAdmin_Click" />
-                        <Button Content="打开站点" Style="{StaticResource PrimaryButton}" Click="OpenSite_Click" />
-                    </UniformGrid>
-
-                    <TextBlock Text="服务控制" Style="{StaticResource SectionTitle}" />
-                    <UniformGrid Columns="2" Margin="0,0,0,8">
-                        <Button Content="启动选中" Style="{StaticResource PrimaryButton}" Click="StartSelected_Click" />
-                        <Button Content="停止选中" Style="{StaticResource PrimaryButton}" Click="StopSelected_Click" />
-                        <Button Content="重启选中" Style="{StaticResource PrimaryButton}" Click="RestartSelected_Click" />
-                        <Button Content="刷新状态" Style="{StaticResource PrimaryButton}" Click="Refresh_Click" />
-                        <Button Content="健康检查" Style="{StaticResource PrimaryButton}" Click="HealthCheck_Click" />
-                        <Button Content="查看日志" Style="{StaticResource PrimaryButton}" Click="TailLogs_Click" />
-                        <Button Content="打开日志目录" Style="{StaticResource PrimaryButton}" Click="OpenLogs_Click" />
-                    </UniformGrid>
-
-                    <CheckBox x:Name="AutoRefreshBox" Content="自动刷新服务状态" IsChecked="True" Margin="0,10,0,8" />
+                    <CheckBox x:Name="AutoRefreshBox" Content="自动刷新服务状态" IsChecked="True" Margin="0,0,0,10" />
                     <TextBlock x:Name="BusyText" Text="就绪" Foreground="#465264" />
                 </StackPanel>
             </ScrollViewer>
         </Border>
 
-        <Grid Grid.Column="1" Margin="18">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="42" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="36" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
+        <TabControl x:Name="MainTabs" Grid.Column="1" Margin="12">
+            <TabItem Header="部署与升级">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
 
-            <DockPanel Grid.Row="0">
-                <TextBlock Text="服务状态" FontSize="18" FontWeight="SemiBold" DockPanel.Dock="Left" />
-                <TextBlock x:Name="LastRefreshText" Foreground="#6B7280" Margin="18,3,0,0" />
-            </DockPanel>
+                    <Grid Grid.Row="0" x:Name="DeployButtonsPanel">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
 
-            <DataGrid x:Name="ServiceGrid"
-                      Grid.Row="1"
-                      AutoGenerateColumns="False"
-                      CanUserAddRows="False"
-                      CanUserDeleteRows="False"
-                      IsReadOnly="True"
-                      GridLinesVisibility="Horizontal"
-                      HeadersVisibility="Column"
-                      RowHeight="32">
-                <DataGrid.Columns>
-                    <DataGridTextColumn Header="服务" Binding="{Binding Name}" Width="140" />
-                    <DataGridTextColumn Header="说明" Binding="{Binding Title}" Width="*" />
-                    <DataGridTextColumn Header="状态" Binding="{Binding State}" Width="100" />
-                    <DataGridTextColumn Header="启动类型" Binding="{Binding StartMode}" Width="100" />
-                    <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="80" />
-                    <DataGridTextColumn Header="端口" Binding="{Binding Port}" Width="80" />
-                    <DataGridTextColumn Header="端口可用" Binding="{Binding PortOpenText}" Width="100" />
-                </DataGrid.Columns>
-            </DataGrid>
+                        <GroupBox Grid.Row="0" Grid.Column="0" Header="部署" Margin="0,0,8,8">
+                            <WrapPanel>
+                                <Button Content="下载基础软件" Style="{StaticResource PrimaryButton}" Click="DownloadPrereqs_Click" />
+                                <Button Content="渲染配置" Style="{StaticResource PrimaryButton}" Click="RenderConfig_Click" />
+                                <Button Content="安装基础服务" Style="{StaticResource PrimaryButton}" Click="InstallInfra_Click" />
+                                <Button Content="安装应用服务" Style="{StaticResource PrimaryButton}" Click="InstallApps_Click" />
+                                <Button Content="一键部署/更新" Style="{StaticResource PrimaryButton}" Click="DeployAll_Click" />
+                            </WrapPanel>
+                        </GroupBox>
 
-            <DockPanel Grid.Row="2" Margin="0,12,0,0">
-                <TextBlock Text="执行输出" FontSize="16" FontWeight="SemiBold" DockPanel.Dock="Left" />
-                <Button Content="清空输出" Width="86" Height="28" HorizontalAlignment="Right" Click="ClearOutput_Click" />
-            </DockPanel>
+                        <GroupBox Grid.Row="0" Grid.Column="1" Header="在线升级" Margin="0,0,0,8">
+                            <WrapPanel>
+                                <Button Content="输入授权码" Style="{StaticResource PrimaryButton}" Click="AuthSetup_Click" />
+                                <Button Content="检查更新" Style="{StaticResource PrimaryButton}" Click="CheckUpgrade_Click" />
+                                <Button Content="立即在线升级" Style="{StaticResource PrimaryButton}" Click="RunUpgrade_Click" />
+                                <Button Content="安装自动升级" Style="{StaticResource PrimaryButton}" Click="InstallAutoUpgrade_Click" />
+                            </WrapPanel>
+                        </GroupBox>
 
-            <TextBox x:Name="OutputBox"
-                     Grid.Row="3"
-                     FontFamily="Consolas"
-                     FontSize="12"
-                     IsReadOnly="True"
-                     AcceptsReturn="True"
-                     AcceptsTab="True"
-                     TextWrapping="NoWrap"
-                     VerticalScrollBarVisibility="Auto"
-                     HorizontalScrollBarVisibility="Auto" />
-        </Grid>
+                        <GroupBox Grid.Row="1" Grid.Column="0" Header="发布到 OSS（开发/构建机）" Margin="0,0,8,0">
+                            <WrapPanel>
+                                <Button Content="发布工具补丁" Style="{StaticResource PrimaryButton}" Click="PublishToolPatch_Click" />
+                                <Button Content="发布完整版本" Style="{StaticResource PrimaryButton}" Click="PublishFullRelease_Click" />
+                            </WrapPanel>
+                        </GroupBox>
+
+                        <GroupBox Grid.Row="1" Grid.Column="1" Header="其他">
+                            <WrapPanel>
+                                <Button Content="管理员重启" Style="{StaticResource PrimaryButton}" Click="RestartAsAdmin_Click" />
+                                <Button Content="打开站点" Style="{StaticResource PrimaryButton}" Click="OpenSite_Click" />
+                            </WrapPanel>
+                        </GroupBox>
+                    </Grid>
+
+                    <DockPanel Grid.Row="1" Margin="0,12,0,4">
+                        <Button Content="清空输出"
+                                DockPanel.Dock="Right"
+                                Width="86"
+                                Height="28"
+                                Click="ClearOutput_Click" />
+                        <TextBlock Text="执行输出" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    </DockPanel>
+
+                    <TextBox x:Name="OutputBox"
+                             Grid.Row="2"
+                             FontFamily="Consolas"
+                             FontSize="12"
+                             IsReadOnly="True"
+                             AcceptsReturn="True"
+                             AcceptsTab="True"
+                             TextWrapping="NoWrap"
+                             VerticalScrollBarVisibility="Auto"
+                             HorizontalScrollBarVisibility="Auto" />
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="服务">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="5*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="6*" />
+                    </Grid.RowDefinitions>
+
+                    <DockPanel Grid.Row="0" Margin="0,0,0,10">
+                        <TextBlock x:Name="LastRefreshText"
+                                   DockPanel.Dock="Right"
+                                   Foreground="#6B7280"
+                                   VerticalAlignment="Center"
+                                   Text="等待刷新..." />
+                        <StackPanel Orientation="Horizontal">
+                            <StackPanel x:Name="ServiceButtonsPanel" Orientation="Horizontal">
+                                <Button Content="启动选中" Style="{StaticResource ToolbarButton}" Click="StartSelected_Click" />
+                                <Button Content="停止选中" Style="{StaticResource ToolbarButton}" Click="StopSelected_Click" />
+                                <Button Content="重启选中" Style="{StaticResource ToolbarButton}" Click="RestartSelected_Click" />
+                                <Button Content="健康检查" Style="{StaticResource ToolbarButton}" Click="HealthCheck_Click" />
+                            </StackPanel>
+                            <Button Content="刷新状态" Style="{StaticResource ToolbarButton}" Click="Refresh_Click" />
+                        </StackPanel>
+                    </DockPanel>
+
+                    <DataGrid x:Name="ServiceGrid"
+                              Grid.Row="1"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              IsReadOnly="False"
+                              GridLinesVisibility="Horizontal"
+                              HeadersVisibility="Column"
+                              SelectionMode="Single"
+                              RowHeight="32">
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="选择" Width="52" CanUserSort="False">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding Selected, UpdateSourceTrigger=PropertyChanged}"
+                                                  Visibility="{Binding CanSelect, Converter={StaticResource BoolToVis}}"
+                                                  HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="服务" Binding="{Binding Name}" Width="140" IsReadOnly="True" />
+                            <DataGridTextColumn Header="说明" Binding="{Binding Title}" Width="*" IsReadOnly="True" />
+                            <DataGridTextColumn Header="状态" Binding="{Binding State}" Width="100" IsReadOnly="True" />
+                            <DataGridTextColumn Header="启动类型" Binding="{Binding StartMode}" Width="100" IsReadOnly="True" />
+                            <DataGridTextColumn Header="PID" Binding="{Binding ProcessId}" Width="80" IsReadOnly="True" />
+                            <DataGridTextColumn Header="端口" Binding="{Binding Port}" Width="80" IsReadOnly="True" />
+                            <DataGridTextColumn Header="端口可用" Binding="{Binding PortOpenText}" Width="90" IsReadOnly="True" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+
+                    <DockPanel Grid.Row="2" Margin="0,12,0,4">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <Button Content="刷新日志" Width="86" Height="28" Margin="0,0,8,0" Click="RefreshLog_Click" />
+                            <Button Content="打开日志目录" Width="106" Height="28" Margin="0,0,8,0" Click="OpenLogs_Click" />
+                            <Button Content="清空操作输出" Width="106" Height="28" Click="ClearServiceOutput_Click" />
+                        </StackPanel>
+                        <TextBlock Text="服务日志（按服务分类）" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
+                    </DockPanel>
+
+                    <TabControl x:Name="LogTabs" Grid.Row="3" SelectionChanged="LogTabs_SelectionChanged">
+                        <TabItem Header="操作输出">
+                            <TextBox x:Name="ServiceOutputBox"
+                                     FontFamily="Consolas"
+                                     FontSize="12"
+                                     IsReadOnly="True"
+                                     AcceptsReturn="True"
+                                     AcceptsTab="True"
+                                     TextWrapping="NoWrap"
+                                     VerticalScrollBarVisibility="Auto"
+                                     HorizontalScrollBarVisibility="Auto" />
+                        </TabItem>
+                    </TabControl>
+                </Grid>
+            </TabItem>
+        </TabControl>
     </Grid>
 </Window>

@@ -15,5 +15,8 @@
     "dompurify": "^3.4.2",
     "marked": "^4.3.0",
     "mp-html": "^2.5.2"
+  },
+  "devDependencies": {
+    "jsdom": "^25.0.1"
   }
 }

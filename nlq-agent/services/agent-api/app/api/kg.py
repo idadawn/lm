@@ -820,7 +820,7 @@ async def get_ontology() -> dict[str, Any]:
             for r in attr_rows
         ]
 
-        # 5. Excel 导入模板（单片性能 + 叠片数据）
+        # 5. Excel 导入模板（环样性能 + 叠片数据）
         template_sql = text("""
             SELECT F_Id as id, F_TEMPLATE_NAME as template_name,
                    F_TEMPLATE_CODE as template_code, F_CONFIG_JSON as config_json

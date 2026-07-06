@@ -185,7 +185,7 @@ async def get_ribbon_subgraph(furnace_no: str, depth: int = 2) -> dict | None:
                 relation="HAS_LAMINATION_DATA", label="叠片数据",
             ))
 
-        # 3. 单片性能
+        # 3. 环样性能
         mag_sql = text("""
             SELECT F_Id, F_FURNACE_NO, F_PS_LOSS, F_SS_POWER, F_HC, F_DETECTION_TIME
             FROM lab_magnetic_raw_data WHERE F_FURNACE_NO = :furnace_no
@@ -195,7 +195,7 @@ async def get_ribbon_subgraph(furnace_no: str, depth: int = 2) -> dict | None:
         if mag:
             mid = f"single_sheet:{mag['F_Id']}"
             nodes.append(OntologyNode(
-                id=mid, type="SingleSheetPerf", label="单片性能",
+                id=mid, type="SingleSheetPerf", label="环样性能",
                 subtitle=str(mag["F_DETECTION_TIME"]) if mag["F_DETECTION_TIME"] else None,
                 status="ok", raw={"ps_loss": float(mag["F_PS_LOSS"]) if mag["F_PS_LOSS"] else None,
                 "ss_power": float(mag["F_SS_POWER"]) if mag["F_SS_POWER"] else None,
@@ -204,7 +204,7 @@ async def get_ribbon_subgraph(furnace_no: str, depth: int = 2) -> dict | None:
             edges.append(OntologyEdge(
                 id=f"{ribbon_id}-HAS_SINGLE_SHEET_PERF-{mid}",
                 source=ribbon_id, target=mid,
-                relation="HAS_SINGLE_SHEET_PERF", label="单片性能",
+                relation="HAS_SINGLE_SHEET_PERF", label="环样性能",
             ))
 
         # 4. 外观特性

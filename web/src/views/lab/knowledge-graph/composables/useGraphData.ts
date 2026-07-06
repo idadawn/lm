@@ -3,7 +3,7 @@
  *
  * 把后端 OntologyData 转成前端图谱可用的 { nodes, edges, combos }。
  * 重点目标不是“把所有节点撒开”，而是围绕检测中心真实业务主线组织关系：
- * 带材 → 产品规格 → 判定规则 → 公式/指标依据，并保留叠片、单片、外观等检测对象入口。
+ * 带材 → 产品规格 → 判定规则 → 公式/指标依据，并保留叠片、环样、外观等检测对象入口。
  */
 
 import { computed, ref } from 'vue';
@@ -120,7 +120,7 @@ function addEdge(edges: any[], source: string, target: string, label: string, re
 function addBusinessObjectNodes(nodes: any[], edges: any[], rootId: string) {
   const objects = [
     { id: 'domain:lamination', type: 'LaminationData' as OntologyNodeType, label: '叠片数据', subtitle: '导入后计算检测明细', x: 100, y: 80 },
-    { id: 'domain:single-sheet', type: 'SingleSheetPerf' as OntologyNodeType, label: '单片性能', subtitle: 'Ps / Ss / Hc', x: 100, y: 150 },
+    { id: 'domain:single-sheet', type: 'SingleSheetPerf' as OntologyNodeType, label: '环样性能', subtitle: 'Ps / Ss / Hc', x: 100, y: 150 },
     { id: 'domain:appearance', type: 'AppearanceFeature' as OntologyNodeType, label: '外观特性', subtitle: '缺陷、等级、分类', x: 100, y: 220 },
     { id: 'domain:metric-judge', type: 'MetricJudge' as OntologyNodeType, label: '指标判定', subtitle: '统计计算与等级结果', x: 520, y: 200 },
   ];

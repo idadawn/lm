@@ -787,7 +787,7 @@
             </span>
           </div>
           <div class="attr-row">
-            <span class="attr-key">单片性能</span>
+            <span class="attr-key">环样性能</span>
             <span class="attr-val">
               <a-tag color="orange" size="small">lab_magnetic_raw_data</a-tag>
               <small style="color:#94a3b8;margin-left:4px">{{ panel.raw?.magneticSourceName || '-' }}</small>
@@ -1016,7 +1016,7 @@
         </div>
       </template>
 
-      <!-- 带材根节点 → 产品规格 + 扩展属性 + 叠片数据 + 单片性能（折叠面板） -->
+      <!-- 带材根节点 → 产品规格 + 扩展属性 + 叠片数据 + 环样性能（折叠面板） -->
       <template v-if="panel.type === 'ribbonRoot'">
         <div class="prop-row"><b>节点:</b> 业务根节点</div>
         <div class="prop-row"><b>描述:</b> 以炉号为业务入口，连接规格、检测数据、公式和判定规则。</div>
@@ -1055,15 +1055,15 @@
             <div v-if="!(panel.raw?.rawDataFields || []).length" class="prop-row" style="color:#94a3b8">暂无叠片数据字段</div>
           </a-collapse-panel>
 
-          <!-- 单片性能 -->
-          <a-collapse-panel key="magneticData" header="单片性能">
+          <!-- 环样性能 -->
+          <a-collapse-panel key="magneticData" header="环样性能">
             <div class="attr-grid">
               <div class="attr-row" v-for="f in (panel.raw?.magneticDataFields || [])" :key="f.id">
                 <span class="attr-key">{{ f.name }}</span>
                 <span class="attr-val" style="font-size:11px;color:#94a3b8">{{ f.code }}</span>
               </div>
             </div>
-            <div v-if="!(panel.raw?.magneticDataFields || []).length" class="prop-row" style="color:#94a3b8">暂无单片性能字段</div>
+            <div v-if="!(panel.raw?.magneticDataFields || []).length" class="prop-row" style="color:#94a3b8">暂无环样性能字段</div>
           </a-collapse-panel>
         </a-collapse>
       </template>
@@ -1103,7 +1103,7 @@
         <div class="prop-row"><b>单卷重量:</b> {{ panel.raw?.single_coil_weight ?? '-' }}</div>
       </template>
 
-      <!-- 单片性能详情 -->
+      <!-- 环样性能详情 -->
       <template v-if="panel.type === 'singleSheet'">
         <div class="prop-row"><b>Ps铁损:</b> {{ panel.raw?.ps_loss ?? '-' }}</div>
         <div class="prop-row"><b>Ss激磁功率:</b> {{ panel.raw?.ss_power ?? '-' }}</div>

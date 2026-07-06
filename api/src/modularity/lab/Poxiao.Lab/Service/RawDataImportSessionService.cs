@@ -2453,12 +2453,12 @@ public class RawDataImportSessionService
                     entity.FurnaceNoFormatted = furnaceNoObj.GetFurnaceNo();
 
                     // ★ 业务规则：叠片数据导入禁止炉号含 K/k 标记
-                    // K 是单片性能（lab/magneticData）的刻痕标识，混在叠片数据里会污染单片性能匹配
+                    // K 是环样性能（lab/magneticData）的刻痕标识，混在叠片数据里会污染环样性能匹配
                     var sm = (furnaceNoObj.SpecialMarker ?? string.Empty).Trim();
                     if (sm.Equals("K", StringComparison.OrdinalIgnoreCase))
                     {
                         entity.ImportStatus = 1;
-                        entity.ImportError = "叠片数据炉号不应含 K 标记（K 是单片性能数据的刻痕标识，请检查录入数据来源）";
+                        entity.ImportError = "叠片数据炉号不应含 K 标记（K 是环样性能数据的刻痕标识，请检查录入数据来源）";
                         entity.IsValidData = 0;
                         entities.Add(entity);
                         continue;

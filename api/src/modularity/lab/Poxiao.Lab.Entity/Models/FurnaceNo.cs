@@ -140,7 +140,7 @@ public class FurnaceNo
             result.FurnaceBatchNo = match.Groups[4].Value; // 炉次号
             result.CoilNo = match.Groups[5].Value; // 卷号
             result.SubcoilNo = match.Groups[6].Value; // 分卷号（必填）
-            // 特殊标记统一大写（W/G/K），让下游 dedup / 展示 / 单片性能匹配只面对一种形态
+            // 特殊标记统一大写（W/G/K），让下游 dedup / 展示 / 环样性能匹配只面对一种形态
             result.SpecialMarker = (match.Groups[7].Value ?? string.Empty).ToUpperInvariant();
             result.FeatureSuffix = NormalizeFeatureSuffix(match.Groups[8].Value); // 特性描述（可选）
 

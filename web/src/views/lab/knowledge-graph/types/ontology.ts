@@ -12,7 +12,7 @@ export type OntologyNodeType =
   | 'Ribbon'           // 带材 — 业务根节点（虚拟）
   | 'ProductSpec'      // 产品规格 — 带材分为的产品类型，来源 lab_product_spec
   | 'LaminationData'   // 叠片数据 — 原始数据导入后的检测明细
-  | 'SingleSheetPerf'  // 单片性能 — Ps铁损 / Ss功率 / Hc
+  | 'SingleSheetPerf'  // 环样性能 — Ps铁损 / Ss功率 / Hc（标识符沿用历史命名，勿与将来的单片性能检测模块混淆）
   | 'AppearanceFeature'// 外观特性 — 缺陷、等级、分类
   | 'AppearanceCategory'// 外观特性大类
   | 'AppearanceLevel'  // 外观特性等级

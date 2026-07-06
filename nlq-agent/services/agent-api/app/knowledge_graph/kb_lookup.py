@@ -21,8 +21,22 @@ from pathlib import Path
 from typing import Any
 
 from app.core.logger import logger
+from app.knowledge_graph.terms import extract_terms, normalize_text
 
 _KB_PATH = Path(__file__).parent / "knowledge_base.json"
+
+# 数据查询意图标记：带这些词的问题要的是"数",不是"定义"，应交给数据查询链路。
+# 命中标记时把阈值抬到 0.7——只有 alias 级强命中（问题里真写了完整定义式说法）才由 KB 接管，
+# 「铁损」「一次交检」这类关键词组合不足以抢答。
+_DATA_QUERY_MARKERS = (
+    "平均", "均值", "最大", "最小", "最高", "最低", "多少", "几条", "几卷",
+    "分布", "趋势", "对比", "排名", "排行", "统计", "汇总", "明细", "导出", "列出",
+    "查一下", "查询", "上月", "上个月", "本月", "今天", "昨天", "最近", "同比", "环比",
+)
+
+
+def _looks_like_data_query(q_norm: str) -> bool:
+    return any(m in q_norm for m in _DATA_QUERY_MARKERS)
 
 # 模块级缓存（FastAPI 单 worker；多 worker 时每 worker 各持一份）
 _kb_cache: dict[str, Any] | None = None
@@ -51,22 +65,35 @@ def _load_kb() -> dict[str, Any]:
     return _kb_cache or {"entries": []}
 
 
-def lookup_kb(question: str, *, min_score: float = 0.6) -> dict[str, Any] | None:
+def lookup_kb(question: str, *, min_score: float = 0.45) -> dict[str, Any] | None:
     """在知识库里找最匹配的条目。
 
-    匹配方式：大小写不敏感（对中文等价 identity，对英文/字段名 F_LABELING vs labeling 兼容）。
+    问题与词条两侧都先经 terms.normalize_text 归一化（全角→半角、去空白标点、
+    口语变体「啥/咋」→「什么/怎么」），再做子串比对；同时用 aliases.json 做
+    同义词桥接——问题里命中的规范词（如「磁损」→ PsLoss）拼进匹配文本参与比对。
 
     评分规则（满分 1.0+）：
-    - alias 与 question 字面相等（忽略大小写）→ 直接返回
-    - 任一 alias 是 question 的子串 → +0.7（强匹配）
-    - keyword 在 question 中命中 → 每个 +0.15（最高 +0.45）
-    - title 中的关键词出现 → +0.1
+    - alias 归一化后与问题相等 → 直接返回
+    - 任一 alias 是匹配文本的子串 → +0.7（强匹配）
+    - keyword 命中 → 每个 +0.25，封顶 +0.5（两个关键词即可过阈值）
+    - title 归一化后（≥4 字）整体出现在问题中 → +0.2
+    数据查询守卫：问题带「平均/分布/多少/上月…」等取数标记时，阈值抬到 0.7，
+    避免定义类词条抢答本该走 SQL 的数据问题。
     返回最高分条目（≥ min_score）；否则 None。
     """
     if not question:
         return None
 
-    q = question.strip().lower()
+    q = normalize_text(question)
+    if not q:
+        return None
+
+    if _looks_like_data_query(q):
+        min_score = max(min_score, 0.7)
+
+    # 同义词桥接：命中的规范词拼进匹配文本，用 § 分隔避免跨词误配
+    bridged = [normalize_text(t["canonical"]) for t in extract_terms(question)]
+    q_ext = "§".join([q, *bridged]) if bridged else q
 
     kb = _load_kb()
     entries = kb.get("entries", [])
@@ -80,28 +107,29 @@ def lookup_kb(question: str, *, min_score: float = 0.6) -> dict[str, Any] | None
         keywords = entry.get("keywords", []) or []
         title = entry.get("title", "")
 
-        # 1. alias 精确匹配 / 子串匹配（大小写不敏感）
+        # 1. alias 精确匹配 / 子串匹配（双侧归一化）
         for alias in aliases:
-            if not alias:
+            al = normalize_text(alias)
+            if len(al) < 2:
                 continue
-            al = alias.lower()
             if al == q:
                 return entry  # 完全相同直接返回
-            if al in q:
+            if al in q_ext:
                 score = max(score, 0.7)
 
-        # 2. keyword 命中数（大小写不敏感）
-        kw_hits = sum(1 for kw in keywords if kw and kw.lower() in q)
+        # 2. keyword 命中数（双侧归一化，含同义词桥接文本）
+        kw_hits = 0
+        for kw in keywords:
+            kw_norm = normalize_text(kw)
+            if len(kw_norm) >= 2 and kw_norm in q_ext:
+                kw_hits += 1
         if kw_hits:
-            score += min(0.45, kw_hits * 0.15)
+            score += min(0.5, kw_hits * 0.25)
 
-        # 3. title 关键词命中
-        if title:
-            title_tokens = [t for t in title.replace("?", "").replace("？", "").split() if len(t) >= 2]
-            for tok in title_tokens:
-                if tok.lower() in q:
-                    score += 0.1
-                    break
+        # 3. title 整体命中（中文标题无空格，按整体子串比对）
+        title_norm = normalize_text(title)
+        if len(title_norm) >= 4 and title_norm in q:
+            score += 0.2
 
         if score > best_score:
             best_score = score

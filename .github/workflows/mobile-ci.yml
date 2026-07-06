@@ -27,7 +27,9 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
-          node-version: 18
+          # 22+：utils/markdown.js 是无 type 标记的 ESM，Node 18 无模块语法探测会直接
+          # SyntaxError（Node 18 已 EOL；本地开发用 24）
+          node-version: 22
           # 不配 npm 缓存：根 .gitignore 有意忽略 package-lock.json，无 lockfile 时
           # cache-dependency-path 解析失败会让 setup-node 直接报错
 

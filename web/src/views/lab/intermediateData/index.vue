@@ -1762,7 +1762,7 @@
       const prefix = cell.prefix || '';
       const suffix = nextValue.trim();
       const fullValue = prefix + suffix;
-      // K 后缀检测：识别为单片性能刻痕标志（仅在后缀里出现 K 时弹确认）
+      // K 后缀检测：识别为环样性能刻痕标志（仅在后缀里出现 K 时弹确认）
       if (/k$/i.test(suffix)) {
         const isScratched = await confirmScratchByTrailingK(fullValue);
         if (isScratched) {

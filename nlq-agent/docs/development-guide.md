@@ -94,7 +94,7 @@ WrenAI 的三层 Pipeline（Indexing → Retrieval → Generation）被映射到
 | L1 根节点 | Ribbon（带材） | 虚拟节点 |
 | L2 产品层 | ProductSpec（产品规格） | `lab_product_spec` |
 | L2 数据层 | RawDataImport（叠片数据） | `lab_raw_data` |
-| L2 数据层 | MagneticDataImport（单片性能） | `lab_magnetic_raw_data` |
+| L2 数据层 | MagneticDataImport（环样性能） | `lab_magnetic_raw_data` |
 | L2 标识层 | FurnaceNoInput / FurnaceNoParsed | 炉号解析规则 |
 | L3 属性层 | SpecAttribute（扩展属性） | `lab_product_spec_attribute` |
 | L3 字段层 | TemplateField（表字段） | `INFORMATION_SCHEMA.COLUMNS` |

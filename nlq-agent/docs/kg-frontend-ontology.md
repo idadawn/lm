@@ -14,7 +14,7 @@
 | ProductSpec | 产品规格 | `lab_product_spec` | 圆形 | 90×90 | `#F0F5FF` / `#2F54EB` |
 | SpecAttribute | 产品属性 | `lab_product_spec_attribute` | 圆形 | 85×85 | `#FFF0F6` / `#EB2F96` |
 | RawDataImport | 叠片数据 | `lab_raw_data` | 圆形 | 95×95 | `#ECFDF5` / `#10B981` |
-| MagneticDataImport | 单片性能 | `lab_magnetic_raw_data` | 圆形 | 95×95 | `#FEF3C7` / `#F59E0B` |
+| MagneticDataImport | 环样性能 | `lab_magnetic_raw_data` | 圆形 | 95×95 | `#FEF3C7` / `#F59E0B` |
 | IntermediateData | 中间数据 | `lab_intermediate_data` | 圆形 | 90×90 | `#E0F2FE` / `#0EA5E9` |
 | TemplateField | 字段映射 | 各表 `INFORMATION_SCHEMA.COLUMNS` | 圆形 | 70×70 | `#F3F4F6` / `#9CA3AF` |
 | FurnaceNoInput | 原始炉号 | 炉号解析规则 | 圆形 | 90×90 | `#FEF3C7` / `#D97706` |
@@ -39,11 +39,11 @@
 **子节点连线：**
 - `contains` → ProductSpec（包含产品）
 - `importsVia` → RawDataImport（叠片导入）
-- `importsVia` → MagneticDataImport（单片导入）
+- `importsVia` → MagneticDataImport（环样导入）
 - `hasIdentifier` → FurnaceNoInput（原始炉号）
 
 **面板类型：** `ribbonRoot`
-- 折叠面板：产品规格列表 + 产品扩展信息 + 叠片数据字段 + 单片性能字段
+- 折叠面板：产品规格列表 + 产品扩展信息 + 叠片数据字段 + 环样性能字段
 
 ---
 
@@ -128,18 +128,18 @@ WHERE F_TEMPLATE_CODE = 'RawDataImport'
 
 ---
 
-### 2.5 MagneticDataImport（单片性能）
+### 2.5 MagneticDataImport（环样性能）
 
 | 属性 | 值 |
 |-----|-----|
 | ID | `tmpl:{F_Id}` |
-| 显示文本 | **单片性能**（中文业务名） |
+| 显示文本 | **环样性能**（中文业务名） |
 | subtitle | `F_TEMPLATE_NAME` |
 | rawData.targetTable | `lab_magnetic_raw_data` |
 
 **数据来源：** 同 RawDataImport，但 `F_TEMPLATE_CODE = 'MagneticDataImport'`
 
-**父级：** Ribbon（`importsVia`，标签"单片导入"）
+**父级：** Ribbon（`importsVia`，标签"环样导入"）
 
 **子节点：**
 - `hasField` → TemplateField（lab_magnetic_raw_data 表字段）
@@ -319,7 +319,7 @@ F_MATCH_CONFIDENCE, F_IMPORT_ERROR, F_IMPORT_STATUS
 
 | 面板类型 | 触发节点 | 展示内容 |
 |---------|---------|---------|
-| `ribbonRoot` | Ribbon | 折叠面板：产品规格列表 + 扩展属性 + 叠片数据字段 + 单片性能字段 |
+| `ribbonRoot` | Ribbon | 折叠面板：产品规格列表 + 扩展属性 + 叠片数据字段 + 环样性能字段 |
 | `spec` | ProductSpec / RawDataImport / MagneticDataImport / IntermediateData / TemplateField | 编码/名称/目标表 + 表字段列表（数据库字段 \| C#属性 \| 中文注释）+ 导入模板字段映射 |
 | `furnaceNo` | FurnaceNoInput / FurnaceNoParsed / FurnaceNoField | 原始炉号：格式规则+正则+分组+数据库字段；炉号：组成部分+字符含义+方法+数据库字段；字段：中文/C#属性/示例/分组+数据库字段 |
 | `ruleCombo` | 规则组 | 规格/状态/规则列表 |

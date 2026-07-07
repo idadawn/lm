@@ -10,8 +10,6 @@
 #   - data/lightrag 卷持久化，容器删了重建索引还在
 #   - LIGHTRAG_ENABLED=true 是开关，关掉则 nlq-agent 降级到静态 knowledge_base.json
 #   - 共享主项目的 LiteLLM + Neo4j + MySQL 服务（用 external_links 引用）
-version: "3.9"
-
 services:
   nlq-agent:
     build:

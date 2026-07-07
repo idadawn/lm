@@ -116,12 +116,24 @@ class TestValidateSql:
         validate_sql("SELECT * FROM lab_intermediate_data")  # lowercase should be allowed
 
     def test_allowed_tables_list(self) -> None:
-        """Test allowed table names list is complete."""
+        """Test allowed table names list is complete.
+
+        白名单覆盖 chat2sql 只读查询所需的全部 lab_* 域内表——
+        任何新增表都必须显式加入这里，防止白名单被无意放宽到 lab 域之外。
+        """
         expected_tables = [
             "LAB_INTERMEDIATE_DATA",
             "LAB_INTERMEDIATE_DATA_FORMULA",
             "LAB_INTERMEDIATE_DATA_JUDGMENT_LEVEL",
             "LAB_PRODUCT_SPEC",
+            "LAB_PRODUCT_SPEC_ATTRIBUTE",
+            "LAB_PRODUCT_SPEC_VERSION",
+            "LAB_APPEARANCE_FEATURE",
+            "LAB_APPEARANCE_FEATURE_CATEGORY",
+            "LAB_APPEARANCE_FEATURE_LEVEL",
+            "LAB_REPORT_CONFIG",
+            "LAB_RAW_DATA",
+            "LAB_MAGNETIC_RAW_DATA",
         ]
         assert set(ALLOWED_TABLES) == set(expected_tables)
 

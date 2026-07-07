@@ -6,12 +6,14 @@ on:
     paths:
       - "web/**"
       - "scripts/check-reasoning-protocol-sync.ps1"
+      - "nlq-agent/packages/shared-types/**" # reasoning-protocol 上游变更也要触发同步门禁
       - ".github/workflows/web-ci.yml"
   pull_request:
     types: [opened, synchronize]
     paths:
       - "web/**"
       - "scripts/check-reasoning-protocol-sync.ps1"
+      - "nlq-agent/packages/shared-types/**" # reasoning-protocol 上游变更也要触发同步门禁
       - ".github/workflows/web-ci.yml"
   workflow_dispatch:
 

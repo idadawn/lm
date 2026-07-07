@@ -18,4 +18,10 @@ public enum ExcelImportTemplateCode
     /// </summary>
     [Description("磁性数据导入模板")]
     MagneticDataImport,
+
+    /// <summary>
+    /// 单片性能数据导入模板.
+    /// </summary>
+    [Description("单片性能数据导入模板")]
+    SingleSheetImport,
 }

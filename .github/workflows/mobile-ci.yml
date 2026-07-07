@@ -27,9 +27,11 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
-          node-version: 18
-          cache: npm
-          cache-dependency-path: mobile/package-lock.json
+          # 22+：utils/markdown.js 是无 type 标记的 ESM，Node 18 无模块语法探测会直接
+          # SyntaxError（Node 18 已 EOL；本地开发用 24）
+          node-version: 22
+          # 不配 npm 缓存：根 .gitignore 有意忽略 package-lock.json，无 lockfile 时
+          # cache-dependency-path 解析失败会让 setup-node 直接报错
 
       - name: Install
         run: npm install
@@ -78,10 +80,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      - name: Validate manifest.json
-        run: |
-          node -e "JSON.parse(require('fs').readFileSync('mobile/manifest.json','utf8')); console.log('manifest.json: valid JSON')"
-
-      - name: Validate pages.json
-        run: |
-          node -e "JSON.parse(require('fs').readFileSync('mobile/pages.json','utf8')); console.log('pages.json: valid JSON')"
+      # uni-app 的 manifest.json/pages.json 是 jsonc（允许 BOM、注释、尾逗号），
+      # 裸 JSON.parse 会误报——manifest.json 实际带 BOM、pages.json 带注释
+      - name: Validate manifest.json / pages.json (jsonc)
+        run: node mobile/scripts/validate-jsonc.js mobile/manifest.json mobile/pages.json

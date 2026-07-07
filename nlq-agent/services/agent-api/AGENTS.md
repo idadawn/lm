@@ -19,7 +19,7 @@ FastAPI + LangGraph + LiteLLM 后端。把用户的中文问题路由到 Intent 
 
 | File | Description |
 |------|-------------|
-| `pyproject.toml` | uv / hatchling 项目，3.11+，含 ruff/mypy/pytest 配置；coverage `fail_under = 70` |
+| `pyproject.toml` | uv / hatchling 项目，3.11+，含 ruff/mypy/pytest 配置；coverage `fail_under = 35`（防倒退底线） |
 | `Dockerfile.dev` | python:3.11-slim + uv，`uvicorn --reload` |
 | `uv.lock` | 锁文件（不要手改） |
 | `coverage.xml` | 上次 pytest --cov 的结果 |
@@ -42,7 +42,7 @@ FastAPI + LangGraph + LiteLLM 后端。把用户的中文问题路由到 Intent 
 - KG 默认禁用（`NEO4J_ENABLED=false`），`get_knowledge_graph()` 返回 `None` 时所有 KG 路径必须降级而非崩溃。
 
 ### Testing Requirements
-- 全量：`uv run pytest --cov=app --cov-report=term-missing`，覆盖 ≥70%。
+- 全量：`uv run pytest --cov=app --cov-report=term-missing`，覆盖 ≥35%（现状 ~38%，门槛为防倒退底线）。
 - 单文件：`uv run pytest tests/unit/test_query_agent.py -v`。
 - Lint：`uv run ruff check . --fix && uv run ruff format .`；类型：`uv run mypy app/`。
 

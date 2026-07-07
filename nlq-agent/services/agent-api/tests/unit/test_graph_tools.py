@@ -23,7 +23,6 @@ from app.tools.graph_tools import (
     traverse_judgment_path,
 )
 
-
 # --------------------------------------------------------------------------- #
 # Helper-level tests
 # --------------------------------------------------------------------------- #
@@ -247,8 +246,15 @@ async def test_traverse_cypher_exception_returns_fallback() -> None:
 
 @pytest.mark.asyncio
 async def test_traverse_no_identifier_returns_single_fallback() -> None:
-    """Empty furnace AND batch returns a single fallback (no DB call)."""
+    """Empty furnace AND batch returns a single fallback (no DB call).
+
+    fallback 步骤现在还携带 SSE reasoning_step 所需的 id/title/summary/status
+    字段（id 为随机 uuid），故只断言关键业务字段。
+    """
     result = await traverse_judgment_path.ainvoke(
         {"furnace_no": "", "batch_no": None, "target_grade": "C"}
     )
-    assert result == [{"kind": "fallback", "label": "请提供炉号或批次号"}]
+    assert len(result) == 1
+    assert result[0]["kind"] == "fallback"
+    assert result[0]["label"] == "请提供炉号或批次号"
+    assert result[0]["status"] == "warning"

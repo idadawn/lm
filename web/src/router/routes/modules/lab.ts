@@ -66,6 +66,15 @@ const lab: AppRouteModule = {
             },
         },
         {
+            path: 'single-sheet-data',
+            name: 'singleSheet',
+            component: () => import('/@/views/lab/singleSheetData/index.vue'),
+            meta: {
+                title: '单片性能数据',
+                icon: 'ant-design:database-outlined',
+            },
+        },
+        {
             path: 'report-config',
             name: 'ReportConfigList',
             component: () => import('/@/views/lab/reportConfig/index.vue'),

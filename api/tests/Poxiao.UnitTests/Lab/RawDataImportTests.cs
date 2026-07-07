@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using MiniExcelLibs;
 using Moq;
 using Poxiao.Infrastructure.Core.Manager;
@@ -60,6 +61,10 @@ namespace Poxiao.UnitTests.Lab
             // Setup Product Spec Mock
             _mockProductSpecRepo.Setup(x => x.GetList()).Returns(new List<ProductSpecEntity>());
 
+            // ParseExcel 是纯解析逻辑，不触碰任何注入字段；
+            // 构造函数依赖 25+ 个服务（含无法 Mock 的具体类），直接创建未初始化实例供反射调用
+            _service = (RawDataImportSessionService)
+                RuntimeHelpers.GetUninitializedObject(typeof(RawDataImportSessionService));
         }
 
         [Fact]
@@ -97,21 +102,26 @@ namespace Poxiao.UnitTests.Lab
 
             // Act
             // Use reflection to call private method
+            // 签名: ParseExcel(byte[] fileBytes, string fileName, int skipRows,
+            //       ExcelTemplateConfig templateConfig, List<ProductSpecEntity> productSpecs, List<string> ignoredSuffixes)
             var methodInfo = typeof(RawDataImportSessionService).GetMethod(
                 "ParseExcel",
                 BindingFlags.NonPublic | BindingFlags.Instance
             );
             Assert.NotNull(methodInfo);
 
-            var result =
-                methodInfo.Invoke(_service, new object[] { fileBytes, "test.xlsx", 0 })
-                as List<RawDataEntity>;
+            var result = methodInfo.Invoke(
+                _service,
+                new object[] { fileBytes, "test.xlsx", 0, null, new List<ProductSpecEntity>(), null }
+            );
+            var (entities, originalRowCount) = ((List<RawDataEntity>, int))result;
 
             // Assert
-            Assert.NotNull(result);
-            Assert.Equal(2, result.Count);
+            Assert.NotNull(entities);
+            Assert.Equal(2, entities.Count);
+            Assert.Equal(2, originalRowCount);
 
-            var row1 = result[0];
+            var row1 = entities[0];
             Assert.Equal("1甲20251101-1-4-1", row1.FurnaceNo);
             Assert.Equal(1200.5m, row1.Width);
             Assert.Equal(5000.1m, row1.CoilWeight);
@@ -144,13 +154,19 @@ namespace Poxiao.UnitTests.Lab
                 "ParseExcel",
                 BindingFlags.NonPublic | BindingFlags.Instance
             );
-            var result =
-                methodInfo.Invoke(_service, new object[] { fileBytes, "test.xlsx", 0 })
-                as List<RawDataEntity>;
+            var result = methodInfo.Invoke(
+                _service,
+                new object[] { fileBytes, "test.xlsx", 0, null, new List<ProductSpecEntity>(), null }
+            );
+            var (entities, _) = ((List<RawDataEntity>, int))result;
 
             // Assert
-            Assert.NotNull(result);
-            var entity = result[0];
+            Assert.NotNull(entities);
+            var entity = Assert.Single(entities);
+            // 混合表头均应识别为检测列: "1"→Detection1, "检测2"→Detection2, "列3"→Detection3
+            Assert.Equal(11.1m, entity.Detection1);
+            Assert.Equal(22.2m, entity.Detection2);
+            Assert.Equal(33.3m, entity.Detection3);
         }
     }
 }

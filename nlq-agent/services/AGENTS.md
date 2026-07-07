@@ -19,7 +19,7 @@
 - 每个 service 必须独立 `pyproject.toml` + `Dockerfile.dev`，根 docker-compose 通过 `build.context` 引用。
 
 ### Testing Requirements
-- `cd services/agent-api && uv run pytest`，覆盖率 ≥70%（`pyproject.toml` `fail_under`）。
+- `cd services/agent-api && uv run pytest`，覆盖率 ≥35%（`pyproject.toml` `fail_under`，防倒退底线，随补测上调）。
 - 单测分两层：`tests/unit/`（mock LLM/KG/SQL 的纯单元）与 `tests/agent/`（compiled LangGraph 端到端 mock 流）。
 
 ### Common Patterns

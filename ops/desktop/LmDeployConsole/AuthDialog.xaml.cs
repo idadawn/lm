@@ -26,7 +26,7 @@ public partial class AuthDialog : Window
         var auth = UpgradeAuthCode.TryDecode(CodeBox.Text);
         if (auth is null)
         {
-            ErrorText.Text = "授权码无效：请确认完整粘贴了供应商提供的授权码。";
+            ErrorText.Text = "凭据码无效：请确认完整粘贴了供应商提供的凭据码。";
             ErrorText.Visibility = Visibility.Visible;
             return;
         }
@@ -44,7 +44,7 @@ public partial class AuthDialog : Window
 
         try
         {
-            Clipboard.SetText(currentCode);
+            System.Windows.Clipboard.SetText(currentCode);
             CopyButton.Content = "已复制";
         }
         catch (Exception ex)

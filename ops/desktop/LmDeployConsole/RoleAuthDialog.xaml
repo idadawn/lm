@@ -1,8 +1,8 @@
-<Window x:Class="LmDeployConsole.AuthDialog"
+<Window x:Class="LmDeployConsole.RoleAuthDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="OSS 凭据码"
-        Width="540"
+        Title="身份授权"
+        Width="480"
         SizeToContent="Height"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"
@@ -12,18 +12,18 @@
     <StackPanel Margin="20">
         <TextBlock TextWrapping="Wrap"
                    Foreground="#465264"
-                   Text="凭据码由供应商提供，用于在线更新与发布（内含 OSS 访问凭据）。粘贴凭据码后点击保存即可，无需手工编辑配置文件。" />
+                   Text="请输入授权码。管理人员可发布程序；维护人员可下载安装、更新、控制服务和备份数据库。授权码保存在 ops\.env 的 MANAGER_AUTH_CODE / MAINTAINER_AUTH_CODE。" />
 
-        <TextBlock x:Name="StatusText" Margin="0,10,0,0" TextWrapping="Wrap" />
+        <TextBlock x:Name="HintText"
+                   FontFamily="Consolas"
+                   FontSize="12"
+                   Foreground="DarkGreen"
+                   TextWrapping="Wrap"
+                   Margin="0,10,0,0"
+                   Visibility="Collapsed" />
 
-        <TextBlock Text="凭据码" FontWeight="SemiBold" Margin="0,12,0,5" />
-        <TextBox x:Name="CodeBox"
-                 Height="88"
-                 FontFamily="Consolas"
-                 FontSize="12"
-                 TextWrapping="Wrap"
-                 AcceptsReturn="True"
-                 VerticalScrollBarVisibility="Auto" />
+        <TextBlock Text="授权码" FontWeight="SemiBold" Margin="0,12,0,5" />
+        <PasswordBox x:Name="CodeBox" Height="30" />
 
         <TextBlock x:Name="ErrorText"
                    Foreground="DarkRed"
@@ -32,18 +32,12 @@
                    Visibility="Collapsed" />
 
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
-            <Button x:Name="CopyButton"
-                    Content="复制当前凭据码"
-                    Width="128"
-                    Height="32"
-                    Margin="0,0,8,0"
-                    Click="Copy_Click" />
-            <Button Content="保存"
+            <Button Content="授权"
                     Width="88"
                     Height="32"
                     Margin="0,0,8,0"
                     IsDefault="True"
-                    Click="Save_Click" />
+                    Click="Ok_Click" />
             <Button Content="取消"
                     Width="88"
                     Height="32"

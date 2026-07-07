@@ -5,6 +5,7 @@ using System.IO;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
@@ -15,9 +16,9 @@ using System.Windows.Threading;
 using Microsoft.Win32;
 using Drawing = System.Drawing;
 using Forms = System.Windows.Forms;
-// UseWindowsForms 会隐式全局 using System.Windows.Forms，与 WPF 同名类型冲突，须显式别名
-using MessageBox = System.Windows.MessageBox;
-using TextBox = System.Windows.Controls.TextBox;
+using WpfCheckBox = System.Windows.Controls.CheckBox;
+using WpfMessageBox = System.Windows.MessageBox;
+using WpfTextBox = System.Windows.Controls.TextBox;
 
 namespace LmDeployConsole;
 
@@ -29,6 +30,8 @@ public sealed record ServiceItem(
     string ScriptKey,
     string LogName,
     bool IsPortOnly = false);
+
+public sealed record StoreItem(string Key, string Title);
 
 public sealed class ServiceStatusRow : INotifyPropertyChanged
 {
@@ -85,6 +88,13 @@ public sealed class ServiceStatusRow : INotifyPropertyChanged
 
 public sealed record ScriptResult(int ExitCode, string Output);
 
+public enum UserRole
+{
+    None,
+    Maintainer,
+    Manager
+}
+
 public partial class MainWindow : Window
 {
     private const string AppSettingsKeyPath = @"Software\LmDeployConsole";
@@ -101,15 +111,39 @@ public partial class MainWindow : Window
         new("rabbitmq-mgmt", "RabbitMQ UI", "RABBITMQ_MANAGEMENT_PORT", 15672, "rabbitmq-mgmt", "lm-rabbitmq", true)
     ];
 
+    private readonly List<StoreItem> prereqItems =
+    [
+        new("nssm", "NSSM"),
+        new("nginx", "nginx"),
+        new("redis", "Redis"),
+        new("erlang", "Erlang"),
+        new("rabbitmq", "RabbitMQ")
+    ];
+
+    private readonly List<StoreItem> infraItems =
+    [
+        new("redis", "Redis 服务"),
+        new("rabbitmq", "RabbitMQ 服务")
+    ];
+
+    private readonly List<StoreItem> appItems =
+    [
+        new("web", "Web 网关"),
+        new("api", "后端 API"),
+        new("nlq-agent", "智能体")
+    ];
+
     private readonly ObservableCollection<ServiceStatusRow> statusRows = [];
     private readonly Dictionary<string, ServiceStatusRow> rowsByName = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, TextBox> logBoxes = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, WpfTextBox> logBoxes = new(StringComparer.OrdinalIgnoreCase);
     private readonly DispatcherTimer refreshTimer = new() { Interval = TimeSpan.FromSeconds(5) };
     private readonly HttpClient httpClient = new() { Timeout = TimeSpan.FromSeconds(5) };
+    private readonly List<string> startupNotices = [];
     private readonly string scriptsDir;
     private readonly string envPath;
     private Dictionary<string, string> env = new(StringComparer.OrdinalIgnoreCase);
     private Forms.NotifyIcon? trayIcon;
+    private UserRole role = UserRole.None;
     private bool busy;
     private bool refreshing;
     private bool reallyExit;
@@ -120,11 +154,11 @@ public partial class MainWindow : Window
         scriptsDir = FindScriptsDir();
         envPath = Path.Combine(scriptsDir, ".env");
 
-        ScriptsDirBox.Text = scriptsDir;
-        AdminText.Text = IsAdministrator() ? "管理员权限：是" : "管理员权限：否，请用管理员身份启动";
-        AdminText.Foreground = IsAdministrator()
-            ? System.Windows.Media.Brushes.DarkGreen
-            : System.Windows.Media.Brushes.DarkRed;
+        EnsureEnvFile();
+        EnsureAuthCodesInEnv();
+        AddChoiceBoxes(PrereqChecks, prereqItems, true);
+        AddChoiceBoxes(InfraChecks, infraItems, true);
+        AddChoiceBoxes(AppChecks, appItems, true);
 
         foreach (var item in services)
         {
@@ -141,22 +175,30 @@ public partial class MainWindow : Window
             rowsByName[item.Name] = row;
         }
         ServiceGrid.ItemsSource = statusRows;
-
         BuildLogTabs();
+
         InitializeTrayIcon();
         LoadLocalSettings();
         ReloadEnv();
         FillSettingsFields();
-        UpdateAuthStatus();
+        UpdateRowPorts();
+        SetAdminText();
+        UpdateOssStatus();
+        ApplyRolePermissions();
 
         Loaded += async (_, _) =>
         {
-            LogDeploy("WPF 部署控制台已启动。");
-            if (!IsAuthorized())
+            Log("部署控制台已启动。");
+            foreach (var notice in startupNotices)
             {
-                LogDeploy("未检测到升级授权码，如需在线升级请输入授权码。");
-                ShowAuthDialog();
+                Log(notice);
             }
+
+            if (role == UserRole.None)
+            {
+                ShowRoleDialog(startupNotices.Count > 0 ? string.Join(Environment.NewLine, startupNotices) : null);
+            }
+
             await RefreshStatusAsync();
         };
 
@@ -199,220 +241,235 @@ public partial class MainWindow : Window
         }
     }
 
-    private void DownloadPrereqs_Click(object sender, RoutedEventArgs e) => RunScript("下载基础软件", "download-prereqs.ps1");
-    private void RenderConfig_Click(object sender, RoutedEventArgs e) => RunScript("渲染配置", "render-config.ps1");
-    private void DeployAll_Click(object sender, RoutedEventArgs e) => RunScript("一键部署/更新", "deploy-all.ps1");
-    private void RestartAsAdmin_Click(object sender, RoutedEventArgs e) => RestartAsAdministrator();
-    private void StartSelected_Click(object sender, RoutedEventArgs e) => RunServiceCommand("start");
-    private void StopSelected_Click(object sender, RoutedEventArgs e) => RunServiceCommand("stop");
-    private void RestartSelected_Click(object sender, RoutedEventArgs e) => RunServiceCommand("restart");
-    private async void Refresh_Click(object sender, RoutedEventArgs e) => await RefreshStatusAsync();
-    private async void HealthCheck_Click(object sender, RoutedEventArgs e) => await HealthCheck();
-    private void OpenSite_Click(object sender, RoutedEventArgs e) => OpenSite();
-    private void OpenLogs_Click(object sender, RoutedEventArgs e) => OpenLogsDir();
-    private void ClearOutput_Click(object sender, RoutedEventArgs e) => OutputBox.Clear();
-    private void ClearServiceOutput_Click(object sender, RoutedEventArgs e) => ServiceOutputBox.Clear();
-    private void AuthSetup_Click(object sender, RoutedEventArgs e) => ShowAuthDialog();
-    private async void RefreshLog_Click(object sender, RoutedEventArgs e) => await LoadCurrentLogTabAsync();
-    private async void LogTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    // ──── 身份授权（管理人员/维护人员）────
+
+    private void Authorize_Click(object sender, RoutedEventArgs e) => ShowRoleDialog();
+
+    private void Logout_Click(object sender, RoutedEventArgs e)
     {
-        if (!ReferenceEquals(e.OriginalSource, LogTabs))
+        role = UserRole.None;
+        ApplyRolePermissions();
+        Log("已退出授权。");
+    }
+
+    private void ShowRoleDialog(string? hint = null)
+    {
+        var dialog = new RoleAuthDialog(hint, TryAuthorizeCode);
+        if (IsLoaded)
+        {
+            dialog.Owner = this;
+        }
+        else
+        {
+            dialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        }
+
+        dialog.ShowDialog();
+        ApplyRolePermissions();
+    }
+
+    private bool TryAuthorizeCode(string code)
+    {
+        ReloadEnv();
+        var managerCode = EnvValue("MANAGER_AUTH_CODE", "");
+        var maintainerCode = EnvValue("MAINTAINER_AUTH_CODE", "");
+
+        if (FixedEquals(code, managerCode))
+        {
+            role = UserRole.Manager;
+        }
+        else if (FixedEquals(code, maintainerCode))
+        {
+            role = UserRole.Maintainer;
+        }
+        else
+        {
+            return false;
+        }
+
+        ApplyRolePermissions();
+        Log($"已切换授权：{RoleName(role)}。");
+        return true;
+    }
+
+    private bool RequireMaintainer()
+    {
+        if (role is UserRole.Maintainer or UserRole.Manager)
+        {
+            return true;
+        }
+
+        var choice = WpfMessageBox.Show(
+            "此操作需要维护人员或管理人员授权。现在输入授权码吗？",
+            "需要授权",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+        if (choice == MessageBoxResult.Yes)
+        {
+            ShowRoleDialog();
+        }
+
+        return role is UserRole.Maintainer or UserRole.Manager;
+    }
+
+    private bool RequireManager()
+    {
+        if (role == UserRole.Manager)
+        {
+            return true;
+        }
+
+        var choice = WpfMessageBox.Show(
+            "发布程序需要管理人员授权。现在输入授权码吗？",
+            "需要管理人员授权",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+        if (choice == MessageBoxResult.Yes)
+        {
+            ShowRoleDialog();
+        }
+
+        return role == UserRole.Manager;
+    }
+
+    private void ApplyRolePermissions()
+    {
+        var canUse = !busy && role is UserRole.Maintainer or UserRole.Manager;
+        var canPublish = !busy && role == UserRole.Manager;
+
+        InstallPanel.IsEnabled = canUse;
+        UpdatePanel.IsEnabled = canUse;
+        ServicePanel.IsEnabled = canUse;
+        BackupPanel.IsEnabled = canUse;
+        PublishPanel.Visibility = canPublish ? Visibility.Visible : Visibility.Collapsed;
+        PublishPanel.IsEnabled = canPublish;
+
+        RoleText.Text = "当前身份：" + RoleName(role);
+        RoleText.Foreground = role == UserRole.None
+            ? System.Windows.Media.Brushes.DarkRed
+            : System.Windows.Media.Brushes.DarkGreen;
+        AuthorizeButton.Content = role == UserRole.None ? "输入授权码" : "切换授权";
+    }
+
+    private static string RoleName(UserRole currentRole) => currentRole switch
+    {
+        UserRole.Manager => "管理人员",
+        UserRole.Maintainer => "维护人员",
+        _ => "未授权"
+    };
+
+    private static bool FixedEquals(string left, string right)
+    {
+        if (string.IsNullOrWhiteSpace(left) || string.IsNullOrWhiteSpace(right))
+        {
+            return false;
+        }
+
+        return string.Equals(left.Trim(), right.Trim(), StringComparison.Ordinal);
+    }
+
+    private void EnsureEnvFile()
+    {
+        if (File.Exists(envPath))
         {
             return;
         }
-        await LoadCurrentLogTabAsync();
-    }
 
-    private void PublishToolPatch_Click(object sender, RoutedEventArgs e)
-    {
-        if (!EnsureAuthorized("发布工具补丁"))
+        var example = Path.Combine(scriptsDir, ".env.example");
+        if (File.Exists(example))
         {
-            return;
-        }
-        RunScript("发布工具补丁到 OSS", "publish-release.ps1", "-PackageMode ToolPatch");
-    }
-
-    private void PublishFullRelease_Click(object sender, RoutedEventArgs e)
-    {
-        if (!EnsureAuthorized("发布完整版本"))
-        {
-            return;
-        }
-        RunScript("发布完整版本到 OSS", "publish-release.ps1", "-PackageMode Full");
-    }
-
-    private void PublishAllAssets_Click(object sender, RoutedEventArgs e)
-    {
-        if (!EnsureAuthorized("发布完整部署资源"))
-        {
-            return;
-        }
-        RunScript("发布完整部署资源到 OSS（基础软件+控制台包+完整包）", "publish-all-assets.ps1");
-    }
-
-    private void SaveSettings_Click(object sender, RoutedEventArgs e)
-    {
-        if (!SaveSettingsToEnv())
-        {
-            return;
-        }
-
-        LogDeploy("部署设置已保存。");
-        if (FirewallBox.IsChecked == true)
-        {
-            RunScript("放行 Web 端口", "configure-firewall.ps1");
+            File.Copy(example, envPath, overwrite: false);
         }
     }
 
-    private void BackupNow_Click(object sender, RoutedEventArgs e) => RunScript("立即备份数据库", "backup-database.ps1", "-RunNow");
-    private void InstallBackupSchedule_Click(object sender, RoutedEventArgs e)
+    private void EnsureAuthCodesInEnv()
     {
-        if (SaveSettingsToEnv())
-        {
-            RunScript("启用每日备份", "backup-database.ps1", "-InstallSchedule");
-        }
-    }
-    private void RemoveBackupSchedule_Click(object sender, RoutedEventArgs e) => RunScript("关闭每日备份", "backup-database.ps1", "-RemoveSchedule");
+        var current = File.Exists(envPath)
+            ? ReadDotEnv(envPath)
+            : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var updates = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-    private void BrowseDeployRoot_Click(object sender, RoutedEventArgs e)
-    {
-        using var dialog = new Forms.FolderBrowserDialog
+        if (string.IsNullOrWhiteSpace(current.GetValueOrDefault("MANAGER_AUTH_CODE", "")))
         {
-            Description = "选择部署目录",
-            UseDescriptionForTitle = true,
-            SelectedPath = Directory.Exists(DeployRootEditBox.Text) ? DeployRootEditBox.Text : @"D:\deploy\lab"
-        };
-
-        if (dialog.ShowDialog() == Forms.DialogResult.OK)
-        {
-            DeployRootEditBox.Text = dialog.SelectedPath;
+            updates["MANAGER_AUTH_CODE"] = GenerateAuthorizationCode("MGR");
+            startupNotices.Add("首次启动已生成管理人员授权码：" + updates["MANAGER_AUTH_CODE"]);
         }
-    }
 
-    private async void AutoStart_Click(object sender, RoutedEventArgs e)
-    {
-        try
+        if (string.IsNullOrWhiteSpace(current.GetValueOrDefault("MAINTAINER_AUTH_CODE", "")))
         {
-            await SetAutoStartAsync(AutoStartBox.IsChecked == true);
-            LogDeploy(AutoStartBox.IsChecked == true ? "已开启开机自启动。" : "已关闭开机自启动。");
+            updates["MAINTAINER_AUTH_CODE"] = GenerateAuthorizationCode("MNT");
+            startupNotices.Add("首次启动已生成维护人员授权码：" + updates["MAINTAINER_AUTH_CODE"]);
         }
-        catch (Exception ex)
+
+        if (updates.Count > 0)
         {
-            AutoStartBox.IsChecked = IsAutoStartEnabled();
-            MessageBox.Show("设置开机自启动失败：" + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            WriteEnvUpdates(updates);
+            startupNotices.Add("授权码已写入 ops\\.env，请妥善保存。");
         }
     }
 
-    private void TraySetting_Click(object sender, RoutedEventArgs e)
+    private static string GenerateAuthorizationCode(string roleCode)
     {
-        SaveBoolSetting("TrayOnMinimize", TrayOnMinimizeBox.IsChecked == true);
-        SaveBoolSetting("CloseToTray", CloseToTrayBox.IsChecked == true);
-    }
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        var builder = new StringBuilder("LM-");
+        builder.Append(roleCode);
 
-    private void HideToTray_Click(object sender, RoutedEventArgs e) => HideToTray(showTip: true);
-
-    private void CheckUpgrade_Click(object sender, RoutedEventArgs e)
-    {
-        if (!EnsureAuthorized("检查更新"))
+        for (var group = 0; group < 4; group++)
         {
-            return;
+            builder.Append('-');
+            for (var index = 0; index < 5; index++)
+            {
+                builder.Append(chars[RandomNumberGenerator.GetInt32(chars.Length)]);
+            }
         }
-        RunScript("检查更新", "upgrade.ps1", "-CheckOnly");
+
+        return builder.ToString();
     }
 
-    private void RunUpgrade_Click(object sender, RoutedEventArgs e)
-    {
-        if (!EnsureAuthorized("在线升级"))
-        {
-            return;
-        }
-        RunScript("立即在线升级", "upgrade.ps1");
-    }
+    // ──── OSS 凭据码（在线升级/发布所需）────
 
-    private void InstallAutoUpgrade_Click(object sender, RoutedEventArgs e)
-    {
-        if (!EnsureAuthorized("安装自动升级"))
-        {
-            return;
-        }
-        RunScript("安装自动升级", "install-auto-upgrade.ps1");
-    }
+    private void OssAuth_Click(object sender, RoutedEventArgs e) => ShowOssDialog();
 
-    private void InstallInfra_Click(object sender, RoutedEventArgs e)
-    {
-        var selected = SelectedServices()
-            .Where(s => s.ScriptKey is "redis" or "rabbitmq")
-            .Select(s => s.ScriptKey)
-            .Distinct()
-            .ToArray();
-        var args = selected.Length > 0 ? "-Only " + string.Join(",", selected) : "";
-        RunScript("安装基础服务", "install-infra.ps1", args);
-    }
-
-    private void InstallApps_Click(object sender, RoutedEventArgs e)
-    {
-        var selected = SelectedServices()
-            .Where(s => s.ScriptKey is "api" or "web" or "nlq-agent")
-            .Select(s => s.ScriptKey)
-            .Distinct()
-            .ToArray();
-        var args = selected.Length > 0
-            ? "-Only " + string.Join(",", selected) + " -SkipBuild"
-            : "-SkipBuild";
-        RunScript("安装应用服务", "install-services.ps1", args);
-    }
-
-    // ──── 升级授权码 ────
-
-    private bool IsAuthorized()
+    private bool IsOssConfigured()
     {
         return EnvValue("OSS_BUCKET", "").Length > 0
             && EnvValue("OSS_ACCESS_KEY_ID", "").Length > 0
             && EnvValue("OSS_ACCESS_KEY_SECRET", "").Length > 0;
     }
 
-    private void UpdateAuthStatus()
+    private void UpdateOssStatus()
     {
-        if (IsAuthorized())
-        {
-            AuthText.Text = $"升级授权：已配置（{EnvValue("OSS_BUCKET", "")}）";
-            AuthText.Foreground = System.Windows.Media.Brushes.DarkGreen;
-            AuthButton.Content = "修改授权码";
-        }
-        else
-        {
-            AuthText.Text = "升级授权：未配置，在线升级前请输入授权码";
-            AuthText.Foreground = System.Windows.Media.Brushes.DarkRed;
-            AuthButton.Content = "输入授权码";
-        }
+        OssStatusText.Text = IsOssConfigured()
+            ? $"OSS 凭据：已配置（{EnvValue("OSS_BUCKET", "")}）"
+            : "OSS 凭据：未配置。在线更新与发布前请先配置凭据码（由供应商提供）。";
     }
 
-    private bool EnsureAuthorized(string action)
+    private bool EnsureOssConfigured(string action)
     {
         ReloadEnv();
-        if (IsAuthorized())
+        if (IsOssConfigured())
         {
             return true;
         }
 
-        var choice = MessageBox.Show(
-            $"{action}需要升级授权码（含 OSS 访问凭据），当前尚未配置。现在输入授权码吗？",
-            "需要授权",
+        var choice = WpfMessageBox.Show(
+            $"{action}需要 OSS 凭据码（由供应商提供），当前尚未配置。现在输入吗？",
+            "需要 OSS 凭据",
             MessageBoxButton.YesNo,
             MessageBoxImage.Question);
         if (choice == MessageBoxResult.Yes)
         {
-            ShowAuthDialog();
+            ShowOssDialog();
         }
 
         ReloadEnv();
-        return IsAuthorized();
+        return IsOssConfigured();
     }
 
-    private void ShowAuthDialog()
+    private void ShowOssDialog()
     {
         ReloadEnv();
-        var configured = IsAuthorized();
+        var configured = IsOssConfigured();
         var status = configured
             ? $"当前状态：已配置（Bucket：{EnvValue("OSS_BUCKET", "")}）"
             : "当前状态：未配置";
@@ -439,200 +496,254 @@ public partial class MainWindow : Window
         {
             try
             {
-                SaveAuthToEnv(auth);
-                LogDeploy($"授权码已保存（Bucket：{auth.Bucket}）。");
+                var updates = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["OSS_BUCKET"] = auth.Bucket,
+                    ["OSS_ACCESS_KEY_ID"] = auth.AccessKeyId,
+                    ["OSS_ACCESS_KEY_SECRET"] = auth.AccessKeySecret
+                };
+                if (auth.Endpoint.Length > 0)
+                {
+                    updates["OSS_ENDPOINT"] = auth.Endpoint;
+                }
+                if (auth.Prefix.Length > 0)
+                {
+                    updates["OSS_PREFIX"] = auth.Prefix;
+                }
+                WriteEnvUpdates(updates);
+                Log($"OSS 凭据码已保存（Bucket：{auth.Bucket}）。");
             }
             catch (Exception ex)
             {
-                MessageBox.Show("保存授权码失败：" + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+                WpfMessageBox.Show("保存 OSS 凭据码失败：" + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
         ReloadEnv();
-        UpdateAuthStatus();
+        UpdateOssStatus();
     }
 
-    private void SaveAuthToEnv(UpgradeAuth auth)
+    // ──── 安装 ────
+
+    private async void SaveSettings_Click(object sender, RoutedEventArgs e)
     {
-        var examplePath = Path.Combine(scriptsDir, ".env.example");
-        List<string> lines;
-        if (File.Exists(envPath))
+        if (!RequireMaintainer())
         {
-            lines = File.ReadAllLines(envPath, Encoding.UTF8).ToList();
-        }
-        else if (File.Exists(examplePath))
-        {
-            lines = File.ReadAllLines(examplePath, Encoding.UTF8).ToList();
-        }
-        else
-        {
-            lines = [];
+            return;
         }
 
-        if (auth.Endpoint.Length > 0)
+        if (!SaveSettingsToEnv())
         {
-            SetEnvLine(lines, "OSS_ENDPOINT", auth.Endpoint);
-        }
-        SetEnvLine(lines, "OSS_BUCKET", auth.Bucket);
-        SetEnvLine(lines, "OSS_ACCESS_KEY_ID", auth.AccessKeyId);
-        SetEnvLine(lines, "OSS_ACCESS_KEY_SECRET", auth.AccessKeySecret);
-        if (auth.Prefix.Length > 0)
-        {
-            SetEnvLine(lines, "OSS_PREFIX", auth.Prefix);
+            return;
         }
 
-        File.WriteAllLines(envPath, lines, new UTF8Encoding(false));
+        Log("部署设置已保存。");
+        if (FirewallBox.IsChecked == true)
+        {
+            await RunScriptAsync("放行 Web 端口", "configure-firewall.ps1");
+        }
     }
 
-    private static void SetEnvLine(List<string> lines, string key, string value)
+    private async void DownloadSelectedPrereqs_Click(object sender, RoutedEventArgs e)
     {
-        var pattern = new Regex(@"^\s*" + Regex.Escape(key) + @"\s*=", RegexOptions.IgnoreCase);
-        for (var i = 0; i < lines.Count; i++)
+        if (!RequireMaintainer() || !SaveSettingsToEnv())
         {
-            if (pattern.IsMatch(lines[i]))
-            {
-                lines[i] = $"{key}={value}";
-                return;
-            }
+            return;
         }
-        lines.Add($"{key}={value}");
+
+        var selected = SelectedTags(PrereqChecks);
+        if (selected.Length == 0)
+        {
+            WpfMessageBox.Show("请先勾选要下载的基础软件。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (string.Equals(EnvValue("PREREQ_SOURCE", "OSS"), "OSS", StringComparison.OrdinalIgnoreCase) && !IsOssConfigured())
+        {
+            Log("提示：未配置 OSS 凭据，基础软件将回退到公网下载地址。");
+        }
+
+        await RunScriptAsync("下载基础软件", "download-prereqs.ps1", "-Only " + string.Join(",", selected));
     }
 
-    // ──── 部署设置（部署位置 / 端口 / 备份参数）────
-
-    private void FillSettingsFields()
+    private async void InstallSelected_Click(object sender, RoutedEventArgs e)
     {
-        DeployRootEditBox.Text = EnvValue("DEPLOY_ROOT", @"D:\deploy\lab");
-        WebPortBox.Text = PortFor("WEB_PORT", 80).ToString();
-        ApiPortBox.Text = PortFor("API_PORT", 10089).ToString();
-        NlqPortBox.Text = PortFor("NLQ_PORT", 8000).ToString();
-        RedisPortBox.Text = PortFor("REDIS_PORT", 6380).ToString();
-        RabbitPortBox.Text = PortFor("RABBITMQ_PORT", 8005).ToString();
-        RabbitMgmtPortBox.Text = PortFor("RABBITMQ_MANAGEMENT_PORT", 15672).ToString();
-        DbPortBox.Text = PortFor("DB_PORT", 3306).ToString();
-        BackupTimeBox.Text = EnvValue("DB_BACKUP_TIME", "02:30");
-        BackupKeepDaysBox.Text = EnvValue("DB_BACKUP_KEEP_DAYS", "14");
+        if (!RequireMaintainer() || !SaveSettingsToEnv())
+        {
+            return;
+        }
+
+        var infra = SelectedTags(InfraChecks);
+        var apps = SelectedTags(AppChecks);
+        if (infra.Length == 0 && apps.Length == 0)
+        {
+            WpfMessageBox.Show("请先勾选要安装的服务。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        if (FirewallBox.IsChecked == true)
+        {
+            await RunScriptAsync("放行 Web 端口", "configure-firewall.ps1");
+        }
+
+        if (infra.Length > 0)
+        {
+            await RunScriptAsync("安装基础服务", "install-infra.ps1", "-Only " + string.Join(",", infra));
+        }
+
+        if (apps.Length > 0)
+        {
+            await RunScriptAsync("安装应用服务", "install-services.ps1", "-Only " + string.Join(",", apps) + " -SkipBuild");
+        }
     }
 
-    private bool SaveSettingsToEnv()
+    // ──── 更新与发布 ────
+
+    private async void RunUpgrade_Click(object sender, RoutedEventArgs e)
     {
-        if (!TryReadPort(WebPortBox, "Web 入口", out var webPort) ||
-            !TryReadPort(ApiPortBox, "API", out var apiPort) ||
-            !TryReadPort(NlqPortBox, "智能体", out var nlqPort) ||
-            !TryReadPort(RedisPortBox, "Redis", out var redisPort) ||
-            !TryReadPort(RabbitPortBox, "RabbitMQ", out var rabbitPort) ||
-            !TryReadPort(RabbitMgmtPortBox, "RabbitMQ 管理台", out var rabbitMgmtPort) ||
-            !TryReadPort(DbPortBox, "MySQL", out var dbPort))
+        if (!RequireMaintainer() || !SaveSettingsToEnv() || !EnsureOssConfigured("在线更新"))
         {
-            return false;
+            return;
         }
 
-        var backupTime = BackupTimeBox.Text.Trim();
-        if (!Regex.IsMatch(backupTime, @"^\d{2}:\d{2}$") || !TimeSpan.TryParse(backupTime, out _))
+        await RunScriptAsync("检查并更新", "upgrade.ps1");
+    }
+
+    private async void InstallAutoUpgrade_Click(object sender, RoutedEventArgs e)
+    {
+        if (!RequireMaintainer() || !SaveSettingsToEnv() || !EnsureOssConfigured("自动更新"))
         {
-            MessageBox.Show("每日备份时间请填写 HH:mm，例如 02:30。", "备份时间格式错误", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return false;
+            return;
         }
 
-        if (!int.TryParse(BackupKeepDaysBox.Text.Trim(), out var keepDays) || keepDays < 1 || keepDays > 3650)
+        await RunScriptAsync("安装每日自动更新任务", "install-auto-upgrade.ps1");
+    }
+
+    private async void PublishToolPatch_Click(object sender, RoutedEventArgs e)
+    {
+        if (RequireManager() && SaveSettingsToEnv() && EnsureOssConfigured("发布"))
         {
-            MessageBox.Show("备份保留天数请填写 1-3650 的数字。", "备份设置错误", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return false;
+            await RunScriptAsync("发布工具补丁到 OSS", "publish-release.ps1", "-PackageMode ToolPatch");
         }
+    }
 
-        var root = DeployRootEditBox.Text.Trim();
-        if (string.IsNullOrWhiteSpace(root))
+    private async void PublishFullRelease_Click(object sender, RoutedEventArgs e)
+    {
+        if (RequireManager() && SaveSettingsToEnv() && EnsureOssConfigured("发布"))
         {
-            MessageBox.Show("请选择部署目录。", "部署设置错误", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return false;
+            await RunScriptAsync("发布完整部署资源到 OSS", "publish-all-assets.ps1");
         }
+    }
 
-        root = Path.GetFullPath(root);
-        Directory.CreateDirectory(root);
-        DeployRootEditBox.Text = root;
+    // ──── 服务控制 ────
 
-        var updates = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    private void StartSelected_Click(object sender, RoutedEventArgs e) => RunServiceCommand("start");
+    private void StopSelected_Click(object sender, RoutedEventArgs e) => RunServiceCommand("stop");
+    private void RestartSelected_Click(object sender, RoutedEventArgs e) => RunServiceCommand("restart");
+    private async void Refresh_Click(object sender, RoutedEventArgs e) => await RefreshStatusAsync();
+
+    private async void HealthCheck_Click(object sender, RoutedEventArgs e)
+    {
+        if (RequireMaintainer())
         {
-            ["DEPLOY_ROOT"] = root,
-            ["NLQ_DIR"] = Path.Combine(root, "nlq-agent"),
-            ["NSSM_EXE"] = Path.Combine(root, "nssm.exe"),
-            ["NGINX_EXE"] = Path.Combine(root, "nginx", "nginx.exe"),
-            ["WEB_PORT"] = webPort.ToString(),
-            ["API_PORT"] = apiPort.ToString(),
-            ["NLQ_PORT"] = nlqPort.ToString(),
-            ["REDIS_PORT"] = redisPort.ToString(),
-            ["RABBITMQ_PORT"] = rabbitPort.ToString(),
-            ["RABBITMQ_MANAGEMENT_PORT"] = rabbitMgmtPort.ToString(),
-            ["DB_PORT"] = dbPort.ToString(),
-            ["DB_BACKUP_TIME"] = backupTime,
-            ["DB_BACKUP_KEEP_DAYS"] = keepDays.ToString()
+            await HealthCheck();
+        }
+    }
+
+    private void OpenSite_Click(object sender, RoutedEventArgs e) => OpenSite();
+
+    private void OpenLogs_Click(object sender, RoutedEventArgs e)
+    {
+        if (RequireMaintainer())
+        {
+            OpenLogsDir();
+        }
+    }
+
+    private async void RefreshLog_Click(object sender, RoutedEventArgs e) => await LoadCurrentLogTabAsync();
+
+    private async void LogTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!ReferenceEquals(e.OriginalSource, LogTabs))
+        {
+            return;
+        }
+        await LoadCurrentLogTabAsync();
+    }
+
+    private void ClearServiceOutput_Click(object sender, RoutedEventArgs e) => ServiceOutputBox.Clear();
+
+    // ──── 备份 ────
+
+    private async void BackupNow_Click(object sender, RoutedEventArgs e)
+    {
+        if (RequireMaintainer() && SaveSettingsToEnv())
+        {
+            await RunScriptAsync("立即备份数据库", "backup-database.ps1", "-RunNow");
+        }
+    }
+
+    private async void InstallBackupSchedule_Click(object sender, RoutedEventArgs e)
+    {
+        if (RequireMaintainer() && SaveSettingsToEnv())
+        {
+            await RunScriptAsync("启用每日备份", "backup-database.ps1", "-InstallSchedule");
+        }
+    }
+
+    private async void RemoveBackupSchedule_Click(object sender, RoutedEventArgs e)
+    {
+        if (RequireMaintainer())
+        {
+            await RunScriptAsync("关闭每日备份", "backup-database.ps1", "-RemoveSchedule");
+        }
+    }
+
+    // ──── 运行设置 ────
+
+    private void BrowseDeployRoot_Click(object sender, RoutedEventArgs e)
+    {
+        using var dialog = new Forms.FolderBrowserDialog
+        {
+            Description = "选择部署目录",
+            UseDescriptionForTitle = true,
+            SelectedPath = Directory.Exists(DeployRootBox.Text) ? DeployRootBox.Text : @"D:\deploy\lab"
         };
 
-        WriteEnvUpdates(updates);
-        ReloadEnv();
-        FillSettingsFields();
-        _ = RefreshStatusAsync();
-        return true;
+        if (dialog.ShowDialog() == Forms.DialogResult.OK)
+        {
+            DeployRootBox.Text = dialog.SelectedPath;
+        }
     }
 
-    private static bool TryReadPort(TextBox box, string name, out int port)
+    private async void AutoStart_Click(object sender, RoutedEventArgs e)
     {
-        if (int.TryParse(box.Text.Trim(), out port) && port is >= 1 and <= 65535)
+        try
         {
-            return true;
+            await SetAutoStartAsync(AutoStartBox.IsChecked == true);
+            Log(AutoStartBox.IsChecked == true ? "已开启开机自启动。" : "已关闭开机自启动。");
         }
-
-        MessageBox.Show($"{name} 端口必须是 1-65535 的数字。", "端口格式错误", MessageBoxButton.OK, MessageBoxImage.Warning);
-        return false;
+        catch (Exception ex)
+        {
+            AutoStartBox.IsChecked = IsAutoStartEnabled();
+            WpfMessageBox.Show("设置开机自启动失败：" + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
-    private void WriteEnvUpdates(Dictionary<string, string> updates)
+    private void TraySetting_Click(object sender, RoutedEventArgs e)
     {
-        var examplePath = Path.Combine(scriptsDir, ".env.example");
-        List<string> lines;
-        if (File.Exists(envPath))
-        {
-            lines = File.ReadAllLines(envPath, Encoding.UTF8).ToList();
-        }
-        else if (File.Exists(examplePath))
-        {
-            lines = File.ReadAllLines(examplePath, Encoding.UTF8).ToList();
-        }
-        else
-        {
-            lines = [];
-        }
-
-        foreach (var (key, value) in updates)
-        {
-            SetEnvLine(lines, key, value);
-        }
-
-        File.WriteAllLines(envPath, lines, new UTF8Encoding(false));
+        SaveBoolSetting("TrayOnMinimize", TrayOnMinimizeBox.IsChecked == true);
+        SaveBoolSetting("CloseToTray", CloseToTrayBox.IsChecked == true);
     }
 
-    // ──── 脚本与服务命令 ────
+    private void HideToTray_Click(object sender, RoutedEventArgs e) => HideToTray(showTip: true);
+    private void ClearOutput_Click(object sender, RoutedEventArgs e) => OutputBox.Clear();
 
-    private async void RunScript(string title, string scriptName, string extraArgs = "")
-    {
-        if (!CanRunTask())
-        {
-            return;
-        }
-
-        var scriptPath = Path.Combine(scriptsDir, scriptName);
-        if (!File.Exists(scriptPath))
-        {
-            MessageBox.Show($"找不到脚本：{scriptPath}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
-            return;
-        }
-
-        await RunTask(title, $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\" {extraArgs}".Trim(), OutputBox);
-    }
+    // ──── 任务执行 ────
 
     private async void RunServiceCommand(string action)
     {
-        if (!CanRunTask())
+        if (!RequireMaintainer() || !CanRunTask())
         {
             return;
         }
@@ -640,7 +751,7 @@ public partial class MainWindow : Window
         var names = SelectedServices().Where(s => !s.IsPortOnly).Select(s => s.Name).ToArray();
         if (names.Length == 0)
         {
-            MessageBox.Show("请先在服务列表勾选服务。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            WpfMessageBox.Show("请先在服务列表勾选服务。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -661,6 +772,23 @@ public partial class MainWindow : Window
         await RunTask($"{action} services", $"-NoProfile -ExecutionPolicy Bypass -EncodedCommand {encoded}", ServiceOutputBox);
     }
 
+    private async Task RunScriptAsync(string title, string scriptName, string extraArgs = "")
+    {
+        if (!CanRunTask())
+        {
+            return;
+        }
+
+        var scriptPath = Path.Combine(scriptsDir, scriptName);
+        if (!File.Exists(scriptPath))
+        {
+            WpfMessageBox.Show($"找不到脚本：{scriptPath}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+
+        await RunTask(title, $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\" {extraArgs}".Trim(), OutputBox);
+    }
+
     private bool CanRunTask()
     {
         if (!busy)
@@ -668,11 +796,11 @@ public partial class MainWindow : Window
             return true;
         }
 
-        MessageBox.Show("已有任务正在执行，请稍后。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+        WpfMessageBox.Show("已有任务正在执行，请稍后。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
         return false;
     }
 
-    private async Task RunTask(string title, string powershellArguments, TextBox target)
+    private async Task RunTask(string title, string powershellArguments, WpfTextBox target)
     {
         SetBusy(true);
         Log(target, "");
@@ -726,12 +854,138 @@ public partial class MainWindow : Window
         return new ScriptResult(process.ExitCode, output.ToString());
     }
 
-    // ──── 服务状态 ────
+    // ──── 配置读写 ────
 
     private void ReloadEnv()
     {
         env = File.Exists(envPath) ? ReadDotEnv(envPath) : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        DeployRootBox.Text = DeployRoot();
+    }
+
+    private void FillSettingsFields()
+    {
+        DeployRootBox.Text = EnvValue("DEPLOY_ROOT", @"D:\deploy\lab");
+        WebPortBox.Text = PortFor("WEB_PORT", 80).ToString();
+        ApiPortBox.Text = PortFor("API_PORT", 10089).ToString();
+        NlqPortBox.Text = PortFor("NLQ_PORT", 8000).ToString();
+        RedisPortBox.Text = PortFor("REDIS_PORT", 6380).ToString();
+        RabbitPortBox.Text = PortFor("RABBITMQ_PORT", 8005).ToString();
+        RabbitMgmtPortBox.Text = PortFor("RABBITMQ_MANAGEMENT_PORT", 15672).ToString();
+        DbPortBox.Text = PortFor("DB_PORT", 3306).ToString();
+        BackupTimeBox.Text = EnvValue("DB_BACKUP_TIME", "02:30");
+        BackupKeepDaysBox.Text = EnvValue("DB_BACKUP_KEEP_DAYS", "14");
+    }
+
+    private bool SaveSettingsToEnv()
+    {
+        if (!TryReadPort(WebPortBox, "Web 入口", out var webPort) ||
+            !TryReadPort(ApiPortBox, "API", out var apiPort) ||
+            !TryReadPort(NlqPortBox, "智能体", out var nlqPort) ||
+            !TryReadPort(RedisPortBox, "Redis", out var redisPort) ||
+            !TryReadPort(RabbitPortBox, "RabbitMQ", out var rabbitPort) ||
+            !TryReadPort(RabbitMgmtPortBox, "RabbitMQ 管理台", out var rabbitMgmtPort) ||
+            !TryReadPort(DbPortBox, "MySQL", out var dbPort))
+        {
+            return false;
+        }
+
+        var backupTime = BackupTimeBox.Text.Trim();
+        if (!Regex.IsMatch(backupTime, @"^\d{2}:\d{2}$") || !TimeSpan.TryParse(backupTime, out _))
+        {
+            WpfMessageBox.Show("每日备份时间请填写 HH:mm，例如 02:30。", "端口/时间格式错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
+        if (!int.TryParse(BackupKeepDaysBox.Text.Trim(), out var keepDays) || keepDays < 1 || keepDays > 3650)
+        {
+            WpfMessageBox.Show("备份保留天数请填写 1-3650 的数字。", "备份设置错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
+        var root = DeployRootBox.Text.Trim();
+        if (string.IsNullOrWhiteSpace(root))
+        {
+            WpfMessageBox.Show("请选择部署目录。", "部署设置错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
+        root = Path.GetFullPath(root);
+        Directory.CreateDirectory(root);
+        DeployRootBox.Text = root;
+
+        var updates = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["DEPLOY_ROOT"] = root,
+            ["NLQ_DIR"] = Path.Combine(root, "nlq-agent"),
+            ["NSSM_EXE"] = Path.Combine(root, "nssm.exe"),
+            ["NGINX_EXE"] = Path.Combine(root, "nginx", "nginx.exe"),
+            ["WEB_PORT"] = webPort.ToString(),
+            ["API_PORT"] = apiPort.ToString(),
+            ["NLQ_PORT"] = nlqPort.ToString(),
+            ["REDIS_PORT"] = redisPort.ToString(),
+            ["RABBITMQ_PORT"] = rabbitPort.ToString(),
+            ["RABBITMQ_MANAGEMENT_PORT"] = rabbitMgmtPort.ToString(),
+            ["DB_PORT"] = dbPort.ToString(),
+            ["DB_BACKUP_TIME"] = backupTime,
+            ["DB_BACKUP_KEEP_DAYS"] = keepDays.ToString()
+        };
+
+        WriteEnvUpdates(updates);
+        ReloadEnv();
+        UpdateRowPorts();
+        return true;
+    }
+
+    private static bool TryReadPort(WpfTextBox box, string name, out int port)
+    {
+        if (int.TryParse(box.Text.Trim(), out port) && port is >= 1 and <= 65535)
+        {
+            return true;
+        }
+
+        WpfMessageBox.Show($"{name} 端口必须是 1-65535 的数字。", "端口格式错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+        return false;
+    }
+
+    private void WriteEnvUpdates(Dictionary<string, string> updates)
+    {
+        EnsureEnvFile();
+        var lines = File.Exists(envPath)
+            ? File.ReadAllLines(envPath, Encoding.UTF8).ToList()
+            : new List<string>();
+
+        foreach (var (key, value) in updates)
+        {
+            var found = false;
+            var pattern = @"^\s*" + Regex.Escape(key) + @"\s*=";
+            for (var i = 0; i < lines.Count; i++)
+            {
+                if (!Regex.IsMatch(lines[i], pattern, RegexOptions.IgnoreCase))
+                {
+                    continue;
+                }
+
+                lines[i] = $"{key}={value}";
+                found = true;
+                break;
+            }
+
+            if (!found)
+            {
+                lines.Add($"{key}={value}");
+            }
+        }
+
+        File.WriteAllLines(envPath, lines, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+    }
+
+    // ──── 服务状态 ────
+
+    private void UpdateRowPorts()
+    {
+        foreach (var item in services)
+        {
+            rowsByName[item.Name].Port = PortFor(item);
+        }
     }
 
     private async Task RefreshStatusAsync()
@@ -929,7 +1183,7 @@ public partial class MainWindow : Window
     {
         foreach (var item in services.Where(s => s.LogName.Length > 0).DistinctBy(s => s.LogName))
         {
-            var box = new TextBox
+            var box = new WpfTextBox
             {
                 FontFamily = new System.Windows.Media.FontFamily("Consolas"),
                 FontSize = 12,
@@ -1003,25 +1257,95 @@ public partial class MainWindow : Window
         Process.Start(new ProcessStartInfo("explorer.exe", $"\"{dir}\"") { UseShellExecute = true });
     }
 
-    private void RestartAsAdministrator()
+    private IEnumerable<ServiceItem> SelectedServices()
     {
-        try
+        var names = statusRows
+            .Where(row => row.CanSelect && row.Selected)
+            .Select(row => row.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return services.Where(s => names.Contains(s.Name));
+    }
+
+    private static string[] SelectedTags(System.Windows.Controls.Panel panel)
+    {
+        return panel.Children.OfType<WpfCheckBox>()
+            .Where(x => x.IsChecked == true)
+            .Select(x => x.Tag?.ToString() ?? "")
+            .Where(x => x.Length > 0)
+            .ToArray();
+    }
+
+    private int PortFor(ServiceItem item) => PortFor(item.PortKey, item.DefaultPort);
+
+    private int PortFor(string key, int defaultPort)
+    {
+        return int.TryParse(EnvValue(key, defaultPort.ToString()), out var port) ? port : defaultPort;
+    }
+
+    private string DeployRoot()
+    {
+        var root = EnvValue("DEPLOY_ROOT", @"D:\deploy\lab");
+        Directory.CreateDirectory(root);
+        return Path.GetFullPath(root);
+    }
+
+    private string EnvValue(string key, string fallback)
+    {
+        return env.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value) ? value : fallback;
+    }
+
+    private static Dictionary<string, string> ReadDotEnv(string path)
+    {
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var raw in File.ReadLines(path, Encoding.UTF8))
         {
-            Process.Start(new ProcessStartInfo
+            var line = raw.Trim();
+            if (line.Length == 0 || line.StartsWith('#'))
             {
-                FileName = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName ?? "LmDeployConsole.exe",
-                UseShellExecute = true,
-                Verb = "runas"
-            });
-            Close();
+                continue;
+            }
+
+            var idx = line.IndexOf('=');
+            if (idx <= 0)
+            {
+                continue;
+            }
+
+            var key = line[..idx].Trim();
+            var value = line[(idx + 1)..].Trim();
+            if (value.Length >= 2 && ((value[0] == '"' && value[^1] == '"') || (value[0] == '\'' && value[^1] == '\'')))
+            {
+                value = value[1..^1];
+            }
+            result[key] = value;
         }
-        catch (Exception ex)
+
+        return result;
+    }
+
+    private void AddChoiceBoxes(System.Windows.Controls.Panel panel, IEnumerable<StoreItem> items, bool isChecked)
+    {
+        foreach (var item in items)
         {
-            MessageBox.Show("管理员重启失败：" + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            panel.Children.Add(new WpfCheckBox
+            {
+                Content = item.Title,
+                IsChecked = isChecked,
+                Margin = new Thickness(0, 0, 8, 8),
+                Tag = item.Key
+            });
         }
     }
 
-    // ──── 托盘与开机自启 ────
+    private void SetAdminText()
+    {
+        AdminText.Text = IsAdministrator() ? "管理员权限：已获取" : "管理员权限：未获取";
+        AdminText.Foreground = IsAdministrator()
+            ? System.Windows.Media.Brushes.DarkGreen
+            : System.Windows.Media.Brushes.DarkRed;
+    }
+
+    // ──── 托盘与自启动 ────
 
     private void InitializeTrayIcon()
     {
@@ -1034,7 +1358,7 @@ public partial class MainWindow : Window
         };
 
         trayIcon.ContextMenuStrip.Items.Add("打开控制台", null, (_, _) => Dispatcher.Invoke(ShowFromTray));
-        trayIcon.ContextMenuStrip.Items.Add("立即在线升级", null, (_, _) => Dispatcher.Invoke(() => RunUpgrade_Click(this, new RoutedEventArgs())));
+        trayIcon.ContextMenuStrip.Items.Add("立即更新", null, (_, _) => Dispatcher.Invoke(() => RunUpgrade_Click(this, new RoutedEventArgs())));
         trayIcon.ContextMenuStrip.Items.Add("退出", null, (_, _) => Dispatcher.Invoke(() =>
         {
             reallyExit = true;
@@ -1145,62 +1469,7 @@ Register-ScheduledTask -TaskName '{AutoStartTaskName}' -Action $action -Trigger 
             ?? Path.Combine(AppContext.BaseDirectory, "LmDeployConsole.exe");
     }
 
-    private IEnumerable<ServiceItem> SelectedServices()
-    {
-        var names = statusRows
-            .Where(row => row.CanSelect && row.Selected)
-            .Select(row => row.Name)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        return services.Where(s => names.Contains(s.Name));
-    }
-
-    private int PortFor(ServiceItem item) => PortFor(item.PortKey, item.DefaultPort);
-
-    private int PortFor(string key, int defaultPort)
-    {
-        return int.TryParse(EnvValue(key, defaultPort.ToString()), out var port) ? port : defaultPort;
-    }
-
-    private string DeployRoot()
-    {
-        var root = EnvValue("DEPLOY_ROOT", @"D:\deploy\lab");
-        Directory.CreateDirectory(root);
-        return Path.GetFullPath(root);
-    }
-
-    private string EnvValue(string key, string fallback)
-    {
-        return env.TryGetValue(key, out var value) && !string.IsNullOrWhiteSpace(value) ? value : fallback;
-    }
-
-    private static Dictionary<string, string> ReadDotEnv(string path)
-    {
-        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var raw in File.ReadLines(path, Encoding.UTF8))
-        {
-            var line = raw.Trim();
-            if (line.Length == 0 || line.StartsWith('#'))
-            {
-                continue;
-            }
-
-            var idx = line.IndexOf('=');
-            if (idx <= 0)
-            {
-                continue;
-            }
-
-            var key = line[..idx].Trim();
-            var value = line[(idx + 1)..].Trim();
-            if (value.Length >= 2 && ((value[0] == '"' && value[^1] == '"') || (value[0] == '\'' && value[^1] == '\'')))
-            {
-                value = value[1..^1];
-            }
-            result[key] = value;
-        }
-
-        return result;
-    }
+    // ──── 工具方法 ────
 
     private static bool IsPortOpen(int port)
     {
@@ -1275,17 +1544,17 @@ Register-ScheduledTask -TaskName '{AutoStartTaskName}' -Action $action -Trigger 
     {
         busy = value;
         BusyText.Text = value ? "正在执行任务..." : "就绪";
-        DeployButtonsPanel.IsEnabled = !value;
-        ServiceButtonsPanel.IsEnabled = !value;
-        SettingsPanel.IsEnabled = !value;
-        AuthButton.IsEnabled = !value;
+        AuthorizeButton.IsEnabled = !value;
+        LogoutButton.IsEnabled = !value;
+        BrowseButton.IsEnabled = !value;
+        ApplyRolePermissions();
     }
 
-    private void LogDeploy(string message) => Log(OutputBox, message);
+    private void Log(string message) => Log(OutputBox, message);
 
     private void LogService(string message) => Log(ServiceOutputBox, message);
 
-    private static void Log(TextBox target, string message)
+    private static void Log(WpfTextBox target, string message)
     {
         target.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
         target.ScrollToEnd();

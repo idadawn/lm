@@ -5,14 +5,15 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from langchain_core.messages import HumanMessage
+from langchain_core.runnables import RunnableLambda
 
 from app.agents.query_agent import (
     _build_chart_config,
-    _merge_entities_with_context,
     _build_time_range_sql,
     _detect_first_inspection_rate_query,
     _detect_judgment_inquiry,
     _format_time_range_desc,
+    _merge_entities_with_context,
     query_agent_node,
 )
 
@@ -25,15 +26,16 @@ class TestHelpers:
         [
             (
                 {"type": "recent_days", "days": 7},
-                "F_DETECTION_DATE >= DATE_SUB(NOW(), INTERVAL 7 DAY)",
+                "F_PROD_DATE >= DATE_SUB(NOW(), INTERVAL 7 DAY)",
             ),
             (
                 {"type": "last_month"},
-                "F_DETECTION_DATE >= DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 1 MONTH), '%Y-%m-01') AND F_DETECTION_DATE < DATE_FORMAT(NOW(), '%Y-%m-01')",
+                "F_PROD_DATE >= DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 1 MONTH), '%Y-%m-01')"
+                " AND F_PROD_DATE < DATE_FORMAT(NOW(), '%Y-%m-01')",
             ),
             (
                 {"type": "year_month", "year": 2026, "month": 1},
-                "F_DETECTION_DATE >= '2026-01-01' AND F_DETECTION_DATE < '2026-02-01'",
+                "F_PROD_DATE >= '2026-01-01' AND F_PROD_DATE < '2026-02-01'",
             ),
             ({}, None),
         ],
@@ -41,7 +43,11 @@ class TestHelpers:
     def test_build_time_range_sql(
         self, time_range: dict[str, object], expected_sql: str | None
     ) -> None:
-        """Build SQL fragments from parsed time ranges."""
+        """Build SQL fragments from parsed time ranges.
+
+        时间过滤统一使用生产日期 F_PROD_DATE（与业务系统月度报表口径一致），
+        不再使用检测日期 F_DETECTION_DATE。
+        """
         assert _build_time_range_sql(time_range) == expected_sql
 
     @pytest.mark.parametrize(
@@ -441,7 +447,17 @@ class TestQueryAgentNode:
 
     @pytest.mark.asyncio
     async def test_query_agent_node_handles_first_inspection_query(self) -> None:
-        """Route first-inspection pass-rate queries without raising context errors."""
+        """Route first-inspection pass-rate queries without raising context errors.
+
+        实现现在会：1) 通过 adispatch_custom_event 推送 reasoning_step 事件，
+        因此节点必须在 Runnable 上下文中调用（与 LangGraph 生产路径一致）；
+        2) 调用 LLM 生成口头汇报，需 mock get_llm，但数据明细表仍包含真实合格率。
+        """
+        llm = SimpleNamespace(
+            ainvoke=AsyncMock(
+                return_value=SimpleNamespace(content="最近7天120规格一次交检合格率为 96.5%。")
+            )
+        )
         query_first_inspection_rate = AsyncMock(
             return_value={
                 "pass_rate": 96.5,
@@ -451,11 +467,14 @@ class TestQueryAgentNode:
             }
         )
 
-        with patch(
-            "app.agents.query_agent.query_first_inspection_rate_tool",
-            new=SimpleNamespace(ainvoke=query_first_inspection_rate),
+        with (
+            patch("app.agents.query_agent.get_llm", return_value=llm),
+            patch(
+                "app.agents.query_agent.query_first_inspection_rate_tool",
+                new=SimpleNamespace(ainvoke=query_first_inspection_rate),
+            ),
         ):
-            result = await query_agent_node(
+            result = await RunnableLambda(query_agent_node).ainvoke(
                 {
                     "messages": [HumanMessage(content="120规格最近7天一次交检合格率是多少？")],
                     "session_id": "session-4",

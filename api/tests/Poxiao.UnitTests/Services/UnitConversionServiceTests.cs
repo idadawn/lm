@@ -1,7 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Moq;
+using Poxiao.Lab.Entity;
 using Poxiao.Lab.Interfaces;
+using Poxiao.Lab.Service;
+using SqlSugar;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -9,19 +15,56 @@ namespace Poxiao.UnitTests.Services;
 
 /// <summary>
 /// 单位换算服务单元测试.
+/// 使用 Mock 仓储自建服务实例（DI 容器中 ISqlSugarRepository 无法在测试宿主解析，
+/// 通过构造函数注入解析会直接崩溃测试宿主进程）.
 /// </summary>
 public class UnitConversionServiceTests
 {
     private readonly ITestOutputHelper _output;
     private readonly IUnitConversionService _unitConversionService;
 
-    public UnitConversionServiceTests(
-        ITestOutputHelper output,
-        IUnitConversionService unitConversionService
-    )
+    private static readonly List<UnitCategoryEntity> Categories = new()
+    {
+        new UnitCategoryEntity { Id = "CAT_LENGTH", Name = "长度", Code = "LENGTH", SortCode = 1 },
+        new UnitCategoryEntity { Id = "CAT_MASS", Name = "质量", Code = "MASS", SortCode = 2 },
+    };
+
+    private static readonly List<UnitDefinitionEntity> Units = new()
+    {
+        // 长度维度，基准单位：米 (m)
+        new UnitDefinitionEntity { Id = "UNIT_M", CategoryId = "CAT_LENGTH", Name = "米", Symbol = "m", IsBase = 1, ScaleToBase = 1m, SortCode = 1 },
+        new UnitDefinitionEntity { Id = "UNIT_KM", CategoryId = "CAT_LENGTH", Name = "千米", Symbol = "km", ScaleToBase = 1000m, SortCode = 2 },
+        new UnitDefinitionEntity { Id = "UNIT_CM", CategoryId = "CAT_LENGTH", Name = "厘米", Symbol = "cm", ScaleToBase = 0.01m, SortCode = 3 },
+        new UnitDefinitionEntity { Id = "UNIT_MM", CategoryId = "CAT_LENGTH", Name = "毫米", Symbol = "mm", ScaleToBase = 0.001m, SortCode = 4 },
+        new UnitDefinitionEntity { Id = "UNIT_UM", CategoryId = "CAT_LENGTH", Name = "微米", Symbol = "μm", ScaleToBase = 0.000001m, SortCode = 5 },
+
+        // 质量维度，基准单位：千克 (kg)
+        new UnitDefinitionEntity { Id = "UNIT_KG", CategoryId = "CAT_MASS", Name = "千克", Symbol = "kg", IsBase = 1, ScaleToBase = 1m, SortCode = 1 },
+    };
+
+    public UnitConversionServiceTests(ITestOutputHelper output)
     {
         _output = output;
-        _unitConversionService = unitConversionService;
+
+        var mockUnitRepo = new Mock<ISqlSugarRepository<UnitDefinitionEntity>>();
+        mockUnitRepo
+            .Setup(x => x.GetByIdAsync(It.IsAny<object>()))
+            .ReturnsAsync((object id) => Units.FirstOrDefault(u => u.Id == id?.ToString()));
+        mockUnitRepo
+            .Setup(x => x.GetListAsync(It.IsAny<Expression<Func<UnitDefinitionEntity, bool>>>()))
+            .ReturnsAsync((Expression<Func<UnitDefinitionEntity, bool>> predicate) =>
+                Units.Where(predicate.Compile()).ToList());
+
+        var mockCategoryRepo = new Mock<ISqlSugarRepository<UnitCategoryEntity>>();
+        mockCategoryRepo
+            .Setup(x => x.GetListAsync(It.IsAny<Expression<Func<UnitCategoryEntity, bool>>>()))
+            .ReturnsAsync((Expression<Func<UnitCategoryEntity, bool>> predicate) =>
+                Categories.Where(predicate.Compile()).ToList());
+
+        _unitConversionService = new UnitConversionService(
+            mockUnitRepo.Object,
+            mockCategoryRepo.Object
+        );
     }
 
     /// <summary>
@@ -62,7 +105,7 @@ public class UnitConversionServiceTests
         string toUnitId = "UNIT_KG"; // 质量单位
 
         // 应该抛出异常，因为不能跨维度换算
-        await Assert.ThrowsAsync<Exception>(async () =>
+        await Assert.ThrowsAnyAsync<Exception>(async () =>
         {
             await _unitConversionService.ConvertAsync(sourceValue, fromUnitId, toUnitId);
         });

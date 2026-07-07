@@ -84,7 +84,11 @@ public class AccessDataSource : IDeviceDataSource
 
             records.Add(new CollectedRecord
             {
-                SourceKey = _sourceOptions.Name,
+                // 源键必须逐条唯一（服务端按它幂等去重），用 源名:主键值；
+                // 主键取不到时退化为随机值（该条无法跨次去重，但不会挤掉其他记录）
+                SourceKey = string.IsNullOrEmpty(position)
+                    ? $"{_sourceOptions.Name}:{Guid.NewGuid():N}"
+                    : $"{_sourceOptions.Name}:{position}",
                 CollectedAt = now,
                 Position = position,
                 Payload = payload,

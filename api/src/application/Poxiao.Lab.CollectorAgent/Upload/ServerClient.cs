@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Poxiao.Lab.CollectorAgent.Options;
@@ -31,14 +32,19 @@ public class ServerClient
     /// </summary>
     public async Task<UploadResult> UploadBatchAsync(SpoolBatch batch, CancellationToken cancellationToken)
     {
+        // 字段结构必须与服务端 DeviceDataBatchInput/DeviceDataRecordInput 对齐：
+        // Payload 字典序列化为 PayloadJson 字符串，多余的 Position 等字段不上送
         var payload = new
         {
             batch.BatchId,
-            batch.SourceName,
             batch.DeviceCode,
-            batch.CreatedAt,
             CollectorId = _options.CollectorId,
-            batch.Records,
+            Records = batch.Records.Select(r => new
+            {
+                r.SourceKey,
+                PayloadJson = JsonSerializer.Serialize(r.Payload),
+                r.CollectedAt,
+            }),
         };
 
         try
@@ -50,12 +56,15 @@ public class ServerClient
             AddAuthHeaders(request);
 
             using var response = await _httpClient.SendAsync(request, cancellationToken);
+            var body = await SafeReadBodyAsync(response, cancellationToken);
             if (response.IsSuccessStatusCode)
             {
-                return UploadResult.Success();
+                // 框架的统一返回把业务异常（含鉴权失败）也包成 HTTP 200 + {code, msg}，
+                // 只看状态码会把失败当成功导致 spool 被删——必须解析响应体里的 code
+                return ClassifyUnifiedBody(body);
             }
 
-            return ClassifyFailure(response.StatusCode, await SafeReadBodyAsync(response, cancellationToken));
+            return ClassifyFailure(response.StatusCode, body);
         }
         catch (TaskCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
@@ -88,7 +97,13 @@ public class ServerClient
             AddAuthHeaders(request);
 
             using var response = await _httpClient.SendAsync(request, cancellationToken);
-            return response.IsSuccessStatusCode;
+            if (!response.IsSuccessStatusCode)
+            {
+                return false;
+            }
+
+            var body = await SafeReadBodyAsync(response, cancellationToken);
+            return ClassifyUnifiedBody(body).IsSuccess;
         }
         catch (Exception ex)
         {
@@ -101,6 +116,44 @@ public class ServerClient
     {
         request.Headers.TryAddWithoutValidation(CollectorHeaders.AppIdHeader, _options.AppId);
         request.Headers.TryAddWithoutValidation(CollectorHeaders.AppSecretHeader, _options.AppSecret);
+    }
+
+    /// <summary>
+    /// 解析框架统一返回体 {code, msg, ...}：code==200 才是真成功；
+    /// 业务失败（鉴权/校验）归为不可重试（保留 spool 文件 + ERROR + 长退避，等待人工修复配置后自然重试）；
+    /// 响应体解析不了时保守地按可重试处理（不删文件）。
+    /// </summary>
+    private static UploadResult ClassifyUnifiedBody(string body)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return UploadResult.Retryable("HTTP 200 但响应体为空，无法确认业务结果");
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.ValueKind != JsonValueKind.Object
+                || !doc.RootElement.TryGetProperty("code", out var codeElement)
+                || !codeElement.TryGetInt32(out var code))
+            {
+                return UploadResult.Retryable("HTTP 200 但响应体不是统一返回格式，无法确认业务结果");
+            }
+
+            if (code == 200)
+            {
+                return UploadResult.Success();
+            }
+
+            var msg = doc.RootElement.TryGetProperty("msg", out var msgElement)
+                ? msgElement.ToString()
+                : string.Empty;
+            return UploadResult.NonRetryable($"服务端业务失败 (code={code}): {msg}");
+        }
+        catch (JsonException)
+        {
+            return UploadResult.Retryable("HTTP 200 但响应体不是合法 JSON，无法确认业务结果");
+        }
     }
 
     private static UploadResult ClassifyFailure(HttpStatusCode statusCode, string body)

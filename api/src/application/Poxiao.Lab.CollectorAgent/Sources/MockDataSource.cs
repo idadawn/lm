@@ -47,7 +47,8 @@ public class MockDataSource : IDeviceDataSource
 
             var record = new CollectedRecord
             {
-                SourceKey = _options.Name,
+                // 源键必须逐条唯一（服务端按它幂等去重），用 源名:序号
+                SourceKey = $"{_options.Name}:{_sequence}",
                 CollectedAt = now,
                 Position = _sequence.ToString(),
                 Payload = new Dictionary<string, object?>

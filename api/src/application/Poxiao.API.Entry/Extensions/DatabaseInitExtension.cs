@@ -46,6 +46,28 @@ public static class DatabaseInitExtension
     }
 
     /// <summary>
+    /// 幂等地确保单片性能相关的两张表存在（原始数据表 + 导入会话表）.
+    /// </summary>
+    public static void EnsureSingleSheetTables(this IServiceProvider serviceProvider)
+    {
+        using var scope = serviceProvider.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<
+            ISqlSugarRepository<ProductSpecEntity>
+        >();
+        var db = repository.AsSugarClient();
+
+        if (!db.DbMaintenance.IsAnyTable("LAB_SINGLE_SHEET_RAW_DATA", false))
+        {
+            db.CodeFirst.InitTables(typeof(SingleSheetRawDataEntity));
+        }
+
+        if (!db.DbMaintenance.IsAnyTable("lab_single_sheet_import_session", false))
+        {
+            db.CodeFirst.InitTables(typeof(SingleSheetImportSessionEntity));
+        }
+    }
+
+    /// <summary>
     /// 初始化数量单位.
     /// </summary>
     private static void SeedQuantityUnits(ISqlSugarRepository<ProductSpecEntity> repository)

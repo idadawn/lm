@@ -56,7 +56,6 @@ jobs:
 
       - name: Run tests
         run: uv run pytest tests/ -m "not live_llm and not live_qdrant" -v --tb=short
-        continue-on-error: true # 存量 16 个过时断言待修（如 F_DETECTION_DATE→F_PROD_DATE 漂移）、覆盖率 36%<70% 门槛；修完后收紧
 
   docker-compose-validate:
     runs-on: ubuntu-latest

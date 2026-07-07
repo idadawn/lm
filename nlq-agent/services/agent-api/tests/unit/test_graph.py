@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from langchain_core.messages import HumanMessage
+from langchain_core.runnables import RunnableLambda
 
 from app.agents.graph import (
     create_agent_graph,
@@ -12,6 +13,16 @@ from app.agents.graph import (
     response_formatter_node,
     route_by_intent,
 )
+
+
+async def _run_intent_classifier(state: dict) -> dict:
+    """在 Runnable 上下文中调用 intent_classifier_node。
+
+    节点内部通过 adispatch_custom_event 推送 reasoning_step 事件，
+    该调用要求存在父 run（生产中由 LangGraph 提供）；直接裸调函数会抛
+    RuntimeError，因此测试统一经 RunnableLambda 调用。
+    """
+    return await RunnableLambda(intent_classifier_node).ainvoke(state)
 
 
 class TestCreateAgentGraph:
@@ -51,7 +62,7 @@ class TestIntentClassifierNode:
         )
 
         with patch("app.agents.graph.get_llm", return_value=llm):
-            result = await intent_classifier_node(
+            result = await _run_intent_classifier(
                 {
                     "messages": [HumanMessage(content="查询 Ps 铁损平均值")],
                     "session_id": "graph-1",
@@ -82,7 +93,7 @@ class TestIntentClassifierNode:
         )
 
         with patch("app.agents.graph.get_llm", return_value=llm):
-            result = await intent_classifier_node(
+            result = await _run_intent_classifier(
                 {
                     "messages": [HumanMessage(content="为什么被判为不合格？")],
                     "session_id": "graph-2",
@@ -115,7 +126,7 @@ class TestIntentClassifierNode:
         )
 
         with patch("app.agents.graph.get_llm", return_value=llm):
-            result = await intent_classifier_node(
+            result = await _run_intent_classifier(
                 {
                     "messages": [HumanMessage(content="甲班数据")],
                     "session_id": "graph-3",
@@ -129,7 +140,7 @@ class TestIntentClassifierNode:
     @pytest.mark.asyncio
     async def test_intent_classifier_returns_unknown_for_empty_messages(self) -> None:
         """Return unknown when no user message is available."""
-        result = await intent_classifier_node(
+        result = await _run_intent_classifier(
             {
                 "messages": [],
                 "session_id": "graph-4",
@@ -147,7 +158,7 @@ class TestIntentClassifierNode:
         llm = SimpleNamespace(ainvoke=AsyncMock(return_value=SimpleNamespace(content="not json")))
 
         with patch("app.agents.graph.get_llm", return_value=llm):
-            result = await intent_classifier_node(
+            result = await _run_intent_classifier(
                 {
                     "messages": [HumanMessage(content="查一下")],
                     "session_id": "graph-5",
@@ -171,7 +182,7 @@ class TestIntentClassifierNode:
         )
 
         with patch("app.agents.graph.get_llm", return_value=llm) as mock_get_llm:
-            await intent_classifier_node(
+            await _run_intent_classifier(
                 {
                     "messages": [HumanMessage(content="查一下")],
                     "session_id": "graph-model-1",

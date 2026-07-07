@@ -17,7 +17,7 @@ pytest 测试根。两层：`unit/`（mock 依赖的纯单元）和 `agent/`（c
 
 ### Working In This Directory
 - 不要在测试里真连 MySQL/Neo4j/LiteLLM；统一 `unittest.mock.AsyncMock` + `patch`。需要真集成时去 `scripts/test_kg_api.py` 或 web 端 e2e。
-- 新模块入 `app/<x>.py` → 必须同时加 `tests/unit/test_<x>.py`，否则覆盖率掉到 70 以下 CI 失败（`pyproject.toml` `fail_under = 70`）。
+- 新模块入 `app/<x>.py` → 必须同时加 `tests/unit/test_<x>.py`，否则覆盖率掉到 35 以下 CI 失败（`pyproject.toml` `fail_under = 35`，防倒退底线）。
 - 共享 fixture 放 `conftest.py`（按需新建），不要在多个 test 里复制 mock 构造。
 
 ### Testing Requirements

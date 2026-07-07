@@ -58,6 +58,19 @@ public class FormulaParser : IFormulaParser, ITransient
         RegexOptions.Compiled | RegexOptions.IgnoreCase
     );
 
+    // 匹配三参数 DIFF_FIRST_LAST 函数: DIFF_FIRST_LAST(prefix, startIndex, endIndex)
+    // 计算范围内首尾差值的绝对值 |第一列值 - 最后一列值|
+    private static readonly Regex DiffFirstLastThreeArgRegex = new(
+        @"DIFF_FIRST_LAST\s*\(\s*(\w+)\s*,\s*(\d+|\$\w+)\s*,\s*(\d+|\$\w+)\s*\)",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase
+    );
+
+    // 匹配单参数 DIFF_FIRST_LAST 函数: DIFF_FIRST_LAST(prefix) - 自动检测范围
+    private static readonly Regex DiffFirstLastSingleArgRegex = new(
+        @"DIFF_FIRST_LAST\s*\(\s*(\w+)\s*\)",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase
+    );
+
     // 匹配统计函数起始: SUM( / AVG( / MAX( / MIN(
     private static readonly Regex StatFunctionRegex = new(
         @"\b(SUM|AVG|MAX|MIN)\s*\(",
@@ -232,24 +245,27 @@ public class FormulaParser : IFormulaParser, ITransient
         // 3. 处理统计函数 SUM/AVG/MAX/MIN（支持 RANGE/DIFF_FIRST/DIFF_LAST）
         result = ProcessStatFunctions(result, contextDict, entity);
 
-        // 4. 处理三参数 RANGE：RANGE(Thickness, 1, 22)
+        // 4. 处理 DIFF_FIRST_LAST（须在 DIFF_FIRST/DIFF_LAST 及 RANGE 之前）
+        result = ProcessDiffFirstLast(result, contextDict, entity);
+
+        // 5. 处理三参数 RANGE：RANGE(Thickness, 1, 22)
         result = ProcessRangeThreeArg(result, contextDict, entity);
 
-        // 5. 处理单参数 RANGE：RANGE(Detection)
+        // 6. 处理单参数 RANGE：RANGE(Detection)
         result = ProcessRangeSingleArg(result, contextDict, entity);
 
-        // 6. 处理 DIFF_FIRST
+        // 7. 处理 DIFF_FIRST
         result = ProcessDiffFirst(result, contextDict, entity);
 
-        // 7. 处理 DIFF_LAST
+        // 8. 处理 DIFF_LAST
         result = ProcessDiffLast(result, contextDict, entity);
 
-        // 7. 替换  动态变量
+        // 9. 替换  动态变量
         result = ReplaceDollarVariables(result, contextDict, entity);
 
-        // 8. 替换 [Variable] 为实际值
+        // 10. 替换 [Variable] 为实际值
         result = ReplaceVariables(result, contextDict);
-        // 9. 处理比较运算符
+        // 11. 处理比较运算符
         result = result.Replace("<>", "!=");
 
         return result;
@@ -489,6 +505,86 @@ public class FormulaParser : IFormulaParser, ITransient
             var roundedDiff = Math.Round(diff, precision, MidpointRounding.AwayFromZero);
             return roundedDiff.ToString(CultureInfo.InvariantCulture);
         });
+    }
+
+    /// <summary>
+    /// 处理 DIFF_FIRST_LAST 函数
+    /// DIFF_FIRST_LAST(Detection) 或 DIFF_FIRST_LAST(Detection, 1, $DetectionColumns)
+    /// 返回范围内首尾差值的绝对值 |第一列值 - 最后一列值|
+    /// </summary>
+    private string ProcessDiffFirstLast(
+        string formula,
+        Dictionary<string, object> contextDict,
+        IntermediateDataEntity entity)
+    {
+        // 先处理三参数形式，再处理单参数形式
+        var result = DiffFirstLastThreeArgRegex.Replace(formula, match =>
+        {
+            var prefix = ResolveRangePrefix(match.Groups[1].Value);
+            var startStr = match.Groups[2].Value;
+            var endStr = match.Groups[3].Value;
+            var maxColumns = GetDetectionColumns(contextDict, entity);
+
+            var startIndex = startStr.StartsWith("$")
+                ? GetIntFromContext(contextDict, startStr.Substring(1), 1)
+                : int.Parse(startStr);
+
+            var endIndex = endStr.StartsWith("$")
+                ? GetIntFromContext(contextDict, endStr.Substring(1), maxColumns)
+                : int.Parse(endStr);
+
+            return FormatDiffFirstLast(prefix, startIndex, endIndex, contextDict, entity, maxColumns);
+        });
+
+        return DiffFirstLastSingleArgRegex.Replace(result, match =>
+        {
+            var prefix = ResolveRangePrefix(match.Groups[1].Value);
+            var columnCount = GetDetectionColumns(contextDict, entity);
+            return FormatDiffFirstLast(prefix, 1, columnCount, contextDict, entity, columnCount);
+        });
+    }
+
+    /// <summary>
+    /// 计算范围内首尾差值的绝对值（数据不足返回 null）
+    /// </summary>
+    private decimal? ComputeDiffFirstLastValue(
+        string prefix,
+        int startIndex,
+        int endIndex,
+        Dictionary<string, object> contextDict,
+        IntermediateDataEntity entity,
+        int maxColumns)
+    {
+        var values = GetRangeValues(prefix, startIndex, endIndex, contextDict, entity, maxColumns);
+
+        if (values.Count < 2)
+        {
+            return null;
+        }
+
+        return Math.Abs(values.First() - values.Last());
+    }
+
+    /// <summary>
+    /// 计算首尾差值并按精度格式化为表达式片段
+    /// </summary>
+    private string FormatDiffFirstLast(
+        string prefix,
+        int startIndex,
+        int endIndex,
+        Dictionary<string, object> contextDict,
+        IntermediateDataEntity entity,
+        int maxColumns)
+    {
+        var diff = ComputeDiffFirstLastValue(prefix, startIndex, endIndex, contextDict, entity, maxColumns);
+        if (!diff.HasValue)
+        {
+            return "0";
+        }
+
+        var precision = GetCalculationPrecision(null);
+        var roundedDiff = Math.Round(diff.Value, precision, MidpointRounding.AwayFromZero);
+        return roundedDiff.ToString(CultureInfo.InvariantCulture);
     }
 
     /// <summary>
@@ -841,6 +937,45 @@ public class FormulaParser : IFormulaParser, ITransient
             {
                 var diff = values.Last() - values.First();
                 results.Add(diff);
+            }
+            return true;
+        }
+
+        // DIFF_FIRST_LAST(prefix, start, end)
+        var diffFirstLastThreeMatch = DiffFirstLastThreeArgRegex.Match(expression);
+        if (diffFirstLastThreeMatch.Success && diffFirstLastThreeMatch.Value.Equals(expression, StringComparison.OrdinalIgnoreCase))
+        {
+            var prefix = ResolveRangePrefix(diffFirstLastThreeMatch.Groups[1].Value);
+            var startStr = diffFirstLastThreeMatch.Groups[2].Value;
+            var endStr = diffFirstLastThreeMatch.Groups[3].Value;
+            var maxColumns = GetDetectionColumns(contextDict, entity);
+
+            var startIndex = startStr.StartsWith("$")
+                ? GetIntFromContext(contextDict, startStr.Substring(1), 1)
+                : int.Parse(startStr);
+
+            var endIndex = endStr.StartsWith("$")
+                ? GetIntFromContext(contextDict, endStr.Substring(1), maxColumns)
+                : int.Parse(endStr);
+
+            var diff = ComputeDiffFirstLastValue(prefix, startIndex, endIndex, contextDict, entity, maxColumns);
+            if (diff.HasValue)
+            {
+                results.Add(diff.Value);
+            }
+            return true;
+        }
+
+        // DIFF_FIRST_LAST(prefix)
+        var diffFirstLastSingleMatch = DiffFirstLastSingleArgRegex.Match(expression);
+        if (diffFirstLastSingleMatch.Success && diffFirstLastSingleMatch.Value.Equals(expression, StringComparison.OrdinalIgnoreCase))
+        {
+            var prefix = ResolveRangePrefix(diffFirstLastSingleMatch.Groups[1].Value);
+            var columnCount = GetDetectionColumns(contextDict, entity);
+            var diff = ComputeDiffFirstLastValue(prefix, 1, columnCount, contextDict, entity, columnCount);
+            if (diff.HasValue)
+            {
+                results.Add(diff.Value);
             }
             return true;
         }

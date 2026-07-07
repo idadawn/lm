@@ -55,6 +55,18 @@
                     <TextBox x:Name="DeployRootBox" IsReadOnly="True" Margin="0,0,0,16" />
 
                     <CheckBox x:Name="AutoRefreshBox" Content="自动刷新服务状态" IsChecked="True" Margin="0,0,0,10" />
+
+                    <TextBlock Text="运行设置" FontWeight="SemiBold" Margin="0,6,0,5" />
+                    <CheckBox x:Name="AutoStartBox" Content="开机自启动" Margin="0,0,0,6" Click="AutoStart_Click" />
+                    <CheckBox x:Name="TrayOnMinimizeBox" Content="最小化到托盘" Margin="0,0,0,6" Click="TraySetting_Click" />
+                    <CheckBox x:Name="CloseToTrayBox" Content="点击关闭进入托盘" Margin="0,0,0,6" Click="TraySetting_Click" />
+                    <Button Content="隐藏到托盘"
+                            Height="28"
+                            Margin="0,2,0,12"
+                            HorizontalAlignment="Left"
+                            Padding="12,0"
+                            Click="HideToTray_Click" />
+
                     <TextBlock x:Name="BusyText" Text="就绪" Foreground="#465264" />
                 </StackPanel>
             </ScrollViewer>
@@ -102,6 +114,7 @@
                             <WrapPanel>
                                 <Button Content="发布工具补丁" Style="{StaticResource PrimaryButton}" Click="PublishToolPatch_Click" />
                                 <Button Content="发布完整版本" Style="{StaticResource PrimaryButton}" Click="PublishFullRelease_Click" />
+                                <Button Content="发布完整部署资源" Style="{StaticResource PrimaryButton}" Click="PublishAllAssets_Click" />
                             </WrapPanel>
                         </GroupBox>
 
@@ -215,6 +228,82 @@
                         </TabItem>
                     </TabControl>
                 </Grid>
+            </TabItem>
+
+            <TabItem Header="设置与备份">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="SettingsPanel" Margin="10" MaxWidth="720" HorizontalAlignment="Left">
+                        <GroupBox Header="部署位置" Margin="0,0,0,10">
+                            <DockPanel Margin="0,4,8,8">
+                                <Button Content="浏览"
+                                        DockPanel.Dock="Right"
+                                        Width="86"
+                                        Height="28"
+                                        Click="BrowseDeployRoot_Click" />
+                                <TextBox x:Name="DeployRootEditBox"
+                                         Margin="0,0,8,0"
+                                         Height="28"
+                                         VerticalContentAlignment="Center" />
+                            </DockPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="端口设置" Margin="0,0,0,10">
+                            <WrapPanel Margin="0,4,0,0">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,16,8">
+                                    <TextBlock Text="Web 入口" Width="90" VerticalAlignment="Center" />
+                                    <TextBox x:Name="WebPortBox" Width="72" Height="26" VerticalContentAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,16,8">
+                                    <TextBlock Text="API" Width="90" VerticalAlignment="Center" />
+                                    <TextBox x:Name="ApiPortBox" Width="72" Height="26" VerticalContentAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,16,8">
+                                    <TextBlock Text="智能体" Width="90" VerticalAlignment="Center" />
+                                    <TextBox x:Name="NlqPortBox" Width="72" Height="26" VerticalContentAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,16,8">
+                                    <TextBlock Text="Redis" Width="90" VerticalAlignment="Center" />
+                                    <TextBox x:Name="RedisPortBox" Width="72" Height="26" VerticalContentAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,16,8">
+                                    <TextBlock Text="RabbitMQ" Width="90" VerticalAlignment="Center" />
+                                    <TextBox x:Name="RabbitPortBox" Width="72" Height="26" VerticalContentAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,16,8">
+                                    <TextBlock Text="RabbitMQ 管理台" Width="110" VerticalAlignment="Center" />
+                                    <TextBox x:Name="RabbitMgmtPortBox" Width="72" Height="26" VerticalContentAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,16,8">
+                                    <TextBlock Text="MySQL" Width="90" VerticalAlignment="Center" />
+                                    <TextBox x:Name="DbPortBox" Width="72" Height="26" VerticalContentAlignment="Center" />
+                                </StackPanel>
+                            </WrapPanel>
+                        </GroupBox>
+
+                        <GroupBox Header="数据库备份" Margin="0,0,0,10">
+                            <StackPanel Margin="0,4,0,0">
+                                <WrapPanel Margin="0,0,0,4">
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,16,8">
+                                        <TextBlock Text="每日备份时间" Width="90" VerticalAlignment="Center" />
+                                        <TextBox x:Name="BackupTimeBox" Width="72" Height="26" VerticalContentAlignment="Center" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,16,8">
+                                        <TextBlock Text="保留天数" Width="90" VerticalAlignment="Center" />
+                                        <TextBox x:Name="BackupKeepDaysBox" Width="72" Height="26" VerticalContentAlignment="Center" />
+                                    </StackPanel>
+                                </WrapPanel>
+                                <WrapPanel>
+                                    <Button Content="立即备份" Style="{StaticResource PrimaryButton}" Click="BackupNow_Click" />
+                                    <Button Content="启用每日备份" Style="{StaticResource PrimaryButton}" Click="InstallBackupSchedule_Click" />
+                                    <Button Content="关闭每日备份" Style="{StaticResource PrimaryButton}" Click="RemoveBackupSchedule_Click" />
+                                </WrapPanel>
+                            </StackPanel>
+                        </GroupBox>
+
+                        <CheckBox x:Name="FirewallBox" Content="保存后放行 Web 端口到防火墙" IsChecked="True" Margin="0,0,0,10" />
+                        <Button Content="保存部署设置" Style="{StaticResource PrimaryButton}" Click="SaveSettings_Click" />
+                    </StackPanel>
+                </ScrollViewer>
             </TabItem>
         </TabControl>
     </Grid>

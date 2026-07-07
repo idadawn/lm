@@ -317,7 +317,9 @@ namespace Poxiao.UnitTests.Lab
             Assert.Equal("W", furnaceNo.SpecialMarker);
             Assert.Equal("脆", furnaceNo.FeatureSuffix);
             Assert.Equal("1甲20251101-1-4-1W脆", furnaceNo.GetFullFurnaceNo());
-            Assert.Equal("1甲20251101-1-4-1W", furnaceNo.GetFurnaceNo());
+            // 基础炉号（物料唯一编码）不再拼 W/G/K 工艺标记，避免同一物料在
+            // 「未刻痕 → 已刻痕」两阶段被当成两条数据；工艺阶段单独读 SpecialMarker
+            Assert.Equal("1甲20251101-1-4-1", furnaceNo.GetFurnaceNo());
             Assert.Equal("1甲20251101-1", furnaceNo.GetStandardFurnaceNo());
         }
 
@@ -332,10 +334,13 @@ namespace Poxiao.UnitTests.Lab
 
             // Assert
             Assert.True(furnaceNo.IsValid);
-            Assert.Equal("w", furnaceNo.SpecialMarker);
+            // 特殊标记解析时统一大写，下游 dedup / 展示 / 环样性能匹配只面对一种形态
+            Assert.Equal("W", furnaceNo.SpecialMarker);
             Assert.True(string.IsNullOrEmpty(furnaceNo.FeatureSuffix));
+            // 完整炉号保留原始输入（含小写 w）
             Assert.Equal("1甲20251101-1-4-1w", furnaceNo.GetFullFurnaceNo());
-            Assert.Equal("1甲20251101-1-4-1w", furnaceNo.GetFurnaceNo());
+            // 基础炉号不含工艺标记
+            Assert.Equal("1甲20251101-1-4-1", furnaceNo.GetFurnaceNo());
         }
     }
 }

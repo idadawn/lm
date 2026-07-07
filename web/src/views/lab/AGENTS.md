@@ -16,6 +16,7 @@
 | `intermediateDataFormula/` | 中间数据公式维护 (see `intermediateDataFormula/AGENTS.md`) |
 | `intermediateDataJudgmentLevel/` | 中间数据判定等级维护 (see `intermediateDataJudgmentLevel/AGENTS.md`) |
 | `magneticData/` | 磁性数据导入与浏览 (see `magneticData/AGENTS.md`) |
+| `singleSheetData/` | 单片性能数据导入与浏览（镜像 magneticData 的 2 步导入链路，暂不参与判定回填） |
 | `metric/` | 指标管理（占位，开发中）(see `metric/AGENTS.md`) |
 | `monthly-dashboard/` | 月度驾驶舱（kebab-case 路径）(see `monthly-dashboard/AGENTS.md`) |
 | `monthlyReport/` | 月度质量统计报表 (see `monthlyReport/AGENTS.md`) |

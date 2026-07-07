@@ -16,6 +16,7 @@
 | `metric.ts` | 检测指标定义 CRUD。 |
 | `monthlyQualityReport.ts` | 月度质量报表生成 / 导出。 |
 | `magneticData.ts` | 磁性数据导入 + 查询。 |
+| `singleSheetData.ts` | 单片性能数据导入 + 查询（列表接口直接调路由前缀，后端为 `[HttpGet("")]`）。 |
 | `product.ts` / `productSpec.ts` / `productSpecPublicAttribute.ts` | 产品 / 规格 / 公共属性。 |
 | `publicDimension.ts` | 化验域公共维度。 |
 | `reportConfig.ts` | 指标列表配置。 |

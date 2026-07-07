@@ -3,7 +3,7 @@ using System.Windows;
 
 namespace LmDeployConsole;
 
-public partial class App : Application
+public partial class App : System.Windows.Application
 {
     static App()
     {
@@ -17,7 +17,7 @@ public partial class App : Application
         DispatcherUnhandledException += (_, args) =>
         {
             WriteCrashLog(args.Exception);
-            MessageBox.Show(args.Exception.ToString(), "LmDeployConsole 启动失败", MessageBoxButton.OK, MessageBoxImage.Error);
+            System.Windows.MessageBox.Show(args.Exception.ToString(), "LmDeployConsole 启动失败", MessageBoxButton.OK, MessageBoxImage.Error);
             args.Handled = true;
         };
 

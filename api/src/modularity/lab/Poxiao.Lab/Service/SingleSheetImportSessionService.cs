@@ -697,7 +697,9 @@ public class SingleSheetImportSessionService
         {
             result.LineNo = match.LineNo; // 产线
             result.Shift = match.Shift; // 班次
-            var dateStr = match.ProdDate; // 日期字符串
+            result.ProdDate = match.ProdDate; // 生产日期
+            result.ShiftNumeric = match.ShiftNumeric; // 班次数字（用于排序）
+            result.FurnaceNoNumeric = match.FurnaceNoNumeric; // 炉号数字（用于排序）
 
             // 解析数字字段（参考原始数据表）
             if (int.TryParse(result.LineNo, out var lineNoNum))

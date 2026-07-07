@@ -80,8 +80,15 @@ function Get-PrereqFile {
     if ($UseOssPrereqs) {
         $key = Join-OssKey @($OssPrefix, $PrereqPrefix, $FileName)
         Write-Host "  download: oss://$OssBucket/$key" -ForegroundColor DarkGray
-        Get-OssObject -Endpoint $OssEndpoint -Bucket $OssBucket -Key $key -AccessKeyId $OssAccessKeyId -AccessKeySecret $OssAccessKeySecret -OutFile $OutFile -EnableHttps $EnableHttps | Out-Null
-        return
+        try {
+            Get-OssObject -Endpoint $OssEndpoint -Bucket $OssBucket -Key $key -AccessKeyId $OssAccessKeyId -AccessKeySecret $OssAccessKeySecret -OutFile $OutFile -EnableHttps $EnableHttps | Out-Null
+            return
+        }
+        catch {
+            # OSS 上还没发布过基础软件包（publish-prereqs.ps1 未执行过）时回退公网下载
+            if (Test-Path $OutFile) { Remove-Item -LiteralPath $OutFile -Force -ErrorAction SilentlyContinue }
+            Write-Host "  OSS 下载失败，回退公网地址：$($_.Exception.Message)" -ForegroundColor Yellow
+        }
     }
 
     Download-File -Url $Url -OutFile $OutFile

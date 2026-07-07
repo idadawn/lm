@@ -99,7 +99,7 @@ enum RawDataApi {
 export async function getSingleSheetRawDataList(params: any): Promise<any> {
   // BasicTable 内部会从返回值的 .data 字段提取数据
   // 所以这里直接返回完整响应（包含 code, data, msg）
-  return defHttp.get({ url: RawDataApi.Prefix + '/list', params });
+  return defHttp.get({ url: RawDataApi.Prefix, params });
 }
 
 // 删除单片原始数据

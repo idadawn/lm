@@ -380,6 +380,16 @@ public class Startup : AppStartup
             Log.Error($"[Startup] 初始化单片性能数据表失败: {ex.Message}");
         }
 
+        // 幂等地确保设备数据采集暂存表存在，建表失败只记日志不阻断启动
+        try
+        {
+            serviceProvider.EnsureDeviceDataTables();
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"[Startup] 初始化设备数据采集暂存表失败: {ex.Message}");
+        }
+
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapControllerRoute(

@@ -68,6 +68,23 @@ public static class DatabaseInitExtension
     }
 
     /// <summary>
+    /// 幂等地确保设备数据采集暂存表存在.
+    /// </summary>
+    public static void EnsureDeviceDataTables(this IServiceProvider serviceProvider)
+    {
+        using var scope = serviceProvider.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<
+            ISqlSugarRepository<ProductSpecEntity>
+        >();
+        var db = repository.AsSugarClient();
+
+        if (!db.DbMaintenance.IsAnyTable("LAB_DEVICE_DATA_INBOX", false))
+        {
+            db.CodeFirst.InitTables(typeof(DeviceDataInboxEntity));
+        }
+    }
+
+    /// <summary>
     /// 初始化数量单位.
     /// </summary>
     private static void SeedQuantityUnits(ISqlSugarRepository<ProductSpecEntity> repository)

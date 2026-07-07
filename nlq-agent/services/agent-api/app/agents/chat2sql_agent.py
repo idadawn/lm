@@ -30,10 +30,12 @@ from langchain_core.messages import HumanMessage
 from app.core.llm_factory import get_llm
 from app.knowledge_graph.schema_loader import (
     ColumnInfo,
+    SchemaCache,
     TableInfo,
     get_schema_cache,
     refresh_schema_cache,
 )
+from app.knowledge_graph.terms import expand_keywords
 from app.tools.sql_tools import execute_safe_sql, validate_sql
 
 logger = logging.getLogger("nlq-agent")
@@ -75,11 +77,30 @@ def _build_column_block(table: TableInfo, columns: list[ColumnInfo]) -> str:
     return head + "\n".join(lines)
 
 
-def _extract_keywords(question: str) -> list[str]:
-    """Naive split + Chinese-friendly token extraction for table/column matching."""
+def _extract_keywords(question: str, cache: SchemaCache | None = None) -> list[str]:
+    """朴素切分 + 业务词表 + glossary 扫描，供表/列匹配。
+
+    中文问题往往整句无空格，朴素切分只得到一个长 token，列匹配几乎必失败；
+    这里补两路召回：
+    - terms.expand_keywords：aliases.json 同义词 → 规范名 + F_ 列名（「铁损」→ PsLoss/F_PS_LOSS）
+    - cache.glossary：DB 公式表的中文术语 → 实际列名（「一次交检合格率」→ F_FIRST_INSPECTION）
+    """
     cleaned = re.sub(r"[\s,，。？?！!；;()（）]+", " ", question)
     tokens = [t for t in cleaned.split(" ") if t]
-    return tokens or [question]
+
+    vocab = expand_keywords(question)
+
+    glossary_terms: list[str] = []
+    if cache is not None:
+        for term, targets in cache.glossary.items():
+            if term and term in question:
+                glossary_terms.append(term)
+                glossary_terms.extend(col for _tbl, col in targets)
+
+    merged = [*tokens, *vocab, *glossary_terms]
+    seen: set[str] = set()
+    deduped = [k for k in merged if not (k in seen or seen.add(k))]
+    return deduped or [question]
 
 
 async def _emit(kind: str, label: str, **extra: Any) -> dict[str, Any]:
@@ -510,7 +531,7 @@ async def chat2sql_agent_node(state: dict[str, Any]) -> dict[str, Any]:
     accumulated.append(schema_step)
 
     # ---------- Step 2: column_pick ---------- #
-    keywords = _extract_keywords(user_question)
+    keywords = _extract_keywords(user_question, cache)
     table_blocks = []
     for entry in picked_tables:
         tname = entry.get("name", "")

@@ -200,71 +200,109 @@ public class ExcelImportTemplateService
 
     /// <summary>
     /// 确保默认模板存在.
+    /// 按模板编码逐个补种，已存在的模板不受影响，缺失的模板补齐，避免已有部署无法获得新增模板.
     /// </summary>
     private async Task EnsureDefaultTemplates()
     {
-        var count = await _repository.CountAsync(t => t.DeleteMark == 0 || t.DeleteMark == null);
-        if (count > 0)
-            return;
-
-        var templates = new List<ExcelImportTemplateEntity>();
-
         // 获取当前用户ID，如果没有用户上下文则使用 "system" 表示系统创建
         var creatorUserId = !string.IsNullOrEmpty(_userManager?.UserId)
             ? _userManager.UserId
             : "system";
 
+        var existingCodes = (
+            await _repository.GetListAsync(t => t.DeleteMark == 0 || t.DeleteMark == null)
+        )
+            .Select(t => t.TemplateCode)
+            .Where(code => !string.IsNullOrEmpty(code))
+            .ToHashSet();
+
+        var templates = new List<ExcelImportTemplateEntity>();
+
         // 1. 检测数据导入模板
-        templates.Add(
-            new ExcelImportTemplateEntity
-            {
-                Id = Guid.NewGuid().ToString(),
-                TemplateName = "检测数据导入模板",
-                TemplateCode = ExcelImportTemplateCode.RawDataImport.ToString(),
-                CreatorTime = DateTime.Now,
-                CreatorUserId = creatorUserId,
-                ConfigJson = System.Text.Json.JsonSerializer.Serialize(
-                    CreateDefaultConfig<RawDataEntity>(
-                        "检测数据默认模板",
-                        new DetectionColumnConfig
-                        {
-                            MinColumn = 1,
-                            MaxColumn = 100,
-                            Patterns = new List<string>
+        if (!existingCodes.Contains(ExcelImportTemplateCode.RawDataImport.ToString()))
+        {
+            templates.Add(
+                new ExcelImportTemplateEntity
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    TemplateName = "检测数据导入模板",
+                    TemplateCode = ExcelImportTemplateCode.RawDataImport.ToString(),
+                    CreatorTime = DateTime.Now,
+                    CreatorUserId = creatorUserId,
+                    ConfigJson = System.Text.Json.JsonSerializer.Serialize(
+                        CreateDefaultConfig<RawDataEntity>(
+                            "检测数据默认模板",
+                            new DetectionColumnConfig
                             {
-                                "{col}",
-                                "检测{col}",
-                                "列{col}",
-                                "第{col}列",
-                                "检测列{col}",
-                            },
-                        }
-                    )
-                ),
-            }
-        );
+                                MinColumn = 1,
+                                MaxColumn = 100,
+                                Patterns = new List<string>
+                                {
+                                    "{col}",
+                                    "检测{col}",
+                                    "列{col}",
+                                    "第{col}列",
+                                    "检测列{col}",
+                                },
+                            }
+                        )
+                    ),
+                }
+            );
+        }
 
         // 2. 磁性数据导入模板
-        templates.Add(
-            new ExcelImportTemplateEntity
-            {
-                Id = Guid.NewGuid().ToString(),
-                TemplateName = "磁性数据导入模板",
-                TemplateCode = ExcelImportTemplateCode.MagneticDataImport.ToString(),
-                CreatorTime = DateTime.Now,
-                CreatorUserId = creatorUserId,
-                ConfigJson = System.Text.Json.JsonSerializer.Serialize(
-                    CreateDefaultConfig<MagneticRawDataEntity>(
-                        "磁性数据默认模板",
-                        new DetectionColumnConfig
-                        {
-                            MinColumn = 0,
-                            MaxColumn = 0, // 磁性数据没有动态检测列
-                        }
-                    )
-                ),
-            }
-        );
+        if (!existingCodes.Contains(ExcelImportTemplateCode.MagneticDataImport.ToString()))
+        {
+            templates.Add(
+                new ExcelImportTemplateEntity
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    TemplateName = "磁性数据导入模板",
+                    TemplateCode = ExcelImportTemplateCode.MagneticDataImport.ToString(),
+                    CreatorTime = DateTime.Now,
+                    CreatorUserId = creatorUserId,
+                    ConfigJson = System.Text.Json.JsonSerializer.Serialize(
+                        CreateDefaultConfig<MagneticRawDataEntity>(
+                            "磁性数据默认模板",
+                            new DetectionColumnConfig
+                            {
+                                MinColumn = 0,
+                                MaxColumn = 0, // 磁性数据没有动态检测列
+                            }
+                        )
+                    ),
+                }
+            );
+        }
+
+        // 3. 单片性能数据导入模板
+        if (!existingCodes.Contains(ExcelImportTemplateCode.SingleSheetImport.ToString()))
+        {
+            templates.Add(
+                new ExcelImportTemplateEntity
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    TemplateName = "单片性能数据导入模板",
+                    TemplateCode = ExcelImportTemplateCode.SingleSheetImport.ToString(),
+                    CreatorTime = DateTime.Now,
+                    CreatorUserId = creatorUserId,
+                    ConfigJson = System.Text.Json.JsonSerializer.Serialize(
+                        CreateDefaultConfig<SingleSheetRawDataEntity>(
+                            "单片性能默认模板",
+                            new DetectionColumnConfig
+                            {
+                                MinColumn = 0,
+                                MaxColumn = 0, // 单片性能数据没有动态检测列
+                            }
+                        )
+                    ),
+                }
+            );
+        }
+
+        if (templates.Count == 0)
+            return;
 
         await _repository.InsertRangeAsync(templates);
     }

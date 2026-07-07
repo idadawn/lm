@@ -108,7 +108,7 @@ const EDGE_COLOR_MAP: Record<string, string> = {
   belongsToCategory: '#FA8C16',   // 属于大类（特性→大类）
   parentCategory: '#D48806',      // 父级大类（大类树自引用）
   hasFormula: '#13C2C2',          // 拥有公式（带材→公式聚合根）
-  sourcedFrom: '#10B981',         // 数据源（叠片数据→原始叠片导入/单片性能）
+  sourcedFrom: '#10B981',         // 数据源（叠片数据→原始叠片导入/环样性能）
   computedBy: '#13C2C2',          // 由...计算（叠片数据→公式聚合根，引用边）
   hasJudgment: '#722ED1',         // 拥有判定（带材→判定等级聚合根）
   scopedBySpec: '#2F54EB',        // 限定规格（规格判定集→产品规格条目，引用边）
@@ -218,13 +218,13 @@ function addLine(lines: any[], from: string, to: string, relation: string, label
 }
 
 // ------------------------------------------------------------------
-// 业务对象节点（叠片、单片、外观、指标判定）
+// 业务对象节点（叠片、环样、外观、指标判定）
 // ------------------------------------------------------------------
 
 function addBusinessObjectNodes(nodes: any[], lines: any[], rootId: string) {
   const objects = [
     { id: 'domain:lamination', dataType: 'LaminationData', label: '叠片数据', subtitle: '导入后计算检测明细' },
-    { id: 'domain:single-sheet', dataType: 'SingleSheetPerf', label: '单片性能', subtitle: 'Ps / Ss / Hc' },
+    { id: 'domain:single-sheet', dataType: 'SingleSheetPerf', label: '环样性能', subtitle: 'Ps / Ss / Hc' },
     { id: 'domain:appearance', dataType: 'AppearanceFeature', label: '外观特性', subtitle: '缺陷、等级、分类' },
     { id: 'domain:metric-judge', dataType: 'MetricJudge', label: '指标判定', subtitle: '统计计算与等级结果' },
   ];
@@ -440,7 +440,7 @@ export function buildRelationGraphData(data: OntologyData, search?: string): RGJ
     });
   }
 
-  // ── Excel 导入模板节点（叠片数据 + 单片性能）──
+  // ── Excel 导入模板节点（叠片数据 + 环样性能）──
   if (ACTIVE_NODE_TYPES.has('RawDataImport') && data.excel_templates) {
     for (const tmpl of data.excel_templates) {
       const isRaw = tmpl.template_code === 'RawDataImport';
@@ -449,7 +449,7 @@ export function buildRelationGraphData(data: OntologyData, search?: string): RGJ
 
       const type = isRaw ? 'RawDataImport' : 'MagneticDataImport';
       const targetTable = isRaw ? 'lab_raw_data' : 'lab_magnetic_raw_data';
-      const label = isRaw ? '原始叠片导入' : '单片性能'; // 业务命名
+      const label = isRaw ? '原始叠片导入' : '环样性能'; // 业务命名
       const tmplNodeId = `tmpl:${tmpl.id}`;
 
       nodes.push(makeNode(
@@ -468,7 +468,7 @@ export function buildRelationGraphData(data: OntologyData, search?: string): RGJ
       ));
       // 不再直连 Ribbon；由「叠片数据」节点通过 sourcedFrom 引用
 
-      // 单片性能：增加指向炉号节点的引用连线
+      // 环样性能：增加指向炉号节点的引用连线
       if (isMagnetic && ACTIVE_NODE_TYPES.has('FurnaceNoInput')) {
         addLine(lines, tmplNodeId, 'domain:furnace-no-input', 'references', '原始炉号');
       }
@@ -538,7 +538,7 @@ export function buildRelationGraphData(data: OntologyData, search?: string): RGJ
         rawData: {
           targetTable: 'lab_intermediate_data',
           route: '/lab/intermediateData',
-          description: '带材的叠片数据成品视图：原始叠片(lab_raw_data) + 单片性能(lab_magnetic_raw_data) 经计算/判定公式合成。',
+          description: '带材的叠片数据成品视图：原始叠片(lab_raw_data) + 环样性能(lab_magnetic_raw_data) 经计算/判定公式合成。',
         },
         typeLabel: '业务成品视图',
       }
@@ -547,13 +547,13 @@ export function buildRelationGraphData(data: OntologyData, search?: string): RGJ
       addLine(lines, rootId, laminationNodeId, 'contains', '叠片数据');
     }
 
-    // sourcedFrom：连接两个数据源（原始叠片 + 单片性能），如果对应导入模板节点存在
+    // sourcedFrom：连接两个数据源（原始叠片 + 环样性能），如果对应导入模板节点存在
     if (ACTIVE_NODE_TYPES.has('RawDataImport') && data.excel_templates) {
       for (const tmpl of data.excel_templates) {
         if (tmpl.template_code === 'RawDataImport' || tmpl.template_code === 'MagneticDataImport') {
           addLine(lines, laminationNodeId, `tmpl:${tmpl.id}`,
             'sourcedFrom',
-            tmpl.template_code === 'RawDataImport' ? '原始叠片' : '单片性能');
+            tmpl.template_code === 'RawDataImport' ? '原始叠片' : '环样性能');
         }
       }
     }

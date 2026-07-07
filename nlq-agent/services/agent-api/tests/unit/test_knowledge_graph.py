@@ -103,14 +103,29 @@ class TestKnowledgeGraphQueries:
 
     @pytest.mark.asyncio
     async def test_get_spec_judgment_rules(self) -> None:
-        """Test getting judgment rules for a spec."""
+        """Test getting judgment rules for a spec.
+
+        Cypher 现在 OPTIONAL MATCH 关联的 Formula 节点，每行返回 rule + metric
+        两列；metric 缺 id 时归一化为 None。
+        """
         from app.knowledge_graph.queries import get_spec_judgment_rules
 
         mock_graph = MagicMock()
         mock_graph.query_async = AsyncMock(
             return_value=[
-                {"rule": {"id": "1", "name": "一级品", "formulaId": "Labeling"}},
-                {"rule": {"id": "2", "name": "二级品", "formulaId": "Labeling"}},
+                {
+                    "rule": {"id": "1", "name": "一级品", "formulaId": "Labeling"},
+                    "metric": {
+                        "id": "m-1",
+                        "name": "贴标判定",
+                        "columnName": "Labeling",
+                        "formulaType": 2,
+                    },
+                },
+                {
+                    "rule": {"id": "2", "name": "二级品", "formulaId": "Labeling"},
+                    "metric": None,
+                },
             ]
         )
 
@@ -118,6 +133,8 @@ class TestKnowledgeGraphQueries:
 
         assert len(result) == 2
         assert result[0]["name"] == "一级品"
+        assert result[0]["metric"]["columnName"] == "Labeling"
+        assert result[1]["metric"] is None
         mock_graph.query_async.assert_called_once()
 
     @pytest.mark.asyncio
@@ -194,13 +211,18 @@ class TestKgApi:
 
     @pytest.mark.asyncio
     async def test_health_endpoint(self) -> None:
-        """Test health check endpoint."""
+        """Test health check endpoint.
+
+        端点现在返回 get_knowledge_graph_status() 的结构化状态，
+        ready 取决于 manager 模块级的 _knowledge_graph 实例是否存在。
+        """
         from app.api.kg import knowledge_graph_health
 
-        with patch("app.api.kg.is_knowledge_graph_ready", return_value=True):
+        with patch("app.knowledge_graph.manager._knowledge_graph", MagicMock()):
             result = await knowledge_graph_health()
             assert result["ready"] is True
             assert result["backend"] == "neo4j"
+            assert result["message"] == "Knowledge graph is ready"
 
     @pytest.mark.asyncio
     async def test_refresh_endpoint_success(self) -> None:

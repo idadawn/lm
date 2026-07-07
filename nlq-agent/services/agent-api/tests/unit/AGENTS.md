@@ -4,7 +4,7 @@
 # unit
 
 ## Purpose
-模块级单元测试。一个测试文件对应一个被测模块，全部依赖 mock，运行毫秒级。覆盖率门槛由 `pyproject.toml` `fail_under = 70` 强制（omit `tests/*` 与 `app/main.py`）。
+模块级单元测试。一个测试文件对应一个被测模块，全部依赖 mock，运行毫秒级。覆盖率门槛由 `pyproject.toml` `fail_under = 35` 强制（omit `tests/*` 与 `app/main.py`；防倒退底线，随补测上调）。
 
 ## Key Files
 

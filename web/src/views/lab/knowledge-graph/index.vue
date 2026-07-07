@@ -75,7 +75,7 @@
       <span v-if="ACTIVE_NODE_TYPES.has('SpecAttribute')" class="leg"><i class="leg-dot" style="background:#EB2F96"></i> 产品属性</span>
       <span v-if="ACTIVE_NODE_TYPES.has('IntermediateData')" class="leg"><i class="leg-dot" style="background:#0EA5E9"></i> 叠片数据</span>
       <span v-if="ACTIVE_NODE_TYPES.has('RawDataImport')" class="leg"><i class="leg-dot" style="background:#10B981"></i> 原始叠片导入</span>
-      <span v-if="ACTIVE_NODE_TYPES.has('MagneticDataImport')" class="leg"><i class="leg-dot" style="background:#F59E0B"></i> 单片性能</span>
+      <span v-if="ACTIVE_NODE_TYPES.has('MagneticDataImport')" class="leg"><i class="leg-dot" style="background:#F59E0B"></i> 环样性能</span>
       <span v-if="ACTIVE_NODE_TYPES.has('TemplateField')" class="leg"><i class="leg-dot" style="background:#9CA3AF"></i> 字段映射</span>
       <span v-if="ACTIVE_NODE_TYPES.has('FurnaceNoInput')" class="leg"><i class="leg-dot" style="background:#D97706"></i> 原始炉号</span>
       <span v-if="ACTIVE_NODE_TYPES.has('FurnaceNoParsed')" class="leg"><i class="leg-dot" style="background:#059669"></i> 炉号</span>
@@ -287,7 +287,7 @@ function handleNodeClick(model: any) {
     FurnaceNoField: '#3B82F6',
   };
 
-  // 点击带材根节点 → 展示产品规格 + 扩展属性 + 叠片数据 + 单片性能（折叠区域）
+  // 点击带材根节点 → 展示产品规格 + 扩展属性 + 叠片数据 + 环样性能（折叠区域）
   if (type === 'Ribbon') {
     // 产品规格列表
     const products = (ontologyData.value?.specs || []).map((s) => ({
@@ -314,7 +314,7 @@ function handleNodeClick(model: any) {
       code: tf.column_name,
       description: '',
     }));
-    // 单片性能表字段
+    // 环样性能表字段
     const magneticDataFields = (ontologyData.value?.table_fields?.['lab_magnetic_raw_data'] || []).map((tf) => ({
       id: tf.column_name,
       name: tf.column_comment || tf.column_name,
@@ -612,7 +612,7 @@ function handleNodeClick(model: any) {
         rawSourceId: rawTmpl ? `tmpl:${rawTmpl.id}` : '',
         rawSourceName: rawTmpl?.template_name || '原始叠片导入',
         magneticSourceId: magTmpl ? `tmpl:${magTmpl.id}` : '',
-        magneticSourceName: magTmpl?.template_name || '单片性能',
+        magneticSourceName: magTmpl?.template_name || '环样性能',
         formulaCounts: {
           calc: (ontologyData.value?.formulas || []).filter((f) => f.formula_type === 'CALC').length,
           judge: (ontologyData.value?.formulas || []).filter((f) => f.formula_type === 'JUDGE').length,

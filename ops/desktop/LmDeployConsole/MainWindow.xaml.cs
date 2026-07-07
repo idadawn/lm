@@ -1,8 +1,10 @@
-﻿using System.ComponentModel;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
@@ -14,9 +16,9 @@ using System.Windows.Threading;
 using Microsoft.Win32;
 using Drawing = System.Drawing;
 using Forms = System.Windows.Forms;
-using WpfButton = System.Windows.Controls.Button;
 using WpfCheckBox = System.Windows.Controls.CheckBox;
 using WpfMessageBox = System.Windows.MessageBox;
+using WpfTextBox = System.Windows.Controls.TextBox;
 
 namespace LmDeployConsole;
 
@@ -31,16 +33,57 @@ public sealed record ServiceItem(
 
 public sealed record StoreItem(string Key, string Title);
 
-public sealed class ServiceStatusRow
+public sealed class ServiceStatusRow : INotifyPropertyChanged
 {
-    public string Name { get; set; } = "";
-    public string Title { get; set; } = "";
-    public string State { get; set; } = "";
-    public string StartMode { get; set; } = "";
-    public string ProcessId { get; set; } = "";
-    public int Port { get; set; }
-    public bool PortOpen { get; set; }
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    public string Name { get; init; } = "";
+    public string Title { get; init; } = "";
+    public bool CanSelect { get; init; }
+
+    private bool selected;
+    public bool Selected { get => selected; set => Set(ref selected, value); }
+
+    private string state = "";
+    public string State { get => state; set => Set(ref state, value); }
+
+    private string startMode = "";
+    public string StartMode { get => startMode; set => Set(ref startMode, value); }
+
+    private string processId = "";
+    public string ProcessId { get => processId; set => Set(ref processId, value); }
+
+    private int port;
+    public int Port { get => port; set => Set(ref port, value); }
+
+    private bool portOpen;
+    public bool PortOpen
+    {
+        get => portOpen;
+        set
+        {
+            if (Set(ref portOpen, value))
+            {
+                OnPropertyChanged(nameof(PortOpenText));
+            }
+        }
+    }
+
     public string PortOpenText => PortOpen ? "是" : "否";
+
+    private bool Set<T>(ref T field, T value, [CallerMemberName] string? name = null)
+    {
+        if (EqualityComparer<T>.Default.Equals(field, value))
+        {
+            return false;
+        }
+
+        field = value;
+        OnPropertyChanged(name);
+        return true;
+    }
+
+    private void OnPropertyChanged(string? name) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
 public sealed record ScriptResult(int ExitCode, string Output);
@@ -54,8 +97,6 @@ public enum UserRole
 
 public partial class MainWindow : Window
 {
-    private const string DefaultManagerCode = "";
-    private const string DefaultMaintainerCode = "";
     private const string AppSettingsKeyPath = @"Software\LmDeployConsole";
     private const string AutoStartTaskName = "lm-deploy-console-autostart";
 
@@ -92,6 +133,9 @@ public partial class MainWindow : Window
         new("nlq-agent", "智能体")
     ];
 
+    private readonly ObservableCollection<ServiceStatusRow> statusRows = [];
+    private readonly Dictionary<string, ServiceStatusRow> rowsByName = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, WpfTextBox> logBoxes = new(StringComparer.OrdinalIgnoreCase);
     private readonly DispatcherTimer refreshTimer = new() { Interval = TimeSpan.FromSeconds(5) };
     private readonly HttpClient httpClient = new() { Timeout = TimeSpan.FromSeconds(5) };
     private readonly List<string> startupNotices = [];
@@ -115,27 +159,44 @@ public partial class MainWindow : Window
         AddChoiceBoxes(PrereqChecks, prereqItems, true);
         AddChoiceBoxes(InfraChecks, infraItems, true);
         AddChoiceBoxes(AppChecks, appItems, true);
-        AddServiceChecks();
+
+        foreach (var item in services)
+        {
+            var row = new ServiceStatusRow
+            {
+                Name = item.Name,
+                Title = item.Title,
+                CanSelect = !item.IsPortOnly,
+                Selected = !item.IsPortOnly,
+                State = item.IsPortOnly ? "PortOnly" : "Loading",
+                Port = item.DefaultPort
+            };
+            statusRows.Add(row);
+            rowsByName[item.Name] = row;
+        }
+        ServiceGrid.ItemsSource = statusRows;
+        BuildLogTabs();
 
         InitializeTrayIcon();
         LoadLocalSettings();
         ReloadEnv();
         FillSettingsFields();
-        SetInitialStatusRows();
+        UpdateRowPorts();
         SetAdminText();
+        UpdateOssStatus();
         ApplyRolePermissions();
 
         Loaded += async (_, _) =>
         {
-            Log("部署商店已启动。");
+            Log("部署控制台已启动。");
             foreach (var notice in startupNotices)
             {
                 Log(notice);
             }
 
-            if (IsDefaultAuthCode())
+            if (role == UserRole.None)
             {
-                Log("提示：尚未配置授权码，请在 .env 中填写 MANAGER_AUTH_CODE / MAINTAINER_AUTH_CODE。");
+                ShowRoleDialog(startupNotices.Count > 0 ? string.Join(Environment.NewLine, startupNotices) : null);
             }
 
             await RefreshStatusAsync();
@@ -180,14 +241,289 @@ public partial class MainWindow : Window
         }
     }
 
-    private void Authorize_Click(object sender, RoutedEventArgs e) => TryAuthorize();
+    // ──── 身份授权（管理人员/维护人员）────
+
+    private void Authorize_Click(object sender, RoutedEventArgs e) => ShowRoleDialog();
+
     private void Logout_Click(object sender, RoutedEventArgs e)
     {
         role = UserRole.None;
-        AuthCodeBox.Clear();
         ApplyRolePermissions();
         Log("已退出授权。");
     }
+
+    private void ShowRoleDialog(string? hint = null)
+    {
+        var dialog = new RoleAuthDialog(hint, TryAuthorizeCode);
+        if (IsLoaded)
+        {
+            dialog.Owner = this;
+        }
+        else
+        {
+            dialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        }
+
+        dialog.ShowDialog();
+        ApplyRolePermissions();
+    }
+
+    private bool TryAuthorizeCode(string code)
+    {
+        ReloadEnv();
+        var managerCode = EnvValue("MANAGER_AUTH_CODE", "");
+        var maintainerCode = EnvValue("MAINTAINER_AUTH_CODE", "");
+
+        if (FixedEquals(code, managerCode))
+        {
+            role = UserRole.Manager;
+        }
+        else if (FixedEquals(code, maintainerCode))
+        {
+            role = UserRole.Maintainer;
+        }
+        else
+        {
+            return false;
+        }
+
+        ApplyRolePermissions();
+        Log($"已切换授权：{RoleName(role)}。");
+        return true;
+    }
+
+    private bool RequireMaintainer()
+    {
+        if (role is UserRole.Maintainer or UserRole.Manager)
+        {
+            return true;
+        }
+
+        var choice = WpfMessageBox.Show(
+            "此操作需要维护人员或管理人员授权。现在输入授权码吗？",
+            "需要授权",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+        if (choice == MessageBoxResult.Yes)
+        {
+            ShowRoleDialog();
+        }
+
+        return role is UserRole.Maintainer or UserRole.Manager;
+    }
+
+    private bool RequireManager()
+    {
+        if (role == UserRole.Manager)
+        {
+            return true;
+        }
+
+        var choice = WpfMessageBox.Show(
+            "发布程序需要管理人员授权。现在输入授权码吗？",
+            "需要管理人员授权",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+        if (choice == MessageBoxResult.Yes)
+        {
+            ShowRoleDialog();
+        }
+
+        return role == UserRole.Manager;
+    }
+
+    private void ApplyRolePermissions()
+    {
+        var canUse = !busy && role is UserRole.Maintainer or UserRole.Manager;
+        var canPublish = !busy && role == UserRole.Manager;
+
+        InstallPanel.IsEnabled = canUse;
+        UpdatePanel.IsEnabled = canUse;
+        ServicePanel.IsEnabled = canUse;
+        BackupPanel.IsEnabled = canUse;
+        PublishPanel.Visibility = canPublish ? Visibility.Visible : Visibility.Collapsed;
+        PublishPanel.IsEnabled = canPublish;
+
+        RoleText.Text = "当前身份：" + RoleName(role);
+        RoleText.Foreground = role == UserRole.None
+            ? System.Windows.Media.Brushes.DarkRed
+            : System.Windows.Media.Brushes.DarkGreen;
+        AuthorizeButton.Content = role == UserRole.None ? "输入授权码" : "切换授权";
+    }
+
+    private static string RoleName(UserRole currentRole) => currentRole switch
+    {
+        UserRole.Manager => "管理人员",
+        UserRole.Maintainer => "维护人员",
+        _ => "未授权"
+    };
+
+    private static bool FixedEquals(string left, string right)
+    {
+        if (string.IsNullOrWhiteSpace(left) || string.IsNullOrWhiteSpace(right))
+        {
+            return false;
+        }
+
+        return string.Equals(left.Trim(), right.Trim(), StringComparison.Ordinal);
+    }
+
+    private void EnsureEnvFile()
+    {
+        if (File.Exists(envPath))
+        {
+            return;
+        }
+
+        var example = Path.Combine(scriptsDir, ".env.example");
+        if (File.Exists(example))
+        {
+            File.Copy(example, envPath, overwrite: false);
+        }
+    }
+
+    private void EnsureAuthCodesInEnv()
+    {
+        var current = File.Exists(envPath)
+            ? ReadDotEnv(envPath)
+            : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var updates = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        if (string.IsNullOrWhiteSpace(current.GetValueOrDefault("MANAGER_AUTH_CODE", "")))
+        {
+            updates["MANAGER_AUTH_CODE"] = GenerateAuthorizationCode("MGR");
+            startupNotices.Add("首次启动已生成管理人员授权码：" + updates["MANAGER_AUTH_CODE"]);
+        }
+
+        if (string.IsNullOrWhiteSpace(current.GetValueOrDefault("MAINTAINER_AUTH_CODE", "")))
+        {
+            updates["MAINTAINER_AUTH_CODE"] = GenerateAuthorizationCode("MNT");
+            startupNotices.Add("首次启动已生成维护人员授权码：" + updates["MAINTAINER_AUTH_CODE"]);
+        }
+
+        if (updates.Count > 0)
+        {
+            WriteEnvUpdates(updates);
+            startupNotices.Add("授权码已写入 ops\\.env，请妥善保存。");
+        }
+    }
+
+    private static string GenerateAuthorizationCode(string roleCode)
+    {
+        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        var builder = new StringBuilder("LM-");
+        builder.Append(roleCode);
+
+        for (var group = 0; group < 4; group++)
+        {
+            builder.Append('-');
+            for (var index = 0; index < 5; index++)
+            {
+                builder.Append(chars[RandomNumberGenerator.GetInt32(chars.Length)]);
+            }
+        }
+
+        return builder.ToString();
+    }
+
+    // ──── OSS 凭据码（在线升级/发布所需）────
+
+    private void OssAuth_Click(object sender, RoutedEventArgs e) => ShowOssDialog();
+
+    private bool IsOssConfigured()
+    {
+        return EnvValue("OSS_BUCKET", "").Length > 0
+            && EnvValue("OSS_ACCESS_KEY_ID", "").Length > 0
+            && EnvValue("OSS_ACCESS_KEY_SECRET", "").Length > 0;
+    }
+
+    private void UpdateOssStatus()
+    {
+        OssStatusText.Text = IsOssConfigured()
+            ? $"OSS 凭据：已配置（{EnvValue("OSS_BUCKET", "")}）"
+            : "OSS 凭据：未配置。在线更新与发布前请先配置凭据码（由供应商提供）。";
+    }
+
+    private bool EnsureOssConfigured(string action)
+    {
+        ReloadEnv();
+        if (IsOssConfigured())
+        {
+            return true;
+        }
+
+        var choice = WpfMessageBox.Show(
+            $"{action}需要 OSS 凭据码（由供应商提供），当前尚未配置。现在输入吗？",
+            "需要 OSS 凭据",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+        if (choice == MessageBoxResult.Yes)
+        {
+            ShowOssDialog();
+        }
+
+        ReloadEnv();
+        return IsOssConfigured();
+    }
+
+    private void ShowOssDialog()
+    {
+        ReloadEnv();
+        var configured = IsOssConfigured();
+        var status = configured
+            ? $"当前状态：已配置（Bucket：{EnvValue("OSS_BUCKET", "")}）"
+            : "当前状态：未配置";
+        var currentCode = configured
+            ? UpgradeAuthCode.Encode(new UpgradeAuth(
+                EnvValue("OSS_ENDPOINT", ""),
+                EnvValue("OSS_BUCKET", ""),
+                EnvValue("OSS_ACCESS_KEY_ID", ""),
+                EnvValue("OSS_ACCESS_KEY_SECRET", ""),
+                EnvValue("OSS_PREFIX", "")))
+            : null;
+
+        var dialog = new AuthDialog(status, currentCode);
+        if (IsLoaded)
+        {
+            dialog.Owner = this;
+        }
+        else
+        {
+            dialog.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+        }
+
+        if (dialog.ShowDialog() == true && dialog.Result is { } auth)
+        {
+            try
+            {
+                var updates = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["OSS_BUCKET"] = auth.Bucket,
+                    ["OSS_ACCESS_KEY_ID"] = auth.AccessKeyId,
+                    ["OSS_ACCESS_KEY_SECRET"] = auth.AccessKeySecret
+                };
+                if (auth.Endpoint.Length > 0)
+                {
+                    updates["OSS_ENDPOINT"] = auth.Endpoint;
+                }
+                if (auth.Prefix.Length > 0)
+                {
+                    updates["OSS_PREFIX"] = auth.Prefix;
+                }
+                WriteEnvUpdates(updates);
+                Log($"OSS 凭据码已保存（Bucket：{auth.Bucket}）。");
+            }
+            catch (Exception ex)
+            {
+                WpfMessageBox.Show("保存 OSS 凭据码失败：" + ex.Message, "错误", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        ReloadEnv();
+        UpdateOssStatus();
+    }
+
+    // ──── 安装 ────
 
     private async void SaveSettings_Click(object sender, RoutedEventArgs e)
     {
@@ -220,6 +556,11 @@ public partial class MainWindow : Window
         {
             WpfMessageBox.Show("请先勾选要下载的基础软件。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
+        }
+
+        if (string.Equals(EnvValue("PREREQ_SOURCE", "OSS"), "OSS", StringComparison.OrdinalIgnoreCase) && !IsOssConfigured())
+        {
+            Log("提示：未配置 OSS 凭据，基础软件将回退到公网下载地址。");
         }
 
         await RunScriptAsync("下载基础软件", "download-prereqs.ps1", "-Only " + string.Join(",", selected));
@@ -256,9 +597,11 @@ public partial class MainWindow : Window
         }
     }
 
+    // ──── 更新与发布 ────
+
     private async void RunUpgrade_Click(object sender, RoutedEventArgs e)
     {
-        if (!RequireMaintainer() || !SaveSettingsToEnv())
+        if (!RequireMaintainer() || !SaveSettingsToEnv() || !EnsureOssConfigured("在线更新"))
         {
             return;
         }
@@ -268,7 +611,7 @@ public partial class MainWindow : Window
 
     private async void InstallAutoUpgrade_Click(object sender, RoutedEventArgs e)
     {
-        if (!RequireMaintainer() || !SaveSettingsToEnv())
+        if (!RequireMaintainer() || !SaveSettingsToEnv() || !EnsureOssConfigured("自动更新"))
         {
             return;
         }
@@ -278,7 +621,7 @@ public partial class MainWindow : Window
 
     private async void PublishToolPatch_Click(object sender, RoutedEventArgs e)
     {
-        if (RequireManager() && SaveSettingsToEnv())
+        if (RequireManager() && SaveSettingsToEnv() && EnsureOssConfigured("发布"))
         {
             await RunScriptAsync("发布工具补丁到 OSS", "publish-release.ps1", "-PackageMode ToolPatch");
         }
@@ -286,16 +629,19 @@ public partial class MainWindow : Window
 
     private async void PublishFullRelease_Click(object sender, RoutedEventArgs e)
     {
-        if (RequireManager() && SaveSettingsToEnv())
+        if (RequireManager() && SaveSettingsToEnv() && EnsureOssConfigured("发布"))
         {
             await RunScriptAsync("发布完整部署资源到 OSS", "publish-all-assets.ps1");
         }
     }
 
+    // ──── 服务控制 ────
+
     private void StartSelected_Click(object sender, RoutedEventArgs e) => RunServiceCommand("start");
     private void StopSelected_Click(object sender, RoutedEventArgs e) => RunServiceCommand("stop");
     private void RestartSelected_Click(object sender, RoutedEventArgs e) => RunServiceCommand("restart");
     private async void Refresh_Click(object sender, RoutedEventArgs e) => await RefreshStatusAsync();
+
     private async void HealthCheck_Click(object sender, RoutedEventArgs e)
     {
         if (RequireMaintainer())
@@ -304,15 +650,8 @@ public partial class MainWindow : Window
         }
     }
 
-    private void TailLogs_Click(object sender, RoutedEventArgs e)
-    {
-        if (RequireMaintainer())
-        {
-            TailLogs();
-        }
-    }
-
     private void OpenSite_Click(object sender, RoutedEventArgs e) => OpenSite();
+
     private void OpenLogs_Click(object sender, RoutedEventArgs e)
     {
         if (RequireMaintainer())
@@ -320,6 +659,21 @@ public partial class MainWindow : Window
             OpenLogsDir();
         }
     }
+
+    private async void RefreshLog_Click(object sender, RoutedEventArgs e) => await LoadCurrentLogTabAsync();
+
+    private async void LogTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (!ReferenceEquals(e.OriginalSource, LogTabs))
+        {
+            return;
+        }
+        await LoadCurrentLogTabAsync();
+    }
+
+    private void ClearServiceOutput_Click(object sender, RoutedEventArgs e) => ServiceOutputBox.Clear();
+
+    // ──── 备份 ────
 
     private async void BackupNow_Click(object sender, RoutedEventArgs e)
     {
@@ -344,6 +698,8 @@ public partial class MainWindow : Window
             await RunScriptAsync("关闭每日备份", "backup-database.ps1", "-RemoveSchedule");
         }
     }
+
+    // ──── 运行设置 ────
 
     private void BrowseDeployRoot_Click(object sender, RoutedEventArgs e)
     {
@@ -383,6 +739,8 @@ public partial class MainWindow : Window
     private void HideToTray_Click(object sender, RoutedEventArgs e) => HideToTray(showTip: true);
     private void ClearOutput_Click(object sender, RoutedEventArgs e) => OutputBox.Clear();
 
+    // ──── 任务执行 ────
+
     private async void RunServiceCommand(string action)
     {
         if (!RequireMaintainer() || !CanRunTask())
@@ -393,7 +751,7 @@ public partial class MainWindow : Window
         var names = SelectedServices().Where(s => !s.IsPortOnly).Select(s => s.Name).ToArray();
         if (names.Length == 0)
         {
-            WpfMessageBox.Show("请先勾选服务。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
+            WpfMessageBox.Show("请先在服务列表勾选服务。", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -410,7 +768,8 @@ public partial class MainWindow : Window
         });
         command.AppendLine("}");
         var encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes(command.ToString()));
-        await RunTask($"{action} services", $"-NoProfile -ExecutionPolicy Bypass -EncodedCommand {encoded}");
+        LogTabs.SelectedIndex = 0;
+        await RunTask($"{action} services", $"-NoProfile -ExecutionPolicy Bypass -EncodedCommand {encoded}", ServiceOutputBox);
     }
 
     private async Task RunScriptAsync(string title, string scriptName, string extraArgs = "")
@@ -427,7 +786,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        await RunTask(title, $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\" {extraArgs}".Trim());
+        await RunTask(title, $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\" {extraArgs}".Trim(), OutputBox);
     }
 
     private bool CanRunTask()
@@ -441,23 +800,23 @@ public partial class MainWindow : Window
         return false;
     }
 
-    private async Task RunTask(string title, string powershellArguments)
+    private async Task RunTask(string title, string powershellArguments, WpfTextBox target)
     {
         SetBusy(true);
-        Log("");
-        Log($">>> {title}");
+        Log(target, "");
+        Log(target, $">>> {title}");
         try
         {
             var result = await RunProcess("powershell.exe", powershellArguments, scriptsDir);
             foreach (var line in SplitLines(result.Output))
             {
-                Log(line);
+                Log(target, line);
             }
-            Log($"<<< 任务结束，退出码：{result.ExitCode}");
+            Log(target, $"<<< 任务结束，退出码：{result.ExitCode}");
         }
         catch (Exception ex)
         {
-            Log("ERROR: " + ex.Message);
+            Log(target, "ERROR: " + ex.Message);
         }
         finally
         {
@@ -495,151 +854,7 @@ public partial class MainWindow : Window
         return new ScriptResult(process.ExitCode, output.ToString());
     }
 
-    private void TryAuthorize()
-    {
-        ReloadEnv();
-        var code = AuthCodeBox.Password.Trim();
-        var managerCode = EnvValue("MANAGER_AUTH_CODE", DefaultManagerCode);
-        var maintainerCode = EnvValue("MAINTAINER_AUTH_CODE", DefaultMaintainerCode);
-
-        if (FixedEquals(code, managerCode))
-        {
-            role = UserRole.Manager;
-        }
-        else if (FixedEquals(code, maintainerCode))
-        {
-            role = UserRole.Maintainer;
-        }
-        else
-        {
-            WpfMessageBox.Show("授权码不正确。", "授权失败", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
-
-        ApplyRolePermissions();
-        Log($"已切换授权：{RoleName(role)}。");
-    }
-
-    private bool RequireMaintainer()
-    {
-        if (role is UserRole.Maintainer or UserRole.Manager)
-        {
-            return true;
-        }
-
-        WpfMessageBox.Show("请输入维护人员或管理人员授权码。", "需要授权", MessageBoxButton.OK, MessageBoxImage.Information);
-        return false;
-    }
-
-    private bool RequireManager()
-    {
-        if (role == UserRole.Manager)
-        {
-            return true;
-        }
-
-        WpfMessageBox.Show("发布程序需要管理人员授权码。", "需要管理人员授权", MessageBoxButton.OK, MessageBoxImage.Information);
-        return false;
-    }
-
-    private void ApplyRolePermissions()
-    {
-        var canUse = !busy && role is UserRole.Maintainer or UserRole.Manager;
-        var canPublish = !busy && role == UserRole.Manager;
-
-        InstallPanel.IsEnabled = canUse;
-        UpdatePanel.IsEnabled = canUse;
-        ServicePanel.IsEnabled = canUse;
-        BackupPanel.IsEnabled = canUse;
-        PublishPanel.Visibility = canPublish ? Visibility.Visible : Visibility.Collapsed;
-        PublishPanel.IsEnabled = canPublish;
-
-        RoleText.Text = "当前身份：" + RoleName(role);
-        RoleText.Foreground = role == UserRole.None
-            ? System.Windows.Media.Brushes.DarkRed
-            : System.Windows.Media.Brushes.DarkGreen;
-    }
-
-    private static string RoleName(UserRole currentRole) => currentRole switch
-    {
-        UserRole.Manager => "管理人员",
-        UserRole.Maintainer => "维护人员",
-        _ => "未授权"
-    };
-
-    private static bool FixedEquals(string left, string right)
-    {
-        if (string.IsNullOrWhiteSpace(left) || string.IsNullOrWhiteSpace(right))
-        {
-            return false;
-        }
-
-        return string.Equals(left.Trim(), right.Trim(), StringComparison.Ordinal);
-    }
-
-    private bool IsDefaultAuthCode()
-    {
-        return string.IsNullOrWhiteSpace(EnvValue("MANAGER_AUTH_CODE", DefaultManagerCode))
-            || string.IsNullOrWhiteSpace(EnvValue("MAINTAINER_AUTH_CODE", DefaultMaintainerCode));
-    }
-
-    private void EnsureEnvFile()
-    {
-        if (File.Exists(envPath))
-        {
-            return;
-        }
-
-        var example = Path.Combine(scriptsDir, ".env.example");
-        if (File.Exists(example))
-        {
-            File.Copy(example, envPath, overwrite: false);
-        }
-    }
-
-    private void EnsureAuthCodesInEnv()
-    {
-        var current = File.Exists(envPath)
-            ? ReadDotEnv(envPath)
-            : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        var updates = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-
-        if (string.IsNullOrWhiteSpace(current.GetValueOrDefault("MANAGER_AUTH_CODE", DefaultManagerCode)))
-        {
-            updates["MANAGER_AUTH_CODE"] = GenerateAuthorizationCode("MGR");
-            startupNotices.Add("首次启动已生成管理人员授权码：" + updates["MANAGER_AUTH_CODE"]);
-        }
-
-        if (string.IsNullOrWhiteSpace(current.GetValueOrDefault("MAINTAINER_AUTH_CODE", DefaultMaintainerCode)))
-        {
-            updates["MAINTAINER_AUTH_CODE"] = GenerateAuthorizationCode("MNT");
-            startupNotices.Add("首次启动已生成维护人员授权码：" + updates["MAINTAINER_AUTH_CODE"]);
-        }
-
-        if (updates.Count > 0)
-        {
-            WriteEnvUpdates(updates);
-            startupNotices.Add("授权码已写入 ops\\.env，请妥善保存。");
-        }
-    }
-
-    private static string GenerateAuthorizationCode(string roleCode)
-    {
-        const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        var builder = new StringBuilder("LM-");
-        builder.Append(roleCode);
-
-        for (var group = 0; group < 4; group++)
-        {
-            builder.Append('-');
-            for (var index = 0; index < 5; index++)
-            {
-                builder.Append(chars[RandomNumberGenerator.GetInt32(chars.Length)]);
-            }
-        }
-
-        return builder.ToString();
-    }
+    // ──── 配置读写 ────
 
     private void ReloadEnv()
     {
@@ -648,8 +863,7 @@ public partial class MainWindow : Window
 
     private void FillSettingsFields()
     {
-        var deployRoot = EnvValue("DEPLOY_ROOT", @"D:\deploy\lab");
-        DeployRootBox.Text = deployRoot;
+        DeployRootBox.Text = EnvValue("DEPLOY_ROOT", @"D:\deploy\lab");
         WebPortBox.Text = PortFor("WEB_PORT", 80).ToString();
         ApiPortBox.Text = PortFor("API_PORT", 10089).ToString();
         NlqPortBox.Text = PortFor("NLQ_PORT", 8000).ToString();
@@ -717,11 +931,11 @@ public partial class MainWindow : Window
 
         WriteEnvUpdates(updates);
         ReloadEnv();
-        SetInitialStatusRows();
+        UpdateRowPorts();
         return true;
     }
 
-    private static bool TryReadPort(System.Windows.Controls.TextBox box, string name, out int port)
+    private static bool TryReadPort(WpfTextBox box, string name, out int port)
     {
         if (int.TryParse(box.Text.Trim(), out port) && port is >= 1 and <= 65535)
         {
@@ -764,20 +978,14 @@ public partial class MainWindow : Window
         File.WriteAllLines(envPath, lines, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
     }
 
-    private void SetInitialStatusRows()
+    // ──── 服务状态 ────
+
+    private void UpdateRowPorts()
     {
-        ReloadEnv();
-        ServiceGrid.ItemsSource = services.Select(item => new ServiceStatusRow
+        foreach (var item in services)
         {
-            Name = item.Name,
-            Title = item.Title,
-            State = item.IsPortOnly ? "PortOnly" : "Loading",
-            StartMode = "",
-            ProcessId = "",
-            Port = PortFor(item),
-            PortOpen = false
-        }).ToList();
-        LastRefreshText.Text = "等待刷新...";
+            rowsByName[item.Name].Port = PortFor(item);
+        }
     }
 
     private async Task RefreshStatusAsync()
@@ -791,35 +999,31 @@ public partial class MainWindow : Window
         try
         {
             ReloadEnv();
+            var ports = services.ToDictionary(x => x.Name, PortFor, StringComparer.OrdinalIgnoreCase);
             var serviceInfo = await QueryServicesAsync(services.Where(x => !x.IsPortOnly).Select(x => x.Name));
-            var rows = await Task.Run(() =>
-            {
-                return services.Select(item =>
-                {
-                    var port = PortFor(item);
-                    var info = item.IsPortOnly || !serviceInfo.TryGetValue(item.Name, out var found)
-                        ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                        : found;
-                    var state = item.IsPortOnly ? "PortOnly" : info.GetValueOrDefault("State", "NotInstalled");
-                    return new ServiceStatusRow
-                    {
-                        Name = item.Name,
-                        Title = item.Title,
-                        State = state,
-                        StartMode = item.IsPortOnly ? "" : info.GetValueOrDefault("StartMode", ""),
-                        ProcessId = item.IsPortOnly ? "" : info.GetValueOrDefault("ProcessId", ""),
-                        Port = port,
-                        PortOpen = port > 0 && IsPortOpen(port)
-                    };
-                }).ToList();
-            });
+            var portOpen = await Task.Run(() => ports.ToDictionary(
+                pair => pair.Key,
+                pair => pair.Value > 0 && IsPortOpen(pair.Value),
+                StringComparer.OrdinalIgnoreCase));
 
-            ServiceGrid.ItemsSource = rows;
+            foreach (var item in services)
+            {
+                var row = rowsByName[item.Name];
+                var info = item.IsPortOnly || !serviceInfo.TryGetValue(item.Name, out var found)
+                    ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    : found;
+                row.State = item.IsPortOnly ? "PortOnly" : info.GetValueOrDefault("State", "NotInstalled");
+                row.StartMode = item.IsPortOnly ? "" : info.GetValueOrDefault("StartMode", "");
+                row.ProcessId = item.IsPortOnly ? "" : info.GetValueOrDefault("ProcessId", "");
+                row.Port = ports[item.Name];
+                row.PortOpen = portOpen.GetValueOrDefault(item.Name);
+            }
+
             LastRefreshText.Text = "最后刷新：" + DateTime.Now.ToString("HH:mm:ss");
         }
         catch (Exception ex)
         {
-            Log("刷新状态失败：" + ex.Message);
+            LogService("刷新状态失败：" + ex.Message);
         }
         finally
         {
@@ -948,7 +1152,8 @@ public partial class MainWindow : Window
 
     private async Task HealthCheck()
     {
-        Log(">>> 健康检查");
+        LogTabs.SelectedIndex = 0;
+        LogService(">>> 健康检查");
         var urls = new[]
         {
             $"http://127.0.0.1:{PortFor("WEB_PORT", 80)}/",
@@ -963,40 +1168,82 @@ public partial class MainWindow : Window
             try
             {
                 using var response = await httpClient.GetAsync(url);
-                Log($"{url} -> {(int)response.StatusCode}");
+                LogService($"{url} -> {(int)response.StatusCode}");
             }
             catch (Exception ex)
             {
-                Log($"{url} -> FAILED: {ex.Message}");
+                LogService($"{url} -> FAILED: {ex.Message}");
             }
         }
     }
 
-    private void TailLogs()
+    // ──── 服务日志（按服务分类展示）────
+
+    private void BuildLogTabs()
     {
-        foreach (var item in SelectedServices())
+        foreach (var item in services.Where(s => s.LogName.Length > 0).DistinctBy(s => s.LogName))
         {
-            if (string.IsNullOrWhiteSpace(item.LogName))
+            var box = new WpfTextBox
             {
-                continue;
-            }
-
-            var stderr = Path.Combine(DeployRoot(), "logs", item.LogName, "stderr.log");
-            var stdout = Path.Combine(DeployRoot(), "logs", item.LogName, "stdout.log");
-            var file = File.Exists(stderr) ? stderr : File.Exists(stdout) ? stdout : "";
-            if (file.Length == 0)
-            {
-                Log($"未找到日志：{item.Name}");
-                continue;
-            }
-
-            Log($">>> {file}");
-            foreach (var line in Tail(file, 80))
-            {
-                Log(line);
-            }
+                FontFamily = new System.Windows.Media.FontFamily("Consolas"),
+                FontSize = 12,
+                IsReadOnly = true,
+                AcceptsReturn = true,
+                AcceptsTab = true,
+                TextWrapping = TextWrapping.NoWrap,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Auto
+            };
+            logBoxes[item.LogName] = box;
+            LogTabs.Items.Add(new TabItem { Header = item.LogName, Content = box, Tag = item.LogName });
         }
     }
+
+    private async Task LoadCurrentLogTabAsync()
+    {
+        if (LogTabs.SelectedItem is not TabItem tab || tab.Tag is not string logName)
+        {
+            return;
+        }
+
+        var box = logBoxes[logName];
+        var dir = Path.Combine(DeployRoot(), "logs", logName);
+        box.Text = $"正在读取 {dir} ...";
+        var text = await Task.Run(() => ReadServiceLog(dir));
+        box.Text = text;
+        box.ScrollToEnd();
+    }
+
+    private static string ReadServiceLog(string dir)
+    {
+        if (!Directory.Exists(dir))
+        {
+            return $"日志目录不存在：{dir}";
+        }
+
+        var sb = new StringBuilder();
+        foreach (var fileName in new[] { "stdout.log", "stderr.log" })
+        {
+            var path = Path.Combine(dir, fileName);
+            sb.AppendLine($"===== {fileName} =====");
+            if (File.Exists(path))
+            {
+                foreach (var line in Tail(path, 200))
+                {
+                    sb.AppendLine(line);
+                }
+            }
+            else
+            {
+                sb.AppendLine("（文件不存在）");
+            }
+            sb.AppendLine();
+        }
+
+        return sb.ToString();
+    }
+
+    // ──── 其他操作 ────
 
     private void OpenSite()
     {
@@ -1012,10 +1259,9 @@ public partial class MainWindow : Window
 
     private IEnumerable<ServiceItem> SelectedServices()
     {
-        var names = ServiceChecks.Children.OfType<WpfCheckBox>()
-            .Where(x => x.IsChecked == true)
-            .Select(x => x.Tag?.ToString() ?? "")
-            .Where(x => x.Length > 0)
+        var names = statusRows
+            .Where(row => row.CanSelect && row.Selected)
+            .Select(row => row.Name)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
         return services.Where(s => names.Contains(s.Name));
     }
@@ -1091,20 +1337,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private void AddServiceChecks()
-    {
-        foreach (var item in services.Where(x => !x.IsPortOnly))
-        {
-            ServiceChecks.Children.Add(new WpfCheckBox
-            {
-                Content = $"{item.Name}  {item.Title}",
-                IsChecked = true,
-                Margin = new Thickness(0, 0, 0, 5),
-                Tag = item.Name
-            });
-        }
-    }
-
     private void SetAdminText()
     {
         AdminText.Text = IsAdministrator() ? "管理员权限：已获取" : "管理员权限：未获取";
@@ -1113,12 +1345,14 @@ public partial class MainWindow : Window
             : System.Windows.Media.Brushes.DarkRed;
     }
 
+    // ──── 托盘与自启动 ────
+
     private void InitializeTrayIcon()
     {
         trayIcon = new Forms.NotifyIcon
         {
             Icon = Drawing.SystemIcons.Application,
-            Text = "检测室数据分析系统 - 部署商店",
+            Text = "检测室数据分析系统 - 部署控制台",
             Visible = true,
             ContextMenuStrip = new Forms.ContextMenuStrip()
         };
@@ -1138,7 +1372,7 @@ public partial class MainWindow : Window
         Hide();
         if (showTip)
         {
-            trayIcon?.ShowBalloonTip(2500, "部署商店仍在运行", "双击托盘图标可重新打开。", Forms.ToolTipIcon.Info);
+            trayIcon?.ShowBalloonTip(2500, "部署控制台仍在运行", "双击托盘图标可重新打开。", Forms.ToolTipIcon.Info);
         }
     }
 
@@ -1235,6 +1469,8 @@ Register-ScheduledTask -TaskName '{AutoStartTaskName}' -Action $action -Trigger 
             ?? Path.Combine(AppContext.BaseDirectory, "LmDeployConsole.exe");
     }
 
+    // ──── 工具方法 ────
+
     private static bool IsPortOpen(int port)
     {
         try
@@ -1308,31 +1544,19 @@ Register-ScheduledTask -TaskName '{AutoStartTaskName}' -Action $action -Trigger 
     {
         busy = value;
         BusyText.Text = value ? "正在执行任务..." : "就绪";
-        SetButtonsEnabled(this, !value);
-        AutoRefreshBox.IsEnabled = true;
-        AutoStartBox.IsEnabled = true;
-        TrayOnMinimizeBox.IsEnabled = true;
-        CloseToTrayBox.IsEnabled = true;
+        AuthorizeButton.IsEnabled = !value;
+        LogoutButton.IsEnabled = !value;
+        BrowseButton.IsEnabled = !value;
         ApplyRolePermissions();
     }
 
-    private static void SetButtonsEnabled(DependencyObject root, bool enabled)
-    {
-        for (var i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(root); i++)
-        {
-            var child = System.Windows.Media.VisualTreeHelper.GetChild(root, i);
-            if (child is WpfButton button && button.Content?.ToString() != "刷新状态")
-            {
-                button.IsEnabled = enabled;
-            }
+    private void Log(string message) => Log(OutputBox, message);
 
-            SetButtonsEnabled(child, enabled);
-        }
-    }
+    private void LogService(string message) => Log(ServiceOutputBox, message);
 
-    private void Log(string message)
+    private static void Log(WpfTextBox target, string message)
     {
-        OutputBox.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
-        OutputBox.ScrollToEnd();
+        target.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
+        target.ScrollToEnd();
     }
 }

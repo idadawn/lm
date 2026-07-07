@@ -46,6 +46,45 @@ public static class DatabaseInitExtension
     }
 
     /// <summary>
+    /// 幂等地确保单片性能相关的两张表存在（原始数据表 + 导入会话表）.
+    /// </summary>
+    public static void EnsureSingleSheetTables(this IServiceProvider serviceProvider)
+    {
+        using var scope = serviceProvider.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<
+            ISqlSugarRepository<ProductSpecEntity>
+        >();
+        var db = repository.AsSugarClient();
+
+        if (!db.DbMaintenance.IsAnyTable("LAB_SINGLE_SHEET_RAW_DATA", false))
+        {
+            db.CodeFirst.InitTables(typeof(SingleSheetRawDataEntity));
+        }
+
+        if (!db.DbMaintenance.IsAnyTable("lab_single_sheet_import_session", false))
+        {
+            db.CodeFirst.InitTables(typeof(SingleSheetImportSessionEntity));
+        }
+    }
+
+    /// <summary>
+    /// 幂等地确保设备数据采集暂存表存在.
+    /// </summary>
+    public static void EnsureDeviceDataTables(this IServiceProvider serviceProvider)
+    {
+        using var scope = serviceProvider.CreateScope();
+        var repository = scope.ServiceProvider.GetRequiredService<
+            ISqlSugarRepository<ProductSpecEntity>
+        >();
+        var db = repository.AsSugarClient();
+
+        if (!db.DbMaintenance.IsAnyTable("LAB_DEVICE_DATA_INBOX", false))
+        {
+            db.CodeFirst.InitTables(typeof(DeviceDataInboxEntity));
+        }
+    }
+
+    /// <summary>
     /// 初始化数量单位.
     /// </summary>
     private static void SeedQuantityUnits(ISqlSugarRepository<ProductSpecEntity> repository)

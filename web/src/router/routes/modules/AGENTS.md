@@ -9,7 +9,7 @@ Static, build-time route modules merged into `basicRoutes`. Currently hosts the 
 ## Key Files
 | File | Description |
 |------|-------------|
-| `lab.ts` | `/lab` parent route under `LAYOUT`. Children: `monthly-dashboard` (生产驾驶舱), `metric` / `metric/form/:id?`, `intermediate-data-formula` (公式维护), `intermediate-data-judgment-level` (判定等级), `monthly-report` (月度质量报表), `magnetic-data` (磁性数据), `report-config` (指标列表). Default redirect to `monthly-dashboard`. |
+| `lab.ts` | `/lab` parent route under `LAYOUT`. Children: `monthly-dashboard` (生产驾驶舱), `metric` / `metric/form/:id?`, `intermediate-data-formula` (公式维护), `intermediate-data-judgment-level` (判定等级), `monthly-report` (月度质量报表), `magnetic-data` (磁性数据), `single-sheet-data` (单片性能数据), `report-config` (指标列表). Default redirect to `monthly-dashboard`. |
 | `ai.ts` | `/ai` parent route — exposes the NLQ-agent chat view (`web/src/views/ai/...`). |
 
 ## For AI Agents

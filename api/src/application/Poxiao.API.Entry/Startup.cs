@@ -13,6 +13,7 @@ using Poxiao.Infrastructure.Core.Filter;
 using Poxiao.Infrastructure.Core.Handlers;
 using Poxiao.JsonSerialization;
 using Poxiao.Lab.Service;
+using Poxiao.Logging;
 using Poxiao.SpecificationDocument;
 using Poxiao.UnifyResult;
 using Poxiao.VirtualFileServer;
@@ -368,6 +369,26 @@ public class Startup : AppStartup
 
         // 初始化数据库表
         //serviceProvider.InitializeLabDatabase();
+
+        // 幂等地确保单片性能相关表存在，建表失败只记日志不阻断启动
+        try
+        {
+            serviceProvider.EnsureSingleSheetTables();
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"[Startup] 初始化单片性能数据表失败: {ex.Message}");
+        }
+
+        // 幂等地确保设备数据采集暂存表存在，建表失败只记日志不阻断启动
+        try
+        {
+            serviceProvider.EnsureDeviceDataTables();
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"[Startup] 初始化设备数据采集暂存表失败: {ex.Message}");
+        }
 
         app.UseEndpoints(endpoints =>
         {

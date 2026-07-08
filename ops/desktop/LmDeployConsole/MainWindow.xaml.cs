@@ -888,6 +888,13 @@ public partial class MainWindow : Window
             return false;
         }
 
+        var ports = new[] { webPort, apiPort, nlqPort, redisPort, rabbitPort, rabbitMgmtPort, dbPort };
+        if (ports.Distinct().Count() != ports.Length)
+        {
+            WpfMessageBox.Show("各服务端口不能重复，请检查后再保存。", "端口冲突", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
         var backupTime = BackupTimeBox.Text.Trim();
         if (!Regex.IsMatch(backupTime, @"^\d{2}:\d{2}$") || !TimeSpan.TryParse(backupTime, out _))
         {
@@ -1426,7 +1433,17 @@ public partial class MainWindow : Window
                 return false;
             }
 
-            process.WaitForExit(2000);
+            if (!process.WaitForExit(2000))
+            {
+                try
+                {
+                    process.Kill();
+                }
+                catch
+                {
+                }
+                return false;
+            }
             return process.ExitCode == 0;
         }
         catch

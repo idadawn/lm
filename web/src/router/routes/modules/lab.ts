@@ -75,6 +75,15 @@ const lab: AppRouteModule = {
             },
         },
         {
+            path: 'scan-station',
+            name: 'scanStation',
+            component: () => import('/@/views/lab/scanStation/index.vue'),
+            meta: {
+                title: '扫码工位',
+                icon: 'ant-design:scan-outlined',
+            },
+        },
+        {
             path: 'report-config',
             name: 'ReportConfigList',
             component: () => import('/@/views/lab/reportConfig/index.vue'),

@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Setup Node
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           # 22+：utils/markdown.js 是无 type 标记的 ESM，Node 18 无模块语法探测会直接
           # SyntaxError（Node 18 已 EOL；本地开发用 24）
